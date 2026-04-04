@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Saffron Kitchen — Authentic Indian Cuisine in Brampton</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --cream: #faf6f0;
+      --warm: #f5ede0;
+      --terracotta: #c2623c;
+      --terracotta-dark: #a0502f;
+      --gold: #d4a853;
+      --text: #2c1a0e;
+      --text-mid: #5c3d2a;
+      --text-light: #8a6555;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--cream);
+      color: var(--text);
+    }
+
+    /* NAV */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 60px;
+      height: 76px;
+      background: rgba(250, 246, 240, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(194, 98, 60, 0.12);
+    }
+
+    .nav-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 0.5px;
+    }
+
+    .nav-logo span { color: var(--terracotta); }
+
+    .nav-links {
+      display: flex;
+      gap: 36px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      font-size: 0.875rem;
+      color: var(--text-mid);
+      letter-spacing: 0.3px;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--terracotta); }
+
+    .nav-cta {
+      padding: 10px 24px;
+      background: var(--terracotta);
+      color: white;
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+      transition: background 0.2s;
+    }
+
+    .nav-cta:hover { background: var(--terracotta-dark); }
+
+    /* HERO */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 120px 60px 80px;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, var(--cream) 0%, var(--warm) 100%);
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      right: -100px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(194, 98, 60, 0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-content { max-width: 580px; }
+
+    .hero-badge {
+      display: inline-block;
+      padding: 6px 16px;
+      background: rgba(194, 98, 60, 0.1);
+      border: 1px solid rgba(194, 98, 60, 0.25);
+      color: var(--terracotta);
+      font-size: 0.75rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.8rem, 6vw, 5rem);
+      font-weight: 700;
+      line-height: 1.1;
+      color: var(--text);
+      margin-bottom: 24px;
+    }
+
+    .hero h1 em {
+      font-style: italic;
+      color: var(--terracotta);
+    }
+
+    .hero p {
+      font-size: 1.05rem;
+      line-height: 1.75;
+      color: var(--text-mid);
+      max-width: 440px;
+      margin-bottom: 40px;
+      font-weight: 300;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      padding: 16px 36px;
+      background: var(--terracotta);
+      color: white;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      transition: background 0.2s, transform 0.2s;
+      display: inline-block;
+    }
+
+    .btn-primary:hover {
+      background: var(--terracotta-dark);
+      transform: translateY(-1px);
+    }
+
+    .btn-outline {
+      padding: 15px 36px;
+      border: 1px solid var(--terracotta);
+      color: var(--terracotta);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      transition: all 0.2s;
+      display: inline-block;
+    }
+
+    .btn-outline:hover {
+      background: var(--terracotta);
+      color: white;
+    }
+
+    /* DECORATIVE PLATES */
+    .hero-visual {
+      position: absolute;
+      right: 80px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      opacity: 0.9;
+    }
+
+    .food-card {
+      width: 180px;
+      height: 220px;
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .food-card:nth-child(2) { margin-top: 40px; }
+    .food-card:nth-child(3) { margin-top: -20px; }
+
+    .food-card-img {
+      width: 100%;
+      height: 75%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.5rem;
+    }
+
+    .food-card-info {
+      padding: 12px 14px;
+      background: white;
+    }
+
+    .food-card-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .food-card-price {
+      font-size: 0.8rem;
+      color: var(--terracotta);
+      margin-top: 2px;
+    }
+
+    /* STRIP */
+    .stats-strip {
+      background: var(--terracotta);
+      padding: 28px 60px;
+      display: flex;
+      justify-content: center;
+      gap: 80px;
+      flex-wrap: wrap;
+    }
+
+    .strip-stat {
+      text-align: center;
+      color: white;
+    }
+
+    .strip-stat-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      display: block;
+    }
+
+    .strip-stat-label {
+      font-size: 0.8rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      opacity: 0.85;
+      margin-top: 4px;
+      display: block;
+    }
+
+    /* MENU */
+    .menu {
+      padding: 100px 60px;
+      background: white;
+    }
+
+    .section-label {
+      font-size: 0.7rem;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--terracotta);
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 60px;
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .menu-card {
+      background: var(--cream);
+      border: 1px solid rgba(194, 98, 60, 0.1);
+      padding: 28px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .menu-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(194, 98, 60, 0.12);
+    }
+
+    .menu-emoji { font-size: 2.4rem; margin-bottom: 16px; display: block; }
+
+    .menu-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .menu-desc {
+      font-size: 0.875rem;
+      color: var(--text-light);
+      line-height: 1.65;
+      margin-bottom: 16px;
+      font-weight: 300;
+    }
+
+    .menu-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .menu-price {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--terracotta);
+    }
+
+    .menu-tag {
+      font-size: 0.7rem;
+      padding: 3px 10px;
+      background: rgba(212, 168, 83, 0.15);
+      color: var(--gold);
+      border: 1px solid rgba(212, 168, 83, 0.3);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    /* ABOUT */
+    .about {
+      padding: 100px 60px;
+      background: var(--warm);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .about-visual {
+      width: 100%;
+      aspect-ratio: 4/3;
+      background: linear-gradient(135deg, #c2623c22, #d4a85322);
+      border: 1px solid rgba(194, 98, 60, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 6rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .about-visual::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 20px,
+        rgba(194, 98, 60, 0.03) 20px,
+        rgba(194, 98, 60, 0.03) 40px
+      );
+    }
+
+    .about-text h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.6rem, 3vw, 2.4rem);
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 20px;
+      line-height: 1.2;
+    }
+
+    .about-text p {
+      font-size: 0.95rem;
+      color: var(--text-mid);
+      line-height: 1.8;
+      font-weight: 300;
+      margin-bottom: 16px;
+    }
+
+    .about-detail {
+      display: flex;
+      gap: 32px;
+      margin-top: 32px;
+      flex-wrap: wrap;
+    }
+
+    .about-detail-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .about-detail-value {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--terracotta);
+    }
+
+    .about-detail-label {
+      font-size: 0.8rem;
+      color: var(--text-light);
+      letter-spacing: 0.5px;
+    }
+
+    /* TESTIMONIALS */
+    .testimonials {
+      padding: 100px 60px;
+      background: white;
+      text-align: center;
+    }
+
+    .testimonials .section-title { margin-bottom: 48px; }
+
+    .testi-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .testi-card {
+      background: var(--cream);
+      border: 1px solid rgba(194, 98, 60, 0.1);
+      padding: 32px 28px;
+      text-align: left;
+    }
+
+    .testi-stars { color: var(--gold); font-size: 0.9rem; margin-bottom: 16px; }
+
+    .testi-quote {
+      font-size: 0.9rem;
+      color: var(--text-mid);
+      line-height: 1.75;
+      font-weight: 300;
+      font-style: italic;
+      margin-bottom: 20px;
+    }
+
+    .testi-name {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .testi-role {
+      font-size: 0.8rem;
+      color: var(--text-light);
+      margin-top: 2px;
+    }
+
+    /* CONTACT */
+    .contact {
+      padding: 100px 60px;
+      background: var(--text);
+      text-align: center;
+      color: white;
+    }
+
+    .contact h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .contact p {
+      font-size: 1rem;
+      opacity: 0.7;
+      margin-bottom: 40px;
+      font-weight: 300;
+    }
+
+    .contact-details {
+      display: flex;
+      justify-content: center;
+      gap: 48px;
+      flex-wrap: wrap;
+      margin-bottom: 40px;
+    }
+
+    .contact-detail {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .contact-detail-label {
+      font-size: 0.75rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      opacity: 0.5;
+    }
+
+    .contact-detail-value {
+      font-size: 1rem;
+      opacity: 0.9;
+    }
+
+    /* FOOTER */
+    footer {
+      background: #1a0f08;
+      padding: 32px 60px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: rgba(255,255,255,0.4);
+      font-size: 0.8rem;
+    }
+
+    .footer-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      color: rgba(255,255,255,0.6);
+    }
+
+    .watermark {
+      font-size: 0.72rem;
+      letter-spacing: 1px;
+      opacity: 0.4;
+    }
+
+    .watermark a {
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px solid currentColor;
+    }
+
+    @media (max-width: 900px) {
+      nav { padding: 0 24px; }
+      .hero { padding: 100px 24px 60px; }
+      .hero-visual { display: none; }
+      .stats-strip { padding: 24px; gap: 40px; }
+      .menu { padding: 80px 24px; }
+      .menu-grid { grid-template-columns: 1fr; }
+      .about { grid-template-columns: 1fr; padding: 80px 24px; }
+      .testimonials { padding: 80px 24px; }
+      .testi-grid { grid-template-columns: 1fr; }
+      .contact { padding: 80px 24px; }
+      footer { padding: 24px; flex-direction: column; gap: 12px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Saffron <span>Kitchen</span></div>
+  <ul class="nav-links">
+    <li><a href="#menu">Menu</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#contact">Location</a></li>
+  </ul>
+  <a href="#contact" class="nav-cta">Reserve a Table</a>
+</nav>
+
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">Brampton's Finest Indian Cuisine</div>
+    <h1>Where Every Dish Tells a <em>Story</em></h1>
+    <p>Authentic flavours from the heart of India, crafted with generations of tradition and the finest local ingredients. Dine in, takeout, or catering for your next event.</p>
+    <div class="hero-actions">
+      <a href="#menu" class="btn-primary">View Our Menu</a>
+      <a href="#contact" class="btn-outline">Reserve a Table</a>
+    </div>
+  </div>
+
+  <div class="hero-visual">
+    <div class="food-card">
+      <div class="food-card-img" style="background:#fdf0e8">🍛</div>
+      <div class="food-card-info">
+        <div class="food-card-name">Butter Chicken</div>
+        <div class="food-card-price">$18.99</div>
+      </div>
+    </div>
+    <div class="food-card">
+      <div class="food-card-img" style="background:#fdf5e0">🫓</div>
+      <div class="food-card-info">
+        <div class="food-card-name">Garlic Naan</div>
+        <div class="food-card-price">$4.99</div>
+      </div>
+    </div>
+    <div class="food-card">
+      <div class="food-card-img" style="background:#fce9e0">🍢</div>
+      <div class="food-card-info">
+        <div class="food-card-name">Lamb Tikka</div>
+        <div class="food-card-price">$24.99</div>
+      </div>
+    </div>
+    <div class="food-card">
+      <div class="food-card-img" style="background:#f0fce8">🥗</div>
+      <div class="food-card-info">
+        <div class="food-card-name">Palak Paneer</div>
+        <div class="food-card-price">$16.99</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="stats-strip">
+  <div class="strip-stat">
+    <span class="strip-stat-num">12+</span>
+    <span class="strip-stat-label">Years in Business</span>
+  </div>
+  <div class="strip-stat">
+    <span class="strip-stat-num">4.9★</span>
+    <span class="strip-stat-label">Google Rating</span>
+  </div>
+  <div class="strip-stat">
+    <span class="strip-stat-num">200+</span>
+    <span class="strip-stat-label">Menu Items</span>
+  </div>
+  <div class="strip-stat">
+    <span class="strip-stat-num">Daily</span>
+    <span class="strip-stat-label">Fresh Prep</span>
+  </div>
+</div>
+
+<section class="menu" id="menu">
+  <div style="text-align:center; margin-bottom: 60px;">
+    <div class="section-label">What We Serve</div>
+    <h2 class="section-title">Our Signature Dishes</h2>
+  </div>
+  <div class="menu-grid">
+    <div class="menu-card">
+      <span class="menu-emoji">🍛</span>
+      <div class="menu-name">Butter Chicken</div>
+      <div class="menu-desc">Tender chicken in a rich, creamy tomato sauce with aromatic spices. Our most beloved classic.</div>
+      <div class="menu-footer">
+        <div class="menu-price">$18.99</div>
+        <div class="menu-tag">Best Seller</div>
+      </div>
+    </div>
+    <div class="menu-card">
+      <span class="menu-emoji">🐑</span>
+      <div class="menu-name">Lamb Rogan Josh</div>
+      <div class="menu-desc">Slow-cooked Kashmiri lamb with whole spices, yogurt, and deep caramelized onion gravy.</div>
+      <div class="menu-footer">
+        <div class="menu-price">$24.99</div>
+        <div class="menu-tag">Chef's Pick</div>
+      </div>
+    </div>
+    <div class="menu-card">
+      <span class="menu-emoji">🫘</span>
+      <div class="menu-name">Dal Makhani</div>
+      <div class="menu-desc">Black lentils simmered overnight with butter and cream. A true comfort dish from Punjab.</div>
+      <div class="menu-footer">
+        <div class="menu-price">$14.99</div>
+        <div class="menu-tag">Vegetarian</div>
+      </div>
+    </div>
+    <div class="menu-card">
+      <span class="menu-emoji">🍢</span>
+      <div class="menu-name">Mixed Grill Platter</div>
+      <div class="menu-desc">Chicken tikka, seekh kebab, and tandoori prawns served with mint chutney and sliced onion.</div>
+      <div class="menu-footer">
+        <div class="menu-price">$34.99</div>
+        <div class="menu-tag">For Two</div>
+      </div>
+    </div>
+    <div class="menu-card">
+      <span class="menu-emoji">🧀</span>
+      <div class="menu-name">Palak Paneer</div>
+      <div class="menu-desc">Fresh cottage cheese cubes in a silky spiced spinach sauce. Light, nutritious, and full of flavour.</div>
+      <div class="menu-footer">
+        <div class="menu-price">$16.99</div>
+        <div class="menu-tag">Vegetarian</div>
+      </div>
+    </div>
+    <div class="menu-card">
+      <span class="menu-emoji">🍮</span>
+      <div class="menu-name">Gulab Jamun</div>
+      <div class="menu-desc">Soft milk solids dumplings soaked in rose-flavored sugar syrup. The perfect sweet finish.</div>
+      <div class="menu-footer">
+        <div class="menu-price">$7.99</div>
+        <div class="menu-tag">Dessert</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="background: var(--warm); padding: 100px 60px;" id="about">
+  <div class="about">
+    <div class="about-visual">🫕</div>
+    <div class="about-text">
+      <div class="section-label">Our Story</div>
+      <h2>A Family Recipe, Brought to Brampton</h2>
+      <p>Saffron Kitchen was founded in 2012 by Chef Arjun Sharma, who brought his family's treasured recipes from Amritsar to share with the GTA. Every dish on our menu is a tribute to that tradition.</p>
+      <p>We source our spices fresh from trusted suppliers and prepare everything from scratch daily. No shortcuts, no compromises — just honest, flavourful food made with love.</p>
+      <div class="about-detail">
+        <div class="about-detail-item">
+          <span class="about-detail-value">2012</span>
+          <span class="about-detail-label">Est. Brampton</span>
+        </div>
+        <div class="about-detail-item">
+          <span class="about-detail-value">4.9★</span>
+          <span class="about-detail-label">800+ Reviews</span>
+        </div>
+        <div class="about-detail-item">
+          <span class="about-detail-value">200+</span>
+          <span class="about-detail-label">Menu Items</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="testimonials">
+  <div class="section-label">What People Say</div>
+  <h2 class="section-title">Our Guests Love Us</h2>
+  <div class="testi-grid">
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-quote">"The butter chicken here is the best I've had outside of India. Authentic flavours, generous portions, and incredible service. We come every Friday night."</p>
+      <div class="testi-name">Priya M.</div>
+      <div class="testi-role">Brampton, ON</div>
+    </div>
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-quote">"Ordered catering for our office event — 80 people — and every single dish was outstanding. Professional, on time, and the food was absolutely delicious."</p>
+      <div class="testi-name">David K.</div>
+      <div class="testi-role">Mississauga, ON</div>
+    </div>
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-quote">"As someone who grew up in Delhi, it's rare to find restaurant food that tastes like home. Saffron Kitchen does it every single time. Don't skip the dal makhani!"</p>
+      <div class="testi-name">Rahul S.</div>
+      <div class="testi-role">Toronto, ON</div>
+    </div>
+  </div>
+</section>
+
+<section class="contact" id="contact">
+  <div class="section-label" style="color: rgba(255,255,255,0.5);">Find Us</div>
+  <h2>Visit Us Today</h2>
+  <p>Dine in, takeout, and catering available. Reservations recommended on weekends.</p>
+  <div class="contact-details">
+    <div class="contact-detail">
+      <span class="contact-detail-label">Address</span>
+      <span class="contact-detail-value">247 Queen St E, Brampton, ON</span>
+    </div>
+    <div class="contact-detail">
+      <span class="contact-detail-label">Hours</span>
+      <span class="contact-detail-value">Mon–Sun: 11am – 10pm</span>
+    </div>
+    <div class="contact-detail">
+      <span class="contact-detail-label">Phone</span>
+      <span class="contact-detail-value">(905) 555-0142</span>
+    </div>
+    <div class="contact-detail">
+      <span class="contact-detail-label">Email</span>
+      <span class="contact-detail-value">hello@saffronkitchen.ca</span>
+    </div>
+  </div>
+  <a href="tel:9055550142" class="btn-primary" style="background: var(--terracotta);">Call to Reserve</a>
+</section>
+
+<footer>
+  <div class="footer-logo">Saffron Kitchen</div>
+  <div>© 2026 Saffron Kitchen. All rights reserved.</div>
+  <div class="watermark">Website by <a href="https://lynq.build">LYNQ</a></div>
+</footer>
+
+</body>
+</html>

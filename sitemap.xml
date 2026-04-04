@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://lynq.build/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+    <lastmod>2026-03-28</lastmod>
+  </url>
+  <url>
+    <loc>https://lynq.build/projects/ai-dashboard.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <lastmod>2026-03-28</lastmod>
+  </url>
+  <url>
+    <loc>https://lynq.build/projects/ecommerce.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <lastmod>2026-03-28</lastmod>
+  </url>
+  <url>
+    <loc>https://lynq.build/projects/product-launch.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <lastmod>2026-03-28</lastmod>
+  </url>
+  <url>
+    <loc>https://lynq.build/projects/gadha.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <lastmod>2026-03-28</lastmod>
+  </url>
+</urlset>

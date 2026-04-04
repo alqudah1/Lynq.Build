@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Peak Renovations — Home Renovation & Contracting in Brampton & GTA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0d1117;
+      --bg2: #111820;
+      --bg3: #161e28;
+      --border: rgba(255,255,255,0.08);
+      --accent: #f0a500;
+      --accent-dark: #c98900;
+      --white: #ffffff;
+      --text: rgba(255,255,255,0.72);
+      --text-dim: rgba(255,255,255,0.45);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    /* NAV */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 60px;
+      height: 76px;
+      background: rgba(13, 17, 23, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--white);
+      letter-spacing: -0.5px;
+    }
+
+    .nav-logo span { color: var(--accent); }
+
+    .nav-links {
+      display: flex;
+      gap: 36px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      font-size: 0.875rem;
+      color: var(--text-dim);
+      transition: color 0.2s;
+      letter-spacing: 0.2px;
+    }
+
+    .nav-links a:hover { color: var(--white); }
+
+    .nav-cta {
+      padding: 10px 24px;
+      background: var(--accent);
+      color: var(--bg);
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      transition: background 0.2s;
+    }
+
+    .nav-cta:hover { background: var(--accent-dark); }
+
+    /* HERO */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 120px 60px 80px;
+      position: relative;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 600px 400px at 70% 50%, rgba(240, 165, 0, 0.06) 0%, transparent 70%),
+        repeating-linear-gradient(0deg, transparent, transparent 80px, rgba(255,255,255,0.015) 80px, rgba(255,255,255,0.015) 81px),
+        repeating-linear-gradient(90deg, transparent, transparent 80px, rgba(255,255,255,0.015) 80px, rgba(255,255,255,0.015) 81px);
+      pointer-events: none;
+    }
+
+    .hero-content { max-width: 600px; position: relative; }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border: 1px solid rgba(240, 165, 0, 0.3);
+      background: rgba(240, 165, 0, 0.07);
+      color: var(--accent);
+      font-size: 0.75rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+
+    .hero-badge::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .hero h1 {
+      font-size: clamp(2.8rem, 6vw, 4.8rem);
+      font-weight: 800;
+      line-height: 1.05;
+      color: var(--white);
+      letter-spacing: -2px;
+      margin-bottom: 24px;
+    }
+
+    .hero h1 .accent { color: var(--accent); }
+
+    .hero p {
+      font-size: 1.05rem;
+      line-height: 1.75;
+      color: var(--text);
+      max-width: 480px;
+      margin-bottom: 40px;
+      font-weight: 300;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .btn-accent {
+      padding: 16px 36px;
+      background: var(--accent);
+      color: var(--bg);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      transition: background 0.2s, transform 0.2s;
+      display: inline-block;
+    }
+
+    .btn-accent:hover { background: var(--accent-dark); transform: translateY(-1px); }
+
+    .btn-ghost {
+      padding: 15px 36px;
+      border: 1px solid var(--border);
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: border-color 0.2s, color 0.2s;
+      display: inline-block;
+    }
+
+    .btn-ghost:hover { border-color: rgba(255,255,255,0.25); color: var(--white); }
+
+    /* TRUST BAR */
+    .trust-bar {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 24px 60px;
+      display: flex;
+      justify-content: center;
+      gap: 64px;
+      flex-wrap: wrap;
+    }
+
+    .trust-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.875rem;
+      color: var(--text-dim);
+    }
+
+    .trust-item .check {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: rgba(240, 165, 0, 0.15);
+      border: 1px solid rgba(240, 165, 0, 0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    /* SERVICES */
+    .services {
+      padding: 100px 60px;
+      background: var(--bg);
+    }
+
+    .section-eyebrow {
+      font-size: 0.7rem;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    .section-heading {
+      font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+      font-weight: 700;
+      color: var(--white);
+      letter-spacing: -1px;
+      margin-bottom: 60px;
+    }
+
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .service-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      padding: 36px 28px;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+
+    .service-card:hover {
+      border-color: rgba(240, 165, 0, 0.2);
+      transform: translateY(-4px);
+    }
+
+    .service-num {
+      font-size: 0.7rem;
+      letter-spacing: 2px;
+      color: var(--accent);
+      opacity: 0.7;
+      margin-bottom: 20px;
+      display: block;
+    }
+
+    .service-icon { font-size: 2rem; margin-bottom: 16px; display: block; }
+
+    .service-name {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--white);
+      margin-bottom: 10px;
+    }
+
+    .service-desc {
+      font-size: 0.875rem;
+      color: var(--text-dim);
+      line-height: 1.7;
+      font-weight: 300;
+    }
+
+    /* STATS */
+    .stats {
+      background: var(--accent);
+      padding: 60px;
+      display: flex;
+      justify-content: center;
+      gap: 80px;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      text-align: center;
+      color: var(--bg);
+    }
+
+    .stat-num {
+      font-size: 3rem;
+      font-weight: 800;
+      letter-spacing: -2px;
+      display: block;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      opacity: 0.7;
+      margin-top: 4px;
+      display: block;
+      font-weight: 600;
+    }
+
+    /* PROJECTS */
+    .projects {
+      padding: 100px 60px;
+      background: var(--bg2);
+    }
+
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .project-card {
+      aspect-ratio: 4/3;
+      display: flex;
+      align-items: flex-end;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .project-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.8) 100%);
+      z-index: 1;
+    }
+
+    .project-info { position: relative; z-index: 2; }
+
+    .project-type {
+      font-size: 0.7rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .project-name {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: white;
+    }
+
+    /* PROCESS */
+    .process {
+      padding: 100px 60px;
+      background: var(--bg);
+    }
+
+    .process-steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      max-width: 1100px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .process-steps::before {
+      content: '';
+      position: absolute;
+      top: 20px;
+      left: calc(12.5% + 8px);
+      right: calc(12.5% + 8px);
+      height: 1px;
+      background: var(--border);
+    }
+
+    .process-step {
+      padding: 0 20px;
+      text-align: center;
+    }
+
+    .process-dot {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--accent);
+      position: relative;
+      z-index: 1;
+    }
+
+    .process-step h4 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--white);
+      margin-bottom: 8px;
+    }
+
+    .process-step p {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      line-height: 1.65;
+      font-weight: 300;
+    }
+
+    /* TESTIMONIALS */
+    .testimonials {
+      padding: 100px 60px;
+      background: var(--bg2);
+    }
+
+    .testi-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .testi-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 32px 28px;
+    }
+
+    .testi-stars { color: var(--accent); font-size: 0.85rem; margin-bottom: 16px; }
+
+    .testi-quote {
+      font-size: 0.9rem;
+      color: var(--text);
+      line-height: 1.75;
+      font-weight: 300;
+      font-style: italic;
+      margin-bottom: 20px;
+    }
+
+    .testi-name {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--white);
+    }
+
+    .testi-role {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    /* CTA */
+    .cta {
+      padding: 100px 60px;
+      background: var(--bg3);
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .cta h2 {
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      font-weight: 800;
+      color: var(--white);
+      letter-spacing: -2px;
+      margin-bottom: 16px;
+    }
+
+    .cta p {
+      font-size: 1rem;
+      color: var(--text-dim);
+      margin-bottom: 40px;
+      max-width: 480px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.7;
+      font-weight: 300;
+    }
+
+    .cta-details {
+      display: flex;
+      justify-content: center;
+      gap: 48px;
+      margin-bottom: 40px;
+      flex-wrap: wrap;
+    }
+
+    .cta-detail {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .cta-detail-label {
+      font-size: 0.7rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .cta-detail-value {
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+
+    /* FOOTER */
+    footer {
+      background: #08090c;
+      padding: 32px 60px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--border);
+      font-size: 0.8rem;
+      color: var(--text-dim);
+    }
+
+    .footer-logo {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--white);
+    }
+
+    .footer-logo span { color: var(--accent); }
+
+    .watermark a {
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px solid currentColor;
+    }
+
+    @media (max-width: 900px) {
+      nav { padding: 0 24px; }
+      .nav-links { display: none; }
+      .hero { padding: 100px 24px 60px; }
+      .trust-bar { padding: 20px 24px; gap: 20px; }
+      .services { padding: 80px 24px; }
+      .services-grid { grid-template-columns: 1fr; }
+      .stats { padding: 40px 24px; gap: 40px; }
+      .projects { padding: 80px 24px; }
+      .projects-grid { grid-template-columns: 1fr; }
+      .process { padding: 80px 24px; }
+      .process-steps { grid-template-columns: 1fr 1fr; gap: 40px; }
+      .process-steps::before { display: none; }
+      .testimonials { padding: 80px 24px; }
+      .testi-grid { grid-template-columns: 1fr; }
+      .cta { padding: 80px 24px; }
+      footer { padding: 24px; flex-direction: column; gap: 12px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Peak <span>Renovations</span></div>
+  <ul class="nav-links">
+    <li><a href="#services">Services</a></li>
+    <li><a href="#projects">Projects</a></li>
+    <li><a href="#process">Process</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <a href="#contact" class="nav-cta">Get a Free Quote</a>
+</nav>
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <div class="hero-badge">Licensed & Insured · Brampton & GTA</div>
+    <h1>Your Home,<br><span class="accent">Reimagined.</span></h1>
+    <p>From kitchen remodels to full home renovations — Peak Renovations delivers quality craftsmanship, on time and on budget. Serving Brampton, Mississauga, and the GTA since 2010.</p>
+    <div class="hero-actions">
+      <a href="#contact" class="btn-accent">Get a Free Quote</a>
+      <a href="#projects" class="btn-ghost">View Our Work</a>
+    </div>
+  </div>
+</section>
+
+<div class="trust-bar">
+  <div class="trust-item"><div class="check">✓</div> Licensed & Insured</div>
+  <div class="trust-item"><div class="check">✓</div> 500+ Projects Completed</div>
+  <div class="trust-item"><div class="check">✓</div> 5-Year Workmanship Warranty</div>
+  <div class="trust-item"><div class="check">✓</div> Free Estimates</div>
+  <div class="trust-item"><div class="check">✓</div> WSIB Certified</div>
+</div>
+
+<section class="services" id="services">
+  <div style="max-width: 1100px; margin: 0 auto;">
+    <div class="section-eyebrow">What We Do</div>
+    <h2 class="section-heading">Full-Service Renovations</h2>
+  </div>
+  <div class="services-grid">
+    <div class="service-card">
+      <span class="service-num">01</span>
+      <span class="service-icon">🍳</span>
+      <div class="service-name">Kitchen Remodels</div>
+      <div class="service-desc">Complete kitchen transformations including cabinetry, countertops, flooring, backsplash, and appliance installation.</div>
+    </div>
+    <div class="service-card">
+      <span class="service-num">02</span>
+      <span class="service-icon">🚿</span>
+      <div class="service-name">Bathroom Renovations</div>
+      <div class="service-desc">Full bathroom overhauls — from tile and fixtures to vanities, showers, and custom glass enclosures.</div>
+    </div>
+    <div class="service-card">
+      <span class="service-num">03</span>
+      <span class="service-icon">🏠</span>
+      <div class="service-name">Basement Finishing</div>
+      <div class="service-desc">Turn your unfinished basement into a living space, rec room, home theatre, or in-law suite.</div>
+    </div>
+    <div class="service-card">
+      <span class="service-num">04</span>
+      <span class="service-icon">🪟</span>
+      <div class="service-name">Windows & Doors</div>
+      <div class="service-desc">Energy-efficient window and door installations to improve your home's look, comfort, and resale value.</div>
+    </div>
+    <div class="service-card">
+      <span class="service-num">05</span>
+      <span class="service-icon">🪵</span>
+      <div class="service-name">Flooring</div>
+      <div class="service-desc">Hardwood, laminate, tile, and vinyl plank — supply and installation for any room in your home.</div>
+    </div>
+    <div class="service-card">
+      <span class="service-num">06</span>
+      <span class="service-icon">🔧</span>
+      <div class="service-name">General Contracting</div>
+      <div class="service-desc">Full home additions, structural work, and project management from permits to final walkthrough.</div>
+    </div>
+  </div>
+</section>
+
+<div class="stats">
+  <div class="stat">
+    <span class="stat-num">500+</span>
+    <span class="stat-label">Projects Done</span>
+  </div>
+  <div class="stat">
+    <span class="stat-num">14</span>
+    <span class="stat-label">Years Experience</span>
+  </div>
+  <div class="stat">
+    <span class="stat-num">4.8★</span>
+    <span class="stat-label">Google Rating</span>
+  </div>
+  <div class="stat">
+    <span class="stat-num">100%</span>
+    <span class="stat-label">Licensed & Insured</span>
+  </div>
+</div>
+
+<section class="projects" id="projects">
+  <div style="max-width: 1100px; margin: 0 auto 48px;">
+    <div class="section-eyebrow">Recent Work</div>
+    <h2 class="section-heading">Projects We're Proud Of</h2>
+  </div>
+  <div class="projects-grid">
+    <div class="project-card" style="background: linear-gradient(135deg, #2a1f14, #3d2c1c);">
+      <div class="project-info">
+        <div class="project-type">Kitchen Remodel</div>
+        <div class="project-name">Brampton — Chinguacousy Rd</div>
+      </div>
+    </div>
+    <div class="project-card" style="background: linear-gradient(135deg, #141a24, #1e2a38);">
+      <div class="project-info">
+        <div class="project-type">Basement Finishing</div>
+        <div class="project-name">Mississauga — Lakeshore</div>
+      </div>
+    </div>
+    <div class="project-card" style="background: linear-gradient(135deg, #1a1a1a, #2c2c2c);">
+      <div class="project-info">
+        <div class="project-type">Bathroom Reno</div>
+        <div class="project-name">Vaughan — Rutherford Rd</div>
+      </div>
+    </div>
+    <div class="project-card" style="background: linear-gradient(135deg, #1f2a14, #2c3d1c);">
+      <div class="project-info">
+        <div class="project-type">Full Home Reno</div>
+        <div class="project-name">Brampton — Sandalwood</div>
+      </div>
+    </div>
+    <div class="project-card" style="background: linear-gradient(135deg, #24141f, #381e2a);">
+      <div class="project-info">
+        <div class="project-type">Flooring Installation</div>
+        <div class="project-name">Toronto — East York</div>
+      </div>
+    </div>
+    <div class="project-card" style="background: linear-gradient(135deg, #14201f, #1c342e);">
+      <div class="project-info">
+        <div class="project-type">Home Addition</div>
+        <div class="project-name">Oakville — Trafalgar Rd</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="process" id="process">
+  <div style="max-width: 1100px; margin: 0 auto 60px;">
+    <div class="section-eyebrow">How It Works</div>
+    <h2 class="section-heading">Simple. Transparent. Done Right.</h2>
+  </div>
+  <div class="process-steps">
+    <div class="process-step">
+      <div class="process-dot">01</div>
+      <h4>Free Consultation</h4>
+      <p>We come to you, assess the space, and discuss your vision, timeline, and budget. No pressure.</p>
+    </div>
+    <div class="process-step">
+      <div class="process-dot">02</div>
+      <h4>Detailed Quote</h4>
+      <p>You receive a clear, itemized quote within 48 hours. No hidden fees — ever.</p>
+    </div>
+    <div class="process-step">
+      <div class="process-dot">03</div>
+      <h4>We Get to Work</h4>
+      <p>Our licensed team handles everything from permits to daily cleanups throughout the project.</p>
+    </div>
+    <div class="process-step">
+      <div class="process-dot">04</div>
+      <h4>Final Walkthrough</h4>
+      <p>We won't consider the job done until you're fully satisfied. 5-year warranty on all work.</p>
+    </div>
+  </div>
+</section>
+
+<section class="testimonials">
+  <div style="max-width: 1100px; margin: 0 auto 48px;">
+    <div class="section-eyebrow">Reviews</div>
+    <h2 class="section-heading">What Our Clients Say</h2>
+  </div>
+  <div class="testi-grid">
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-quote">"Peak redid our entire kitchen and master bathroom. The work was flawless, the crew was respectful of our home, and they finished 3 days ahead of schedule. Highly recommend."</p>
+      <div class="testi-name">Karen L.</div>
+      <div class="testi-role">Brampton, ON</div>
+    </div>
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-quote">"We've used three different contractors over the years. Peak is the only one that showed up on time every day, communicated clearly, and actually delivered what they quoted."</p>
+      <div class="testi-name">Mark T.</div>
+      <div class="testi-role">Mississauga, ON</div>
+    </div>
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-quote">"Our basement went from storage room to full rec room in 6 weeks. The level of craftsmanship and attention to detail was outstanding. Best investment we've made in the house."</p>
+      <div class="testi-name">Sandra & James O.</div>
+      <div class="testi-role">Vaughan, ON</div>
+    </div>
+  </div>
+</section>
+
+<section class="cta" id="contact">
+  <div class="section-eyebrow">Get Started</div>
+  <h2>Ready to Transform Your Home?</h2>
+  <p>Book your free in-home consultation today. No obligation — just honest advice from experienced renovators.</p>
+  <div class="cta-details">
+    <div class="cta-detail">
+      <span class="cta-detail-label">Phone</span>
+      <span class="cta-detail-value">(905) 555-0188</span>
+    </div>
+    <div class="cta-detail">
+      <span class="cta-detail-label">Email</span>
+      <span class="cta-detail-value">info@peakrenos.ca</span>
+    </div>
+    <div class="cta-detail">
+      <span class="cta-detail-label">Service Area</span>
+      <span class="cta-detail-value">Brampton · Mississauga · GTA</span>
+    </div>
+    <div class="cta-detail">
+      <span class="cta-detail-label">Hours</span>
+      <span class="cta-detail-value">Mon–Sat: 7am – 7pm</span>
+    </div>
+  </div>
+  <a href="tel:9055550188" class="btn-accent">Call for a Free Quote</a>
+</section>
+
+<footer>
+  <div class="footer-logo">Peak <span>Renovations</span></div>
+  <div>© 2026 Peak Renovations Inc. All rights reserved.</div>
+  <div class="watermark">Website by <a href="https://lynq.build">LYNQ</a></div>
+</footer>
+
+</body>
+</html>

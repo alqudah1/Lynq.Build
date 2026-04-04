@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gadha — Arabic Quiz & Puzzle Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0c0c12;
+      --card: #13131e;
+      --border: rgba(255,255,255,0.07);
+      --amber: #f59e0b;
+      --amber-dim: rgba(245,158,11,0.12);
+      --amber-glow: rgba(245,158,11,0.22);
+      --text: #f1f0ee;
+      --muted: #7a7a8c;
+      --muted-light: #a0a0b8;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* ── Ambient top glow ── */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 900px;
+      height: 600px;
+      background: radial-gradient(ellipse at center, rgba(245,158,11,0.11) 0%, transparent 65%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Layout ── */
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Nav ── */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 22px 40px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .nav-logo {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--amber);
+      text-decoration: none;
+      text-transform: uppercase;
+    }
+
+    .nav-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--amber);
+      background: var(--amber-dim);
+      border: 1px solid rgba(245,158,11,0.28);
+      padding: 4px 12px;
+      border-radius: 20px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      text-align: center;
+      padding: 60px 24px 50px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.73rem;
+      font-weight: 600;
+      color: var(--amber);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+      background: var(--amber-dim);
+      border: 1px solid rgba(245,158,11,0.22);
+      padding: 6px 16px;
+      border-radius: 20px;
+    }
+
+    .hero-eyebrow::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--amber);
+      box-shadow: 0 0 8px var(--amber);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.65); }
+    }
+
+    .hero-title {
+      font-size: clamp(5rem, 18vw, 10rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 0.9;
+      color: var(--amber);
+      text-shadow:
+        0 0 40px rgba(245,158,11,0.45),
+        0 0 90px rgba(245,158,11,0.22),
+        0 0 180px rgba(245,158,11,0.1);
+      margin-bottom: 20px;
+    }
+
+    .hero-subtitle {
+      font-size: 1.15rem;
+      font-weight: 400;
+      color: var(--muted-light);
+      letter-spacing: 0.04em;
+      margin-bottom: 12px;
+    }
+
+    .hero-arabic {
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: rgba(245,158,11,0.45);
+      margin-bottom: 40px;
+      letter-spacing: 0.04em;
+      direction: rtl;
+    }
+
+    .hero-cta-group {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      background: var(--amber);
+      color: #0c0c12;
+      border: none;
+      padding: 13px 32px;
+      border-radius: 8px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+      box-shadow: 0 0 24px rgba(245,158,11,0.38), 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 40px rgba(245,158,11,0.55), 0 6px 16px rgba(0,0,0,0.35);
+      background: #fbbf24;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 13px 32px;
+      border-radius: 8px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .btn-secondary:hover {
+      border-color: rgba(245,158,11,0.4);
+      color: var(--amber);
+    }
+
+    /* ── Quiz card ── */
+    .quiz-section {
+      padding: 20px 24px 60px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .quiz-card {
+      max-width: 500px;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--amber);
+      border-radius: 16px;
+      padding: 36px 32px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.45), 0 0 60px rgba(245,158,11,0.05);
+    }
+
+    .quiz-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 22px;
+    }
+
+    .quiz-category {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--amber);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      background: var(--amber-dim);
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+
+    .quiz-progress-text {
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .quiz-progress-bar {
+      height: 3px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 2px;
+      margin-bottom: 28px;
+      overflow: hidden;
+    }
+
+    .quiz-progress-fill {
+      height: 100%;
+      width: 10%;
+      background: linear-gradient(90deg, var(--amber), #fbbf24);
+      border-radius: 2px;
+      box-shadow: 0 0 8px rgba(245,158,11,0.5);
+    }
+
+    .quiz-question {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.45;
+      margin-bottom: 28px;
+      letter-spacing: -0.01em;
+    }
+
+    .quiz-arabic-word {
+      display: inline-block;
+      color: var(--amber);
+      font-size: 1.4rem;
+      font-weight: 700;
+      text-shadow: 0 0 20px rgba(245,158,11,0.35);
+    }
+
+    .quiz-answers {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .answer-btn {
+      width: 100%;
+      padding: 14px 18px;
+      border-radius: 10px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.92rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      letter-spacing: 0.01em;
+    }
+
+    .answer-btn .answer-letter {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.78rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+
+    /* Default (dark) answers */
+    .answer-btn.dark {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      color: var(--muted-light);
+    }
+
+    .answer-btn.dark .answer-letter {
+      background: rgba(255,255,255,0.06);
+      color: var(--muted);
+    }
+
+    .answer-btn.dark:hover {
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.13);
+      color: var(--text);
+    }
+
+    .answer-btn.dark:hover .answer-letter {
+      background: rgba(255,255,255,0.1);
+      color: var(--text);
+    }
+
+    /* Correct answer styling */
+    .answer-btn.correct {
+      background: rgba(245,158,11,0.12);
+      border: 1px solid rgba(245,158,11,0.35);
+      color: var(--text);
+    }
+
+    .answer-btn.correct .answer-letter {
+      background: var(--amber);
+      color: #0c0c12;
+    }
+
+    .answer-btn.correct:hover {
+      background: rgba(245,158,11,0.18);
+      border-color: rgba(245,158,11,0.55);
+      box-shadow: 0 0 20px rgba(245,158,11,0.12);
+    }
+
+    /* After selection states */
+    .answer-btn.reveal-correct {
+      background: rgba(245,158,11,0.18) !important;
+      border-color: var(--amber) !important;
+      color: var(--amber) !important;
+      box-shadow: 0 0 24px rgba(245,158,11,0.18);
+      cursor: default;
+    }
+
+    .answer-btn.reveal-correct .answer-letter {
+      background: var(--amber) !important;
+      color: #0c0c12 !important;
+    }
+
+    .answer-btn.reveal-wrong {
+      background: rgba(239,68,68,0.08) !important;
+      border-color: rgba(239,68,68,0.28) !important;
+      color: rgba(239,68,68,0.7) !important;
+      cursor: default;
+    }
+
+    .answer-btn.reveal-wrong .answer-letter {
+      background: rgba(239,68,68,0.15) !important;
+      color: rgba(239,68,68,0.7) !important;
+    }
+
+    .answer-btn.reveal-dim {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    .quiz-footer {
+      margin-top: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 24px;
+    }
+
+    .quiz-hint {
+      font-size: 0.78rem;
+      color: var(--muted);
+      transition: color 0.3s;
+    }
+
+    .quiz-hint.success { color: #34d399; }
+    .quiz-hint.error { color: #f87171; }
+
+    .quiz-score {
+      font-size: 0.8rem;
+      color: var(--amber);
+      font-weight: 600;
+      background: var(--amber-dim);
+      padding: 4px 10px;
+      border-radius: 6px;
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+
+    .quiz-score.visible { opacity: 1; }
+
+    /* ── Features ── */
+    .features-section {
+      padding: 60px 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .section-label {
+      text-align: center;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--amber);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: clamp(1.7rem, 4vw, 2.3rem);
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
+      margin-bottom: 46px;
+      line-height: 1.2;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .feature-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px 24px;
+      transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(245,158,11,0.28);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3), 0 0 30px rgba(245,158,11,0.06);
+    }
+
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--amber-dim);
+      border: 1px solid rgba(245,158,11,0.18);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 18px;
+    }
+
+    .feature-icon svg {
+      width: 22px;
+      height: 22px;
+      stroke: var(--amber);
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .feature-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .feature-desc {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* ── Stats ── */
+    .stats-strip {
+      padding: 10px 24px 60px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .stats-inner {
+      max-width: 860px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .stat-item {
+      background: var(--card);
+      padding: 28px 24px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.9rem;
+      font-weight: 800;
+      color: var(--amber);
+      letter-spacing: -0.03em;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .stat-label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      max-width: 860px;
+      margin: 0 auto;
+      height: 1px;
+      background: var(--border);
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Waitlist ── */
+    .waitlist-section {
+      padding: 64px 24px 80px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .waitlist-card {
+      max-width: 560px;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 48px 44px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .waitlist-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(245,158,11,0.6), transparent);
+    }
+
+    .waitlist-card::after {
+      content: '';
+      position: absolute;
+      top: -80px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 320px;
+      height: 220px;
+      background: radial-gradient(ellipse at center, rgba(245,158,11,0.08), transparent 70%);
+      pointer-events: none;
+    }
+
+    .waitlist-icon {
+      font-size: 2.4rem;
+      display: block;
+      margin-bottom: 16px;
+    }
+
+    .waitlist-title {
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
+      margin-bottom: 10px;
+    }
+
+    .waitlist-subtitle {
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    .waitlist-form {
+      display: flex;
+      gap: 10px;
+      max-width: 380px;
+      margin: 0 auto 14px;
+    }
+
+    .waitlist-input {
+      flex: 1;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+      min-width: 0;
+    }
+
+    .waitlist-input::placeholder { color: var(--muted); }
+
+    .waitlist-input:focus {
+      border-color: rgba(245,158,11,0.4);
+      background: rgba(245,158,11,0.03);
+    }
+
+    .waitlist-btn {
+      padding: 12px 24px;
+      background: var(--amber);
+      color: #0c0c12;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 0 20px rgba(245,158,11,0.28);
+    }
+
+    .waitlist-btn:hover {
+      background: #fbbf24;
+      transform: translateY(-1px);
+      box-shadow: 0 0 30px rgba(245,158,11,0.45);
+    }
+
+    .waitlist-btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .waitlist-note {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .waitlist-success {
+      display: none;
+      background: rgba(52,211,153,0.08);
+      border: 1px solid rgba(52,211,153,0.25);
+      border-radius: 10px;
+      padding: 14px 20px;
+      font-size: 0.9rem;
+      color: #34d399;
+      font-weight: 500;
+      max-width: 380px;
+      margin: 0 auto 14px;
+    }
+
+    /* ── Footer ── */
+    footer {
+      padding: 32px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      z-index: 1;
+    }
+
+    .footer-copy {
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 22px;
+    }
+
+    .footer-links a {
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: var(--amber); }
+
+    /* ── Watermark ── */
+    .watermark {
+      position: fixed;
+      bottom: 18px;
+      right: 22px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.1);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 680px) {
+      nav { padding: 18px 20px; }
+      .hero { padding: 40px 20px 36px; }
+
+      .features-grid {
+        grid-template-columns: 1fr;
+        max-width: 420px;
+        margin: 0 auto;
+      }
+
+      .stats-inner {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .waitlist-card { padding: 36px 22px; }
+      .waitlist-form { flex-direction: column; }
+
+      footer {
+        flex-direction: column;
+        gap: 14px;
+        text-align: center;
+        padding: 28px 22px;
+      }
+
+      .quiz-card { padding: 28px 18px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav>
+    <a href="#" class="nav-logo">Gadha</a>
+    <span class="nav-badge">Coming Soon</span>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-eyebrow">Now in Development</div>
+    <h1 class="hero-title">GADHA</h1>
+    <p class="hero-subtitle">Arabic Quiz &amp; Puzzle Game</p>
+    <p class="hero-arabic">تحدى معرفتك</p>
+    <div class="hero-cta-group">
+      <button class="btn-primary" onclick="document.getElementById('waitlist').scrollIntoView({behavior:'smooth'})">Join the Waitlist</button>
+      <button class="btn-secondary" onclick="document.getElementById('quiz').scrollIntoView({behavior:'smooth'})">Try a Question</button>
+    </div>
+  </section>
+
+  <!-- Quiz card -->
+  <section class="quiz-section" id="quiz">
+    <div class="quiz-card">
+      <div class="quiz-meta">
+        <span class="quiz-category">Vocabulary</span>
+        <span class="quiz-progress-text">Question 1 of 10</span>
+      </div>
+      <div class="quiz-progress-bar">
+        <div class="quiz-progress-fill"></div>
+      </div>
+      <p class="quiz-question">
+        What does <span class="quiz-arabic-word">"Shukran"</span> mean?
+      </p>
+      <div class="quiz-answers" id="quiz-answers">
+        <button class="answer-btn dark" data-correct="false">
+          <span class="answer-letter">A</span> Hello
+        </button>
+        <button class="answer-btn correct" data-correct="true">
+          <span class="answer-letter">B</span> Thank You
+        </button>
+        <button class="answer-btn dark" data-correct="false">
+          <span class="answer-letter">C</span> Goodbye
+        </button>
+        <button class="answer-btn dark" data-correct="false">
+          <span class="answer-letter">D</span> Please
+        </button>
+      </div>
+      <div class="quiz-footer">
+        <span class="quiz-hint" id="quiz-hint">Tap an answer to check yourself</span>
+        <span class="quiz-score" id="quiz-score">+10 pts</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features-section">
+    <div class="container">
+      <p class="section-label">Why Gadha</p>
+      <h2 class="section-title">Learn Arabic the fun way</h2>
+      <div class="features-grid">
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+              <line x1="12" y1="6" x2="16" y2="6"/>
+              <line x1="12" y1="10" x2="16" y2="10"/>
+            </svg>
+          </div>
+          <h3 class="feature-title">Cultural Trivia</h3>
+          <p class="feature-desc">Explore Arabic language, history, and culture through hundreds of handcrafted questions across multiple difficulty levels.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+              <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>
+            </svg>
+          </div>
+          <h3 class="feature-title">Daily Challenges</h3>
+          <p class="feature-desc">A fresh set of puzzles every day. Maintain your streak and earn bonus points for playing on consecutive days.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24">
+              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+              <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+              <path d="M4 22h16"/>
+              <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+              <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+              <path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/>
+            </svg>
+          </div>
+          <h3 class="feature-title">Leaderboards</h3>
+          <p class="feature-desc">Compete with players worldwide. Climb the global rankings and earn exclusive badges as you master Arabic.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="stats-strip">
+    <div class="stats-inner" style="max-width:860px;margin:0 auto;">
+      <div class="stat-item">
+        <div class="stat-value">500+</div>
+        <div class="stat-label">Questions</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">12</div>
+        <div class="stat-label">Categories</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">3</div>
+        <div class="stat-label">Difficulty Levels</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">Daily</div>
+        <div class="stat-label">New Content</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider container"></div>
+
+  <!-- Waitlist -->
+  <section class="waitlist-section" id="waitlist">
+    <div class="waitlist-card">
+      <span class="waitlist-icon">🎯</span>
+      <h2 class="waitlist-title">Coming Soon</h2>
+      <p class="waitlist-subtitle">Join the waitlist and be among the first to play when we launch. Early members get 30 days of premium — free.</p>
+      <form class="waitlist-form" id="waitlist-form">
+        <input
+          type="email"
+          class="waitlist-input"
+          id="waitlist-email"
+          placeholder="your@email.com"
+          required
+          autocomplete="email"
+        />
+        <button type="submit" class="waitlist-btn">Join</button>
+      </form>
+      <div class="waitlist-success" id="waitlist-success">
+        ✓ You're on the list — we'll be in touch soon.
+      </div>
+      <p class="waitlist-note" id="waitlist-note">No spam. Unsubscribe anytime.</p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <div class="divider container"></div>
+  <footer>
+    <span class="footer-copy">© 2026 Gadha. All rights reserved.</span>
+    <div class="footer-links">
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+      <a href="#">Contact</a>
+    </div>
+  </footer>
+
+  <!-- Watermark -->
+  <span class="watermark">Designed by LYNQ</span>
+
+  <script>
+    // ── Quiz interaction ──
+    (function () {
+      const answers = document.querySelectorAll('#quiz-answers .answer-btn');
+      const hint = document.getElementById('quiz-hint');
+      const score = document.getElementById('quiz-score');
+      let answered = false;
+
+      answers.forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (answered) return;
+          answered = true;
+
+          const isCorrect = btn.dataset.correct === 'true';
+
+          answers.forEach(b => {
+            if (b.dataset.correct === 'true') {
+              b.classList.add('reveal-correct');
+              b.classList.remove('correct', 'dark');
+            } else if (b === btn && !isCorrect) {
+              b.classList.add('reveal-wrong');
+              b.classList.remove('dark');
+            } else {
+              b.classList.add('reveal-dim');
+            }
+          });
+
+          if (isCorrect) {
+            hint.textContent = '🎉 Correct! "Shukran" (شكراً) means Thank You.';
+            hint.className = 'quiz-hint success';
+            score.classList.add('visible');
+          } else {
+            hint.textContent = '✗ Not quite — the answer is "Thank You".';
+            hint.className = 'quiz-hint error';
+          }
+        });
+      });
+    })();
+
+    // ── Waitlist form ──
+    (function () {
+      const form = document.getElementById('waitlist-form');
+      const success = document.getElementById('waitlist-success');
+      const note = document.getElementById('waitlist-note');
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const btn = form.querySelector('button[type="submit"]');
+        btn.textContent = 'Joining…';
+        btn.disabled = true;
+
+        setTimeout(() => {
+          form.style.display = 'none';
+          success.style.display = 'block';
+          note.style.display = 'none';
+        }, 700);
+      });
+    })();
+  </script>
+
+</body>
+</html>

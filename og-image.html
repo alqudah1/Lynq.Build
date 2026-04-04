@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1200">
+<title>LYNQ — OG Image</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;400;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 1200px;
+    height: 630px;
+    overflow: hidden;
+    background: #0a0a0a;
+    font-family: 'Outfit', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .card {
+    width: 1200px;
+    height: 630px;
+    background: #0a0a0a;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Subtle radial glow */
+  .card::before {
+    content: '';
+    position: absolute;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 900px;
+    height: 600px;
+    background: radial-gradient(ellipse at center,
+      rgba(180,180,190,0.07) 0%,
+      transparent 65%);
+    pointer-events: none;
+  }
+
+  /* Thin border frame */
+  .card::after {
+    content: '';
+    position: absolute;
+    inset: 32px;
+    border: 1px solid rgba(255,255,255,0.06);
+    pointer-events: none;
+  }
+
+  /* Corner marks */
+  .corner {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+  }
+  .corner::before, .corner::after {
+    content: '';
+    position: absolute;
+    background: rgba(255,255,255,0.2);
+  }
+  .corner::before { width: 100%; height: 1px; top: 0; left: 0; }
+  .corner::after  { width: 1px; height: 100%; top: 0; left: 0; }
+  .corner.tl { top: 32px; left: 32px; }
+  .corner.tr { top: 32px; right: 32px; transform: scaleX(-1); }
+  .corner.bl { bottom: 32px; left: 32px; transform: scaleY(-1); }
+  .corner.br { bottom: 32px; right: 32px; transform: scale(-1); }
+
+  .logo-mark {
+    margin-bottom: 48px;
+    opacity: 0.9;
+  }
+
+  .logo-mark svg {
+    width: 52px;
+    height: 52px;
+  }
+
+  .wordmark {
+    font-size: 120px;
+    font-weight: 800;
+    letter-spacing: -4px;
+    color: #ffffff;
+    line-height: 1;
+    margin-bottom: 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .tagline {
+    font-size: 22px;
+    font-weight: 300;
+    letter-spacing: 8px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    position: relative;
+    z-index: 1;
+  }
+
+  .rule {
+    width: 48px;
+    height: 1px;
+    background: rgba(255,255,255,0.15);
+    margin: 32px auto 32px;
+  }
+
+  .url {
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.18);
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Thin horizontal lines */
+  .line-top, .line-bottom {
+    position: absolute;
+    left: 80px;
+    right: 80px;
+    height: 1px;
+    background: rgba(255,255,255,0.04);
+  }
+  .line-top    { top: 120px; }
+  .line-bottom { bottom: 120px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="corner tl"></div>
+  <div class="corner tr"></div>
+  <div class="corner bl"></div>
+  <div class="corner br"></div>
+  <div class="line-top"></div>
+  <div class="line-bottom"></div>
+
+  <div class="logo-mark">
+    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M8,5 L30,5 L30,54 L46,70 L92,70 L92,95 L8,95 Z" fill="white"/>
+    </svg>
+  </div>
+
+  <div class="wordmark">LYNQ</div>
+  <div class="tagline">Web Design &amp; Marketing</div>
+  <div class="rule"></div>
+  <div class="url">lynq.build — Brampton &amp; GTA</div>
+</div>
+</body>
+</html>

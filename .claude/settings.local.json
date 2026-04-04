@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(vercel --version)",
+      "Bash(vercel --prod)",
+      "Bash(vercel domains:*)",
+      "Bash(vercel dns:*)",
+      "Bash(dig lynq.dev A +short)",
+      "Bash(dig www.lynq.dev CNAME +short)",
+      "Bash(npm install:*)",
+      "Bash(dig www.lynq.dev A +short)",
+      "Bash(dig @ns39.domaincontrol.com lynq.dev A +short)",
+      "Bash(dig @ns39.domaincontrol.com www.lynq.dev CNAME +short)",
+      "Bash(dig @ns39.domaincontrol.com www.lynq.dev A +short)",
+      "Bash(dig @ns35.domaincontrol.com lynq.dev A +short)",
+      "Bash(dig @ns35.domaincontrol.com www.lynq.dev CNAME +short)",
+      "Bash(dig @8.8.8.8 lynq.dev A +short)",
+      "Bash(dig lynq.dev NS +short)",
+      "Bash(dig lynq.dev NS +trace)"
+    ]
+  }
+}
