@@ -75,6 +75,44 @@ document.addEventListener('click', e => {
 });
 
 
+// ── Mobile hamburger nav ──────────────────────────────────────────────────────
+(function initHamburger() {
+  const btn    = document.getElementById('navHamburger');
+  const drawer = document.getElementById('navMobile');
+  if (!btn || !drawer) return;
+
+  function closeMenu() {
+    btn.classList.remove('open');
+    drawer.classList.remove('open');
+    btn.setAttribute('aria-expanded', 'false');
+    drawer.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  btn.addEventListener('click', () => {
+    const opening = !btn.classList.contains('open');
+    if (opening) {
+      btn.classList.add('open');
+      drawer.classList.add('open');
+      btn.setAttribute('aria-expanded', 'true');
+      drawer.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    } else {
+      closeMenu();
+    }
+  });
+
+  // Close when a nav link is tapped
+  drawer.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', closeMenu);
+  });
+
+  // Close on Escape
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeMenu();
+  });
+})();
+
 // ── Lenis smooth scroll ───────────────────────────────────────────────────────
 //
 // Drives the native scroll position through Lenis's momentum model so every
@@ -82,12 +120,16 @@ document.addEventListener('click', e => {
 // frame — Lenis updates scrollY and fires native 'scroll' events, so the
 // parallax listener and Intersection Observers below work without changes.
 
+// Disable Lenis on touch devices — iOS Safari's native momentum scroll
+// feels better and Lenis touchMultiplier can cause erratic behaviour.
+const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+
 const lenis = new Lenis({
   duration: 0.6,
   easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // expo ease-out
-  smoothWheel: true,
+  smoothWheel: !isTouchDevice,
   wheelMultiplier: 1,
-  touchMultiplier: 2,
+  touchMultiplier: isTouchDevice ? 0 : 2,
 });
 
 (function lenisRaf(time) {

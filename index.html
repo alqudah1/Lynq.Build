@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>LYNQ | Global Web Design &amp; Marketing Agency — Modern Websites That Grow Businesses</title>
 
 <!-- Favicon & Icons -->
@@ -59,8 +59,7 @@
   "name": "LYNQ",
   "description": "Global web design and digital marketing agency. We build modern, SEO-optimized websites for businesses worldwide — restaurants, contractors, retailers, service providers, and more.",
   "url": "https://lynq.build",
-  "telephone": "",
-  "areaServed": { "@type": "Place", "name": "Worldwide" },
+  "areaServed":{ "@type": "Place", "name": "Worldwide" },
   "serviceType": [
     "Web Design",
     "Web Development",
@@ -92,7 +91,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.css">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=3">
 </head>
 <body class="preloading">
 
@@ -120,7 +119,18 @@
     <li><a href="#process">Process</a></li>
     <li><a href="#contact">Contact</a></li>
   </ul>
+  <button class="nav-hamburger" id="navHamburger" aria-label="Open menu" aria-expanded="false">
+    <span></span>
+    <span></span>
+  </button>
 </nav>
+
+<!-- MOBILE NAV DRAWER -->
+<div class="nav-mobile" id="navMobile" role="dialog" aria-label="Mobile navigation" aria-hidden="true">
+  <a href="#work">Work</a>
+  <a href="#process">Process</a>
+  <a href="#contact">Contact</a>
+</div>
 
 <!-- HERO -->
 <section class="hero" aria-label="Hero — LYNQ Global Web Design & Marketing Agency">
@@ -924,7 +934,7 @@
   <h2 class="contact-heading">Let's Build It</h2>
   <p class="contact-sub">Ready to get a website for your business? Tell us about your project and we'll be in touch within 24 hours.</p>
 
-  <form class="contact-form" action="https://formspree.io/f/YOUR_ID" method="POST" aria-label="Contact form">
+  <form class="contact-form" action="https://formspree.io/f/mjgplkrw" method="POST" aria-label="Contact form">
     <input type="text" name="name" placeholder="Your name" required aria-label="Your name" />
     <input type="email" name="email" placeholder="Your email address" required aria-label="Your email address" />
     <input type="tel" name="phone" placeholder="Your phone number (optional)" aria-label="Your phone number" />
@@ -1082,6 +1092,6 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
-<script src="scripts.js"></script>
+<script src="scripts.js?v=2"></script>
 </body>
 </html>
