@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LYNQ Admin — Lead Pipeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0a;
+  --bg-card: #111111;
+  --border: #1a1a1a;
+  --border-light: #2a2a2a;
+  --text: #e8e8e8;
+  --text-dim: #777777;
+  --white: #ffffff;
+  --green: #22c55e;
+  --red: #ef4444;
+  --yellow: #eab308;
+  --blue: #60a5fa;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+/* ── GATE ── */
+#gate { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 100; }
+#gate-box { width: 340px; text-align: center; }
+#gate-box .logo { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 8px; color: var(--white); }
+#gate-box .tagline { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 32px; }
+#gate-box input { width: 100%; background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 8px; padding: 14px 16px; color: var(--white); font-family: inherit; font-size: 0.95rem; outline: none; margin-bottom: 12px; transition: border-color 0.2s; }
+#gate-box input:focus { border-color: #555; }
+#gate-box button { width: 100%; background: var(--white); color: #000; border: none; border-radius: 8px; padding: 14px; font-family: inherit; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+#gate-box button:hover { opacity: 0.9; }
+.gate-error { color: var(--red); font-size: 0.83rem; margin-top: 10px; min-height: 18px; }
+
+/* ── DASHBOARD ── */
+#dashboard { display: none; min-height: 100vh; }
+
+header { border-bottom: 1px solid var(--border); padding: 18px 40px; display: flex; align-items: center; justify-content: space-between; }
+header .logo { font-size: 1rem; font-weight: 700; letter-spacing: -0.5px; color: var(--white); }
+header .badge { font-size: 0.75rem; font-weight: 500; padding: 5px 12px; border-radius: 100px; border: 1px solid var(--border-light); color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
+
+.main { padding: 40px; max-width: 1280px; margin: 0 auto; }
+h1 { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px; color: var(--white); }
+.subtitle { color: var(--text-dim); font-size: 0.92rem; margin-bottom: 36px; }
+
+/* Stats */
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+.stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; }
+.stat-card .label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px; }
+.stat-card .value { font-size: 2.2rem; font-weight: 700; color: var(--white); letter-spacing: -1.5px; line-height: 1; }
+.stat-card .sub { font-size: 0.78rem; color: var(--text-dim); margin-top: 6px; }
+
+/* Run card */
+.run-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 24px; display: flex; align-items: center; gap: 24px; }
+.run-info { flex: 1; }
+.run-info h3 { font-size: 1rem; font-weight: 600; color: var(--white); margin-bottom: 4px; }
+.run-info p { font-size: 0.85rem; color: var(--text-dim); }
+.progress-wrap { display: none; margin-top: 14px; }
+.progress-bar-bg { background: var(--border); border-radius: 100px; height: 3px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: var(--white); border-radius: 100px; transition: width 0.4s ease; width: 0%; }
+.progress-label { font-size: 0.78rem; color: var(--text-dim); margin-top: 6px; }
+.btn-run { background: var(--white); color: #000; border: none; border-radius: 8px; padding: 14px 28px; font-family: inherit; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.15s, transform 0.1s; white-space: nowrap; }
+.btn-run:hover { opacity: 0.88; }
+.btn-run:active { transform: scale(0.97); }
+.btn-run:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+.btn-stop { background: transparent; color: var(--red); border: 1px solid var(--red); border-radius: 8px; padding: 14px 28px; font-family: inherit; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: background 0.2s; white-space: nowrap; display: none; }
+.btn-stop:hover { background: rgba(239,68,68,0.08); }
+
+/* Selectors grid */
+.selectors-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.card-header h3 { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-dim); }
+.select-all { font-size: 0.78rem; color: var(--text-dim); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; background: none; border: none; font-family: inherit; }
+.select-all:hover { color: var(--white); }
+.check-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.check-item { display: flex; align-items: center; gap: 8px; font-size: 0.86rem; cursor: pointer; padding: 6px 8px; border-radius: 6px; transition: background 0.15s; }
+.check-item:hover { background: rgba(255,255,255,0.04); }
+.check-item input[type="checkbox"] { width: 14px; height: 14px; accent-color: var(--white); cursor: pointer; flex-shrink: 0; }
+.check-item span { color: var(--text); }
+
+/* Email setup card */
+.email-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+.email-card h3 { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-dim); margin-bottom: 16px; }
+.email-sequence { display: flex; flex-direction: column; gap: 12px; }
+.seq-step { display: flex; align-items: flex-start; gap: 14px; padding: 14px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px; }
+.seq-num { width: 24px; height: 24px; border-radius: 50%; background: var(--border-light); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600; color: var(--text-dim); flex-shrink: 0; margin-top: 1px; }
+.seq-info { flex: 1; }
+.seq-info .seq-title { font-size: 0.88rem; font-weight: 600; color: var(--white); margin-bottom: 3px; }
+.seq-info .seq-desc { font-size: 0.8rem; color: var(--text-dim); }
+.seq-info textarea { width: 100%; background: var(--bg); border: 1px solid var(--border-light); border-radius: 6px; padding: 10px 12px; color: var(--text); font-family: inherit; font-size: 0.82rem; line-height: 1.6; resize: vertical; outline: none; margin-top: 8px; min-height: 80px; }
+.seq-info textarea:focus { border-color: #444; }
+.seq-delay { font-size: 0.75rem; color: var(--text-dim); padding: 3px 8px; background: var(--border); border-radius: 4px; white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
+
+/* Log */
+.log-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.log-header { padding: 14px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.log-header h3 { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-dim); }
+.btn-clear { font-size: 0.78rem; color: var(--text-dim); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; background: none; border: none; font-family: inherit; }
+.btn-clear:hover { color: var(--white); }
+#log-output { padding: 18px 24px; font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace; font-size: 0.79rem; line-height: 1.9; color: var(--text-dim); height: 320px; overflow-y: auto; }
+.log-success { color: var(--green); }
+.log-error { color: var(--red); }
+.log-info { color: var(--blue); }
+.log-warn { color: var(--yellow); }
+.log-skip { color: #333; }
+
+/* Status dot */
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-dim); display: inline-block; }
+.dot.active { background: var(--green); box-shadow: 0 0 6px var(--green); animation: blink 1.4s infinite; }
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+@media (max-width: 900px) {
+  header { padding: 14px 20px; }
+  .main { padding: 24px 16px; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .selectors-grid { grid-template-columns: 1fr; }
+  .run-card { flex-direction: column; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── GATE ── -->
+<div id="gate">
+  <div id="gate-box">
+    <div class="logo">LYNQ</div>
+    <div class="tagline">Admin — Lead Pipeline</div>
+    <input type="password" id="pw" placeholder="Password" onkeydown="if(event.key==='Enter')auth()">
+    <button onclick="auth()">Enter Dashboard</button>
+    <div class="gate-error" id="pw-err"></div>
+  </div>
+</div>
+
+<!-- ── DASHBOARD ── -->
+<div id="dashboard">
+  <header>
+    <div class="logo">LYNQ <span style="color:var(--text-dim);font-weight:400">/ Pipeline</span></div>
+    <div class="badge"><span class="dot" id="dot"></span><span id="status-txt">Idle</span></div>
+  </header>
+
+  <div class="main">
+    <h1>Lead Engine</h1>
+    <p class="subtitle">Automated prospecting across the GTA. Scrape → Qualify → Enrich → Outreach.</p>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card"><div class="label">Scraped</div><div class="value" id="s-found">0</div><div class="sub">This session</div></div>
+      <div class="stat-card"><div class="label">Qualified</div><div class="value" id="s-qual">0</div><div class="sub">Score &lt; 60/100</div></div>
+      <div class="stat-card"><div class="label">Sent</div><div class="value" id="s-sent">0</div><div class="sub">→ Make → Clay → Instantly</div></div>
+      <div class="stat-card"><div class="label">Skipped</div><div class="value" id="s-skip">0</div><div class="sub">Already processed</div></div>
+    </div>
+
+    <!-- Run Controls -->
+    <div class="run-card">
+      <div class="run-info">
+        <h3>Pipeline Controls</h3>
+        <p id="run-msg">Select cities and industries, then press Run.</p>
+        <div class="progress-wrap" id="prog-wrap">
+          <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-fill"></div></div>
+          <div class="progress-label" id="prog-lbl">Starting…</div>
+        </div>
+      </div>
+      <button class="btn-stop" id="btn-stop" onclick="stop()">Stop</button>
+      <button class="btn-run" id="btn-run" onclick="run()">Run Pipeline</button>
+    </div>
+
+    <!-- Selectors -->
+    <div class="selectors-grid">
+      <div class="card">
+        <div class="card-header">
+          <h3>GTA Cities</h3>
+          <button class="select-all" onclick="toggleAll('city-cb')">Toggle all</button>
+        </div>
+        <div class="check-grid" id="city-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3>Industries</h3>
+          <button class="select-all" onclick="toggleAll('ind-cb')">Toggle all</button>
+        </div>
+        <div class="check-grid" id="ind-list"></div>
+      </div>
+    </div>
+
+    <!-- Email Sequence -->
+    <div class="email-card">
+      <h3>Email Sequence (copy into Instantly campaign)</h3>
+      <div class="email-sequence">
+        <div class="seq-step">
+          <div class="seq-num">1</div>
+          <div class="seq-info">
+            <div class="seq-title">Initial Outreach — Day 1</div>
+            <div class="seq-desc">Subject: Quick question about {{company}}'s online presence</div>
+            <textarea readonly>Hi {{first_name}},
+
+I was looking up {{company}} online and noticed you don't have a website yet — or the current one isn't showing up well on mobile.
+
+We're LYNQ, a web design agency. We build clean, fast websites for local businesses in the GTA that help you get found on Google and turn visitors into customers.
+
+We've done this for restaurants, dental offices, law firms, and more across Brampton and Mississauga.
+
+Would it make sense to hop on a 15-min call this week to see if we can help?
+
+— Mustafa
+lynq.build</textarea>
+          </div>
+          <div class="seq-delay">Day 1</div>
+        </div>
+
+        <div class="seq-step">
+          <div class="seq-num">2</div>
+          <div class="seq-info">
+            <div class="seq-title">Follow-up — Day 4</div>
+            <div class="seq-desc">Subject: Re: Quick question about {{company}}'s online presence</div>
+            <textarea readonly>Hi {{first_name}},
+
+Just following up on my message from earlier this week.
+
+A lot of businesses we work with were in the same spot — no website, or one that wasn't bringing in any new customers. Most see a noticeable difference within 30 days of going live.
+
+Happy to share a couple of examples if you'd like to see what it looks like for businesses similar to {{company}}.
+
+Worth a quick chat?
+
+— Mustafa
+lynq.build</textarea>
+          </div>
+          <div class="seq-delay">+3 days</div>
+        </div>
+
+        <div class="seq-step">
+          <div class="seq-num">3</div>
+          <div class="seq-info">
+            <div class="seq-title">Break-up Email — Day 9</div>
+            <div class="seq-desc">Subject: Closing the loop on {{company}}</div>
+            <textarea readonly>Hi {{first_name}},
+
+I'll keep this short — I don't want to keep showing up in your inbox if the timing isn't right.
+
+If you ever decide to build or upgrade {{company}}'s website, we'd love to be the team you call. We're local, fast, and focused on results.
+
+Feel free to reach out anytime at lynq.build.
+
+Wishing you a great week,
+Mustafa</textarea>
+          </div>
+          <div class="seq-delay">+5 days</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Log -->
+    <div class="log-card">
+      <div class="log-header">
+        <h3>Live Log</h3>
+        <button class="btn-clear" onclick="clearLog()">Clear</button>
+      </div>
+      <div id="log-output"><span class="log-info">Pipeline ready. Configure targets above and press Run.</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PASS = 'lynq2026';
+
+const CITIES = [
+  'Brampton, Ontario, Canada',
+  'Mississauga, Ontario, Canada',
+  'Toronto, Ontario, Canada',
+  'Vaughan, Ontario, Canada',
+  'Richmond Hill, Ontario, Canada',
+  'Markham, Ontario, Canada',
+  'Scarborough, Ontario, Canada',
+  'North York, Ontario, Canada',
+  'Etobicoke, Ontario, Canada',
+  'Oakville, Ontario, Canada',
+  'Burlington, Ontario, Canada',
+  'Ajax, Ontario, Canada',
+  'Pickering, Ontario, Canada',
+  'Whitby, Ontario, Canada',
+  'Oshawa, Ontario, Canada',
+];
+
+const INDUSTRIES = [
+  'restaurants',
+  'dental clinics',
+  'real estate agents',
+  'plumbers',
+  'hair salons',
+  'auto repair shops',
+  'law firms',
+  'physiotherapy clinics',
+  'accounting firms',
+  'landscaping companies',
+  'cleaning services',
+  'gyms and fitness centers',
+];
+
+let stopping = false;
+let S = { found: 0, qual: 0, sent: 0, skip: 0 };
+
+function auth() {
+  if (document.getElementById('pw').value === PASS) {
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    build();
+  } else {
+    document.getElementById('pw-err').textContent = 'Wrong password.';
+    document.getElementById('pw').value = '';
+  }
+}
+
+function build() {
+  const cityEl = document.getElementById('city-list');
+  const indEl = document.getElementById('ind-list');
+
+  CITIES.forEach((c, i) => {
+    const lbl = document.createElement('label');
+    lbl.className = 'check-item';
+    lbl.innerHTML = `<input type="checkbox" class="city-cb" value="${c}" ${i < 4 ? 'checked' : ''}><span>${c.split(',')[0]}</span>`;
+    cityEl.appendChild(lbl);
+  });
+
+  INDUSTRIES.forEach(ind => {
+    const lbl = document.createElement('label');
+    lbl.className = 'check-item';
+    lbl.innerHTML = `<input type="checkbox" class="ind-cb" value="${ind}" checked><span>${ind.charAt(0).toUpperCase() + ind.slice(1)}</span>`;
+    indEl.appendChild(lbl);
+  });
+}
+
+function toggleAll(cls) {
+  const boxes = document.querySelectorAll('.' + cls);
+  const allOn = [...boxes].every(b => b.checked);
+  boxes.forEach(b => b.checked = !allOn);
+}
+
+function checked(cls) {
+  return [...document.querySelectorAll('.' + cls + ':checked')].map(b => b.value);
+}
+
+function log(msg, type = '') {
+  const el = document.getElementById('log-output');
+  const ts = new Date().toTimeString().slice(0, 8);
+  el.innerHTML += `<br><span class="${type ? 'log-' + type : ''}">[${ts}] ${msg}</span>`;
+  el.scrollTop = el.scrollHeight;
+}
+
+function clearLog() {
+  document.getElementById('log-output').innerHTML = '<span class="log-info">Log cleared.</span>';
+}
+
+function setStatus(active, txt) {
+  document.getElementById('dot').className = 'dot' + (active ? ' active' : '');
+  document.getElementById('status-txt').textContent = txt;
+}
+
+function updateStats() {
+  document.getElementById('s-found').textContent = S.found;
+  document.getElementById('s-qual').textContent = S.qual;
+  document.getElementById('s-sent').textContent = S.sent;
+  document.getElementById('s-skip').textContent = S.skip;
+}
+
+async function run() {
+  const cities = checked('city-cb');
+  const industries = checked('ind-cb');
+  if (!cities.length || !industries.length) { log('Select at least one city and one industry.', 'error'); return; }
+
+  stopping = false;
+  S = { found: 0, qual: 0, sent: 0, skip: 0 };
+  updateStats();
+
+  document.getElementById('btn-run').disabled = true;
+  document.getElementById('btn-stop').style.display = 'block';
+  document.getElementById('prog-wrap').style.display = 'block';
+  setStatus(true, 'Running');
+
+  const jobs = [];
+  cities.forEach(c => industries.forEach(i => jobs.push({ city: c, industry: i })));
+  const total = jobs.length;
+  let done = 0;
+
+  log(`Pipeline started: ${cities.length} cities × ${industries.length} industries = ${total} jobs`, 'info');
+
+  for (const job of jobs) {
+    if (stopping) { log('Stopped.', 'warn'); break; }
+
+    const cityShort = job.city.split(',')[0];
+    log(`Scraping ${job.industry} in ${cityShort}…`);
+    document.getElementById('run-msg').textContent = `${job.industry} in ${cityShort}`;
+
+    try {
+      const res = await fetch('/api/run-pipeline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ city: job.city, industry: job.industry }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        log(`Error: ${data.error || res.statusText}`, 'error');
+      } else {
+        S.found += data.found || 0;
+        S.qual += data.qualified || 0;
+        S.sent += data.sent || 0;
+        S.skip += data.skipped || 0;
+        updateStats();
+
+        (data.leads || []).forEach(l => {
+          const icon = l.sent ? '✓' : '○';
+          const cls = l.sent ? 'success' : 'skip';
+          log(`  ${icon} ${l.name} — ${l.reason}`, cls);
+        });
+
+        log(`✓ ${data.qualified}/${data.found} qualified · ${data.sent} sent to pipeline`, 'success');
+      }
+    } catch (err) {
+      log(`Request failed: ${err.message}`, 'error');
+    }
+
+    done++;
+    const pct = Math.round((done / total) * 100);
+    document.getElementById('prog-fill').style.width = pct + '%';
+    document.getElementById('prog-lbl').textContent = `${done} / ${total} jobs (${pct}%)`;
+  }
+
+  document.getElementById('btn-run').disabled = false;
+  document.getElementById('btn-stop').style.display = 'none';
+  setStatus(false, 'Idle');
+  document.getElementById('run-msg').textContent = `Last run: ${S.qual} qualified · ${S.sent} sent to pipeline.`;
+  log(`Pipeline complete — ${S.found} scraped · ${S.qual} qualified · ${S.sent} sent`, 'info');
+}
+
+function stop() { stopping = true; }
+</script>
+</body>
+</html>
