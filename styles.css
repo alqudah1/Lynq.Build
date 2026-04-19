@@ -199,6 +199,21 @@ nav {
 
 .nav-links a:hover { opacity: 1; }
 
+.nav-agent-btn {
+  background: var(--white) !important;
+  color: #000 !important;
+  opacity: 1 !important;
+  padding: 8px 18px !important;
+  border-radius: 100px !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  font-weight: 600 !important;
+  font-size: 0.82rem !important;
+  transition: opacity 0.2s !important;
+}
+
+.nav-agent-btn:hover { opacity: 0.85 !important; }
+
 /* ── HERO ── */
 .hero {
   min-height: 100vh;
