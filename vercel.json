@@ -3,5 +3,10 @@
   "outputDirectory": ".",
   "framework": null,
   "cleanUrls": true,
-  "trailingSlash": false
+  "trailingSlash": false,
+  "functions": {
+    "api/run-pipeline.js": { "maxDuration": 90 },
+    "api/build.js":        { "maxDuration": 60 },
+    "api/chat.js":         { "maxDuration": 30 }
+  }
 }

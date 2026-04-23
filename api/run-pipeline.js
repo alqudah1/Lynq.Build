@@ -26,8 +26,22 @@ function httpRequest(url, options = {}, body = null) {
   });
 }
 
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+function extractEmail(html) {
+  if (!html) return '';
+  const mailto = html.match(/mailto:([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})/i);
+  if (mailto) return mailto[1].toLowerCase();
+  const skip = ['example.com','sentry.io','wixpress.com','squarespace.com','wordpress.com',
+                'schema.org','google.com','facebook.com','w3.org','jquery.com','cloudflare.com'];
+  const all = html.match(/\b([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})\b/g) || [];
+  return (all.find(e => !skip.some(s => e.includes(s))) || '').toLowerCase();
+}
+
 async function checkWebsite(url) {
-  if (!url || !url.trim()) return { score: 0, reason: 'No website', qualified: true };
+  if (!url || !url.trim()) return { score: 0, reason: 'No website', qualified: true, email: '' };
   let clean = url.trim();
   if (!clean.startsWith('http')) clean = 'https://' + clean;
   try {
@@ -36,34 +50,34 @@ async function checkWebsite(url) {
     return new Promise(resolve => {
       const req = lib.request({
         hostname: parsed.hostname, port: parsed.port, path: parsed.pathname,
-        method: 'GET', timeout: 6000,
+        method: 'GET', timeout: 5000,
         headers: { 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15' },
       }, res => {
         let body = '';
-        res.on('data', c => { body += c; if (body.length > 50000) req.destroy(); });
+        res.on('data', c => { body += c; if (body.length > 60000) req.destroy(); });
         res.on('end', () => {
           const issues = [];
           let score = 100;
-          if (!body.includes('viewport')) { issues.push('Not mobile-responsive'); score -= 30; }
-          if (!clean.startsWith('https')) { issues.push('No HTTPS'); score -= 20; }
-          if (!body.includes('<meta') || !body.includes('description')) { issues.push('Missing meta'); score -= 15; }
-          if (!body.includes('react') && !body.includes('next') && !body.includes('vue') && !body.includes('tailwind') && !body.includes('bootstrap')) {
+          if (!body.includes('viewport'))    { issues.push('Not mobile-responsive'); score -= 30; }
+          if (!clean.startsWith('https'))    { issues.push('No HTTPS'); score -= 20; }
+          if (!body.includes('description')) { issues.push('Missing meta description'); score -= 15; }
+          if (!body.includes('react') && !body.includes('next') && !body.includes('vue') &&
+              !body.includes('tailwind') && !body.includes('bootstrap')) {
             issues.push('Outdated tech'); score -= 10;
           }
           if (!body.includes('facebook') && !body.includes('instagram') && !body.includes('twitter')) {
             issues.push('No social links'); score -= 10;
           }
           if (body.length < 2000) { issues.push('Placeholder site'); score -= 25; }
-          const qualified = score < 60;
-          resolve({ score: Math.max(0, score), reason: issues.length ? issues.join(', ') : 'Decent website', qualified });
+          resolve({ score: Math.max(0, score), reason: issues.length ? issues.join(', ') : 'Decent website', qualified: score < 60, email: extractEmail(body) });
         });
       });
-      req.on('timeout', () => { req.destroy(); resolve({ score: 10, reason: 'Site unreachable', qualified: true }); });
-      req.on('error', () => resolve({ score: 5, reason: 'Site broken', qualified: true }));
+      req.on('timeout', () => { req.destroy(); resolve({ score: 10, reason: 'Site unreachable', qualified: true, email: '' }); });
+      req.on('error',   ()  => resolve({ score: 5,  reason: 'Site broken',      qualified: true, email: '' }));
       req.end();
     });
   } catch {
-    return { score: 5, reason: 'Invalid URL', qualified: true };
+    return { score: 5, reason: 'Invalid URL', qualified: true, email: '' };
   }
 }
 
@@ -78,73 +92,117 @@ module.exports = async (req, res) => {
   if (!city || !industry) return res.status(400).json({ error: 'city and industry required' });
 
   const OUTSCRAPER_KEY = process.env.OUTSCRAPER_API_KEY;
-  const WEBHOOK_URL = process.env.MAKE_WEBHOOK_URL;
-  if (!OUTSCRAPER_KEY || !WEBHOOK_URL) return res.status(500).json({ error: 'Missing env vars: OUTSCRAPER_API_KEY and MAKE_WEBHOOK_URL' });
+  if (!OUTSCRAPER_KEY) return res.status(500).json({ error: 'Missing OUTSCRAPER_API_KEY' });
 
-  // Scrape Google Maps via Outscraper
+  const key = OUTSCRAPER_KEY.trim();
+  const query = `${industry} in ${city}`;
+
+  // ── Scrape via sync API (instant, no polling needed) ──────────────────────
   const params = new URLSearchParams({
-    query: `${industry}, ${city}`,
-    limit: '20', language: 'en', region: 'CA', async: 'false',
-    fields: 'name,full_address,phone,site,owner_name,place_id',
+    query, limit: '10', language: 'en', region: 'CA', async: 'false',
+    fields: 'name,full_address,phone,site,owner_name,rating,reviews,type,photo,description',
   });
 
-  let businesses = [];
+  let results = [];
   try {
-    const scrape = await httpRequest(
+    const scrapeRes = await fetch(
       `https://api.app.outscraper.com/maps/search-v3?${params}`,
-      { headers: { 'X-API-KEY': OUTSCRAPER_KEY } }
+      { headers: { 'X-API-KEY': key } }
     );
-    businesses = scrape.data?.data?.[0] || [];
+    if (scrapeRes.status === 401) return res.status(500).json({ error: 'Outscraper API key invalid' });
+    if (scrapeRes.status === 402) return res.status(500).json({ error: 'Outscraper credits exhausted — top up at outscraper.com' });
+    if (!scrapeRes.ok) {
+      const txt = await scrapeRes.text();
+      return res.status(500).json({ error: `Outscraper error ${scrapeRes.status}: ${txt.slice(0, 200)}` });
+    }
+    const json = await scrapeRes.json();
+    results = json?.data?.[0] || [];
   } catch (err) {
-    return res.status(500).json({ error: `Outscraper failed: ${err.message}` });
+    return res.status(500).json({ error: `Outscraper request failed: ${err.message}` });
   }
 
-  const leads = [];
-  let qualified = 0, sent = 0;
+  if (!results.length) {
+    return res.status(200).json({
+      found: 0, qualified: 0, sent: 0, skipped: 0, leads: [],
+      debug: `No businesses found for "${query}"`,
+    });
+  }
 
-  for (const biz of businesses) {
-    const webCheck = await checkWebsite(biz.site);
-    if (!webCheck.qualified) continue;
-    qualified++;
+  // ── Fetch a single page and extract email ────────────────────────────────
+  function fetchPage(url) {
+    return new Promise(resolve => {
+      try {
+        const parsed = new URL(url);
+        const lib = parsed.protocol === 'https:' ? https : http;
+        const req = lib.request({
+          hostname: parsed.hostname,
+          port: parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
+          path: parsed.pathname || '/',
+          method: 'GET', timeout: 4000,
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)' },
+        }, r => {
+          let body = '';
+          r.on('data', c => { body += c; if (body.length > 50000) req.destroy(); });
+          r.on('end', () => resolve(body));
+        });
+        req.on('timeout', () => { req.destroy(); resolve(''); });
+        req.on('error', () => resolve(''));
+        req.end();
+      } catch { resolve(''); }
+    });
+  }
 
-    const lead = {
-      name: biz.name,
-      phone: biz.phone || '',
-      website: biz.site || '',
-      address: biz.full_address || '',
-      industry,
-      city,
-      websiteScore: webCheck.score,
-      reason: webCheck.reason,
-      sent: false,
-    };
+  // ── Find email by checking homepage + /contact + /about ──────────────────
+  async function findEmail(siteUrl) {
+    if (!siteUrl) return '';
+    let base = siteUrl.trim();
+    if (!base.startsWith('http')) base = 'https://' + base;
 
-    // Send to Make.com webhook → Clay → Instantly
+    // Skip social/review sites
+    const skip = ['instagram.com','facebook.com','twitter.com','yelp.com','google.com','linkedin.com'];
+    if (skip.some(s => base.includes(s))) return '';
+
     try {
-      const wRes = await httpRequest(WEBHOOK_URL, { method: 'POST' }, {
-        first_name: biz.owner_name || biz.name.split(' ')[0] || 'Owner',
-        last_name: biz.name.split(' ').slice(1).join(' ') || '',
-        email: '',
-        company: biz.name,
-        linkedin_url: '',
-        phone: biz.phone || '',
-        website: biz.site || '',
-        address: biz.full_address || '',
-        industry,
-        website_score: webCheck.score,
-        website_issues: webCheck.reason,
-      });
-      if (wRes.status >= 200 && wRes.status < 300) { lead.sent = true; sent++; }
-    } catch { /* webhook failure — lead still recorded */ }
-
-    leads.push(lead);
+      const origin = new URL(base).origin;
+      // Check up to 3 pages in sequence — stop as soon as we find an email
+      const pages = [base, `${origin}/contact`, `${origin}/contact-us`, `${origin}/about`];
+      for (const page of pages) {
+        const html = await fetchPage(page);
+        const email = extractEmail(html);
+        if (email) return email;
+      }
+      return '';
+    } catch { return ''; }
   }
+
+  // ── Run all email lookups in parallel ─────────────────────────────────────
+  const emails = await Promise.all(results.map(biz => findEmail(biz.site)));
+
+  const leads = results.map((biz, i) => ({
+    name:        biz.name        || '',
+    phone:       biz.phone       || '',
+    website:     biz.site        || '',
+    address:     biz.full_address || '',
+    industry,
+    city,
+    rating:      biz.rating      || null,
+    reviews:     biz.reviews     || 0,
+    category:    biz.type        || industry,
+    photo:       biz.photo       || '',
+    description: biz.description || '',
+    ownerName:   biz.owner_name  || '',
+    email:       emails[i],
+    websiteScore: biz.site ? 40 : 0,
+    reason:      biz.site ? 'Has website — needs improvement' : 'No website',
+    qualified:   true,
+    sent:        false,
+  }));
 
   return res.status(200).json({
-    found: businesses.length,
-    qualified,
-    sent,
-    skipped: 0,
+    found:     leads.length,
+    qualified: leads.length,
+    sent:      0,
+    skipped:   0,
     leads,
   });
 };

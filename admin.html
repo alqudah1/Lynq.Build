@@ -107,6 +107,33 @@ h1 { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.5px; margin-bottom:
 .log-warn { color: var(--yellow); }
 .log-skip { color: #333; }
 
+/* Results grid */
+.results-section { margin-bottom: 24px; display: none; }
+.results-section h3 { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-dim); margin-bottom: 14px; }
+.results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+.biz-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: border-color 0.2s; }
+.biz-card:hover { border-color: var(--border-light); }
+.biz-photo { width: 100%; height: 140px; object-fit: cover; background: var(--border); display: block; }
+.biz-photo-placeholder { width: 100%; height: 140px; background: var(--border); display: flex; align-items: center; justify-content: center; font-size: 2rem; color: var(--border-light); }
+.biz-body { padding: 16px; }
+.biz-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.biz-name { font-size: 0.95rem; font-weight: 600; color: var(--white); line-height: 1.3; }
+.biz-score { flex-shrink: 0; font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; }
+.score-bad  { background: rgba(239,68,68,0.15); color: var(--red); }
+.score-mid  { background: rgba(234,179,8,0.15); color: var(--yellow); }
+.score-ok   { background: rgba(34,197,94,0.15); color: var(--green); }
+.biz-category { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 10px; }
+.biz-row { display: flex; align-items: center; gap: 7px; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 5px; }
+.biz-row a { color: var(--blue); text-decoration: none; }
+.biz-row a:hover { text-decoration: underline; }
+.biz-rating { display: flex; align-items: center; gap: 5px; margin-bottom: 8px; }
+.stars { color: #eab308; font-size: 0.8rem; }
+.biz-issues { margin-top: 10px; padding: 8px 10px; background: rgba(239,68,68,0.06); border-radius: 6px; border: 1px solid rgba(239,68,68,0.15); font-size: 0.74rem; color: #f87171; line-height: 1.5; }
+.biz-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+.biz-status { font-size: 0.72rem; }
+.biz-btn { font-size: 0.75rem; font-weight: 600; padding: 5px 12px; border-radius: 6px; border: none; cursor: pointer; background: var(--white); color: #000; font-family: inherit; transition: opacity 0.15s; }
+.biz-btn:hover { opacity: 0.8; }
+
 /* Status dot */
 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-dim); display: inline-block; }
 .dot.active { background: var(--green); box-shadow: 0 0 6px var(--green); animation: blink 1.4s infinite; }
@@ -122,6 +149,67 @@ h1 { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.5px; margin-bottom:
 </style>
 </head>
 <body>
+
+<!-- ── OUTREACH MODAL ── -->
+<div id="email-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:200;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#111;border:1px solid #2a2a2a;border-radius:14px;width:520px;max-width:100%;max-height:90vh;overflow-y:auto">
+    <!-- Header -->
+    <div style="padding:22px 24px 0">
+      <div style="font-size:1rem;font-weight:600;color:#fff;margin-bottom:2px" id="modal-biz-name"></div>
+      <div style="font-size:0.78rem;color:#666;margin-bottom:16px" id="modal-biz-detail"></div>
+      <!-- Tabs -->
+      <div style="display:flex;gap:4px;margin-bottom:0;border-bottom:1px solid #1a1a1a;padding-bottom:0">
+        <button onclick="switchTab('email')" id="tab-email" style="padding:8px 14px;background:none;border:none;border-bottom:2px solid #fff;color:#fff;font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer;margin-bottom:-1px">✉ Email</button>
+        <button onclick="switchTab('sms')"   id="tab-sms"   style="padding:8px 14px;background:none;border:none;border-bottom:2px solid transparent;color:#555;font-family:inherit;font-size:0.82rem;font-weight:500;cursor:pointer;margin-bottom:-1px">💬 SMS</button>
+        <button onclick="switchTab('call')"  id="tab-call"  style="padding:8px 14px;background:none;border:none;border-bottom:2px solid transparent;color:#555;font-family:inherit;font-size:0.82rem;font-weight:500;cursor:pointer;margin-bottom:-1px">📞 Call Script</button>
+      </div>
+    </div>
+
+    <!-- Generate step (shown first) -->
+    <div id="modal-generate" style="padding:20px 24px">
+      <div style="font-size:0.82rem;color:#555;margin-bottom:14px">Claude will write a personalised email, SMS, and call script based on this business's specific issues — then you can send or copy each one.</div>
+      <input id="modal-email" type="email" placeholder="Email address (optional — to send now)"
+        style="width:100%;background:#0a0a0a;border:1px solid #2a2a2a;border-radius:8px;padding:11px 14px;color:#fff;font-family:inherit;font-size:0.88rem;outline:none;margin-bottom:14px">
+      <div style="display:flex;gap:10px">
+        <button onclick="closeModal()" style="flex:1;background:transparent;border:1px solid #2a2a2a;border-radius:8px;padding:11px;color:#666;font-family:inherit;font-size:0.88rem;cursor:pointer">Cancel</button>
+        <button id="modal-send-btn" onclick="generateOutreach()" style="flex:2;background:#fff;border:none;border-radius:8px;padding:11px;color:#000;font-family:inherit;font-size:0.88rem;font-weight:600;cursor:pointer">Generate with Claude</button>
+      </div>
+      <div id="modal-status" style="font-size:0.8rem;margin-top:10px;min-height:18px;text-align:center"></div>
+    </div>
+
+    <!-- Results (shown after generate) -->
+    <div id="modal-results" style="display:none;padding:0 24px 24px">
+      <!-- Email tab -->
+      <div id="panel-email" style="padding-top:16px">
+        <div style="font-size:0.75rem;color:#555;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Subject</div>
+        <div id="res-subject" style="font-size:0.88rem;color:#fff;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:10px 12px;margin-bottom:12px"></div>
+        <div style="font-size:0.75rem;color:#555;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Body</div>
+        <textarea id="res-email" style="width:100%;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:10px 12px;color:#ccc;font-family:inherit;font-size:0.83rem;line-height:1.7;resize:vertical;outline:none;min-height:160px"></textarea>
+        <div id="email-sent-note" style="font-size:0.78rem;color:#22c55e;margin-top:6px;display:none">✓ Email sent from hello@lynq.build</div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button onclick="copyText('res-email')" style="flex:1;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:7px;padding:9px;color:#ccc;font-family:inherit;font-size:0.82rem;cursor:pointer">Copy</button>
+          <button id="btn-send-email" onclick="sendEmailNow()" style="flex:2;background:#fff;border:none;border-radius:7px;padding:9px;color:#000;font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">Send from hello@lynq.build</button>
+        </div>
+      </div>
+      <!-- SMS tab -->
+      <div id="panel-sms" style="display:none;padding-top:16px">
+        <div style="font-size:0.75rem;color:#555;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Text Message (copy & send from your phone)</div>
+        <textarea id="res-sms" style="width:100%;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:10px 12px;color:#ccc;font-family:inherit;font-size:0.88rem;line-height:1.6;resize:vertical;outline:none;min-height:100px"></textarea>
+        <div id="sms-chars" style="font-size:0.75rem;color:#555;margin-top:4px;text-align:right"></div>
+        <button onclick="copyText('res-sms')" style="width:100%;margin-top:10px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:7px;padding:10px;color:#ccc;font-family:inherit;font-size:0.85rem;cursor:pointer">Copy SMS</button>
+        <div id="res-phone" style="font-size:0.82rem;color:#60a5fa;margin-top:8px;text-align:center"></div>
+      </div>
+      <!-- Call tab -->
+      <div id="panel-call" style="display:none;padding-top:16px">
+        <div style="font-size:0.75rem;color:#555;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">30-Second Call Opener</div>
+        <textarea id="res-call" style="width:100%;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:10px 12px;color:#ccc;font-family:inherit;font-size:0.88rem;line-height:1.7;resize:vertical;outline:none;min-height:140px"></textarea>
+        <button onclick="copyText('res-call')" style="width:100%;margin-top:10px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:7px;padding:10px;color:#ccc;font-family:inherit;font-size:0.85rem;cursor:pointer">Copy Script</button>
+        <div id="res-phone2" style="font-size:0.82rem;color:#60a5fa;margin-top:8px;text-align:center"></div>
+      </div>
+      <button onclick="closeModal()" style="width:100%;margin-top:14px;background:transparent;border:1px solid #1a1a1a;border-radius:7px;padding:9px;color:#444;font-family:inherit;font-size:0.82rem;cursor:pointer">Close</button>
+    </div>
+  </div>
+</div>
 
 <!-- ── GATE ── -->
 <div id="gate">
@@ -182,6 +270,31 @@ h1 { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.5px; margin-bottom:
           <button class="select-all" onclick="toggleAll('ind-cb')">Toggle all</button>
         </div>
         <div class="check-grid" id="ind-list"></div>
+      </div>
+    </div>
+
+    <!-- Results cards -->
+    <div class="results-section" id="results-section">
+      <h3 id="results-heading">Qualified Leads</h3>
+      <div class="results-grid" id="results-grid"></div>
+    </div>
+
+    <!-- Manual Lead → Agent -->
+    <div class="card" style="margin-bottom:24px">
+      <div class="card-header" style="margin-bottom:20px">
+        <h3>Send Lead to Agent</h3>
+        <span style="font-size:0.78rem;color:var(--text-dim)">→ Make → Clay → Instantly</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <input id="a-first"   placeholder="First name"   style="background:var(--bg);border:1px solid var(--border-light);border-radius:8px;padding:11px 14px;color:var(--white);font-family:inherit;font-size:0.88rem;outline:none;width:100%">
+        <input id="a-last"    placeholder="Last name"    style="background:var(--bg);border:1px solid var(--border-light);border-radius:8px;padding:11px 14px;color:var(--white);font-family:inherit;font-size:0.88rem;outline:none;width:100%">
+        <input id="a-email"   placeholder="Email"        type="email" style="background:var(--bg);border:1px solid var(--border-light);border-radius:8px;padding:11px 14px;color:var(--white);font-family:inherit;font-size:0.88rem;outline:none;width:100%">
+        <input id="a-company" placeholder="Company"      style="background:var(--bg);border:1px solid var(--border-light);border-radius:8px;padding:11px 14px;color:var(--white);font-family:inherit;font-size:0.88rem;outline:none;width:100%">
+        <input id="a-linkedin" placeholder="LinkedIn URL (optional)" style="background:var(--bg);border:1px solid var(--border-light);border-radius:8px;padding:11px 14px;color:var(--white);font-family:inherit;font-size:0.88rem;outline:none;width:100%;grid-column:span 2">
+      </div>
+      <div style="display:flex;align-items:center;gap:14px">
+        <button id="btn-agent" class="btn-run" onclick="sendToAgent()" style="padding:12px 28px">Start Agent</button>
+        <span id="agent-status" style="font-size:0.83rem;color:var(--text-dim)"></span>
       </div>
     </div>
 
@@ -267,20 +380,20 @@ Mustafa</textarea>
 const PASS = 'lynq2026';
 
 const CITIES = [
-  'Brampton, Ontario, Canada',
-  'Mississauga, Ontario, Canada',
+  'Downtown Toronto, Ontario, Canada',
   'Toronto, Ontario, Canada',
+  'North York, Ontario, Canada',
+  'Scarborough, Ontario, Canada',
+  'Etobicoke, Ontario, Canada',
+  'Mississauga, Ontario, Canada',
+  'Brampton, Ontario, Canada',
   'Vaughan, Ontario, Canada',
   'Richmond Hill, Ontario, Canada',
   'Markham, Ontario, Canada',
-  'Scarborough, Ontario, Canada',
-  'North York, Ontario, Canada',
-  'Etobicoke, Ontario, Canada',
   'Oakville, Ontario, Canada',
   'Burlington, Ontario, Canada',
   'Ajax, Ontario, Canada',
   'Pickering, Ontario, Canada',
-  'Whitby, Ontario, Canada',
   'Oshawa, Ontario, Canada',
 ];
 
@@ -301,6 +414,8 @@ const INDUSTRIES = [
 
 let stopping = false;
 let S = { found: 0, qual: 0, sent: 0, skip: 0 };
+const LEAD_STORE = {}; // index → lead object, avoids JSON-in-onclick issues
+let leadIdx = 0;
 
 function auth() {
   if (document.getElementById('pw').value === PASS) {
@@ -320,7 +435,7 @@ function build() {
   CITIES.forEach((c, i) => {
     const lbl = document.createElement('label');
     lbl.className = 'check-item';
-    lbl.innerHTML = `<input type="checkbox" class="city-cb" value="${c}" ${i < 4 ? 'checked' : ''}><span>${c.split(',')[0]}</span>`;
+    lbl.innerHTML = `<input type="checkbox" class="city-cb" value="${c}" ${i < 1 ? 'checked' : ''}><span>${c.split(',')[0]}</span>`;
     cityEl.appendChild(lbl);
   });
 
@@ -410,13 +525,20 @@ async function run() {
         S.skip += data.skipped || 0;
         updateStats();
 
+        const grid = document.getElementById('results-grid');
+        const section = document.getElementById('results-section');
+
         (data.leads || []).forEach(l => {
-          const icon = l.sent ? '✓' : '○';
-          const cls = l.sent ? 'success' : 'skip';
-          log(`  ${icon} ${l.name} — ${l.reason}`, cls);
+          const tag = l.sent ? '✓ sent' : l.qualified ? '🟢 qualified' : '🔴 skip';
+          log(`  [${tag}] ${l.name} — Score: ${l.websiteScore}/100 — ${l.reason}`, l.sent ? 'success' : l.qualified ? '' : 'skip');
+          grid.insertAdjacentHTML('afterbegin', renderCard(l));
+          section.style.display = 'block';
         });
 
-        log(`✓ ${data.qualified}/${data.found} qualified · ${data.sent} sent to pipeline`, 'success');
+        const total_cards = grid.children.length;
+        document.getElementById('results-heading').textContent = `All Businesses (${total_cards}) — ${data.qualified} qualified`;
+        log(`✓ ${data.found} scraped · ${data.qualified} qualified · ${data.sent} sent to Make`, 'success');
+        if (data.debug) log(`ℹ ${data.debug}`, 'warn');
       }
     } catch (err) {
       log(`Request failed: ${err.message}`, 'error');
@@ -436,6 +558,284 @@ async function run() {
 }
 
 function stop() { stopping = true; }
+
+function renderCard(l) {
+  const scoreClass = l.websiteScore < 30 ? 'score-bad' : l.websiteScore < 60 ? 'score-mid' : 'score-ok';
+  const cardBorder = l.qualified ? (l.sent ? 'border-color:#22c55e' : 'border-color:#2a2a2a') : 'border-color:#1a1a1a;opacity:0.5';
+  const stars = l.rating ? '★'.repeat(Math.round(l.rating)) + '☆'.repeat(5 - Math.round(l.rating)) : '';
+  const photo = l.photo
+    ? `<img class="biz-photo" src="${l.photo}" alt="${l.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+    + `<div class="biz-photo-placeholder" style="display:none">🏢</div>`
+    : `<div class="biz-photo-placeholder">🏢</div>`;
+
+  const hours = l.hours && typeof l.hours === 'object'
+    ? Object.entries(l.hours).slice(0, 2).map(([d, h]) => `${d}: ${h}`).join(' · ')
+    : '';
+
+  const websiteRow = l.website
+    ? `<div class="biz-row">🌐 <a href="${l.website}" target="_blank" rel="noopener">${l.website.replace(/^https?:\/\/(www\.)?/, '')}</a></div>`
+    : `<div class="biz-row" style="color:var(--red)">🌐 No website</div>`;
+
+  const phoneRow = l.phone ? `<div class="biz-row">📞 ${l.phone}</div>` : '';
+  const addrRow  = l.address ? `<div class="biz-row">📍 ${l.address}</div>` : '';
+  const hoursRow = hours ? `<div class="biz-row">🕐 ${hours}</div>` : '';
+  const descRow  = l.description ? `<div class="biz-row" style="display:block;line-height:1.5;margin-top:4px">${l.description.slice(0, 120)}${l.description.length > 120 ? '…' : ''}</div>` : '';
+
+  const ratingBlock = l.rating
+    ? `<div class="biz-rating"><span class="stars">${stars}</span><span style="font-size:0.8rem;color:var(--text-dim)">${l.rating} (${l.reviews} reviews)</span></div>`
+    : '';
+
+  const issuesBlock = l.reason && l.reason !== 'No website'
+    ? `<div class="biz-issues">⚠ ${l.reason}</div>`
+    : l.websiteScore === 0 ? `<div class="biz-issues">⚠ No website found — perfect cold outreach target</div>` : '';
+
+  const sentBadge = l.sent
+    ? `<span class="biz-status" style="color:var(--green)">✓ Sent to pipeline</span>`
+    : l.qualified
+      ? `<span class="biz-status" style="color:var(--yellow)">⚡ Qualified</span>`
+      : `<span class="biz-status" style="color:var(--text-dim)">✓ Good website</span>`;
+  const emailTag = l.email
+    ? `<div class="biz-row" style="color:#22c55e">✉ ${l.email}</div>`
+    : `<div class="biz-row" style="color:#555">✉ No email found</div>`;
+  const idx = leadIdx++;
+  LEAD_STORE[idx] = l;
+  const sendBtn = `<button class="biz-btn" style="background:#fff;margin-left:6px" onclick="openModal(LEAD_STORE[${idx}])">✉ AI Email</button>`;
+
+  return `
+  <div class="biz-card" style="${cardBorder}">
+    ${photo}
+    <div class="biz-body">
+      <div class="biz-top">
+        <div class="biz-name">${l.name}</div>
+        <span class="biz-score ${scoreClass}">${l.websiteScore}/100</span>
+      </div>
+      <div class="biz-category">${l.category || l.industry}</div>
+      ${ratingBlock}
+      ${websiteRow}
+      ${phoneRow}
+      ${addrRow}
+      ${hoursRow}
+      ${emailTag}
+      ${descRow}
+      ${issuesBlock}
+      <div class="biz-footer">
+        ${sentBadge}
+        ${sendBtn}
+      </div>
+    </div>
+  </div>`;
+}
+
+let _modalLead = null;
+let _outreachData = null;
+
+function openModal(lead) {
+  _modalLead = lead;
+  _outreachData = null;
+  document.getElementById('modal-biz-name').textContent = lead.name;
+  document.getElementById('modal-biz-detail').textContent = `${lead.category || lead.industry} · ${lead.address || lead.city}`;
+  document.getElementById('modal-email').value = lead.email || '';
+  document.getElementById('modal-status').textContent = '';
+  document.getElementById('modal-send-btn').disabled = false;
+  document.getElementById('modal-send-btn').textContent = 'Generate with Claude';
+  document.getElementById('modal-generate').style.display = 'block';
+  document.getElementById('modal-results').style.display = 'none';
+  document.getElementById('email-sent-note').style.display = 'none';
+  switchTab('email');
+  document.getElementById('email-modal').style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('email-modal').style.display = 'none';
+  _modalLead = null;
+}
+
+function switchTab(tab) {
+  ['email','sms','call'].forEach(t => {
+    document.getElementById(`tab-${t}`).style.borderBottomColor = t === tab ? '#fff' : 'transparent';
+    document.getElementById(`tab-${t}`).style.color = t === tab ? '#fff' : '#555';
+    document.getElementById(`panel-${t}`).style.display = t === tab ? 'block' : 'none';
+  });
+}
+
+function copyText(id) {
+  const el = document.getElementById(id);
+  navigator.clipboard.writeText(el.value || el.textContent).then(() => {
+    const orig = el.previousElementSibling?.textContent;
+  });
+  // Flash feedback
+  const btns = el.parentElement.querySelectorAll('button');
+  btns.forEach(b => { if (b.textContent.startsWith('Copy')) { b.textContent = '✓ Copied!'; setTimeout(() => b.textContent = b.textContent.includes('SMS') ? 'Copy SMS' : b.textContent.includes('Script') ? 'Copy Script' : 'Copy', 1500); }});
+}
+
+async function generateOutreach() {
+  const btn = document.getElementById('modal-send-btn');
+  const statusEl = document.getElementById('modal-status');
+  btn.disabled = true;
+  btn.textContent = 'Claude is writing…';
+  statusEl.style.color = '#777';
+  statusEl.textContent = 'Generating email, SMS, and call script…';
+
+  const toEmail = document.getElementById('modal-email').value.trim();
+
+  try {
+    const res = await fetch('/api/outreach', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lead: _modalLead, toEmail, sendEmail: false }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+
+    _outreachData = data;
+
+    // Populate fields
+    document.getElementById('res-subject').textContent = data.subject || '';
+    document.getElementById('res-email').value = data.email || '';
+    document.getElementById('res-sms').value = data.sms || '';
+    document.getElementById('res-call').value = data.callScript || '';
+    const smsLen = (data.sms || '').length;
+    document.getElementById('sms-chars').textContent = `${smsLen}/160 chars`;
+    const phone = _modalLead.phone || '';
+    document.getElementById('res-phone').textContent  = phone ? `📞 ${phone}` : '';
+    document.getElementById('res-phone2').textContent = phone ? `📞 ${phone}` : '';
+
+    document.getElementById('modal-generate').style.display = 'none';
+    document.getElementById('modal-results').style.display = 'block';
+
+    // Auto-send email if address was entered
+    if (toEmail && toEmail.includes('@')) {
+      await sendEmailNow();
+    }
+
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'Generate with Claude';
+    statusEl.textContent = err.message;
+    statusEl.style.color = '#ef4444';
+  }
+}
+
+async function sendEmailNow() {
+  const toEmail = document.getElementById('modal-email').value.trim() ||
+                  prompt('Enter email address to send to:');
+  if (!toEmail || !toEmail.includes('@')) return;
+
+  const btn = document.getElementById('btn-send-email');
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+
+  try {
+    const res = await fetch('/api/outreach', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lead: _modalLead, toEmail, sendEmail: true }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Send failed');
+    btn.textContent = '✓ Sent!';
+    btn.style.background = '#22c55e';
+    document.getElementById('email-sent-note').style.display = 'block';
+    log(`✉ Email sent → ${_modalLead.name} &lt;${toEmail}&gt;`, 'success');
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'Send from hello@lynq.build';
+    alert('Send failed: ' + err.message);
+  }
+}
+
+document.getElementById('email-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('email-modal')) closeModal();
+});
+
+async function sendLeadManual(l) {
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  try {
+    const res = await fetch('https://hook.us2.make.com/di7iq2r22kae4ru93kkf6tni1n7lnhf7', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        first_name: l.ownerName || l.name.split(' ')[0] || 'Owner',
+        last_name: l.name.split(' ').slice(1).join(' ') || '',
+        email: '',
+        company: l.name,
+        linkedin_url: '',
+        phone: l.phone || '',
+        website: l.website || '',
+        address: l.address || '',
+        industry: l.industry,
+        website_score: l.websiteScore,
+        website_issues: l.reason,
+      }),
+    });
+    if (res.ok) {
+      btn.textContent = '✓ Sent';
+      btn.style.background = 'var(--green)';
+      btn.style.color = '#000';
+      log(`Manually sent: ${l.name}`, 'success');
+    } else {
+      btn.textContent = 'Failed';
+      btn.style.background = 'var(--red)';
+      btn.disabled = false;
+    }
+  } catch {
+    btn.textContent = 'Error';
+    btn.disabled = false;
+  }
+}
+
+async function sendToAgent() {
+  const first_name  = document.getElementById('a-first').value.trim();
+  const last_name   = document.getElementById('a-last').value.trim();
+  const email       = document.getElementById('a-email').value.trim();
+  const company     = document.getElementById('a-company').value.trim();
+  const linkedin_url = document.getElementById('a-linkedin').value.trim();
+
+  if (!first_name || !email || !company) {
+    document.getElementById('agent-status').textContent = 'First name, email and company are required.';
+    document.getElementById('agent-status').style.color = 'var(--red)';
+    return;
+  }
+
+  const btn = document.getElementById('btn-agent');
+  const statusEl = document.getElementById('agent-status');
+  btn.disabled = true;
+  btn.textContent = 'Agent Running...';
+  statusEl.textContent = '';
+  statusEl.style.color = 'var(--text-dim)';
+
+  try {
+    const res = await fetch('https://hook.us2.make.com/di7iq2r22kae4ru93kkf6tni1n7lnhf7', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ first_name, last_name, email, company, linkedin_url }),
+    });
+
+    if (res.ok) {
+      statusEl.textContent = '✓ Lead sent successfully';
+      statusEl.style.color = 'var(--green)';
+      log(`Agent triggered → ${first_name} ${last_name} &lt;${email}&gt; / ${company}`, 'success');
+      // Clear form
+      ['a-first','a-last','a-email','a-company','a-linkedin'].forEach(id => document.getElementById(id).value = '');
+    } else {
+      const txt = await res.text().catch(() => res.statusText);
+      statusEl.textContent = `Error: ${res.status} — ${txt}`;
+      statusEl.style.color = 'var(--red)';
+      console.error('Webhook error:', res.status, txt);
+      log(`Agent webhook error ${res.status}: ${txt}`, 'error');
+    }
+  } catch (err) {
+    statusEl.textContent = 'Network error — check console.';
+    statusEl.style.color = 'var(--red)';
+    console.error('sendToAgent failed:', err);
+    log(`Agent request failed: ${err.message}`, 'error');
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Start Agent';
+}
 </script>
 </body>
 </html>
