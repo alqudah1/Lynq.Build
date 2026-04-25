@@ -262,7 +262,7 @@
       display: block;
     }
 
-    .service-icon { font-size: 2rem; margin-bottom: 16px; display: block; }
+    .service-icon { width: 36px; height: 36px; margin-bottom: 16px; display: block; opacity: 0.9; }
 
     .service-name {
       font-size: 1.05rem;
@@ -331,6 +331,8 @@
       padding: 20px;
       position: relative;
       overflow: hidden;
+      background-size: cover;
+      background-position: center;
     }
 
     .project-card::before {
@@ -599,37 +601,37 @@
   <div class="services-grid">
     <div class="service-card">
       <span class="service-num">01</span>
-      <span class="service-icon">🍳</span>
+      <svg class="service-icon" viewBox="0 0 24 24" fill="none" stroke="#f0a500" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h18M3 15h18M9 3v18"/><rect x="3" y="3" width="18" height="18" rx="1"/></svg>
       <div class="service-name">Kitchen Remodels</div>
       <div class="service-desc">Complete kitchen transformations including cabinetry, countertops, flooring, backsplash, and appliance installation.</div>
     </div>
     <div class="service-card">
       <span class="service-num">02</span>
-      <span class="service-icon">🚿</span>
+      <svg class="service-icon" viewBox="0 0 24 24" fill="none" stroke="#f0a500" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12H4z"/><path d="M8 20h8M12 16v4"/><circle cx="16" cy="8" r="1.5"/></svg>
       <div class="service-name">Bathroom Renovations</div>
       <div class="service-desc">Full bathroom overhauls — from tile and fixtures to vanities, showers, and custom glass enclosures.</div>
     </div>
     <div class="service-card">
       <span class="service-num">03</span>
-      <span class="service-icon">🏠</span>
+      <svg class="service-icon" viewBox="0 0 24 24" fill="none" stroke="#f0a500" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5L12 4l9 5.5V20H3V9.5z"/><path d="M9 20v-6h6v6"/></svg>
       <div class="service-name">Basement Finishing</div>
       <div class="service-desc">Turn your unfinished basement into a living space, rec room, home theatre, or in-law suite.</div>
     </div>
     <div class="service-card">
       <span class="service-num">04</span>
-      <span class="service-icon">🪟</span>
+      <svg class="service-icon" viewBox="0 0 24 24" fill="none" stroke="#f0a500" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="1"/><path d="M12 4v16M2 12h20"/></svg>
       <div class="service-name">Windows & Doors</div>
       <div class="service-desc">Energy-efficient window and door installations to improve your home's look, comfort, and resale value.</div>
     </div>
     <div class="service-card">
       <span class="service-num">05</span>
-      <span class="service-icon">🪵</span>
+      <svg class="service-icon" viewBox="0 0 24 24" fill="none" stroke="#f0a500" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20M2 16h20M6 16V8m4 8V8m4 8V8m4 8V8"/><path d="M2 8h20"/></svg>
       <div class="service-name">Flooring</div>
       <div class="service-desc">Hardwood, laminate, tile, and vinyl plank — supply and installation for any room in your home.</div>
     </div>
     <div class="service-card">
       <span class="service-num">06</span>
-      <span class="service-icon">🔧</span>
+      <svg class="service-icon" viewBox="0 0 24 24" fill="none" stroke="#f0a500" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
       <div class="service-name">General Contracting</div>
       <div class="service-desc">Full home additions, structural work, and project management from permits to final walkthrough.</div>
     </div>
@@ -661,37 +663,37 @@
     <h2 class="section-heading">Projects We're Proud Of</h2>
   </div>
   <div class="projects-grid">
-    <div class="project-card" style="background: linear-gradient(135deg, #2a1f14, #3d2c1c);">
+    <div class="project-card" style="background-image:url('https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=700&h=525&fit=crop&q=80')">
       <div class="project-info">
         <div class="project-type">Kitchen Remodel</div>
         <div class="project-name">Brampton — Chinguacousy Rd</div>
       </div>
     </div>
-    <div class="project-card" style="background: linear-gradient(135deg, #141a24, #1e2a38);">
+    <div class="project-card" style="background-image:url('https://images.unsplash.com/photo-1560185007-c5ca9d2c014d?w=700&h=525&fit=crop&q=80')">
       <div class="project-info">
         <div class="project-type">Basement Finishing</div>
         <div class="project-name">Mississauga — Lakeshore</div>
       </div>
     </div>
-    <div class="project-card" style="background: linear-gradient(135deg, #1a1a1a, #2c2c2c);">
+    <div class="project-card" style="background-image:url('https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=700&h=525&fit=crop&q=80')">
       <div class="project-info">
         <div class="project-type">Bathroom Reno</div>
         <div class="project-name">Vaughan — Rutherford Rd</div>
       </div>
     </div>
-    <div class="project-card" style="background: linear-gradient(135deg, #1f2a14, #2c3d1c);">
+    <div class="project-card" style="background-image:url('https://images.unsplash.com/photo-1484154218962-a197022b5858?w=700&h=525&fit=crop&q=80')">
       <div class="project-info">
         <div class="project-type">Full Home Reno</div>
         <div class="project-name">Brampton — Sandalwood</div>
       </div>
     </div>
-    <div class="project-card" style="background: linear-gradient(135deg, #24141f, #381e2a);">
+    <div class="project-card" style="background-image:url('https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=700&h=525&fit=crop&q=80')">
       <div class="project-info">
         <div class="project-type">Flooring Installation</div>
         <div class="project-name">Toronto — East York</div>
       </div>
     </div>
-    <div class="project-card" style="background: linear-gradient(135deg, #14201f, #1c342e);">
+    <div class="project-card" style="background-image:url('https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=700&h=525&fit=crop&q=80')">
       <div class="project-info">
         <div class="project-type">Home Addition</div>
         <div class="project-name">Oakville — Trafalgar Rd</div>
