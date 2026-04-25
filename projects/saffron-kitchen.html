@@ -3,770 +3,536 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Saffron Kitchen — Authentic Indian Cuisine in Brampton</title>
+  <meta name="description" content="Saffron Kitchen — Fine Indian dining in Toronto. Authentic flavours, crafted with tradition."/>
+  <title>Saffron Kitchen — Fine Indian Dining in Toronto</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --cream: #faf6f0;
-      --warm: #f5ede0;
-      --terracotta: #c2623c;
-      --terracotta-dark: #a0502f;
-      --gold: #d4a853;
-      --text: #2c1a0e;
-      --text-mid: #5c3d2a;
-      --text-light: #8a6555;
+      --bg:       #09060404;
+      --bg:       #0a0604;
+      --bg2:      #13100d;
+      --bg3:      #1b1510;
+      --border:   rgba(255,255,255,0.07);
+      --terra:    #c85237;
+      --terra-lt: #e06545;
+      --gold:     #c9902a;
+      --cream:    #ede3d6;
+      --cream-d:  rgba(237,227,214,0.5);
+      --white:    #f9f5f0;
     }
 
     html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--cream); overflow-x: hidden; }
 
-    body {
-      font-family: 'Inter', sans-serif;
-      background: var(--cream);
-      color: var(--text);
-    }
-
-    /* NAV */
+    /* ── NAV ── */
     nav {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      z-index: 100;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0 60px;
-      height: 76px;
-      background: rgba(250, 246, 240, 0.92);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(194, 98, 60, 0.12);
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0 64px; height: 72px;
+      transition: background 0.5s, backdrop-filter 0.5s, border-color 0.5s;
+      border-bottom: 1px solid transparent;
     }
-
+    nav.scrolled {
+      background: rgba(10,6,4,0.94);
+      backdrop-filter: blur(20px);
+      border-color: var(--border);
+    }
     .nav-logo {
       font-family: 'Playfair Display', serif;
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: var(--text);
-      letter-spacing: 0.5px;
+      font-size: 1.25rem; font-weight: 700; color: var(--white); letter-spacing: 0.5px;
     }
-
-    .nav-logo span { color: var(--terracotta); }
-
-    .nav-links {
-      display: flex;
-      gap: 36px;
-      list-style: none;
-    }
-
+    .nav-logo em { font-style: italic; color: var(--terra-lt); }
+    .nav-links { display: flex; gap: 36px; list-style: none; }
     .nav-links a {
-      text-decoration: none;
-      font-size: 0.875rem;
-      color: var(--text-mid);
-      letter-spacing: 0.3px;
+      text-decoration: none; font-size: 0.78rem; font-weight: 400;
+      color: var(--cream-d); letter-spacing: 1.2px; text-transform: uppercase;
       transition: color 0.2s;
     }
-
-    .nav-links a:hover { color: var(--terracotta); }
-
+    .nav-links a:hover { color: var(--white); }
     .nav-cta {
-      padding: 10px 24px;
-      background: var(--terracotta);
-      color: white;
-      text-decoration: none;
-      font-size: 0.875rem;
-      font-weight: 500;
-      letter-spacing: 0.3px;
-      transition: background 0.2s;
+      padding: 9px 26px;
+      border: 1px solid rgba(200,82,55,0.45); color: var(--terra-lt);
+      text-decoration: none; font-size: 0.75rem; font-weight: 500;
+      letter-spacing: 1px; text-transform: uppercase; transition: all 0.25s;
     }
+    .nav-cta:hover { background: var(--terra); border-color: var(--terra); color: white; }
 
-    .nav-cta:hover { background: var(--terracotta-dark); }
-
-    /* HERO */
+    /* ── HERO ── */
     .hero {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      padding: 120px 60px 80px;
-      position: relative;
-      overflow: hidden;
-      background: linear-gradient(135deg, var(--cream) 0%, var(--warm) 100%);
+      position: relative; height: 100vh; min-height: 720px;
+      display: flex; align-items: center; justify-content: center;
+      text-align: center; overflow: hidden;
     }
-
-    .hero::before {
-      content: '';
-      position: absolute;
-      right: -100px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 600px;
-      height: 600px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(194, 98, 60, 0.12) 0%, transparent 70%);
-      pointer-events: none;
+    .hero-bg {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover;
+      transform: scale(1.06);
+      transition: transform 9s ease-out;
     }
-
-    .hero-content { max-width: 580px; }
-
-    .hero-badge {
-      display: inline-block;
-      padding: 6px 16px;
-      background: rgba(194, 98, 60, 0.1);
-      border: 1px solid rgba(194, 98, 60, 0.25);
-      color: var(--terracotta);
-      font-size: 0.75rem;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      margin-bottom: 28px;
+    .hero-bg.loaded { transform: scale(1); }
+    .hero-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg,
+        rgba(10,6,4,0.5) 0%,
+        rgba(10,6,4,0.25) 35%,
+        rgba(10,6,4,0.65) 70%,
+        rgba(10,6,4,1) 100%
+      );
     }
-
+    .hero-content {
+      position: relative; z-index: 2;
+      max-width: 820px; padding: 0 24px;
+    }
+    .hero-kicker {
+      display: inline-flex; align-items: center; gap: 12px;
+      font-size: 0.68rem; letter-spacing: 4px; text-transform: uppercase;
+      color: var(--gold); margin-bottom: 30px;
+      opacity: 0; animation: fadeUp 0.8s ease 0.3s forwards;
+    }
+    .hero-kicker::before, .hero-kicker::after {
+      content: ''; width: 36px; height: 1px; background: currentColor; opacity: 0.5;
+    }
     .hero h1 {
       font-family: 'Playfair Display', serif;
-      font-size: clamp(2.8rem, 6vw, 5rem);
-      font-weight: 700;
-      line-height: 1.1;
-      color: var(--text);
-      margin-bottom: 24px;
+      font-size: clamp(3.6rem, 8.5vw, 7.5rem);
+      font-weight: 700; line-height: 1.0; color: var(--white);
+      letter-spacing: -1px; margin-bottom: 26px;
+      opacity: 0; animation: fadeUp 0.8s ease 0.55s forwards;
     }
-
-    .hero h1 em {
-      font-style: italic;
-      color: var(--terracotta);
+    .hero h1 em { font-style: italic; color: var(--terra-lt); display: block; }
+    .hero-desc {
+      font-size: 1.05rem; color: rgba(237,227,214,0.7); font-weight: 300;
+      max-width: 500px; margin: 0 auto 44px; line-height: 1.8;
+      opacity: 0; animation: fadeUp 0.8s ease 0.75s forwards;
     }
-
-    .hero p {
-      font-size: 1.05rem;
-      line-height: 1.75;
-      color: var(--text-mid);
-      max-width: 440px;
-      margin-bottom: 40px;
-      font-weight: 300;
+    .hero-btns {
+      display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;
+      opacity: 0; animation: fadeUp 0.8s ease 0.95s forwards;
     }
-
-    .hero-actions {
-      display: flex;
-      gap: 16px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
     .btn-primary {
-      padding: 16px 36px;
-      background: var(--terracotta);
-      color: white;
-      text-decoration: none;
-      font-size: 0.9rem;
-      font-weight: 500;
-      letter-spacing: 0.5px;
-      transition: background 0.2s, transform 0.2s;
-      display: inline-block;
+      padding: 15px 42px; background: var(--terra); color: white;
+      text-decoration: none; font-size: 0.82rem; font-weight: 500;
+      letter-spacing: 1px; text-transform: uppercase;
+      transition: background 0.25s, transform 0.2s; display: inline-block;
     }
-
-    .btn-primary:hover {
-      background: var(--terracotta-dark);
-      transform: translateY(-1px);
+    .btn-primary:hover { background: var(--terra-lt); transform: translateY(-2px); }
+    .btn-ghost {
+      padding: 14px 42px; border: 1px solid rgba(237,227,214,0.22); color: var(--cream);
+      text-decoration: none; font-size: 0.82rem; font-weight: 400;
+      letter-spacing: 1px; text-transform: uppercase;
+      transition: border-color 0.25s, color 0.25s, transform 0.2s; display: inline-block;
     }
+    .btn-ghost:hover { border-color: rgba(237,227,214,0.55); color: var(--white); transform: translateY(-2px); }
 
-    .btn-outline {
-      padding: 15px 36px;
-      border: 1px solid var(--terracotta);
-      color: var(--terracotta);
-      text-decoration: none;
-      font-size: 0.9rem;
-      font-weight: 500;
-      letter-spacing: 0.5px;
-      transition: all 0.2s;
-      display: inline-block;
+    /* ── STATS STRIP ── */
+    .strip {
+      background: var(--bg2); border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 22px 64px; display: flex; justify-content: center;
+      gap: 64px; flex-wrap: wrap;
     }
-
-    .btn-outline:hover {
-      background: var(--terracotta);
-      color: white;
+    .strip-item { display: flex; align-items: center; gap: 14px; }
+    .strip-num {
+      font-family: 'Playfair Display', serif; font-size: 1.9rem;
+      font-weight: 700; color: var(--gold); letter-spacing: -1px; line-height: 1;
     }
+    .strip-label { font-size: 0.72rem; color: var(--cream-d); letter-spacing: 1px; text-transform: uppercase; line-height: 1.5; }
+    .strip-sub { font-size: 0.7rem; color: rgba(237,227,214,0.3); margin-top: 2px; }
 
-    /* DECORATIVE PLATES */
-    .hero-visual {
-      position: absolute;
-      right: 80px;
-      top: 50%;
-      transform: translateY(-50%);
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      opacity: 0.9;
+    /* ── SECTION COMMON ── */
+    .eyebrow {
+      font-size: 0.68rem; font-weight: 500; letter-spacing: 4px;
+      text-transform: uppercase; color: var(--gold);
+      margin-bottom: 16px; display: flex; align-items: center; gap: 12px;
     }
-
-    .food-card {
-      width: 180px;
-      height: 220px;
-      border-radius: 4px;
-      overflow: hidden;
-      position: relative;
-    }
-
-    .food-card:nth-child(2) { margin-top: 40px; }
-    .food-card:nth-child(3) { margin-top: -20px; }
-
-    .food-card-img {
-      width: 100%;
-      height: 75%;
-      object-fit: cover;
-      display: block;
-    }
-
-    .food-card-info {
-      padding: 12px 14px;
-      background: white;
-    }
-
-    .food-card-name {
-      font-family: 'Playfair Display', serif;
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: var(--text);
-    }
-
-    .food-card-price {
-      font-size: 0.8rem;
-      color: var(--terracotta);
-      margin-top: 2px;
-    }
-
-    /* STRIP */
-    .stats-strip {
-      background: var(--terracotta);
-      padding: 28px 60px;
-      display: flex;
-      justify-content: center;
-      gap: 80px;
-      flex-wrap: wrap;
-    }
-
-    .strip-stat {
-      text-align: center;
-      color: white;
-    }
-
-    .strip-stat-num {
-      font-family: 'Playfair Display', serif;
-      font-size: 2rem;
-      font-weight: 700;
-      display: block;
-    }
-
-    .strip-stat-label {
-      font-size: 0.8rem;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      opacity: 0.85;
-      margin-top: 4px;
-      display: block;
-    }
-
-    /* MENU */
-    .menu {
-      padding: 100px 60px;
-      background: white;
-    }
-
-    .section-label {
-      font-size: 0.7rem;
-      letter-spacing: 4px;
-      text-transform: uppercase;
-      color: var(--terracotta);
-      margin-bottom: 12px;
-    }
-
+    .eyebrow::after { content: ''; width: 36px; height: 1px; background: var(--gold); opacity: 0.4; }
     .section-title {
       font-family: 'Playfair Display', serif;
-      font-size: clamp(1.8rem, 3.5vw, 2.8rem);
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 60px;
+      font-size: clamp(2.2rem, 4.5vw, 3.4rem); font-weight: 700;
+      color: var(--white); line-height: 1.15; margin-bottom: 64px;
     }
+    .section-title em { font-style: italic; color: var(--terra-lt); }
 
+    /* ── MENU ── */
+    .menu { padding: 120px 64px; }
+    .menu-header { max-width: 1200px; margin: 0 auto; }
     .menu-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 32px;
-      max-width: 1100px;
-      margin: 0 auto;
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 3px; max-width: 1200px; margin: 0 auto;
     }
-
-    .menu-card {
-      background: var(--cream);
-      border: 1px solid rgba(194, 98, 60, 0.1);
-      padding: 28px;
-      transition: transform 0.2s, box-shadow 0.2s;
+    .menu-card { position: relative; overflow: hidden; cursor: pointer; }
+    .menu-card img {
+      width: 100%; aspect-ratio: 3/4; object-fit: cover; display: block;
+      transition: transform 0.65s ease;
     }
-
-    .menu-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 40px rgba(194, 98, 60, 0.12);
+    .menu-card:hover img { transform: scale(1.08); }
+    .menu-card-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, transparent 40%, rgba(10,6,4,0.92) 100%);
+      display: flex; flex-direction: column; justify-content: flex-end; padding: 26px;
     }
+    .menu-card-tag { font-size: 0.62rem; letter-spacing: 2.5px; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; }
+    .menu-card-name {
+      font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 600;
+      color: var(--white); margin-bottom: 6px; line-height: 1.2;
+    }
+    .menu-card-price { font-size: 0.92rem; color: var(--terra-lt); font-weight: 500; }
 
-    .menu-emoji { width: 100%; height: 160px; object-fit: cover; display: block; margin-bottom: 20px; border-radius: 2px; }
-
-    .menu-name {
+    /* ── QUOTE BAND ── */
+    .quote-band {
+      position: relative; height: 460px; overflow: hidden;
+      display: flex; align-items: center;
+    }
+    .quote-band img {
+      position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+    }
+    .quote-band-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(90deg, rgba(10,6,4,0.93) 0%, rgba(10,6,4,0.6) 55%, rgba(10,6,4,0.1) 100%);
+    }
+    .quote-band-content { position: relative; z-index: 2; max-width: 1200px; margin: 0 auto; padding: 0 64px; }
+    .quote-band-content blockquote {
       font-family: 'Playfair Display', serif;
-      font-size: 1.15rem;
-      font-weight: 600;
-      color: var(--text);
-      margin-bottom: 8px;
+      font-size: clamp(1.6rem, 3.5vw, 2.8rem); font-weight: 400; font-style: italic;
+      color: var(--white); max-width: 640px; line-height: 1.45;
+    }
+    .quote-band-content blockquote em { font-style: normal; color: var(--terra-lt); }
+    .quote-band-content cite {
+      display: block; font-size: 0.75rem; color: var(--cream-d);
+      letter-spacing: 2px; text-transform: uppercase; margin-top: 22px; font-style: normal;
     }
 
-    .menu-desc {
-      font-size: 0.875rem;
-      color: var(--text-light);
-      line-height: 1.65;
-      margin-bottom: 16px;
-      font-weight: 300;
+    /* ── ABOUT ── */
+    .about { padding: 120px 64px; background: var(--bg2); }
+    .about-inner {
+      max-width: 1200px; margin: 0 auto;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center;
     }
-
-    .menu-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .about-img-wrap { position: relative; }
+    .about-img-wrap img { width: 100%; aspect-ratio: 4/5; object-fit: cover; display: block; }
+    .about-badge {
+      position: absolute; bottom: -28px; right: -28px;
+      background: var(--terra); padding: 26px 30px; text-align: center;
     }
-
-    .menu-price {
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: var(--terracotta);
+    .about-badge-n {
+      font-family: 'Playfair Display', serif; font-size: 2.6rem;
+      font-weight: 700; color: white; display: block; line-height: 1;
     }
-
-    .menu-tag {
-      font-size: 0.7rem;
-      padding: 3px 10px;
-      background: rgba(212, 168, 83, 0.15);
-      color: var(--gold);
-      border: 1px solid rgba(212, 168, 83, 0.3);
-      letter-spacing: 1px;
-      text-transform: uppercase;
-    }
-
-    /* ABOUT */
-    .about {
-      padding: 100px 60px;
-      background: var(--warm);
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 80px;
-      align-items: center;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .about-visual {
-      width: 100%;
-      aspect-ratio: 4/3;
-      border-radius: 2px;
-      overflow: hidden;
-      position: relative;
-    }
-
-    .about-visual img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
+    .about-badge-l { font-size: 0.62rem; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.7); margin-top: 5px; display: block; }
+    .about-text { padding-bottom: 28px; }
     .about-text h2 {
       font-family: 'Playfair Display', serif;
-      font-size: clamp(1.6rem, 3vw, 2.4rem);
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 20px;
-      line-height: 1.2;
+      font-size: clamp(1.8rem, 3.2vw, 2.7rem); font-weight: 700;
+      color: var(--white); line-height: 1.2; margin-bottom: 26px;
     }
+    .about-text h2 em { font-style: italic; color: var(--terra-lt); }
+    .about-text p { font-size: 0.95rem; color: var(--cream-d); line-height: 1.88; font-weight: 300; margin-bottom: 18px; }
+    .about-sig { font-family: 'Playfair Display', serif; font-size: 1.7rem; font-style: italic; color: var(--gold); margin-top: 36px; }
 
-    .about-text p {
-      font-size: 0.95rem;
-      color: var(--text-mid);
-      line-height: 1.8;
-      font-weight: 300;
-      margin-bottom: 16px;
-    }
-
-    .about-detail {
-      display: flex;
-      gap: 32px;
-      margin-top: 32px;
-      flex-wrap: wrap;
-    }
-
-    .about-detail-item {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .about-detail-value {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.6rem;
-      font-weight: 700;
-      color: var(--terracotta);
-    }
-
-    .about-detail-label {
-      font-size: 0.8rem;
-      color: var(--text-light);
-      letter-spacing: 0.5px;
-    }
-
-    /* TESTIMONIALS */
-    .testimonials {
-      padding: 100px 60px;
-      background: white;
-      text-align: center;
-    }
-
-    .testimonials .section-title { margin-bottom: 48px; }
-
+    /* ── TESTIMONIALS ── */
+    .testimonials { padding: 120px 64px; }
+    .testi-header { max-width: 1200px; margin: 0 auto; }
     .testi-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
-      max-width: 1000px;
-      margin: 0 auto;
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 1px; background: var(--border); max-width: 1200px; margin: 0 auto;
     }
-
     .testi-card {
-      background: var(--cream);
-      border: 1px solid rgba(194, 98, 60, 0.1);
-      padding: 32px 28px;
-      text-align: left;
+      background: var(--bg); padding: 50px 40px; position: relative;
     }
-
-    .testi-stars { color: var(--gold); font-size: 0.9rem; margin-bottom: 16px; }
-
-    .testi-quote {
-      font-size: 0.9rem;
-      color: var(--text-mid);
-      line-height: 1.75;
-      font-weight: 300;
-      font-style: italic;
-      margin-bottom: 20px;
+    .testi-card::before {
+      content: '\201C'; position: absolute; top: 20px; left: 34px;
+      font-family: 'Playfair Display', serif; font-size: 6rem;
+      color: var(--terra); opacity: 0.12; line-height: 1; pointer-events: none;
     }
+    .testi-stars { color: var(--gold); font-size: 0.82rem; letter-spacing: 2px; margin-bottom: 22px; }
+    .testi-quote { font-size: 0.92rem; color: var(--cream-d); line-height: 1.88; font-weight: 300; font-style: italic; margin-bottom: 28px; }
+    .testi-name { font-size: 0.875rem; font-weight: 600; color: var(--white); }
+    .testi-loc { font-size: 0.78rem; color: var(--cream-d); margin-top: 3px; }
 
-    .testi-name {
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: var(--text);
+    /* ── CONTACT ── */
+    .contact { padding: 120px 64px; background: var(--bg2); border-top: 1px solid var(--border); }
+    .contact-inner {
+      max-width: 1200px; margin: 0 auto;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center;
     }
-
-    .testi-role {
-      font-size: 0.8rem;
-      color: var(--text-light);
-      margin-top: 2px;
-    }
-
-    /* CONTACT */
-    .contact {
-      padding: 100px 60px;
-      background: var(--text);
-      text-align: center;
-      color: white;
-    }
-
-    .contact h2 {
+    .contact-left h2 {
       font-family: 'Playfair Display', serif;
-      font-size: clamp(2rem, 4vw, 3rem);
-      font-weight: 700;
-      margin-bottom: 16px;
+      font-size: clamp(2rem, 4vw, 3rem); font-weight: 700;
+      color: var(--white); line-height: 1.2; margin-bottom: 18px;
     }
+    .contact-left h2 em { font-style: italic; color: var(--terra-lt); }
+    .contact-left p { font-size: 0.95rem; color: var(--cream-d); line-height: 1.75; font-weight: 300; margin-bottom: 36px; }
+    .contact-rows { display: flex; flex-direction: column; gap: 14px; }
+    .contact-row { display: flex; align-items: flex-start; gap: 12px; font-size: 0.9rem; color: var(--cream); }
+    .contact-icon { flex-shrink: 0; color: var(--gold); margin-top: 1px; width: 16px; }
+    .contact-img img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
 
-    .contact p {
-      font-size: 1rem;
-      opacity: 0.7;
-      margin-bottom: 40px;
-      font-weight: 300;
-    }
-
-    .contact-details {
-      display: flex;
-      justify-content: center;
-      gap: 48px;
-      flex-wrap: wrap;
-      margin-bottom: 40px;
-    }
-
-    .contact-detail {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .contact-detail-label {
-      font-size: 0.75rem;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      opacity: 0.5;
-    }
-
-    .contact-detail-value {
-      font-size: 1rem;
-      opacity: 0.9;
-    }
-
-    /* FOOTER */
+    /* ── FOOTER ── */
     footer {
-      background: #1a0f08;
-      padding: 32px 60px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      color: rgba(255,255,255,0.4);
-      font-size: 0.8rem;
+      background: #050302; padding: 30px 64px;
+      display: flex; justify-content: space-between; align-items: center;
+      border-top: 1px solid var(--border); font-size: 0.78rem; color: rgba(237,227,214,0.25);
     }
+    .footer-logo { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: rgba(237,227,214,0.4); }
+    .footer-logo em { font-style: italic; color: var(--terra); opacity: 0.7; }
+    footer a { color: inherit; text-decoration: none; border-bottom: 1px solid currentColor; transition: color 0.2s; }
+    footer a:hover { color: rgba(237,227,214,0.55); }
 
-    .footer-logo {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.1rem;
-      color: rgba(255,255,255,0.6);
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(22px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
+    .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.75s ease, transform 0.75s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-delay { transition-delay: 0.15s; }
+    .reveal-delay2 { transition-delay: 0.3s; }
 
-    .watermark {
-      font-size: 0.72rem;
-      letter-spacing: 1px;
-      opacity: 0.4;
-    }
-
-    .watermark a {
-      color: inherit;
-      text-decoration: none;
-      border-bottom: 1px solid currentColor;
-    }
-
+    /* ── MOBILE ── */
     @media (max-width: 900px) {
-      nav { padding: 0 24px; }
-      .hero { padding: 100px 24px 60px; }
-      .hero-visual { display: none; }
-      .stats-strip { padding: 24px; gap: 40px; }
-      .menu { padding: 80px 24px; }
-      .menu-grid { grid-template-columns: 1fr; }
-      .about { grid-template-columns: 1fr; padding: 80px 24px; }
-      .testimonials { padding: 80px 24px; }
-      .testi-grid { grid-template-columns: 1fr; }
-      .contact { padding: 80px 24px; }
-      footer { padding: 24px; flex-direction: column; gap: 12px; text-align: center; }
+      nav { padding: 0 20px; }
+      .nav-links { display: none; }
+      .hero h1 { font-size: clamp(3rem, 13vw, 5rem); }
+      .strip { padding: 18px 20px; gap: 28px; }
+      .menu { padding: 80px 20px; }
+      .menu-grid { grid-template-columns: 1fr 1fr; }
+      .quote-band-content { padding: 0 20px; }
+      .about { padding: 80px 20px; }
+      .about-inner { grid-template-columns: 1fr; gap: 60px; }
+      .about-badge { right: 0; bottom: -20px; }
+      .testimonials { padding: 80px 20px; }
+      .testi-grid { grid-template-columns: 1fr; background: none; gap: 1px; }
+      .testi-card { background: var(--bg2); }
+      .contact { padding: 80px 20px; }
+      .contact-inner { grid-template-columns: 1fr; }
+      footer { padding: 24px 20px; flex-direction: column; gap: 10px; text-align: center; }
     }
   </style>
 </head>
 <body>
 
-<nav>
-  <div class="nav-logo">Saffron <span>Kitchen</span></div>
+<nav id="nav">
+  <div class="nav-logo">Saffron <em>Kitchen</em></div>
   <ul class="nav-links">
     <li><a href="#menu">Menu</a></li>
-    <li><a href="#about">About</a></li>
-    <li><a href="#contact">Location</a></li>
+    <li><a href="#about">Our Story</a></li>
+    <li><a href="#contact">Visit Us</a></li>
   </ul>
   <a href="#contact" class="nav-cta">Reserve a Table</a>
 </nav>
 
+<!-- HERO -->
 <section class="hero">
+  <img class="hero-bg" id="heroBg"
+    src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1920&h=1080&fit=crop&q=85"
+    alt="Saffron Kitchen dining room">
+  <div class="hero-overlay"></div>
   <div class="hero-content">
-    <div class="hero-badge">Brampton's Finest Indian Cuisine</div>
-    <h1>Where Every Dish Tells a <em>Story</em></h1>
-    <p>Authentic flavours from the heart of India, crafted with generations of tradition and the finest local ingredients. Dine in, takeout, or catering for your next event.</p>
-    <div class="hero-actions">
+    <div class="hero-kicker">Fine Indian Dining · Toronto</div>
+    <h1>Where Every<br><em>Flavour</em><br>Tells a Story</h1>
+    <p class="hero-desc">Generations of tradition — crafted in every dish. Authentic Indian cuisine from the heart of Amritsar, served with love in the soul of Toronto.</p>
+    <div class="hero-btns">
       <a href="#menu" class="btn-primary">View Our Menu</a>
-      <a href="#contact" class="btn-outline">Reserve a Table</a>
-    </div>
-  </div>
-
-  <div class="hero-visual">
-    <div class="food-card">
-      <img class="food-card-img" src="https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=360&h=270&fit=crop&q=80" alt="Butter Chicken">
-      <div class="food-card-info">
-        <div class="food-card-name">Butter Chicken</div>
-        <div class="food-card-price">$18.99</div>
-      </div>
-    </div>
-    <div class="food-card">
-      <img class="food-card-img" src="https://images.unsplash.com/photo-1547592180-85f173990554?w=360&h=270&fit=crop&q=80" alt="Garlic Naan">
-      <div class="food-card-info">
-        <div class="food-card-name">Garlic Naan</div>
-        <div class="food-card-price">$4.99</div>
-      </div>
-    </div>
-    <div class="food-card">
-      <img class="food-card-img" src="https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=360&h=270&fit=crop&q=80" alt="Lamb Tikka">
-      <div class="food-card-info">
-        <div class="food-card-name">Lamb Tikka</div>
-        <div class="food-card-price">$24.99</div>
-      </div>
-    </div>
-    <div class="food-card">
-      <img class="food-card-img" src="https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=360&h=270&fit=crop&q=80" alt="Palak Paneer">
-      <div class="food-card-info">
-        <div class="food-card-name">Palak Paneer</div>
-        <div class="food-card-price">$16.99</div>
-      </div>
+      <a href="#contact" class="btn-ghost">Reserve a Table</a>
     </div>
   </div>
 </section>
 
-<div class="stats-strip">
-  <div class="strip-stat">
-    <span class="strip-stat-num">12+</span>
-    <span class="strip-stat-label">Years in Business</span>
+<!-- STRIP -->
+<div class="strip">
+  <div class="strip-item">
+    <span class="strip-num">4.9</span>
+    <div>
+      <div class="strip-label">Google Rating</div>
+      <div class="strip-sub">★★★★★ · 800+ Reviews</div>
+    </div>
   </div>
-  <div class="strip-stat">
-    <span class="strip-stat-num">4.9★</span>
-    <span class="strip-stat-label">Google Rating</span>
+  <div class="strip-item">
+    <span class="strip-num">12+</span>
+    <div>
+      <div class="strip-label">Years in Toronto</div>
+      <div class="strip-sub">Est. 2012 · Queen St East</div>
+    </div>
   </div>
-  <div class="strip-stat">
-    <span class="strip-stat-num">200+</span>
-    <span class="strip-stat-label">Menu Items</span>
+  <div class="strip-item">
+    <span class="strip-num">200+</span>
+    <div>
+      <div class="strip-label">Menu Items</div>
+      <div class="strip-sub">Fresh-prepared daily</div>
+    </div>
   </div>
-  <div class="strip-stat">
-    <span class="strip-stat-num">Daily</span>
-    <span class="strip-stat-label">Fresh Prep</span>
+  <div class="strip-item">
+    <span class="strip-num">100%</span>
+    <div>
+      <div class="strip-label">Halal Certified</div>
+      <div class="strip-sub">Dine in · Takeout · Catering</div>
+    </div>
   </div>
 </div>
 
+<!-- MENU -->
 <section class="menu" id="menu">
-  <div style="text-align:center; margin-bottom: 60px;">
-    <div class="section-label">What We Serve</div>
-    <h2 class="section-title">Our Signature Dishes</h2>
+  <div class="menu-header">
+    <div class="eyebrow reveal">Signature Dishes</div>
+    <h2 class="section-title reveal">Food That <em>Moves</em> You</h2>
   </div>
-  <div class="menu-grid">
+  <div class="menu-grid reveal">
     <div class="menu-card">
-      <img class="menu-emoji" src="https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=600&h=320&fit=crop&q=80" alt="Butter Chicken">
-      <div class="menu-name">Butter Chicken</div>
-      <div class="menu-desc">Tender chicken in a rich, creamy tomato sauce with aromatic spices. Our most beloved classic.</div>
-      <div class="menu-footer">
-        <div class="menu-price">$18.99</div>
-        <div class="menu-tag">Best Seller</div>
+      <img src="https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=600&h=800&fit=crop&q=80" alt="Butter Chicken" loading="lazy">
+      <div class="menu-card-overlay">
+        <div class="menu-card-tag">Best Seller</div>
+        <div class="menu-card-name">Butter Chicken</div>
+        <div class="menu-card-price">$18.99</div>
       </div>
     </div>
     <div class="menu-card">
-      <img class="menu-emoji" src="https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=600&h=320&fit=crop&q=80" alt="Lamb Rogan Josh">
-      <div class="menu-name">Lamb Rogan Josh</div>
-      <div class="menu-desc">Slow-cooked Kashmiri lamb with whole spices, yogurt, and deep caramelized onion gravy.</div>
-      <div class="menu-footer">
-        <div class="menu-price">$24.99</div>
-        <div class="menu-tag">Chef's Pick</div>
+      <img src="https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=600&h=800&fit=crop&q=80" alt="Lamb Rogan Josh" loading="lazy">
+      <div class="menu-card-overlay">
+        <div class="menu-card-tag">Chef's Pick</div>
+        <div class="menu-card-name">Lamb Rogan Josh</div>
+        <div class="menu-card-price">$24.99</div>
       </div>
     </div>
     <div class="menu-card">
-      <img class="menu-emoji" src="https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600&h=320&fit=crop&q=80" alt="Dal Makhani">
-      <div class="menu-name">Dal Makhani</div>
-      <div class="menu-desc">Black lentils simmered overnight with butter and cream. A true comfort dish from Punjab.</div>
-      <div class="menu-footer">
-        <div class="menu-price">$14.99</div>
-        <div class="menu-tag">Vegetarian</div>
+      <img src="https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=600&h=800&fit=crop&q=80" alt="Palak Paneer" loading="lazy">
+      <div class="menu-card-overlay">
+        <div class="menu-card-tag">Vegetarian</div>
+        <div class="menu-card-name">Palak Paneer</div>
+        <div class="menu-card-price">$16.99</div>
       </div>
     </div>
     <div class="menu-card">
-      <img class="menu-emoji" src="https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=600&h=320&fit=crop&q=80" alt="Mixed Grill Platter">
-      <div class="menu-name">Mixed Grill Platter</div>
-      <div class="menu-desc">Chicken tikka, seekh kebab, and tandoori prawns served with mint chutney and sliced onion.</div>
-      <div class="menu-footer">
-        <div class="menu-price">$34.99</div>
-        <div class="menu-tag">For Two</div>
+      <img src="https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=600&h=800&fit=crop&q=80" alt="Mixed Grill" loading="lazy">
+      <div class="menu-card-overlay">
+        <div class="menu-card-tag">For Two</div>
+        <div class="menu-card-name">Mixed Grill Platter</div>
+        <div class="menu-card-price">$34.99</div>
       </div>
     </div>
     <div class="menu-card">
-      <img class="menu-emoji" src="https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=600&h=320&fit=crop&q=80" alt="Palak Paneer">
-      <div class="menu-name">Palak Paneer</div>
-      <div class="menu-desc">Fresh cottage cheese cubes in a silky spiced spinach sauce. Light, nutritious, and full of flavour.</div>
-      <div class="menu-footer">
-        <div class="menu-price">$16.99</div>
-        <div class="menu-tag">Vegetarian</div>
+      <img src="https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600&h=800&fit=crop&q=80" alt="Dal Makhani" loading="lazy">
+      <div class="menu-card-overlay">
+        <div class="menu-card-tag">Vegetarian</div>
+        <div class="menu-card-name">Dal Makhani</div>
+        <div class="menu-card-price">$14.99</div>
       </div>
     </div>
     <div class="menu-card">
-      <img class="menu-emoji" src="https://images.unsplash.com/photo-1551024506-0bccd828d307?w=600&h=320&fit=crop&q=80" alt="Gulab Jamun">
-      <div class="menu-name">Gulab Jamun</div>
-      <div class="menu-desc">Soft milk solids dumplings soaked in rose-flavored sugar syrup. The perfect sweet finish.</div>
-      <div class="menu-footer">
-        <div class="menu-price">$7.99</div>
-        <div class="menu-tag">Dessert</div>
+      <img src="https://images.unsplash.com/photo-1551024506-0bccd828d307?w=600&h=800&fit=crop&q=80" alt="Gulab Jamun" loading="lazy">
+      <div class="menu-card-overlay">
+        <div class="menu-card-tag">Dessert</div>
+        <div class="menu-card-name">Gulab Jamun</div>
+        <div class="menu-card-price">$7.99</div>
       </div>
     </div>
   </div>
 </section>
 
-<section style="background: var(--warm); padding: 100px 60px;" id="about">
-  <div class="about">
-    <div class="about-visual">
-      <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&h=600&fit=crop&q=80" alt="Saffron Kitchen restaurant interior">
-    </div>
-    <div class="about-text">
-      <div class="section-label">Our Story</div>
-      <h2>A Family Recipe, Brought to Brampton</h2>
-      <p>Saffron Kitchen was founded in 2012 by Chef Arjun Sharma, who brought his family's treasured recipes from Amritsar to share with the GTA. Every dish on our menu is a tribute to that tradition.</p>
-      <p>We source our spices fresh from trusted suppliers and prepare everything from scratch daily. No shortcuts, no compromises — just honest, flavourful food made with love.</p>
-      <div class="about-detail">
-        <div class="about-detail-item">
-          <span class="about-detail-value">2012</span>
-          <span class="about-detail-label">Est. Brampton</span>
-        </div>
-        <div class="about-detail-item">
-          <span class="about-detail-value">4.9★</span>
-          <span class="about-detail-label">800+ Reviews</span>
-        </div>
-        <div class="about-detail-item">
-          <span class="about-detail-value">200+</span>
-          <span class="about-detail-label">Menu Items</span>
-        </div>
+<!-- QUOTE BAND -->
+<div class="quote-band">
+  <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1920&h=460&fit=crop&q=80" alt="Restaurant ambience" loading="lazy">
+  <div class="quote-band-overlay"></div>
+  <div class="quote-band-content">
+    <blockquote>"Cooking is not just about <em>ingredients</em> — it is about memory, love, and the stories we pass down."</blockquote>
+    <cite>— Chef Arjun Sharma, Founder</cite>
+  </div>
+</div>
+
+<!-- ABOUT -->
+<section class="about" id="about">
+  <div class="about-inner">
+    <div class="about-img-wrap reveal">
+      <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=1000&fit=crop&q=80" alt="Saffron Kitchen interior">
+      <div class="about-badge">
+        <span class="about-badge-n">2012</span>
+        <span class="about-badge-l">Est. Toronto</span>
       </div>
+    </div>
+    <div class="about-text reveal reveal-delay">
+      <div class="eyebrow">Our Story</div>
+      <h2>A Family Recipe,<br>Brought to <em>Toronto</em></h2>
+      <p>Saffron Kitchen was born from Chef Arjun Sharma's dream — to bring his family's treasured recipes from Amritsar to the people of Toronto. Every dish on our menu is a tribute to that tradition, unchanged for generations.</p>
+      <p>We source our spices fresh from trusted suppliers and prepare everything from scratch each morning. No shortcuts, no compromises — just honest, deeply flavourful food made with love.</p>
+      <p>Whether it's a quiet dinner, a birthday celebration, or catering for 200 guests, we bring the same dedication to every plate we serve.</p>
+      <div class="about-sig">Arjun Sharma</div>
     </div>
   </div>
 </section>
 
-<section class="testimonials">
-  <div class="section-label">What People Say</div>
-  <h2 class="section-title">Our Guests Love Us</h2>
-  <div class="testi-grid">
+<!-- TESTIMONIALS -->
+<section class="testimonials" id="reviews">
+  <div class="testi-header">
+    <div class="eyebrow reveal">Guest Reviews</div>
+    <h2 class="section-title reveal">What Our <em>Guests</em> Say</h2>
+  </div>
+  <div class="testi-grid reveal">
     <div class="testi-card">
       <div class="testi-stars">★★★★★</div>
-      <p class="testi-quote">"The butter chicken here is the best I've had outside of India. Authentic flavours, generous portions, and incredible service. We come every Friday night."</p>
+      <p class="testi-quote">"The butter chicken here is the best I've had outside of India. Authentic flavours, generous portions, and incredible service. We come every Friday night without fail."</p>
       <div class="testi-name">Priya M.</div>
-      <div class="testi-role">Brampton, ON</div>
+      <div class="testi-loc">Toronto, ON</div>
     </div>
     <div class="testi-card">
       <div class="testi-stars">★★★★★</div>
-      <p class="testi-quote">"Ordered catering for our office event — 80 people — and every single dish was outstanding. Professional, on time, and the food was absolutely delicious."</p>
+      <p class="testi-quote">"Ordered catering for our office event — 80 guests — and every single dish was outstanding. Professional, on time, and the food was absolutely exceptional."</p>
       <div class="testi-name">David K.</div>
-      <div class="testi-role">Mississauga, ON</div>
+      <div class="testi-loc">Mississauga, ON</div>
     </div>
     <div class="testi-card">
       <div class="testi-stars">★★★★★</div>
-      <p class="testi-quote">"As someone who grew up in Delhi, it's rare to find restaurant food that tastes like home. Saffron Kitchen does it every single time. Don't skip the dal makhani!"</p>
+      <p class="testi-quote">"As someone who grew up in Delhi, it's rare to find food that tastes like home. Saffron Kitchen does it every single time. Don't skip the dal makhani!"</p>
       <div class="testi-name">Rahul S.</div>
-      <div class="testi-role">Toronto, ON</div>
+      <div class="testi-loc">Brampton, ON</div>
     </div>
   </div>
 </section>
 
+<!-- CONTACT -->
 <section class="contact" id="contact">
-  <div class="section-label" style="color: rgba(255,255,255,0.5);">Find Us</div>
-  <h2>Visit Us Today</h2>
-  <p>Dine in, takeout, and catering available. Reservations recommended on weekends.</p>
-  <div class="contact-details">
-    <div class="contact-detail">
-      <span class="contact-detail-label">Address</span>
-      <span class="contact-detail-value">247 Queen St E, Brampton, ON</span>
+  <div class="contact-inner">
+    <div class="contact-left reveal">
+      <div class="eyebrow">Visit Us</div>
+      <h2>Come <em>Dine</em><br>With Us</h2>
+      <p>Dine in, takeout, and full catering available. Walk-ins welcome — reservations recommended Friday and Saturday evenings.</p>
+      <div class="contact-rows">
+        <div class="contact-row"><span class="contact-icon">📍</span><span>247 Queen St East, Toronto, ON M5A 1S5</span></div>
+        <div class="contact-row"><span class="contact-icon">🕐</span><span>Monday – Sunday: 11:00 am – 10:30 pm</span></div>
+        <div class="contact-row"><span class="contact-icon">📞</span><span>(416) 555-0172</span></div>
+        <div class="contact-row"><span class="contact-icon">✉</span><span>hello@saffronkitchen.ca</span></div>
+      </div>
+      <a href="https://lynq.build/#contact" class="btn-primary" style="margin-top:36px;display:inline-block">Reserve a Table</a>
+      <p style="margin-top:22px;font-size:0.7rem;color:rgba(237,227,214,0.28);letter-spacing:1px;text-transform:uppercase">Concept site by <a href="https://lynq.build" style="color:inherit;text-decoration:underline">LYNQ</a></p>
     </div>
-    <div class="contact-detail">
-      <span class="contact-detail-label">Hours</span>
-      <span class="contact-detail-value">Mon–Sun: 11am – 10pm</span>
+    <div class="contact-img reveal reveal-delay">
+      <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&h=600&fit=crop&q=80" alt="Saffron Kitchen dining room">
     </div>
   </div>
-  <p style="margin-top:24px;font-size:0.8rem;opacity:0.45;letter-spacing:1px;text-transform:uppercase;">This is a concept site built by <a href="https://lynq.build" style="color:inherit;text-decoration:underline;">LYNQ</a></p>
-  <a href="https://lynq.build#contact" class="btn-primary" style="background: var(--terracotta);margin-top:16px;">Get a Site Like This</a>
 </section>
 
 <footer>
-  <div class="footer-logo">Saffron Kitchen</div>
-  <div>© 2026 Saffron Kitchen. All rights reserved.</div>
-  <div class="watermark">Website by <a href="https://lynq.build">LYNQ</a></div>
+  <div class="footer-logo">Saffron <em>Kitchen</em></div>
+  <p>© 2026 Saffron Kitchen · Toronto, ON</p>
+  <p>Website by <a href="https://lynq.build">LYNQ</a></p>
 </footer>
 
+<script>
+  // Nav scroll
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => nav.classList.toggle('scrolled', window.scrollY > 50), { passive: true });
+
+  // Hero zoom-in on load
+  const bg = document.getElementById('heroBg');
+  if (bg.complete) bg.classList.add('loaded');
+  else bg.addEventListener('load', () => bg.classList.add('loaded'));
+
+  // Scroll reveal
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+  }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
 </body>
 </html>
