@@ -7,6 +7,7 @@
   "functions": {
     "api/run-pipeline.js": { "maxDuration": 90 },
     "api/build.js":        { "maxDuration": 60 },
-    "api/chat.js":         { "maxDuration": 30 }
+    "api/chat.js":         { "maxDuration": 30 },
+    "api/insurance-script.js": { "maxDuration": 30 }
   }
 }

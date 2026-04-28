@@ -23,6 +23,55 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
 
+/* ── PAGE TABS ── */
+.page-tabs { display: flex; gap: 4px; padding: 16px 40px 0; border-bottom: 1px solid var(--border); background: var(--bg-card); }
+.page-tab { padding: 10px 20px; background: none; border: none; border-bottom: 2px solid transparent; font-family: inherit; font-size: 0.84rem; font-weight: 500; color: var(--text-dim); cursor: pointer; margin-bottom: -1px; transition: color 0.2s, border-color 0.2s; }
+.page-tab:hover { color: var(--text); }
+.page-tab.active { color: var(--white); border-bottom-color: var(--white); }
+.page-tab.ins-tab.active { color: #60a5fa; border-bottom-color: #60a5fa; }
+
+/* ── INSURANCE ── */
+#ins-section { display: none; padding: 40px; max-width: 1280px; margin: 0 auto; }
+.ins-form-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+.ins-form-card h3 { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-dim); margin-bottom: 18px; }
+.ins-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.ins-input { background: var(--bg); border: 1px solid var(--border-light); border-radius: 8px; padding: 11px 14px; color: var(--white); font-family: inherit; font-size: 0.88rem; outline: none; width: 100%; transition: border-color 0.2s; }
+.ins-input:focus { border-color: #555; }
+.ins-select { background: var(--bg); border: 1px solid var(--border-light); border-radius: 8px; padding: 11px 14px; color: var(--white); font-family: inherit; font-size: 0.88rem; outline: none; width: 100%; cursor: pointer; }
+.ins-contacts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.ins-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; transition: border-color 0.2s; }
+.ins-card:hover { border-color: var(--border-light); }
+.ins-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+.ins-name { font-size: 0.95rem; font-weight: 600; color: var(--white); }
+.ins-rel { font-size: 0.7rem; font-weight: 600; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+.rel-family     { background: rgba(168,85,247,0.15); color: #c084fc; }
+.rel-friend     { background: rgba(96,165,250,0.15); color: #60a5fa; }
+.rel-colleague  { background: rgba(34,197,94,0.15);  color: #4ade80; }
+.rel-acquaintance { background: rgba(251,191,36,0.15); color: #fbbf24; }
+.ins-info-row { display: flex; align-items: center; gap: 7px; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 5px; }
+.ins-status-wrap { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+.ins-status-select { flex: 1; background: var(--bg); border: 1px solid var(--border-light); border-radius: 6px; padding: 6px 10px; color: var(--white); font-family: inherit; font-size: 0.78rem; outline: none; cursor: pointer; }
+.ins-btn-script { font-size: 0.75rem; font-weight: 600; padding: 6px 12px; border-radius: 6px; border: none; cursor: pointer; background: #60a5fa; color: #000; font-family: inherit; transition: opacity 0.15s; white-space: nowrap; }
+.ins-btn-script:hover { opacity: 0.85; }
+.ins-btn-del { font-size: 0.75rem; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-light); background: none; color: var(--text-dim); cursor: pointer; font-family: inherit; transition: color 0.15s, border-color 0.15s; }
+.ins-btn-del:hover { color: var(--red); border-color: var(--red); }
+.ins-notes { font-size: 0.78rem; color: var(--text-dim); margin-top: 6px; font-style: italic; line-height: 1.4; }
+
+/* Status dot colours */
+.status-new        { color: var(--text-dim); }
+.status-called     { color: var(--blue); }
+.status-meeting    { color: var(--yellow); }
+.status-presented  { color: #c084fc; }
+.status-sold       { color: var(--green); }
+.status-notNow     { color: #555; }
+
+/* Script modal */
+#ins-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:200; align-items:center; justify-content:center; padding:16px; }
+#ins-modal-inner { background:#111; border:1px solid #2a2a2a; border-radius:14px; width:540px; max-width:100%; max-height:90vh; overflow-y:auto; }
+.ins-modal-tabs { display:flex; gap:4px; padding:20px 24px 0; border-bottom:1px solid #1a1a1a; }
+.ins-modal-tab { padding:8px 14px; background:none; border:none; border-bottom:2px solid transparent; color:#555; font-family:inherit; font-size:0.82rem; font-weight:500; cursor:pointer; margin-bottom:-1px; transition:color 0.2s, border-color 0.2s; }
+.ins-modal-tab.active { color:#60a5fa; border-bottom-color:#60a5fa; }
+
 /* ── GATE ── */
 #gate { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 100; }
 #gate-box { width: 340px; text-align: center; }
@@ -225,9 +274,113 @@ h1 { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.5px; margin-bottom:
 <!-- ── DASHBOARD ── -->
 <div id="dashboard">
   <header>
-    <div class="logo">LYNQ <span style="color:var(--text-dim);font-weight:400">/ Pipeline</span></div>
+    <div class="logo">LYNQ <span style="color:var(--text-dim);font-weight:400">/ Admin</span></div>
     <div class="badge"><span class="dot" id="dot"></span><span id="status-txt">Idle</span></div>
   </header>
+
+  <!-- Page tabs -->
+  <div class="page-tabs">
+    <button class="page-tab active" id="tab-web-btn"     onclick="switchPage('web')">🌐 Web Design Leads</button>
+    <button class="page-tab ins-tab" id="tab-ins-btn"   onclick="switchPage('ins')">🛡 Insurance Leads</button>
+  </div>
+
+  <!-- ── INSURANCE SECTION ── -->
+  <div id="ins-section">
+    <h1 style="margin-bottom:4px">Insurance — Natural Market</h1>
+    <p class="subtitle">Track your personal network, generate call scripts, and log every touchpoint.</p>
+
+    <!-- Insurance stats -->
+    <div class="stats-row">
+      <div class="stat-card"><div class="label">Contacts</div><div class="value" id="ins-s-total">0</div><div class="sub">In your list</div></div>
+      <div class="stat-card"><div class="label">Called</div><div class="value" id="ins-s-called">0</div><div class="sub">Reached out</div></div>
+      <div class="stat-card"><div class="label">Meetings</div><div class="value" id="ins-s-meetings">0</div><div class="sub">Booked</div></div>
+      <div class="stat-card"><div class="label">Policies Sold</div><div class="value" id="ins-s-sold">0</div><div class="sub">🎉 Closed</div></div>
+    </div>
+
+    <!-- Add contact -->
+    <div class="ins-form-card">
+      <h3>Add Contact — Natural Market</h3>
+      <div class="ins-form-grid">
+        <input class="ins-input" id="ins-name"     placeholder="Full name *">
+        <input class="ins-input" id="ins-phone"    placeholder="Phone number">
+        <input class="ins-input" id="ins-email"    type="email" placeholder="Email address">
+        <input class="ins-input" id="ins-age"      placeholder="Approx. age (optional)">
+        <select class="ins-select" id="ins-rel">
+          <option value="family">👨‍👩‍👧 Family</option>
+          <option value="friend" selected>👥 Friend</option>
+          <option value="colleague">💼 Colleague</option>
+          <option value="acquaintance">🤝 Acquaintance</option>
+        </select>
+        <input class="ins-input" id="ins-notes" placeholder="Notes (e.g. has kids, self-employed…)">
+      </div>
+      <div style="display:flex;align-items:center;gap:14px">
+        <button class="btn-run" onclick="insAddContact()" style="padding:12px 28px">Add Contact</button>
+        <span id="ins-add-status" style="font-size:0.83rem;color:var(--text-dim)"></span>
+      </div>
+    </div>
+
+    <!-- Contact cards -->
+    <div id="ins-cards-section" style="display:none;margin-bottom:24px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <h3 style="font-size:0.8rem;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-dim)" id="ins-cards-heading">Contacts</h3>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select class="ins-select" id="ins-filter" onchange="insRender()" style="width:auto;padding:6px 10px;font-size:0.78rem">
+            <option value="all">All statuses</option>
+            <option value="new">New</option>
+            <option value="called">Called</option>
+            <option value="meeting">Meeting Set</option>
+            <option value="presented">Presented</option>
+            <option value="sold">Policy Sold</option>
+            <option value="notNow">Not Right Now</option>
+          </select>
+        </div>
+      </div>
+      <div class="ins-contacts-grid" id="ins-cards-grid"></div>
+    </div>
+  </div>
+
+  <!-- ── INSURANCE SCRIPT MODAL ── -->
+  <div id="ins-modal">
+    <div id="ins-modal-inner">
+      <div style="padding:22px 24px 0">
+        <div style="font-size:1rem;font-weight:600;color:#fff;margin-bottom:2px" id="ins-modal-name"></div>
+        <div style="font-size:0.78rem;color:#666;margin-bottom:14px" id="ins-modal-detail"></div>
+        <div class="ins-modal-tabs">
+          <button class="ins-modal-tab active" onclick="insModalTab('call')">📞 Call Script</button>
+          <button class="ins-modal-tab"        onclick="insModalTab('sms')">💬 SMS</button>
+          <button class="ins-modal-tab"        onclick="insModalTab('followup')">🔁 Follow-Up</button>
+        </div>
+      </div>
+      <!-- Generate step -->
+      <div id="ins-modal-gen" style="padding:20px 24px">
+        <div style="font-size:0.82rem;color:#555;margin-bottom:14px">Claude will write a natural, non-pushy call script, SMS, and follow-up tailored to your relationship with this person.</div>
+        <div style="display:flex;gap:10px">
+          <button onclick="insCloseModal()" style="flex:1;background:transparent;border:1px solid #2a2a2a;border-radius:8px;padding:11px;color:#666;font-family:inherit;font-size:0.88rem;cursor:pointer">Cancel</button>
+          <button id="ins-gen-btn" onclick="insGenerate()" style="flex:2;background:#60a5fa;border:none;border-radius:8px;padding:11px;color:#000;font-family:inherit;font-size:0.88rem;font-weight:600;cursor:pointer">Generate Scripts</button>
+        </div>
+        <div id="ins-gen-status" style="font-size:0.8rem;margin-top:10px;min-height:18px;text-align:center;color:#777"></div>
+      </div>
+      <!-- Results -->
+      <div id="ins-modal-results" style="display:none;padding:0 24px 24px">
+        <div id="ins-panel-call" style="padding-top:16px">
+          <div style="font-size:0.75rem;color:#555;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">30-Second Call Opener</div>
+          <textarea id="ins-res-call" style="width:100%;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:10px 12px;color:#ccc;font-family:inherit;font-size:0.83rem;line-height:1.7;resize:vertical;outline:none;min-height:180px"></textarea>
+          <button onclick="insCopy('ins-res-call')" style="width:100%;margin-top:10px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:7px;padding:9px;color:#ccc;font-family:inherit;font-size:0.82rem;cursor:pointer">Copy Script</button>
+        </div>
+        <div id="ins-panel-sms" style="display:none;padding-top:16px">
+          <div style="font-size:0.75rem;color:#555;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Text Message</div>
+          <textarea id="ins-res-sms" style="width:100%;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:10px 12px;color:#ccc;font-family:inherit;font-size:0.88rem;line-height:1.6;resize:vertical;outline:none;min-height:100px"></textarea>
+          <button onclick="insCopy('ins-res-sms')" style="width:100%;margin-top:10px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:7px;padding:10px;color:#ccc;font-family:inherit;font-size:0.85rem;cursor:pointer">Copy SMS</button>
+        </div>
+        <div id="ins-panel-followup" style="display:none;padding-top:16px">
+          <div style="font-size:0.75rem;color:#555;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Follow-Up Script (3–5 days later)</div>
+          <textarea id="ins-res-followup" style="width:100%;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:10px 12px;color:#ccc;font-family:inherit;font-size:0.83rem;line-height:1.7;resize:vertical;outline:none;min-height:160px"></textarea>
+          <button onclick="insCopy('ins-res-followup')" style="width:100%;margin-top:10px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:7px;padding:9px;color:#ccc;font-family:inherit;font-size:0.82rem;cursor:pointer">Copy Follow-Up</button>
+        </div>
+        <button onclick="insCloseModal()" style="width:100%;margin-top:14px;background:transparent;border:1px solid #1a1a1a;border-radius:7px;padding:9px;color:#444;font-family:inherit;font-size:0.82rem;cursor:pointer">Close</button>
+      </div>
+    </div>
+  </div>
 
   <div class="main">
     <h1>Lead Engine</h1>
@@ -836,6 +989,209 @@ async function sendToAgent() {
   btn.disabled = false;
   btn.textContent = 'Start Agent';
 }
+
+// ═══════════════════════════════════════════════
+//  PAGE TAB SWITCHING
+// ═══════════════════════════════════════════════
+function switchPage(tab) {
+  const isIns = tab === 'ins';
+  document.getElementById('ins-section').style.display  = isIns ? 'block' : 'none';
+  document.querySelector('.main').style.display          = isIns ? 'none'  : 'block';
+  document.getElementById('tab-web-btn').classList.toggle('active', !isIns);
+  document.getElementById('tab-ins-btn').classList.toggle('active',  isIns);
+  if (isIns) insRender();
+}
+
+// ═══════════════════════════════════════════════
+//  INSURANCE — STORAGE & RENDER
+// ═══════════════════════════════════════════════
+const INS_KEY = 'lynq_ins_contacts';
+
+function insLoad()   { try { return JSON.parse(localStorage.getItem(INS_KEY)) || []; } catch { return []; } }
+function insSave(arr){ localStorage.setItem(INS_KEY, JSON.stringify(arr)); }
+
+const STATUS_LABELS = {
+  new:        { label: 'New',            cls: 'status-new' },
+  called:     { label: 'Called',         cls: 'status-called' },
+  meeting:    { label: 'Meeting Set',    cls: 'status-meeting' },
+  presented:  { label: 'Presented',      cls: 'status-presented' },
+  sold:       { label: 'Policy Sold 🎉', cls: 'status-sold' },
+  notNow:     { label: 'Not Right Now',  cls: 'status-notNow' },
+};
+
+const REL_LABELS = {
+  family:       'rel-family',
+  friend:       'rel-friend',
+  colleague:    'rel-colleague',
+  acquaintance: 'rel-acquaintance',
+};
+
+function insStats(contacts) {
+  document.getElementById('ins-s-total').textContent    = contacts.length;
+  document.getElementById('ins-s-called').textContent   = contacts.filter(c => ['called','meeting','presented','sold'].includes(c.status)).length;
+  document.getElementById('ins-s-meetings').textContent = contacts.filter(c => ['meeting','presented','sold'].includes(c.status)).length;
+  document.getElementById('ins-s-sold').textContent     = contacts.filter(c => c.status === 'sold').length;
+}
+
+function insRender() {
+  const contacts = insLoad();
+  const filter   = document.getElementById('ins-filter')?.value || 'all';
+  const filtered = filter === 'all' ? contacts : contacts.filter(c => c.status === filter);
+  insStats(contacts);
+
+  const section = document.getElementById('ins-cards-section');
+  const grid    = document.getElementById('ins-cards-grid');
+  const heading = document.getElementById('ins-cards-heading');
+
+  if (!contacts.length) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  heading.textContent   = `Contacts (${filtered.length}${filter !== 'all' ? ' filtered' : ''})`;
+
+  grid.innerHTML = filtered.map(c => {
+    const rel   = c.relationship || 'friend';
+    const relCls= REL_LABELS[rel] || 'rel-friend';
+    const relLbl= rel.charAt(0).toUpperCase() + rel.slice(1);
+    const st    = STATUS_LABELS[c.status] || STATUS_LABELS.new;
+    return `
+    <div class="ins-card" id="ins-card-${c.id}">
+      <div class="ins-card-top">
+        <div class="ins-name">${c.name}</div>
+        <span class="ins-rel ${relCls}">${relLbl}</span>
+      </div>
+      ${c.phone ? `<div class="ins-info-row">📞 ${c.phone}</div>` : ''}
+      ${c.email ? `<div class="ins-info-row">✉ ${c.email}</div>` : ''}
+      ${c.age   ? `<div class="ins-info-row">🎂 ~${c.age} yrs old</div>` : ''}
+      ${c.notes ? `<div class="ins-notes">${c.notes}</div>` : ''}
+      <div class="ins-status-wrap">
+        <select class="ins-status-select" onchange="insUpdateStatus('${c.id}', this.value)">
+          ${Object.entries(STATUS_LABELS).map(([k,v]) => `<option value="${k}" ${c.status===k?'selected':''}>${v.label}</option>`).join('')}
+        </select>
+        <button class="ins-btn-script" onclick="insOpenModal('${c.id}')">✦ Scripts</button>
+        <button class="ins-btn-del" onclick="insDelete('${c.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function insAddContact() {
+  const name = document.getElementById('ins-name').value.trim();
+  if (!name) {
+    document.getElementById('ins-add-status').textContent = 'Name is required.';
+    document.getElementById('ins-add-status').style.color = 'var(--red)';
+    return;
+  }
+  const c = {
+    id:           Date.now().toString(),
+    name,
+    phone:        document.getElementById('ins-phone').value.trim(),
+    email:        document.getElementById('ins-email').value.trim(),
+    age:          document.getElementById('ins-age').value.trim(),
+    relationship: document.getElementById('ins-rel').value,
+    notes:        document.getElementById('ins-notes').value.trim(),
+    status:       'new',
+    addedAt:      Date.now(),
+  };
+  const contacts = insLoad();
+  contacts.unshift(c);
+  insSave(contacts);
+
+  ['ins-name','ins-phone','ins-email','ins-age','ins-notes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('ins-rel').value = 'friend';
+  const st = document.getElementById('ins-add-status');
+  st.style.color = 'var(--green)';
+  st.textContent = `✓ ${name} added.`;
+  setTimeout(() => st.textContent = '', 3000);
+  insRender();
+}
+
+function insUpdateStatus(id, status) {
+  const contacts = insLoad();
+  const c = contacts.find(x => x.id === id);
+  if (c) { c.status = status; insSave(contacts); insStats(contacts); }
+}
+
+function insDelete(id) {
+  const contacts = insLoad().filter(c => c.id !== id);
+  insSave(contacts);
+  insRender();
+}
+
+// ═══════════════════════════════════════════════
+//  INSURANCE SCRIPT MODAL
+// ═══════════════════════════════════════════════
+let _insContact = null;
+
+function insOpenModal(id) {
+  _insContact = insLoad().find(c => c.id === id);
+  if (!_insContact) return;
+  document.getElementById('ins-modal-name').textContent   = _insContact.name;
+  document.getElementById('ins-modal-detail').textContent = `${_insContact.relationship} · ${_insContact.phone || _insContact.email || 'No contact info'}`;
+  document.getElementById('ins-modal-gen').style.display     = 'block';
+  document.getElementById('ins-modal-results').style.display = 'none';
+  document.getElementById('ins-gen-btn').disabled   = false;
+  document.getElementById('ins-gen-btn').textContent = 'Generate Scripts';
+  document.getElementById('ins-gen-status').textContent = '';
+  insModalTab('call');
+  document.getElementById('ins-modal').style.display = 'flex';
+}
+
+function insCloseModal() {
+  document.getElementById('ins-modal').style.display = 'none';
+  _insContact = null;
+}
+
+function insModalTab(tab) {
+  ['call','sms','followup'].forEach(t => {
+    const btn = document.querySelector(`.ins-modal-tab[onclick="insModalTab('${t}')"]`);
+    const pnl = document.getElementById(`ins-panel-${t}`);
+    if (btn) btn.classList.toggle('active', t === tab);
+    if (pnl) pnl.style.display = t === tab ? 'block' : 'none';
+  });
+}
+
+async function insGenerate() {
+  const btn = document.getElementById('ins-gen-btn');
+  const st  = document.getElementById('ins-gen-status');
+  btn.disabled = true;
+  btn.textContent = 'Claude is writing…';
+  st.textContent  = 'Generating call script, SMS, and follow-up…';
+  st.style.color  = '#777';
+
+  const c = _insContact;
+  try {
+    const res = await fetch('/api/insurance-script', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contact: c }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+
+    document.getElementById('ins-res-call').value    = data.callScript    || '';
+    document.getElementById('ins-res-sms').value     = data.smsScript     || '';
+    document.getElementById('ins-res-followup').value= data.followUpScript|| '';
+
+    document.getElementById('ins-modal-gen').style.display     = 'none';
+    document.getElementById('ins-modal-results').style.display = 'block';
+    insModalTab('call');
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'Generate Scripts';
+    st.textContent  = err.message;
+    st.style.color  = 'var(--red)';
+  }
+}
+
+function insCopy(id) {
+  const el = document.getElementById(id);
+  navigator.clipboard.writeText(el.value);
+  const btn = el.nextElementSibling;
+  if (btn) { const orig = btn.textContent; btn.textContent = '✓ Copied!'; setTimeout(() => btn.textContent = orig, 1500); }
+}
+
+document.getElementById('ins-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('ins-modal')) insCloseModal();
+});
 </script>
 </body>
 </html>
