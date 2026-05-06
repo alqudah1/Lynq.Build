@@ -1,0 +1,1865 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SMYRNA by Cem — Tapas, Paella &amp; Cocktails · Barceloneta</title>
+    <meta
+      name="description"
+      content="Turkish-Mediterranean cuisine on the Barceloneta waterfront. Fresh paellas, Turkish mezze, creative tapas, and sunset cocktails — family-run by Cem."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400;1,9..144,500&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --sand: #ece2cd;
+        --sand-2: #dfd3b5;
+        --cream: #f7ede0;
+        --teal: #1a4a56;
+        --teal-deep: #0e2f38;
+        --teal-sea: #2d7684;
+        --terracotta: #c4552b;
+        --gold: #c8a24b;
+        --gold-bright: #e3c276;
+        --ink: #1a1814;
+        --char: #272420;
+        --stone: #6d6455;
+        --line: rgba(26, 24, 20, 0.12);
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        font-family: "Plus Jakarta Sans", sans-serif;
+        background: var(--sand);
+        color: var(--ink);
+        line-height: 1.6;
+        overflow-x: hidden;
+      }
+      .container {
+        max-width: 1340px;
+        margin: 0 auto;
+        padding: 0 36px;
+      }
+
+      /* ===== TOP STRIP ===== */
+      .top-bar {
+        background: var(--teal-deep);
+        color: var(--sand);
+        padding: 11px 0;
+        font-size: 12px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        text-align: center;
+        font-weight: 500;
+      }
+      .top-bar .sep {
+        display: inline-block;
+        color: var(--gold);
+        margin: 0 18px;
+      }
+
+      /* ===== ANIMATED HERO ===== */
+      .animated-hero {
+        position: relative;
+        min-height: 100vh;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .hero-bg {
+        position: absolute;
+        inset: 0;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        z-index: 0;
+      }
+      .hero-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          135deg,
+          rgba(10, 30, 35, 0.72) 0%,
+          rgba(14, 47, 56, 0.55) 100%
+        );
+      }
+
+      .hero-inner-header {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 84px;
+        padding: 0 48px;
+        animation: heroHeaderIn 0.8s ease-out forwards;
+      }
+      .h-logo {
+        font-family: "Fraunces", serif;
+        font-size: 32px;
+        letter-spacing: 0.12em;
+        color: #fff;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        font-weight: 500;
+      }
+      .h-logo-icon {
+        width: 36px;
+        height: 36px;
+        border: 1.5px solid rgba(200, 162, 75, 0.55);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .h-logo-icon::before {
+        content: "";
+        width: 14px;
+        height: 14px;
+        background: var(--gold);
+        border-radius: 50%;
+      }
+      .h-logo .by {
+        font-family: "Fraunces", serif;
+        font-style: italic;
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.55);
+        display: block;
+        letter-spacing: 0.02em;
+        margin-top: -2px;
+        font-weight: 400;
+      }
+      .hero-inner-header .h-nav {
+        display: flex;
+        gap: 32px;
+        list-style: none;
+      }
+      .hero-inner-header .h-nav a {
+        color: rgba(255, 255, 255, 0.78);
+        text-decoration: none;
+        font-size: 12px;
+        font-weight: 500;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        transition: color 0.2s;
+      }
+      .hero-inner-header .h-nav a:hover {
+        color: #fff;
+      }
+
+      .hero-content-wrap {
+        position: relative;
+        z-index: 10;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 120px 48px 80px;
+        max-width: 980px;
+        color: #fff;
+      }
+
+      .ah-eyebrow {
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: var(--gold);
+        margin-bottom: 28px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        opacity: 0;
+        animation: heroItemIn 0.6s ease-out 0.1s forwards;
+      }
+      .ah-eyebrow::before {
+        content: "";
+        width: 30px;
+        height: 1px;
+        background: var(--gold);
+      }
+
+      .ah-title {
+        font-family: "Fraunces", serif;
+        font-size: clamp(52px, 8vw, 112px);
+        font-weight: 500;
+        line-height: 0.92;
+        letter-spacing: -0.03em;
+        color: #fff;
+        opacity: 0;
+        animation: heroItemIn 0.6s ease-out 0.22s forwards;
+      }
+      .ah-title em {
+        font-style: italic;
+        color: var(--gold);
+        font-weight: 400;
+      }
+      .ah-title .sub {
+        display: block;
+        font-size: 0.42em;
+        font-style: italic;
+        color: rgba(255, 255, 255, 0.48);
+        margin-top: 14px;
+        letter-spacing: 0.01em;
+        font-weight: 400;
+      }
+
+      .ah-desc {
+        font-family: "Fraunces", serif;
+        font-size: 19px;
+        line-height: 1.75;
+        color: rgba(255, 255, 255, 0.7);
+        max-width: 560px;
+        margin-top: 36px;
+        opacity: 0;
+        animation: heroItemIn 0.6s ease-out 0.38s forwards;
+      }
+
+      .ah-actions {
+        display: flex;
+        gap: 16px;
+        margin-top: 48px;
+        flex-wrap: wrap;
+        opacity: 0;
+        animation: heroItemIn 0.6s ease-out 0.54s forwards;
+      }
+
+      .hero-glass-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 14px 34px;
+        border-radius: 9999px;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        color: #fff;
+        font-family: "Plus Jakarta Sans", sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        text-decoration: none;
+        transition: background 0.2s, border-color 0.2s;
+        white-space: nowrap;
+        cursor: pointer;
+      }
+      .hero-glass-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.38);
+        color: #fff;
+      }
+
+      /* ===== SCROLL NAV ===== */
+      .scroll-nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        background: rgba(236, 226, 205, 0.96);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border-bottom: 1px solid var(--line);
+        padding: 16px 0;
+        transform: translateY(-110%);
+        transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .scroll-nav.visible {
+        transform: translateY(0);
+      }
+      .sn-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .sn-logo {
+        font-family: "Fraunces", serif;
+        font-size: 26px;
+        letter-spacing: 0.12em;
+        color: var(--teal-deep);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 500;
+      }
+      .sn-logo-icon {
+        width: 30px;
+        height: 30px;
+        border: 1.5px solid var(--gold);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .sn-logo-icon::before {
+        content: "";
+        width: 12px;
+        height: 12px;
+        background: var(--gold);
+        border-radius: 50%;
+      }
+      .sn-logo .by {
+        font-family: "Fraunces", serif;
+        font-style: italic;
+        font-size: 13px;
+        color: var(--terracotta);
+        display: block;
+        letter-spacing: 0.02em;
+        margin-top: -2px;
+        font-weight: 400;
+      }
+      .sn-links {
+        display: flex;
+        gap: 32px;
+        list-style: none;
+      }
+      .sn-links a {
+        color: var(--char);
+        text-decoration: none;
+        font-size: 12px;
+        font-weight: 500;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        transition: color 0.2s;
+      }
+      .sn-links a:hover {
+        color: var(--terracotta);
+      }
+
+      /* Liquid glass (scroll nav CTA) */
+      .btn-liquid {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 26px;
+        border-radius: 9999px;
+        font-family: "Plus Jakarta Sans", sans-serif;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        text-decoration: none;
+        cursor: pointer;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: var(--teal-deep);
+        white-space: nowrap;
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      .btn-liquid:hover {
+        transform: scale(1.06);
+      }
+      .btn-liquid:active {
+        transform: scale(0.96);
+      }
+      .btn-liquid-glass {
+        position: absolute;
+        inset: 0;
+        border-radius: 9999px;
+        overflow: hidden;
+        backdrop-filter: blur(12px) url("#liquid-glass-filter");
+        -webkit-backdrop-filter: blur(12px);
+        pointer-events: none;
+        z-index: -1;
+      }
+      .btn-liquid-overlay {
+        position: absolute;
+        inset: 0;
+        border-radius: 9999px;
+        background: rgba(255, 255, 255, 0.18);
+        border: 1px solid rgba(255, 255, 255, 0.55);
+        box-shadow: 0 0 6px rgba(0, 0, 0, 0.03), 0 2px 6px rgba(0, 0, 0, 0.08),
+          inset 3px 3px 0.5px -3px rgba(0, 0, 0, 0.9),
+          inset -3px -3px 0.5px -3px rgba(0, 0, 0, 0.85),
+          inset 1px 1px 1px -0.5px rgba(0, 0, 0, 0.6),
+          inset -1px -1px 1px -0.5px rgba(0, 0, 0, 0.6),
+          inset 0 0 6px 6px rgba(0, 0, 0, 0.12),
+          inset 0 0 2px 2px rgba(0, 0, 0, 0.06),
+          0 0 12px rgba(255, 255, 255, 0.15);
+        pointer-events: none;
+        z-index: 0;
+      }
+      .btn-liquid-text {
+        position: relative;
+        z-index: 2;
+        pointer-events: none;
+      }
+
+      /* ===== KEYFRAMES ===== */
+      @keyframes heroHeaderIn {
+        from {
+          transform: translateY(-80px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+      @keyframes heroItemIn {
+        from {
+          transform: translateY(22px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      /* ===== TICKER ===== */
+      .ticker {
+        background: var(--teal-deep);
+        color: var(--cream);
+        padding: 24px 0;
+        overflow: hidden;
+        border-top: 3px solid var(--gold);
+        border-bottom: 3px solid var(--gold);
+      }
+      .ticker-inner {
+        display: flex;
+        gap: 80px;
+        animation: slide 40s linear infinite;
+        font-family: "Fraunces", serif;
+        font-style: italic;
+        font-size: 28px;
+        letter-spacing: 0.06em;
+        white-space: nowrap;
+      }
+      .ticker-inner span {
+        display: inline-flex;
+        align-items: center;
+        gap: 80px;
+      }
+      .ticker-inner span::after {
+        content: "⎔";
+        color: var(--gold);
+        font-size: 15px;
+        font-style: normal;
+      }
+      @keyframes slide {
+        from {
+          transform: translateX(0);
+        }
+        to {
+          transform: translateX(-50%);
+        }
+      }
+
+      /* ===== SECTION COMMON ===== */
+      .section-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 11px;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: var(--terracotta);
+        font-weight: 600;
+        margin-bottom: 20px;
+      }
+      .section-eyebrow::before {
+        content: "";
+        width: 30px;
+        height: 1px;
+        background: var(--gold);
+      }
+      h2.section-title {
+        font-family: "Fraunces", serif;
+        font-size: clamp(44px, 6vw, 80px);
+        line-height: 1;
+        font-weight: 500;
+        color: var(--teal-deep);
+        letter-spacing: -0.025em;
+        margin-bottom: 36px;
+      }
+      h2.section-title em {
+        font-style: italic;
+        color: var(--terracotta);
+        font-weight: 400;
+      }
+
+      /* ===== STORY ===== */
+      .story {
+        padding: 140px 0;
+      }
+      .story-grid {
+        display: grid;
+        grid-template-columns: 1fr 1.15fr;
+        gap: 100px;
+        align-items: center;
+      }
+      .story-img-wrap {
+        position: relative;
+        aspect-ratio: 4/5;
+        border-radius: 32px;
+        overflow: hidden;
+        box-shadow: 0 40px 100px rgba(14, 47, 56, 0.22);
+      }
+      .story-img-wrap img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.9s ease;
+      }
+      .story-img-wrap:hover img {
+        transform: scale(1.04);
+      }
+      .story-badge {
+        position: absolute;
+        bottom: -20px;
+        left: -20px;
+        background: var(--teal-deep);
+        color: var(--cream);
+        padding: 28px 32px;
+        border-radius: 16px;
+        z-index: 2;
+        box-shadow: 0 20px 40px rgba(14, 47, 56, 0.3);
+      }
+      .story-badge .t1 {
+        font-family: "Fraunces", serif;
+        font-style: italic;
+        color: var(--gold);
+        font-size: 13px;
+        margin-bottom: 5px;
+      }
+      .story-badge .t2 {
+        font-family: "Fraunces", serif;
+        font-size: 22px;
+        line-height: 1.2;
+        font-weight: 500;
+      }
+      .story-text {
+        font-family: "Fraunces", serif;
+        font-size: 18px;
+        line-height: 1.85;
+        color: var(--char);
+      }
+      .story-text p {
+        margin-bottom: 18px;
+        max-width: 560px;
+      }
+      .story-text p:first-of-type::first-letter {
+        font-family: "Fraunces", serif;
+        font-size: 88px;
+        font-weight: 500;
+        float: left;
+        line-height: 0.85;
+        padding: 6px 14px 0 0;
+        color: var(--teal-deep);
+        font-style: italic;
+      }
+      .bigq {
+        font-family: "Fraunces", serif;
+        font-style: italic;
+        font-size: 21px;
+        color: var(--teal-deep);
+        line-height: 1.45;
+        margin-top: 32px;
+        padding: 24px 0 24px 28px;
+        border-left: 3px solid var(--gold);
+      }
+      .bigq cite {
+        display: block;
+        margin-top: 14px;
+        font-family: "Plus Jakarta Sans", sans-serif;
+        font-style: normal;
+        font-size: 11px;
+        color: var(--stone);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+      }
+
+      /* ===== MENU ===== */
+      .menu {
+        background: var(--teal-deep);
+        color: var(--cream);
+        padding: 140px 0;
+        position: relative;
+        overflow: hidden;
+      }
+      .menu::before {
+        content: "";
+        position: absolute;
+        top: -20%;
+        right: -10%;
+        width: 700px;
+        height: 700px;
+        background: radial-gradient(
+          circle,
+          rgba(200, 162, 75, 0.12),
+          transparent 70%
+        );
+        pointer-events: none;
+      }
+      .menu-inner {
+        position: relative;
+        z-index: 1;
+      }
+      .menu-head {
+        text-align: center;
+        margin-bottom: 80px;
+      }
+      .menu .section-eyebrow {
+        color: var(--gold-bright);
+      }
+      .menu .section-eyebrow::before {
+        background: var(--gold);
+      }
+      .menu h2 {
+        color: var(--cream);
+      }
+      .menu h2 em {
+        color: var(--gold);
+      }
+      .menu-intro {
+        max-width: 640px;
+        margin: 24px auto 0;
+        font-family: "Fraunces", serif;
+        font-style: italic;
+        font-size: 18px;
+        color: rgba(247, 237, 224, 0.68);
+        line-height: 1.7;
+      }
+
+      /* Product Cards */
+      .cards-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 28px;
+        margin-bottom: 100px;
+      }
+      .product-card {
+        position: relative;
+        overflow: hidden;
+        border-radius: 20px;
+        border: 1px solid rgba(200, 162, 75, 0.2);
+        background: rgba(14, 47, 56, 0.7);
+        color: var(--cream);
+        transition: box-shadow 0.3s, border-color 0.3s, transform 0.35s;
+      }
+      .product-card:hover {
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+        border-color: rgba(200, 162, 75, 0.48);
+        transform: translateY(-7px);
+      }
+      .product-card-link {
+        display: block;
+        text-decoration: none;
+        color: inherit;
+      }
+      .pc-img {
+        aspect-ratio: 1/1;
+        overflow: hidden;
+        border-radius: 20px 20px 0 0;
+      }
+      .pc-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.4s ease;
+      }
+      .product-card:hover .pc-img img {
+        transform: scale(1.06);
+      }
+      .pc-body {
+        padding: 18px 22px 24px;
+      }
+      .pc-title {
+        font-family: "Fraunces", serif;
+        font-size: 24px;
+        font-weight: 500;
+        color: var(--cream);
+        line-height: 1.1;
+      }
+      .pc-meta {
+        margin-top: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .pc-cat {
+        font-family: "Fraunces", serif;
+        font-style: italic;
+        font-size: 13px;
+        color: rgba(247, 237, 224, 0.48);
+      }
+      .pc-price {
+        font-family: "Fraunces", serif;
+        font-style: italic;
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--gold);
+      }
+      .pc-save {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: rgba(247, 237, 224, 0.12);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.25s, background 0.2s, border-color 0.2s;
+        color: var(--cream);
+      }
+      .product-card:hover .pc-save {
+        opacity: 1;
+      }
+      .pc-save:hover {
+        background: rgba(200, 162, 75, 0.25);
+        border-color: rgba(200, 162, 75, 0.5);
+      }
+      .pc-save.saved {
+        opacity: 1;
+        background: rgba(200, 162, 75, 0.2);
+        border-color: var(--gold);
+        color: var(--gold);
+      }
+
+      /* Full text menu */
+      .menu-divider {
+        border: 0;
+        border-top: 1px solid rgba(200, 162, 75, 0.2);
+        margin: 0 0 64px;
+      }
+      .menu-divider-label {
+        text-align: center;
+        margin-bottom: 60px;
+      }
+      .menu-divider-label span {
+        font-family: "Fraunces", serif;
+        font-style: italic;
+        font-size: 26px;
+        color: var(--gold-bright);
+      }
+      .menu-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 72px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      .menu-col h3 {
+        font-family: "Fraunces", serif;
+        font-size: 38px;
+        color: var(--cream);
+        line-height: 1;
+        letter-spacing: -0.01em;
+        margin-bottom: 4px;
+        font-weight: 500;
+      }
+      .menu-col h3 em {
+        font-style: italic;
+        color: var(--gold);
+        font-size: 0.52em;
+        display: block;
+        margin-top: 6px;
+        font-weight: 400;
+        letter-spacing: 0;
+      }
+      .menu-col .col-line {
+        width: 50px;
+        height: 1px;
+        background: var(--terracotta);
+        margin: 18px 0 24px;
+      }
+      .m-item {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 18px;
+        padding: 15px 0;
+        align-items: baseline;
+        border-bottom: 1px dashed rgba(247, 237, 224, 0.1);
+      }
+      .m-item:last-child {
+        border-bottom: none;
+      }
+      .m-item .nm {
+        font-family: "Fraunces", serif;
+        font-size: 19px;
+        color: var(--cream);
+        margin-bottom: 3px;
+        font-weight: 500;
+      }
+      .m-item .nm.fire::after {
+        content: " ◆";
+        color: var(--terracotta);
+        font-size: 0.7em;
+      }
+      .m-item .dc {
+        font-family: "Fraunces", serif;
+        font-style: italic;
+        font-size: 13px;
+        color: rgba(247, 237, 224, 0.48);
+        line-height: 1.5;
+      }
+      .m-item .pr {
+        font-family: "Fraunces", serif;
+        font-style: italic;
+        font-size: 21px;
+        color: var(--gold);
+      }
+
+      /* ===== TERRACE ===== */
+      .terrace {
+        padding: 140px 0;
+      }
+      .terrace-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 80px;
+        align-items: center;
+      }
+      .terrace-img-wrap {
+        aspect-ratio: 1.05;
+        border-radius: 32px;
+        overflow: hidden;
+        position: relative;
+        box-shadow: 0 40px 80px rgba(14, 47, 56, 0.28);
+      }
+      .terrace-img-wrap img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.9s ease;
+      }
+      .terrace-img-wrap:hover img {
+        transform: scale(1.04);
+      }
+      .terrace-glass {
+        position: absolute;
+        left: 28px;
+        bottom: 28px;
+        right: 28px;
+        background: rgba(14, 47, 56, 0.72);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border: 1px solid rgba(200, 162, 75, 0.22);
+        border-radius: 16px;
+        padding: 24px 28px;
+        color: var(--cream);
+      }
+      .terrace-glass .line {
+        width: 40px;
+        height: 2px;
+        background: var(--gold);
+        margin-bottom: 14px;
+      }
+      .terrace-glass h4 {
+        font-family: "Fraunces", serif;
+        font-size: 26px;
+        line-height: 1.1;
+        font-weight: 500;
+      }
+      .terrace-glass p {
+        font-family: "Fraunces", serif;
+        font-style: italic;
+        color: rgba(247, 237, 224, 0.72);
+        margin-top: 6px;
+        font-size: 15px;
+      }
+      .features {
+        display: grid;
+        gap: 0;
+        margin-top: 36px;
+      }
+      .feature {
+        display: grid;
+        grid-template-columns: 48px 1fr;
+        gap: 22px;
+        padding: 22px 0;
+        border-top: 1px solid var(--line);
+      }
+      .feature:last-child {
+        border-bottom: 1px solid var(--line);
+      }
+      .feature .ni {
+        font-family: "Fraunces", serif;
+        font-size: 26px;
+        color: var(--terracotta);
+        line-height: 1;
+        font-style: italic;
+      }
+      .feature .nm {
+        font-family: "Fraunces", serif;
+        font-size: 20px;
+        color: var(--teal-deep);
+        font-weight: 500;
+        margin-bottom: 4px;
+      }
+      .feature .dc {
+        font-size: 14px;
+        color: var(--stone);
+        line-height: 1.6;
+      }
+      .btn-primary {
+        background: var(--terracotta);
+        color: var(--cream);
+        padding: 16px 34px;
+        text-decoration: none;
+        font-size: 12px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        font-weight: 600;
+        transition: all 0.3s;
+        display: inline-block;
+        border-radius: 9999px;
+        margin-top: 36px;
+      }
+      .btn-primary:hover {
+        background: var(--teal-deep);
+        transform: translateY(-2px);
+      }
+
+      /* ===== VISIT ===== */
+      .visit {
+        padding: 140px 0;
+        background: var(--teal-deep);
+        color: var(--cream);
+      }
+      .visit-head {
+        text-align: center;
+        margin-bottom: 70px;
+      }
+      .visit .section-eyebrow {
+        color: var(--gold-bright);
+      }
+      .visit .section-eyebrow::before {
+        background: var(--gold);
+      }
+      .visit h2 {
+        color: var(--cream);
+      }
+      .visit h2 em {
+        color: var(--gold);
+      }
+      .visit-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1px;
+        background: rgba(247, 237, 224, 0.1);
+        border-radius: 24px;
+        overflow: hidden;
+      }
+      .visit-cell {
+        background: rgba(14, 47, 56, 0.85);
+        padding: 48px 40px;
+      }
+      .visit-cell .label {
+        font-size: 11px;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: var(--gold);
+        margin-bottom: 16px;
+        font-weight: 600;
+      }
+      .visit-cell .val {
+        font-family: "Fraunces", serif;
+        font-size: 26px;
+        color: var(--cream);
+        line-height: 1.25;
+        margin-bottom: 12px;
+        font-weight: 500;
+      }
+      .visit-cell .val a {
+        color: var(--cream);
+        text-decoration: none;
+        border-bottom: 1px solid rgba(200, 162, 75, 0.45);
+        transition: color 0.2s;
+      }
+      .visit-cell .val a:hover {
+        color: var(--gold);
+      }
+      .visit-cell .sub {
+        font-size: 14px;
+        color: rgba(247, 237, 224, 0.58);
+        line-height: 1.65;
+        margin-top: 6px;
+      }
+      .hl {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        font-size: 14px;
+        color: rgba(247, 237, 224, 0.65);
+        border-bottom: 1px solid rgba(247, 237, 224, 0.08);
+      }
+      .hl:last-child {
+        border-bottom: none;
+      }
+      .hl .t {
+        font-family: "Fraunces", serif;
+        font-style: italic;
+        font-size: 18px;
+        color: var(--cream);
+      }
+      .hl.today {
+        color: var(--gold-bright);
+      }
+      .hl.today .t {
+        color: var(--gold-bright);
+      }
+      .visit-cta {
+        text-align: center;
+        margin-top: 64px;
+      }
+      .btn-gold {
+        background: var(--gold);
+        color: var(--teal-deep);
+        padding: 18px 44px;
+        text-decoration: none;
+        font-size: 12px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        font-weight: 700;
+        border-radius: 9999px;
+        display: inline-block;
+        transition: all 0.2s;
+      }
+      .btn-gold:hover {
+        background: var(--gold-bright);
+        transform: translateY(-2px);
+      }
+
+      /* map */
+      .map-wrap {
+        margin-top: 72px;
+        border-radius: 28px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(14, 47, 56, 0.35);
+      }
+      .map-wrap iframe {
+        width: 100%;
+        min-height: 420px;
+        border: 0;
+        display: block;
+      }
+
+      /* ===== FOOTER ===== */
+      footer {
+        background: var(--char);
+        color: var(--sand);
+        padding: 90px 0 32px;
+        position: relative;
+        overflow: hidden;
+      }
+      footer::before {
+        content: "SMYRNA";
+        position: absolute;
+        bottom: -20px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-family: "Fraunces", serif;
+        font-style: italic;
+        font-size: clamp(140px, 22vw, 320px);
+        color: rgba(200, 162, 75, 0.05);
+        letter-spacing: 0.1em;
+        pointer-events: none;
+        white-space: nowrap;
+      }
+      .foot-inner {
+        position: relative;
+        z-index: 1;
+      }
+      .foot-top {
+        text-align: center;
+        margin-bottom: 70px;
+      }
+      .foot-icon {
+        font-family: "Fraunces", serif;
+        font-size: 48px;
+        color: var(--gold);
+        letter-spacing: 0.12em;
+        margin-bottom: 14px;
+        font-weight: 500;
+      }
+      .foot-tagline {
+        font-family: "Fraunces", serif;
+        font-style: italic;
+        font-size: 19px;
+        color: rgba(236, 226, 205, 0.65);
+        max-width: 500px;
+        margin: 0 auto;
+        line-height: 1.65;
+      }
+      .foot-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 40px;
+        padding: 50px 0;
+        border-top: 1px solid rgba(236, 226, 205, 0.15);
+        border-bottom: 1px solid rgba(236, 226, 205, 0.15);
+        margin-bottom: 32px;
+      }
+      .foot-grid h4 {
+        font-family: "Fraunces", serif;
+        font-style: italic;
+        font-size: 20px;
+        color: var(--gold);
+        margin-bottom: 16px;
+      }
+      .foot-grid p,
+      .foot-grid a {
+        color: rgba(236, 226, 205, 0.65);
+        font-size: 14px;
+        line-height: 1.9;
+        text-decoration: none;
+      }
+      .foot-grid a:hover {
+        color: var(--gold);
+      }
+      .foot-bot {
+        display: flex;
+        justify-content: space-between;
+        color: rgba(236, 226, 205, 0.38);
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      /* ===== RESPONSIVE ===== */
+      @media (max-width: 900px) {
+        .hero-inner-header {
+          padding: 0 20px;
+        }
+        .hero-inner-header .h-nav {
+          display: none;
+        }
+        .hero-content-wrap {
+          padding: 100px 20px 60px;
+        }
+        .ah-actions {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .story-grid,
+        .terrace-grid,
+        .foot-grid {
+          grid-template-columns: 1fr;
+          gap: 56px;
+        }
+        .menu-grid {
+          grid-template-columns: 1fr;
+          gap: 56px;
+        }
+        .cards-grid {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 18px;
+        }
+        .visit-grid {
+          grid-template-columns: 1fr;
+          border-radius: 16px;
+        }
+        .container {
+          padding: 0 20px;
+        }
+        .story-badge {
+          left: -10px;
+          bottom: -10px;
+        }
+      }
+      @media (max-width: 540px) {
+        .cards-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- SVG filter for liquid glass -->
+    <svg
+      style="position: absolute; width: 0; height: 0; overflow: hidden"
+      aria-hidden="true"
+    >
+      <defs>
+        <filter
+          id="liquid-glass-filter"
+          x="0%"
+          y="0%"
+          width="100%"
+          height="100%"
+          color-interpolation-filters="sRGB"
+        >
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.05 0.05"
+            numOctaves="1"
+            seed="1"
+            result="turbulence"
+          />
+          <feGaussianBlur
+            in="turbulence"
+            stdDeviation="2"
+            result="blurredNoise"
+          />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="blurredNoise"
+            scale="70"
+            xChannelSelector="R"
+            yChannelSelector="B"
+            result="displaced"
+          />
+          <feGaussianBlur in="displaced" stdDeviation="4" result="finalBlur" />
+          <feComposite in="finalBlur" in2="finalBlur" operator="over" />
+        </filter>
+      </defs>
+    </svg>
+
+    <div class="top-bar">
+      Open every day 11:00 — 01:00
+      <span class="sep">◆</span>
+      Barceloneta waterfront · Pg. de Joan de Borbó, 2
+      <span class="sep">◆</span>
+      Reservations welcome
+    </div>
+
+    <!-- ANIMATED HERO -->
+    <section class="animated-hero">
+      <div
+        class="hero-bg"
+        style="
+          background-image: url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1800&h=1200&fit=crop&auto=format&q=85');
+        "
+      >
+        <div class="hero-overlay"></div>
+      </div>
+
+      <header class="hero-inner-header">
+        <div class="h-logo">
+          <div class="h-logo-icon"></div>
+          <div>SMYRNA<span class="by">— by Cem</span></div>
+        </div>
+        <ul class="h-nav">
+          <li><a href="#story">Our story</a></li>
+          <li><a href="#menu">The menu</a></li>
+          <li><a href="#terrace">The terrace</a></li>
+          <li><a href="#visit">Reserve</a></li>
+        </ul>
+        <a
+          href="#visit"
+          class="hero-glass-btn"
+          style="padding: 10px 22px; font-size: 12px"
+          >Book a table →</a
+        >
+      </header>
+
+      <div class="hero-content-wrap">
+        <div class="ah-eyebrow">CEM &amp; FAMILY · BARCELONETA WATERFRONT</div>
+        <h1 class="ah-title">
+          Paella, mezze<br />&amp; a sea <em>breeze</em>.
+          <span class="sub">— Turkish-Mediterranean, on the waterfront —</span>
+        </h1>
+        <p class="ah-desc">
+          A family restaurant where Spanish paella meets Turkish mezze. Cem and
+          his father cook what they love: slow paellas, fresh-grilled fish,
+          aromatic mezze, and cocktails that taste like summer.
+        </p>
+        <div class="ah-actions">
+          <a href="#menu" class="hero-glass-btn">See the menu →</a>
+          <a href="#visit" class="hero-glass-btn">Book a table</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCROLL NAV -->
+    <nav class="scroll-nav">
+      <div class="container sn-inner">
+        <div class="sn-logo">
+          <div class="sn-logo-icon"></div>
+          <div>SMYRNA<span class="by">— by Cem</span></div>
+        </div>
+        <ul class="sn-links">
+          <li><a href="#story">Our story</a></li>
+          <li><a href="#menu">The menu</a></li>
+          <li><a href="#terrace">The terrace</a></li>
+          <li><a href="#visit">Reserve</a></li>
+        </ul>
+        <a href="#visit" class="btn-liquid">
+          <div class="btn-liquid-glass"></div>
+          <div class="btn-liquid-overlay"></div>
+          <span class="btn-liquid-text">Book a table →</span>
+        </a>
+      </div>
+    </nav>
+
+    <!-- TICKER -->
+    <div class="ticker">
+      <div class="ticker-inner">
+        <span>Paella marisco</span><span>Mezze platter</span
+        ><span>Octopus carpaccio</span><span>Lamb köfte</span
+        ><span>Padrón peppers</span><span>Pomegranate gin</span
+        ><span>Sangria cava</span><span>Baklava</span>
+        <span>Paella marisco</span><span>Mezze platter</span
+        ><span>Octopus carpaccio</span><span>Lamb köfte</span
+        ><span>Padrón peppers</span><span>Pomegranate gin</span
+        ><span>Sangria cava</span><span>Baklava</span>
+      </div>
+    </div>
+
+    <!-- STORY -->
+    <section class="story" id="story">
+      <div class="container story-grid">
+        <div style="position: relative">
+          <div class="story-img-wrap">
+            <img
+              src="https://images.unsplash.com/photo-1466637574441-749b8f19452f?w=800&h=1000&fit=crop&auto=format&q=80"
+              alt="Cem and his father in the kitchen"
+            />
+          </div>
+          <div class="story-badge">
+            <div class="t1">— a family restaurant</div>
+            <div class="t2">From Bandırma,<br />to Barceloneta.</div>
+          </div>
+        </div>
+        <div>
+          <div class="section-eyebrow">OUR FAMILY</div>
+          <h2 class="section-title">Two coasts,<br />one <em>kitchen</em>.</h2>
+          <div class="story-text">
+            <p>
+              Cem grew up in Bandırma, a port town on the Sea of Marmara,
+              watching his father cook for everyone who walked through the door.
+              The mezze, the koftes, the slow-grilled fish — it was the language
+              of the house.
+            </p>
+            <p>
+              When they opened SMYRNA in Barceloneta, they kept that language
+              and added another. Spanish paella, fresh-caught seafood from the
+              Boqueria, Padrón peppers from Galicia. Two coastlines, one menu.
+            </p>
+            <p>
+              The kitchen is run by father and son. The terrace looks out over
+              the water. And every dish — from the first piece of bread to the
+              last shot of raki — comes out of the same idea: feed people the
+              way you'd feed your own family.
+            </p>
+            <div class="bigq">
+              "Best restaurant in Barcelona for tapas and great seafood. Thanks
+              Cem and his father — and we're from Bandırma too, our hometown."
+              <cite>— GOOGLE REVIEW · 7,560+ MORE LIKE THIS</cite>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MENU -->
+    <section class="menu" id="menu">
+      <div class="container menu-inner">
+        <div class="menu-head">
+          <div class="section-eyebrow">THE MENU</div>
+          <h2 class="section-title">
+            Tapas, mezze<br />&amp; <em>real paella</em>.
+          </h2>
+          <p class="menu-intro">
+            Our paellas are made to order — allow 30 minutes. Mezze come on
+            shareable platters. Daily fish depends on what's good at the market
+            that morning. Ask your waiter.
+          </p>
+        </div>
+
+        <!-- Featured dishes — ProductCards with photos -->
+        <div class="cards-grid" id="smyrna-cards"></div>
+
+        <script>
+          const smyrnaItems = [
+            {
+              name: "Paella marisco",
+              cat: "Made to order · 30 min",
+              price: "€26 /p",
+              img: "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=800&h=800&fit=crop&auto=format&q=80",
+            },
+            {
+              name: "Mezze platter",
+              cat: "Hummus · baba ganoush · ezme",
+              price: "€18",
+              img: "https://images.unsplash.com/photo-1540189549336-e6e99eb4b90e?w=800&h=800&fit=crop&auto=format&q=80",
+            },
+            {
+              name: "Lamb köfte",
+              cat: "Grilled · sumac onions",
+              price: "€14",
+              img: "https://images.unsplash.com/photo-1529042410759-befb1204b468?w=800&h=800&fit=crop&auto=format&q=80",
+            },
+            {
+              name: "Pomegranate gin",
+              cat: "House signature cocktail",
+              price: "€11",
+              img: "https://images.unsplash.com/photo-1551538827-9c037cb4f32a?w=800&h=800&fit=crop&auto=format&q=80",
+            },
+            {
+              name: "Octopus carpaccio",
+              cat: "Lemon · smoked paprika",
+              price: "€16",
+              img: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&h=800&fit=crop&auto=format&q=80",
+            },
+            {
+              name: "Baklava",
+              cat: "Homemade · honey & pistachio",
+              price: "€6",
+              img: "https://images.unsplash.com/photo-1705663106388-6c1c51ff5a8d?w=800&h=800&fit=crop&auto=format&q=80",
+            },
+          ];
+          const bkSVG = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>`;
+          const grid = document.getElementById("smyrna-cards");
+          smyrnaItems.forEach((item) => {
+            grid.innerHTML += `
+        <div class="product-card">
+          <a href="#menu" class="product-card-link" aria-label="${item.name}">
+            <div class="pc-img"><img src="${item.img}" alt="${item.name}" loading="lazy"></div>
+            <div class="pc-body">
+              <div class="pc-title">${item.name}</div>
+              <div class="pc-meta">
+                <span class="pc-cat">${item.cat}</span>
+                <span class="pc-price">${item.price}</span>
+              </div>
+            </div>
+          </a>
+          <button class="pc-save" onclick="toggleSave(this)" aria-label="Save ${item.name}">${bkSVG}</button>
+        </div>`;
+          });
+          window.toggleSave = function (btn) {
+            btn.classList.toggle("saved");
+            const path = btn.querySelector("svg path");
+            btn.classList.contains("saved")
+              ? path.setAttribute("fill", "currentColor")
+              : path.setAttribute("fill", "none");
+          };
+        </script>
+
+        <!-- Full text menu -->
+        <hr class="menu-divider" />
+        <div class="menu-divider-label"><span>— Full menu —</span></div>
+        <div class="menu-grid">
+          <div class="menu-col">
+            <h3>Mezze<em>— Turkish small plates</em></h3>
+            <div class="col-line"></div>
+            <div class="m-item">
+              <div>
+                <div class="nm fire">Mezze platter</div>
+                <div class="dc">
+                  Hummus, baba ganoush, ezme, haydari, warm pide bread
+                </div>
+              </div>
+              <div class="pr">€18</div>
+            </div>
+            <div class="m-item">
+              <div>
+                <div class="nm">Hummus &amp; pide</div>
+                <div class="dc">
+                  Stone-ground chickpea, lemon, olive oil, paprika
+                </div>
+              </div>
+              <div class="pr">€8</div>
+            </div>
+            <div class="m-item">
+              <div>
+                <div class="nm">Sigara böreği</div>
+                <div class="dc">
+                  Crispy phyllo cigars filled with feta and parsley (4u)
+                </div>
+              </div>
+              <div class="pr">€9</div>
+            </div>
+            <div class="m-item">
+              <div>
+                <div class="nm fire">Lamb köfte (4u)</div>
+                <div class="dc">
+                  Hand-shaped, grilled, sumac onions and yogurt sauce
+                </div>
+              </div>
+              <div class="pr">€14</div>
+            </div>
+            <div class="m-item">
+              <div>
+                <div class="nm">Octopus carpaccio</div>
+                <div class="dc">
+                  Thinly sliced, lemon, olive oil, smoked paprika
+                </div>
+              </div>
+              <div class="pr">€16</div>
+            </div>
+            <div class="m-item">
+              <div>
+                <div class="nm">Stuffed vine leaves</div>
+                <div class="dc">
+                  Rice, pine nuts, currants, lemon, served cold
+                </div>
+              </div>
+              <div class="pr">€10</div>
+            </div>
+          </div>
+
+          <div class="menu-col">
+            <h3>Tapas<em>— Spanish classics</em></h3>
+            <div class="col-line"></div>
+            <div class="m-item">
+              <div>
+                <div class="nm fire">Padrón peppers</div>
+                <div class="dc">
+                  Blistered with sea salt — some are spicy, some aren't
+                </div>
+              </div>
+              <div class="pr">€7</div>
+            </div>
+            <div class="m-item">
+              <div>
+                <div class="nm">Pa amb tomàquet</div>
+                <div class="dc">
+                  Grilled bread, ripe tomato, olive oil, garlic
+                </div>
+              </div>
+              <div class="pr">€5</div>
+            </div>
+            <div class="m-item">
+              <div>
+                <div class="nm">Croquetas (6u)</div>
+                <div class="dc">Iberico ham, creamy béchamel, golden crumb</div>
+              </div>
+              <div class="pr">€10</div>
+            </div>
+            <div class="m-item">
+              <div>
+                <div class="nm">Pulpo a la gallega</div>
+                <div class="dc">Octopus, potato, smoked paprika, olive oil</div>
+              </div>
+              <div class="pr">€18</div>
+            </div>
+            <div class="m-item">
+              <div>
+                <div class="nm fire">Chorizo al vino</div>
+                <div class="dc">
+                  Sliced chorizo cooked in red wine, served with bread
+                </div>
+              </div>
+              <div class="pr">€9</div>
+            </div>
+            <div class="m-item">
+              <div>
+                <div class="nm">Anchoas del Cantábrico</div>
+                <div class="dc">Cured anchovies, tomato bread, capers</div>
+              </div>
+              <div class="pr">€12</div>
+            </div>
+          </div>
+
+          <div class="menu-col">
+            <h3>Paellas<em>— made to order, 30 min</em></h3>
+            <div class="col-line"></div>
+            <div class="m-item">
+              <div>
+                <div class="nm fire">Paella marisco</div>
+                <div class="dc">
+                  Prawn, mussel, clam, calamari, saffron rice (per person, min
+                  2)
+                </div>
+              </div>
+              <div class="pr">€26</div>
+            </div>
+            <div class="m-item">
+              <div>
+                <div class="nm">Paella mixta</div>
+                <div class="dc">
+                  Chicken, rabbit, prawn, mussel — surf &amp; turf classic
+                </div>
+              </div>
+              <div class="pr">€24</div>
+            </div>
+            <div class="m-item">
+              <div>
+                <div class="nm">Arroz negro</div>
+                <div class="dc">
+                  Black rice with squid ink, calamari, finished with alioli
+                </div>
+              </div>
+              <div class="pr">€26</div>
+            </div>
+            <div class="m-item">
+              <div>
+                <div class="nm">Paella verduras</div>
+                <div class="dc">
+                  Artichoke, asparagus, peppers, peas — vegetarian
+                </div>
+              </div>
+              <div class="pr">€22</div>
+            </div>
+            <div class="m-item">
+              <div>
+                <div class="nm">Fideuà</div>
+                <div class="dc">Toasted thin pasta with seafood, alioli</div>
+              </div>
+              <div class="pr">€25</div>
+            </div>
+          </div>
+
+          <div class="menu-col">
+            <h3>Cocktails<em>— from sunset</em></h3>
+            <div class="col-line"></div>
+            <div class="m-item">
+              <div>
+                <div class="nm fire">Pomegranate gin spritz</div>
+                <div class="dc">
+                  House gin, pomegranate, soda, mint — our signature
+                </div>
+              </div>
+              <div class="pr">€11</div>
+            </div>
+            <div class="m-item">
+              <div>
+                <div class="nm">Sangria de cava</div>
+                <div class="dc">
+                  Cava, fresh fruit, brandy, citrus — by glass or jug
+                </div>
+              </div>
+              <div class="pr">€8</div>
+            </div>
+            <div class="m-item">
+              <div>
+                <div class="nm">Aperol spritz</div>
+                <div class="dc">Aperol, prosecco, soda, orange</div>
+              </div>
+              <div class="pr">€9</div>
+            </div>
+            <div class="m-item">
+              <div>
+                <div class="nm">Mojito</div>
+                <div class="dc">White rum, lime, mint, sugar, soda</div>
+              </div>
+              <div class="pr">€10</div>
+            </div>
+            <div class="m-item">
+              <div>
+                <div class="nm">Raki &amp; water</div>
+                <div class="dc">
+                  Turkish anise spirit, served properly with cold water
+                </div>
+              </div>
+              <div class="pr">€8</div>
+            </div>
+            <div class="m-item">
+              <div>
+                <div class="nm">Vermouth on tap</div>
+                <div class="dc">House vermouth with olive and orange</div>
+              </div>
+              <div class="pr">€5</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TERRACE -->
+    <section class="terrace" id="terrace">
+      <div class="container terrace-grid">
+        <div>
+          <div class="section-eyebrow">THE TERRACE</div>
+          <h2 class="section-title">Sunset over <em>the marina</em>.</h2>
+          <p
+            style="
+              font-family: 'Fraunces', serif;
+              font-size: 19px;
+              color: var(--char);
+              line-height: 1.75;
+              margin-bottom: 8px;
+            "
+          >
+            Our outdoor terrace faces the Port Vell marina. Heated in winter,
+            shaded in summer, open year-round. From late afternoon, it's the
+            best spot in Barceloneta to watch the boats come in with a cold
+            drink in hand.
+          </p>
+          <div class="features">
+            <div class="feature">
+              <div class="ni">01</div>
+              <div>
+                <div class="nm">Reservations recommended</div>
+                <div class="dc">
+                  For lunch or dinner peak times — call or book online.
+                </div>
+              </div>
+            </div>
+            <div class="feature">
+              <div class="ni">02</div>
+              <div>
+                <div class="nm">Group dining up to 250</div>
+                <div class="dc">
+                  Modular spaces for birthdays, company dinners, weddings.
+                </div>
+              </div>
+            </div>
+            <div class="feature">
+              <div class="ni">03</div>
+              <div>
+                <div class="nm">Live DJ Friday &amp; Saturday</div>
+                <div class="dc">
+                  From 10pm — Mediterranean lounge, then dance.
+                </div>
+              </div>
+            </div>
+          </div>
+          <a href="#visit" class="btn-primary">Reserve the terrace →</a>
+        </div>
+        <div class="terrace-img-wrap">
+          <img
+            src="https://images.unsplash.com/photo-1510414696678-2415ad8474aa?w=900&h=945&fit=crop&auto=format&q=80"
+            alt="Smyrna waterfront terrace at sunset"
+          />
+          <div class="terrace-glass">
+            <div class="line"></div>
+            <h4>Best seat in the<br />house — outside.</h4>
+            <p>Heated terrace, year-round.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VISIT -->
+    <section class="visit" id="visit">
+      <div class="container">
+        <div class="visit-head">
+          <div class="section-eyebrow">FIND US</div>
+          <h2 class="section-title">Pg. de Joan de Borbó, <em>2</em>.</h2>
+        </div>
+        <div class="visit-grid">
+          <div class="visit-cell">
+            <div class="label">— THE ADDRESS</div>
+            <div class="val">Pg. de Joan de Borbó, 2</div>
+            <div class="sub">
+              08003 Barcelona — right at the start of Barceloneta, opposite the
+              marina. Metro: Barceloneta (L4) — 2 min walk.
+            </div>
+          </div>
+          <div class="visit-cell">
+            <div class="label">— RESERVATIONS</div>
+            <div class="val"><a href="tel:+34000000000">Call us</a></div>
+            <div class="val" style="font-size: 19px; margin-top: 10px">
+              <a href="mailto:reservas@smyrna.bcn">reservas@smyrna.bcn</a>
+            </div>
+            <div class="sub" style="margin-top: 12px">
+              Lunch 13:00–16:00 · Dinner 19:00–00:30<br />Walk-ins welcome at
+              the bar.
+            </div>
+          </div>
+          <div class="visit-cell">
+            <div class="label">— OPEN HOURS</div>
+            <div class="hl today">
+              <span>Saturday · today</span><span class="t">11:00 — 01:00</span>
+            </div>
+            <div class="hl">
+              <span>Sunday</span><span class="t">11:00 — 00:30</span>
+            </div>
+            <div class="hl">
+              <span>Monday</span><span class="t">11:00 — 00:30</span>
+            </div>
+            <div class="hl">
+              <span>Tuesday</span><span class="t">11:00 — 00:30</span>
+            </div>
+            <div class="hl">
+              <span>Wed &amp; Thu</span><span class="t">11:00 — 00:30</span>
+            </div>
+            <div class="hl">
+              <span>Friday</span><span class="t">11:00 — 01:00</span>
+            </div>
+          </div>
+        </div>
+        <div class="visit-cta">
+          <a href="tel:+34000000000" class="btn-gold">Book a table now →</a>
+        </div>
+        <div class="map-wrap">
+          <iframe
+            title="SMYRNA location in Barceloneta"
+            src="https://www.google.com/maps?q=Passeig+de+Joan+de+Borbo+2+Barcelona&output=embed"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+          ></iframe>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+      <div class="container foot-inner">
+        <div class="foot-top">
+          <div class="foot-icon">SMYRNA</div>
+          <div class="foot-tagline">
+            "Two coastlines, one kitchen, and a family that's been feeding
+            strangers like friends since the day we opened."
+          </div>
+        </div>
+        <div class="foot-grid">
+          <div>
+            <h4>Visit</h4>
+            <p>Pg. de Joan de Borbó, 2<br />08003 Barcelona</p>
+          </div>
+          <div>
+            <h4>Open</h4>
+            <p>Every day<br />11:00 — 00:30<br />Fri &amp; Sat until 01:00</p>
+          </div>
+          <div>
+            <h4>Reserve</h4>
+            <p>
+              <a href="mailto:reservas@smyrna.bcn">reservas@smyrna.bcn</a
+              ><br /><a href="#">Online booking</a>
+            </p>
+          </div>
+          <div>
+            <h4>Follow</h4>
+            <p><a href="#">@smyrnabcn</a><br /><a href="#">TripAdvisor</a></p>
+          </div>
+        </div>
+        <div class="foot-bot">
+          <div>© 2026 SMYRNA by Cem · Hecho en Barceloneta</div>
+          <div>⎔ FAMILY-RUN · SINCE DAY ONE ⎔</div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      (function () {
+        var hero = document.querySelector(".animated-hero");
+        var nav = document.querySelector(".scroll-nav");
+        function onScroll() {
+          nav.classList.toggle(
+            "visible",
+            window.scrollY > hero.offsetHeight * 0.6
+          );
+        }
+        window.addEventListener("scroll", onScroll, { passive: true });
+      })();
+    </script>
+  </body>
+</html>
