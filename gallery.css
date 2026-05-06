@@ -60,9 +60,84 @@ body {
 }
 .nav-cta:hover { opacity: 0.88 !important; color: #080808 !important; }
 
+/* ── INTRO ── */
+.intro {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 88px 44px 36px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.intro-name {
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  margin-bottom: 14px;
+}
+.intro-bio {
+  font-size: clamp(1.15rem, 2vw, 1.55rem);
+  font-weight: 300;
+  line-height: 1.45;
+  letter-spacing: -0.02em;
+  color: rgba(255,255,255,0.75);
+  max-width: 600px;
+  margin: 0;
+}
+.intro-bio em {
+  font-style: italic;
+  color: #fff;
+}
+.intro-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.intro-avail {
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.intro-avail::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+  flex-shrink: 0;
+}
+.intro-email {
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: rgba(255,255,255,0.45);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  transition: color 0.2s;
+}
+.intro-email:hover { color: #fff; }
+
+@media (max-width: 860px) {
+  .intro {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 80px 20px 28px;
+    gap: 20px;
+  }
+  .intro-right { align-items: flex-start; }
+}
+
 /* ── GALLERY ── */
 .gallery {
-  padding-top: 72px;
+  padding-top: 0;
   display: grid;
   grid-template-columns: 3fr 2fr;
   gap: 3px;
