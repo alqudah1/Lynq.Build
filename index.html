@@ -13,47 +13,6 @@
 <link rel="stylesheet" href="gallery.css?v=6">
 <style>
 
-/* ── CUSTOM CURSOR ── */
-@media (pointer: fine) {
-  body, a, button, [role="button"] { cursor: none !important; }
-}
-.cursor-dot {
-  position: fixed;
-  top: 0; left: 0;
-  width: 5px; height: 5px;
-  background: #fff;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 99999;
-  will-change: transform;
-  transform: translate(-50%, -50%);
-  transition: opacity 0.15s, background 0.2s;
-  display: none;
-}
-.cursor-ring {
-  position: fixed;
-  top: 0; left: 0;
-  width: 32px; height: 32px;
-  border: 1px solid rgba(255,255,255,0.42);
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 99998;
-  will-change: transform;
-  transform: translate(-50%, -50%);
-  transition: width 0.38s cubic-bezier(0.25,0.46,0.45,0.94),
-              height 0.38s cubic-bezier(0.25,0.46,0.45,0.94),
-              border-color 0.3s, opacity 0.2s;
-  display: none;
-}
-@media (pointer: fine) {
-  .cursor-dot, .cursor-ring { display: block; }
-}
-.cursor-ring.hov {
-  width: 56px; height: 56px;
-  border-color: rgba(255,255,255,0.75);
-}
-.cursor-dot.hov { opacity: 0; }
-
 /* ── CARD NUMBER (textural) ── */
 .card-num {
   position: absolute;
@@ -285,10 +244,6 @@
 </head>
 <body>
 
-<!-- Custom cursor -->
-<div class="cursor-dot" id="cursorDot"></div>
-<div class="cursor-ring" id="cursorRing"></div>
-
 <!-- Film grain -->
 <svg class="grain" aria-hidden="true">
   <filter id="gr" x="0%" y="0%" width="100%" height="100%">
@@ -419,9 +374,11 @@
   <a href="projects/aether.html" target="_blank" rel="noopener"
      class="gallery-card featured aether-featured">
     <span class="card-num">01</span>
-    <div class="card-img" style="
-      background-color: #120e08;
-      background-image: url('https://images.unsplash.com/photo-1490750967868-88df5691cc2e?auto=format&fit=crop&w=2400&q=88');
+    <div class="card-img" style="background:
+      radial-gradient(ellipse 70% 90% at 74% 36%, rgba(120,72,6,0.68) 0%, transparent 52%),
+      radial-gradient(ellipse 55% 60% at 16% 82%, rgba(58,34,4,0.5) 0%, transparent 48%),
+      radial-gradient(ellipse 40% 50% at 50% 10%, rgba(90,54,6,0.32) 0%, transparent 44%),
+      linear-gradient(168deg, #0c0904 0%, #1d1509 26%, #2e1d0c 44%, #160f05 70%, #080603 100%);
     "></div>
     <div class="card-overlay"></div>
     <div class="card-info">
@@ -523,28 +480,6 @@
 </footer>
 
 <script>
-/* ── CUSTOM CURSOR ── */
-const dot  = document.getElementById('cursorDot');
-const ring = document.getElementById('cursorRing');
-let mx = -200, my = -200, rx = -200, ry = -200;
-
-window.addEventListener('mousemove', e => {
-  mx = e.clientX; my = e.clientY;
-  dot.style.transform = `translate(${mx}px, ${my}px)`;
-});
-
-(function tick() {
-  rx += (mx - rx) * 0.11;
-  ry += (my - ry) * 0.11;
-  ring.style.transform = `translate(${rx}px, ${ry}px)`;
-  requestAnimationFrame(tick);
-})();
-
-document.querySelectorAll('a, button, [role="button"]').forEach(el => {
-  el.addEventListener('mouseenter', () => { dot.classList.add('hov'); ring.classList.add('hov'); });
-  el.addEventListener('mouseleave', () => { dot.classList.remove('hov'); ring.classList.remove('hov'); });
-});
-
 /* ── INTRO SCREEN ── */
 const intro = document.getElementById('introScreen');
 setTimeout(() => {
