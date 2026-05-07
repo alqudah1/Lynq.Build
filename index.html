@@ -9,12 +9,25 @@
 <link rel="canonical" href="https://lynq.build">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="gallery.css?v=3">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="gallery.css?v=4">
 </head>
 <body>
 
-<div class="cursor" id="cursor">View</div>
+<!-- Film grain -->
+<svg class="grain" aria-hidden="true">
+  <filter id="gr" x="0%" y="0%" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.68" numOctaves="4" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+  <rect width="100%" height="100%" filter="url(#gr)"/>
+</svg>
+
+<!-- Intro screen — fades away on load -->
+<div class="intro-screen" id="introScreen">
+  <div class="is-name">Mustafa Alqudah</div>
+  <div class="is-role">Web Designer &nbsp;·&nbsp; Toronto</div>
+</div>
 
 <nav class="nav" id="nav">
   <a href="/" class="nav-logo">
@@ -35,7 +48,6 @@
 
 <main class="gallery">
 
-  <!-- SMYRNA — featured hero card -->
   <a href="projects/smyrna.html" target="_blank" rel="noopener" class="gallery-card featured">
     <div class="card-img" style="background-image:url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=2400&h=1600&fit=crop&auto=format&q=90')"></div>
     <div class="card-overlay"></div>
@@ -45,7 +57,6 @@
     </div>
   </a>
 
-  <!-- Nour's Kitchen -->
   <a href="projects/nours-kitchen.html" target="_blank" rel="noopener" class="gallery-card">
     <div class="card-img" style="background-image:url('https://images.unsplash.com/photo-1547592180-85f173990554?w=1400&h=900&fit=crop&auto=format&q=88')"></div>
     <div class="card-overlay"></div>
@@ -55,7 +66,6 @@
     </div>
   </a>
 
-  <!-- Drift Coffee -->
   <a href="projects/drift-coffee.html" target="_blank" rel="noopener" class="gallery-card">
     <div class="card-img" style="background-image:url('https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1400&h=900&fit=crop&auto=format&q=88')"></div>
     <div class="card-overlay"></div>
@@ -65,7 +75,6 @@
     </div>
   </a>
 
-  <!-- Greek Pastry -->
   <a href="projects/greek-pastry.html" target="_blank" rel="noopener" class="gallery-card">
     <div class="card-img" style="background-image:url('https://images.unsplash.com/photo-1519676867240-f03562e64548?w=1400&h=900&fit=crop&auto=format&q=88')"></div>
     <div class="card-overlay"></div>
@@ -75,7 +84,6 @@
     </div>
   </a>
 
-  <!-- CTA card -->
   <a href="#contact" class="gallery-card cta-card">
     <div class="cta-inner">
       <div class="cta-tag">Your business next</div>
@@ -104,26 +112,53 @@
 </footer>
 
 <script>
-  // Nav scroll
-  const nav = document.getElementById('nav');
-  window.addEventListener('scroll', () => {
-    nav.classList.toggle('scrolled', window.scrollY > 40);
-  }, { passive: true });
+// ── INTRO SCREEN
+const introScreen = document.getElementById('introScreen');
+setTimeout(() => {
+  introScreen.classList.add('out');
+  setTimeout(() => introScreen.remove(), 900);
+}, 1600);
 
-  // Custom cursor
-  const cursor = document.getElementById('cursor');
-  let cx = -200, cy = -200, tx = -200, ty = -200;
-  document.addEventListener('mousemove', e => { tx = e.clientX; ty = e.clientY; });
-  (function loop() {
-    cx += (tx - cx) * 0.12;
-    cy += (ty - cy) * 0.12;
-    cursor.style.transform = `translate(${cx}px, ${cy}px) translate(-50%, -50%)`;
-    requestAnimationFrame(loop);
-  })();
-  document.querySelectorAll('.gallery-card:not(.cta-card)').forEach(card => {
-    card.addEventListener('mouseenter', () => cursor.classList.add('active'));
-    card.addEventListener('mouseleave', () => cursor.classList.remove('active'));
+// ── NAV SCROLL
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 40);
+}, { passive: true });
+
+// ── 3D PARALLAX ON CARDS
+document.querySelectorAll('.gallery-card:not(.cta-card)').forEach(card => {
+  const img = card.querySelector('.card-img');
+  let raf;
+
+  card.addEventListener('mousemove', e => {
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {
+      const rect = card.getBoundingClientRect();
+      const xPct = (e.clientX - rect.left) / rect.width - 0.5;
+      const yPct = (e.clientY - rect.top)  / rect.height - 0.5;
+
+      // image drifts opposite to cursor (depth illusion)
+      const px = xPct * -28;
+      const py = yPct * -28;
+      img.style.transition = 'none';
+      img.style.transform  = `scale(1.1) translate(${px}px, ${py}px)`;
+
+      // card tilts toward cursor
+      const rx = yPct * -5;
+      const ry = xPct * 5;
+      card.style.transition = 'none';
+      card.style.transform  = `perspective(1400px) rotateX(${rx}deg) rotateY(${ry}deg)`;
+    });
   });
+
+  card.addEventListener('mouseleave', () => {
+    cancelAnimationFrame(raf);
+    img.style.transition  = 'transform 0.9s cubic-bezier(0.25,0.46,0.45,0.94)';
+    img.style.transform   = '';
+    card.style.transition = 'transform 0.9s cubic-bezier(0.25,0.46,0.45,0.94)';
+    card.style.transform  = '';
+  });
+});
 </script>
 
 </body>
