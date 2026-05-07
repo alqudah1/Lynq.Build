@@ -4,14 +4,73 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Mustafa Alqudah — Web Designer · Toronto</title>
-<meta name="description" content="Web designer based in Toronto. I build beautiful, fast websites for restaurants, home businesses, creatives, and coffee shops.">
+<meta name="description" content="Web designer based in Toronto. Art-forward websites for restaurants, creatives, and independent brands.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="canonical" href="https://lynq.build">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="gallery.css?v=5">
+<link rel="stylesheet" href="gallery.css?v=6">
 <style>
+
+/* ── CUSTOM CURSOR ── */
+@media (pointer: fine) {
+  body, a, button, [role="button"] { cursor: none !important; }
+}
+.cursor-dot {
+  position: fixed;
+  top: 0; left: 0;
+  width: 5px; height: 5px;
+  background: #fff;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 99999;
+  will-change: transform;
+  transform: translate(-50%, -50%);
+  transition: opacity 0.15s, background 0.2s;
+  display: none;
+}
+.cursor-ring {
+  position: fixed;
+  top: 0; left: 0;
+  width: 32px; height: 32px;
+  border: 1px solid rgba(255,255,255,0.42);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 99998;
+  will-change: transform;
+  transform: translate(-50%, -50%);
+  transition: width 0.38s cubic-bezier(0.25,0.46,0.45,0.94),
+              height 0.38s cubic-bezier(0.25,0.46,0.45,0.94),
+              border-color 0.3s, opacity 0.2s;
+  display: none;
+}
+@media (pointer: fine) {
+  .cursor-dot, .cursor-ring { display: block; }
+}
+.cursor-ring.hov {
+  width: 56px; height: 56px;
+  border-color: rgba(255,255,255,0.75);
+}
+.cursor-dot.hov { opacity: 0; }
+
+/* ── CARD NUMBER (textural) ── */
+.card-num {
+  position: absolute;
+  top: 28px; right: 32px;
+  z-index: 3;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 200;
+  font-size: clamp(4rem, 8vw, 7.5rem);
+  letter-spacing: -0.05em;
+  color: rgba(255,255,255,0.055);
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  transition: color 0.6s;
+}
+.gallery-card:hover .card-num { color: rgba(255,255,255,0.11); }
+
 /* ── ALL-WORK OVERLAY ── */
 .aw-overlay {
   position: fixed;
@@ -23,9 +82,7 @@
   overflow-y: auto;
   overscroll-behavior: contain;
 }
-.aw-overlay.open {
-  transform: translateY(0);
-}
+.aw-overlay.open { transform: translateY(0); }
 .aw-header {
   position: sticky;
   top: 0;
@@ -36,6 +93,7 @@
   padding: 20px 44px;
   background: rgba(8,8,8,0.96);
   backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 .aw-title {
@@ -57,7 +115,7 @@
   font-size: 0.72rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  cursor: pointer;
+  cursor: none !important;
   transition: border-color 0.2s, color 0.2s;
 }
 .aw-close:hover { border-color: rgba(255,255,255,0.3); color: #fff; }
@@ -81,23 +139,20 @@
   transition: opacity 0.5s cubic-bezier(0.25,0.46,0.45,0.94),
               transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94);
 }
-.aw-overlay.open .aw-card {
-  opacity: 1;
-  transform: none;
-}
-/* stagger */
-.aw-overlay.open .aw-card:nth-child(1)  { transition-delay: 0.05s; }
-.aw-overlay.open .aw-card:nth-child(2)  { transition-delay: 0.10s; }
-.aw-overlay.open .aw-card:nth-child(3)  { transition-delay: 0.15s; }
-.aw-overlay.open .aw-card:nth-child(4)  { transition-delay: 0.20s; }
-.aw-overlay.open .aw-card:nth-child(5)  { transition-delay: 0.25s; }
-.aw-overlay.open .aw-card:nth-child(6)  { transition-delay: 0.30s; }
-.aw-overlay.open .aw-card:nth-child(7)  { transition-delay: 0.35s; }
-.aw-overlay.open .aw-card:nth-child(8)  { transition-delay: 0.40s; }
-.aw-overlay.open .aw-card:nth-child(9)  { transition-delay: 0.45s; }
-.aw-overlay.open .aw-card:nth-child(10) { transition-delay: 0.50s; }
-.aw-overlay.open .aw-card:nth-child(11) { transition-delay: 0.55s; }
-.aw-overlay.open .aw-card:nth-child(12) { transition-delay: 0.60s; }
+.aw-overlay.open .aw-card { opacity: 1; transform: none; }
+.aw-overlay.open .aw-card:nth-child(1)  { transition-delay: 0.04s; }
+.aw-overlay.open .aw-card:nth-child(2)  { transition-delay: 0.09s; }
+.aw-overlay.open .aw-card:nth-child(3)  { transition-delay: 0.14s; }
+.aw-overlay.open .aw-card:nth-child(4)  { transition-delay: 0.19s; }
+.aw-overlay.open .aw-card:nth-child(5)  { transition-delay: 0.24s; }
+.aw-overlay.open .aw-card:nth-child(6)  { transition-delay: 0.29s; }
+.aw-overlay.open .aw-card:nth-child(7)  { transition-delay: 0.34s; }
+.aw-overlay.open .aw-card:nth-child(8)  { transition-delay: 0.39s; }
+.aw-overlay.open .aw-card:nth-child(9)  { transition-delay: 0.44s; }
+.aw-overlay.open .aw-card:nth-child(10) { transition-delay: 0.49s; }
+.aw-overlay.open .aw-card:nth-child(11) { transition-delay: 0.54s; }
+.aw-overlay.open .aw-card:nth-child(12) { transition-delay: 0.59s; }
+.aw-overlay.open .aw-card:nth-child(13) { transition-delay: 0.64s; }
 .aw-card-img {
   position: absolute;
   inset: 0;
@@ -112,11 +167,12 @@
   background: linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.08) 55%, transparent 100%);
   transition: background 0.4s;
 }
-.aw-card:hover .aw-card-overlay { background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.3) 55%, rgba(0,0,0,0.08) 100%); }
+.aw-card:hover .aw-card-overlay {
+  background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.3) 55%, rgba(0,0,0,0.08) 100%);
+}
 .aw-card-info {
   position: absolute;
-  bottom: 22px;
-  left: 24px;
+  bottom: 22px; left: 24px;
   z-index: 2;
   transition: transform 0.4s;
 }
@@ -136,76 +192,102 @@
   line-height: 1.1;
 }
 
-/* ── MORE TRIGGER ── */
+/* ── VIEW ALL TRIGGER ── */
 .more-trigger {
   grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 28px;
-  padding: 72px 44px;
-  background: #0c0c0c;
-  border-top: 1px solid rgba(255,255,255,0.05);
-  cursor: pointer;
   position: relative;
   overflow: hidden;
-  transition: background 0.3s;
+  cursor: none !important;
+  background: #060606;
+  border-top: 1px solid rgba(255,255,255,0.055);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 80px 52px 64px;
+  gap: 24px;
+  transition: background 0.5s;
+  min-height: 44vh;
 }
-.more-trigger:hover { background: #111; }
-.more-trigger::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.02), transparent 70%);
-  opacity: 0;
-  transition: opacity 0.4s;
-}
-.more-trigger:hover::before { opacity: 1; }
-.more-count {
+.more-trigger:hover { background: #0d0d0d; }
+
+.mt-left { display: flex; flex-direction: column; gap: 18px; }
+.mt-eyebrow {
   font-size: 0.6rem;
   letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.2);
 }
-.more-label {
+.mt-heading {
   font-family: 'Cormorant Garamond', serif;
   font-style: italic;
   font-weight: 300;
-  font-size: clamp(2.2rem, 4vw, 3.8rem);
-  color: rgba(255,255,255,0.72);
+  font-size: clamp(3.4rem, 6.5vw, 7rem);
+  color: rgba(255,255,255,0.78);
   letter-spacing: -0.03em;
-  text-align: center;
-  line-height: 1.1;
-  transition: color 0.3s;
+  line-height: 0.92;
+  transition: color 0.35s;
 }
-.more-trigger:hover .more-label { color: #fff; }
-.more-arrow {
+.more-trigger:hover .mt-heading { color: #fff; }
+
+.mt-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 14px;
+  padding-bottom: 8px;
+}
+.mt-arrow {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 0.68rem;
+  gap: 14px;
+  font-size: 0.7rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.22);
-  transition: gap 0.3s, color 0.3s;
+  color: rgba(255,255,255,0.25);
+  transition: gap 0.35s, color 0.35s;
 }
-.more-trigger:hover .more-arrow { gap: 18px; color: rgba(255,255,255,0.55); }
-.arrow-line {
-  width: 28px; height: 1px;
-  background: rgba(255,255,255,0.22);
-  transition: width 0.3s, background 0.3s;
+.more-trigger:hover .mt-arrow { gap: 24px; color: rgba(255,255,255,0.65); }
+.mt-arrow-line {
+  width: 36px; height: 1px;
+  background: currentColor;
+  transition: width 0.35s;
 }
-.more-trigger:hover .arrow-line { width: 44px; background: rgba(255,255,255,0.55); }
+.more-trigger:hover .mt-arrow-line { width: 56px; }
 
+/* The big ghost number in the trigger */
+.mt-ghost {
+  position: absolute;
+  right: 44px; bottom: -16px;
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(8rem, 16vw, 18rem);
+  letter-spacing: -0.06em;
+  line-height: 1;
+  color: rgba(255,255,255,0.032);
+  pointer-events: none;
+  user-select: none;
+  transition: color 0.6s;
+}
+.more-trigger:hover .mt-ghost { color: rgba(255,255,255,0.055); }
+
+/* ── RESPONSIVE ── */
 @media (max-width: 860px) {
   .aw-header { padding: 16px 20px; }
   .aw-grid { grid-template-columns: repeat(2, 1fr); }
   .aw-card { height: 52vw; min-height: 180px; }
+  .more-trigger { padding: 52px 24px 48px; min-height: 36vh; }
+  .card-num { font-size: 3rem; top: 18px; right: 18px; }
+  .mt-ghost { font-size: 6rem; }
 }
 </style>
 </head>
 <body>
+
+<!-- Custom cursor -->
+<div class="cursor-dot" id="cursorDot"></div>
+<div class="cursor-ring" id="cursorRing"></div>
 
 <!-- Film grain -->
 <svg class="grain" aria-hidden="true">
@@ -225,78 +307,93 @@
 <!-- All-work overlay -->
 <div class="aw-overlay" id="awOverlay" role="dialog" aria-label="All projects">
   <div class="aw-header">
-    <span class="aw-title">All work — 12 projects</span>
+    <span class="aw-title">All work — 13 projects</span>
     <button class="aw-close" id="awClose">✕ &nbsp; Close</button>
   </div>
   <div class="aw-grid">
-    <a href="projects/aether.html"      target="_blank" rel="noopener" class="aw-card">
-      <div class="aw-card-img" style="background-image:url('https://images.unsplash.com/photo-1490750967868-88df5691cc2e?w=900&h=700&fit=crop&auto=format&q=80')"></div>
+
+    <a href="projects/aether.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#120e08; background-image:url('https://images.unsplash.com/photo-1490750967868-88df5691cc2e?auto=format&fit=crop&w=900&q=80')"></div>
       <div class="aw-card-overlay"></div>
       <div class="aw-card-info"><div class="aw-card-cat">Perfume House</div><div class="aw-card-name">Aether</div></div>
     </a>
-    <a href="projects/smyrna.html"      target="_blank" rel="noopener" class="aw-card">
-      <div class="aw-card-img" style="background-image:url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=900&h=700&fit=crop&auto=format&q=80')"></div>
+
+    <a href="projects/smyrna.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#0f0c0b; background-image:url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=900&q=80')"></div>
       <div class="aw-card-overlay"></div>
       <div class="aw-card-info"><div class="aw-card-cat">Restaurant · Barcelona</div><div class="aw-card-name">SMYRNA by Cem</div></div>
     </a>
-    <a href="projects/roux.html"        target="_blank" rel="noopener" class="aw-card">
-      <div class="aw-card-img" style="background-image:url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=900&h=700&fit=crop&auto=format&q=80')"></div>
+
+    <a href="projects/roux.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#0e0809; background-image:url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=900&q=80')"></div>
       <div class="aw-card-overlay"></div>
       <div class="aw-card-info"><div class="aw-card-cat">Fine Dining · Toronto</div><div class="aw-card-name">ROUX</div></div>
     </a>
+
     <a href="projects/nours-kitchen.html" target="_blank" rel="noopener" class="aw-card">
-      <div class="aw-card-img" style="background-image:url('https://images.unsplash.com/photo-1547592180-85f173990554?w=900&h=700&fit=crop&auto=format&q=80')"></div>
+      <div class="aw-card-img" style="background-color:#110e0b; background-image:url('https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80')"></div>
       <div class="aw-card-overlay"></div>
       <div class="aw-card-info"><div class="aw-card-cat">Home Food · Toronto</div><div class="aw-card-name">Nour's Kitchen</div></div>
     </a>
+
     <a href="projects/drift-coffee.html" target="_blank" rel="noopener" class="aw-card">
-      <div class="aw-card-img" style="background-image:url('https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=900&h=700&fit=crop&auto=format&q=80')"></div>
+      <div class="aw-card-img" style="background-color:#0c0b09; background-image:url('https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80')"></div>
       <div class="aw-card-overlay"></div>
       <div class="aw-card-info"><div class="aw-card-cat">Coffee Shop · Toronto</div><div class="aw-card-name">Drift Coffee</div></div>
     </a>
+
     <a href="projects/greek-pastry.html" target="_blank" rel="noopener" class="aw-card">
-      <div class="aw-card-img" style="background-image:url('https://images.unsplash.com/photo-1519676867240-f03562e64548?w=900&h=700&fit=crop&auto=format&q=80')"></div>
+      <div class="aw-card-img" style="background-color:#14120e; background-image:url('https://images.unsplash.com/photo-1519676867240-f03562e64548?auto=format&fit=crop&w=900&q=80')"></div>
       <div class="aw-card-overlay"></div>
       <div class="aw-card-info"><div class="aw-card-cat">Bakery · Barcelona</div><div class="aw-card-name">Greek Pastry</div></div>
     </a>
-    <a href="projects/maya-reyes.html"  target="_blank" rel="noopener" class="aw-card">
-      <div class="aw-card-img" style="background-image:url('https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=900&h=700&fit=crop&auto=format&q=80')"></div>
+
+    <a href="projects/maya-reyes.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#0d0c0c; background-image:url('https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=900&q=80')"></div>
       <div class="aw-card-overlay"></div>
       <div class="aw-card-info"><div class="aw-card-cat">Photographer · Toronto</div><div class="aw-card-name">Maya Reyes</div></div>
     </a>
-    <a href="projects/vault.html"       target="_blank" rel="noopener" class="aw-card">
-      <div class="aw-card-img" style="background-image:url('https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=900&h=700&fit=crop&auto=format&q=80')"></div>
+
+    <a href="projects/vault.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#080614; background-image:url('https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=900&q=80')"></div>
       <div class="aw-card-overlay"></div>
       <div class="aw-card-info"><div class="aw-card-cat">Indie Game</div><div class="aw-card-name">VAULT</div></div>
     </a>
-    <a href="projects/cavo.html"        target="_blank" rel="noopener" class="aw-card">
-      <div class="aw-card-img" style="background-image:url('https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=900&h=700&fit=crop&auto=format&q=80')"></div>
+
+    <a href="projects/cavo.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#030810; background-image:url('https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?auto=format&fit=crop&w=900&q=80')"></div>
       <div class="aw-card-overlay"></div>
       <div class="aw-card-info"><div class="aw-card-cat">Yacht Charter · Mediterranean</div><div class="aw-card-name">Cavo</div></div>
     </a>
-    <a href="projects/kira.html"        target="_blank" rel="noopener" class="aw-card">
-      <div class="aw-card-img" style="background-image:url('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=900&h=700&fit=crop&auto=format&q=80')"></div>
+
+    <a href="projects/kira.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#090909; background-image:url('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=900&q=80')"></div>
       <div class="aw-card-overlay"></div>
       <div class="aw-card-info"><div class="aw-card-cat">Fashion Label · Toronto</div><div class="aw-card-name">KIRA</div></div>
     </a>
-    <a href="projects/elara.html"       target="_blank" rel="noopener" class="aw-card">
-      <div class="aw-card-img" style="background-image:url('https://images.unsplash.com/photo-1560066984-138dadb4c035?w=900&h=700&fit=crop&auto=format&q=80')"></div>
+
+    <a href="projects/elara.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#120a0e; background-image:url('https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=900&q=80')"></div>
       <div class="aw-card-overlay"></div>
       <div class="aw-card-info"><div class="aw-card-cat">Beauty Studio · Toronto</div><div class="aw-card-name">Elara Studio</div></div>
     </a>
-    <a href="projects/solstice.html"    target="_blank" rel="noopener" class="aw-card">
-      <div class="aw-card-img" style="background-image:url('https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=900&h=700&fit=crop&auto=format&q=80')"></div>
+
+    <a href="projects/solstice.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#0c0e0a; background-image:url('https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=900&q=80')"></div>
       <div class="aw-card-overlay"></div>
       <div class="aw-card-info"><div class="aw-card-cat">Yoga Studio · Toronto</div><div class="aw-card-name">Solstice</div></div>
     </a>
-    <a href="projects/forma.html"       target="_blank" rel="noopener" class="aw-card">
-      <div class="aw-card-img" style="background-image:url('https://images.unsplash.com/photo-1487958449943-2429e8be8625?w=900&h=700&fit=crop&auto=format&q=80')"></div>
+
+    <a href="projects/forma.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#0a0a0a; background-image:url('https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=900&q=80')"></div>
       <div class="aw-card-overlay"></div>
       <div class="aw-card-info"><div class="aw-card-cat">Architecture Studio · Toronto</div><div class="aw-card-name">Forma Studio</div></div>
     </a>
+
   </div>
 </div>
 
+<!-- Nav -->
 <nav class="nav" id="nav">
   <a href="/" class="nav-logo">
     <span class="nav-logo-name">LYNQ</span>
@@ -309,16 +406,23 @@
   </div>
 </nav>
 
+<!-- Work label bar -->
 <div class="work-label">
   <span class="wl-left">Selected work &mdash; 2024–2026</span>
-  <span class="wl-right"><span class="wl-dot"></span>Available for projects</span>
+  <span class="wl-right"><span class="wl-dot"></span>Art, not templates</span>
 </div>
 
+<!-- Gallery -->
 <main class="gallery">
 
-  <!-- ① AETHER — showstopper featured -->
-  <a href="projects/aether.html" target="_blank" rel="noopener" class="gallery-card featured aether-featured">
-    <div class="card-img" style="background-image:url('https://images.unsplash.com/photo-1490750967868-88df5691cc2e?w=2400&h=1600&fit=crop&auto=format&q=90')"></div>
+  <!-- 01 · AETHER — showstopper -->
+  <a href="projects/aether.html" target="_blank" rel="noopener"
+     class="gallery-card featured aether-featured">
+    <span class="card-num">01</span>
+    <div class="card-img" style="
+      background-color: #120e08;
+      background-image: url('https://images.unsplash.com/photo-1490750967868-88df5691cc2e?auto=format&fit=crop&w=2400&q=88');
+    "></div>
     <div class="card-overlay"></div>
     <div class="card-info">
       <div class="card-cat">Perfume House · Independent</div>
@@ -326,9 +430,13 @@
     </div>
   </a>
 
-  <!-- ② -->
+  <!-- 02 · ROUX -->
   <a href="projects/roux.html" target="_blank" rel="noopener" class="gallery-card">
-    <div class="card-img" style="background-image:url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1400&h=900&fit=crop&auto=format&q=88')"></div>
+    <span class="card-num">02</span>
+    <div class="card-img" style="
+      background-color: #0e0809;
+      background-image: url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1400&q=85');
+    "></div>
     <div class="card-overlay"></div>
     <div class="card-info">
       <div class="card-cat">Fine Dining · Toronto</div>
@@ -336,9 +444,14 @@
     </div>
   </a>
 
-  <!-- ③ -->
-  <a href="projects/kira.html" target="_blank" rel="noopener" class="gallery-card">
-    <div class="card-img" style="background-image:url('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=1400&h=900&fit=crop&auto=format&q=88')"></div>
+  <!-- 03 · KIRA -->
+  <a href="projects/kira.html" target="_blank" rel="noopener"
+     class="gallery-card kira-featured">
+    <span class="card-num">03</span>
+    <div class="card-img" style="
+      background-color: #090909;
+      background-image: url('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1400&q=85');
+    "></div>
     <div class="card-overlay"></div>
     <div class="card-info">
       <div class="card-cat">Fashion Label · Toronto</div>
@@ -346,9 +459,13 @@
     </div>
   </a>
 
-  <!-- ④ -->
+  <!-- 04 · MAYA REYES -->
   <a href="projects/maya-reyes.html" target="_blank" rel="noopener" class="gallery-card">
-    <div class="card-img" style="background-image:url('https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=1400&h=900&fit=crop&auto=format&q=88')"></div>
+    <span class="card-num">04</span>
+    <div class="card-img" style="
+      background-color: #0d0c0c;
+      background-image: url('https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=1400&q=85');
+    "></div>
     <div class="card-overlay"></div>
     <div class="card-info">
       <div class="card-cat">Photographer · Toronto</div>
@@ -356,9 +473,13 @@
     </div>
   </a>
 
-  <!-- ⑤ -->
+  <!-- 05 · CAVO -->
   <a href="projects/cavo.html" target="_blank" rel="noopener" class="gallery-card">
-    <div class="card-img" style="background-image:url('https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=1400&h=900&fit=crop&auto=format&q=88')"></div>
+    <span class="card-num">05</span>
+    <div class="card-img" style="
+      background-color: #030810;
+      background-image: url('https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?auto=format&fit=crop&w=1400&q=85');
+    "></div>
     <div class="card-overlay"></div>
     <div class="card-info">
       <div class="card-cat">Yacht Charter · Mediterranean</div>
@@ -366,23 +487,30 @@
     </div>
   </a>
 
-  <!-- MORE TRIGGER -->
-  <div class="more-trigger" id="moreTrigger" role="button" tabindex="0" aria-label="View all 13 projects">
-    <span class="more-count">13 projects total</span>
-    <span class="more-label">View all<br>the work.</span>
-    <span class="more-arrow">
-      <span class="arrow-line"></span>
-      Open
-    </span>
+  <!-- VIEW ALL TRIGGER -->
+  <div class="more-trigger" id="moreTrigger" role="button" tabindex="0"
+       aria-label="View all 13 projects">
+    <div class="mt-left">
+      <span class="mt-eyebrow">13 projects · 2024–2026</span>
+      <span class="mt-heading">All<br>the work.</span>
+    </div>
+    <div class="mt-right">
+      <span class="mt-arrow">
+        <span class="mt-arrow-line"></span>
+        Explore all
+      </span>
+    </div>
+    <span class="mt-ghost" aria-hidden="true">13</span>
   </div>
 
 </main>
 
+<!-- Contact -->
 <section class="contact" id="contact">
   <div class="contact-tag">Get in touch</div>
   <h2 class="contact-heading">Ready when<br><em>you are.</em></h2>
   <a href="mailto:hello@lynq.build" class="contact-email">hello@lynq.build</a>
-  <p class="contact-sub">We'll get back to you within 24 hours.</p>
+  <p class="contact-sub">Reply within 24 hours.</p>
 </section>
 
 <footer class="footer">
@@ -390,39 +518,61 @@
   <div class="footer-right">
     <a href="/services">Services</a>
     <a href="#contact">Contact</a>
-    <span>© 2026 Mustafa Alqudah</span>
+    <span>&copy; 2026 Mustafa Alqudah</span>
   </div>
 </footer>
 
 <script>
-// ── INTRO SCREEN
-const introScreen = document.getElementById('introScreen');
+/* ── CUSTOM CURSOR ── */
+const dot  = document.getElementById('cursorDot');
+const ring = document.getElementById('cursorRing');
+let mx = -200, my = -200, rx = -200, ry = -200;
+
+window.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  dot.style.transform = `translate(${mx}px, ${my}px)`;
+});
+
+(function tick() {
+  rx += (mx - rx) * 0.11;
+  ry += (my - ry) * 0.11;
+  ring.style.transform = `translate(${rx}px, ${ry}px)`;
+  requestAnimationFrame(tick);
+})();
+
+document.querySelectorAll('a, button, [role="button"]').forEach(el => {
+  el.addEventListener('mouseenter', () => { dot.classList.add('hov'); ring.classList.add('hov'); });
+  el.addEventListener('mouseleave', () => { dot.classList.remove('hov'); ring.classList.remove('hov'); });
+});
+
+/* ── INTRO SCREEN ── */
+const intro = document.getElementById('introScreen');
 setTimeout(() => {
-  introScreen.classList.add('out');
-  setTimeout(() => introScreen.remove(), 900);
+  intro.classList.add('out');
+  setTimeout(() => intro.remove(), 900);
 }, 1600);
 
-// ── NAV SCROLL
+/* ── NAV SCROLL ── */
 const nav = document.getElementById('nav');
 window.addEventListener('scroll', () => {
   nav.classList.toggle('scrolled', window.scrollY > 40);
 }, { passive: true });
 
-// ── 3D PARALLAX
-document.querySelectorAll('.gallery-card:not(.cta-card)').forEach(card => {
+/* ── 3D PARALLAX ON CARDS ── */
+document.querySelectorAll('.gallery-card').forEach(card => {
   const img = card.querySelector('.card-img');
   if (!img) return;
   let raf;
   card.addEventListener('mousemove', e => {
     cancelAnimationFrame(raf);
     raf = requestAnimationFrame(() => {
-      const rect = card.getBoundingClientRect();
-      const xPct = (e.clientX - rect.left) / rect.width - 0.5;
-      const yPct = (e.clientY - rect.top)  / rect.height - 0.5;
-      img.style.transition = 'none';
-      img.style.transform  = `scale(1.1) translate(${xPct * -28}px, ${yPct * -28}px)`;
+      const r   = card.getBoundingClientRect();
+      const xp  = (e.clientX - r.left)  / r.width  - 0.5;
+      const yp  = (e.clientY - r.top)   / r.height - 0.5;
+      img.style.transition  = 'none';
+      img.style.transform   = `scale(1.1) translate(${xp * -28}px, ${yp * -28}px)`;
       card.style.transition = 'none';
-      card.style.transform  = `perspective(1400px) rotateX(${yPct * -5}deg) rotateY(${xPct * 5}deg)`;
+      card.style.transform  = `perspective(1400px) rotateX(${yp * -5}deg) rotateY(${xp * 5}deg)`;
     });
   });
   card.addEventListener('mouseleave', () => {
@@ -434,7 +584,7 @@ document.querySelectorAll('.gallery-card:not(.cta-card)').forEach(card => {
   });
 });
 
-// ── ALL-WORK OVERLAY
+/* ── ALL-WORK OVERLAY ── */
 const overlay    = document.getElementById('awOverlay');
 const moreTrigger = document.getElementById('moreTrigger');
 const awClose    = document.getElementById('awClose');
@@ -449,9 +599,13 @@ function closeOverlay() {
 }
 
 moreTrigger.addEventListener('click', openOverlay);
-moreTrigger.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openOverlay(); });
+moreTrigger.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') openOverlay();
+});
 awClose.addEventListener('click', closeOverlay);
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeOverlay(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeOverlay();
+});
 </script>
 </body>
 </html>

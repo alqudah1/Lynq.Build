@@ -285,6 +285,25 @@ body {
   letter-spacing: -0.02em;
 }
 
+/* ── AETHER FEATURED CARD ── */
+.aether-featured .card-overlay {
+  background: linear-gradient(
+    to top,
+    rgba(8,5,2,0.88) 0%,
+    rgba(12,8,3,0.18) 44%,
+    rgba(8,5,0,0.04) 100%
+  );
+}
+.aether-featured:hover .card-overlay {
+  background: linear-gradient(
+    to top,
+    rgba(8,5,2,0.92) 0%,
+    rgba(12,8,3,0.48) 52%,
+    rgba(8,5,0,0.14) 100%
+  );
+}
+.aether-featured .card-cat { color: rgba(210,170,100,0.55); }
+
 /* ── VAULT FEATURED CARD ── */
 .vault-featured .card-name {
   font-family: 'Outfit', sans-serif;
