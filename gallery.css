@@ -197,6 +197,9 @@ body {
 .gallery-card:nth-child(3) { animation-delay: 2.28s; }
 .gallery-card:nth-child(4) { animation-delay: 2.36s; }
 .gallery-card:nth-child(5) { animation-delay: 2.44s; }
+.gallery-card:nth-child(6) { animation-delay: 2.52s; }
+.gallery-card:nth-child(7) { animation-delay: 2.58s; }
+.gallery-card:nth-child(8) { animation-delay: 2.64s; }
 
 .gallery-card.featured {
   grid-column: 1 / -1;
@@ -275,6 +278,31 @@ body {
   font-weight: 300;
   font-size: clamp(2.8rem, 5vw, 5rem);
   letter-spacing: -0.02em;
+}
+
+/* ── VAULT FEATURED CARD ── */
+.vault-featured .card-name {
+  font-family: 'Outfit', sans-serif;
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  font-size: clamp(2.4rem, 4vw, 4rem);
+}
+.vault-featured .card-overlay {
+  background: linear-gradient(
+    to top,
+    rgba(4,4,20,0.88) 0%,
+    rgba(4,4,20,0.2) 44%,
+    rgba(4,4,20,0.05) 100%
+  );
+}
+.vault-featured:hover .card-overlay {
+  background: linear-gradient(
+    to top,
+    rgba(4,4,20,0.94) 0%,
+    rgba(4,4,20,0.55) 52%,
+    rgba(4,4,20,0.2) 100%
+  );
 }
 
 /* ── CTA CARD ── */

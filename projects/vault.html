@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Vault — An Indie Game</title>
+<meta name="description" content="Vault is a atmospheric puzzle-thriller about memory, identity, and the things we bury. Wishlist now on Steam.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #04040a;
+  --bg2:     #080810;
+  --violet:  #7b56ff;
+  --violet2: #a388ff;
+  --crimson: #c73a4a;
+  --cream:   #e8e2f8;
+  --muted:   rgba(232,226,248,0.32);
+  --line:    rgba(123,86,255,0.12);
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--cream);
+  font-family: 'Space Grotesk', sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── GRAIN ── */
+.grain {
+  position: fixed;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  pointer-events: none;
+  z-index: 9000;
+  opacity: 0.038;
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 44px;
+}
+.nav-logo {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  color: var(--cream);
+  text-transform: uppercase;
+}
+.nav-logo span { color: var(--violet); }
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+.nav-right a {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.nav-right a:hover { color: var(--cream); }
+.nav-wishlist {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--violet);
+  color: #fff !important;
+  border-radius: 5px;
+  font-size: 0.72rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase;
+  transition: opacity 0.2s, transform 0.2s !important;
+}
+.nav-wishlist:hover { opacity: 0.88 !important; transform: translateY(-1px) !important; }
+
+/* ── HERO ── */
+.hero {
+  position: relative;
+  height: 100vh;
+  min-height: 600px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hero-bg {
+  position: absolute;
+  inset: 0;
+}
+.hero-bg img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  filter: brightness(0.3) saturate(0.6);
+  display: block;
+}
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at 50% 60%,
+    rgba(123,86,255,0.12) 0%,
+    rgba(4,4,10,0.6) 70%
+  );
+}
+.hero-overlay2 {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 30%, var(--bg) 100%);
+}
+.hero-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+.hero-eyebrow {
+  font-size: 0.62rem;
+  letter-spacing: 0.36em;
+  text-transform: uppercase;
+  color: var(--violet2);
+  margin-bottom: 28px;
+}
+.hero-title {
+  font-size: clamp(7rem, 18vw, 18rem);
+  font-weight: 700;
+  letter-spacing: -0.06em;
+  color: var(--cream);
+  line-height: 0.88;
+  text-transform: uppercase;
+}
+.hero-title .glow {
+  color: var(--violet);
+  text-shadow: 0 0 80px rgba(123,86,255,0.5), 0 0 160px rgba(123,86,255,0.2);
+}
+.hero-sub {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(1.1rem, 2vw, 1.5rem);
+  color: var(--muted);
+  margin-top: 24px;
+  letter-spacing: 0.02em;
+}
+.hero-cta-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 44px;
+}
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 32px;
+  background: var(--violet);
+  color: #fff;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 8px 32px rgba(123,86,255,0.35);
+}
+.btn-primary:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 12px 40px rgba(123,86,255,0.5); }
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 28px;
+  border: 1px solid rgba(123,86,255,0.3);
+  color: var(--cream);
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+.btn-secondary:hover { border-color: var(--violet); background: rgba(123,86,255,0.06); }
+.hero-scroll-hint {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  z-index: 3;
+}
+.hero-scroll-hint span {
+  font-size: 0.58rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.scroll-line {
+  width: 1px; height: 36px;
+  background: linear-gradient(to bottom, var(--violet), transparent);
+  animation: sl 1.8s ease-in-out infinite;
+}
+@keyframes sl {
+  0%   { transform: scaleY(0); transform-origin: top; opacity: 0; }
+  40%  { transform: scaleY(1); opacity: 1; transform-origin: top; }
+  60%  { transform-origin: bottom; }
+  100% { transform: scaleY(0); transform-origin: bottom; opacity: 0; }
+}
+
+/* ── STORY STRIP ── */
+.story-strip {
+  padding: 80px 44px;
+  max-width: 900px;
+  margin: 0 auto;
+  text-align: center;
+}
+.story-strip p {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(1.4rem, 2.5vw, 2rem);
+  color: rgba(232,226,248,0.55);
+  line-height: 1.55;
+  letter-spacing: 0.01em;
+}
+.story-strip p strong {
+  color: var(--cream);
+  font-style: normal;
+  font-weight: 300;
+}
+
+/* ── FEATURES ── */
+.features {
+  padding: 0 44px 100px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.features-header {
+  text-align: center;
+  margin-bottom: 64px;
+}
+.section-tag {
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--violet2);
+  margin-bottom: 16px;
+}
+.features-header h2 {
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  font-weight: 600;
+  color: var(--cream);
+  letter-spacing: -0.04em;
+}
+.feat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2px;
+  background: var(--line);
+}
+.feat-card {
+  background: var(--bg2);
+  padding: 52px 44px;
+  position: relative;
+  overflow: hidden;
+}
+.feat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 1px;
+  background: var(--line);
+}
+.feat-num {
+  font-size: 0.62rem;
+  letter-spacing: 0.3em;
+  color: var(--violet);
+  font-weight: 600;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+}
+.feat-title {
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--cream);
+  letter-spacing: -0.03em;
+  margin-bottom: 14px;
+}
+.feat-desc {
+  font-size: 0.84rem;
+  line-height: 1.75;
+  color: var(--muted);
+  font-weight: 300;
+}
+.feat-card-accent {
+  position: absolute;
+  bottom: -40px;
+  right: -40px;
+  width: 160px; height: 160px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(123,86,255,0.08), transparent 70%);
+}
+
+/* ── SCREENSHOTS ── */
+.screenshots {
+  background: var(--bg2);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 80px 0;
+  overflow: hidden;
+}
+.screenshots-header {
+  padding: 0 44px 48px;
+}
+.screenshots-header h2 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 600;
+  color: var(--cream);
+  letter-spacing: -0.04em;
+}
+.ss-strip {
+  display: flex;
+  gap: 3px;
+  overflow-x: auto;
+  padding: 0 44px;
+  scrollbar-width: none;
+}
+.ss-strip::-webkit-scrollbar { display: none; }
+.ss-item {
+  flex-shrink: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  width: 500px;
+  height: 300px;
+  position: relative;
+}
+.ss-item img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: brightness(0.75) saturate(0.8);
+  transition: filter 0.4s;
+}
+.ss-item:hover img { filter: brightness(0.95) saturate(1); }
+.ss-caption {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 20px 20px 16px;
+  background: linear-gradient(to top, rgba(4,4,10,0.8), transparent);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(232,226,248,0.5);
+}
+
+/* ── PLATFORMS ── */
+.platforms {
+  padding: 100px 44px;
+  text-align: center;
+}
+.platforms-tag {
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+.platforms h2 {
+  font-size: clamp(2.2rem, 4vw, 3.5rem);
+  font-weight: 600;
+  color: var(--cream);
+  letter-spacing: -0.04em;
+  margin-bottom: 16px;
+}
+.platforms-sub {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 1.2rem;
+  color: var(--muted);
+  margin-bottom: 52px;
+}
+.platform-list {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  flex-wrap: wrap;
+  margin-bottom: 52px;
+}
+.platform-badge {
+  padding: 12px 28px;
+  border: 1px solid var(--line);
+  border-radius: 40px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: rgba(232,226,248,0.5);
+  letter-spacing: 0.06em;
+}
+.wishlist-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 44px;
+  background: var(--violet);
+  color: #fff;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 12px 44px rgba(123,86,255,0.4);
+}
+.wishlist-cta:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 18px 56px rgba(123,86,255,0.55); }
+
+/* ── FOOTER ── */
+footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 44px;
+  border-top: 1px solid var(--line);
+}
+.footer-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.footer-logo {
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  color: rgba(232,226,248,0.18);
+  text-transform: uppercase;
+}
+.footer-studio {
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: rgba(232,226,248,0.1);
+}
+.footer-lynq {
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  color: rgba(232,226,248,0.12);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.footer-lynq:hover { color: rgba(232,226,248,0.4); }
+
+/* ── REVEAL ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.8s cubic-bezier(0.25,0.46,0.45,0.94),
+              transform 0.8s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+.reveal.in { opacity: 1; transform: none; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 860px) {
+  nav { padding: 16px 20px; }
+  .nav-right a:not(.nav-wishlist) { display: none; }
+  .hero-title { font-size: clamp(5rem, 18vw, 8rem); }
+  .hero-cta-row { flex-direction: column; }
+  .features { padding: 0 20px 60px; }
+  .feat-grid { grid-template-columns: 1fr; }
+  .story-strip { padding: 60px 20px; }
+  .ss-item { width: 320px; height: 200px; }
+  .screenshots-header { padding: 0 20px 32px; }
+  .ss-strip { padding: 0 20px; }
+  .platforms { padding: 60px 20px; }
+  footer { padding: 18px 20px; }
+}
+</style>
+</head>
+<body>
+
+<svg class="grain" aria-hidden="true">
+  <filter id="gr" x="0%" y="0%" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.70" numOctaves="4" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+  <rect width="100%" height="100%" filter="url(#gr)"/>
+</svg>
+
+<nav>
+  <div class="nav-logo">V<span>AU</span>LT</div>
+  <div class="nav-right">
+    <a href="#story">Story</a>
+    <a href="#features">Features</a>
+    <a href="#screenshots">Screenshots</a>
+    <a href="#platforms" class="nav-wishlist">Wishlist →</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-bg">
+    <img src="https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=2400&h=1400&fit=crop&auto=format&q=90" alt="">
+  </div>
+  <div class="hero-overlay"></div>
+  <div class="hero-overlay2"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">A new puzzle-thriller · Coming 2026</div>
+    <div class="hero-title"><span class="glow">VAULT</span></div>
+    <div class="hero-sub">Some doors are locked for a reason.</div>
+    <div class="hero-cta-row">
+      <a href="#platforms" class="btn-primary">Wishlist on Steam →</a>
+      <a href="#story" class="btn-secondary">Watch trailer</a>
+    </div>
+  </div>
+  <div class="hero-scroll-hint">
+    <div class="scroll-line"></div>
+    <span>Scroll</span>
+  </div>
+</section>
+
+<!-- Story -->
+<section class="story-strip" id="story">
+  <p class="reveal">
+    You wake up in a room you don't recognise.<br>
+    <strong>Every object is a memory. Every door is a choice.</strong><br>
+    Some memories are better left locked away.
+  </p>
+</section>
+
+<!-- Features -->
+<section class="features" id="features">
+  <div class="features-header reveal">
+    <div class="section-tag">The game</div>
+    <h2>Built around atmosphere.</h2>
+  </div>
+  <div class="feat-grid">
+    <div class="feat-card reveal">
+      <div class="feat-num">01 — Narrative</div>
+      <div class="feat-title">A story that shifts under you</div>
+      <div class="feat-desc">Every decision rewrites what came before. Vault's branching narrative has no fixed truth — only your truth, built from what you chose to remember.</div>
+      <div class="feat-card-accent"></div>
+    </div>
+    <div class="feat-card reveal">
+      <div class="feat-num">02 — Puzzles</div>
+      <div class="feat-title">Logic and memory entwined</div>
+      <div class="feat-desc">Over 60 hand-crafted puzzles that respond to your emotional state. The same door opens differently depending on what you've seen.</div>
+      <div class="feat-card-accent"></div>
+    </div>
+    <div class="feat-card reveal">
+      <div class="feat-num">03 — Atmosphere</div>
+      <div class="feat-title">Sound-first design</div>
+      <div class="feat-desc">Original score by Mercury Prize-nominated composer Faye Alvers. Adaptive audio that responds in real time — silence is a mechanic, not a gap.</div>
+      <div class="feat-card-accent"></div>
+    </div>
+    <div class="feat-card reveal">
+      <div class="feat-num">04 — Replayability</div>
+      <div class="feat-title">Three endings. One truth.</div>
+      <div class="feat-desc">No two playthroughs surface the same details. New players consistently discover things on a third run that veterans missed entirely.</div>
+      <div class="feat-card-accent"></div>
+    </div>
+  </div>
+</section>
+
+<!-- Screenshots -->
+<section class="screenshots" id="screenshots">
+  <div class="screenshots-header reveal">
+    <div class="section-tag">In-game</div>
+    <h2>Screenshots.</h2>
+  </div>
+  <div class="ss-strip">
+    <div class="ss-item">
+      <img src="https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=1000&h=600&fit=crop&auto=format&q=88" alt="">
+      <div class="ss-caption">Chapter I — The Entry</div>
+    </div>
+    <div class="ss-item">
+      <img src="https://images.unsplash.com/photo-1616514197671-15d99ce7a6f8?w=1000&h=600&fit=crop&auto=format&q=88" alt="">
+      <div class="ss-caption">Chapter II — The Archive</div>
+    </div>
+    <div class="ss-item">
+      <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1000&h=600&fit=crop&auto=format&q=88" alt="">
+      <div class="ss-caption">Chapter III — The Descent</div>
+    </div>
+    <div class="ss-item">
+      <img src="https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=1000&h=600&fit=crop&auto=format&q=88" alt="">
+      <div class="ss-caption">Chapter IV — The Vault</div>
+    </div>
+  </div>
+</section>
+
+<!-- Platforms / Wishlist -->
+<section class="platforms" id="platforms">
+  <div class="platforms-tag reveal">Available on</div>
+  <h2 class="reveal">Coming 2026.</h2>
+  <div class="platforms-sub reveal">Wishlist now to be notified on launch day.</div>
+  <div class="platform-list reveal">
+    <div class="platform-badge">Steam — PC</div>
+    <div class="platform-badge">PlayStation 5</div>
+    <div class="platform-badge">Xbox Series X</div>
+    <div class="platform-badge">Nintendo Switch</div>
+  </div>
+  <a href="#" class="wishlist-cta reveal">+ Wishlist on Steam</a>
+</section>
+
+<footer>
+  <div class="footer-left">
+    <div class="footer-logo">Vault</div>
+    <div class="footer-studio">by Stillframe Studio · 2026</div>
+  </div>
+  <a href="https://lynq.build" class="footer-lynq">Site by LYNQ</a>
+</footer>
+
+<script>
+const reveals = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+  });
+}, { threshold: 0.08 });
+reveals.forEach(el => io.observe(el));
+</script>
+</body>
+</html>

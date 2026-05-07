@@ -1,2167 +1,641 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Greek Pastry — Authentic Greek Bakery in Barceloneta</title>
-    <meta
-      name="description"
-      content="Traditional Greek pastries, phyllo pies, baklava, bougatsa and Greek coffee in the heart of Barceloneta. Made fresh every morning by a family from Athens."
-    />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400;1,9..144,500&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&display=swap"
-      rel="stylesheet"
-    />
-    <style>
-      :root {
-        --white: #fcfaf3;
-        --white-2: #f5f0e3;
-        --blue: #0f3d66;
-        --blue-sky: #3b83b8;
-        --blue-deep: #062340;
-        --blue-pale: #e3edf5;
-        --gold: #c9a34a;
-        --gold-deep: #8a6a1e;
-        --honey: #e3b854;
-        --olive: #6b7a3a;
-        --stone: #7a7062;
-        --ink: #1a1812;
-        --char: #2d2824;
-        --line: #d4c8a8;
-      }
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-      html {
-        scroll-behavior: smooth;
-      }
-      body {
-        font-family: "Plus Jakarta Sans", sans-serif;
-        background: var(--white);
-        color: var(--ink);
-        line-height: 1.6;
-        overflow-x: hidden;
-      }
-      .display {
-        font-family: "Fraunces", serif;
-      }
-      .spec {
-        font-family: "Fraunces", serif;
-      }
-      .container {
-        max-width: 1340px;
-        margin: 0 auto;
-        padding: 0 36px;
-      }
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Greek Pastry — Authentic Greek Bakery · Barceloneta</title>
+<meta name="description" content="Traditional Greek pastries, phyllo pies, baklava, and bougatsa made fresh every morning in the heart of Barceloneta, Barcelona.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ivory:  #faf5ee;
+  --cream:  #f2e9d8;
+  --navy:   #182b40;
+  --navy2:  #0f1e2e;
+  --gold:   #b08a30;
+  --gold2:  #d4a838;
+  --ink:    #1a130a;
+  --muted:  #8a7c68;
+  --line:   rgba(26,19,10,0.08);
+}
 
-      /* ============ TOP ============ */
-      .top-strip {
-        background: var(--blue);
-        color: var(--white);
-        padding: 11px 0;
-        text-align: center;
-        font-size: 13px;
-        letter-spacing: 0.15em;
-        text-transform: uppercase;
-        font-weight: 500;
-      }
-      .top-strip .greek-key {
-        display: inline-block;
-        color: var(--gold);
-        margin: 0 18px;
-        letter-spacing: 0.05em;
-      }
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--ivory);
+  color: var(--ink);
+  font-family: 'DM Sans', sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
 
-      /* ============ NAV ============ */
-      nav {
-        background: var(--white);
-        padding: 22px 0;
-        border-bottom: 1px solid var(--line);
-        position: sticky;
-        top: 0;
-        z-index: 100;
-        background: rgba(252, 250, 243, 0.96);
-        backdrop-filter: blur(16px);
-      }
-      .nav-inner {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-      }
-      .logo-wrap {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-      }
-      .logo-seal {
-        width: 52px;
-        height: 52px;
-        border: 2px solid var(--blue);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-      }
-      .logo-seal::before {
-        content: "";
-        position: absolute;
-        inset: 4px;
-        border: 1px solid var(--gold);
-        border-radius: 50%;
-      }
-      .logo-seal span {
-        font-family: "Fraunces", serif;
-        font-style: italic;
-        font-weight: 600;
-        font-size: 24px;
-        color: var(--blue);
-      }
-      .logo-text {
-        line-height: 1;
-      }
-      .logo-text .n {
-        font-family: "Fraunces", serif;
-        font-size: 26px;
-        color: var(--blue);
-        font-weight: 600;
-        letter-spacing: 0.01em;
-      }
-      .logo-text .t {
-        font-size: 11px;
-        color: var(--gold-deep);
-        letter-spacing: 0.25em;
-        text-transform: uppercase;
-        margin-top: 4px;
-        font-weight: 600;
-      }
-      .nav-links {
-        display: flex;
-        gap: 36px;
-        list-style: none;
-      }
-      .nav-links a {
-        color: var(--ink);
-        text-decoration: none;
-        font-size: 13px;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.15em;
-        transition: color 0.2s;
-      }
-      .nav-links a:hover {
-        color: var(--blue);
-      }
-      .nav-cta {
-        background: var(--blue);
-        color: var(--white);
-        padding: 12px 24px;
-        text-decoration: none;
-        font-size: 12px;
-        letter-spacing: 0.15em;
-        text-transform: uppercase;
-        font-weight: 600;
-        transition: all 0.2s;
-      }
-      .nav-cta:hover {
-        background: var(--gold);
-        color: var(--ink);
-      }
+/* ── GRAIN ── */
+.grain {
+  position: fixed;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  pointer-events: none;
+  z-index: 9000;
+  opacity: 0.030;
+}
 
-      /* ============ HERO ============ */
-      .hero {
-        padding: 80px 0 100px;
-        position: relative;
-        overflow: hidden;
-      }
-      .hero::before {
-        content: "";
-        position: absolute;
-        top: 20%;
-        right: -5%;
-        width: 500px;
-        height: 500px;
-        background: radial-gradient(
-          circle,
-          rgba(201, 163, 74, 0.12),
-          transparent 70%
-        );
-        pointer-events: none;
-      }
-      .hero-grid {
-        display: grid;
-        grid-template-columns: 1.1fr 0.9fr;
-        gap: 80px;
-        align-items: center;
-      }
-      .hero-greek-tag {
-        display: inline-flex;
-        align-items: center;
-        gap: 14px;
-        margin-bottom: 28px;
-        font-size: 13px;
-        letter-spacing: 0.2em;
-        text-transform: uppercase;
-        color: var(--blue);
-        font-weight: 600;
-      }
-      .hero-greek-tag::before,
-      .hero-greek-tag::after {
-        content: "";
-        width: 40px;
-        height: 1px;
-        background: var(--gold);
-      }
-      h1.hero-title {
-        font-family: "Fraunces", serif;
-        font-size: clamp(56px, 9vw, 140px);
-        line-height: 0.92;
-        font-weight: 500;
-        color: var(--blue);
-        letter-spacing: -0.03em;
-        margin-bottom: 36px;
-      }
-      h1.hero-title em {
-        font-style: italic;
-        color: var(--gold);
-        font-weight: 400;
-      }
-      h1.hero-title .greek {
-        font-family: "Fraunces", serif;
-        font-style: italic;
-        color: var(--gold-deep);
-        font-size: 0.48em;
-        display: block;
-        margin-top: 8px;
-        font-weight: 400;
-        letter-spacing: 0.01em;
-      }
-      .hero-text {
-        font-size: 19px;
-        color: var(--char);
-        line-height: 1.7;
-        margin-bottom: 40px;
-        max-width: 520px;
-        font-family: "Fraunces", serif;
-      }
-      .hero-text strong {
-        color: var(--blue);
-        font-weight: 500;
-      }
-      .hero-actions {
-        display: flex;
-        gap: 18px;
-        align-items: center;
-        flex-wrap: wrap;
-      }
-      .btn-primary {
-        background: var(--blue);
-        color: var(--white);
-        padding: 18px 34px;
-        text-decoration: none;
-        font-size: 13px;
-        font-weight: 600;
-        letter-spacing: 0.18em;
-        text-transform: uppercase;
-        transition: all 0.3s;
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-      }
-      .btn-primary:hover {
-        background: var(--gold);
-        color: var(--ink);
-        transform: translateY(-2px);
-      }
-      .btn-ghost {
-        color: var(--blue);
-        text-decoration: none;
-        padding: 18px 28px;
-        font-size: 13px;
-        font-weight: 600;
-        letter-spacing: 0.18em;
-        text-transform: uppercase;
-        border: 2px solid var(--blue);
-        transition: all 0.2s;
-      }
-      .btn-ghost:hover {
-        background: var(--blue);
-        color: var(--white);
-      }
+/* ── NAV ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 44px;
+  background: rgba(250,245,238,0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--line);
+}
+.nav-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 1.4rem;
+  color: var(--ink);
+  letter-spacing: 0.02em;
+  text-decoration: none;
+}
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+.nav-right a {
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.nav-right a:hover { color: var(--ink); }
+.nav-order {
+  background: var(--navy) !important;
+  color: #fff !important;
+  padding: 9px 20px !important;
+  border-radius: 5px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.05em !important;
+}
+.nav-order:hover { opacity: 0.88 !important; }
 
-      /* hero visual */
-      .hero-visual {
-        position: relative;
-        aspect-ratio: 1;
-      }
-      .plate {
-        position: absolute;
-        inset: 0;
-        background: radial-gradient(
-            circle at 40% 30%,
-            rgba(255, 255, 255, 0.4),
-            transparent 60%
-          ),
-          linear-gradient(135deg, var(--blue) 0%, var(--blue-deep) 100%);
-        border-radius: 50%;
-        box-shadow: 0 50px 120px rgba(15, 61, 102, 0.4),
-          inset 0 0 0 6px var(--blue-deep), inset 0 0 0 10px var(--gold);
-      }
-      .plate svg {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-      }
-      .floating-tag {
-        position: absolute;
-        background: var(--white);
-        border: 1.5px solid var(--line);
-        padding: 14px 22px;
-        font-size: 14px;
-        font-weight: 500;
-        color: var(--ink);
-        box-shadow: 0 12px 30px rgba(15, 61, 102, 0.15);
-        white-space: nowrap;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-      .floating-tag.t1 {
-        top: 10%;
-        left: -8%;
-        animation: drift 6s ease-in-out infinite;
-      }
-      .floating-tag.t2 {
-        top: 55%;
-        right: -12%;
-        background: var(--gold);
-        border-color: var(--gold-deep);
-        color: var(--ink);
-        animation: drift 6s ease-in-out infinite 2s;
-      }
-      .floating-tag.t3 {
-        bottom: 8%;
-        left: -5%;
-        background: var(--blue);
-        color: var(--white);
-        border-color: var(--blue-deep);
-        animation: drift 6s ease-in-out infinite 4s;
-      }
-      @keyframes drift {
-        0%,
-        100% {
-          transform: translateY(0);
-        }
-        50% {
-          transform: translateY(-12px);
-        }
-      }
+/* ── HERO ── */
+.hero {
+  position: relative;
+  height: 100vh;
+  min-height: 600px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+}
+.hero-img {
+  position: absolute;
+  inset: 0;
+  background: url('https://images.unsplash.com/photo-1519676867240-f03562e64548?w=2400&h=1400&fit=crop&auto=format&q=90') center/cover no-repeat;
+}
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(24,43,64,0.92) 0%,
+    rgba(24,43,64,0.45) 50%,
+    rgba(24,43,64,0.12) 100%
+  );
+}
+.hero-content {
+  position: relative;
+  z-index: 2;
+  padding: 0 64px 72px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  width: 100%;
+}
+.hero-text {}
+.hero-tag {
+  font-size: 0.6rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(212,168,56,0.7);
+  margin-bottom: 18px;
+}
+.hero-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(3.5rem, 7vw, 7rem);
+  color: #fff;
+  letter-spacing: -0.03em;
+  line-height: 1.0;
+}
+.hero-sub {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.38);
+  margin-top: 16px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.hero-scroll {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.hero-scroll span {
+  font-size: 0.6rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.22);
+  writing-mode: vertical-rl;
+}
+.scroll-line {
+  width: 1px;
+  height: 48px;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.3), transparent);
+  animation: scrollLine 2s ease-in-out infinite;
+}
+@keyframes scrollLine {
+  0%   { transform: scaleY(0); transform-origin: top; }
+  50%  { transform: scaleY(1); transform-origin: top; }
+  51%  { transform-origin: bottom; }
+  100% { transform: scaleY(0); transform-origin: bottom; }
+}
 
-      /* ============ GREEK KEY DIVIDER ============ */
-      .greek-divider {
-        background: var(--blue-pale);
-        padding: 40px 0;
-        overflow: hidden;
-        border-top: 1px solid var(--line);
-        border-bottom: 1px solid var(--line);
-      }
-      .greek-divider-inner {
-        display: flex;
-        justify-content: center;
-        gap: 80px;
-        font-family: "Fraunces", serif;
-        font-style: italic;
-        font-size: 32px;
-        color: var(--blue);
-        flex-wrap: wrap;
-        text-align: center;
-      }
-      .greek-divider-inner span {
-        position: relative;
-        padding: 0 40px;
-      }
-      .greek-divider-inner span:not(:last-child)::after {
-        content: "✦";
-        position: absolute;
-        right: -40px;
-        color: var(--gold);
-        font-size: 20px;
-        top: 50%;
-        transform: translateY(-50%);
-      }
+/* ── INTRO STRIP ── */
+.intro-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 48px;
+  padding: 32px 44px;
+  border-bottom: 1px solid var(--line);
+  background: var(--ivory);
+}
+.strip-item {
+  text-align: center;
+}
+.strip-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 2.2rem;
+  font-weight: 300;
+  color: var(--gold);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.strip-lbl {
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.strip-rule {
+  width: 1px;
+  height: 36px;
+  background: var(--line);
+  flex-shrink: 0;
+}
 
-      /* ============ STORY ============ */
-      .story {
-        padding: 140px 0;
-      }
-      .story-grid {
-        display: grid;
-        grid-template-columns: 1fr 1.15fr;
-        gap: 100px;
-        align-items: center;
-      }
-      .story-visual {
-        aspect-ratio: 4/5;
-        position: relative;
-        background: var(--blue-pale);
-        border-radius: 4px;
-        overflow: hidden;
-        border: 1px solid var(--line);
-      }
-      .story-visual svg {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-      }
-      .story-sticker {
-        position: absolute;
-        top: 24px;
-        right: 24px;
-        width: 110px;
-        height: 110px;
-        background: var(--gold);
-        color: var(--blue-deep);
-        border-radius: 50%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        font-family: "Fraunces", serif;
-        font-weight: 700;
-        text-align: center;
-        transform: rotate(-12deg);
-        box-shadow: 0 10px 30px rgba(138, 106, 30, 0.3);
-        padding: 16px;
-        line-height: 1.1;
-        border: 2px solid var(--blue-deep);
-      }
-      .story-sticker .big {
-        font-size: 28px;
-        font-style: italic;
-        display: block;
-      }
-      .story-sticker .sm {
-        font-size: 10px;
-        letter-spacing: 0.15em;
-        text-transform: uppercase;
-        font-weight: 600;
-        margin-top: 4px;
-      }
+/* ── MENU / PASTRIES ── */
+.pastries {
+  padding: 100px 44px;
+  max-width: 1160px;
+  margin: 0 auto;
+}
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+  margin-bottom: 56px;
+}
+.section-tag {
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.section-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(2.4rem, 4vw, 3.8rem);
+  color: var(--ink);
+  letter-spacing: -0.03em;
+}
+.pastry-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  background: var(--line);
+}
+.pastry-card {
+  background: var(--ivory);
+  overflow: hidden;
+  position: relative;
+}
+.pastry-img {
+  height: 280px;
+  overflow: hidden;
+}
+.pastry-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transition: transform 0.8s cubic-bezier(0.25,0.46,0.45,0.94);
+  display: block;
+}
+.pastry-card:hover .pastry-img img { transform: scale(1.06); }
+.pastry-body {
+  padding: 24px 28px 32px;
+}
+.pastry-origin {
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+.pastry-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 400;
+  font-size: 1.35rem;
+  color: var(--ink);
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+.pastry-desc {
+  font-size: 0.78rem;
+  line-height: 1.7;
+  color: var(--muted);
+  font-weight: 300;
+  margin-bottom: 16px;
+}
+.pastry-price {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 1.1rem;
+  color: var(--gold);
+}
 
-      .section-eyebrow {
-        display: inline-flex;
-        align-items: center;
-        gap: 14px;
-        font-size: 12px;
-        letter-spacing: 0.28em;
-        text-transform: uppercase;
-        color: var(--gold-deep);
-        font-weight: 600;
-        margin-bottom: 20px;
-      }
-      .section-eyebrow::before {
-        content: "";
-        width: 30px;
-        height: 1px;
-        background: var(--gold);
-      }
-      h2.section-title {
-        font-family: "Fraunces", serif;
-        font-size: clamp(44px, 6vw, 80px);
-        line-height: 1;
-        font-weight: 500;
-        color: var(--blue);
-        letter-spacing: -0.025em;
-        margin-bottom: 36px;
-      }
-      h2.section-title em {
-        font-style: italic;
-        color: var(--gold);
-        font-weight: 400;
-      }
-      .story-text {
-        font-family: "Fraunces", serif;
-        font-size: 18px;
-        line-height: 1.85;
-        color: var(--char);
-      }
-      .story-text p {
-        margin-bottom: 20px;
-        max-width: 560px;
-      }
-      .story-text p:first-of-type::first-letter {
-        font-family: "Fraunces", serif;
-        font-size: 88px;
-        font-weight: 600;
-        float: left;
-        line-height: 0.85;
-        padding: 6px 14px 0 0;
-        color: var(--blue);
-        font-style: italic;
-      }
+/* ── STORY ── */
+.story {
+  padding: 0 44px 100px;
+  max-width: 1160px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+.story-img {
+  border-radius: 3px;
+  overflow: hidden;
+  height: 560px;
+}
+.story-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.8s ease;
+}
+.story-img:hover img { transform: scale(1.03); }
+.story-tag {
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 24px;
+}
+.story-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(2rem, 3.5vw, 3rem);
+  color: var(--ink);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin-bottom: 28px;
+}
+.story-text p {
+  font-size: 0.86rem;
+  line-height: 1.9;
+  color: var(--muted);
+  font-weight: 300;
+  margin-bottom: 16px;
+}
+.story-rule {
+  width: 40px;
+  height: 1px;
+  background: var(--gold);
+  margin: 28px 0;
+}
+.story-founder {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 1.05rem;
+  color: var(--ink);
+  opacity: 0.6;
+}
 
-      /* ============ MENU ============ */
-      .menu {
-        background: var(--blue);
-        color: var(--white);
-        padding: 140px 0;
-        position: relative;
-        overflow: hidden;
-      }
-      .menu::before {
-        content: "";
-        position: absolute;
-        top: -20%;
-        right: -15%;
-        width: 700px;
-        height: 700px;
-        background: radial-gradient(
-          circle,
-          rgba(201, 163, 74, 0.15),
-          transparent 70%
-        );
-        pointer-events: none;
-      }
-      .menu-inner {
-        position: relative;
-        z-index: 1;
-      }
-      .menu-head {
-        text-align: center;
-        margin-bottom: 80px;
-      }
-      .menu .section-eyebrow {
-        color: var(--gold);
-      }
-      .menu .section-eyebrow::before {
-        background: var(--gold);
-      }
-      .menu h2 {
-        color: var(--white);
-      }
-      .menu h2 em {
-        color: var(--gold);
-      }
-      .menu-text {
-        max-width: 640px;
-        margin: 24px auto 0;
-        font-family: "Fraunces", serif;
-        font-size: 18px;
-        color: rgba(252, 250, 243, 0.75);
-        line-height: 1.7;
-      }
+/* ── VISIT (NAVY) ── */
+.visit {
+  background: var(--navy);
+  padding: 120px 44px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+.visit-left {}
+.visit-tag {
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(212,168,56,0.6);
+  margin-bottom: 28px;
+}
+.visit-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(2.4rem, 4vw, 4rem);
+  color: #fff;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+  margin-bottom: 40px;
+}
+.visit-detail {
+  margin-bottom: 20px;
+}
+.visit-detail-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+  margin-bottom: 6px;
+}
+.visit-detail-val {
+  font-size: 0.92rem;
+  color: rgba(255,255,255,0.65);
+  font-weight: 300;
+}
+.visit-right {
+  border-radius: 3px;
+  overflow: hidden;
+  height: 420px;
+}
+.visit-right img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: brightness(0.7);
+}
 
-      .menu-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 40px;
-      }
-      .menu-cat {
-        background: rgba(252, 250, 243, 0.04);
-        border: 1px solid rgba(201, 163, 74, 0.25);
-        padding: 40px 32px;
-        position: relative;
-        transition: all 0.3s;
-      }
-      .menu-cat:hover {
-        border-color: var(--gold);
-        transform: translateY(-4px);
-      }
-      .menu-cat h3 {
-        font-family: "Fraunces", serif;
-        font-style: italic;
-        font-size: 34px;
-        color: var(--gold);
-        margin-bottom: 4px;
-        font-weight: 500;
-      }
-      .menu-cat .greek-sub {
-        font-family: "Fraunces", serif;
-        font-size: 15px;
-        font-style: italic;
-        color: rgba(252, 250, 243, 0.6);
-        margin-bottom: 24px;
-        padding-bottom: 18px;
-        border-bottom: 1px solid rgba(201, 163, 74, 0.2);
-      }
-      .mitem {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 16px;
-        padding: 14px 0;
-        border-bottom: 1px dashed rgba(252, 250, 243, 0.12);
-        align-items: baseline;
-      }
-      .mitem:last-child {
-        border-bottom: none;
-      }
-      .mitem .nm {
-        font-family: "Fraunces", serif;
-        font-size: 20px;
-        color: var(--white);
-        font-weight: 500;
-        margin-bottom: 4px;
-      }
-      .mitem .dc {
-        font-size: 13px;
-        color: rgba(252, 250, 243, 0.6);
-        line-height: 1.5;
-      }
-      .mitem .pr {
-        font-family: "Fraunces", serif;
-        font-style: italic;
-        font-size: 22px;
-        color: var(--gold);
-        font-weight: 600;
-      }
-      .special::after {
-        content: " ◆";
-        color: var(--gold);
-        font-size: 0.75em;
-        vertical-align: middle;
-      }
+/* ── FOOTER ── */
+footer {
+  background: var(--navy2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 44px;
+}
+.footer-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 1.1rem;
+  color: rgba(255,255,255,0.2);
+}
+.footer-lynq {
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  color: rgba(255,255,255,0.12);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.footer-lynq:hover { color: rgba(255,255,255,0.4); }
 
-      /* ============ MENU CARDS ============ */
-      .menu-card {
-        background: rgba(6, 35, 64, 0.6);
-        border: 1px solid rgba(201, 163, 74, 0.2);
-        overflow: hidden;
-        transition: transform 0.35s, border-color 0.3s, box-shadow 0.35s;
-      }
-      .menu-card:hover {
-        transform: translateY(-8px);
-        border-color: var(--gold);
-        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
-      }
-      .menu-card-img {
-        position: relative;
-        aspect-ratio: 4/3;
-        overflow: hidden;
-      }
-      .menu-card-img img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-        transition: transform 0.6s ease;
-      }
-      .menu-card:hover .menu-card-img img {
-        transform: scale(1.08);
-      }
-      .menu-card-price {
-        position: absolute;
-        bottom: 0;
-        right: 0;
-        background: var(--gold);
-        color: var(--blue-deep);
-        font-family: "Fraunces", serif;
-        font-size: 24px;
-        font-weight: 700;
-        font-style: italic;
-        padding: 10px 20px;
-        line-height: 1;
-      }
-      .menu-card-body {
-        padding: 26px 28px 30px;
-      }
-      .menu-card-name {
-        font-family: "Fraunces", serif;
-        font-size: 30px;
-        font-weight: 500;
-        color: var(--white);
-        margin-bottom: 4px;
-        line-height: 1;
-      }
-      .menu-card-greek {
-        font-family: "Fraunces", serif;
-        font-style: italic;
-        color: var(--gold);
-        font-size: 15px;
-        margin-bottom: 14px;
-        padding-bottom: 14px;
-        border-bottom: 1px solid rgba(201, 163, 74, 0.2);
-      }
-      .menu-card-desc {
-        font-size: 14px;
-        color: rgba(252, 250, 243, 0.65);
-        line-height: 1.6;
-      }
+/* ── REVEAL ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s cubic-bezier(0.25,0.46,0.45,0.94),
+              transform 0.7s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+.reveal.in { opacity: 1; transform: none; }
 
-      /* ============ CALL CARD ============ */
-      .call-card {
-        background: var(--white);
-        border: 1px solid var(--line);
-        padding: 64px 48px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        gap: 20px;
-      }
-      .call-label {
-        font-size: 11px;
-        color: var(--gold-deep);
-        letter-spacing: 0.28em;
-        text-transform: uppercase;
-        font-weight: 700;
-      }
-      .call-number {
-        font-family: "Fraunces", serif;
-        font-size: 52px;
-        font-weight: 500;
-        color: var(--blue);
-        text-decoration: none;
-        line-height: 1;
-        letter-spacing: -0.02em;
-        transition: color 0.2s;
-        display: block;
-      }
-      .call-number:hover {
-        color: var(--gold-deep);
-      }
-      .call-hours {
-        font-size: 14px;
-        color: var(--stone);
-        letter-spacing: 0.05em;
-      }
-      .call-email {
-        font-size: 14px;
-        color: var(--stone);
-      }
-      .call-email a {
-        color: var(--blue);
-        text-decoration: none;
-        border-bottom: 1px solid var(--gold);
-      }
-      .call-email a:hover {
-        color: var(--gold-deep);
-      }
+/* ── RESPONSIVE ── */
+@media (max-width: 860px) {
+  nav { padding: 16px 20px; }
+  .nav-right a:not(.nav-order) { display: none; }
+  .hero-content { padding: 0 24px 48px; flex-direction: column; align-items: flex-start; gap: 24px; }
+  .intro-strip { gap: 20px; padding: 24px 20px; flex-wrap: wrap; }
+  .pastries, .story { padding: 60px 20px; }
+  .pastry-grid { grid-template-columns: 1fr; }
+  .story { grid-template-columns: 1fr; }
+  .story-img { height: 300px; }
+  .visit { grid-template-columns: 1fr; padding: 80px 20px; gap: 40px; }
+  .visit-right { height: 260px; }
+  footer { padding: 18px 20px; }
+}
+</style>
+</head>
+<body>
 
-      /* ============ TOO GOOD TO GO ============ */
-      .sustainable {
-        padding: 120px 0;
-        background: var(--white-2);
-      }
-      .sus-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 80px;
-        align-items: center;
-      }
-      .sus-visual {
-        aspect-ratio: 1;
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .sus-circle {
-        position: absolute;
-        inset: 0;
-        background: radial-gradient(
-          circle,
-          var(--honey) 0%,
-          var(--gold-deep) 100%
-        );
-        border-radius: 50%;
-      }
-      .sus-visual svg {
-        position: relative;
-        width: 70%;
-        z-index: 1;
-      }
+<svg class="grain" aria-hidden="true">
+  <filter id="gr" x="0%" y="0%" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.68" numOctaves="4" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+  <rect width="100%" height="100%" filter="url(#gr)"/>
+</svg>
 
-      /* ============ VISIT ============ */
-      .visit {
-        padding: 140px 0;
-      }
-      .visit-grid {
-        display: grid;
-        grid-template-columns: 1.1fr 0.9fr;
-        gap: 80px;
-        align-items: start;
-      }
-      .hours-board {
-        background: var(--white-2);
-        border: 1px solid var(--line);
-        padding: 48px;
-      }
-      .hours-title {
-        font-family: "Fraunces", serif;
-        font-style: italic;
-        font-size: 34px;
-        color: var(--blue);
-        margin-bottom: 8px;
-      }
-      .hours-greek {
-        font-family: "Fraunces", serif;
-        font-style: italic;
-        color: var(--gold-deep);
-        font-size: 15px;
-        margin-bottom: 32px;
-        padding-bottom: 20px;
-        border-bottom: 1.5px solid var(--blue);
-      }
-      .hrow {
-        display: flex;
-        justify-content: space-between;
-        padding: 14px 0;
-        font-size: 15px;
-        border-bottom: 1px solid var(--line);
-      }
-      .hrow:last-child {
-        border-bottom: none;
-      }
-      .hrow.today {
-        color: var(--blue);
-        font-weight: 600;
-      }
-      .hrow .t {
-        font-family: "Fraunces", serif;
-        font-style: italic;
-        font-size: 18px;
-        color: var(--gold-deep);
-      }
-      .hrow.today .t {
-        color: var(--blue);
-      }
-      .visit-info {
-        padding: 24px 0;
-        border-bottom: 1px solid var(--line);
-      }
-      .visit-info:first-child {
-        border-top: 1px solid var(--line);
-      }
-      .visit-info .lbl {
-        font-size: 11px;
-        color: var(--gold-deep);
-        letter-spacing: 0.28em;
-        text-transform: uppercase;
-        font-weight: 700;
-        margin-bottom: 8px;
-      }
-      .visit-info .val {
-        font-family: "Fraunces", serif;
-        font-size: 28px;
-        color: var(--blue);
-        font-weight: 500;
-        line-height: 1.3;
-      }
-      .visit-info .val a {
-        color: var(--blue);
-        text-decoration: none;
-        border-bottom: 1px solid var(--gold);
-      }
-      .visit-info .val a:hover {
-        color: var(--gold-deep);
-      }
-      .visit-info .sub {
-        color: var(--stone);
-        font-size: 14px;
-        margin-top: 6px;
-      }
-      .map-wrap {
-        margin-top: 72px;
-        border: 1px solid var(--line);
-        background: var(--white-2);
-        padding: 12px;
-      }
-      .map-wrap iframe {
-        width: 100%;
-        min-height: 420px;
-        border: 0;
-        display: block;
-        filter: saturate(0.95) contrast(0.95);
-      }
+<nav>
+  <a href="#" class="nav-logo">Greek Pastry</a>
+  <div class="nav-right">
+    <a href="#pastries">Menu</a>
+    <a href="#story">About</a>
+    <a href="#visit">Visit</a>
+    <a href="#visit" class="nav-order">Order now</a>
+  </div>
+</nav>
 
-      /* ============ CONTACT ============ */
-      .contact {
-        padding: 140px 0;
-        background: var(--white-2);
-      }
-      .contact-grid {
-        display: grid;
-        grid-template-columns: 0.9fr 1.1fr;
-        gap: 80px;
-        align-items: start;
-      }
-      .contact-note {
-        font-family: "Fraunces", serif;
-        font-size: 18px;
-        color: var(--char);
-        line-height: 1.8;
-        max-width: 520px;
-      }
-      .contact-card {
-        background: var(--white);
-        border: 1px solid var(--line);
-        padding: 48px;
-      }
-      .form-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 22px;
-      }
-      .form-field.full {
-        grid-column: 1 / -1;
-      }
-      .form-field label {
-        display: block;
-        font-size: 11px;
-        color: var(--gold-deep);
-        letter-spacing: 0.22em;
-        text-transform: uppercase;
-        font-weight: 700;
-        margin-bottom: 8px;
-      }
-      .form-field input,
-      .form-field select,
-      .form-field textarea {
-        width: 100%;
-        border: 1px solid var(--line);
-        background: var(--white);
-        color: var(--ink);
-        font: 15px "Plus Jakarta Sans", sans-serif;
-        padding: 15px 16px;
-        outline: none;
-        transition: border-color 0.2s, box-shadow 0.2s;
-      }
-      .form-field textarea {
-        min-height: 130px;
-        resize: vertical;
-      }
-      .form-field input:focus,
-      .form-field select:focus,
-      .form-field textarea:focus {
-        border-color: var(--blue);
-        box-shadow: 0 0 0 3px rgba(15, 61, 102, 0.08);
-      }
-      .form-submit {
-        border: 0;
-        cursor: pointer;
-        margin-top: 10px;
-      }
-
-      /* ============ FOOTER ============ */
-      footer {
-        background: var(--blue-deep);
-        color: var(--white);
-        padding: 100px 0 32px;
-        position: relative;
-        overflow: hidden;
-      }
-      footer::before {
-        content: "ΚΑΛΩΣ ΗΡΘΑΤΕ";
-        position: absolute;
-        bottom: 15%;
-        left: 50%;
-        transform: translateX(-50%);
-        font-family: "Fraunces", serif;
-        font-style: italic;
-        font-size: 180px;
-        color: rgba(201, 163, 74, 0.08);
-        letter-spacing: 0.02em;
-        pointer-events: none;
-        white-space: nowrap;
-      }
-      .foot-inner {
-        position: relative;
-        z-index: 1;
-      }
-      .foot-main {
-        text-align: center;
-        margin-bottom: 80px;
-      }
-      .foot-logo-seal {
-        width: 80px;
-        height: 80px;
-        border: 2px solid var(--gold);
-        border-radius: 50%;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 24px;
-        position: relative;
-      }
-      .foot-logo-seal::before {
-        content: "";
-        position: absolute;
-        inset: 6px;
-        border: 1px solid var(--gold);
-        border-radius: 50%;
-      }
-      .foot-logo-seal span {
-        font-family: "Fraunces", serif;
-        font-style: italic;
-        font-weight: 600;
-        font-size: 36px;
-        color: var(--gold);
-      }
-      .foot-bigtitle {
-        font-family: "Fraunces", serif;
-        font-size: 56px;
-        color: var(--white);
-        font-weight: 500;
-        letter-spacing: -0.02em;
-        margin-bottom: 16px;
-      }
-      .foot-bigtitle em {
-        font-style: italic;
-        color: var(--gold);
-      }
-      .foot-greek {
-        font-family: "Fraunces", serif;
-        font-style: italic;
-        color: var(--honey);
-        font-size: 22px;
-      }
-      .foot-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 48px;
-        padding-top: 60px;
-        border-top: 1px solid rgba(252, 250, 243, 0.15);
-        margin-bottom: 40px;
-      }
-      .foot-grid h4 {
-        font-family: "Fraunces", serif;
-        font-style: italic;
-        color: var(--gold);
-        font-size: 22px;
-        margin-bottom: 16px;
-      }
-      .foot-grid p,
-      .foot-grid a {
-        color: rgba(252, 250, 243, 0.7);
-        font-size: 14px;
-        line-height: 1.9;
-        text-decoration: none;
-      }
-      .foot-grid a:hover {
-        color: var(--gold);
-      }
-      .foot-bot {
-        border-top: 1px solid rgba(252, 250, 243, 0.15);
-        padding-top: 24px;
-        display: flex;
-        justify-content: space-between;
-        color: rgba(252, 250, 243, 0.45);
-        font-size: 12px;
-        letter-spacing: 0.1em;
-        flex-wrap: wrap;
-        gap: 12px;
-      }
-
-      /* ============ LIQUID GLASS BUTTON ============ */
-      .btn-liquid {
-        position: relative;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        padding: 18px 36px;
-        border-radius: 9999px;
-        font-family: "Plus Jakarta Sans", sans-serif;
-        font-size: 13px;
-        font-weight: 600;
-        letter-spacing: 0.18em;
-        text-transform: uppercase;
-        text-decoration: none;
-        cursor: pointer;
-        background: transparent;
-        border: none;
-        outline: none;
-        color: var(--blue);
-        white-space: nowrap;
-        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-      }
-      .btn-liquid:hover {
-        transform: scale(1.06);
-      }
-      .btn-liquid:active {
-        transform: scale(0.96);
-      }
-      .btn-liquid-sm {
-        padding: 11px 22px;
-        font-size: 12px;
-      }
-
-      .btn-liquid-glass {
-        position: absolute;
-        inset: 0;
-        border-radius: 9999px;
-        overflow: hidden;
-        backdrop-filter: blur(12px) url("#liquid-glass-filter");
-        -webkit-backdrop-filter: blur(12px);
-        pointer-events: none;
-        z-index: -1;
-      }
-      .btn-liquid-overlay {
-        position: absolute;
-        inset: 0;
-        border-radius: 9999px;
-        background: rgba(255, 255, 255, 0.18);
-        border: 1px solid rgba(255, 255, 255, 0.55);
-        box-shadow: 0 0 6px rgba(0, 0, 0, 0.03), 0 2px 6px rgba(0, 0, 0, 0.08),
-          inset 3px 3px 0.5px -3px rgba(0, 0, 0, 0.9),
-          inset -3px -3px 0.5px -3px rgba(0, 0, 0, 0.85),
-          inset 1px 1px 1px -0.5px rgba(0, 0, 0, 0.6),
-          inset -1px -1px 1px -0.5px rgba(0, 0, 0, 0.6),
-          inset 0 0 6px 6px rgba(0, 0, 0, 0.12),
-          inset 0 0 2px 2px rgba(0, 0, 0, 0.06),
-          0 0 12px rgba(255, 255, 255, 0.15);
-        pointer-events: none;
-        z-index: 0;
-      }
-      .btn-liquid-text {
-        position: relative;
-        z-index: 2;
-        pointer-events: none;
-      }
-
-      /* ============ MODERN AESTHETIC OVERRIDES ============ */
-
-      /* Hero: real food photo, no SVG plate */
-      .plate {
-        display: none;
-      }
-      .floating-tag {
-        display: none !important;
-      }
-      .hero-visual {
-        overflow: visible;
-      }
-
-      .hero-img-frame {
-        width: 100%;
-        aspect-ratio: 4/5;
-        border-radius: 40px;
-        overflow: hidden;
-        box-shadow: 0 40px 120px rgba(15, 61, 102, 0.16),
-          0 0 0 1px rgba(212, 200, 168, 0.6);
-      }
-      .hero-img-frame img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-        transition: transform 0.9s ease;
-      }
-      .hero-img-frame:hover img {
-        transform: scale(1.04);
-      }
-
-      /* Divider: warmer background */
-      .greek-divider {
-        background: var(--white-2);
-        border-color: rgba(212, 200, 168, 0.5);
-      }
-      .greek-divider-inner {
-        font-size: 26px;
-        gap: 56px;
-        color: var(--blue);
-      }
-
-      /* Story visual: softer corners */
-      .story-visual {
-        border-radius: 32px;
-      }
-
-      /* Menu cards: fully rounded */
-      .menu-card {
-        border-radius: 20px;
-      }
-      .menu-card-img {
-        border-radius: 20px 20px 0 0;
-      }
-      .menu-card-price {
-        border-radius: 0 0 0 14px;
-      }
-
-      /* Hours board: rounded */
-      .hours-board {
-        border-radius: 24px;
-      }
-
-      /* Map: clean rounded container */
-      .map-wrap {
-        border-radius: 28px;
-        overflow: hidden;
-        padding: 0;
-        border: none;
-        box-shadow: 0 20px 60px rgba(15, 61, 102, 0.1);
-        margin-top: 72px;
-      }
-      .map-wrap iframe {
-        border-radius: 28px;
-        min-height: 400px;
-      }
-
-      /* Call / contact card: rounded */
-      .call-card {
-        border-radius: 32px;
-        border: none;
-        box-shadow: 0 20px 60px rgba(15, 61, 102, 0.1);
-      }
-
-      /* Story sticker: already round, just a shadow tweak */
-      .story-sticker {
-        box-shadow: 0 16px 40px rgba(138, 106, 30, 0.25);
-      }
-
-      /* Too Good To Go: round the whole visual area */
-      .sus-visual {
-        border-radius: 50%;
-      }
-
-      /* Subtle warm tweaks to section eyebrow */
-      .section-eyebrow {
-        letter-spacing: 0.22em;
-      }
-
-      /* ============ PRODUCT CARD (cards-1 component) ============ */
-      .product-card {
-        position: relative;
-        overflow: hidden;
-        border-radius: 16px;
-        border: 1px solid rgba(201, 163, 74, 0.15);
-        background: rgba(6, 35, 64, 0.55);
-        color: var(--white);
-        transition: box-shadow 0.3s ease, border-color 0.3s ease;
-      }
-      .product-card:hover {
-        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
-        border-color: rgba(201, 163, 74, 0.45);
-      }
-      .product-card-link {
-        display: block;
-        text-decoration: none;
-        color: inherit;
-      }
-      .product-card-img-wrap {
-        aspect-ratio: 1 / 1;
-        overflow: hidden;
-      }
-      .product-card-img-wrap img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-        transition: transform 0.35s ease;
-      }
-      .product-card:hover .product-card-img-wrap img {
-        transform: scale(1.05);
-      }
-      .product-card-body {
-        padding: 18px 20px 22px;
-      }
-      .product-card-title {
-        font-family: "Fraunces", serif;
-        font-size: 22px;
-        font-weight: 500;
-        color: var(--white);
-        line-height: 1.2;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      .product-card-meta {
-        margin-top: 8px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-      .product-card-category {
-        font-family: "Fraunces", serif;
-        font-style: italic;
-        font-size: 14px;
-        color: rgba(252, 250, 243, 0.5);
-      }
-      .product-card-price {
-        font-family: "Fraunces", serif;
-        font-style: italic;
-        font-size: 20px;
-        font-weight: 600;
-        color: var(--gold);
-      }
-      /* Save / bookmark button — appears on hover, matches shadcn secondary + icon */
-      .product-card-save {
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        width: 34px;
-        height: 34px;
-        border-radius: 50%;
-        background: rgba(252, 250, 243, 0.12);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        opacity: 0;
-        transition: opacity 0.25s ease, background 0.2s ease,
-          border-color 0.2s ease;
-        color: var(--white);
-      }
-      .product-card:hover .product-card-save {
-        opacity: 1;
-      }
-      .product-card-save:hover {
-        background: rgba(201, 163, 74, 0.25);
-        border-color: rgba(201, 163, 74, 0.5);
-      }
-      .product-card-save.saved {
-        opacity: 1;
-        background: rgba(201, 163, 74, 0.2);
-        border-color: var(--gold);
-        color: var(--gold);
-      }
-
-      /* ============ ANIMATED HERO (animated-hero-section-1) ============ */
-      .animated-hero {
-        position: relative;
-        min-height: 100vh;
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-      }
-      .hero-bg {
-        position: absolute;
-        inset: 0;
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        z-index: 0;
-      }
-      .hero-overlay {
-        position: absolute;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.58);
-      }
-      /* Inner header — framer-motion initial: y -100, animate: y 0 */
-      .hero-inner-header {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 20;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        height: 84px;
-        padding: 0 48px;
-        animation: heroHeaderIn 0.8s ease-out forwards;
-      }
-      .hero-inner-header .logo-text .n {
-        color: #fff;
-      }
-      .hero-inner-header .logo-seal {
-        border-color: rgba(255, 255, 255, 0.45);
-      }
-      .hero-inner-header .logo-seal::before {
-        border-color: rgba(201, 163, 74, 0.5);
-      }
-      .hero-inner-header .logo-seal span {
-        color: #fff;
-      }
-      .hero-inner-header .logo-text .t {
-        color: rgba(255, 255, 255, 0.5);
-      }
-      .hero-inner-header .nav-links a {
-        color: rgba(255, 255, 255, 0.8);
-        letter-spacing: 0.15em;
-      }
-      .hero-inner-header .nav-links a:hover {
-        color: #fff;
-      }
-      .hero-inner-header .nav-links {
-        display: flex;
-      }
-
-      /* Content — staggered children (framer itemVariants: y 20→0, opacity 0→1) */
-      .hero-content-wrap {
-        position: relative;
-        z-index: 10;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        justify-content: center;
-        padding: 120px 48px 80px;
-        max-width: 940px;
-        color: #fff;
-      }
-      .ah-eyebrow {
-        font-size: 12px;
-        font-weight: 600;
-        letter-spacing: 0.28em;
-        text-transform: uppercase;
-        color: var(--gold);
-        margin-bottom: 28px;
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        opacity: 0;
-        animation: heroItemIn 0.6s ease-out 0.1s forwards;
-      }
-      .ah-eyebrow::before {
-        content: "";
-        width: 30px;
-        height: 1px;
-        background: var(--gold);
-      }
-      .ah-title {
-        font-family: "Fraunces", serif;
-        font-size: clamp(54px, 8.5vw, 118px);
-        font-weight: 500;
-        line-height: 0.92;
-        letter-spacing: -0.03em;
-        color: #fff;
-        opacity: 0;
-        animation: heroItemIn 0.6s ease-out 0.22s forwards;
-      }
-      .ah-title em {
-        font-style: italic;
-        color: var(--gold);
-        font-weight: 400;
-      }
-      .ah-title .greek-sub {
-        display: block;
-        font-size: 0.45em;
-        font-style: italic;
-        color: rgba(255, 255, 255, 0.55);
-        margin-top: 10px;
-        letter-spacing: 0.01em;
-      }
-      .ah-desc {
-        font-family: "Fraunces", serif;
-        font-size: 19px;
-        line-height: 1.75;
-        color: rgba(255, 255, 255, 0.72);
-        max-width: 560px;
-        margin-top: 36px;
-        opacity: 0;
-        animation: heroItemIn 0.6s ease-out 0.38s forwards;
-      }
-      .ah-actions {
-        display: flex;
-        gap: 16px;
-        margin-top: 48px;
-        flex-wrap: wrap;
-        opacity: 0;
-        animation: heroItemIn 0.6s ease-out 0.54s forwards;
-      }
-      /* Glass button — matches glassButtonClassName in the component */
-      .hero-glass-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 14px 34px;
-        border-radius: 9999px;
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        border: 1px solid rgba(255, 255, 255, 0.22);
-        color: #fff;
-        font-family: "Plus Jakarta Sans", sans-serif;
-        font-size: 13px;
-        font-weight: 600;
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-        text-decoration: none;
-        transition: background 0.2s ease, border-color 0.2s ease;
-        white-space: nowrap;
-        cursor: pointer;
-      }
-      .hero-glass-btn:hover {
-        background: rgba(255, 255, 255, 0.2);
-        border-color: rgba(255, 255, 255, 0.38);
-        color: #fff;
-      }
-      /* Scroll-revealed sticky nav (fixed, slides down after hero) */
-      .scroll-nav {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 100;
-        background: rgba(252, 250, 243, 0.96);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        border-bottom: 1px solid var(--line);
-        padding: 18px 0;
-        transform: translateY(-110%);
-        transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1);
-      }
-      .scroll-nav.visible {
-        transform: translateY(0);
-      }
-
-      /* Keyframes — replaces framer-motion variants */
-      @keyframes heroHeaderIn {
-        from {
-          transform: translateY(-80px);
-          opacity: 0;
-        }
-        to {
-          transform: translateY(0);
-          opacity: 1;
-        }
-      }
-      @keyframes heroItemIn {
-        from {
-          transform: translateY(22px);
-          opacity: 0;
-        }
-        to {
-          transform: translateY(0);
-          opacity: 1;
-        }
-      }
-
-      @media (max-width: 900px) {
-        .hero-inner-header {
-          padding: 0 20px;
-        }
-        .hero-inner-header .nav-links {
-          display: none;
-        }
-        .hero-content-wrap {
-          padding: 100px 20px 60px;
-        }
-        .ah-actions {
-          flex-direction: column;
-          align-items: flex-start;
-        }
-      }
-
-      @media (max-width: 900px) {
-        .hero-grid,
-        .story-grid,
-        .sus-grid,
-        .visit-grid,
-        .contact-grid,
-        .foot-grid {
-          grid-template-columns: 1fr;
-          gap: 60px;
-        }
-        .menu-grid {
-          grid-template-columns: repeat(2, 1fr);
-          gap: 16px;
-        }
-        .form-grid {
-          grid-template-columns: 1fr;
-        }
-        .nav-links {
-          display: none;
-        }
-        .container {
-          padding: 0 20px;
-        }
-        .floating-tag {
-          display: none;
-        }
-        .contact-card {
-          padding: 32px 24px;
-        }
-        .hero-img-frame {
-          border-radius: 28px;
-          aspect-ratio: 3/2;
-        }
-        .map-wrap {
-          border-radius: 20px;
-        }
-        .map-wrap iframe {
-          border-radius: 20px;
-        }
-        .call-card {
-          border-radius: 24px;
-          padding: 48px 32px;
-        }
-        .hours-board {
-          border-radius: 20px;
-        }
-      }
-      @media (max-width: 480px) {
-        .menu-grid {
-          grid-template-columns: 1fr;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <svg
-      style="position: absolute; width: 0; height: 0; overflow: hidden"
-      aria-hidden="true"
-    >
-      <defs>
-        <filter
-          id="liquid-glass-filter"
-          x="0%"
-          y="0%"
-          width="100%"
-          height="100%"
-          color-interpolation-filters="sRGB"
-        >
-          <feTurbulence
-            type="fractalNoise"
-            baseFrequency="0.05 0.05"
-            numOctaves="1"
-            seed="1"
-            result="turbulence"
-          />
-          <feGaussianBlur
-            in="turbulence"
-            stdDeviation="2"
-            result="blurredNoise"
-          />
-          <feDisplacementMap
-            in="SourceGraphic"
-            in2="blurredNoise"
-            scale="70"
-            xChannelSelector="R"
-            yChannelSelector="B"
-            result="displaced"
-          />
-          <feGaussianBlur in="displaced" stdDeviation="4" result="finalBlur" />
-          <feComposite in="finalBlur" in2="finalBlur" operator="over" />
-        </filter>
-      </defs>
-    </svg>
-
-    <div class="top-strip">
-      ΚΑΛΩΣ ΗΡΘΑΤΕ <span class="greek-key">◆</span> AUTHENTIC GREEK BAKERY
-      <span class="greek-key">◆</span> BAKED FRESH EVERY MORNING
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-img"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-text">
+      <div class="hero-tag">Barceloneta · Barcelona · Est. 2014</div>
+      <h1 class="hero-title">Greek Pastry</h1>
+      <div class="hero-sub">Made fresh each morning · From Athens, with love</div>
     </div>
+    <div class="hero-scroll">
+      <div class="scroll-line"></div>
+      <span>Scroll</span>
+    </div>
+  </div>
+</section>
 
-    <!-- AnimatedHero: full-screen background + integrated header + staggered content -->
-    <section class="animated-hero">
-      <div
-        class="hero-bg"
-        style="
-          background-image: url('https://images.unsplash.com/photo-1519676867240-f03562e64548?w=1800&h=1200&fit=crop&auto=format&q=85');
-        "
-      >
-        <div class="hero-overlay"></div>
+<!-- Strip -->
+<div class="intro-strip">
+  <div class="strip-item reveal">
+    <div class="strip-num">12+</div>
+    <div class="strip-lbl">Pastry varieties</div>
+  </div>
+  <div class="strip-rule"></div>
+  <div class="strip-item reveal">
+    <div class="strip-num">Daily</div>
+    <div class="strip-lbl">Baked fresh</div>
+  </div>
+  <div class="strip-rule"></div>
+  <div class="strip-item reveal">
+    <div class="strip-num">Athens</div>
+    <div class="strip-lbl">Family recipes</div>
+  </div>
+  <div class="strip-rule"></div>
+  <div class="strip-item reveal">
+    <div class="strip-num">2014</div>
+    <div class="strip-lbl">Since</div>
+  </div>
+</div>
+
+<!-- Pastries -->
+<section class="pastries" id="pastries">
+  <div class="section-header reveal">
+    <span class="section-tag">Our pastries</span>
+    <h2 class="section-title">Baked this morning.</h2>
+  </div>
+  <div class="pastry-grid">
+    <div class="pastry-card reveal">
+      <div class="pastry-img">
+        <img src="https://images.unsplash.com/photo-1519676867240-f03562e64548?w=900&h=600&fit=crop&auto=format&q=88" alt="Baklava">
       </div>
-
-      <!-- header — mirrors motion.header initial y:-100 animate y:0 -->
-      <header class="hero-inner-header">
-        <div class="logo-wrap">
-          <div class="logo-seal"><span>Γ</span></div>
-          <div class="logo-text">
-            <div class="n">Greek Pastry</div>
-            <div class="t">Αρτοποιείο · Barceloneta</div>
-          </div>
-        </div>
-        <ul class="nav-links">
-          <li><a href="#story">Our story</a></li>
-          <li><a href="#menu">The menu</a></li>
-          <li><a href="#location">Location</a></li>
-          <li><a href="#contact">Contact</a></li>
-        </ul>
-        <a
-          href="#contact"
-          class="hero-glass-btn"
-          style="padding: 10px 22px; font-size: 12px"
-          >Reserve →</a
-        >
-      </header>
-
-      <!-- content — staggerChildren 0.15s, delayChildren 0.2s -->
-      <div class="hero-content-wrap">
-        <div class="ah-eyebrow">GREEK · ΕΛΛΗΝΙΚΟ · BARCELONETA</div>
-        <h1 class="ah-title">
-          Real Greek<br />pastries —<br />
-          <em>φρέσκα</em>.
-          <span class="greek-sub">fresh out of the oven every morning</span>
-        </h1>
-        <p class="ah-desc">
-          A family bakery from Athens, now on a corner of Barceloneta. We bake
-          phyllo pies, bougatsa and baklava, and pull proper Greek coffee in a
-          briki. You'll smell us before you see us.
-        </p>
-        <div class="ah-actions">
-          <a href="#menu" class="hero-glass-btn">View Menu →</a>
-          <a href="#contact" class="hero-glass-btn">Reserve</a>
-        </div>
-      </div>
-    </section>
-
-    <!-- Scroll-revealed sticky nav — appears once user scrolls past the hero -->
-    <nav class="scroll-nav">
-      <div class="container nav-inner">
-        <div class="logo-wrap">
-          <div class="logo-seal"><span>Γ</span></div>
-          <div class="logo-text">
-            <div class="n">Greek Pastry</div>
-            <div class="t">Αρτοποιείο · Barceloneta</div>
-          </div>
-        </div>
-        <ul class="nav-links">
-          <li><a href="#story">Our story</a></li>
-          <li><a href="#menu">The menu</a></li>
-          <li><a href="#location">Location</a></li>
-          <li><a href="#contact">Contact</a></li>
-        </ul>
-        <a href="#contact" class="btn-liquid btn-liquid-sm">
-          <div class="btn-liquid-glass"></div>
-          <div class="btn-liquid-overlay"></div>
-          <span class="btn-liquid-text">Reserve →</span>
-        </a>
-      </div>
-    </nav>
-
-    <div class="greek-divider">
-      <div class="container greek-divider-inner">
-        <span>Baklava</span>
-        <span>Bougatsa</span>
-        <span>Spanakopita</span>
-        <span>Tiropita</span>
-        <span>Koulouri</span>
-        <span>Frappé</span>
+      <div class="pastry-body">
+        <div class="pastry-origin">Classic</div>
+        <div class="pastry-name">Baklava</div>
+        <div class="pastry-desc">Layers of hand-rolled phyllo, crushed walnuts, and orange blossom honey syrup. Grandmother's recipe, unchanged.</div>
+        <div class="pastry-price">€4.50</div>
       </div>
     </div>
-
-    <section class="story" id="story">
-      <div class="container story-grid">
-        <div style="position: relative">
-          <div class="story-visual">
-            <svg
-              viewBox="0 0 400 500"
-              fill="none"
-              preserveAspectRatio="xMidYMid slice"
-            >
-              <!-- Greek island building -->
-              <rect width="400" height="500" fill="#e3edf5" />
-              <!-- sea -->
-              <rect x="0" y="280" width="400" height="220" fill="#3b83b8" />
-              <!-- waves -->
-              <path
-                d="M 0 300 Q 50 290 100 300 T 200 300 T 300 300 T 400 300 L 400 320 L 0 320 Z"
-                fill="#0f3d66"
-                opacity="0.3"
-              />
-              <path
-                d="M 0 330 Q 50 320 100 330 T 200 330 T 300 330 T 400 330 L 400 350 L 0 350 Z"
-                fill="#0f3d66"
-                opacity="0.2"
-              />
-              <!-- white building (greek) -->
-              <rect x="80" y="200" width="140" height="100" fill="#fcfaf3" />
-              <rect x="220" y="170" width="120" height="130" fill="#fcfaf3" />
-              <!-- blue dome -->
-              <ellipse cx="280" cy="170" rx="60" ry="40" fill="#0f3d66" />
-              <rect x="275" y="130" width="10" height="30" fill="#fcfaf3" />
-              <path d="M 272 130 L 288 130 L 280 120 Z" fill="#c9a34a" />
-              <!-- door and windows -->
-              <rect x="130" y="240" width="40" height="60" fill="#0f3d66" />
-              <rect x="95" y="215" width="20" height="20" fill="#0f3d66" />
-              <rect x="180" y="215" width="20" height="20" fill="#0f3d66" />
-              <rect x="240" y="200" width="20" height="20" fill="#0f3d66" />
-              <rect x="300" y="200" width="20" height="20" fill="#0f3d66" />
-              <rect x="270" y="220" width="20" height="80" fill="#0f3d66" />
-              <!-- steps -->
-              <rect x="70" y="300" width="160" height="8" fill="#d4c8a8" />
-              <rect x="210" y="300" width="140" height="8" fill="#d4c8a8" />
-              <!-- sun -->
-              <circle cx="60" cy="80" r="35" fill="#e3b854" />
-              <circle cx="60" cy="80" r="25" fill="#c9a34a" />
-              <!-- sky swirls -->
-              <path
-                d="M 150 60 Q 170 50 190 60 Q 210 70 230 60"
-                stroke="#fcfaf3"
-                stroke-width="3"
-                fill="none"
-                opacity="0.8"
-              />
-              <path
-                d="M 250 100 Q 270 90 290 100 Q 310 110 330 100"
-                stroke="#fcfaf3"
-                stroke-width="2"
-                fill="none"
-                opacity="0.6"
-              />
-              <!-- olive tree -->
-              <rect x="350" y="250" width="8" height="40" fill="#6b4423" />
-              <ellipse cx="354" cy="240" rx="25" ry="20" fill="#6b7a3a" />
-              <circle cx="345" cy="235" r="3" fill="#4a5a2a" />
-              <circle cx="360" cy="240" r="3" fill="#4a5a2a" />
-              <circle cx="354" cy="230" r="3" fill="#4a5a2a" />
-              <!-- boat on water -->
-              <path d="M 40 360 L 60 360 L 55 375 L 45 375 Z" fill="#c9a34a" />
-              <rect x="49" y="345" width="2" height="15" fill="#6b4423" />
-              <path d="M 51 345 L 51 360 L 65 360 Z" fill="#fcfaf3" />
-              <!-- text at bottom -->
-              <text
-                x="200"
-                y="440"
-                text-anchor="middle"
-                font-family="Fraunces, serif"
-                font-style="italic"
-                font-size="32"
-                fill="#0f3d66"
-              >
-                Καλημέρα
-              </text>
-              <text
-                x="200"
-                y="465"
-                text-anchor="middle"
-                font-family="Plus Jakarta Sans, sans-serif"
-                font-size="11"
-                fill="#8a6a1e"
-                letter-spacing="3"
-              >
-                — GOOD MORNING FROM GREECE —
-              </text>
-            </svg>
-          </div>
-          <div class="story-sticker">
-            <span class="big">5 yrs</span>
-            <span class="sm">In Barceloneta</span>
-          </div>
-        </div>
-        <div>
-          <div class="section-eyebrow">OUR STORY</div>
-          <h2 class="section-title">
-            A <em>taste of Greece</em>,<br />on a Barceloneta corner.
-          </h2>
-          <div class="story-text">
-            <p>
-              We come from a family of bakers in Athens. Our grandmother taught
-              our mother the way of phyllo — thirty-six layers, paper-thin,
-              folded by hand — and our mother taught us. Then we came to
-              Barcelona, fell in love with the city, and decided to bring what
-              we know.
-            </p>
-            <p>
-              Every morning before dawn we make the dough from scratch. We press
-              the phyllo, fill it with feta and spinach or apricot and walnut,
-              and bake it the way it's been done in our family kitchen for
-              generations.
-            </p>
-            <p>
-              The baklava is soaked in Greek honey — real honey, from home. The
-              bougatsa is still warm when you walk in. And the frappé? Shaken
-              hard, poured cold, and served in a tall glass with a long straw.
-              Just like in Athens.
-            </p>
-          </div>
-        </div>
+    <div class="pastry-card reveal">
+      <div class="pastry-img">
+        <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=900&h=600&fit=crop&auto=format&q=88" alt="Spanakopita">
       </div>
-    </section>
-
-    <section class="menu" id="menu">
-      <div class="container menu-inner">
-        <div class="menu-head">
-          <div class="section-eyebrow">Η ΚΑΡΤΑ</div>
-          <h2 class="section-title">
-            Pastries, pies<br />&amp; <em>fresh phyllo</em>.
-          </h2>
-          <p class="menu-text">
-            A simple daily selection baked in-house. Come early for warm
-            bougatsa, whole pies and honey-soaked sweets wrapped to go.
-          </p>
-        </div>
-
-        <div class="menu-grid" id="menu-grid"></div>
-
-        <script>
-          // ProductCard data — images verified via Unsplash CDN
-          const menuItems = [
-            {
-              name: "Baklava",
-              greek: "Μπακλαβάς",
-              price: "€3.50",
-              img: "https://images.unsplash.com/photo-1705663106388-6c1c51ff5a8d?w=800&h=800&fit=crop&auto=format&q=80",
-            },
-            {
-              name: "Bougatsa",
-              greek: "Μπουγάτσα",
-              price: "€4.00",
-              img: "https://images.unsplash.com/photo-1709989491635-6169cdb25a90?w=800&h=800&fit=crop&auto=format&q=80",
-            },
-            {
-              name: "Spanakopita",
-              greek: "Σπανακόπιτα",
-              price: "€3.80",
-              img: "https://images.unsplash.com/photo-1633205772834-c0b9943c5a54?w=800&h=800&fit=crop&auto=format&q=80",
-            },
-            {
-              name: "Greek Coffee",
-              greek: "Ελληνικός καφές",
-              price: "€2.50",
-              img: "https://images.unsplash.com/photo-1530225027979-f22e35df7b01?w=800&h=800&fit=crop&auto=format&q=80",
-            },
-            {
-              name: "Feta Pie",
-              greek: "Τυρόπιτα",
-              price: "€4.20",
-              img: "https://images.unsplash.com/photo-1714831225893-0c2d2595abaa?w=800&h=800&fit=crop&auto=format&q=80",
-            },
-            {
-              name: "Honey Cake",
-              greek: "Μελόπιτα",
-              price: "€3.90",
-              img: "https://images.unsplash.com/photo-1624000961428-eeece184988b?w=800&h=800&fit=crop&auto=format&q=80",
-            },
-          ];
-
-          // Bookmark SVG — matches lucide-react Bookmark icon
-          const bookmarkSVG = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>`;
-
-          const grid = document.getElementById("menu-grid");
-          menuItems.forEach((item) => {
-            grid.innerHTML += `
-          <div class="product-card">
-            <a href="#menu" class="product-card-link" aria-label="${item.name}">
-              <div class="product-card-img-wrap">
-                <img src="${item.img}" alt="${item.name}" loading="lazy">
-              </div>
-              <div class="product-card-body">
-                <div class="product-card-title">${item.name}</div>
-                <div class="product-card-meta">
-                  <span class="product-card-category">${item.greek}</span>
-                  <span class="product-card-price">${item.price}</span>
-                </div>
-              </div>
-            </a>
-            <button class="product-card-save" onclick="toggleSave(this)" aria-label="Save ${item.name}">
-              ${bookmarkSVG}
-            </button>
-          </div>`;
-          });
-
-          // Toggle saved state — mirrors onSave() in the React component
-          window.toggleSave = function (btn) {
-            btn.classList.toggle("saved");
-            const path = btn.querySelector("svg path");
-            btn.classList.contains("saved")
-              ? path.setAttribute("fill", "currentColor")
-              : path.setAttribute("fill", "none");
-          };
-        </script>
+      <div class="pastry-body">
+        <div class="pastry-origin">Savory</div>
+        <div class="pastry-name">Spanakopita</div>
+        <div class="pastry-desc">Crispy phyllo filled with fresh spinach, wild herbs, and aged Greek feta. A morning staple in every Athenian home.</div>
+        <div class="pastry-price">€5.50</div>
       </div>
-    </section>
-
-    <section class="sustainable" id="sus">
-      <div class="container sus-grid">
-        <div class="sus-visual">
-          <div class="sus-circle"></div>
-          <svg viewBox="0 0 200 200" fill="none">
-            <!-- surprise bag -->
-            <rect x="60" y="70" width="80" height="100" rx="4" fill="#fcfaf3" />
-            <rect x="60" y="70" width="80" height="15" fill="#0f3d66" />
-            <rect x="70" y="90" width="60" height="4" fill="#0f3d66" />
-            <!-- handles -->
-            <path
-              d="M 70 70 Q 70 50 85 50 Q 100 50 100 70"
-              stroke="#0f3d66"
-              stroke-width="3"
-              fill="none"
-            />
-            <path
-              d="M 100 70 Q 100 50 115 50 Q 130 50 130 70"
-              stroke="#0f3d66"
-              stroke-width="3"
-              fill="none"
-            />
-            <!-- food items peeking -->
-            <ellipse cx="85" cy="105" rx="10" ry="6" fill="#c9a34a" />
-            <ellipse cx="115" cy="115" rx="10" ry="6" fill="#e3b854" />
-            <ellipse cx="100" cy="130" rx="14" ry="6" fill="#c9a34a" />
-            <!-- Too Good To Go style label -->
-            <rect x="75" y="140" width="50" height="18" fill="#0f3d66" rx="2" />
-            <text
-              x="100"
-              y="153"
-              text-anchor="middle"
-              font-family="Plus Jakarta Sans, sans-serif"
-              font-weight="700"
-              font-size="10"
-              fill="#fcfaf3"
-            >
-              €3.99
-            </text>
-            <!-- leaves -->
-            <ellipse
-              cx="50"
-              cy="75"
-              rx="12"
-              ry="6"
-              fill="#6b7a3a"
-              transform="rotate(-45 50 75)"
-            />
-            <ellipse
-              cx="150"
-              cy="75"
-              rx="12"
-              ry="6"
-              fill="#6b7a3a"
-              transform="rotate(45 150 75)"
-            />
-          </svg>
-        </div>
-        <div>
-          <div class="section-eyebrow">★ TOO GOOD TO GO</div>
-          <h2 class="section-title">
-            Pick up a <em>surprise bag</em><br />— save good food.
-          </h2>
-          <p class="story-text" style="margin-top: 28px">
-            Every evening before we close, any fresh pastries and pies still on
-            the shelf go into a surprise bag — for €3.99 on the Too Good To Go
-            app. It's our way of making sure nothing we bake goes to waste, and
-            yours of getting a handful of our best pastries at a third of the
-            price.
-          </p>
-          <div class="hero-actions" style="margin-top: 40px">
-            <a href="#contact" class="btn-primary">Reserve pastries →</a>
-          </div>
-        </div>
+    </div>
+    <div class="pastry-card reveal">
+      <div class="pastry-img">
+        <img src="https://images.unsplash.com/photo-1509365465985-25d11c17e812?w=900&h=600&fit=crop&auto=format&q=88" alt="Loukoumades">
       </div>
-    </section>
-
-    <section class="visit" id="location">
-      <div class="container visit-grid">
-        <div>
-          <div class="section-eyebrow">ΕΠΙΣΚΕΨΗ</div>
-          <h2 class="section-title">Come say <em>γειά σας</em>.</h2>
-          <div class="visit-info">
-            <div class="lbl">THE SHOP</div>
-            <div class="val">Carrer d'Andrea Dòria, 18</div>
-            <div class="sub">08003 Barcelona — Barceloneta</div>
-          </div>
-          <div class="visit-info">
-            <div class="lbl">METRO</div>
-            <div class="val">Barceloneta (L4)</div>
-            <div class="sub">4-minute walk from the station</div>
-          </div>
-          <div class="visit-info">
-            <div class="lbl">CATERING &amp; WHOLE PIES</div>
-            <div class="val">
-              <a href="mailto:hello@greekpastry.bcn">hello@greekpastry.bcn</a>
-            </div>
-            <div class="sub">Please order 48 hours ahead for large orders</div>
-          </div>
-          <div class="visit-info">
-            <div class="lbl">FOLLOW ALONG</div>
-            <div class="val"><a href="#">@greekpastry.bcn</a></div>
-          </div>
-        </div>
-        <div class="hours-board">
-          <div class="hours-title">Hours</div>
-          <div class="hours-greek">— Ώρες λειτουργίας —</div>
-          <div class="hrow today">
-            <span>Monday — Thursday</span>
-            <span class="t">7:00 — 20:00</span>
-          </div>
-          <div class="hrow">
-            <span>Friday</span><span class="t">7:00 — 21:00</span>
-          </div>
-          <div class="hrow">
-            <span>Saturday</span><span class="t">8:00 — 21:00</span>
-          </div>
-          <div class="hrow">
-            <span>Sunday</span><span class="t">8:00 — 15:00</span>
-          </div>
-        </div>
+      <div class="pastry-body">
+        <div class="pastry-origin">Sweet</div>
+        <div class="pastry-name">Loukoumades</div>
+        <div class="pastry-desc">Fried honey puffs dusted with cinnamon and sesame. Served warm, eaten immediately. No other way.</div>
+        <div class="pastry-price">€6.00</div>
       </div>
-      <div class="container">
-        <div class="map-wrap">
-          <iframe
-            title="Greek Pastry location in Barceloneta"
-            src="https://www.google.com/maps?q=Barceloneta%2C%20Barcelona&output=embed"
-            loading="lazy"
-            referrerpolicy="no-referrer-when-downgrade"
-          ></iframe>
-        </div>
+    </div>
+    <div class="pastry-card reveal">
+      <div class="pastry-img">
+        <img src="https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=900&h=600&fit=crop&auto=format&q=88" alt="Bougatsa">
       </div>
-    </section>
-
-    <section class="contact" id="contact">
-      <div class="container contact-grid">
-        <div>
-          <div class="section-eyebrow">LARGE ORDERS</div>
-          <h2 class="section-title">
-            Catering &amp;<br /><em>whole pies</em>?
-          </h2>
-          <p class="contact-note">
-            Walk in any morning for fresh pastries — no reservation needed. For
-            bulk orders, catering trays, whole pies, and weekend boxes, just
-            give us a call and we will sort it out together.
-          </p>
-        </div>
-        <div class="call-card">
-          <div class="call-label">Give us a ring</div>
-          <a href="tel:+34931234567" class="call-number">+34 931 234 567</a>
-          <div class="call-hours">Mon – Sat · 8:00 – 18:00</div>
-          <div class="call-email">
-            or email
-            <a href="mailto:hello@greekpastry.bcn">hello@greekpastry.bcn</a>
-          </div>
-        </div>
+      <div class="pastry-body">
+        <div class="pastry-origin">Breakfast</div>
+        <div class="pastry-name">Bougatsa</div>
+        <div class="pastry-desc">Semolina custard wrapped in paper-thin phyllo, dusted with powdered sugar. Thessaloniki's greatest export.</div>
+        <div class="pastry-price">€4.00</div>
       </div>
-    </section>
-
-    <footer>
-      <div class="container foot-inner">
-        <div class="foot-main">
-          <div class="foot-logo-seal"><span>Γ</span></div>
-          <div class="foot-bigtitle">Greek <em>Pastry</em></div>
-          <div class="foot-greek">— φτιαγμένο με αγάπη —</div>
-        </div>
-        <div class="foot-grid">
-          <div>
-            <h4>Visit</h4>
-            <p>Carrer d'Andrea Dòria, 18<br />08003 Barcelona</p>
-          </div>
-          <div>
-            <h4>Hours</h4>
-            <p>Every day<br />7:00 — 20:00<br />Fri–Sat until 21:00</p>
-          </div>
-          <div>
-            <h4>Contact</h4>
-            <p>
-              <a href="mailto:hello@greekpastry.bcn">hello@greekpastry.bcn</a
-              ><br /><a href="#">@greekpastry.bcn</a>
-            </p>
-          </div>
-          <div>
-            <h4>Sustainability</h4>
-            <p><a href="#">Too Good To Go</a><br />€3.99 surprise bag</p>
-          </div>
-        </div>
-        <div class="foot-bot">
-          <div>© 2026 Greek Pastry · Hecho con amor desde Atenas</div>
-          <div>◆ FROM ATHENS, WITH LOVE ◆</div>
-        </div>
+    </div>
+    <div class="pastry-card reveal">
+      <div class="pastry-img">
+        <img src="https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=900&h=600&fit=crop&auto=format&q=88" alt="Tiropita">
       </div>
-    </footer>
+      <div class="pastry-body">
+        <div class="pastry-origin">Savory</div>
+        <div class="pastry-name">Tiropita</div>
+        <div class="pastry-desc">Three-cheese phyllo pie — graviera, feta, and mizithra — baked golden. Pairs with Greek mountain tea.</div>
+        <div class="pastry-price">€5.00</div>
+      </div>
+    </div>
+    <div class="pastry-card reveal">
+      <div class="pastry-img">
+        <img src="https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?w=900&h=600&fit=crop&auto=format&q=88" alt="Galaktoboureko">
+      </div>
+      <div class="pastry-body">
+        <div class="pastry-origin">Special</div>
+        <div class="pastry-name">Galaktoboureko</div>
+        <div class="pastry-desc">Silky semolina custard between layers of buttered phyllo, drenched in lemony syrup. Weekend special only.</div>
+        <div class="pastry-price">€6.50</div>
+      </div>
+    </div>
+  </div>
+</section>
 
-    <script>
-      // Mirrors framer-motion animate: scroll triggers sticky nav visibility
-      (function () {
-        var hero = document.querySelector(".animated-hero");
-        var nav = document.querySelector(".scroll-nav");
-        function onScroll() {
-          nav.classList.toggle(
-            "visible",
-            window.scrollY > hero.offsetHeight * 0.6
-          );
-        }
-        window.addEventListener("scroll", onScroll, { passive: true });
-      })();
-    </script>
-  </body>
+<!-- Story -->
+<section class="story" id="story">
+  <div class="story-img reveal">
+    <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1200&h=1600&fit=crop&auto=format&q=88" alt="Bakery kitchen">
+  </div>
+  <div class="story-text">
+    <div class="story-tag reveal">Our story</div>
+    <h2 class="story-title reveal">From a small kitchen<br>in Pagrati, Athens.</h2>
+    <p class="reveal">Maria came to Barcelona in 2014 with a suitcase and her mother's recipe book. She found a small corner space in Barceloneta, two streets from the sea, and started baking at 4am every morning.</p>
+    <p class="reveal">The phyllo is made by hand. The honey comes from Crete. The feta is imported from a single dairy in Epirus. Nothing is rushed, nothing is frozen.</p>
+    <p class="reveal">Twelve years later, the line still wraps the corner on Saturday mornings. The recipes haven't changed once.</p>
+    <div class="story-rule reveal"></div>
+    <div class="story-founder reveal">— Maria Papadopoulou, founder</div>
+  </div>
+</section>
+
+<!-- Visit -->
+<section class="visit" id="visit">
+  <div class="visit-left">
+    <div class="visit-tag reveal">Come find us</div>
+    <h2 class="visit-title reveal">We're here<br>every morning.</h2>
+    <div class="visit-detail reveal">
+      <div class="visit-detail-label">Address</div>
+      <div class="visit-detail-val">Carrer del Mar 14, Barceloneta<br>08003 Barcelona</div>
+    </div>
+    <div class="visit-detail reveal">
+      <div class="visit-detail-label">Hours</div>
+      <div class="visit-detail-val">Mon – Sat &nbsp; 7:00 – 14:00<br>Sunday &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 8:00 – 13:00</div>
+    </div>
+    <div class="visit-detail reveal">
+      <div class="visit-detail-label">Contact</div>
+      <div class="visit-detail-val">+34 93 221 48 02<br>hola@greekpastry.es</div>
+    </div>
+  </div>
+  <div class="visit-right reveal">
+    <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&h=900&fit=crop&auto=format&q=88" alt="Barceloneta cafe view">
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo">Greek Pastry</div>
+  <a href="https://lynq.build" class="footer-lynq">Site by LYNQ</a>
+</footer>
+
+<script>
+const reveals = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+  });
+}, { threshold: 0.1 });
+reveals.forEach(el => io.observe(el));
+</script>
+</body>
 </html>
