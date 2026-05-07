@@ -10,7 +10,200 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="gallery.css?v=4">
+<link rel="stylesheet" href="gallery.css?v=5">
+<style>
+/* ── ALL-WORK OVERLAY ── */
+.aw-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 4000;
+  background: #080808;
+  transform: translateY(100%);
+  transition: transform 0.72s cubic-bezier(0.76,0,0.24,1);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.aw-overlay.open {
+  transform: translateY(0);
+}
+.aw-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 44px;
+  background: rgba(8,8,8,0.96);
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.aw-title {
+  font-size: 0.65rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.32);
+}
+.aw-close {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: none;
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.5);
+  padding: 9px 20px;
+  border-radius: 5px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.aw-close:hover { border-color: rgba(255,255,255,0.3); color: #fff; }
+.aw-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  padding: 3px;
+  background: #1a1a1a;
+}
+.aw-card {
+  position: relative;
+  overflow: hidden;
+  display: block;
+  text-decoration: none;
+  height: 52vmin;
+  min-height: 260px;
+  background: #111;
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.5s cubic-bezier(0.25,0.46,0.45,0.94),
+              transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+.aw-overlay.open .aw-card {
+  opacity: 1;
+  transform: none;
+}
+/* stagger */
+.aw-overlay.open .aw-card:nth-child(1)  { transition-delay: 0.05s; }
+.aw-overlay.open .aw-card:nth-child(2)  { transition-delay: 0.10s; }
+.aw-overlay.open .aw-card:nth-child(3)  { transition-delay: 0.15s; }
+.aw-overlay.open .aw-card:nth-child(4)  { transition-delay: 0.20s; }
+.aw-overlay.open .aw-card:nth-child(5)  { transition-delay: 0.25s; }
+.aw-overlay.open .aw-card:nth-child(6)  { transition-delay: 0.30s; }
+.aw-overlay.open .aw-card:nth-child(7)  { transition-delay: 0.35s; }
+.aw-overlay.open .aw-card:nth-child(8)  { transition-delay: 0.40s; }
+.aw-overlay.open .aw-card:nth-child(9)  { transition-delay: 0.45s; }
+.aw-overlay.open .aw-card:nth-child(10) { transition-delay: 0.50s; }
+.aw-overlay.open .aw-card:nth-child(11) { transition-delay: 0.55s; }
+.aw-overlay.open .aw-card:nth-child(12) { transition-delay: 0.60s; }
+.aw-card-img {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.8s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+.aw-card:hover .aw-card-img { transform: scale(1.06); }
+.aw-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.08) 55%, transparent 100%);
+  transition: background 0.4s;
+}
+.aw-card:hover .aw-card-overlay { background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.3) 55%, rgba(0,0,0,0.08) 100%); }
+.aw-card-info {
+  position: absolute;
+  bottom: 22px;
+  left: 24px;
+  z-index: 2;
+  transition: transform 0.4s;
+}
+.aw-card:hover .aw-card-info { transform: translateY(-6px); }
+.aw-card-cat {
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 6px;
+}
+.aw-card-name {
+  font-size: 1.15rem;
+  font-weight: 400;
+  color: #fff;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+/* ── MORE TRIGGER ── */
+.more-trigger {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 28px;
+  padding: 72px 44px;
+  background: #0c0c0c;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.3s;
+}
+.more-trigger:hover { background: #111; }
+.more-trigger::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.02), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.more-trigger:hover::before { opacity: 1; }
+.more-count {
+  font-size: 0.6rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.18);
+}
+.more-label {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(2.2rem, 4vw, 3.8rem);
+  color: rgba(255,255,255,0.72);
+  letter-spacing: -0.03em;
+  text-align: center;
+  line-height: 1.1;
+  transition: color 0.3s;
+}
+.more-trigger:hover .more-label { color: #fff; }
+.more-arrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.22);
+  transition: gap 0.3s, color 0.3s;
+}
+.more-trigger:hover .more-arrow { gap: 18px; color: rgba(255,255,255,0.55); }
+.arrow-line {
+  width: 28px; height: 1px;
+  background: rgba(255,255,255,0.22);
+  transition: width 0.3s, background 0.3s;
+}
+.more-trigger:hover .arrow-line { width: 44px; background: rgba(255,255,255,0.55); }
+
+@media (max-width: 860px) {
+  .aw-header { padding: 16px 20px; }
+  .aw-grid { grid-template-columns: repeat(2, 1fr); }
+  .aw-card { height: 52vw; min-height: 180px; }
+}
+</style>
 </head>
 <body>
 
@@ -23,10 +216,85 @@
   <rect width="100%" height="100%" filter="url(#gr)"/>
 </svg>
 
-<!-- Intro screen — fades away on load -->
+<!-- Intro screen -->
 <div class="intro-screen" id="introScreen">
   <div class="is-name">Mustafa Alqudah</div>
   <div class="is-role">Web Designer &nbsp;·&nbsp; Toronto</div>
+</div>
+
+<!-- All-work overlay -->
+<div class="aw-overlay" id="awOverlay" role="dialog" aria-label="All projects">
+  <div class="aw-header">
+    <span class="aw-title">All work — 12 projects</span>
+    <button class="aw-close" id="awClose">✕ &nbsp; Close</button>
+  </div>
+  <div class="aw-grid">
+    <a href="projects/aether.html"      target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-image:url('https://images.unsplash.com/photo-1490750967868-88df5691cc2e?w=900&h=700&fit=crop&auto=format&q=80')"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Perfume House</div><div class="aw-card-name">Aether</div></div>
+    </a>
+    <a href="projects/smyrna.html"      target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-image:url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=900&h=700&fit=crop&auto=format&q=80')"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Restaurant · Barcelona</div><div class="aw-card-name">SMYRNA by Cem</div></div>
+    </a>
+    <a href="projects/roux.html"        target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-image:url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=900&h=700&fit=crop&auto=format&q=80')"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Fine Dining · Toronto</div><div class="aw-card-name">ROUX</div></div>
+    </a>
+    <a href="projects/nours-kitchen.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-image:url('https://images.unsplash.com/photo-1547592180-85f173990554?w=900&h=700&fit=crop&auto=format&q=80')"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Home Food · Toronto</div><div class="aw-card-name">Nour's Kitchen</div></div>
+    </a>
+    <a href="projects/drift-coffee.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-image:url('https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=900&h=700&fit=crop&auto=format&q=80')"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Coffee Shop · Toronto</div><div class="aw-card-name">Drift Coffee</div></div>
+    </a>
+    <a href="projects/greek-pastry.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-image:url('https://images.unsplash.com/photo-1519676867240-f03562e64548?w=900&h=700&fit=crop&auto=format&q=80')"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Bakery · Barcelona</div><div class="aw-card-name">Greek Pastry</div></div>
+    </a>
+    <a href="projects/maya-reyes.html"  target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-image:url('https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=900&h=700&fit=crop&auto=format&q=80')"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Photographer · Toronto</div><div class="aw-card-name">Maya Reyes</div></div>
+    </a>
+    <a href="projects/vault.html"       target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-image:url('https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=900&h=700&fit=crop&auto=format&q=80')"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Indie Game</div><div class="aw-card-name">VAULT</div></div>
+    </a>
+    <a href="projects/cavo.html"        target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-image:url('https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=900&h=700&fit=crop&auto=format&q=80')"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Yacht Charter · Mediterranean</div><div class="aw-card-name">Cavo</div></div>
+    </a>
+    <a href="projects/kira.html"        target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-image:url('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=900&h=700&fit=crop&auto=format&q=80')"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Fashion Label · Toronto</div><div class="aw-card-name">KIRA</div></div>
+    </a>
+    <a href="projects/elara.html"       target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-image:url('https://images.unsplash.com/photo-1560066984-138dadb4c035?w=900&h=700&fit=crop&auto=format&q=80')"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Beauty Studio · Toronto</div><div class="aw-card-name">Elara Studio</div></div>
+    </a>
+    <a href="projects/solstice.html"    target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-image:url('https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=900&h=700&fit=crop&auto=format&q=80')"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Yoga Studio · Toronto</div><div class="aw-card-name">Solstice</div></div>
+    </a>
+    <a href="projects/forma.html"       target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-image:url('https://images.unsplash.com/photo-1487958449943-2429e8be8625?w=900&h=700&fit=crop&auto=format&q=80')"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Architecture Studio · Toronto</div><div class="aw-card-name">Forma Studio</div></div>
+    </a>
+  </div>
 </div>
 
 <nav class="nav" id="nav">
@@ -48,71 +316,17 @@
 
 <main class="gallery">
 
-  <!-- Featured: SMYRNA -->
-  <a href="projects/smyrna.html" target="_blank" rel="noopener" class="gallery-card featured">
-    <div class="card-img" style="background-image:url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=2400&h=1600&fit=crop&auto=format&q=90')"></div>
+  <!-- ① AETHER — showstopper featured -->
+  <a href="projects/aether.html" target="_blank" rel="noopener" class="gallery-card featured aether-featured">
+    <div class="card-img" style="background-image:url('https://images.unsplash.com/photo-1490750967868-88df5691cc2e?w=2400&h=1600&fit=crop&auto=format&q=90')"></div>
     <div class="card-overlay"></div>
     <div class="card-info">
-      <div class="card-cat">Restaurant · Barcelona</div>
-      <div class="card-name">SMYRNA by Cem</div>
+      <div class="card-cat">Perfume House · Independent</div>
+      <div class="card-name">Aether</div>
     </div>
   </a>
 
-  <a href="projects/nours-kitchen.html" target="_blank" rel="noopener" class="gallery-card">
-    <div class="card-img" style="background-image:url('https://images.unsplash.com/photo-1547592180-85f173990554?w=1400&h=900&fit=crop&auto=format&q=88')"></div>
-    <div class="card-overlay"></div>
-    <div class="card-info">
-      <div class="card-cat">Home Food Business · Toronto</div>
-      <div class="card-name">Nour's Kitchen</div>
-    </div>
-  </a>
-
-  <a href="projects/drift-coffee.html" target="_blank" rel="noopener" class="gallery-card">
-    <div class="card-img" style="background-image:url('https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1400&h=900&fit=crop&auto=format&q=88')"></div>
-    <div class="card-overlay"></div>
-    <div class="card-info">
-      <div class="card-cat">Coffee Shop · Toronto</div>
-      <div class="card-name">Drift Coffee</div>
-    </div>
-  </a>
-
-  <a href="projects/greek-pastry.html" target="_blank" rel="noopener" class="gallery-card">
-    <div class="card-img" style="background-image:url('https://images.unsplash.com/photo-1519676867240-f03562e64548?w=1400&h=900&fit=crop&auto=format&q=88')"></div>
-    <div class="card-overlay"></div>
-    <div class="card-info">
-      <div class="card-cat">Bakery · Barcelona</div>
-      <div class="card-name">Greek Pastry</div>
-    </div>
-  </a>
-
-  <a href="projects/maya-reyes.html" target="_blank" rel="noopener" class="gallery-card">
-    <div class="card-img" style="background-image:url('https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=1400&h=900&fit=crop&auto=format&q=88')"></div>
-    <div class="card-overlay"></div>
-    <div class="card-info">
-      <div class="card-cat">Photographer · Toronto</div>
-      <div class="card-name">Maya Reyes</div>
-    </div>
-  </a>
-
-  <!-- Featured: VAULT -->
-  <a href="projects/vault.html" target="_blank" rel="noopener" class="gallery-card featured vault-featured">
-    <div class="card-img" style="background-image:url('https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=2400&h=1400&fit=crop&auto=format&q=90')"></div>
-    <div class="card-overlay"></div>
-    <div class="card-info">
-      <div class="card-cat">Indie Game · Stillframe Studio</div>
-      <div class="card-name">VAULT</div>
-    </div>
-  </a>
-
-  <a href="projects/elara.html" target="_blank" rel="noopener" class="gallery-card">
-    <div class="card-img" style="background-image:url('https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1400&h=900&fit=crop&auto=format&q=88')"></div>
-    <div class="card-overlay"></div>
-    <div class="card-info">
-      <div class="card-cat">Home Beauty Studio · Toronto</div>
-      <div class="card-name">Elara Studio</div>
-    </div>
-  </a>
-
+  <!-- ② -->
   <a href="projects/roux.html" target="_blank" rel="noopener" class="gallery-card">
     <div class="card-img" style="background-image:url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1400&h=900&fit=crop&auto=format&q=88')"></div>
     <div class="card-overlay"></div>
@@ -122,6 +336,27 @@
     </div>
   </a>
 
+  <!-- ③ -->
+  <a href="projects/kira.html" target="_blank" rel="noopener" class="gallery-card">
+    <div class="card-img" style="background-image:url('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=1400&h=900&fit=crop&auto=format&q=88')"></div>
+    <div class="card-overlay"></div>
+    <div class="card-info">
+      <div class="card-cat">Fashion Label · Toronto</div>
+      <div class="card-name">KIRA</div>
+    </div>
+  </a>
+
+  <!-- ④ -->
+  <a href="projects/maya-reyes.html" target="_blank" rel="noopener" class="gallery-card">
+    <div class="card-img" style="background-image:url('https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=1400&h=900&fit=crop&auto=format&q=88')"></div>
+    <div class="card-overlay"></div>
+    <div class="card-info">
+      <div class="card-cat">Photographer · Toronto</div>
+      <div class="card-name">Maya Reyes</div>
+    </div>
+  </a>
+
+  <!-- ⑤ -->
   <a href="projects/cavo.html" target="_blank" rel="noopener" class="gallery-card">
     <div class="card-img" style="background-image:url('https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=1400&h=900&fit=crop&auto=format&q=88')"></div>
     <div class="card-overlay"></div>
@@ -131,42 +366,15 @@
     </div>
   </a>
 
-  <!-- Featured: KIRA -->
-  <a href="projects/kira.html" target="_blank" rel="noopener" class="gallery-card featured kira-featured">
-    <div class="card-img" style="background-image:url('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=2400&h=1400&fit=crop&auto=format&q=90')"></div>
-    <div class="card-overlay"></div>
-    <div class="card-info">
-      <div class="card-cat">Fashion Label · Toronto</div>
-      <div class="card-name">KIRA</div>
-    </div>
-  </a>
-
-  <a href="projects/solstice.html" target="_blank" rel="noopener" class="gallery-card">
-    <div class="card-img" style="background-image:url('https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=1400&h=900&fit=crop&auto=format&q=88')"></div>
-    <div class="card-overlay"></div>
-    <div class="card-info">
-      <div class="card-cat">Yoga & Wellness · Toronto</div>
-      <div class="card-name">Solstice</div>
-    </div>
-  </a>
-
-  <a href="projects/forma.html" target="_blank" rel="noopener" class="gallery-card">
-    <div class="card-img" style="background-image:url('https://images.unsplash.com/photo-1487958449943-2429e8be8625?w=1400&h=900&fit=crop&auto=format&q=88')"></div>
-    <div class="card-overlay"></div>
-    <div class="card-info">
-      <div class="card-cat">Architecture Studio · Toronto</div>
-      <div class="card-name">Forma Studio</div>
-    </div>
-  </a>
-
-  <a href="#contact" class="gallery-card cta-card">
-    <div class="cta-inner">
-      <div class="cta-tag">Your business next</div>
-      <h2 class="cta-heading">Let's build<br><em>something great.</em></h2>
-      <div class="cta-sub">hello@lynq.build</div>
-      <span class="cta-btn">Start a project →</span>
-    </div>
-  </a>
+  <!-- MORE TRIGGER -->
+  <div class="more-trigger" id="moreTrigger" role="button" tabindex="0" aria-label="View all 13 projects">
+    <span class="more-count">13 projects total</span>
+    <span class="more-label">View all<br>the work.</span>
+    <span class="more-arrow">
+      <span class="arrow-line"></span>
+      Open
+    </span>
+  </div>
 
 </main>
 
@@ -200,32 +408,23 @@ window.addEventListener('scroll', () => {
   nav.classList.toggle('scrolled', window.scrollY > 40);
 }, { passive: true });
 
-// ── 3D PARALLAX ON CARDS
+// ── 3D PARALLAX
 document.querySelectorAll('.gallery-card:not(.cta-card)').forEach(card => {
   const img = card.querySelector('.card-img');
+  if (!img) return;
   let raf;
-
   card.addEventListener('mousemove', e => {
     cancelAnimationFrame(raf);
     raf = requestAnimationFrame(() => {
       const rect = card.getBoundingClientRect();
       const xPct = (e.clientX - rect.left) / rect.width - 0.5;
       const yPct = (e.clientY - rect.top)  / rect.height - 0.5;
-
-      // image drifts opposite to cursor (depth illusion)
-      const px = xPct * -28;
-      const py = yPct * -28;
       img.style.transition = 'none';
-      img.style.transform  = `scale(1.1) translate(${px}px, ${py}px)`;
-
-      // card tilts toward cursor
-      const rx = yPct * -5;
-      const ry = xPct * 5;
+      img.style.transform  = `scale(1.1) translate(${xPct * -28}px, ${yPct * -28}px)`;
       card.style.transition = 'none';
-      card.style.transform  = `perspective(1400px) rotateX(${rx}deg) rotateY(${ry}deg)`;
+      card.style.transform  = `perspective(1400px) rotateX(${yPct * -5}deg) rotateY(${xPct * 5}deg)`;
     });
   });
-
   card.addEventListener('mouseleave', () => {
     cancelAnimationFrame(raf);
     img.style.transition  = 'transform 0.9s cubic-bezier(0.25,0.46,0.45,0.94)';
@@ -234,7 +433,25 @@ document.querySelectorAll('.gallery-card:not(.cta-card)').forEach(card => {
     card.style.transform  = '';
   });
 });
-</script>
 
+// ── ALL-WORK OVERLAY
+const overlay    = document.getElementById('awOverlay');
+const moreTrigger = document.getElementById('moreTrigger');
+const awClose    = document.getElementById('awClose');
+
+function openOverlay() {
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeOverlay() {
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+moreTrigger.addEventListener('click', openOverlay);
+moreTrigger.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openOverlay(); });
+awClose.addEventListener('click', closeOverlay);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeOverlay(); });
+</script>
 </body>
 </html>

@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>AETHER — Perfume House</title>
+<meta name="description" content="An independent perfume house. Three fragrances. Four hundred bottles each. Made once, never repeated.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #040405;
+  --bg2:     #08080c;
+  --amber:   #8c5e20;
+  --amber2:  #c4883a;
+  --parch:   #f0e6cc;
+  --cream:   #faf4e8;
+  --muted:   rgba(240,230,204,0.28);
+  --line:    rgba(140,94,32,0.16);
+  --line2:   rgba(240,230,204,0.06);
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--parch);
+  font-family: 'DM Sans', sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── GRAIN ── */
+.grain {
+  position: fixed;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  pointer-events: none;
+  z-index: 9000;
+  opacity: 0.052;
+}
+
+/* ── PROGRESS ── */
+#pgbar {
+  position: fixed;
+  top: 0; left: 0;
+  height: 1px;
+  width: 0%;
+  background: var(--amber);
+  z-index: 8000;
+  transition: width 0.06s linear;
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 32px 52px;
+  mix-blend-mode: difference;
+}
+.nav-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 300;
+  font-size: 0.72rem;
+  letter-spacing: 0.52em;
+  text-transform: uppercase;
+  color: var(--cream);
+  text-decoration: none;
+}
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+}
+.nav-right a {
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(250,244,232,0.38);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+.nav-right a:hover { color: var(--cream); }
+
+/* ── SCROLL EXPANSION HERO ── */
+.hero-wrap {
+  position: relative;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+/* Title above card — slides UP on scroll */
+.hero-above {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 22vh;
+  z-index: 3;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+.hero-wordmark {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(5rem, 14vw, 13rem);
+  color: var(--cream);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  text-align: center;
+}
+/* Subtitle below card — slides DOWN on scroll */
+.hero-below {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 14vh;
+  gap: 12px;
+  z-index: 3;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+.hero-house {
+  font-size: 0.58rem;
+  letter-spacing: 0.48em;
+  text-transform: uppercase;
+  color: rgba(240,230,204,0.28);
+}
+.hero-year {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 0.9rem;
+  color: rgba(240,230,204,0.18);
+  letter-spacing: 0.08em;
+}
+.hero-scroll-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  opacity: 1;
+  transition: opacity 0.3s;
+}
+.hero-scroll-hint span {
+  font-size: 0.55rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(240,230,204,0.2);
+}
+.scroll-line {
+  width: 1px; height: 44px;
+  background: linear-gradient(to bottom, rgba(140,94,32,0.5), transparent);
+  animation: sl 2s ease-in-out infinite;
+}
+@keyframes sl {
+  0%   { transform: scaleY(0); transform-origin: top; opacity: 0; }
+  45%  { transform: scaleY(1); transform-origin: top; opacity: 1; }
+  55%  { transform-origin: bottom; }
+  100% { transform: scaleY(0); transform-origin: bottom; opacity: 0; }
+}
+
+/* The expanding card */
+.hero-card {
+  position: relative;
+  z-index: 2;
+  width: 200px;
+  height: 290px;
+  border-radius: 3px;
+  overflow: hidden;
+  will-change: width, height, border-radius;
+  cursor: pointer;
+  box-shadow: 0 40px 100px rgba(0,0,0,0.9);
+}
+.hero-card img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: brightness(0.8) saturate(0.6);
+}
+
+/* ── MANIFESTO ── */
+.manifesto {
+  padding: 160px 52px;
+  max-width: 820px;
+  margin: 0 auto;
+  text-align: center;
+}
+.manifesto-pre {
+  font-size: 0.58rem;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 40px;
+}
+.manifesto-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(1.6rem, 3.5vw, 2.8rem);
+  color: rgba(240,230,204,0.62);
+  letter-spacing: -0.01em;
+  line-height: 1.5;
+}
+.manifesto-text strong {
+  color: var(--cream);
+  font-style: italic;
+  font-weight: 300;
+}
+
+/* ── COLLECTION ── */
+.collection {
+  border-top: 1px solid var(--line2);
+  padding: 0 0 120px;
+}
+.collection-header {
+  padding: 72px 52px 64px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line2);
+}
+.coll-tag { font-size: 0.58rem; letter-spacing: 0.38em; text-transform: uppercase; color: var(--amber); }
+.coll-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(2rem, 4vw, 3.6rem);
+  color: var(--cream);
+  letter-spacing: -0.03em;
+}
+.fragrance-list {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 52px;
+}
+.fragrance {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border-bottom: 1px solid var(--line2);
+  min-height: 520px;
+}
+.fragrance:nth-child(even) .frag-img { order: 2; }
+.fragrance:nth-child(even) .frag-body { order: 1; }
+.frag-img {
+  overflow: hidden;
+  position: relative;
+}
+.frag-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: brightness(0.55) saturate(0.5) contrast(1.1);
+  transition: transform 1.2s cubic-bezier(0.25,0.46,0.45,0.94), filter 0.8s;
+}
+.fragrance:hover .frag-img img {
+  transform: scale(1.04);
+  filter: brightness(0.68) saturate(0.65) contrast(1.05);
+}
+.frag-num-bg {
+  position: absolute;
+  top: 32px; left: 32px;
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 8rem;
+  color: rgba(140,94,32,0.14);
+  line-height: 1;
+  pointer-events: none;
+}
+.frag-body {
+  padding: 64px 52px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: var(--bg2);
+}
+.frag-number {
+  font-size: 0.58rem;
+  letter-spacing: 0.38em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 24px;
+}
+.frag-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(2.8rem, 5vw, 4.5rem);
+  color: var(--cream);
+  letter-spacing: -0.03em;
+  line-height: 1.0;
+  margin-bottom: 28px;
+}
+.frag-family {
+  font-size: 0.6rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(240,230,204,0.22);
+  margin-bottom: 28px;
+}
+.frag-desc {
+  font-size: 0.86rem;
+  line-height: 1.9;
+  color: rgba(240,230,204,0.38);
+  font-weight: 300;
+  margin-bottom: 36px;
+  max-width: 380px;
+}
+.frag-notes-label {
+  font-size: 0.58rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(240,230,204,0.18);
+  margin-bottom: 12px;
+}
+.frag-notes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 40px;
+}
+.note-pill {
+  padding: 6px 14px;
+  border: 1px solid var(--line);
+  border-radius: 40px;
+  font-size: 0.68rem;
+  color: rgba(240,230,204,0.42);
+  letter-spacing: 0.06em;
+}
+.frag-edition {
+  font-size: 0.7rem;
+  color: var(--amber);
+  letter-spacing: 0.08em;
+}
+.frag-price {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 1.4rem;
+  color: var(--amber2);
+  margin-top: 6px;
+}
+
+/* ── CRAFT SECTION ── */
+.craft {
+  padding: 160px 52px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 100px;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  border-top: 1px solid var(--line2);
+}
+.craft-img {
+  position: relative;
+  height: 640px;
+  overflow: hidden;
+}
+.craft-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: brightness(0.6) saturate(0.5);
+}
+.craft-img::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent, rgba(4,4,5,0.5));
+}
+.craft-text {}
+.craft-tag { font-size: 0.58rem; letter-spacing: 0.38em; text-transform: uppercase; color: var(--amber); margin-bottom: 28px; }
+.craft-text h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(2.2rem, 4vw, 3.6rem);
+  color: var(--cream);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin-bottom: 36px;
+}
+.craft-text p {
+  font-size: 0.86rem;
+  line-height: 2;
+  color: rgba(240,230,204,0.35);
+  font-weight: 300;
+  margin-bottom: 16px;
+}
+.craft-rule {
+  width: 28px; height: 1px;
+  background: var(--amber);
+  margin: 36px 0;
+}
+.craft-numbers {
+  display: flex;
+  gap: 40px;
+}
+.cn-item {}
+.cn-val {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 2.8rem;
+  font-weight: 300;
+  color: var(--amber2);
+  line-height: 1;
+}
+.cn-lbl {
+  font-size: 0.58rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(240,230,204,0.2);
+  margin-top: 4px;
+}
+
+/* ── STOCKISTS ── */
+.stockists {
+  background: var(--parch);
+  padding: 140px 52px;
+  text-align: center;
+}
+.stockists-tag { font-size: 0.6rem; letter-spacing: 0.38em; text-transform: uppercase; color: rgba(4,4,5,0.38); margin-bottom: 28px; }
+.stockists h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(3rem, 6vw, 5.5rem);
+  color: var(--bg);
+  letter-spacing: -0.04em;
+  line-height: 1.04;
+  margin-bottom: 52px;
+}
+.stockist-cities {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  flex-wrap: wrap;
+  margin-bottom: 52px;
+  border-top: 1px solid rgba(4,4,5,0.08);
+  border-bottom: 1px solid rgba(4,4,5,0.08);
+}
+.city-item {
+  padding: 18px 36px;
+  border-right: 1px solid rgba(4,4,5,0.08);
+}
+.city-item:last-child { border-right: none; }
+.city-name {
+  font-size: 0.8rem;
+  font-weight: 300;
+  color: rgba(4,4,5,0.6);
+  letter-spacing: 0.06em;
+}
+.city-store {
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(4,4,5,0.3);
+  margin-top: 3px;
+}
+.stock-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 36px;
+  border: 1px solid rgba(4,4,5,0.25);
+  color: var(--bg);
+  border-radius: 3px;
+  text-decoration: none;
+  font-size: 0.78rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: background 0.2s, color 0.2s;
+}
+.stock-cta:hover { background: var(--bg); color: var(--parch); }
+
+/* ── FOOTER ── */
+footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 52px;
+  border-top: 1px solid var(--line2);
+}
+.footer-logo { font-family: 'Cormorant Garamond', serif; font-size: 0.72rem; letter-spacing: 0.52em; text-transform: uppercase; color: rgba(240,230,204,0.12); }
+.footer-lynq { font-size: 0.62rem; letter-spacing: 0.14em; color: rgba(240,230,204,0.1); text-decoration: none; transition: color 0.2s; }
+.footer-lynq:hover { color: rgba(240,230,204,0.4); }
+
+/* ── REVEAL ── */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.9s cubic-bezier(0.25,0.46,0.45,0.94), transform 0.9s cubic-bezier(0.25,0.46,0.45,0.94); }
+.reveal.in { opacity: 1; transform: none; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 860px) {
+  nav { padding: 22px 20px; }
+  .nav-right a:not(:last-child) { display: none; }
+  .manifesto { padding: 80px 24px; }
+  .collection-header { padding: 48px 24px 40px; flex-direction: column; gap: 12px; }
+  .fragrance-list { padding: 0 0; }
+  .fragrance { grid-template-columns: 1fr; min-height: auto; }
+  .fragrance:nth-child(even) .frag-img { order: 1; }
+  .fragrance:nth-child(even) .frag-body { order: 2; }
+  .frag-img { height: 320px; }
+  .frag-body { padding: 40px 24px; }
+  .craft { grid-template-columns: 1fr; padding: 80px 24px; gap: 48px; }
+  .craft-img { height: 320px; }
+  .stockists { padding: 80px 24px; }
+  .stockist-cities { flex-direction: column; }
+  .city-item { border-right: none; border-bottom: 1px solid rgba(4,4,5,0.08); width: 100%; }
+  footer { padding: 20px; }
+}
+</style>
+</head>
+<body>
+
+<svg class="grain" aria-hidden="true">
+  <filter id="gr" x="0%" y="0%" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.70" numOctaves="4" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+  <rect width="100%" height="100%" filter="url(#gr)"/>
+</svg>
+<div id="pgbar"></div>
+
+<nav>
+  <a href="#" class="nav-logo">Aether</a>
+  <div class="nav-right">
+    <a href="#collection">Collection</a>
+    <a href="#craft">Craft</a>
+    <a href="#stockists">Stockists</a>
+  </div>
+</nav>
+
+<!-- Scroll Expansion Hero -->
+<section class="hero-wrap" id="heroWrap">
+
+  <!-- Title above — slides UP -->
+  <div class="hero-above" id="heroAbove">
+    <h1 class="hero-wordmark">Aether</h1>
+  </div>
+
+  <!-- Expanding card -->
+  <div class="hero-card" id="heroCard">
+    <img src="https://images.unsplash.com/photo-1490750967868-88df5691cc2e?w=2400&h=1600&fit=crop&auto=format&q=90" alt="Aether">
+  </div>
+
+  <!-- Subtitle below — slides DOWN -->
+  <div class="hero-below" id="heroBelow">
+    <div class="hero-house">Perfume House &nbsp;·&nbsp; Independent</div>
+    <div class="hero-year">Est. MMXIX</div>
+    <div class="hero-scroll-hint" id="heroHint">
+      <div class="scroll-line"></div>
+      <span>Scroll</span>
+    </div>
+  </div>
+
+</section>
+
+<!-- Manifesto -->
+<section class="manifesto">
+  <div class="manifesto-pre reveal">The work</div>
+  <p class="manifesto-text reveal">
+    We make <strong>three fragrances.</strong><br>
+    Four hundred bottles each.<br>
+    <strong>Made once. Never repeated.</strong><br>
+    When they're gone, they're gone.
+  </p>
+</section>
+
+<!-- Collection -->
+<section class="collection" id="collection">
+  <div class="collection-header">
+    <span class="coll-tag reveal">The collection</span>
+    <h2 class="coll-title reveal">Three fragrances.</h2>
+  </div>
+  <div class="fragrance-list">
+
+    <div class="fragrance reveal">
+      <div class="frag-img">
+        <img src="https://images.unsplash.com/photo-1532630571098-79a3d222b00d?w=1200&h=1400&fit=crop&auto=format&q=88" alt="NOIR">
+        <div class="frag-num-bg">I</div>
+      </div>
+      <div class="frag-body">
+        <div class="frag-number">Fragrance I of III</div>
+        <h3 class="frag-name">Noir<br>de Aether</h3>
+        <div class="frag-family">Oriental Woody · Unisex</div>
+        <p class="frag-desc">The smell of a library after rain. Old leather, black ink, and something burning slowly in the next room. For the hours after midnight.</p>
+        <div class="frag-notes-label">Olfactory notes</div>
+        <div class="frag-notes">
+          <span class="note-pill">Oud</span>
+          <span class="note-pill">Vetiver</span>
+          <span class="note-pill">Black pepper</span>
+          <span class="note-pill">Smoked birch</span>
+          <span class="note-pill">Benzoin</span>
+        </div>
+        <div class="frag-edition">Edition of 400 · 50ml · Numbered</div>
+        <div class="frag-price">€280</div>
+      </div>
+    </div>
+
+    <div class="fragrance reveal">
+      <div class="frag-img">
+        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&h=1400&fit=crop&auto=format&q=88" alt="AMBRE">
+        <div class="frag-num-bg">II</div>
+      </div>
+      <div class="frag-body">
+        <div class="frag-number">Fragrance II of III</div>
+        <h3 class="frag-name">Ambre<br>de Aether</h3>
+        <div class="frag-family">Amber Floral · Feminine</div>
+        <p class="frag-desc">A late afternoon in a walled garden. Resin still warm from the sun, figs beginning to fall, and the heaviness of flowers that have been open too long.</p>
+        <div class="frag-notes-label">Olfactory notes</div>
+        <div class="frag-notes">
+          <span class="note-pill">Labdanum</span>
+          <span class="note-pill">Fig milk</span>
+          <span class="note-pill">Jasmine</span>
+          <span class="note-pill">Benzyl benzoate</span>
+          <span class="note-pill">Amber</span>
+        </div>
+        <div class="frag-edition">Edition of 400 · 50ml · Numbered</div>
+        <div class="frag-price">€265</div>
+      </div>
+    </div>
+
+    <div class="fragrance reveal">
+      <div class="frag-img">
+        <img src="https://images.unsplash.com/photo-1476842634003-7dcca8f832de?w=1200&h=1400&fit=crop&auto=format&q=88" alt="SOLEIL">
+        <div class="frag-num-bg">III</div>
+      </div>
+      <div class="frag-body">
+        <div class="frag-number">Fragrance III of III</div>
+        <h3 class="frag-name">Soleil<br>de Aether</h3>
+        <div class="frag-family">Citrus Green · Masculine</div>
+        <p class="frag-desc">Morning light through pine trees near the sea. Cold air, damp stone, the green smell of crushed leaves. The feeling of arriving somewhere you've been before.</p>
+        <div class="frag-notes-label">Olfactory notes</div>
+        <div class="frag-notes">
+          <span class="note-pill">Sicilian bergamot</span>
+          <span class="note-pill">Marine accord</span>
+          <span class="note-pill">Cedar</span>
+          <span class="note-pill">White tea</span>
+          <span class="note-pill">Musk</span>
+        </div>
+        <div class="frag-edition">Edition of 400 · 50ml · Numbered</div>
+        <div class="frag-price">€255</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Craft -->
+<section class="craft" id="craft">
+  <div class="craft-img reveal">
+    <img src="https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&h=1600&fit=crop&auto=format&q=88" alt="The craft">
+  </div>
+  <div class="craft-text">
+    <div class="craft-tag reveal">How we work</div>
+    <h2 class="reveal">No shortcuts.<br>No shortcuts.</h2>
+    <p class="reveal">Every fragrance begins with a brief that can be read in a single sentence. A place, a memory, a feeling with no name. We work the formula until the scent earns it.</p>
+    <p class="reveal">We never use synthetic base notes. The production run is fixed before the first bottle is filled. When a fragrance sells out, it retires. No rereleases, no anniversaries, no second chances.</p>
+    <div class="craft-rule reveal"></div>
+    <div class="craft-numbers reveal">
+      <div class="cn-item">
+        <div class="cn-val">400</div>
+        <div class="cn-lbl">Bottles per edition</div>
+      </div>
+      <div class="cn-item">
+        <div class="cn-val">3</div>
+        <div class="cn-lbl">Fragrances total</div>
+      </div>
+      <div class="cn-item">
+        <div class="cn-val">Never</div>
+        <div class="cn-lbl">Repeated</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Stockists -->
+<section class="stockists" id="stockists">
+  <div class="stockists-tag reveal">Where to find us</div>
+  <h2 class="reveal">Available in<br>six cities.</h2>
+  <div class="stockist-cities reveal">
+    <div class="city-item">
+      <div class="city-name">Toronto</div>
+      <div class="city-store">Ritual Objects</div>
+    </div>
+    <div class="city-item">
+      <div class="city-name">New York</div>
+      <div class="city-store">Object of Desire</div>
+    </div>
+    <div class="city-item">
+      <div class="city-name">Paris</div>
+      <div class="city-store">Colette Archive</div>
+    </div>
+    <div class="city-item">
+      <div class="city-name">London</div>
+      <div class="city-store">Dover St Market</div>
+    </div>
+    <div class="city-item">
+      <div class="city-name">Tokyo</div>
+      <div class="city-store">Cibone Aoyama</div>
+    </div>
+    <div class="city-item">
+      <div class="city-name">Milan</div>
+      <div class="city-store">10 Corso Como</div>
+    </div>
+  </div>
+  <a href="mailto:hello@aetherperfume.com" class="stock-cta reveal">Enquire about stockists →</a>
+</section>
+
+<footer>
+  <div class="footer-logo">Aether</div>
+  <a href="https://lynq.build" class="footer-lynq">Site by LYNQ</a>
+</footer>
+
+<script>
+// ── PROGRESS BAR
+window.addEventListener('scroll', () => {
+  const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+  document.getElementById('pgbar').style.width = pct + '%';
+}, { passive: true });
+
+// ── SCROLL EXPANSION HERO (vertical split)
+const heroWrap  = document.getElementById('heroWrap');
+const heroCard  = document.getElementById('heroCard');
+const heroAbove = document.getElementById('heroAbove');
+const heroBelow = document.getElementById('heroBelow');
+const heroHint  = document.getElementById('heroHint');
+
+let progress  = 0;
+let isExpanded = false;
+let touching   = false;
+let touchStartY = 0;
+
+function applyHero(p) {
+  progress = Math.max(0, Math.min(1, p));
+
+  const ease = progress < 0.5
+    ? 4 * progress * progress * progress
+    : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  const w = 200 + (vw - 200) * ease;
+  const h = 290 + (vh - 290) * ease;
+  const r = 3 * (1 - ease);
+
+  heroCard.style.width        = w + 'px';
+  heroCard.style.height       = h + 'px';
+  heroCard.style.borderRadius = r + 'px';
+
+  // Title slides UP off screen
+  const upShift = ease * 55;
+  heroAbove.style.transform = `translateY(-${upShift}vh)`;
+  heroAbove.style.opacity   = Math.max(0, 1 - ease * 2.2).toString();
+
+  // Subtitle slides DOWN off screen
+  const downShift = ease * 55;
+  heroBelow.style.transform = `translateY(${downShift}vh)`;
+  heroBelow.style.opacity   = Math.max(0, 1 - ease * 2.2).toString();
+
+  heroHint.style.opacity = Math.max(0, 1 - progress * 5).toString();
+
+  if (progress >= 1 && !isExpanded) {
+    isExpanded = true;
+    heroWrap.style.zIndex = '0';
+    document.body.style.overflow = '';
+  }
+}
+
+document.body.style.overflow = 'hidden';
+applyHero(0);
+
+window.addEventListener('wheel', e => {
+  if (isExpanded && e.deltaY < 0 && window.scrollY <= 2) {
+    collapse();
+  } else if (!isExpanded) {
+    e.preventDefault();
+    applyHero(progress + e.deltaY * 0.0012);
+  }
+}, { passive: false });
+
+window.addEventListener('touchstart', e => {
+  touching = true;
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+window.addEventListener('touchmove', e => {
+  if (!touching || isExpanded) return;
+  e.preventDefault();
+  const dy = touchStartY - e.touches[0].clientY;
+  touchStartY = e.touches[0].clientY;
+  applyHero(progress + dy * 0.0022);
+}, { passive: false });
+
+window.addEventListener('touchend', () => { touching = false; });
+
+function collapse() {
+  isExpanded = false;
+  document.body.style.overflow = 'hidden';
+  heroWrap.style.zIndex = '10';
+  const tick = () => {
+    progress = Math.max(0, progress - 0.042);
+    applyHero(progress);
+    if (progress > 0) requestAnimationFrame(tick);
+    else document.body.style.overflow = '';
+  };
+  requestAnimationFrame(tick);
+}
+
+// ── REVEAL
+const reveals = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+}, { threshold: 0.08 });
+reveals.forEach(el => io.observe(el));
+</script>
+</body>
+</html>
