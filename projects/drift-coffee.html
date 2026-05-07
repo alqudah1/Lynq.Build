@@ -1,1556 +1,909 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Drift Coffee — Specialty Coffee · Dundas West, Toronto</title>
-    <meta
-      name="description"
-      content="Small-batch specialty coffee on Dundas West. Single origin, slow poured. 847 Dundas St W, Toronto."
-    />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400;1,9..144,500&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&display=swap"
-      rel="stylesheet"
-    />
-    <style>
-      :root {
-        --bg:       #09080a;
-        --bg-2:     #0f0d10;
-        --bg-card:  #131115;
-        --cream:    #f0e8d8;
-        --warm-wht: #faf3e8;
-        --gold:     #c49a3c;
-        --gold-lt:  #dbb96a;
-        --brown:    #6b3a1f;
-        --muted:    rgba(240, 232, 216, 0.52);
-        --line:     rgba(196, 154, 60, 0.16);
-        --line-dim: rgba(240, 232, 216, 0.1);
-      }
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      html { scroll-behavior: smooth; }
-      body {
-        font-family: "Plus Jakarta Sans", sans-serif;
-        background: var(--bg);
-        color: var(--cream);
-        line-height: 1.6;
-        overflow-x: hidden;
-      }
-      .container {
-        max-width: 1340px;
-        margin: 0 auto;
-        padding: 0 36px;
-      }
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Drift Coffee — Specialty Coffee · Dundas West, Toronto</title>
+<meta name="description" content="Small-batch specialty coffee on Dundas West. Single origin, slow poured. 847 Dundas St W, Toronto.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Caveat:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:    #09080a;
+  --bg2:   #0f0e10;
+  --cream: #f0e6d2;
+  --gold:  #b8884a;
+  --gold2: #d4a86a;
+  --dark:  #09080a;
+  --muted: #786b5c;
+  --line:  rgba(240,230,210,0.08);
+}
 
-      /* ===== TOP BAR ===== */
-      .top-bar {
-        background: #0d0a07;
-        color: rgba(240, 232, 216, 0.72);
-        padding: 11px 0;
-        font-size: 12px;
-        letter-spacing: 0.18em;
-        text-transform: uppercase;
-        text-align: center;
-        font-weight: 500;
-        border-bottom: 1px solid rgba(196, 154, 60, 0.18);
-      }
-      .top-bar .sep {
-        display: inline-block;
-        color: var(--gold);
-        margin: 0 18px;
-        opacity: 0.7;
-      }
-      .top-bar strong {
-        color: var(--gold);
-        font-weight: 600;
-      }
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--cream);
+  font-family: 'DM Sans', sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
 
-      /* ===== ANIMATED HERO ===== */
-      .animated-hero {
-        position: relative;
-        min-height: 100vh;
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-      }
-      .hero-bg {
-        position: absolute;
-        inset: 0;
-        background-size: cover;
-        background-position: center 30%;
-        background-repeat: no-repeat;
-        z-index: 0;
-      }
-      .hero-overlay {
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(
-          160deg,
-          rgba(8, 5, 2, 0.82) 0%,
-          rgba(8, 5, 2, 0.62) 55%,
-          rgba(8, 5, 2, 0.78) 100%
-        );
-      }
-      .hero-grain {
-        position: absolute;
-        inset: 0;
-        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
-        background-size: 200px 200px;
-        opacity: 0.5;
-        pointer-events: none;
-        z-index: 1;
-      }
+/* ── GRAIN ── */
+.grain {
+  position: fixed;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  pointer-events: none;
+  z-index: 9000;
+  opacity: 0.045;
+}
 
-      /* Hero header */
-      .hero-inner-header {
-        position: absolute;
-        top: 0; left: 0; right: 0;
-        z-index: 20;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        height: 84px;
-        padding: 0 52px;
-        animation: heroHeaderIn 0.8s ease-out forwards;
-      }
-      .h-logo {
-        font-family: "Fraunces", serif;
-        font-size: 28px;
-        letter-spacing: 0.22em;
-        color: var(--warm-wht);
-        line-height: 1;
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        font-weight: 400;
-        text-decoration: none;
-      }
-      .h-logo-mark {
-        width: 34px; height: 34px;
-        border: 1px solid rgba(196, 154, 60, 0.5);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-      }
-      .h-logo-mark::before {
-        content: "";
-        width: 10px; height: 10px;
-        background: var(--gold);
-        border-radius: 50%;
-      }
-      .hero-inner-header .h-nav {
-        display: flex;
-        gap: 34px;
-        list-style: none;
-      }
-      .hero-inner-header .h-nav a {
-        color: rgba(240, 232, 216, 0.72);
-        text-decoration: none;
-        font-size: 12px;
-        font-weight: 500;
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-        transition: color 0.2s;
-      }
-      .hero-inner-header .h-nav a:hover { color: var(--warm-wht); }
+/* ── PROGRESS BAR ── */
+#pgbar {
+  position: fixed;
+  top: 0; left: 0;
+  height: 2px;
+  width: 0%;
+  background: var(--gold);
+  z-index: 8000;
+  transition: width 0.08s linear;
+}
 
-      /* Hero content */
-      .hero-content-wrap {
-        position: relative;
-        z-index: 10;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        justify-content: center;
-        padding: 130px 52px 90px;
-        max-width: 1040px;
-        color: #fff;
-      }
-      .ah-eyebrow {
-        font-size: 11px;
-        font-weight: 600;
-        letter-spacing: 0.3em;
-        text-transform: uppercase;
-        color: var(--gold);
-        margin-bottom: 30px;
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        opacity: 0;
-        animation: heroItemIn 0.65s ease-out 0.1s forwards;
-      }
-      .ah-eyebrow::before {
-        content: "";
-        width: 32px; height: 1px;
-        background: var(--gold);
-      }
-      .ah-title {
-        font-family: "Fraunces", serif;
-        font-size: clamp(54px, 8.5vw, 116px);
-        font-weight: 400;
-        line-height: 0.92;
-        letter-spacing: -0.03em;
-        font-style: italic;
-        color: var(--warm-wht);
-        opacity: 0;
-        animation: heroItemIn 0.65s ease-out 0.24s forwards;
-      }
-      .ah-title em {
-        color: var(--gold);
-        font-style: italic;
-      }
-      .ah-desc {
-        font-family: "Fraunces", serif;
-        font-size: 18px;
-        line-height: 1.8;
-        color: rgba(240, 232, 216, 0.62);
-        max-width: 520px;
-        margin-top: 38px;
-        font-style: italic;
-        opacity: 0;
-        animation: heroItemIn 0.65s ease-out 0.4s forwards;
-      }
-      .ah-actions {
-        display: flex;
-        gap: 14px;
-        margin-top: 48px;
-        flex-wrap: wrap;
-        opacity: 0;
-        animation: heroItemIn 0.65s ease-out 0.56s forwards;
-      }
-      .hero-glass-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 14px 34px;
-        border-radius: 9999px;
-        background: rgba(255, 255, 255, 0.08);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.18);
-        color: var(--warm-wht);
-        font-family: "Plus Jakarta Sans", sans-serif;
-        font-size: 12px;
-        font-weight: 600;
-        letter-spacing: 0.18em;
-        text-transform: uppercase;
-        text-decoration: none;
-        transition: background 0.25s, border-color 0.25s, transform 0.25s;
-        white-space: nowrap;
-        cursor: pointer;
-      }
-      .hero-glass-btn:hover {
-        background: rgba(196, 154, 60, 0.18);
-        border-color: rgba(196, 154, 60, 0.45);
-        transform: translateY(-2px);
-      }
-      .hero-glass-btn.gold {
-        background: var(--gold);
-        border-color: var(--gold);
-        color: #09080a;
-        font-weight: 700;
-      }
-      .hero-glass-btn.gold:hover {
-        background: var(--gold-lt);
-        border-color: var(--gold-lt);
-      }
+/* ── NAV ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 44px;
+  mix-blend-mode: difference;
+}
+.nav-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.nav-logo {
+  font-family: 'Caveat', cursive;
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--cream);
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+.nav-sub {
+  font-size: 0.6rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(240,230,210,0.38);
+  font-family: 'DM Sans', sans-serif;
+}
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+.nav-right a {
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(240,230,210,0.5);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.nav-right a:hover { color: var(--cream); }
 
-      /* Hero scroll hint */
-      .hero-scroll-hint {
-        position: absolute;
-        bottom: 36px;
-        left: 52px;
-        z-index: 10;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        opacity: 0;
-        animation: heroItemIn 0.65s ease-out 0.8s forwards;
-      }
-      .hero-scroll-hint .line {
-        width: 1px; height: 40px;
-        background: linear-gradient(to bottom, transparent, var(--gold), transparent);
-      }
-      .hero-scroll-hint span {
-        font-size: 10px;
-        letter-spacing: 0.22em;
-        text-transform: uppercase;
-        color: rgba(240, 232, 216, 0.45);
-        writing-mode: vertical-lr;
-        transform: rotate(180deg);
-      }
+/* ── SCROLL EXPANSION HERO ── */
+.hero-wrap {
+  position: relative;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.hero-title {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 7vw;
+  z-index: 3;
+  pointer-events: none;
+}
+.hero-left, .hero-right {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(5rem, 11vw, 10rem);
+  color: var(--cream);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  will-change: transform;
+  text-shadow: 0 2px 40px rgba(0,0,0,0.6);
+}
+.hero-right { text-align: right; }
 
-      /* ===== SCROLL NAV ===== */
-      .scroll-nav {
-        position: fixed;
-        top: 0; left: 0; right: 0;
-        z-index: 100;
-        background: rgba(9, 8, 10, 0.92);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border-bottom: 1px solid rgba(196, 154, 60, 0.14);
-        padding: 16px 0;
-        transform: translateY(-110%);
-        transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1);
-      }
-      .scroll-nav.visible { transform: translateY(0); }
-      .sn-inner {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-      }
-      .sn-logo {
-        font-family: "Fraunces", serif;
-        font-size: 24px;
-        letter-spacing: 0.22em;
-        color: var(--warm-wht);
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-weight: 400;
-        text-decoration: none;
-      }
-      .sn-logo-mark {
-        width: 28px; height: 28px;
-        border: 1px solid var(--gold);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-      }
-      .sn-logo-mark::before {
-        content: "";
-        width: 9px; height: 9px;
-        background: var(--gold);
-        border-radius: 50%;
-      }
-      .sn-links {
-        display: flex;
-        gap: 32px;
-        list-style: none;
-      }
-      .sn-links a {
-        color: rgba(240, 232, 216, 0.6);
-        text-decoration: none;
-        font-size: 11px;
-        font-weight: 500;
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-        transition: color 0.2s;
-      }
-      .sn-links a:hover { color: var(--gold); }
+.hero-card {
+  position: relative;
+  z-index: 2;
+  width: 280px;
+  height: 400px;
+  border-radius: 6px;
+  overflow: hidden;
+  will-change: width, height, border-radius;
+  cursor: pointer;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.7);
+}
+.hero-card img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  display: block;
+}
 
-      /* Liquid-glass nav CTA */
-      .btn-liquid {
-        position: relative;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 11px 24px;
-        border-radius: 9999px;
-        font-family: "Plus Jakarta Sans", sans-serif;
-        font-size: 11px;
-        font-weight: 600;
-        letter-spacing: 0.18em;
-        text-transform: uppercase;
-        text-decoration: none;
-        cursor: pointer;
-        background: transparent;
-        border: none;
-        outline: none;
-        color: var(--gold);
-        white-space: nowrap;
-        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-      }
-      .btn-liquid:hover { transform: scale(1.06); }
-      .btn-liquid:active { transform: scale(0.96); }
-      .btn-liquid-glass {
-        position: absolute;
-        inset: 0;
-        border-radius: 9999px;
-        overflow: hidden;
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        pointer-events: none;
-        z-index: -1;
-      }
-      .btn-liquid-overlay {
-        position: absolute;
-        inset: 0;
-        border-radius: 9999px;
-        background: rgba(196, 154, 60, 0.08);
-        border: 1px solid rgba(196, 154, 60, 0.35);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 2px 8px rgba(0,0,0,0.3);
-        pointer-events: none;
-        z-index: 0;
-      }
-      .btn-liquid-text {
-        position: relative;
-        z-index: 2;
-        pointer-events: none;
-      }
+.hero-scroll-hint {
+  position: absolute;
+  bottom: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  opacity: 1;
+  transition: opacity 0.4s;
+}
+.hero-scroll-hint span {
+  font-size: 0.58rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(240,230,210,0.28);
+}
+.scroll-line {
+  width: 1px;
+  height: 40px;
+  background: linear-gradient(to bottom, rgba(240,230,210,0.3), transparent);
+  animation: scrollLine 1.8s ease-in-out infinite;
+}
+@keyframes scrollLine {
+  0%   { transform: scaleY(0); transform-origin: top; opacity: 0; }
+  40%  { transform: scaleY(1); transform-origin: top; opacity: 1; }
+  60%  { transform: scaleY(1); transform-origin: bottom; opacity: 1; }
+  100% { transform: scaleY(0); transform-origin: bottom; opacity: 0; }
+}
 
-      /* ===== KEYFRAMES ===== */
-      @keyframes heroHeaderIn {
-        from { transform: translateY(-60px); opacity: 0; }
-        to   { transform: translateY(0);     opacity: 1; }
-      }
-      @keyframes heroItemIn {
-        from { transform: translateY(24px); opacity: 0; }
-        to   { transform: translateY(0);    opacity: 1; }
-      }
+/* ── ZOOM PARALLAX ── */
+.parallax-wrap {
+  position: relative;
+  height: 280vh;
+  overflow: hidden;
+}
+.parallax-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+.parallax-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.parallax-img {
+  position: absolute;
+  border-radius: 4px;
+  overflow: hidden;
+  will-change: transform;
+}
+.parallax-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.parallax-headline {
+  position: absolute;
+  bottom: 80px;
+  left: 0; right: 0;
+  text-align: center;
+  z-index: 10;
+  pointer-events: none;
+  will-change: opacity;
+}
+.parallax-headline h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(3.5rem, 8vw, 7rem);
+  color: var(--cream);
+  letter-spacing: -0.03em;
+  text-shadow: 0 2px 30px rgba(0,0,0,0.8);
+  line-height: 1.04;
+}
+.parallax-headline p {
+  font-size: 0.7rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(240,230,210,0.3);
+  margin-top: 16px;
+}
 
-      /* ===== TICKER ===== */
-      .ticker {
-        background: #0d0a07;
-        color: var(--cream);
-        padding: 22px 0;
-        overflow: hidden;
-        border-top: 2px solid rgba(196, 154, 60, 0.35);
-        border-bottom: 2px solid rgba(196, 154, 60, 0.35);
-      }
-      .ticker-inner {
-        display: flex;
-        animation: slide 38s linear infinite;
-        font-family: "Fraunces", serif;
-        font-style: italic;
-        font-size: 26px;
-        letter-spacing: 0.04em;
-        white-space: nowrap;
-        gap: 0;
-      }
-      .ticker-item {
-        display: inline-flex;
-        align-items: center;
-        gap: 0;
-        padding: 0 52px;
-        position: relative;
-      }
-      .ticker-item::after {
-        content: "·";
-        color: var(--gold);
-        font-size: 32px;
-        line-height: 1;
-        position: absolute;
-        right: 0;
-        top: 50%;
-        transform: translateY(-52%);
-      }
-      @keyframes slide {
-        from { transform: translateX(0); }
-        to   { transform: translateX(-50%); }
-      }
+/* ── STORY ── */
+.story {
+  padding: 140px 44px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: start;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.story-img {
+  position: relative;
+  border-radius: 4px;
+  overflow: hidden;
+  height: 520px;
+}
+.story-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.story-img::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(9,8,10,0.1), rgba(9,8,10,0.3));
+}
+.story-text {}
+.story-tag {
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 28px;
+}
+.story-text h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(2.4rem, 4vw, 3.6rem);
+  color: var(--cream);
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+  margin-bottom: 28px;
+}
+.story-text blockquote {
+  border-left: 2px solid var(--gold);
+  padding-left: 20px;
+  margin-bottom: 28px;
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 1.25rem;
+  color: rgba(240,230,210,0.6);
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+}
+.story-text p {
+  font-size: 0.88rem;
+  line-height: 1.85;
+  color: rgba(240,230,210,0.45);
+  font-weight: 300;
+  margin-bottom: 16px;
+}
+.story-detail {
+  display: flex;
+  gap: 36px;
+  margin-top: 36px;
+  padding-top: 32px;
+  border-top: 1px solid var(--line);
+}
+.story-detail-item {}
+.detail-val {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 2.2rem;
+  font-weight: 300;
+  color: var(--gold);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.detail-lbl {
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(240,230,210,0.22);
+}
 
-      /* ===== SECTION COMMON ===== */
-      .section-eyebrow {
-        display: inline-flex;
-        align-items: center;
-        gap: 12px;
-        font-size: 11px;
-        letter-spacing: 0.28em;
-        text-transform: uppercase;
-        color: var(--gold);
-        font-weight: 600;
-        margin-bottom: 20px;
-      }
-      .section-eyebrow::before {
-        content: "";
-        width: 28px; height: 1px;
-        background: var(--gold);
-        opacity: 0.6;
-      }
-      h2.section-title {
-        font-family: "Fraunces", serif;
-        font-size: clamp(44px, 6vw, 78px);
-        line-height: 0.95;
-        font-weight: 400;
-        letter-spacing: -0.025em;
-        margin-bottom: 36px;
-      }
-      h2.section-title em {
-        font-style: italic;
-        color: var(--gold);
-      }
+/* ── MENU ── */
+.menu-section {
+  background: var(--bg2);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 100px 44px;
+}
+.menu-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  max-width: 1100px;
+  margin: 0 auto 64px;
+}
+.menu-header-tag {
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(240,230,210,0.22);
+}
+.menu-header h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(2.8rem, 5vw, 4.5rem);
+  color: var(--cream);
+  letter-spacing: -0.03em;
+}
+.menu-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  max-width: 1100px;
+  margin: 0 auto;
+  background: var(--line);
+}
+.menu-col {
+  background: var(--bg2);
+  padding: 48px 44px;
+}
+.menu-col-name {
+  font-size: 0.6rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 32px;
+}
+.menu-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+.menu-item:last-child { border-bottom: none; }
+.mi-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 400;
+  font-size: 1.15rem;
+  color: var(--cream);
+  letter-spacing: -0.01em;
+}
+.mi-sub {
+  font-size: 0.68rem;
+  color: rgba(240,230,210,0.28);
+  margin-top: 2px;
+  letter-spacing: 0.03em;
+}
+.mi-price {
+  font-size: 0.82rem;
+  color: var(--gold);
+  font-weight: 400;
+  white-space: nowrap;
+  margin-left: 16px;
+  flex-shrink: 0;
+}
 
-      /* ===== MENU SECTION ===== */
-      .menu {
-        background: var(--bg);
-        padding: 130px 0;
-        position: relative;
-        overflow: hidden;
-      }
-      .menu::before {
-        content: "";
-        position: absolute;
-        top: -10%;
-        right: -15%;
-        width: 800px; height: 800px;
-        background: radial-gradient(circle, rgba(196,154,60,0.06), transparent 65%);
-        pointer-events: none;
-      }
-      .menu::after {
-        content: "";
-        position: absolute;
-        bottom: -10%;
-        left: -10%;
-        width: 600px; height: 600px;
-        background: radial-gradient(circle, rgba(107,58,31,0.08), transparent 65%);
-        pointer-events: none;
-      }
-      .menu-inner { position: relative; z-index: 1; }
-      .menu-head {
-        margin-bottom: 80px;
-      }
-      .menu h2.section-title { color: var(--cream); }
+/* ── EXPERIENCE ── */
+.experience {
+  padding: 140px 44px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.exp-tag {
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(240,230,210,0.22);
+  margin-bottom: 56px;
+  text-align: center;
+}
+.exp-items {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  background: var(--line);
+}
+.exp-item {
+  background: var(--bg);
+  padding: 52px 40px;
+}
+.exp-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 5rem;
+  font-weight: 300;
+  color: rgba(184,136,74,0.12);
+  line-height: 1;
+  margin-bottom: 20px;
+}
+.exp-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 400;
+  font-size: 1.35rem;
+  color: var(--cream);
+  letter-spacing: -0.01em;
+  margin-bottom: 12px;
+}
+.exp-desc {
+  font-size: 0.8rem;
+  line-height: 1.75;
+  color: rgba(240,230,210,0.32);
+  font-weight: 300;
+}
 
-      /* Product cards */
-      .cards-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 24px;
-        margin-bottom: 90px;
-      }
-      .product-card {
-        position: relative;
-        overflow: hidden;
-        border-radius: 20px;
-        border: 1px solid rgba(196, 154, 60, 0.14);
-        background: var(--bg-card);
-        transition: box-shadow 0.3s, border-color 0.3s, transform 0.35s;
-      }
-      .product-card:hover {
-        box-shadow: 0 28px 70px rgba(0, 0, 0, 0.65);
-        border-color: rgba(196, 154, 60, 0.38);
-        transform: translateY(-7px);
-      }
-      .product-card-link {
-        display: block;
-        text-decoration: none;
-        color: inherit;
-      }
-      .pc-img {
-        aspect-ratio: 1/1;
-        overflow: hidden;
-        border-radius: 20px 20px 0 0;
-        position: relative;
-      }
-      .pc-img img {
-        width: 100%; height: 100%;
-        object-fit: cover;
-        display: block;
-        transition: transform 0.5s ease;
-        filter: brightness(0.88) saturate(0.9);
-      }
-      .product-card:hover .pc-img img { transform: scale(1.07); }
-      .pc-img-overlay {
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(to top, rgba(9,8,10,0.55) 0%, transparent 50%);
-        pointer-events: none;
-      }
-      .pc-body { padding: 18px 22px 24px; }
-      .pc-title {
-        font-family: "Fraunces", serif;
-        font-size: 23px;
-        font-weight: 400;
-        color: var(--cream);
-        line-height: 1.1;
-        font-style: italic;
-      }
-      .pc-meta {
-        margin-top: 9px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-      .pc-cat {
-        font-size: 11px;
-        color: rgba(240, 232, 216, 0.42);
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-      }
-      .pc-price {
-        font-family: "Fraunces", serif;
-        font-style: italic;
-        font-size: 20px;
-        color: var(--gold);
-      }
-      .pc-tag {
-        position: absolute;
-        top: 14px;
-        left: 14px;
-        background: rgba(9,8,10,0.75);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        border: 1px solid rgba(196,154,60,0.3);
-        border-radius: 9999px;
-        padding: 4px 12px;
-        font-size: 10px;
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-        color: var(--gold);
-        font-weight: 600;
-      }
+/* ── VISIT ── */
+.visit {
+  background: var(--gold);
+  padding: 120px 44px;
+  text-align: center;
+}
+.visit-tag {
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(9,8,10,0.45);
+  margin-bottom: 28px;
+}
+.visit h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(3rem, 7vw, 6rem);
+  color: var(--dark);
+  letter-spacing: -0.04em;
+  line-height: 1.04;
+  margin-bottom: 36px;
+}
+.visit-address {
+  font-size: 0.82rem;
+  letter-spacing: 0.12em;
+  color: rgba(9,8,10,0.6);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+.visit-hours {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 1.35rem;
+  color: rgba(9,8,10,0.55);
+  margin-bottom: 44px;
+}
+.visit-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 32px;
+  background: var(--dark);
+  color: var(--cream);
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  transition: opacity 0.2s, transform 0.25s;
+}
+.visit-cta:hover { opacity: 0.9; transform: translateY(-2px); }
 
-      /* Full menu list */
-      .menu-divider {
-        border: 0;
-        border-top: 1px solid var(--line);
-        margin: 0 0 60px;
-      }
-      .menu-divider-label {
-        text-align: center;
-        margin-bottom: 56px;
-      }
-      .menu-divider-label span {
-        font-family: "Fraunces", serif;
-        font-style: italic;
-        font-size: 24px;
-        color: rgba(240, 232, 216, 0.45);
-        letter-spacing: 0.04em;
-      }
-      .menu-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0 80px;
-        max-width: 1160px;
-        margin: 0 auto;
-      }
-      .menu-col { padding-bottom: 56px; }
-      .menu-col h3 {
-        font-family: "Fraunces", serif;
-        font-size: 36px;
-        color: var(--cream);
-        line-height: 1;
-        letter-spacing: -0.01em;
-        margin-bottom: 4px;
-        font-weight: 400;
-      }
-      .menu-col h3 em {
-        font-style: italic;
-        color: var(--gold);
-        font-size: 0.5em;
-        display: block;
-        margin-top: 7px;
-        letter-spacing: 0.04em;
-        font-weight: 400;
-      }
-      .menu-col .col-rule {
-        width: 44px; height: 1px;
-        background: var(--brown);
-        margin: 20px 0 26px;
-        opacity: 0.7;
-      }
-      .m-item {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 18px;
-        padding: 14px 0;
-        align-items: baseline;
-        border-bottom: 1px dashed rgba(240, 232, 216, 0.07);
-      }
-      .m-item:last-child { border-bottom: none; }
-      .m-item .nm {
-        font-family: "Fraunces", serif;
-        font-size: 18px;
-        color: var(--cream);
-        margin-bottom: 3px;
-        font-weight: 400;
-      }
-      .m-item .nm.special::after {
-        content: " ◆";
-        color: var(--gold);
-        font-size: 0.65em;
-      }
-      .m-item .dc {
-        font-family: "Fraunces", serif;
-        font-style: italic;
-        font-size: 12.5px;
-        color: rgba(240, 232, 216, 0.4);
-        line-height: 1.55;
-      }
-      .m-item .pr {
-        font-family: "Fraunces", serif;
-        font-style: italic;
-        font-size: 19px;
-        color: var(--gold);
-        white-space: nowrap;
-      }
-      .menu-note {
-        margin-top: 40px;
-        padding: 22px 28px;
-        border: 1px solid rgba(196, 154, 60, 0.16);
-        border-radius: 12px;
-        background: rgba(196, 154, 60, 0.04);
-        font-family: "Fraunces", serif;
-        font-style: italic;
-        font-size: 14px;
-        color: rgba(240, 232, 216, 0.5);
-        line-height: 1.7;
-        text-align: center;
-        max-width: 700px;
-        margin-left: auto;
-        margin-right: auto;
-      }
+/* ── FOOTER ── */
+footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 44px;
+  border-top: 1px solid var(--line);
+}
+.footer-logo {
+  font-family: 'Caveat', cursive;
+  font-size: 1.2rem;
+  color: rgba(240,230,210,0.2);
+}
+.footer-lynq {
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  color: rgba(240,230,210,0.15);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.footer-lynq:hover { color: rgba(240,230,210,0.4); }
 
-      /* ===== STORY SECTION ===== */
-      .story {
-        background: var(--bg-2);
-        padding: 140px 0;
-        position: relative;
-        overflow: hidden;
-      }
-      .story::before {
-        content: "";
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: radial-gradient(ellipse at 70% 40%, rgba(107,58,31,0.07), transparent 60%);
-        pointer-events: none;
-      }
-      .story-grid {
-        display: grid;
-        grid-template-columns: 1.12fr 1fr;
-        gap: 100px;
-        align-items: center;
-        position: relative;
-        z-index: 1;
-      }
-      .story-text-col {}
-      .story-img-wrap {
-        position: relative;
-        aspect-ratio: 4/5;
-        border-radius: 28px;
-        overflow: hidden;
-        box-shadow: 0 50px 120px rgba(0,0,0,0.55);
-        border: 1px solid rgba(196,154,60,0.12);
-      }
-      .story-img-wrap img {
-        width: 100%; height: 100%;
-        object-fit: cover;
-        display: block;
-        filter: brightness(0.82) saturate(0.85);
-        transition: transform 0.9s ease;
-      }
-      .story-img-wrap:hover img { transform: scale(1.04); }
-      .story-badge {
-        position: absolute;
-        bottom: -16px;
-        right: -16px;
-        background: #0d0a07;
-        border: 1px solid rgba(196,154,60,0.25);
-        color: var(--cream);
-        padding: 24px 28px;
-        border-radius: 16px;
-        z-index: 2;
-        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-      }
-      .story-badge .t1 {
-        font-family: "Fraunces", serif;
-        font-style: italic;
-        color: var(--gold);
-        font-size: 12px;
-        margin-bottom: 5px;
-        letter-spacing: 0.04em;
-      }
-      .story-badge .t2 {
-        font-family: "Fraunces", serif;
-        font-size: 20px;
-        line-height: 1.2;
-        font-weight: 400;
-        color: var(--cream);
-      }
-      .story-text {
-        font-family: "Fraunces", serif;
-        font-size: 18px;
-        line-height: 1.85;
-        color: rgba(240, 232, 216, 0.72);
-      }
-      .story-text p {
-        margin-bottom: 18px;
-        max-width: 560px;
-      }
-      .story-text p:first-of-type::first-letter {
-        font-family: "Fraunces", serif;
-        font-size: 84px;
-        font-weight: 400;
-        float: left;
-        line-height: 0.82;
-        padding: 6px 14px 0 0;
-        color: var(--gold);
-        font-style: italic;
-      }
-      .story-blockquote {
-        font-family: "Fraunces", serif;
-        font-style: italic;
-        font-size: 19px;
-        color: var(--cream);
-        line-height: 1.5;
-        margin-top: 34px;
-        padding: 22px 0 22px 28px;
-        border-left: 2px solid var(--gold);
-        max-width: 500px;
-      }
-      .story-blockquote p { margin-bottom: 0; color: var(--cream); }
+/* ── REVEAL ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.8s cubic-bezier(0.25,0.46,0.45,0.94),
+              transform 0.8s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+.reveal.in { opacity: 1; transform: none; }
 
-      /* ===== SPACE SECTION (full-width) ===== */
-      .space {
-        position: relative;
-        height: 560px;
-        overflow: hidden;
-      }
-      .space-bg {
-        position: absolute;
-        inset: 0;
-        background-size: cover;
-        background-position: center 55%;
-        filter: brightness(0.55) saturate(0.75);
-      }
-      .space-overlay {
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(
-          to right,
-          rgba(8,5,2,0.6) 0%,
-          rgba(8,5,2,0.1) 50%,
-          rgba(8,5,2,0.35) 100%
-        );
-      }
-      .space-content {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        align-items: flex-end;
-        padding: 0 52px 60px;
-      }
-      .space-glass {
-        background: rgba(8, 5, 2, 0.6);
-        backdrop-filter: blur(18px);
-        -webkit-backdrop-filter: blur(18px);
-        border: 1px solid rgba(196, 154, 60, 0.22);
-        border-radius: 20px;
-        padding: 32px 40px 36px;
-        max-width: 540px;
-      }
-      .space-glass .rule {
-        width: 36px; height: 1px;
-        background: var(--gold);
-        margin-bottom: 18px;
-      }
-      .space-glass h3 {
-        font-family: "Fraunces", serif;
-        font-size: 38px;
-        font-style: italic;
-        font-weight: 400;
-        line-height: 1.05;
-        color: var(--warm-wht);
-        margin-bottom: 12px;
-      }
-      .space-glass p {
-        font-family: "Fraunces", serif;
-        font-style: italic;
-        font-size: 15px;
-        color: rgba(240, 232, 216, 0.62);
-        line-height: 1.7;
-      }
+/* ── RESPONSIVE ── */
+@media (max-width: 860px) {
+  nav { padding: 16px 20px; }
+  .nav-right a:not(.nav-cta) { display: none; }
+  .hero-left, .hero-right { font-size: clamp(3.5rem, 10vw, 6rem); }
+  .story { grid-template-columns: 1fr; padding: 80px 20px; gap: 48px; }
+  .story-img { height: 340px; }
+  .menu-section { padding: 80px 20px; }
+  .menu-grid { grid-template-columns: 1fr; }
+  .exp-items { grid-template-columns: 1fr; }
+  .experience { padding: 80px 20px; }
+  .visit { padding: 80px 20px; }
+  footer { padding: 20px; }
+  .menu-header { flex-direction: column; gap: 12px; }
+}
+</style>
+</head>
+<body>
 
-      /* ===== VISIT SECTION ===== */
-      .visit {
-        background: var(--bg);
-        padding: 130px 0;
-        position: relative;
-        overflow: hidden;
-      }
-      .visit::before {
-        content: "";
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: radial-gradient(ellipse at 30% 60%, rgba(196,154,60,0.05), transparent 55%);
-        pointer-events: none;
-      }
-      .visit-head {
-        text-align: center;
-        margin-bottom: 70px;
-        position: relative;
-        z-index: 1;
-      }
-      .visit h2.section-title { color: var(--cream); }
-      .visit-grid {
-        position: relative;
-        z-index: 1;
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
-        gap: 1px;
-        background: rgba(196, 154, 60, 0.1);
-        border-radius: 24px;
-        overflow: hidden;
-      }
-      .visit-cell {
-        background: #0e0c0f;
-        padding: 48px 40px;
-      }
-      .visit-cell .v-label {
-        font-size: 10px;
-        letter-spacing: 0.3em;
-        text-transform: uppercase;
-        color: var(--gold);
-        margin-bottom: 20px;
-        font-weight: 600;
-        opacity: 0.8;
-      }
-      .visit-cell .v-val {
-        font-family: "Fraunces", serif;
-        font-size: 26px;
-        color: var(--cream);
-        line-height: 1.2;
-        margin-bottom: 14px;
-        font-weight: 400;
-        font-style: italic;
-      }
-      .visit-cell .v-val a {
-        color: var(--cream);
-        text-decoration: none;
-        border-bottom: 1px solid rgba(196,154,60,0.35);
-        transition: color 0.2s, border-color 0.2s;
-      }
-      .visit-cell .v-val a:hover {
-        color: var(--gold);
-        border-color: var(--gold);
-      }
-      .visit-cell .v-sub {
-        font-size: 13.5px;
-        color: rgba(240, 232, 216, 0.45);
-        line-height: 1.7;
-      }
-      .hours-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 9px 0;
-        font-size: 13.5px;
-        color: rgba(240, 232, 216, 0.5);
-        border-bottom: 1px solid rgba(240,232,216,0.06);
-      }
-      .hours-row:last-child { border-bottom: none; }
-      .hours-row .day {
-        font-family: "Plus Jakarta Sans", sans-serif;
-      }
-      .hours-row .time {
-        font-family: "Fraunces", serif;
-        font-style: italic;
-        font-size: 16px;
-        color: var(--cream);
-      }
-      .hours-row.today {
-        color: var(--gold-lt);
-      }
-      .hours-row.today .time {
-        color: var(--gold-lt);
-      }
-      .today-badge {
-        display: inline-block;
-        background: rgba(196,154,60,0.12);
-        border: 1px solid rgba(196,154,60,0.3);
-        border-radius: 9999px;
-        padding: 1px 8px;
-        font-size: 9px;
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-        color: var(--gold);
-        font-family: "Plus Jakarta Sans", sans-serif;
-        font-weight: 600;
-        margin-left: 6px;
-        vertical-align: middle;
-      }
-      .map-wrap {
-        position: relative;
-        z-index: 1;
-        margin-top: 64px;
-        border-radius: 24px;
-        overflow: hidden;
-        border: 1px solid rgba(196,154,60,0.12);
-        box-shadow: 0 20px 60px rgba(0,0,0,0.45);
-      }
-      .map-wrap iframe {
-        width: 100%;
-        min-height: 400px;
-        border: 0;
-        display: block;
-        filter: grayscale(0.2) brightness(0.9);
-      }
+<!-- Film grain -->
+<svg class="grain" aria-hidden="true">
+  <filter id="gr" x="0%" y="0%" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.70" numOctaves="4" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+  <rect width="100%" height="100%" filter="url(#gr)"/>
+</svg>
 
-      /* ===== FOOTER ===== */
-      footer {
-        background: #0a0809;
-        color: var(--cream);
-        padding: 80px 0 28px;
-        position: relative;
-        overflow: hidden;
-        border-top: 1px solid rgba(196,154,60,0.12);
-      }
-      footer::before {
-        content: "DRIFT";
-        position: absolute;
-        bottom: -36px;
-        left: 50%;
-        transform: translateX(-50%);
-        font-family: "Fraunces", serif;
-        font-style: italic;
-        font-size: clamp(130px, 20vw, 300px);
-        color: rgba(196, 154, 60, 0.04);
-        letter-spacing: 0.1em;
-        pointer-events: none;
-        white-space: nowrap;
-        font-weight: 400;
-      }
-      .foot-inner { position: relative; z-index: 1; }
-      .foot-top {
-        text-align: center;
-        margin-bottom: 60px;
-      }
-      .foot-wordmark {
-        font-family: "Fraunces", serif;
-        font-style: italic;
-        font-size: 52px;
-        letter-spacing: 0.14em;
-        color: var(--gold);
-        font-weight: 400;
-        margin-bottom: 16px;
-        display: block;
-      }
-      .foot-tagline {
-        font-family: "Fraunces", serif;
-        font-style: italic;
-        font-size: 18px;
-        color: rgba(240, 232, 216, 0.42);
-        max-width: 460px;
-        margin: 0 auto;
-        line-height: 1.6;
-      }
-      .foot-row {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0;
-        padding: 36px 0;
-        border-top: 1px solid var(--line-dim);
-        border-bottom: 1px solid var(--line-dim);
-        margin-bottom: 28px;
-        flex-wrap: wrap;
-      }
-      .foot-row-item {
-        text-align: center;
-        padding: 0 44px;
-        border-right: 1px solid var(--line-dim);
-      }
-      .foot-row-item:last-child { border-right: none; }
-      .foot-row-item .label {
-        font-size: 10px;
-        letter-spacing: 0.26em;
-        text-transform: uppercase;
-        color: var(--gold);
-        opacity: 0.7;
-        margin-bottom: 6px;
-        font-weight: 600;
-      }
-      .foot-row-item .val {
-        font-family: "Fraunces", serif;
-        font-style: italic;
-        font-size: 15px;
-        color: rgba(240, 232, 216, 0.6);
-      }
-      .foot-bottom {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        color: rgba(240, 232, 216, 0.25);
-        font-size: 11px;
-        letter-spacing: 0.12em;
-        flex-wrap: wrap;
-        gap: 12px;
-      }
-      .foot-bottom a {
-        color: rgba(240,232,216,0.35);
-        text-decoration: none;
-        transition: color 0.2s;
-      }
-      .foot-bottom a:hover { color: var(--gold); }
-      .foot-lynq {
-        font-size: 10px;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        color: rgba(240, 232, 216, 0.2);
-      }
-      .foot-lynq a {
-        color: rgba(196,154,60,0.45);
-        text-decoration: none;
-        transition: color 0.2s;
-      }
-      .foot-lynq a:hover { color: var(--gold); }
+<div id="pgbar"></div>
 
-      /* ===== RESPONSIVE ===== */
-      @media (max-width: 960px) {
-        .hero-inner-header { padding: 0 24px; }
-        .hero-inner-header .h-nav { display: none; }
-        .hero-content-wrap { padding: 110px 24px 70px; }
-        .hero-scroll-hint { left: 24px; }
-        .ah-actions { flex-direction: column; align-items: flex-start; }
-        .story-grid {
-          grid-template-columns: 1fr;
-          gap: 60px;
-        }
-        .story-grid .story-img-wrap { max-width: 520px; }
-        .story-badge { right: -8px; bottom: -8px; }
-        .story-text p { max-width: 100%; }
-        .story-blockquote { max-width: 100%; }
-        .menu-grid { grid-template-columns: 1fr; gap: 0; }
-        .cards-grid { grid-template-columns: repeat(2, 1fr); gap: 18px; }
-        .visit-grid { grid-template-columns: 1fr; border-radius: 16px; }
-        .space-content { padding: 0 24px 40px; }
-        .space-glass { max-width: 100%; }
-        .container { padding: 0 20px; }
-        .foot-row { gap: 20px; }
-        .foot-row-item { border-right: none; padding: 12px 24px; }
-      }
-      @media (max-width: 600px) {
-        .cards-grid { grid-template-columns: 1fr; }
-        .space { height: 480px; }
-        .space-glass h3 { font-size: 28px; }
-        .sn-links { display: none; }
-      }
-    </style>
-  </head>
-  <body>
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">Drift</div>
+    <div class="nav-sub">Specialty Coffee · Toronto</div>
+  </div>
+  <div class="nav-right">
+    <a href="#menu">Menu</a>
+    <a href="#visit">Visit</a>
+  </div>
+</nav>
 
-    <!-- TOP BAR -->
-    <div class="top-bar">
-      <strong>Now open</strong>
-      <span class="sep">·</span>
-      7am – 6pm
-      <span class="sep">·</span>
-      847 Dundas St W, Toronto
+<!-- Scroll expansion hero -->
+<section class="hero-wrap" id="heroWrap">
+  <div class="hero-title">
+    <div class="hero-left" id="heroLeft">Drift</div>
+    <div class="hero-right" id="heroRight">Coffee</div>
+  </div>
+  <div class="hero-card" id="heroCard">
+    <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=2400&h=1600&fit=crop&auto=format&q=90" alt="Drift Coffee">
+  </div>
+  <div class="hero-scroll-hint" id="heroHint">
+    <span>Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- Zoom parallax -->
+<section class="parallax-wrap" id="parallaxWrap">
+  <div class="parallax-sticky" id="parallaxSticky">
+    <div class="parallax-stage" id="parallaxStage">
+
+      <div class="parallax-img" data-scale-max="7.5"
+        style="width:38%;height:60%;top:20%;left:31%;">
+        <img src="https://images.unsplash.com/photo-1511920170033-f8396924c348?w=1600&h=2000&fit=crop&auto=format&q=88" alt="">
+      </div>
+
+      <div class="parallax-img" data-scale-max="5.5"
+        style="width:22%;height:52%;top:8%;left:4%;">
+        <img src="https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=1200&h=1600&fit=crop&auto=format&q=88" alt="">
+      </div>
+
+      <div class="parallax-img" data-scale-max="5"
+        style="width:22%;height:52%;top:8%;right:4%;">
+        <img src="https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1200&h=1600&fit=crop&auto=format&q=88" alt="">
+      </div>
+
+      <div class="parallax-img" data-scale-max="4.2"
+        style="width:18%;height:40%;bottom:6%;left:8%;">
+        <img src="https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1200&h=1000&fit=crop&auto=format&q=88" alt="">
+      </div>
+
+      <div class="parallax-img" data-scale-max="4"
+        style="width:18%;height:40%;bottom:6%;right:8%;">
+        <img src="https://images.unsplash.com/photo-1561882468-9110e03e0f78?w=1200&h=1000&fit=crop&auto=format&q=88" alt="">
+      </div>
+
+      <div class="parallax-headline" id="parallaxHeadline">
+        <h2>Slow coffee,<br>made right.</h2>
+        <p>Single origin · Hand poured · Dundas West</p>
+      </div>
+
     </div>
+  </div>
+</section>
 
-    <!-- HERO -->
-    <section class="animated-hero" id="top">
-      <div
-        class="hero-bg"
-        style="background-image: url('https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=2000&h=1300&fit=crop&auto=format&q=92');"
-      >
-        <div class="hero-overlay"></div>
+<!-- Story -->
+<section class="story" id="about">
+  <div class="story-img reveal">
+    <img src="https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=1200&h=1400&fit=crop&auto=format&q=88" alt="Barista at Drift Coffee">
+  </div>
+  <div class="story-text">
+    <div class="story-tag reveal">The story</div>
+    <h2 class="reveal">Coffee worth<br>slowing down for.</h2>
+    <blockquote class="reveal">"Every cup is a deliberate act. We don't rush good coffee."</blockquote>
+    <p class="reveal">Drift started as a small pour-over bar on Dundas West in 2019. We believed that specialty coffee didn't have to be intimidating — it just had to be honest. Every bean we source is traceable, every grind is timed, every pour is intentional.</p>
+    <p class="reveal">We work directly with farms in Ethiopia, Colombia, and Guatemala — small lots, harvested by hand. The relationship matters as much as the result.</p>
+    <div class="story-detail reveal">
+      <div class="story-detail-item">
+        <div class="detail-val">6</div>
+        <div class="detail-lbl">Origins on rotation</div>
       </div>
-      <div class="hero-grain"></div>
-
-      <header class="hero-inner-header">
-        <a href="#top" class="h-logo">
-          <div class="h-logo-mark"></div>
-          DRIFT
-        </a>
-        <ul class="h-nav">
-          <li><a href="#menu">Menu</a></li>
-          <li><a href="#story">Our Story</a></li>
-          <li><a href="#visit">Visit</a></li>
-        </ul>
-        <a href="#menu" class="hero-glass-btn" style="padding: 10px 22px; font-size: 11px;">Order ahead →</a>
-      </header>
-
-      <div class="hero-content-wrap">
-        <div class="ah-eyebrow">Specialty Coffee · Dundas West · Toronto</div>
-        <h1 class="ah-title">
-          Coffee that changes<br />your <em>morning</em>.
-        </h1>
-        <p class="ah-desc">
-          Single origin. Slow poured. Every cup made like it matters.
-        </p>
-        <div class="ah-actions">
-          <a href="#menu" class="hero-glass-btn gold">Our Menu →</a>
-          <a href="#visit" class="hero-glass-btn">Find Us</a>
-        </div>
+      <div class="story-detail-item">
+        <div class="detail-val">2019</div>
+        <div class="detail-lbl">Opened</div>
       </div>
-
-      <div class="hero-scroll-hint">
-        <div class="line"></div>
-        <span>Scroll</span>
-      </div>
-    </section>
-
-    <!-- SCROLL NAV -->
-    <nav class="scroll-nav">
-      <div class="container sn-inner">
-        <a href="#top" class="sn-logo">
-          <div class="sn-logo-mark"></div>
-          DRIFT
-        </a>
-        <ul class="sn-links">
-          <li><a href="#menu">Menu</a></li>
-          <li><a href="#story">Our Story</a></li>
-          <li><a href="#space">The Space</a></li>
-          <li><a href="#visit">Visit</a></li>
-        </ul>
-        <a href="#menu" class="btn-liquid">
-          <div class="btn-liquid-glass"></div>
-          <div class="btn-liquid-overlay"></div>
-          <span class="btn-liquid-text">Order ahead →</span>
-        </a>
-      </div>
-    </nav>
-
-    <!-- TICKER -->
-    <div class="ticker">
-      <div class="ticker-inner">
-        <span class="ticker-item">Pour Over</span>
-        <span class="ticker-item">Espresso</span>
-        <span class="ticker-item">Cold Brew</span>
-        <span class="ticker-item">Oat Flat White</span>
-        <span class="ticker-item">Ethiopian Natural</span>
-        <span class="ticker-item">Colombian Washed</span>
-        <span class="ticker-item">Cascara</span>
-        <span class="ticker-item">Cardamom Honey Latte</span>
-        <!-- duplicate for seamless loop -->
-        <span class="ticker-item">Pour Over</span>
-        <span class="ticker-item">Espresso</span>
-        <span class="ticker-item">Cold Brew</span>
-        <span class="ticker-item">Oat Flat White</span>
-        <span class="ticker-item">Ethiopian Natural</span>
-        <span class="ticker-item">Colombian Washed</span>
-        <span class="ticker-item">Cascara</span>
-        <span class="ticker-item">Cardamom Honey Latte</span>
+      <div class="story-detail-item">
+        <div class="detail-val">Daily</div>
+        <div class="detail-lbl">Fresh roasted</div>
       </div>
     </div>
+  </div>
+</section>
 
-    <!-- MENU -->
-    <section class="menu" id="menu">
-      <div class="container menu-inner">
-        <div class="menu-head">
-          <div class="section-eyebrow">The Menu</div>
-          <h2 class="section-title">What we <em>pour</em>.</h2>
-        </div>
-
-        <!-- Featured drink cards -->
-        <div class="cards-grid">
-          <div class="product-card">
-            <a href="#menu" class="product-card-link" aria-label="Pour Over">
-              <div class="pc-img">
-                <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&h=800&fit=crop&auto=format&q=85" alt="Pour Over coffee" loading="lazy" />
-                <div class="pc-img-overlay"></div>
-              </div>
-              <div class="pc-body">
-                <div class="pc-title">Pour Over</div>
-                <div class="pc-meta">
-                  <span class="pc-cat">Rotating origin · V60</span>
-                  <span class="pc-price">$6</span>
-                </div>
-              </div>
-            </a>
-            <div class="pc-tag">Filter</div>
-          </div>
-
-          <div class="product-card">
-            <a href="#menu" class="product-card-link" aria-label="Cold Brew">
-              <div class="pc-img">
-                <img src="https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=800&h=800&fit=crop&auto=format&q=85" alt="Cold Brew coffee" loading="lazy" />
-                <div class="pc-img-overlay"></div>
-              </div>
-              <div class="pc-body">
-                <div class="pc-title">Cold Brew</div>
-                <div class="pc-meta">
-                  <span class="pc-cat">24hr steep · served over ice</span>
-                  <span class="pc-price">$5.50</span>
-                </div>
-              </div>
-            </a>
-            <div class="pc-tag">Cold</div>
-          </div>
-
-          <div class="product-card">
-            <a href="#menu" class="product-card-link" aria-label="Latte">
-              <div class="pc-img">
-                <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=800&fit=crop&auto=format&q=85" alt="Latte" loading="lazy" />
-                <div class="pc-img-overlay"></div>
-              </div>
-              <div class="pc-body">
-                <div class="pc-title">Latte</div>
-                <div class="pc-meta">
-                  <span class="pc-cat">Double shot · steamed milk</span>
-                  <span class="pc-price">$5.50</span>
-                </div>
-              </div>
-            </a>
-            <div class="pc-tag">Espresso bar</div>
-          </div>
-        </div>
-
-        <!-- Full menu list -->
-        <hr class="menu-divider" />
-        <div class="menu-divider-label"><span>— Full menu —</span></div>
-
-        <div class="menu-grid">
-          <div class="menu-col">
-            <h3>Espresso bar<em>— all day, every day</em></h3>
-            <div class="col-rule"></div>
-            <div class="m-item">
-              <div>
-                <div class="nm">Espresso</div>
-                <div class="dc">Double shot · our monthly rotating blend</div>
-              </div>
-              <div class="pr">$3.50</div>
-            </div>
-            <div class="m-item">
-              <div>
-                <div class="nm">Cortado</div>
-                <div class="dc">Equal parts espresso and warm milk</div>
-              </div>
-              <div class="pr">$4</div>
-            </div>
-            <div class="m-item">
-              <div>
-                <div class="nm special">Flat White</div>
-                <div class="dc">Double ristretto · velvety microfoam · our most ordered</div>
-              </div>
-              <div class="pr">$5</div>
-            </div>
-            <div class="m-item">
-              <div>
-                <div class="nm">Latte</div>
-                <div class="dc">Double shot · steamed milk · choose your milk</div>
-              </div>
-              <div class="pr">$5.50</div>
-            </div>
-            <div class="m-item">
-              <div>
-                <div class="nm">Cappuccino</div>
-                <div class="dc">Espresso · dry foam · old school done right</div>
-              </div>
-              <div class="pr">$5</div>
-            </div>
-          </div>
-
-          <div class="menu-col">
-            <h3>Filter<em>— slow, intentional coffee</em></h3>
-            <div class="col-rule"></div>
-            <div class="m-item">
-              <div>
-                <div class="nm special">Pour Over</div>
-                <div class="dc">V60 · rotating single origin · ask what's on today</div>
-              </div>
-              <div class="pr">$6</div>
-            </div>
-            <div class="m-item">
-              <div>
-                <div class="nm">Cold Brew</div>
-                <div class="dc">24hr steep · served over ice · no dilution</div>
-              </div>
-              <div class="pr">$5.50</div>
-            </div>
-            <div class="m-item">
-              <div>
-                <div class="nm">Batch Brew</div>
-                <div class="dc">Filter of the day · always fresh · never sitting long</div>
-              </div>
-              <div class="pr">$3.50</div>
-            </div>
-          </div>
-
-          <div class="menu-col">
-            <h3>Seasonal<em>— changes with the weather</em></h3>
-            <div class="col-rule"></div>
-            <div class="m-item">
-              <div>
-                <div class="nm special">Cardamom Honey Latte</div>
-                <div class="dc">House-made cardamom syrup · wildflower honey · steamed oat milk</div>
-              </div>
-              <div class="pr">$6.50</div>
-            </div>
-          </div>
-
-          <div class="menu-col">
-            <h3>Non-coffee<em>— for the purists</em></h3>
-            <div class="col-rule"></div>
-            <div class="m-item">
-              <div>
-                <div class="nm">Matcha Latte</div>
-                <div class="dc">Ceremonial grade · oat milk or whole</div>
-              </div>
-              <div class="pr">$5.50</div>
-            </div>
-            <div class="m-item">
-              <div>
-                <div class="nm">Cascara</div>
-                <div class="dc">Coffee cherry tea · lightly sweet · unusual and worth it</div>
-              </div>
-              <div class="pr">$5</div>
-            </div>
-            <div class="m-item">
-              <div>
-                <div class="nm">London Fog</div>
-                <div class="dc">Earl grey · vanilla · steamed milk</div>
-              </div>
-              <div class="pr">$5</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="menu-note">
-          Our espresso blend changes monthly. Ask your barista what's on today.
-        </div>
-      </div>
-    </section>
-
-    <!-- STORY -->
-    <section class="story" id="story">
-      <div class="container story-grid">
+<!-- Menu -->
+<section class="menu-section" id="menu">
+  <div class="menu-header">
+    <div class="menu-header-tag reveal">Current menu</div>
+    <h2 class="reveal">What we pour.</h2>
+  </div>
+  <div class="menu-grid reveal">
+    <div class="menu-col">
+      <div class="menu-col-name">Espresso &amp; Filter</div>
+      <div class="menu-item">
         <div>
-          <div class="section-eyebrow">Our Story</div>
-          <h2 class="section-title" style="color: var(--cream);">Three years.<br />Still <em>excited</em>.</h2>
-          <div class="story-text">
-            <p>
-              Drift started because we were tired of mediocre coffee. Not bad coffee — mediocre coffee.
-              The kind that's technically fine but doesn't make you feel anything.
-            </p>
-            <p>
-              We wanted something that made you slow down. So we found a narrow space on Dundas West,
-              put in a La Marzocco, and started sourcing coffees that genuinely surprised us.
-            </p>
-            <p>
-              Three years later, we still get excited about every bag that comes through the door.
-              That's the whole point.
-            </p>
-            <blockquote class="story-blockquote">
-              <p>"We buy coffee from farmers we've met and roasters we trust. Nothing else."</p>
-            </blockquote>
-          </div>
+          <div class="mi-name">Espresso</div>
+          <div class="mi-sub">Double shot, seasonal blend</div>
         </div>
-        <div style="position: relative;">
-          <div class="story-img-wrap">
-            <img
-              src="https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=800&h=1000&fit=crop&auto=format&q=85"
-              alt="Barista at Drift Coffee"
-            />
-          </div>
-          <div class="story-badge">
-            <div class="t1">— specialty coffee</div>
-            <div class="t2">Est. 2023<br />Dundas West</div>
-          </div>
-        </div>
+        <div class="mi-price">$3.75</div>
       </div>
-    </section>
-
-    <!-- THE SPACE -->
-    <section class="space" id="space">
-      <div
-        class="space-bg"
-        style="background-image: url('https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1800&h=900&fit=crop&auto=format&q=88');"
-      ></div>
-      <div class="space-overlay"></div>
-      <div class="space-content">
-        <div class="space-glass">
-          <div class="rule"></div>
-          <h3>Come in and<br />stay a while.</h3>
-          <p>We have good music, fast wifi, and no shame about a 4-hour work session.</p>
+      <div class="menu-item">
+        <div>
+          <div class="mi-name">Cortado</div>
+          <div class="mi-sub">Equal parts espresso &amp; steamed milk</div>
         </div>
+        <div class="mi-price">$4.50</div>
       </div>
-    </section>
-
-    <!-- VISIT -->
-    <section class="visit" id="visit">
-      <div class="container">
-        <div class="visit-head">
-          <div class="section-eyebrow">Find Us</div>
-          <h2 class="section-title">847 Dundas St <em>West</em>.</h2>
+      <div class="menu-item">
+        <div>
+          <div class="mi-name">Flat White</div>
+          <div class="mi-sub">Ristretto base, velvety microfoam</div>
         </div>
-
-        <div class="visit-grid">
-          <div class="visit-cell">
-            <div class="v-label">— Address</div>
-            <div class="v-val">847 Dundas St W</div>
-            <div class="v-sub">
-              Toronto ON M6J 1T3<br />
-              Dundas West neighbourhood — 5 min from Ossington station.
-            </div>
-          </div>
-
-          <div class="visit-cell">
-            <div class="v-label">— Hours</div>
-            <div class="hours-row"><span class="day">Monday – Friday</span><span class="time">7am – 6pm</span></div>
-            <div class="hours-row"><span class="day">Saturday</span><span class="time">8am – 5pm</span></div>
-            <div class="hours-row today">
-              <span class="day">Sunday <span class="today-badge">Today</span></span>
-              <span class="time">8am – 5pm</span>
-            </div>
-          </div>
-
-          <div class="visit-cell">
-            <div class="v-label">— Find Us Online</div>
-            <div class="v-val"><a href="https://instagram.com/driftcoffee.to" target="_blank" rel="noopener">@driftcoffee.to</a></div>
-            <div class="v-sub" style="margin-top: 10px;">
-              Walk-ins always welcome.<br />
-              No reservations — just show up.
-            </div>
-          </div>
-        </div>
-
-        <div class="map-wrap">
-          <iframe
-            title="Drift Coffee location — 847 Dundas St W, Toronto"
-            src="https://www.google.com/maps?q=847+Dundas+St+W+Toronto&output=embed"
-            loading="lazy"
-            referrerpolicy="no-referrer-when-downgrade"
-          ></iframe>
-        </div>
+        <div class="mi-price">$5.50</div>
       </div>
-    </section>
-
-    <!-- FOOTER -->
-    <footer>
-      <div class="container foot-inner">
-        <div class="foot-top">
-          <span class="foot-wordmark">Drift</span>
-          <div class="foot-tagline">"The best cup you'll have today."</div>
+      <div class="menu-item">
+        <div>
+          <div class="mi-name">Pour Over</div>
+          <div class="mi-sub">Single origin, brewed to order</div>
         </div>
-
-        <div class="foot-row">
-          <div class="foot-row-item">
-            <div class="label">Location</div>
-            <div class="val">Dundas West, Toronto</div>
-          </div>
-          <div class="foot-row-item">
-            <div class="label">Est.</div>
-            <div class="val">2023</div>
-          </div>
-          <div class="foot-row-item">
-            <div class="label">Hours</div>
-            <div class="val">Mon–Fri 7–6 · Sat–Sun 8–5</div>
-          </div>
-          <div class="foot-row-item">
-            <div class="label">Instagram</div>
-            <div class="val">@driftcoffee.to</div>
-          </div>
-        </div>
-
-        <div class="foot-bottom">
-          <div>DRIFT · 847 Dundas St W · Toronto · Est. 2023</div>
-          <div class="foot-lynq">
-            Demo by <a href="https://lynq.build" target="_blank" rel="noopener">LYNQ</a>
-          </div>
-          <div>@driftcoffee.to</div>
-        </div>
+        <div class="mi-price">$6.00</div>
       </div>
-    </footer>
+      <div class="menu-item">
+        <div>
+          <div class="mi-name">Cold Brew</div>
+          <div class="mi-sub">18-hour steep, served over ice</div>
+        </div>
+        <div class="mi-price">$5.25</div>
+      </div>
+    </div>
+    <div class="menu-col">
+      <div class="menu-col-name">Small Bites</div>
+      <div class="menu-item">
+        <div>
+          <div class="mi-name">Almond Croissant</div>
+          <div class="mi-sub">House made, frangipane filled</div>
+        </div>
+        <div class="mi-price">$5.00</div>
+      </div>
+      <div class="menu-item">
+        <div>
+          <div class="mi-name">Cardamom Kouign</div>
+          <div class="mi-sub">Caramelized, spiced, warm</div>
+        </div>
+        <div class="mi-price">$5.50</div>
+      </div>
+      <div class="menu-item">
+        <div>
+          <div class="mi-name">Avocado Toast</div>
+          <div class="mi-sub">Levain, pickled onion, chili flake</div>
+        </div>
+        <div class="mi-price">$10.00</div>
+      </div>
+      <div class="menu-item">
+        <div>
+          <div class="mi-name">Tahini Date Bar</div>
+          <div class="mi-sub">Gluten free, naturally sweetened</div>
+        </div>
+        <div class="mi-price">$4.50</div>
+      </div>
+      <div class="menu-item">
+        <div>
+          <div class="mi-name">Seasonal Muffin</div>
+          <div class="mi-sub">Changes weekly</div>
+        </div>
+        <div class="mi-price">$4.25</div>
+      </div>
+    </div>
+  </div>
+</section>
 
-    <!-- Scroll nav trigger -->
-    <script>
-      (function () {
-        var hero = document.querySelector(".animated-hero");
-        var nav  = document.querySelector(".scroll-nav");
-        function onScroll() {
-          nav.classList.toggle("visible", window.scrollY > hero.offsetHeight * 0.55);
-        }
-        window.addEventListener("scroll", onScroll, { passive: true });
-      })();
-    </script>
-  </body>
+<!-- Experience -->
+<section class="experience">
+  <div class="exp-tag reveal">The Drift experience</div>
+  <div class="exp-items">
+    <div class="exp-item reveal">
+      <div class="exp-num">01</div>
+      <div class="exp-title">Single Origin</div>
+      <div class="exp-desc">Every coffee we serve is traceable to a specific farm and harvest. No blending to cover flaws — just honest, clean coffee.</div>
+    </div>
+    <div class="exp-item reveal">
+      <div class="exp-num">02</div>
+      <div class="exp-title">Brewed Fresh</div>
+      <div class="exp-desc">We roast in small batches with our partners at Heart Coffee. Beans are never more than 10 days off roast when they reach your cup.</div>
+    </div>
+    <div class="exp-item reveal">
+      <div class="exp-num">03</div>
+      <div class="exp-title">The Right Pace</div>
+      <div class="exp-desc">No rush counters, no loud music. Drift is designed to be a place where you actually stop — with a good cup and a quiet moment.</div>
+    </div>
+  </div>
+</section>
+
+<!-- Visit -->
+<section class="visit" id="visit">
+  <div class="visit-tag">Find us</div>
+  <h2>847 Dundas St W,<br>Toronto.</h2>
+  <div class="visit-address">Open daily · No reservations needed</div>
+  <div class="visit-hours">Mon – Fri 7am – 5pm &nbsp;·&nbsp; Sat – Sun 8am – 4pm</div>
+  <a href="https://maps.google.com" class="visit-cta">Get directions →</a>
+</section>
+
+<footer>
+  <div class="footer-logo">Drift Coffee</div>
+  <a href="https://lynq.build" class="footer-lynq">Site by LYNQ</a>
+</footer>
+
+<script>
+// ── PROGRESS BAR
+const pgbar = document.getElementById('pgbar');
+function updateProgress() {
+  const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+  pgbar.style.width = pct + '%';
+}
+window.addEventListener('scroll', updateProgress, { passive: true });
+
+// ── SCROLL EXPANSION HERO
+const heroWrap  = document.getElementById('heroWrap');
+const heroCard  = document.getElementById('heroCard');
+const heroLeft  = document.getElementById('heroLeft');
+const heroRight = document.getElementById('heroRight');
+const heroHint  = document.getElementById('heroHint');
+
+let progress  = 0;
+let isExpanded = false;
+let touching  = false;
+let touchStartY = 0;
+
+function applyHero(p) {
+  progress = Math.max(0, Math.min(1, p));
+
+  const ease = progress < 0.5
+    ? 4 * progress * progress * progress
+    : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  const w = 280 + (vw - 280) * ease;
+  const h = 400 + (vh - 400) * ease;
+  const r = 6 * (1 - ease);
+
+  heroCard.style.width        = w + 'px';
+  heroCard.style.height       = h + 'px';
+  heroCard.style.borderRadius = r + 'px';
+
+  const shift = ease * 34;
+  heroLeft.style.transform  = `translateX(-${shift}vw)`;
+  heroRight.style.transform = `translateX(${shift}vw)`;
+
+  const hintOp = Math.max(0, 1 - progress * 4);
+  heroHint.style.opacity = hintOp;
+
+  if (progress >= 1 && !isExpanded) {
+    isExpanded = true;
+    heroWrap.style.zIndex = '0';
+    document.body.style.overflow = '';
+  }
+}
+
+function collapse() {
+  isExpanded = false;
+  document.body.style.overflow = 'hidden';
+  heroWrap.style.zIndex = '10';
+  const tick = () => {
+    progress = Math.max(0, progress - 0.04);
+    applyHero(progress);
+    if (progress > 0) requestAnimationFrame(tick);
+    else document.body.style.overflow = '';
+  };
+  requestAnimationFrame(tick);
+}
+
+// Init
+document.body.style.overflow = 'hidden';
+applyHero(0);
+
+window.addEventListener('wheel', e => {
+  if (isExpanded && e.deltaY < 0 && window.scrollY <= 2) {
+    collapse();
+  } else if (!isExpanded) {
+    e.preventDefault();
+    applyHero(progress + e.deltaY * 0.0011);
+  }
+}, { passive: false });
+
+window.addEventListener('touchstart', e => {
+  touching = true;
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+window.addEventListener('touchmove', e => {
+  if (!touching || isExpanded) return;
+  e.preventDefault();
+  const dy = touchStartY - e.touches[0].clientY;
+  touchStartY = e.touches[0].clientY;
+  applyHero(progress + dy * 0.0022);
+}, { passive: false });
+
+window.addEventListener('touchend', () => { touching = false; });
+
+// ── ZOOM PARALLAX
+const parallaxWrap     = document.getElementById('parallaxWrap');
+const parallaxSticky   = document.getElementById('parallaxSticky');
+const parallaxImgs     = document.querySelectorAll('.parallax-img');
+const parallaxHeadline = document.getElementById('parallaxHeadline');
+
+function updateParallax() {
+  const rect   = parallaxWrap.getBoundingClientRect();
+  const total  = parallaxWrap.offsetHeight - window.innerHeight;
+  const scrolled = -rect.top;
+  const p = Math.max(0, Math.min(1, scrolled / total));
+
+  parallaxImgs.forEach(img => {
+    const maxScale = parseFloat(img.dataset.scaleMax) || 4;
+    const s = 1 + (maxScale - 1) * p;
+    img.style.transform = `scale(${s})`;
+  });
+
+  parallaxHeadline.style.opacity = Math.max(0, 1 - p * 2.5);
+}
+
+window.addEventListener('scroll', updateParallax, { passive: true });
+updateParallax();
+
+// ── SCROLL REVEAL
+const reveals = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('in');
+      io.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.12 });
+reveals.forEach(el => io.observe(el));
+</script>
+</body>
 </html>
