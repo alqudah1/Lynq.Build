@@ -197,9 +197,14 @@ body {
 .gallery-card:nth-child(3) { animation-delay: 2.28s; }
 .gallery-card:nth-child(4) { animation-delay: 2.36s; }
 .gallery-card:nth-child(5) { animation-delay: 2.44s; }
-.gallery-card:nth-child(6) { animation-delay: 2.52s; }
-.gallery-card:nth-child(7) { animation-delay: 2.58s; }
-.gallery-card:nth-child(8) { animation-delay: 2.64s; }
+.gallery-card:nth-child(6)  { animation-delay: 2.52s; }
+.gallery-card:nth-child(7)  { animation-delay: 2.58s; }
+.gallery-card:nth-child(8)  { animation-delay: 2.64s; }
+.gallery-card:nth-child(9)  { animation-delay: 2.70s; }
+.gallery-card:nth-child(10) { animation-delay: 2.76s; }
+.gallery-card:nth-child(11) { animation-delay: 2.82s; }
+.gallery-card:nth-child(12) { animation-delay: 2.88s; }
+.gallery-card:nth-child(13) { animation-delay: 2.94s; }
 
 .gallery-card.featured {
   grid-column: 1 / -1;
@@ -304,6 +309,17 @@ body {
     rgba(4,4,20,0.2) 100%
   );
 }
+
+/* ── KIRA FEATURED CARD ── */
+.kira-featured .card-name {
+  font-family: 'Outfit', sans-serif;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  font-size: clamp(2.4rem, 4vw, 4rem);
+  text-transform: uppercase;
+}
+.kira-featured .card-cat { color: rgba(212,200,0,0.7); }
 
 /* ── CTA CARD ── */
 .cta-inner { padding: 52px; }

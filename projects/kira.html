@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>KIRA — New Collection</title>
+<meta name="description" content="KIRA is an independent fashion label from Toronto. Considered streetwear, seasonal drops. Shop the new collection.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --black:  #090909;
+  --white:  #f5f5f0;
+  --yellow: #d4c800;
+  --gray:   #1a1a1a;
+  --muted:  rgba(245,245,240,0.35);
+  --line:   rgba(245,245,240,0.07);
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--black);
+  color: var(--white);
+  font-family: 'Space Grotesk', sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── GRAIN ── */
+.grain {
+  position: fixed;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  pointer-events: none;
+  z-index: 9000;
+  opacity: 0.03;
+}
+
+/* ── MARQUEE ── */
+.marquee-wrap {
+  overflow: hidden;
+  background: var(--yellow);
+  padding: 10px 0;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 600;
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 18s linear infinite;
+}
+.marquee-item {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--black);
+  padding: 0 28px;
+  white-space: nowrap;
+}
+.marquee-dot { color: rgba(9,9,9,0.3); margin: 0 4px; }
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed;
+  top: 34px; left: 0; right: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 44px;
+  background: rgba(9,9,9,0.96);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--line);
+}
+.nav-logo {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--white);
+  text-decoration: none;
+  text-transform: uppercase;
+}
+.nav-logo span { color: var(--yellow); }
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+.nav-right a {
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.nav-right a:hover { color: var(--white); }
+.nav-shop {
+  background: var(--yellow) !important;
+  color: var(--black) !important;
+  padding: 9px 20px !important;
+  border-radius: 3px !important;
+  font-weight: 700 !important;
+  transition: opacity 0.2s !important;
+}
+.nav-shop:hover { opacity: 0.88 !important; }
+
+/* ── HERO ── */
+.hero {
+  position: relative;
+  height: 100vh;
+  min-height: 640px;
+  overflow: hidden;
+  padding-top: 88px;
+  display: flex;
+}
+.hero-img {
+  position: absolute;
+  inset: 0;
+}
+.hero-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: brightness(0.45) contrast(1.1);
+}
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, rgba(9,9,9,0.8) 0%, rgba(9,9,9,0.15) 60%, transparent 100%);
+}
+.hero-content {
+  position: relative;
+  z-index: 2;
+  padding: 0 52px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-bottom: 72px;
+  max-width: 780px;
+}
+.hero-season {
+  font-size: 0.62rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--yellow);
+  margin-bottom: 20px;
+}
+.hero-title {
+  font-size: clamp(4rem, 10vw, 10rem);
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  line-height: 0.88;
+  color: var(--white);
+  margin-bottom: 28px;
+}
+.hero-title em {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  color: rgba(245,245,240,0.45);
+  letter-spacing: -0.01em;
+  display: block;
+  font-size: 0.55em;
+  line-height: 1.3;
+  margin-bottom: 6px;
+}
+.hero-sub {
+  font-size: 0.82rem;
+  font-weight: 300;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  max-width: 360px;
+  line-height: 1.7;
+  margin-bottom: 36px;
+}
+.hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 36px;
+  background: var(--yellow);
+  color: var(--black);
+  border-radius: 3px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: opacity 0.2s, transform 0.2s;
+  width: fit-content;
+}
+.hero-cta:hover { opacity: 0.9; transform: translateY(-2px); }
+.hero-badge {
+  position: absolute;
+  right: 52px;
+  bottom: 72px;
+  z-index: 3;
+  width: 96px; height: 96px;
+  border-radius: 50%;
+  background: var(--yellow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+  animation: rotateBadge 12s linear infinite;
+}
+.badge-text {
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--black);
+  line-height: 1.4;
+}
+@keyframes rotateBadge {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── COLLECTION ── */
+.collection {
+  padding: 100px 44px;
+}
+.coll-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 44px;
+}
+.coll-title {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  color: var(--white);
+}
+.coll-season {
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3px;
+}
+.product-card {
+  position: relative;
+  overflow: hidden;
+  background: var(--gray);
+  cursor: pointer;
+}
+.product-img {
+  aspect-ratio: 3/4;
+  overflow: hidden;
+}
+.product-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.8s cubic-bezier(0.25,0.46,0.45,0.94);
+  filter: brightness(0.88);
+}
+.product-card:hover .product-img img { transform: scale(1.06); }
+.product-body {
+  padding: 16px 18px 20px;
+}
+.product-cat {
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.product-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--white);
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+.product-price {
+  font-size: 0.82rem;
+  color: var(--yellow);
+  font-weight: 500;
+}
+.product-tag {
+  position: absolute;
+  top: 14px; left: 14px;
+  background: var(--yellow);
+  color: var(--black);
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 2px;
+}
+
+/* ── ABOUT ── */
+.about {
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 100px 44px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+.about-text {}
+.about-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--yellow);
+  margin-bottom: 20px;
+}
+.about-title {
+  font-size: clamp(2.2rem, 4vw, 3.8rem);
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  color: var(--white);
+  line-height: 0.92;
+  margin-bottom: 28px;
+}
+.about-body p {
+  font-size: 0.84rem;
+  line-height: 1.85;
+  color: var(--muted);
+  font-weight: 300;
+  margin-bottom: 14px;
+}
+.about-details {
+  display: flex;
+  gap: 32px;
+  margin-top: 36px;
+  padding-top: 28px;
+  border-top: 1px solid var(--line);
+}
+.ad-item {}
+.ad-val {
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: var(--yellow);
+  line-height: 1;
+}
+.ad-lbl {
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.about-img {
+  height: 580px;
+  overflow: hidden;
+  border-radius: 2px;
+}
+.about-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: brightness(0.75) contrast(1.05);
+}
+
+/* ── DROP ── */
+.drop {
+  background: var(--yellow);
+  padding: 120px 44px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+}
+.drop-text {}
+.drop-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(9,9,9,0.45);
+  margin-bottom: 18px;
+}
+.drop-title {
+  font-size: clamp(3rem, 6vw, 5.5rem);
+  font-weight: 700;
+  letter-spacing: -0.06em;
+  color: var(--black);
+  line-height: 0.9;
+  margin-bottom: 24px;
+}
+.drop-sub {
+  font-size: 0.84rem;
+  color: rgba(9,9,9,0.5);
+  font-weight: 300;
+  line-height: 1.7;
+  margin-bottom: 36px;
+}
+.drop-form {
+  display: flex;
+  gap: 0;
+  max-width: 400px;
+}
+.drop-input {
+  flex: 1;
+  padding: 14px 18px;
+  background: rgba(9,9,9,0.12);
+  border: none;
+  border-radius: 3px 0 0 3px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.8rem;
+  color: var(--black);
+  outline: none;
+}
+.drop-input::placeholder { color: rgba(9,9,9,0.35); }
+.drop-submit {
+  padding: 14px 22px;
+  background: var(--black);
+  color: var(--yellow);
+  border: none;
+  border-radius: 0 3px 3px 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.drop-submit:hover { opacity: 0.88; }
+.drop-visual { position: relative; }
+.drop-visual img {
+  width: 100%;
+  border-radius: 3px;
+  display: block;
+  filter: brightness(0.88);
+}
+
+/* ── FOOTER ── */
+footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 44px;
+  border-top: 1px solid var(--line);
+}
+.footer-logo { font-size: 0.88rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(245,245,240,0.15); }
+.footer-lynq { font-size: 0.65rem; letter-spacing: 0.12em; color: rgba(245,245,240,0.12); text-decoration: none; transition: color 0.2s; }
+.footer-lynq:hover { color: rgba(245,245,240,0.42); }
+
+/* ── REVEAL ── */
+.reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.7s cubic-bezier(0.25,0.46,0.45,0.94), transform 0.7s cubic-bezier(0.25,0.46,0.45,0.94); }
+.reveal.in { opacity: 1; transform: none; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 860px) {
+  nav { top: 28px; padding: 14px 20px; }
+  .hero-content { padding: 0 24px 44px; }
+  .hero-badge { display: none; }
+  .collection { padding: 64px 20px; }
+  .product-grid { grid-template-columns: repeat(2, 1fr); }
+  .about, .drop { grid-template-columns: 1fr; padding: 64px 20px; gap: 40px; }
+  .about-img { height: 320px; }
+  footer { padding: 18px 20px; }
+}
+</style>
+</head>
+<body>
+
+<svg class="grain" aria-hidden="true">
+  <filter id="gr" x="0%" y="0%" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.70" numOctaves="4" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+  <rect width="100%" height="100%" filter="url(#gr)"/>
+</svg>
+
+<!-- Marquee ticker -->
+<div class="marquee-wrap" aria-hidden="true">
+  <div class="marquee-track">
+    <span class="marquee-item">SS26 Collection now live <span class="marquee-dot">·</span></span>
+    <span class="marquee-item">Free shipping on orders over $200 <span class="marquee-dot">·</span></span>
+    <span class="marquee-item">New drop every season <span class="marquee-dot">·</span></span>
+    <span class="marquee-item">Independent label · Toronto <span class="marquee-dot">·</span></span>
+    <span class="marquee-item">SS26 Collection now live <span class="marquee-dot">·</span></span>
+    <span class="marquee-item">Free shipping on orders over $200 <span class="marquee-dot">·</span></span>
+    <span class="marquee-item">New drop every season <span class="marquee-dot">·</span></span>
+    <span class="marquee-item">Independent label · Toronto <span class="marquee-dot">·</span></span>
+  </div>
+</div>
+
+<nav>
+  <a href="#" class="nav-logo">KI<span>RA</span></a>
+  <div class="nav-right">
+    <a href="#collection">Shop</a>
+    <a href="#about">About</a>
+    <a href="#drop">Get notified</a>
+    <a href="#collection" class="nav-shop">Shop now</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-img">
+    <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=2400&h=1400&fit=crop&auto=format&q=90" alt="KIRA SS26">
+  </div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-season">Spring / Summer 2026</div>
+    <h1 class="hero-title">
+      <em>New collection</em>
+      DRESSED<br>FOR<br>NOTHING.
+    </h1>
+    <p class="hero-sub">Clothes for how you actually live. No occasion required.</p>
+    <a href="#collection" class="hero-cta">Shop the collection →</a>
+  </div>
+  <div class="hero-badge">
+    <div class="badge-text">New Drop<br>SS26<br>Available Now</div>
+  </div>
+</section>
+
+<!-- Collection -->
+<section class="collection" id="collection">
+  <div class="coll-header reveal">
+    <h2 class="coll-title">SS26</h2>
+    <span class="coll-season">Spring / Summer 2026 · 14 pieces</span>
+  </div>
+  <div class="product-grid">
+    <div class="product-card reveal">
+      <span class="product-tag">New</span>
+      <div class="product-img">
+        <img src="https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=700&h=950&fit=crop&auto=format&q=88" alt="">
+      </div>
+      <div class="product-body">
+        <div class="product-cat">Outerwear</div>
+        <div class="product-name">Oversize Coach Jacket</div>
+        <div class="product-price">$245</div>
+      </div>
+    </div>
+    <div class="product-card reveal">
+      <div class="product-img">
+        <img src="https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=700&h=950&fit=crop&auto=format&q=88" alt="">
+      </div>
+      <div class="product-body">
+        <div class="product-cat">Tops</div>
+        <div class="product-name">Drop Shoulder Tee</div>
+        <div class="product-price">$85</div>
+      </div>
+    </div>
+    <div class="product-card reveal">
+      <span class="product-tag">Limited</span>
+      <div class="product-img">
+        <img src="https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=700&h=950&fit=crop&auto=format&q=88" alt="">
+      </div>
+      <div class="product-body">
+        <div class="product-cat">Bottoms</div>
+        <div class="product-name">Wide Cargo Pant</div>
+        <div class="product-price">$185</div>
+      </div>
+    </div>
+    <div class="product-card reveal">
+      <div class="product-img">
+        <img src="https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=700&h=950&fit=crop&auto=format&q=88" alt="">
+      </div>
+      <div class="product-body">
+        <div class="product-cat">Accessories</div>
+        <div class="product-name">Bucket Hat</div>
+        <div class="product-price">$65</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- About -->
+<section class="about" id="about">
+  <div class="about-text">
+    <div class="about-label reveal">The label</div>
+    <h2 class="about-title reveal">Made for<br>real life.</h2>
+    <div class="about-body">
+      <p class="reveal">KIRA started in 2021 as a Toronto-based independent label built on one idea: clothes that actually get worn. Not saved for occasions that never come.</p>
+      <p class="reveal">We produce in small runs twice a year. Quality over volume. Every piece is designed to be worn for 10 years, not one season.</p>
+      <p class="reveal">Produced with a small family factory in Montréal. All deadstock and GOTS-certified fabrics. No fast fashion practices, no exceptions.</p>
+    </div>
+    <div class="about-details reveal">
+      <div class="ad-item"><div class="ad-val">2</div><div class="ad-lbl">Drops per year</div></div>
+      <div class="ad-item"><div class="ad-val">Mtl</div><div class="ad-lbl">Produced in</div></div>
+      <div class="ad-item"><div class="ad-val">2021</div><div class="ad-lbl">Founded</div></div>
+    </div>
+  </div>
+  <div class="about-img reveal">
+    <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&h=1500&fit=crop&auto=format&q=88" alt="KIRA">
+  </div>
+</section>
+
+<!-- Drop notification -->
+<section class="drop" id="drop">
+  <div class="drop-text">
+    <div class="drop-label reveal">FW26 dropping soon</div>
+    <h2 class="drop-title reveal">Don't<br>miss it.</h2>
+    <p class="drop-sub reveal">Fall/Winter 2026 is coming. Small run, sells fast. Get on the list and we'll tell you the hour it drops.</p>
+    <form class="drop-form reveal" onsubmit="return false">
+      <input type="email" class="drop-input" placeholder="your@email.com">
+      <button type="submit" class="drop-submit">Notify me</button>
+    </form>
+  </div>
+  <div class="drop-visual reveal">
+    <img src="https://images.unsplash.com/photo-1509631179647-0177331693ae?w=900&h=700&fit=crop&auto=format&q=88" alt="FW26 preview">
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo">KIRA</div>
+  <a href="https://lynq.build" class="footer-lynq">Site by LYNQ</a>
+</footer>
+
+<script>
+const reveals = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+}, { threshold: 0.07 });
+reveals.forEach(el => io.observe(el));
+</script>
+</body>
+</html>

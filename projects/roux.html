@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>ROUX — Fine Dining · Toronto</title>
+<meta name="description" content="ROUX is a modern French tasting menu restaurant in Toronto's King West. Seasonal cuisine, curated wine, intimate setting. Chef's table available.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:     #0c0a09;
+  --bg2:    #111009;
+  --wine:   #7a1f2e;
+  --wine2:  #9a2e40;
+  --cream:  #f0e8d5;
+  --gold:   #b89850;
+  --muted:  rgba(240,232,213,0.35);
+  --line:   rgba(240,232,213,0.07);
+  --line2:  rgba(122,31,46,0.2);
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--cream);
+  font-family: 'DM Sans', sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── GRAIN ── */
+.grain {
+  position: fixed;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  pointer-events: none;
+  z-index: 9000;
+  opacity: 0.04;
+}
+
+/* ── PROGRESS BAR ── */
+#pgbar {
+  position: fixed;
+  top: 0; left: 0;
+  height: 1px;
+  width: 0%;
+  background: var(--wine2);
+  z-index: 8000;
+  transition: width 0.08s linear;
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 52px;
+}
+.nav-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 400;
+  font-size: 0.78rem;
+  letter-spacing: 0.44em;
+  color: var(--cream);
+  text-transform: uppercase;
+  text-decoration: none;
+}
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+}
+.nav-right a {
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.nav-right a:hover { color: var(--cream); }
+.nav-reserve {
+  border: 1px solid rgba(122,31,46,0.5) !important;
+  color: var(--cream) !important;
+  padding: 10px 22px !important;
+  border-radius: 3px !important;
+  transition: background 0.2s, border-color 0.2s !important;
+}
+.nav-reserve:hover { background: var(--wine) !important; border-color: var(--wine) !important; }
+
+/* ── HERO ── */
+.hero {
+  position: relative;
+  height: 100vh;
+  min-height: 640px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hero-img {
+  position: absolute;
+  inset: 0;
+}
+.hero-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: brightness(0.35) saturate(0.6);
+}
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(12,10,9,0.3) 0%, rgba(12,10,9,0.6) 100%);
+}
+.hero-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+.hero-pre {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 36px;
+}
+.pre-line {
+  width: 32px; height: 1px;
+  background: var(--wine2);
+}
+.pre-text {
+  font-size: 0.6rem;
+  letter-spacing: 0.38em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.hero-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 300;
+  font-size: clamp(5rem, 14vw, 14rem);
+  color: var(--cream);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+.hero-sub {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(1rem, 1.6vw, 1.35rem);
+  color: var(--muted);
+  margin-top: 24px;
+  letter-spacing: 0.04em;
+}
+.hero-cta-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 44px;
+}
+.btn-wine {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 36px;
+  background: var(--wine);
+  color: var(--cream);
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.btn-wine:hover { opacity: 0.9; transform: translateY(-2px); }
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 32px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  border-radius: 3px;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: border-color 0.2s, color 0.2s;
+}
+.btn-ghost:hover { border-color: var(--muted); color: var(--cream); }
+.hero-scroll {
+  position: absolute;
+  bottom: 32px;
+  right: 52px;
+  writing-mode: vertical-rl;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.58rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--muted);
+  z-index: 3;
+}
+.scroll-bar { width: 1px; height: 36px; background: rgba(122,31,46,0.5); }
+
+/* ── EXPERIENCE STRIP ── */
+.exp-strip {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+}
+.exp-item {
+  flex: 1;
+  padding: 44px 48px;
+  border-right: 1px solid var(--line);
+  text-align: center;
+}
+.exp-item:last-child { border-right: none; }
+.exp-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 2.6rem;
+  font-weight: 300;
+  color: var(--wine2);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.exp-lbl {
+  font-size: 0.6rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ── MENU ── */
+.menu-section {
+  padding: 100px 52px;
+}
+.section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 56px;
+}
+.section-tag { font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--wine2); }
+.section-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(2rem, 3.5vw, 3.4rem);
+  color: var(--cream);
+  letter-spacing: -0.02em;
+}
+.menu-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+}
+.menu-col-title {
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 28px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line2);
+}
+.menu-item {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line);
+}
+.menu-item:last-child { border-bottom: none; }
+.mi-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 6px;
+}
+.mi-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 400;
+  font-size: 1.15rem;
+  color: var(--cream);
+  letter-spacing: 0.01em;
+}
+.mi-price {
+  font-size: 0.75rem;
+  color: var(--gold);
+  font-weight: 300;
+  flex-shrink: 0;
+}
+.mi-desc {
+  font-size: 0.74rem;
+  color: var(--muted);
+  font-weight: 300;
+  line-height: 1.6;
+  font-style: italic;
+}
+
+/* ── CHEF ── */
+.chef {
+  background: var(--bg2);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 120px 52px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+.chef-img {
+  height: 560px;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.chef-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: brightness(0.72) contrast(1.05) grayscale(0.2);
+}
+.chef-text {}
+.chef-tag { font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--wine2); margin-bottom: 24px; }
+.chef-text h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(2rem, 3vw, 3rem);
+  color: var(--cream);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin-bottom: 24px;
+}
+.chef-text blockquote {
+  border-left: 1px solid var(--wine2);
+  padding-left: 20px;
+  margin-bottom: 24px;
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 1.1rem;
+  color: rgba(240,232,213,0.45);
+  line-height: 1.6;
+}
+.chef-text p {
+  font-size: 0.84rem;
+  line-height: 1.9;
+  color: var(--muted);
+  font-weight: 300;
+  margin-bottom: 12px;
+}
+
+/* ── RESERVE ── */
+.reserve {
+  padding: 160px 52px;
+  text-align: center;
+  border-top: 1px solid var(--line);
+}
+.reserve-tag { font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--muted); margin-bottom: 28px; }
+.reserve h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(3rem, 6vw, 5.5rem);
+  color: var(--cream);
+  letter-spacing: -0.03em;
+  line-height: 1.04;
+  margin-bottom: 18px;
+}
+.reserve-sub {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-weight: 300;
+  margin-bottom: 52px;
+  letter-spacing: 0.06em;
+}
+.reserve-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* ── FOOTER ── */
+footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 52px;
+  border-top: 1px solid var(--line);
+}
+.footer-logo { font-family: 'Cormorant Garamond', serif; font-size: 0.72rem; letter-spacing: 0.4em; text-transform: uppercase; color: rgba(240,232,213,0.15); }
+.footer-lynq { font-size: 0.65rem; letter-spacing: 0.12em; color: rgba(240,232,213,0.1); text-decoration: none; transition: color 0.2s; }
+.footer-lynq:hover { color: rgba(240,232,213,0.38); }
+
+/* ── REVEAL ── */
+.reveal { opacity: 0; transform: translateY(22px); transition: opacity 0.75s cubic-bezier(0.25,0.46,0.45,0.94), transform 0.75s cubic-bezier(0.25,0.46,0.45,0.94); }
+.reveal.in { opacity: 1; transform: none; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 860px) {
+  nav { padding: 18px 20px; }
+  .nav-right a:not(.nav-reserve) { display: none; }
+  .hero-scroll { display: none; }
+  .exp-strip { flex-wrap: wrap; }
+  .exp-item { flex: 1 1 50%; }
+  .menu-section, .chef, .reserve { padding: 64px 20px; }
+  .menu-cols { grid-template-columns: 1fr; gap: 44px; }
+  .chef { grid-template-columns: 1fr; gap: 40px; }
+  .chef-img { height: 300px; }
+  footer { padding: 18px 20px; }
+}
+</style>
+</head>
+<body>
+
+<svg class="grain" aria-hidden="true">
+  <filter id="gr" x="0%" y="0%" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="4" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+  <rect width="100%" height="100%" filter="url(#gr)"/>
+</svg>
+<div id="pgbar"></div>
+
+<nav>
+  <a href="#" class="nav-logo">ROUX</a>
+  <div class="nav-right">
+    <a href="#menu">Menu</a>
+    <a href="#chef">The chef</a>
+    <a href="#reserve">Reserve</a>
+    <a href="#reserve" class="nav-reserve">Reserve a table</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-img">
+    <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=2400&h=1400&fit=crop&auto=format&q=90" alt="ROUX">
+  </div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-pre">
+      <div class="pre-line"></div>
+      <span class="pre-text">Toronto · King West · Tasting menus</span>
+      <div class="pre-line"></div>
+    </div>
+    <h1 class="hero-title">ROUX</h1>
+    <p class="hero-sub">Modern French cuisine. Seasonal, precise, unhurried.</p>
+    <div class="hero-cta-row">
+      <a href="#reserve" class="btn-wine">Reserve a table →</a>
+      <a href="#menu" class="btn-ghost">View the menu</a>
+    </div>
+  </div>
+  <div class="hero-scroll">
+    <div class="scroll-bar"></div>
+    <span>Scroll</span>
+  </div>
+</section>
+
+<!-- Experience strip -->
+<div class="exp-strip">
+  <div class="exp-item reveal">
+    <div class="exp-num">7</div>
+    <div class="exp-lbl">Course tasting menu</div>
+  </div>
+  <div class="exp-item reveal">
+    <div class="exp-num">22</div>
+    <div class="exp-lbl">Covers per service</div>
+  </div>
+  <div class="exp-item reveal">
+    <div class="exp-num">Seasonal</div>
+    <div class="exp-lbl">Menu changes entirely</div>
+  </div>
+  <div class="exp-item reveal">
+    <div class="exp-num">Wed–Sat</div>
+    <div class="exp-lbl">Two seatings: 6 & 8:30pm</div>
+  </div>
+</div>
+
+<!-- Menu -->
+<section class="menu-section" id="menu">
+  <div class="section-header reveal">
+    <span class="section-tag">Spring 2026</span>
+    <h2 class="section-title">The tasting menu.</h2>
+  </div>
+  <div class="menu-cols">
+    <div class="menu-col reveal">
+      <div class="menu-col-title">The menu — $145 per person</div>
+      <div class="menu-item">
+        <div class="mi-top"><span class="mi-name">I. Amuse-bouche</span></div>
+        <div class="mi-desc">Smoked trout rillette, radish, crème fraîche, dill oil</div>
+      </div>
+      <div class="menu-item">
+        <div class="mi-top"><span class="mi-name">II. Tartare</span></div>
+        <div class="mi-desc">Hand-cut beef, egg yolk jam, preserved lemon, hazelnuts, brioche tuile</div>
+      </div>
+      <div class="menu-item">
+        <div class="mi-top"><span class="mi-name">III. Velouté</span></div>
+        <div class="mi-desc">Spring pea, whipped goat cheese, pickled green strawberry, chervil</div>
+      </div>
+      <div class="menu-item">
+        <div class="mi-top"><span class="mi-name">IV. Fish</span></div>
+        <div class="mi-desc">Seared halibut, white asparagus, beurre blanc, caviar, micro sorrel</div>
+      </div>
+    </div>
+    <div class="menu-col reveal">
+      <div class="menu-col-title">Continued</div>
+      <div class="menu-item">
+        <div class="mi-top"><span class="mi-name">V. Sorbet</span></div>
+        <div class="mi-desc">Rhubarb, elderflower, lemon verbena</div>
+      </div>
+      <div class="menu-item">
+        <div class="mi-top"><span class="mi-name">VI. Main</span></div>
+        <div class="mi-desc">Dry-aged duck breast, morel jus, fava bean purée, pommes Anna</div>
+      </div>
+      <div class="menu-item">
+        <div class="mi-top"><span class="mi-name">VII. Dessert</span></div>
+        <div class="mi-desc">Valrhona chocolate, salted caramel, hazelnut praline, miso ice cream</div>
+      </div>
+      <div class="menu-item">
+        <div class="mi-top">
+          <span class="mi-name">Wine pairing</span>
+          <span class="mi-price">+$85</span>
+        </div>
+        <div class="mi-desc">Six wines, curated by sommelier Jeanne Beaumont. Ontario, Burgundy, Loire.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Chef -->
+<section class="chef" id="chef">
+  <div class="chef-img reveal">
+    <img src="https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=1200&h=1600&fit=crop&auto=format&q=88" alt="Chef">
+  </div>
+  <div class="chef-text">
+    <div class="chef-tag reveal">The kitchen</div>
+    <h2 class="reveal">Chef Nicolas Lafleur.</h2>
+    <blockquote class="reveal">"I cook the way I want to eat: without pretension, but without compromise."</blockquote>
+    <p class="reveal">Nicolas spent twelve years in Paris — four at Taillevent, three at his own small bistro in the 11th — before moving to Toronto in 2018 and opening ROUX the following year.</p>
+    <p class="reveal">The menu changes completely with the seasons. He buys from three Ontario farms he's worked with since opening. The bread is made each morning. The butter is churned in-house.</p>
+    <p class="reveal">ROUX seats 22. That's the number of people Nicolas can cook for properly, and he sees no reason to change it.</p>
+  </div>
+</section>
+
+<!-- Reserve -->
+<section class="reserve" id="reserve">
+  <div class="reserve-tag reveal">Reservations</div>
+  <h2 class="reveal">Reserve your table.</h2>
+  <p class="reserve-sub reveal">Wednesday through Saturday · Two seatings: 6:00pm &amp; 8:30pm<br>Tasting menu $145 · Wine pairing +$85 · Chef's table for 4 available</p>
+  <div class="reserve-links">
+    <a href="#" class="btn-wine reveal">Book online →</a>
+    <a href="tel:+14160000000" class="btn-ghost reveal">+1 (416) 000 0000</a>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo">ROUX</div>
+  <a href="https://lynq.build" class="footer-lynq">Site by LYNQ</a>
+</footer>
+
+<script>
+document.getElementById('pgbar') && window.addEventListener('scroll', () => {
+  const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+  document.getElementById('pgbar').style.width = pct + '%';
+}, { passive: true });
+const reveals = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+}, { threshold: 0.08 });
+reveals.forEach(el => io.observe(el));
+</script>
+</body>
+</html>
