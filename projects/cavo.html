@@ -530,6 +530,26 @@ footer {
 .reveal { opacity: 0; transform: translateY(22px); transition: opacity 0.75s cubic-bezier(0.25,0.46,0.45,0.94), transform 0.75s cubic-bezier(0.25,0.46,0.45,0.94); }
 .reveal.in { opacity: 1; transform: none; }
 
+/* ── ART MOTION ── */
+.lr{overflow:hidden;display:block}
+.lr>span{display:block;transform:translateY(106%);transition:transform 1s cubic-bezier(0.16,1,0.3,1)}
+.lr.in>span{transform:translateY(0)}
+.lr:nth-child(2)>span{transition-delay:0.1s}
+.lr:nth-child(3)>span{transition-delay:0.2s}
+.lr:nth-child(4)>span{transition-delay:0.3s}
+.lr:nth-child(5)>span{transition-delay:0.4s}
+.img-curtain{overflow:hidden}
+.img-curtain img{transform:scale(1.07);clip-path:inset(0 0 100% 0);transition:clip-path 1.4s cubic-bezier(0.16,1,0.3,1),transform 1.4s cubic-bezier(0.16,1,0.3,1)}
+.img-curtain.in img{clip-path:inset(0 0 0% 0);transform:scale(1)}
+.art-mq{overflow:hidden;padding:18px 0}
+.art-mq.dk{border-top:1px solid rgba(255,255,255,0.07);border-bottom:1px solid rgba(255,255,255,0.07)}
+.art-mq.lt{border-top:1px solid rgba(0,0,0,0.08);border-bottom:1px solid rgba(0,0,0,0.08)}
+.am-tr{display:inline-flex;animation:am-roll 26s linear infinite;white-space:nowrap}
+.am-tr span{font-size:0.68rem;letter-spacing:0.26em;text-transform:uppercase;padding-right:52px}
+.art-mq.dk .am-tr span{color:rgba(255,255,255,0.25)}
+.art-mq.lt .am-tr span{color:rgba(0,0,0,0.22)}
+@keyframes am-roll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
 /* ── RESPONSIVE ── */
 @media (max-width: 860px) {
   nav { padding: 18px 20px; }
@@ -564,6 +584,11 @@ footer {
     <a href="#enquire" class="nav-charter">Enquire</a>
   </div>
 </nav>
+<div class="art-mq dk">
+  <div class="am-tr">
+    <span>Luxury Charters</span><span>—</span><span>Mediterranean</span><span>—</span><span>Up to 12 Guests</span><span>—</span><span>Bespoke Itineraries</span><span>—</span><span>Croatia · Greece · Italy</span><span>—</span><span>Luxury Charters</span><span>—</span><span>Mediterranean</span><span>—</span><span>Up to 12 Guests</span><span>—</span><span>Bespoke Itineraries</span><span>—</span><span>Croatia · Greece · Italy</span><span>—</span>
+  </div>
+</div>
 
 <!-- Hero -->
 <section class="hero">
@@ -573,7 +598,7 @@ footer {
   <div class="hero-overlay"></div>
   <div class="hero-content">
     <div class="hero-eyebrow">Private Crewed Charters · Mediterranean</div>
-    <h1 class="hero-title">Days on the water,<br>unlike any other.</h1>
+    <h1 class="hero-title"><span class="lr"><span>Days on the water,</span></span><span class="lr"><span>unlike any other.</span></span></h1>
     <p class="hero-sub">Bespoke itineraries across Greece, Croatia, Amalfi, and Ibiza.</p>
     <div class="hero-cta-row">
       <a href="#enquire" class="btn-gold">Plan your charter →</a>
@@ -610,7 +635,7 @@ footer {
 <section class="destinations" id="destinations">
   <div class="section-header reveal">
     <span class="section-tag">Where we sail</span>
-    <h2 class="section-title">The routes.</h2>
+    <h2 class="section-title"><span class="lr"><span>The routes.</span></span></h2>
   </div>
   <div class="dest-grid">
     <div class="dest-card reveal">
@@ -648,7 +673,7 @@ footer {
   <div class="vessels-header">
     <div class="section-header reveal">
       <span class="section-tag">The fleet</span>
-      <h2 class="section-title">Our vessels.</h2>
+      <h2 class="section-title"><span class="lr"><span>Our vessels.</span></span></h2>
     </div>
   </div>
   <div class="vessels-strip">
@@ -704,7 +729,7 @@ footer {
   </div>
   <div class="exp-text">
     <div class="exp-tag reveal">On board</div>
-    <h2 class="reveal">Nothing arranged,<br>everything considered.</h2>
+    <h2 class="reveal"><span class="lr"><span>Nothing arranged,</span></span><span class="lr"><span>everything considered.</span></span></h2>
     <p class="reveal">Every Cavo charter is built around you. Private chef, preferred wines, provisioning before departure — the details you'd spend months coordinating, handled before you board.</p>
     <p class="reveal">Our crew has an average of 12 years at sea. They know the anchorages that don't appear on apps, the villages that close by noon, the nights worth staying out for.</p>
     <div class="exp-includes reveal">
@@ -724,7 +749,7 @@ footer {
 <!-- Enquire -->
 <section class="enquire" id="enquire">
   <div class="enquire-tag">Ready to sail</div>
-  <h2>Your voyage<br>starts here.</h2>
+  <h2><span class="lr"><span>Your voyage</span></span><span class="lr"><span>starts here.</span></span></h2>
   <div class="enquire-sub">Tell us where you want to go. We'll handle everything else.</div>
   <a href="mailto:charter@cavo.com" class="enquire-btn">Begin enquiry →</a>
 </section>
@@ -740,6 +765,9 @@ const io = new IntersectionObserver(entries => {
   entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
 }, { threshold: 0.08 });
 reveals.forEach(el => io.observe(el));
+/* art motion observer */
+const _ao=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');_ao.unobserve(e.target)}})},{threshold:0.12});
+document.querySelectorAll('.lr,.img-curtain').forEach(el=>_ao.observe(el));
 </script>
 </body>
 </html>

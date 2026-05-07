@@ -419,6 +419,26 @@ footer {
   .chef-img { height: 300px; }
   footer { padding: 18px 20px; }
 }
+
+/* ── ART MOTION ── */
+.lr{overflow:hidden;display:block}
+.lr>span{display:block;transform:translateY(106%);transition:transform 1s cubic-bezier(0.16,1,0.3,1)}
+.lr.in>span{transform:translateY(0)}
+.lr:nth-child(2)>span{transition-delay:0.1s}
+.lr:nth-child(3)>span{transition-delay:0.2s}
+.lr:nth-child(4)>span{transition-delay:0.3s}
+.lr:nth-child(5)>span{transition-delay:0.4s}
+.img-curtain{overflow:hidden}
+.img-curtain img{transform:scale(1.07);clip-path:inset(0 0 100% 0);transition:clip-path 1.4s cubic-bezier(0.16,1,0.3,1),transform 1.4s cubic-bezier(0.16,1,0.3,1)}
+.img-curtain.in img{clip-path:inset(0 0 0% 0);transform:scale(1)}
+.art-mq{overflow:hidden;padding:18px 0}
+.art-mq.dk{border-top:1px solid rgba(255,255,255,0.07);border-bottom:1px solid rgba(255,255,255,0.07)}
+.art-mq.lt{border-top:1px solid rgba(0,0,0,0.08);border-bottom:1px solid rgba(0,0,0,0.08)}
+.am-tr{display:inline-flex;animation:am-roll 26s linear infinite;white-space:nowrap}
+.am-tr span{font-size:0.68rem;letter-spacing:0.26em;text-transform:uppercase;padding-right:52px}
+.art-mq.dk .am-tr span{color:rgba(255,255,255,0.25)}
+.art-mq.lt .am-tr span{color:rgba(0,0,0,0.22)}
+@keyframes am-roll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 </style>
 </head>
 <body>
@@ -441,6 +461,12 @@ footer {
     <a href="#reserve" class="nav-reserve">Reserve a table</a>
   </div>
 </nav>
+
+<div class="art-mq dk">
+  <div class="am-tr">
+    <span>French Fine Dining</span><span>—</span><span>Toronto</span><span>—</span><span>Tasting Menu</span><span>—</span><span>Reservations Required</span><span>—</span><span>Wine Pairing Available</span><span>—</span><span>French Fine Dining</span><span>—</span><span>Toronto</span><span>—</span><span>Tasting Menu</span><span>—</span><span>Reservations Required</span><span>—</span><span>Wine Pairing Available</span><span>—</span>
+  </div>
+</div>
 
 <!-- Hero -->
 <section class="hero">
@@ -540,12 +566,14 @@ footer {
 
 <!-- Chef -->
 <section class="chef" id="chef">
-  <div class="chef-img reveal">
+  <div class="chef-img img-curtain reveal">
     <img src="https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=1200&h=1600&fit=crop&auto=format&q=88" alt="Chef">
   </div>
   <div class="chef-text">
     <div class="chef-tag reveal">The kitchen</div>
-    <h2 class="reveal">Chef Nicolas Lafleur.</h2>
+    <h2>
+      <span class="lr"><span>Chef Nicolas Lafleur.</span></span>
+    </h2>
     <blockquote class="reveal">"I cook the way I want to eat: without pretension, but without compromise."</blockquote>
     <p class="reveal">Nicolas spent twelve years in Paris — four at Taillevent, three at his own small bistro in the 11th — before moving to Toronto in 2018 and opening ROUX the following year.</p>
     <p class="reveal">The menu changes completely with the seasons. He buys from three Ontario farms he's worked with since opening. The bread is made each morning. The butter is churned in-house.</p>
@@ -579,6 +607,10 @@ const io = new IntersectionObserver(entries => {
   entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
 }, { threshold: 0.08 });
 reveals.forEach(el => io.observe(el));
+
+/* art motion observer */
+const _ao=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');_ao.unobserve(e.target)}})},{threshold:0.12});
+document.querySelectorAll('.lr,.img-curtain').forEach(el=>_ao.observe(el));
 </script>
 </body>
 </html>

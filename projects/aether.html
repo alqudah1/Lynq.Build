@@ -523,6 +523,25 @@ footer {
   .city-item { border-right: none; border-bottom: 1px solid rgba(4,4,5,0.08); width: 100%; }
   footer { padding: 20px; }
 }
+/* ── ART MOTION ── */
+.lr{overflow:hidden;display:block}
+.lr>span{display:block;transform:translateY(106%);transition:transform 1s cubic-bezier(0.16,1,0.3,1)}
+.lr.in>span{transform:translateY(0)}
+.lr:nth-child(2)>span{transition-delay:0.1s}
+.lr:nth-child(3)>span{transition-delay:0.2s}
+.lr:nth-child(4)>span{transition-delay:0.3s}
+.lr:nth-child(5)>span{transition-delay:0.4s}
+.img-curtain{overflow:hidden}
+.img-curtain img{transform:scale(1.07);clip-path:inset(0 0 100% 0);transition:clip-path 1.4s cubic-bezier(0.16,1,0.3,1),transform 1.4s cubic-bezier(0.16,1,0.3,1)}
+.img-curtain.in img{clip-path:inset(0 0 0% 0);transform:scale(1)}
+.art-mq{overflow:hidden;padding:18px 0}
+.art-mq.dk{border-top:1px solid rgba(255,255,255,0.07);border-bottom:1px solid rgba(255,255,255,0.07)}
+.art-mq.lt{border-top:1px solid rgba(0,0,0,0.08);border-bottom:1px solid rgba(0,0,0,0.08)}
+.am-tr{display:inline-flex;animation:am-roll 26s linear infinite;white-space:nowrap}
+.am-tr span{font-size:0.68rem;letter-spacing:0.26em;text-transform:uppercase;padding-right:52px}
+.art-mq.dk .am-tr span{color:rgba(255,255,255,0.25)}
+.art-mq.lt .am-tr span{color:rgba(0,0,0,0.22)}
+@keyframes am-roll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 </style>
 </head>
 <body>
@@ -544,6 +563,11 @@ footer {
     <a href="#stockists">Stockists</a>
   </div>
 </nav>
+<div class="art-mq dk">
+  <div class="am-tr">
+    <span>Made Once</span><span>—</span><span>Never Repeated</span><span>—</span><span>Three Fragrances</span><span>—</span><span>400 Bottles Each</span><span>—</span><span>Independent</span><span>—</span><span>Made Once</span><span>—</span><span>Never Repeated</span><span>—</span><span>Three Fragrances</span><span>—</span><span>400 Bottles Each</span><span>—</span><span>Independent</span><span>—</span>
+  </div>
+</div>
 
 <!-- Scroll Expansion Hero -->
 <section class="hero-wrap" id="heroWrap">
@@ -573,11 +597,11 @@ footer {
 <!-- Manifesto -->
 <section class="manifesto">
   <div class="manifesto-pre reveal">The work</div>
-  <p class="manifesto-text reveal">
-    We make <strong>three fragrances.</strong><br>
-    Four hundred bottles each.<br>
-    <strong>Made once. Never repeated.</strong><br>
-    When they're gone, they're gone.
+  <p class="manifesto-text">
+    <span class="lr"><span>We make <strong>three fragrances.</strong></span></span>
+    <span class="lr"><span>Four hundred bottles each.</span></span>
+    <span class="lr"><span><strong>Made once. Never repeated.</strong></span></span>
+    <span class="lr"><span>When they're gone, they're gone.</span></span>
   </p>
 </section>
 
@@ -590,7 +614,7 @@ footer {
   <div class="fragrance-list">
 
     <div class="fragrance reveal">
-      <div class="frag-img">
+      <div class="frag-img img-curtain">
         <img src="https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?w=1200&h=1400&fit=crop&auto=format&q=88" alt="NOIR">
         <div class="frag-num-bg">I</div>
       </div>
@@ -613,7 +637,7 @@ footer {
     </div>
 
     <div class="fragrance reveal">
-      <div class="frag-img">
+      <div class="frag-img img-curtain">
         <img src="https://images.unsplash.com/photo-1490750967868-88df5691cc2e?w=1200&h=1400&fit=crop&auto=format&q=88" alt="AMBRE">
         <div class="frag-num-bg">II</div>
       </div>
@@ -636,7 +660,7 @@ footer {
     </div>
 
     <div class="fragrance reveal">
-      <div class="frag-img">
+      <div class="frag-img img-curtain">
         <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1200&h=1400&fit=crop&auto=format&q=88" alt="SOLEIL">
         <div class="frag-num-bg">III</div>
       </div>
@@ -668,7 +692,10 @@ footer {
   </div>
   <div class="craft-text">
     <div class="craft-tag reveal">How we work</div>
-    <h2 class="reveal">No shortcuts.<br>No shortcuts.</h2>
+    <h2>
+      <span class="lr"><span>No shortcuts.</span></span>
+      <span class="lr"><span>No shortcuts.</span></span>
+    </h2>
     <p class="reveal">Every fragrance begins with a brief that can be read in a single sentence. A place, a memory, a feeling with no name. We work the formula until the scent earns it.</p>
     <p class="reveal">We never use synthetic base notes. The production run is fixed before the first bottle is filled. When a fragrance sells out, it retires. No rereleases, no anniversaries, no second chances.</p>
     <div class="craft-rule reveal"></div>
@@ -829,6 +856,9 @@ const io = new IntersectionObserver(entries => {
   entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
 }, { threshold: 0.08 });
 reveals.forEach(el => io.observe(el));
+/* art motion observer */
+const _ao=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');_ao.unobserve(e.target)}})},{threshold:0.12});
+document.querySelectorAll('.lr,.img-curtain').forEach(el=>_ao.observe(el));
 </script>
 </body>
 </html>

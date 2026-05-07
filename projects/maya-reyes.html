@@ -455,6 +455,25 @@ footer {
   .contact { padding: 100px 20px; }
   footer { padding: 18px 20px; }
 }
+/* ── ART MOTION ── */
+.lr{overflow:hidden;display:block}
+.lr>span{display:block;transform:translateY(106%);transition:transform 1s cubic-bezier(0.16,1,0.3,1)}
+.lr.in>span{transform:translateY(0)}
+.lr:nth-child(2)>span{transition-delay:0.1s}
+.lr:nth-child(3)>span{transition-delay:0.2s}
+.lr:nth-child(4)>span{transition-delay:0.3s}
+.lr:nth-child(5)>span{transition-delay:0.4s}
+.img-curtain{overflow:hidden}
+.img-curtain img{transform:scale(1.07);clip-path:inset(0 0 100% 0);transition:clip-path 1.4s cubic-bezier(0.16,1,0.3,1),transform 1.4s cubic-bezier(0.16,1,0.3,1)}
+.img-curtain.in img{clip-path:inset(0 0 0% 0);transform:scale(1)}
+.art-mq{overflow:hidden;padding:18px 0}
+.art-mq.dk{border-top:1px solid rgba(255,255,255,0.07);border-bottom:1px solid rgba(255,255,255,0.07)}
+.art-mq.lt{border-top:1px solid rgba(0,0,0,0.08);border-bottom:1px solid rgba(0,0,0,0.08)}
+.am-tr{display:inline-flex;animation:am-roll 26s linear infinite;white-space:nowrap}
+.am-tr span{font-size:0.68rem;letter-spacing:0.26em;text-transform:uppercase;padding-right:52px}
+.art-mq.dk .am-tr span{color:rgba(255,255,255,0.25)}
+.art-mq.lt .am-tr span{color:rgba(0,0,0,0.22)}
+@keyframes am-roll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 </style>
 </head>
 <body>
@@ -478,10 +497,15 @@ footer {
     <a href="#contact">Contact</a>
   </div>
 </nav>
+<div class="art-mq dk">
+  <div class="am-tr">
+    <span>Portrait</span><span>—</span><span>Documentary</span><span>—</span><span>Editorial</span><span>—</span><span>Toronto</span><span>—</span><span>Available Worldwide</span><span>—</span><span>Portrait</span><span>—</span><span>Documentary</span><span>—</span><span>Editorial</span><span>—</span><span>Toronto</span><span>—</span><span>Available Worldwide</span><span>—</span>
+  </div>
+</div>
 
 <!-- Hero -->
 <section class="hero">
-  <div class="hero-img">
+  <div class="hero-img img-curtain">
     <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=2400&h=1600&fit=crop&auto=format&q=90" alt="Portrait work">
   </div>
   <div class="hero-overlay"></div>
@@ -571,7 +595,10 @@ footer {
 <section class="work-section">
   <div class="work-left reveal">
     <div class="work-tag">Selected projects</div>
-    <h2 class="work-title">Recent<br>commissions.</h2>
+    <h2 class="work-title">
+      <span class="lr"><span>Recent</span></span>
+      <span class="lr"><span>commissions.</span></span>
+    </h2>
   </div>
   <div class="work-right">
     <ul class="work-list">
@@ -618,7 +645,10 @@ footer {
 <section class="about" id="about">
   <div class="about-text">
     <div class="about-tag reveal">About</div>
-    <h2 class="reveal">I photograph<br>people as they are.</h2>
+    <h2>
+      <span class="lr"><span>I photograph</span></span>
+      <span class="lr"><span>people as they are.</span></span>
+    </h2>
     <p class="reveal">I'm Maya — a portrait and editorial photographer based in Toronto, working wherever the light is right. My work is about stillness. Finding the second before the mask goes back on.</p>
     <p class="reveal">I've shot for Lux, The Sunday Times, and independent labels across North America and Europe. I'm drawn to natural light, quiet rooms, and faces that have a story.</p>
     <p class="reveal">Available for portrait commissions, editorial, events, and campaign work. I travel for the right project.</p>
@@ -631,7 +661,10 @@ footer {
 <!-- Contact -->
 <section class="contact" id="contact">
   <div class="contact-tag reveal">Get in touch</div>
-  <h2 class="reveal">Let's make<br><span>something real.</span></h2>
+  <h2>
+    <span class="lr"><span>Let's make</span></span>
+    <span class="lr"><span><span style="color:var(--rose)">something real.</span></span></span>
+  </h2>
   <div class="contact-links">
     <a href="mailto:maya@mayareyes.ca" class="contact-link reveal">maya@mayareyes.ca</a>
     <div class="contact-dot"></div>
@@ -661,6 +694,9 @@ document.querySelectorAll('.cat-btn').forEach(btn => {
     btn.classList.add('active');
   });
 });
+/* art motion observer */
+const _ao=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');_ao.unobserve(e.target)}})},{threshold:0.12});
+document.querySelectorAll('.lr,.img-curtain').forEach(el=>_ao.observe(el));
 </script>
 </body>
 </html>

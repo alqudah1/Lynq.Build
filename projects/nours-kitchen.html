@@ -117,6 +117,26 @@
       .zp-headline h2 { font-size: 1.55rem; }
       footer { flex-direction: column; gap: 0.6rem; text-align: center; }
     }
+
+/* ── ART MOTION ── */
+.lr{overflow:hidden;display:block}
+.lr>span{display:block;transform:translateY(106%);transition:transform 1s cubic-bezier(0.16,1,0.3,1)}
+.lr.in>span{transform:translateY(0)}
+.lr:nth-child(2)>span{transition-delay:0.1s}
+.lr:nth-child(3)>span{transition-delay:0.2s}
+.lr:nth-child(4)>span{transition-delay:0.3s}
+.lr:nth-child(5)>span{transition-delay:0.4s}
+.img-curtain{overflow:hidden}
+.img-curtain img{transform:scale(1.07);clip-path:inset(0 0 100% 0);transition:clip-path 1.4s cubic-bezier(0.16,1,0.3,1),transform 1.4s cubic-bezier(0.16,1,0.3,1)}
+.img-curtain.in img{clip-path:inset(0 0 0% 0);transform:scale(1)}
+.art-mq{overflow:hidden;padding:18px 0}
+.art-mq.dk{border-top:1px solid rgba(255,255,255,0.07);border-bottom:1px solid rgba(255,255,255,0.07)}
+.art-mq.lt{border-top:1px solid rgba(0,0,0,0.08);border-bottom:1px solid rgba(0,0,0,0.08)}
+.am-tr{display:inline-flex;animation:am-roll 26s linear infinite;white-space:nowrap}
+.am-tr span{font-size:0.68rem;letter-spacing:0.26em;text-transform:uppercase;padding-right:52px}
+.art-mq.dk .am-tr span{color:rgba(255,255,255,0.25)}
+.art-mq.lt .am-tr span{color:rgba(0,0,0,0.22)}
+@keyframes am-roll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
   </style>
 </head>
 <body>
@@ -143,6 +163,12 @@
     <li><a href="#contact">contact</a></li>
   </ul>
 </nav>
+
+<div class="art-mq dk">
+  <div class="am-tr">
+    <span>Syrian Flavours</span><span>—</span><span>Made to Order</span><span>—</span><span>Pickup & Delivery</span><span>—</span><span>Toronto</span><span>—</span><span>Fresh Daily</span><span>—</span><span>Syrian Flavours</span><span>—</span><span>Made to Order</span><span>—</span><span>Pickup & Delivery</span><span>—</span><span>Toronto</span><span>—</span><span>Fresh Daily</span><span>—</span>
+  </div>
+</div>
 
 <!-- SCROLL EXPANSION HERO -->
 <section class="she" id="top">
@@ -175,7 +201,11 @@
   <div class="zp-sticky">
     <div class="zp-label"><span class="s-label" style="color:rgba(250,246,239,0.3)">the food</span></div>
     <div class="zp-headline" id="zpHeadline">
-      <h2>slow-cooked.<br>generous.<br>from the heart.</h2>
+      <h2>
+        <span class="lr"><span>slow-cooked.</span></span>
+        <span class="lr"><span>generous.</span></span>
+        <span class="lr"><span>from the heart.</span></span>
+      </h2>
     </div>
     <div class="zp-layer" data-scale-max="4">
       <div class="zp-img" style="width:24vw;height:26vh;">
@@ -218,7 +248,7 @@
     <p class="reveal" style="transition-delay:.1s">Nour grew up watching her mother cook for everyone who came through the door — relatives, neighbours, strangers who left as friends. The table was never small enough to say no.</p>
     <p class="reveal" style="transition-delay:.18s">Now based in Toronto, she brings those same recipes forward: kibbeh the way her grandmother made it, fattoush with whatever's freshest that week, musakhan with enough sumac to mean it. All made to order, all from scratch.</p>
   </div>
-  <div class="about-img">
+  <div class="about-img img-curtain">
     <img src="https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=900&h=1100&fit=crop&auto=format&q=85" alt="Nour cooking" loading="lazy" />
   </div>
 </section>
@@ -227,7 +257,11 @@
 <section class="order" id="order">
   <div class="order-left">
     <span class="s-label" style="color:rgba(250,246,239,0.28)">how to order</span>
-    <h2 class="reveal">Simple.<br>Personal.<br><em>Just message.</em></h2>
+    <h2>
+      <span class="lr"><span>Simple.</span></span>
+      <span class="lr"><span>Personal.</span></span>
+      <span class="lr"><span><em>Just message.</em></span></span>
+    </h2>
     <p class="reveal" style="transition-delay:.1s">No app. No middleman. Message Nour directly on WhatsApp or Instagram — she'll confirm what's on this week and arrange pickup or local delivery across Toronto.</p>
   </div>
   <div class="order-steps">
@@ -360,6 +394,10 @@
 
   const revObs=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in');}),{threshold:0.12});
   document.querySelectorAll('.reveal').forEach(el=>revObs.observe(el));
+
+/* art motion observer */
+const _ao=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');_ao.unobserve(e.target)}})},{threshold:0.12});
+document.querySelectorAll('.lr,.img-curtain').forEach(el=>_ao.observe(el));
 </script>
 </body>
 </html>

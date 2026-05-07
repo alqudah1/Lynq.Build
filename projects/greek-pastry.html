@@ -446,6 +446,25 @@ footer {
   .visit-right { height: 260px; }
   footer { padding: 18px 20px; }
 }
+/* ── ART MOTION ── */
+.lr{overflow:hidden;display:block}
+.lr>span{display:block;transform:translateY(106%);transition:transform 1s cubic-bezier(0.16,1,0.3,1)}
+.lr.in>span{transform:translateY(0)}
+.lr:nth-child(2)>span{transition-delay:0.1s}
+.lr:nth-child(3)>span{transition-delay:0.2s}
+.lr:nth-child(4)>span{transition-delay:0.3s}
+.lr:nth-child(5)>span{transition-delay:0.4s}
+.img-curtain{overflow:hidden}
+.img-curtain img{transform:scale(1.07);clip-path:inset(0 0 100% 0);transition:clip-path 1.4s cubic-bezier(0.16,1,0.3,1),transform 1.4s cubic-bezier(0.16,1,0.3,1)}
+.img-curtain.in img{clip-path:inset(0 0 0% 0);transform:scale(1)}
+.art-mq{overflow:hidden;padding:18px 0}
+.art-mq.dk{border-top:1px solid rgba(255,255,255,0.07);border-bottom:1px solid rgba(255,255,255,0.07)}
+.art-mq.lt{border-top:1px solid rgba(0,0,0,0.08);border-bottom:1px solid rgba(0,0,0,0.08)}
+.am-tr{display:inline-flex;animation:am-roll 26s linear infinite;white-space:nowrap}
+.am-tr span{font-size:0.68rem;letter-spacing:0.26em;text-transform:uppercase;padding-right:52px}
+.art-mq.dk .am-tr span{color:rgba(255,255,255,0.25)}
+.art-mq.lt .am-tr span{color:rgba(0,0,0,0.22)}
+@keyframes am-roll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 </style>
 </head>
 <body>
@@ -467,6 +486,11 @@ footer {
     <a href="#visit" class="nav-order">Order now</a>
   </div>
 </nav>
+<div class="art-mq lt">
+  <div class="am-tr">
+    <span>Baked Fresh Daily</span><span>—</span><span>Barcelona</span><span>—</span><span>Baklava</span><span>—</span><span>Galaktoboureko</span><span>—</span><span>Koulouri</span><span>—</span><span>Baked Fresh Daily</span><span>—</span><span>Barcelona</span><span>—</span><span>Baklava</span><span>—</span><span>Galaktoboureko</span><span>—</span><span>Koulouri</span><span>—</span>
+  </div>
+</div>
 
 <!-- Hero -->
 <section class="hero">
@@ -516,7 +540,7 @@ footer {
   </div>
   <div class="pastry-grid">
     <div class="pastry-card reveal">
-      <div class="pastry-img">
+      <div class="pastry-img img-curtain">
         <img src="https://images.unsplash.com/photo-1519676867240-f03562e64548?w=900&h=600&fit=crop&auto=format&q=88" alt="Baklava">
       </div>
       <div class="pastry-body">
@@ -527,7 +551,7 @@ footer {
       </div>
     </div>
     <div class="pastry-card reveal">
-      <div class="pastry-img">
+      <div class="pastry-img img-curtain">
         <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=900&h=600&fit=crop&auto=format&q=88" alt="Spanakopita">
       </div>
       <div class="pastry-body">
@@ -538,7 +562,7 @@ footer {
       </div>
     </div>
     <div class="pastry-card reveal">
-      <div class="pastry-img">
+      <div class="pastry-img img-curtain">
         <img src="https://images.unsplash.com/photo-1509365465985-25d11c17e812?w=900&h=600&fit=crop&auto=format&q=88" alt="Loukoumades">
       </div>
       <div class="pastry-body">
@@ -549,7 +573,7 @@ footer {
       </div>
     </div>
     <div class="pastry-card reveal">
-      <div class="pastry-img">
+      <div class="pastry-img img-curtain">
         <img src="https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=900&h=600&fit=crop&auto=format&q=88" alt="Bougatsa">
       </div>
       <div class="pastry-body">
@@ -560,7 +584,7 @@ footer {
       </div>
     </div>
     <div class="pastry-card reveal">
-      <div class="pastry-img">
+      <div class="pastry-img img-curtain">
         <img src="https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=900&h=600&fit=crop&auto=format&q=88" alt="Tiropita">
       </div>
       <div class="pastry-body">
@@ -571,7 +595,7 @@ footer {
       </div>
     </div>
     <div class="pastry-card reveal">
-      <div class="pastry-img">
+      <div class="pastry-img img-curtain">
         <img src="https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?w=900&h=600&fit=crop&auto=format&q=88" alt="Galaktoboureko">
       </div>
       <div class="pastry-body">
@@ -591,7 +615,10 @@ footer {
   </div>
   <div class="story-text">
     <div class="story-tag reveal">Our story</div>
-    <h2 class="story-title reveal">From a small kitchen<br>in Pagrati, Athens.</h2>
+    <h2 class="story-title">
+      <span class="lr"><span>From a small kitchen</span></span>
+      <span class="lr"><span>in Pagrati, Athens.</span></span>
+    </h2>
     <p class="reveal">Maria came to Barcelona in 2014 with a suitcase and her mother's recipe book. She found a small corner space in Barceloneta, two streets from the sea, and started baking at 4am every morning.</p>
     <p class="reveal">The phyllo is made by hand. The honey comes from Crete. The feta is imported from a single dairy in Epirus. Nothing is rushed, nothing is frozen.</p>
     <p class="reveal">Twelve years later, the line still wraps the corner on Saturday mornings. The recipes haven't changed once.</p>
@@ -604,7 +631,10 @@ footer {
 <section class="visit" id="visit">
   <div class="visit-left">
     <div class="visit-tag reveal">Come find us</div>
-    <h2 class="visit-title reveal">We're here<br>every morning.</h2>
+    <h2 class="visit-title">
+      <span class="lr"><span>We're here</span></span>
+      <span class="lr"><span>every morning.</span></span>
+    </h2>
     <div class="visit-detail reveal">
       <div class="visit-detail-label">Address</div>
       <div class="visit-detail-val">Carrer del Mar 14, Barceloneta<br>08003 Barcelona</div>
@@ -636,6 +666,9 @@ const io = new IntersectionObserver(entries => {
   });
 }, { threshold: 0.1 });
 reveals.forEach(el => io.observe(el));
+/* art motion observer */
+const _ao=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');_ao.unobserve(e.target)}})},{threshold:0.12});
+document.querySelectorAll('.lr,.img-curtain').forEach(el=>_ao.observe(el));
 </script>
 </body>
 </html>

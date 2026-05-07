@@ -447,6 +447,26 @@ footer {
   .reserve { padding: 80px 20px; }
   footer { padding: 18px 20px; }
 }
+
+/* ── ART MOTION ── */
+.lr{overflow:hidden;display:block}
+.lr>span{display:block;transform:translateY(106%);transition:transform 1s cubic-bezier(0.16,1,0.3,1)}
+.lr.in>span{transform:translateY(0)}
+.lr:nth-child(2)>span{transition-delay:0.1s}
+.lr:nth-child(3)>span{transition-delay:0.2s}
+.lr:nth-child(4)>span{transition-delay:0.3s}
+.lr:nth-child(5)>span{transition-delay:0.4s}
+.img-curtain{overflow:hidden}
+.img-curtain img{transform:scale(1.07);clip-path:inset(0 0 100% 0);transition:clip-path 1.4s cubic-bezier(0.16,1,0.3,1),transform 1.4s cubic-bezier(0.16,1,0.3,1)}
+.img-curtain.in img{clip-path:inset(0 0 0% 0);transform:scale(1)}
+.art-mq{overflow:hidden;padding:18px 0}
+.art-mq.dk{border-top:1px solid rgba(255,255,255,0.07);border-bottom:1px solid rgba(255,255,255,0.07)}
+.art-mq.lt{border-top:1px solid rgba(0,0,0,0.08);border-bottom:1px solid rgba(0,0,0,0.08)}
+.am-tr{display:inline-flex;animation:am-roll 26s linear infinite;white-space:nowrap}
+.am-tr span{font-size:0.68rem;letter-spacing:0.26em;text-transform:uppercase;padding-right:52px}
+.art-mq.dk .am-tr span{color:rgba(255,255,255,0.25)}
+.art-mq.lt .am-tr span{color:rgba(0,0,0,0.22)}
+@keyframes am-roll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 </style>
 </head>
 <body>
@@ -472,6 +492,12 @@ footer {
     <a href="#reserve" class="nav-reserve">Reserve</a>
   </div>
 </nav>
+
+<div class="art-mq dk">
+  <div class="am-tr">
+    <span>Mediterranean Kitchen</span><span>—</span><span>Barceloneta</span><span>—</span><span>Open Tues–Sun</span><span>—</span><span>Reserve a Table</span><span>—</span><span>Turkish Roots</span><span>—</span><span>Mediterranean Kitchen</span><span>—</span><span>Barceloneta</span><span>—</span><span>Open Tues–Sun</span><span>—</span><span>Reserve a Table</span><span>—</span><span>Turkish Roots</span><span>—</span>
+  </div>
+</div>
 
 <!-- Scroll expansion hero -->
 <section class="hero-wrap" id="heroWrap">
@@ -557,7 +583,10 @@ footer {
   </div>
   <div class="story-text">
     <div class="story-tag reveal">The story</div>
-    <h2 class="reveal">From Izmir<br>to the sea.</h2>
+    <h2>
+      <span class="lr"><span>From Izmir</span></span>
+      <span class="lr"><span>to the sea.</span></span>
+    </h2>
     <blockquote class="reveal">"In Turkey we eat together for hours. I wanted to bring that to Barcelona."</blockquote>
     <p class="reveal">Cem Akyüz arrived in Barcelona in 2009 from Izmir — a port city on the Aegean that gave this restaurant its name. He spent two years cooking in other people's kitchens before opening his own on the Barceloneta seafront in 2011.</p>
     <p class="reveal">The menu is neither Turkish nor Spanish. It borrows from both coasts of the same sea — the one that connects Izmir to Barcelona, that made both cities what they are. The paella uses saffron from Turkey. The börek uses olive oil from Catalonia.</p>
@@ -570,7 +599,10 @@ footer {
 <section class="visit" id="visit">
   <div class="visit-text">
     <div class="visit-tag reveal">Find us</div>
-    <h2 class="reveal">Every day,<br>by the water.</h2>
+    <h2>
+      <span class="lr"><span>Every day,</span></span>
+      <span class="lr"><span>by the water.</span></span>
+    </h2>
     <div class="visit-detail reveal">
       <div class="vd-lbl">Address</div>
       <div class="vd-val">Passeig Marítim de la Barceloneta 38<br>08003 Barcelona</div>
@@ -650,6 +682,10 @@ const io = new IntersectionObserver(entries => {
   entries.forEach(e => { if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);} });
 }, { threshold:0.08 });
 reveals.forEach(el=>io.observe(el));
+
+/* art motion observer */
+const _ao=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');_ao.unobserve(e.target)}})},{threshold:0.12});
+document.querySelectorAll('.lr,.img-curtain').forEach(el=>_ao.observe(el));
 </script>
 </body>
 </html>

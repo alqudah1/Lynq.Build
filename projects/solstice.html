@@ -415,6 +415,26 @@ footer {
 .reveal { opacity: 0; transform: translateY(22px); transition: opacity 0.75s cubic-bezier(0.25,0.46,0.45,0.94), transform 0.75s cubic-bezier(0.25,0.46,0.45,0.94); }
 .reveal.in { opacity: 1; transform: none; }
 
+/* ── ART MOTION ── */
+.lr{overflow:hidden;display:block}
+.lr>span{display:block;transform:translateY(106%);transition:transform 1s cubic-bezier(0.16,1,0.3,1)}
+.lr.in>span{transform:translateY(0)}
+.lr:nth-child(2)>span{transition-delay:0.1s}
+.lr:nth-child(3)>span{transition-delay:0.2s}
+.lr:nth-child(4)>span{transition-delay:0.3s}
+.lr:nth-child(5)>span{transition-delay:0.4s}
+.img-curtain{overflow:hidden}
+.img-curtain img{transform:scale(1.07);clip-path:inset(0 0 100% 0);transition:clip-path 1.4s cubic-bezier(0.16,1,0.3,1),transform 1.4s cubic-bezier(0.16,1,0.3,1)}
+.img-curtain.in img{clip-path:inset(0 0 0% 0);transform:scale(1)}
+.art-mq{overflow:hidden;padding:18px 0}
+.art-mq.dk{border-top:1px solid rgba(255,255,255,0.07);border-bottom:1px solid rgba(255,255,255,0.07)}
+.art-mq.lt{border-top:1px solid rgba(0,0,0,0.08);border-bottom:1px solid rgba(0,0,0,0.08)}
+.am-tr{display:inline-flex;animation:am-roll 26s linear infinite;white-space:nowrap}
+.am-tr span{font-size:0.68rem;letter-spacing:0.26em;text-transform:uppercase;padding-right:52px}
+.art-mq.dk .am-tr span{color:rgba(255,255,255,0.25)}
+.art-mq.lt .am-tr span{color:rgba(0,0,0,0.22)}
+@keyframes am-roll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
 /* ── RESPONSIVE ── */
 @media (max-width: 860px) {
   nav { padding: 16px 20px; }
@@ -449,6 +469,11 @@ footer {
     <a href="#book" class="nav-book">Book a class</a>
   </div>
 </nav>
+<div class="art-mq lt">
+  <div class="am-tr">
+    <span>Morning Flow</span><span>—</span><span>Vinyasa</span><span>—</span><span>Yin</span><span>—</span><span>Toronto</span><span>—</span><span>New Students Welcome</span><span>—</span><span>Morning Flow</span><span>—</span><span>Vinyasa</span><span>—</span><span>Yin</span><span>—</span><span>Toronto</span><span>—</span><span>New Students Welcome</span><span>—</span>
+  </div>
+</div>
 
 <!-- Hero -->
 <section class="hero">
@@ -459,7 +484,7 @@ footer {
   <div class="hero-content">
     <div class="hero-text">
       <div class="hero-tag">The Annex, Toronto · Est. 2018</div>
-      <h1 class="hero-title">Find<br>stillness.</h1>
+      <h1 class="hero-title"><span class="lr"><span>Find</span></span><span class="lr"><span>stillness.</span></span></h1>
       <div class="hero-sub">A grounded yoga and movement studio. No mirrors, no performance. Just practice.</div>
     </div>
     <div class="hero-right">
@@ -472,7 +497,7 @@ footer {
 <!-- Offerings -->
 <section class="offerings" id="offerings">
   <div class="section-tag reveal">Our classes</div>
-  <h2 class="section-title reveal">Find your practice.</h2>
+  <h2 class="section-title reveal"><span class="lr"><span>Find your practice.</span></span></h2>
   <div class="offer-grid">
     <div class="offer-card reveal">
       <div class="offer-img">
@@ -514,7 +539,7 @@ footer {
 <section class="about" id="about">
   <div class="about-text">
     <div class="about-tag reveal">The studio</div>
-    <h2 class="reveal">A place to arrive,<br>not perform.</h2>
+    <h2 class="reveal"><span class="lr"><span>A place to arrive,</span></span><span class="lr"><span>not perform.</span></span></h2>
     <blockquote class="reveal">"Yoga isn't about touching your toes. It's about what you learn on the way down."</blockquote>
     <p class="reveal">Solstice opened in 2018 in the Annex with twelve mats, a heated room, and a simple principle: practice is for you, not an audience. No mirrors, no leaderboards, no livestreams.</p>
     <p class="reveal">We have four resident teachers with a combined 60 years of practice. Small class sizes (max 14) mean you get real guidance, real adjustment, and real silence when you need it.</p>
@@ -527,7 +552,7 @@ footer {
 <!-- Schedule -->
 <section class="schedule" id="schedule">
   <div class="section-tag reveal">Weekly timetable</div>
-  <h2 class="section-title reveal">This week's classes.</h2>
+  <h2 class="section-title reveal"><span class="lr"><span>This week's classes.</span></span></h2>
   <div class="schedule-grid reveal">
     <div class="day-col">
       <div class="day-name">Monday</div>
@@ -565,7 +590,7 @@ footer {
 <section class="book" id="book">
   <div class="book-text">
     <div class="book-tag reveal">Memberships</div>
-    <h2 class="book-title reveal">Choose how<br>you practice.</h2>
+    <h2 class="book-title reveal"><span class="lr"><span>Choose how</span></span><span class="lr"><span>you practice.</span></span></h2>
     <p class="book-sub reveal">Drop-in anytime, or commit to a regular practice with one of our memberships. All include unlimited class booking and a 30-minute intake call.</p>
   </div>
   <div class="book-options reveal">
@@ -599,6 +624,9 @@ const io = new IntersectionObserver(entries => {
   entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
 }, { threshold: 0.08 });
 reveals.forEach(el => io.observe(el));
+/* art motion observer */
+const _ao=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');_ao.unobserve(e.target)}})},{threshold:0.12});
+document.querySelectorAll('.lr,.img-curtain').forEach(el=>_ao.observe(el));
 </script>
 </body>
 </html>

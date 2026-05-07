@@ -517,6 +517,26 @@ footer {
   .booking { grid-template-columns: 1fr; padding: 80px 20px; gap: 40px; }
   footer { padding: 18px 20px; }
 }
+
+/* ── ART MOTION ── */
+.lr{overflow:hidden;display:block}
+.lr>span{display:block;transform:translateY(106%);transition:transform 1s cubic-bezier(0.16,1,0.3,1)}
+.lr.in>span{transform:translateY(0)}
+.lr:nth-child(2)>span{transition-delay:0.1s}
+.lr:nth-child(3)>span{transition-delay:0.2s}
+.lr:nth-child(4)>span{transition-delay:0.3s}
+.lr:nth-child(5)>span{transition-delay:0.4s}
+.img-curtain{overflow:hidden}
+.img-curtain img{transform:scale(1.07);clip-path:inset(0 0 100% 0);transition:clip-path 1.4s cubic-bezier(0.16,1,0.3,1),transform 1.4s cubic-bezier(0.16,1,0.3,1)}
+.img-curtain.in img{clip-path:inset(0 0 0% 0);transform:scale(1)}
+.art-mq{overflow:hidden;padding:18px 0}
+.art-mq.dk{border-top:1px solid rgba(255,255,255,0.07);border-bottom:1px solid rgba(255,255,255,0.07)}
+.art-mq.lt{border-top:1px solid rgba(0,0,0,0.08);border-bottom:1px solid rgba(0,0,0,0.08)}
+.am-tr{display:inline-flex;animation:am-roll 26s linear infinite;white-space:nowrap}
+.am-tr span{font-size:0.68rem;letter-spacing:0.26em;text-transform:uppercase;padding-right:52px}
+.art-mq.dk .am-tr span{color:rgba(255,255,255,0.25)}
+.art-mq.lt .am-tr span{color:rgba(0,0,0,0.22)}
+@keyframes am-roll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 </style>
 </head>
 <body>
@@ -539,6 +559,12 @@ footer {
   </div>
 </nav>
 
+<div class="art-mq lt">
+  <div class="am-tr">
+    <span>Lash Extensions</span><span>—</span><span>Facials</span><span>—</span><span>Brow Tinting</span><span>—</span><span>Toronto</span><span>—</span><span>By Appointment</span><span>—</span><span>Lash Extensions</span><span>—</span><span>Facials</span><span>—</span><span>Brow Tinting</span><span>—</span><span>Toronto</span><span>—</span><span>By Appointment</span><span>—</span>
+  </div>
+</div>
+
 <!-- Hero -->
 <section class="hero">
   <div class="hero-img">
@@ -549,7 +575,10 @@ footer {
   <div class="hero-content">
     <div class="hero-text">
       <div class="hero-tag">Private Beauty Studio · Rosedale, Toronto</div>
-      <h1 class="hero-title">Elara<br>Studio</h1>
+      <h1 class="hero-title">
+        <span class="lr"><span>Elara</span></span>
+        <span class="lr"><span>Studio</span></span>
+      </h1>
       <div class="hero-sub">A quiet space for hair, skin, and self. No rush, no noise. Just you and the work.</div>
     </div>
     <div class="hero-aside">
@@ -626,7 +655,7 @@ footer {
 
 <!-- About -->
 <section class="about" id="about">
-  <div class="about-img reveal">
+  <div class="about-img img-curtain reveal">
     <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=1200&h=1600&fit=crop&auto=format&q=88" alt="Elara Nasser">
   </div>
   <div class="about-text">
@@ -700,6 +729,10 @@ const io = new IntersectionObserver(entries => {
   });
 }, { threshold: 0.08 });
 reveals.forEach(el => io.observe(el));
+
+/* art motion observer */
+const _ao=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');_ao.unobserve(e.target)}})},{threshold:0.12});
+document.querySelectorAll('.lr,.img-curtain').forEach(el=>_ao.observe(el));
 </script>
 </body>
 </html>
