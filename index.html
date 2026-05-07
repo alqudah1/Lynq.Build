@@ -3,19 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>LYNQ — Web Design Studio · Toronto</title>
-<meta name="description" content="LYNQ builds beautiful, fast websites for restaurants, home businesses, creatives, coffee shops, and more. Toronto-based web design studio.">
+<title>Mustafa Alqudah — Web Designer · Toronto</title>
+<meta name="description" content="Web designer based in Toronto. I build beautiful, fast websites for restaurants, home businesses, creatives, and coffee shops.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="canonical" href="https://lynq.build">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="gallery.css?v=2">
+<link rel="stylesheet" href="gallery.css?v=3">
 </head>
 <body>
 
+<div class="cursor" id="cursor">View</div>
+
 <nav class="nav" id="nav">
-  <a href="/" class="nav-logo">LYNQ</a>
+  <a href="/" class="nav-logo">
+    <span class="nav-logo-name">LYNQ</span>
+    <span class="nav-logo-by">Mustafa Alqudah</span>
+  </a>
   <div class="nav-right">
     <a href="/services">Services</a>
     <a href="#contact">Contact</a>
@@ -23,16 +28,10 @@
   </div>
 </nav>
 
-<header class="intro">
-  <div class="intro-left">
-    <div class="intro-name">Mustafa Alqudah</div>
-    <p class="intro-bio">Web designer based in Toronto — I build beautiful, fast websites for restaurants, home businesses, coffee shops, and creatives.</p>
-  </div>
-  <div class="intro-right">
-    <span class="intro-avail">Available for new projects</span>
-    <a href="mailto:hello@lynq.build" class="intro-email">hello@lynq.build →</a>
-  </div>
-</header>
+<div class="work-label">
+  <span class="wl-left">Selected work &mdash; 2024–2026</span>
+  <span class="wl-right"><span class="wl-dot"></span>Available for projects</span>
+</div>
 
 <main class="gallery">
 
@@ -44,7 +43,6 @@
       <div class="card-cat">Restaurant · Barcelona</div>
       <div class="card-name">SMYRNA by Cem</div>
     </div>
-    <div class="card-view">View project →</div>
   </a>
 
   <!-- Nour's Kitchen -->
@@ -55,7 +53,6 @@
       <div class="card-cat">Home Food Business · Toronto</div>
       <div class="card-name">Nour's Kitchen</div>
     </div>
-    <div class="card-view">View project →</div>
   </a>
 
   <!-- Drift Coffee -->
@@ -66,7 +63,6 @@
       <div class="card-cat">Coffee Shop · Toronto</div>
       <div class="card-name">Drift Coffee</div>
     </div>
-    <div class="card-view">View project →</div>
   </a>
 
   <!-- Greek Pastry -->
@@ -77,7 +73,6 @@
       <div class="card-cat">Bakery · Barcelona</div>
       <div class="card-name">Greek Pastry</div>
     </div>
-    <div class="card-view">View project →</div>
   </a>
 
   <!-- CTA card -->
@@ -104,15 +99,31 @@
   <div class="footer-right">
     <a href="/services">Services</a>
     <a href="#contact">Contact</a>
-    <span>© 2026</span>
+    <span>© 2026 Mustafa Alqudah</span>
   </div>
 </footer>
 
 <script>
+  // Nav scroll
   const nav = document.getElementById('nav');
   window.addEventListener('scroll', () => {
     nav.classList.toggle('scrolled', window.scrollY > 40);
   }, { passive: true });
+
+  // Custom cursor
+  const cursor = document.getElementById('cursor');
+  let cx = -200, cy = -200, tx = -200, ty = -200;
+  document.addEventListener('mousemove', e => { tx = e.clientX; ty = e.clientY; });
+  (function loop() {
+    cx += (tx - cx) * 0.12;
+    cy += (ty - cy) * 0.12;
+    cursor.style.transform = `translate(${cx}px, ${cy}px) translate(-50%, -50%)`;
+    requestAnimationFrame(loop);
+  })();
+  document.querySelectorAll('.gallery-card:not(.cta-card)').forEach(card => {
+    card.addEventListener('mouseenter', () => cursor.classList.add('active'));
+    card.addEventListener('mouseleave', () => cursor.classList.remove('active'));
+  });
 </script>
 
 </body>
