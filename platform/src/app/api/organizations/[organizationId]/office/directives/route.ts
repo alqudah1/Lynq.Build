@@ -1,6 +1,8 @@
 import "server-only";
 
 import { randomUUID } from "node:crypto";
+import { after } from "next/server";
+import { neon } from "@neondatabase/serverless";
 import { z } from "zod";
 import { loadEnv } from "@/lib/env";
 import { createDbClient } from "@/db/client";
@@ -13,8 +15,10 @@ import { createTask, transitionTaskStatus } from "@/lib/projects/tasks";
 import { launchAgentForTask } from "@/lib/projects/links";
 import { getDirectiveDomains, planOfficeDirective } from "@/lib/office/directives";
 import { getAgentOfficeIdentity } from "@/lib/office/view";
+import { pollAndProcess } from "@/lib/runtime/worker";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 300;
 
 const bodySchema = z
   .object({
@@ -151,6 +155,17 @@ export async function POST(request: Request, { params }: RouteParams) {
           })
         : planningProject;
 
+    if (dispatched.length > 0) {
+      const rawSql = neon(env.DATABASE_URL);
+      after(async () => {
+        await pollAndProcess(db, rawSql, {
+          leaseOwner: `office-directive:${project.id}`,
+          jobTypes: ["execution_run"],
+          maxJobs: dispatched.length,
+        });
+      });
+    }
+
     return jsonSuccess(
       {
         assistantReply: plan.assistantReply,
@@ -169,4 +184,3 @@ export async function POST(request: Request, { params }: RouteParams) {
     return handleRouteError(err);
   }
 }
-

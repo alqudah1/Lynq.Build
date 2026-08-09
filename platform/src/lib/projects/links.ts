@@ -16,6 +16,10 @@ import { resolveKnowledgeAnalystAgent, createKnowledgeAnalystTask } from "@/lib/
 import { resolveAgentById } from "@/lib/agents/agents";
 import { createExecution } from "@/lib/agent-runtime/executions";
 import { assignExecution, startExecution } from "@/lib/agent-runtime/lifecycle";
+import { advanceExecution } from "@/lib/agent-runtime/lifecycle";
+import { createPlan } from "@/lib/agent-runtime/plans";
+import { createCheckpoint } from "@/lib/agent-runtime/checkpoints";
+import { enqueueJob } from "@/lib/runtime/queue";
 import type { KnowledgeDomain } from "@/lib/brain/knowledge-items";
 import type { ProjectLinkedEntityType } from "./validation";
 
@@ -185,10 +189,8 @@ export interface LaunchAgentForTaskInput {
  * Launches any deployed registry agent for a project task through the same
  * audited Runtime used everywhere else. This is the office orchestrator's
  * generic counterpart to `launchKnowledgeAnalystForTask`: it creates a real
- * execution, assigns the selected employee, starts context gathering, and
- * records the typed project link. It deliberately stops at
- * `gathering_context`; later progress must come from the agent runtime rather
- * than the human-facing route impersonating an agent.
+ * execution, assigns the selected employee, records a recoverable plan, and
+ * enqueues the durable Runtime job that continues the work after the request.
  */
 export async function launchAgentForTask(db: Db, input: LaunchAgentForTaskInput): Promise<ProjectExecutionLink> {
   const project = await resolveProjectById(db, input.organizationId, input.projectId);
@@ -232,6 +234,38 @@ export async function launchAgentForTask(db: Db, input: LaunchAgentForTaskInput)
     executionId: assigned.id,
     actorUserId: input.actorUserId,
   });
+  const planning = await advanceExecution(db, {
+    organizationId: input.organizationId,
+    executionId: started.id,
+    toStatus: "planning",
+    actorAgentId: agent.id,
+  });
+  await createPlan(db, {
+    organizationId: input.organizationId,
+    executionId: planning.id,
+    actorAgentId: agent.id,
+    steps: [
+      "Analyze the founder objective and the assigned workstream",
+      "Produce a concrete, reviewable workstream deliverable",
+      "Verify the deliverable against the stated success criteria",
+      "Hand the result back to the Executive Assistant for founder review",
+    ],
+  });
+  await createCheckpoint(db, {
+    organizationId: input.organizationId,
+    executionId: planning.id,
+    statusAtCheckpoint: "planning",
+    actorAgentId: agent.id,
+    safeStateSummary: { officeDirectiveExecution: true, projectId: project.id, taskId: task.id },
+  });
+  const job = await enqueueJob(db, {
+    organizationId: input.organizationId,
+    workspaceId: project.workspaceId,
+    jobType: "execution_run",
+    executionId: planning.id,
+    idempotencyKey: `office-exec:${planning.id}`,
+    priority: input.priority,
+  });
 
   const [row] = await db
     .insert(projectExecutionLinks)
@@ -240,7 +274,7 @@ export async function launchAgentForTask(db: Db, input: LaunchAgentForTaskInput)
       organizationId: input.organizationId,
       projectId: project.id,
       taskId: task.id,
-      executionId: started.id,
+      executionId: planning.id,
       launchedByUserId: input.actorUserId,
     })
     .returning();
@@ -251,7 +285,7 @@ export async function launchAgentForTask(db: Db, input: LaunchAgentForTaskInput)
     organizationId: input.organizationId,
     targetType: "project_task",
     targetId: task.id,
-    metadata: { executionId: started.id, agentId: agent.id, source: "office_directive" },
+    metadata: { executionId: planning.id, jobId: job.id, agentId: agent.id, source: "office_directive" },
   });
   await recordProjectEvent(db, {
     organizationId: input.organizationId,
@@ -260,15 +294,15 @@ export async function launchAgentForTask(db: Db, input: LaunchAgentForTaskInput)
     actorUserId: input.actorUserId,
     targetType: "project_task",
     targetId: task.id,
-    metadata: { executionId: started.id, agentId: agent.id, source: "office_directive" },
+    metadata: { executionId: planning.id, jobId: job.id, agentId: agent.id, source: "office_directive" },
   });
 
   return {
     id: row.id,
     projectId: project.id,
     taskId: task.id,
-    executionId: started.id,
-    executionStatus: started.status,
+    executionId: planning.id,
+    executionStatus: planning.status,
     createdAt: row.createdAt,
   };
 }

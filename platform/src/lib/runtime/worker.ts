@@ -7,6 +7,7 @@ import { claimJobs, startJob, completeJob, reportJobFailure, type RuntimeJob } f
 import { RUNTIME_CONFIG } from "./config";
 import { RUNTIME_JOB_TYPES, type JobFailureClass } from "./validation";
 import { continueKnowledgeAnalystExecution, NoAccessibleDomainsError } from "@/lib/agents/knowledge-analyst";
+import { continueOfficeDirectiveExecution, isOfficeDirectiveExecution } from "@/lib/office/execution";
 import { reconcileToolInvocations } from "./reconciliation-tool-invocations";
 import { reconcileExecutions } from "./reconciliation-executions";
 import { cleanupExpiredSessions, cleanupStaleRateLimitCounters } from "./cleanup";
@@ -36,14 +37,10 @@ type RawSql = NeonQueryFunction<false, false>;
  * and "resume it" from the worker's point of view; the 3 job type names
  * exist for observability/audit clarity, not 3 different code paths.
  *
- * This dispatch table is intentionally hardcoded to the Knowledge
- * Analyst's own continuation function. This remains correct after Module
- * 14: Knowledge Analyst is still the only agent task type that runs
- * asynchronously through the Runtime job queue (`createKnowledgeAnalystTask`
- * enqueues `execution_run`); both Sales OS agent tasks complete
- * synchronously within their own `launch()` call (see
- * `sales-os/agents.ts`) and never enqueue this job type at all — a future
- * asynchronous agent task type would extend this switch, not redesign it.
+ * Execution jobs are dispatched by durable execution provenance: the
+ * Knowledge Analyst keeps its evidence-bounded continuation, while founder
+ * directives use the Office continuation. Other bounded task types remain
+ * synchronous until they gain their own reviewed continuation driver.
  */
 export function classifyExecutionError(err: unknown): { failureClass: JobFailureClass; errorCode: string; requiresHumanReview: boolean } {
   if (err instanceof LivePermissionRevalidationFailedError) return { failureClass: "permission_revoked", errorCode: "agent_ineligible", requiresHumanReview: false };
@@ -87,6 +84,11 @@ async function notifyLinkedWorkflowNodeIfAny(db: Db, organizationId: string, run
 
 async function runExecutionJob(db: Db, rawSql: RawSql, job: RuntimeJob): Promise<unknown> {
   if (!job.executionId || !job.organizationId) throw new Error("execution job is missing executionId/organizationId");
+  if (await isOfficeDirectiveExecution(db, job.organizationId, job.executionId)) {
+    const execution = await continueOfficeDirectiveExecution(db, { organizationId: job.organizationId, executionId: job.executionId });
+    await notifyLinkedWorkflowNodeIfAny(db, job.organizationId, job.executionId);
+    return { executionStatus: execution.status, source: "office_directive" };
+  }
   const result = await continueKnowledgeAnalystExecution(db, rawSql, { organizationId: job.organizationId, executionId: job.executionId });
   await notifyLinkedWorkflowNodeIfAny(db, job.organizationId, job.executionId);
   return { artifactId: result.artifactId, executionStatus: result.execution.status };
