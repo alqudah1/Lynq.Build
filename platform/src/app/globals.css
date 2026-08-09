@@ -7,8 +7,8 @@
  * how Tailwind is configured changes later (per Module 1's requirement
  * that tokens not be coupled to Tailwind).
  *
- * Values match the existing lynq.build marketing site: near-black
- * background, warm amber accent, Cormorant Garamond (serif, display) +
+ * Values use a near-black background with neutral clear-glass accents,
+ * Cormorant Garamond (serif, display) +
  * Outfit (sans, UI/body). The brand is dark by default, not
  * light/dark-adaptive — this is intentional, not an oversight.
  */
@@ -21,9 +21,9 @@
   --lynq-fg-subtle: rgba(255, 255, 255, 0.38);
   --lynq-border: rgba(255, 255, 255, 0.08);
   --lynq-border-strong: rgba(255, 255, 255, 0.14);
-  --lynq-accent: #d2aa64;
-  --lynq-accent-foreground: #e0bb80;
-  --lynq-accent-wash: rgba(210, 170, 100, 0.1);
+  --lynq-accent: #f4f7fb;
+  --lynq-accent-foreground: #ffffff;
+  --lynq-accent-wash: rgba(255, 255, 255, 0.08);
   --lynq-font-sans: var(--font-outfit);
   --lynq-font-serif: var(--font-cormorant);
 
@@ -53,8 +53,8 @@
   /* Status colors — used only for real states (success/warning/danger/info), never for brand decoration. Muted, not neon. */
   --lynq-success: #6fbf8b;
   --lynq-success-wash: rgba(111, 191, 139, 0.12);
-  --lynq-warning: #d2a24c;
-  --lynq-warning-wash: rgba(210, 162, 76, 0.12);
+  --lynq-warning: #c6b8ff;
+  --lynq-warning-wash: rgba(198, 184, 255, 0.12);
   --lynq-danger: #d97462;
   --lynq-danger-wash: rgba(217, 116, 98, 0.12);
   --lynq-info: #7ea6c9;
@@ -129,8 +129,8 @@ body {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(1200px 600px at 15% -10%, rgba(210, 170, 100, 0.05), transparent 60%),
-    radial-gradient(900px 500px at 100% 10%, rgba(255, 255, 255, 0.03), transparent 55%);
+    radial-gradient(1200px 600px at 15% -10%, rgba(178, 210, 255, 0.05), transparent 60%),
+    radial-gradient(900px 500px at 100% 10%, rgba(255, 255, 255, 0.045), transparent 55%);
 }
 
 /* Glass surface — translucent, blurred, subtly bordered. Used selectively (sidebar, top bar, primary cards, dialogs, menus), never on every element. */
@@ -223,7 +223,7 @@ body {
   pointer-events: none;
   z-index: -1;
   background:
-    radial-gradient(38rem 22rem at 72% 4%, rgba(210, 170, 100, 0.085), transparent 68%),
+    radial-gradient(38rem 22rem at 72% 4%, rgba(190, 218, 255, 0.075), transparent 68%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent);
 }
 
@@ -265,15 +265,15 @@ body {
   display: flex;
   gap: 1.25rem;
   overflow: hidden;
-  border: 1px solid rgba(210, 170, 100, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: var(--lynq-radius-lg);
   background:
-    linear-gradient(115deg, rgba(210, 170, 100, 0.075), rgba(255, 255, 255, 0.025) 45%, rgba(255, 255, 255, 0.012)),
-    rgba(10, 10, 10, 0.78);
+    linear-gradient(115deg, rgba(255, 255, 255, 0.09), rgba(207, 225, 255, 0.035) 45%, rgba(255, 255, 255, 0.015)),
+    rgba(8, 10, 14, 0.48);
   padding: clamp(1.1rem, 2.4vw, 1.75rem);
   box-shadow: inset 0 1px rgba(255, 255, 255, 0.06), var(--lynq-shadow-md);
-  backdrop-filter: blur(22px) saturate(140%);
-  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  backdrop-filter: blur(24px) saturate(120%);
+  -webkit-backdrop-filter: blur(24px) saturate(120%);
 }
 
 .office-command::after {
@@ -283,7 +283,7 @@ body {
   width: 26rem;
   height: 18rem;
   pointer-events: none;
-  background: radial-gradient(circle, rgba(210, 170, 100, 0.09), transparent 68%);
+  background: radial-gradient(circle, rgba(210, 228, 255, 0.09), transparent 68%);
 }
 
 .office-command--compact { box-shadow: inset 0 1px rgba(255, 255, 255, 0.05); }
@@ -296,9 +296,9 @@ body {
   height: 3.25rem;
   flex: 0 0 auto;
   place-items: center;
-  border: 1px solid rgba(210, 170, 100, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 50%;
-  background: rgba(210, 170, 100, 0.08);
+  background: rgba(255, 255, 255, 0.07);
   color: var(--lynq-accent-foreground);
   font-family: var(--lynq-font-serif), serif;
   font-size: 1rem;
@@ -332,7 +332,7 @@ body {
 }
 .office-command__input::placeholder { color: var(--lynq-fg-subtle); }
 .office-command__input:hover { border-color: rgba(255, 255, 255, 0.2); }
-.office-command__input:focus { border-color: rgba(210, 170, 100, 0.5); background: rgba(0, 0, 0, 0.34); }
+.office-command__input:focus { border-color: rgba(255, 255, 255, 0.5); background: rgba(0, 0, 0, 0.34); }
 
 .office-starter,
 .office-mini-link {
@@ -355,16 +355,16 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.6rem;
-  border: 1px solid rgba(210, 170, 100, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.68);
   border-radius: var(--lynq-radius-sm);
   background: var(--lynq-accent);
   padding: 0.65rem 1rem;
-  color: #16120c;
+  color: #0a0d12;
   font-size: 0.75rem;
   font-weight: 600;
   transition: transform 160ms var(--lynq-ease), box-shadow 160ms var(--lynq-ease), opacity 160ms var(--lynq-ease);
 }
-.office-dispatch-button:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(210, 170, 100, 0.16); }
+.office-dispatch-button:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(220, 234, 255, 0.14); }
 .office-dispatch-button:disabled { cursor: not-allowed; opacity: 0.42; }
 
 .office-dispatch-result {
@@ -388,18 +388,18 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.11);
   border-radius: var(--lynq-radius-lg);
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.018) 54%, rgba(210, 170, 100, 0.025)),
-    rgba(9, 9, 9, 0.7);
+    linear-gradient(145deg, rgba(255, 255, 255, 0.095), rgba(218, 232, 255, 0.025) 54%, rgba(255, 255, 255, 0.012)),
+    rgba(8, 10, 14, 0.42);
   padding: 1.25rem;
   box-shadow: inset 0 1px rgba(255, 255, 255, 0.055), inset 0 -1px rgba(0, 0, 0, 0.32);
-  backdrop-filter: blur(18px) saturate(135%);
-  -webkit-backdrop-filter: blur(18px) saturate(135%);
+  backdrop-filter: blur(22px) saturate(115%);
+  -webkit-backdrop-filter: blur(22px) saturate(115%);
   transition: transform 200ms var(--lynq-ease), border-color 200ms var(--lynq-ease), box-shadow 200ms var(--lynq-ease);
 }
 
 .office-room:hover {
   transform: translateY(-3px);
-  border-color: rgba(210, 170, 100, 0.28);
+  border-color: rgba(255, 255, 255, 0.3);
   box-shadow: inset 0 1px rgba(255, 255, 255, 0.075), 0 20px 44px -24px rgba(0, 0, 0, 0.85);
 }
 
@@ -409,7 +409,7 @@ body {
   width: 14rem;
   height: 14rem;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(210, 170, 100, 0.095), transparent 68%);
+  background: radial-gradient(circle, rgba(205, 225, 255, 0.09), transparent 68%);
   transition: transform 240ms var(--lynq-ease), opacity 240ms var(--lynq-ease);
 }
 .office-room:hover .office-room__ambient { transform: translate(-1rem, 1rem); opacity: 1.4; }
@@ -418,8 +418,8 @@ body {
 .employee-office-hero__monogram {
   display: grid;
   place-items: center;
-  border: 1px solid rgba(210, 170, 100, 0.22);
-  background: rgba(210, 170, 100, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.055);
   color: var(--lynq-accent-foreground);
   font-family: var(--lynq-font-serif), serif;
   letter-spacing: 0.08em;
@@ -443,7 +443,7 @@ body {
 .office-presence::before { content: ""; width: 0.38rem; height: 0.38rem; border-radius: 50%; background: currentColor; }
 .office-presence--working { border-color: rgba(126, 166, 201, 0.25); background: var(--lynq-info-wash); color: var(--lynq-info); }
 .office-presence--ready { border-color: rgba(111, 191, 139, 0.25); background: var(--lynq-success-wash); color: var(--lynq-success); }
-.office-presence--attention { border-color: rgba(210, 162, 76, 0.25); background: var(--lynq-warning-wash); color: var(--lynq-warning); }
+.office-presence--attention { border-color: rgba(198, 184, 255, 0.25); background: var(--lynq-warning-wash); color: var(--lynq-warning); }
 .office-presence--offline { color: var(--lynq-fg-subtle); }
 
 .office-panel {
