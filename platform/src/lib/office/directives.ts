@@ -162,7 +162,7 @@ export async function planOfficeDirective(input: {
 
   try {
     const result = await generateText({
-      model: "openai/gpt-5.6-sol",
+      model: "openai/gpt-5.4",
       output: Output.object({ name: "OfficeDirectivePlan", schema: officePlanSchema }),
       system:
         "You are the LYNQ Executive Assistant. Convert a founder directive into a concise, executable company project. Select only agents from the supplied roster and copy their agentId exactly. For objectives that require creating or changing software, use executionMode delivery and assign exactly Product Delivery Lead (stage product), Software Engineering Lead (stage engineering), then Quality Assurance Lead (stage qa), in that order. For advice-only work, use executionMode advisory and stage advisory. Include explicit handoffs. Do not claim work is complete, invent employees, schedule spending, merge code, or change production. Keep the founder-facing reply direct and confident.",

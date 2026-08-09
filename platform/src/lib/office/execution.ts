@@ -83,7 +83,7 @@ async function makeTextArtifact(db: Db, input: { organizationId: string; executi
   if (!agent) throw new Error("assigned employee is unavailable");
   const identity = getAgentOfficeIdentity(agent);
   const result = await generateText({
-    model: "openai/gpt-5.6-sol",
+    model: "openai/gpt-5.4",
     system: `You are the ${identity.title} at LYNQ. Produce the actual project deliverable. Be concrete, testable, and decision-oriented. Use prior project artifacts as shared memory. State missing evidence honestly. Do not claim external actions occurred unless context proves them. Return polished Markdown only.`,
     prompt: JSON.stringify({ goal: input.goal, successCriteria: input.successCriteria, sharedProjectContext: input.projectContext, requestedSections: ["Executive summary", "Scope and decisions", "Acceptance criteria", "Deliverable", "Dependencies and risks", "Handoff"] }),
   });
