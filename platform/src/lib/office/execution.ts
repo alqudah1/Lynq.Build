@@ -79,7 +79,6 @@ async function latestEngineeringResult(db: Db, organizationId: string, projectId
 }
 
 async function makeTextArtifact(db: Db, input: { organizationId: string; executionId: string; agentId: string; projectContext: string; goal: string; successCriteria: string; title: string }) {
-  if (!process.env.AI_GATEWAY_API_KEY && !process.env.VERCEL_OIDC_TOKEN) throw new Error("AI Gateway is not available for Office execution");
   const agent = await resolveAgentById(db, input.agentId);
   if (!agent) throw new Error("assigned employee is unavailable");
   const identity = getAgentOfficeIdentity(agent);
