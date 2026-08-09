@@ -191,7 +191,10 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
               executionCount={executionCount}
               transitionAction={transitionTaskAction.bind(null, organizationSlug, projectId, task.id)}
               assignAction={assignTaskAction.bind(null, organizationSlug, projectId, task.id)}
-              unassignAction={async (userId: string) => unassignTaskAction(organizationSlug, projectId, task.id, userId)}
+              unassignAction={async (userId: string) => {
+                "use server";
+                return unassignTaskAction(organizationSlug, projectId, task.id, userId);
+              }}
               addDependencyAction={addDependencyAction.bind(null, organizationSlug, projectId, task.id)}
               launchAgentAction={launchKnowledgeAnalystAction.bind(null, organizationSlug, projectId, task.id)}
             />

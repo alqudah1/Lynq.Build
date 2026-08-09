@@ -19,6 +19,9 @@ const ACTIVE_EXECUTION_STATUSES = new Set<AgentExecutionStatus>([
 ]);
 
 const ROLE_BY_AGENT_NAME: Record<string, { title: string; room: string; monogram: string }> = {
+  "Product Delivery Lead": { title: "Product Delivery Lead", room: "Product Office", monogram: "PD" },
+  "Software Engineering Lead": { title: "Software Engineering Lead", room: "Engineering Lab", monogram: "EN" },
+  "Quality Assurance Lead": { title: "Quality Assurance Lead", room: "Quality Lab", monogram: "QA" },
   "Founder Analyst": { title: "Chief Executive Officer", room: "Executive Office", monogram: "CEO" },
   "Company Knowledge Analyst": { title: "Chief Operating Officer", room: "Operations Office", monogram: "COO" },
   "Communications Assistant": { title: "Executive Assistant", room: "Front Office", monogram: "EA" },
@@ -160,4 +163,3 @@ export async function loadOfficeView(
     assistantAgentId: employees.find((employee) => employee.title === "Executive Assistant")?.id ?? null,
   };
 }
-
