@@ -1,0 +1,2 @@
+CREATE TYPE "public"."decision_outcome" AS ENUM('pending', 'succeeded', 'failed', 'mixed');--> statement-breakpoint
+ALTER TABLE "knowledge_items" ADD COLUMN "outcome" "decision_outcome" DEFAULT 'pending' NOT NULL;

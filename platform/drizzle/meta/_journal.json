@@ -1,0 +1,272 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1785528002537,
+      "tag": "0000_dapper_steel_serpent",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1785529772614,
+      "tag": "0001_tiresome_shatterstar",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785538548647,
+      "tag": "0002_square_doctor_doom",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1785696674562,
+      "tag": "0003_bumpy_payback",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1785698701856,
+      "tag": "0004_smart_warbird",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1785700249885,
+      "tag": "0005_perpetual_quasar",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1785700352122,
+      "tag": "0006_kind_edwin_jarvis",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1785715806883,
+      "tag": "0007_nappy_silvermane",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1785717979565,
+      "tag": "0008_shiny_wonder_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1785776414307,
+      "tag": "0009_flippant_weapon_omega",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1785776479719,
+      "tag": "0010_seed_domain_metadata",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1785777912868,
+      "tag": "0011_warm_shooting_star",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1785951498308,
+      "tag": "0012_quick_rumiko_fujikawa",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1785953047715,
+      "tag": "0013_marvelous_speed_demon",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1785956191365,
+      "tag": "0014_magenta_toad_men",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1785956947711,
+      "tag": "0015_slim_dexter_bennett",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1785958176746,
+      "tag": "0016_serious_risque",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1786022517117,
+      "tag": "0017_flippant_sauron",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1786022782272,
+      "tag": "0018_red_proudstar",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1786027013911,
+      "tag": "0019_confused_hiroim",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1786031511757,
+      "tag": "0020_wet_harpoon",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1786047740457,
+      "tag": "0021_narrow_chamber",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1786052965596,
+      "tag": "0022_dusty_moira_mactaggert",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1786064231119,
+      "tag": "0023_condemned_titanium_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1786067890022,
+      "tag": "0024_calm_shadow_king",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1786068473452,
+      "tag": "0025_melted_liz_osborn",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1786110250682,
+      "tag": "0026_powerful_quicksilver",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1786132012479,
+      "tag": "0027_rapid_thunderbolt_ross",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1786133461819,
+      "tag": "0028_equal_jackal",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1786208184415,
+      "tag": "0029_marketing_os_module15",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1786210881939,
+      "tag": "0030_marketing_approval_links_cascade_fix",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1786211000747,
+      "tag": "0031_marketing_content_artifact_cascade_fix",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1786213035405,
+      "tag": "0032_sales_approval_links_cascade_fix",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1786213631317,
+      "tag": "0033_communications_os_module16",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1786215186972,
+      "tag": "0034_sales_sequence_communication_draft",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1786239158758,
+      "tag": "0035_communication_messages_agent_fk_fix",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1786242250047,
+      "tag": "0036_analytics_os_module17",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1786292039221,
+      "tag": "0037_founder_workspace_module18",
+      "breakpoints": true
+    }
+  ]
+}

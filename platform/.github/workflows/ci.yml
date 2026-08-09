@@ -1,0 +1,49 @@
+name: platform CI
+
+on:
+  push:
+    paths:
+      - "platform/**"
+  pull_request:
+    paths:
+      - "platform/**"
+
+defaults:
+  run:
+    working-directory: platform
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    env:
+      # Non-production, non-secret placeholder values. These are syntactically
+      # valid connection strings pointing at nothing real — they exist only
+      # so the build/test steps have required configuration present. The
+      # real Neon credentials live exclusively in Vercel's Sensitive
+      # Environment Variables on the platform's own Vercel project, are
+      # never referenced here, and are never available to this workflow.
+      DATABASE_URL: "postgres://ci-user:ci-password@ci-placeholder.invalid/ci-db"
+      DATABASE_URL_UNPOOLED: "postgres://ci-user:ci-password@ci-placeholder-direct.invalid/ci-db"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+          cache-dependency-path: platform/package-lock.json
+
+      - name: Install dependencies from lockfile
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm run test
+
+      - name: Build
+        run: npm run build

@@ -1,0 +1,3 @@
+ALTER TABLE "marketing_approval_links" DROP CONSTRAINT "marketing_approval_links_approval_request_id_agent_approval_requests_id_fk";
+--> statement-breakpoint
+ALTER TABLE "marketing_approval_links" ADD CONSTRAINT "marketing_approval_links_approval_request_id_agent_approval_requests_id_fk" FOREIGN KEY ("approval_request_id") REFERENCES "public"."agent_approval_requests"("id") ON DELETE cascade ON UPDATE no action;

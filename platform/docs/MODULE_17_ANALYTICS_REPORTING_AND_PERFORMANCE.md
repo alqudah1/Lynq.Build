@@ -1,0 +1,29 @@
+# Module 17 — Analytics Reporting and Performance
+
+## Saved reports
+
+`reports.ts`. A saved report (`analytics_saved_reports`) is a stored, revalidated set of `runAnalyticsQuery` inputs — `metricKeys` (a plain string array validated against the registry at both create and update time), `dateRangeStrategy` + optional custom bounds, `comparisonEnabled`, `timeGrain`, `dimensions` (only the first entry is currently used as `groupBy` when the report runs — a documented v1 simplification), `visualization` (one of 7 fixed kinds), `visibility`. **Structurally never executable SQL** — there is no field capable of holding a query string, only references into the closed metric/dimension registries. `runSavedReport` re-runs the identical stored inputs through the exact same `runAnalyticsQuery` every ad-hoc query goes through — never a separate, weaker execution path — and records `analytics_report_viewed`. Updates are revision-guarded (`StaleAnalyticsUpdateError` on a lost optimistic-concurrency race); a functional and a concurrency test both cover the exact race.
+
+## Dashboard widgets
+
+7 fixed visualization kinds (`kpi_card`, `line`, `bar`, `table`, `funnel`, `progress`, `status_distribution`) are declared on the schema/validation layer as the closed set a saved report may request — the actually-shipped UI renders every metric as a `MetricCard` (KPI-card style) plus, when grouped, a real `MetricTable`, and every funnel as a `FunnelTable`. No arbitrary client-supplied chart configuration is ever accepted or interpreted; the visualization field is metadata for a future richer renderer, not something the current UI branches its own rendering logic on beyond "is this metric grouped."
+
+## Freshness and snapshots
+
+Every metric's `MetricFreshness` is `live` in this release — computed directly against the source module's own tables on every call, no caching layer, no snapshot table. This was a deliberate scope decision (see `MODULE_17_ANALYTICS_OS.md`'s schema section) rather than an oversight: the spec's own text explicitly allows "most current LYNQ operational metrics may be computed live initially," and this codebase's current data volume does not yet justify the added complexity (and "never a second source of business truth" risk) of a snapshot/materialization layer. The `MetricFreshness` type (`live`/`near_real_time`/`scheduled_snapshot`/`manual`) already exists on every metric definition and every query result specifically so a future snapshot layer can be introduced metric-by-metric without a breaking API change — a caller already receives and can display freshness today, it simply always reads `live`.
+
+## Performance and bounds
+
+Every bound is enforced centrally in `query.ts`, never left to an individual metric to remember: `MAX_METRIC_KEYS_PER_QUERY = 20` (a query requesting more throws `QueryTooComplexError` before any database call happens), `MAX_DATE_RANGE_DAYS = 400` (enforced by `dateRangeSchema`'s own Zod refinement, at the API validation layer — a little over a year, bounding an unbounded range without blocking a genuine year-over-year comparison), `MAX_GROUP_BY_CARDINALITY = 100` (a grouped metric result exceeding 100 rows throws `QueryTooComplexError` rather than silently returning a huge, UI-breaking payload), `MAX_DRILLDOWN_ROWS = 200` (every `drilldown()` implementation applies `.limit(200)` directly in its own SQL, not as a post-query slice — the database itself never computes more rows than will be returned).
+
+**Query plans and indexes**: every metric's `WHERE` clause leads with `eq(table.organizationId, ...)`, matching every existing `*_org_*_idx` composite index already defined by the source module's own schema (e.g. `crm_leads_owner_status_idx`, `agent_executions_org_status_idx`-equivalent coverage via existing indexes) — no new index was added specifically for Analytics OS, since every query is a straightforward `COUNT`/`SUM`/`AVG` over columns already indexed for the source module's own list/detail pages. The one place raw SQL appears at all (`query-support.ts`'s `seriesByDay`/`seriesSumByDay`) uses `date_trunc` against a fixed, in-code grain-to-Postgres-string map — never caller-interpolated text — against a real, already-indexed timestamp column.
+
+**N+1 prevention**: `runAnalyticsQuery` issues exactly one query per requested metric (plus, when a comparison period is active, exactly one more for the previous period) — never a query per row, never a query per dimension value. `computeExecutiveKpis` issues one query per metric across all 7 KPI groups (bounded to the fixed, small curated list in `KPI_GROUPS`), not a query per underlying record.
+
+## Concurrency proofs
+
+Full list and results in `MODULE_17_ANALYTICS_OS.md`'s "Concurrency results" section — 7/7 passing, covering the saved-report revision guard, duplicate-creation safety, immediate permission-revocation visibility, duplicate-role-grant rejection, role-revocation racing, and cross-tenant isolation under real concurrent load for both aggregate queries and CSV export. The two spec-suggested items about snapshot rebuild/no-duplicate-period do not apply in this release, since no snapshot table was built (see "Freshness and snapshots" above) — noted here explicitly as N/A rather than silently omitted.
+
+## Manual end-to-end result
+
+See the final report for the full cross-module walkthrough (seed CRM/Sales/Marketing/Communications/Projects/Workflow/Agent data → query cross-module KPIs → verify the campaign→lead→opportunity→won linkage → verify Sales actual-vs-weighted pipeline → verify Communications sent/delivered → verify Projects/Workflow/Agent operational metrics → compare current vs. previous period → save a report → drill down into an authorized record → export CSV → confirm the UI renders the same canonical values), executed against the real database.

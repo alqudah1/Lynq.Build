@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "workflow_edges_source_target_null_condition_unique" ON "workflow_edges" USING btree ("source_node_id","target_node_id") WHERE "workflow_edges"."condition_key" IS NULL;

@@ -1,0 +1,1 @@
+CREATE INDEX "knowledge_item_versions_fts_idx" ON "knowledge_item_versions" USING gin (to_tsvector('english', "title" || ' ' || "content"));

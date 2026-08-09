@@ -1,0 +1,1 @@
+ALTER TABLE "sales_sequence_step_runs" ADD COLUMN "workflow_execution_id" uuid;

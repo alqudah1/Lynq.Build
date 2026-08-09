@@ -1,0 +1,1 @@
+ALTER TABLE "knowledge_items" ADD CONSTRAINT "knowledge_items_classification_check" CHECK ("knowledge_items"."classification" IN ('fact', 'instruction', 'policy', 'procedure', 'decision', 'observation', 'note', 'summary', 'template', 'prompt', 'reference'));
