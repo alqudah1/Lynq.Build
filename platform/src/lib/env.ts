@@ -22,6 +22,9 @@ const envSchema = z.object({
   // that never touch the worker system keep working unmodified.
   WORKER_BOOTSTRAP_SECRET: z.string().min(1).optional(),
   CRON_SECRET: z.string().min(32).optional(),
+  OFFICE_PLANNING_MODEL: z.string().regex(/^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/i).optional(),
+  OFFICE_ENGINEERING_MODEL: z.string().regex(/^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/i).optional(),
+  OFFICE_REVIEW_MODEL: z.string().regex(/^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/i).optional(),
   // Module 16 — Communications Core. Symmetric key (32 raw bytes,
   // base64-encoded) used to encrypt integration connection credentials at
   // rest (`integration_credentials.ciphertext`, AES-256-GCM). Optional —
@@ -65,6 +68,9 @@ export function loadEnv(): Env {
     DATABASE_URL_UNPOOLED: process.env.DATABASE_URL_UNPOOLED,
     WORKER_BOOTSTRAP_SECRET: process.env.WORKER_BOOTSTRAP_SECRET,
     CRON_SECRET: process.env.CRON_SECRET,
+    OFFICE_PLANNING_MODEL: process.env.OFFICE_PLANNING_MODEL,
+    OFFICE_ENGINEERING_MODEL: process.env.OFFICE_ENGINEERING_MODEL,
+    OFFICE_REVIEW_MODEL: process.env.OFFICE_REVIEW_MODEL,
     INTEGRATION_CREDENTIAL_ENCRYPTION_KEY: process.env.INTEGRATION_CREDENTIAL_ENCRYPTION_KEY,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     RESEND_WEBHOOK_SECRET: process.env.RESEND_WEBHOOK_SECRET,

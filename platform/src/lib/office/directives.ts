@@ -5,6 +5,7 @@ import { z } from "zod";
 import type { Agent } from "@/lib/agents/agents";
 import type { KnowledgeDomain } from "@/lib/brain/knowledge-items";
 import { getAgentOfficeIdentity } from "./view";
+import { getOfficeModel } from "./models";
 import { officeDeliveryStageSchema } from "./task-metadata";
 import { OFFICE_ENGINEERING_AGENT_NAME, OFFICE_PRODUCT_AGENT_NAME, OFFICE_QA_AGENT_NAME } from "./team";
 
@@ -147,8 +148,6 @@ export async function planOfficeDirective(input: {
   if (eligibleAgents.length === 0) throw new Error("No eligible agents are available");
 
   const fallback = fallbackPlan(input.instruction, eligibleAgents, input.preferredAgentId);
-  if (!process.env.AI_GATEWAY_API_KEY && !process.env.VERCEL_OIDC_TOKEN) return fallback;
-
   const roster = eligibleAgents.map((agent) => {
     const identity = getAgentOfficeIdentity(agent);
     return {
@@ -162,7 +161,7 @@ export async function planOfficeDirective(input: {
 
   try {
     const result = await generateText({
-      model: "openai/gpt-5.4-mini",
+      model: getOfficeModel("planning"),
       output: Output.object({ name: "OfficeDirectivePlan", schema: officePlanSchema }),
       system:
         "You are the LYNQ Executive Assistant. Convert a founder directive into a concise, executable company project. Select only agents from the supplied roster and copy their agentId exactly. For objectives that require creating or changing software, use executionMode delivery and assign exactly Product Delivery Lead (stage product), Software Engineering Lead (stage engineering), then Quality Assurance Lead (stage qa), in that order. For advice-only work, use executionMode advisory and stage advisory. Include explicit handoffs. Do not claim work is complete, invent employees, schedule spending, merge code, or change production. Keep the founder-facing reply direct and confident.",

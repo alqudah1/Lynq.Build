@@ -18,6 +18,7 @@ import { listTasks, resolveTaskById, transitionTaskStatus } from "@/lib/projects
 import { executeEngineeringDelivery, inspectEngineeringDelivery, type EngineeringDeliveryResult } from "./engineering";
 import { getDirectiveDomains } from "./directives";
 import { parseOfficeTaskMetadata } from "./task-metadata";
+import { getOfficeModel } from "./models";
 import { getAgentOfficeIdentity } from "./view";
 
 type Db = NeonHttpDatabase<Record<string, unknown>>;
@@ -78,12 +79,12 @@ async function latestEngineeringResult(db: Db, organizationId: string, projectId
   return null;
 }
 
-async function makeTextArtifact(db: Db, input: { organizationId: string; executionId: string; agentId: string; projectContext: string; goal: string; successCriteria: string; title: string }) {
+async function makeTextArtifact(db: Db, input: { organizationId: string; executionId: string; agentId: string; projectContext: string; goal: string; successCriteria: string; title: string; modelRole: "planning" | "review" }) {
   const agent = await resolveAgentById(db, input.agentId);
   if (!agent) throw new Error("assigned employee is unavailable");
   const identity = getAgentOfficeIdentity(agent);
   const result = await generateText({
-    model: "openai/gpt-5.4-mini",
+    model: getOfficeModel(input.modelRole),
     system: `You are the ${identity.title} at LYNQ. Produce the actual project deliverable. Be concrete, testable, and decision-oriented. Use prior project artifacts as shared memory. State missing evidence honestly. Do not claim external actions occurred unless context proves them. Return polished Markdown only.`,
     prompt: JSON.stringify({ goal: input.goal, successCriteria: input.successCriteria, sharedProjectContext: input.projectContext, requestedSections: ["Executive summary", "Scope and decisions", "Acceptance criteria", "Deliverable", "Dependencies and risks", "Handoff"] }),
   });
@@ -199,16 +200,21 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
       if (!delivery) throw new Error("QA is waiting for an Engineering pull request");
       const inspected = await inspectEngineeringDelivery(delivery);
       if (!inspected.previewUrl) throw new Error("QA is waiting for the Vercel preview deployment");
+      const review = await generateText({
+        model: getOfficeModel("review"),
+        system: "You are LYNQ's independent Quality Assurance Lead. Review the supplied implementation evidence against the objective and acceptance criteria. Be concise and factual. Identify defects or missing evidence; never claim checks passed unless the evidence says so. Return polished Markdown with Verdict, Acceptance criteria, Risks, and Founder recommendation.",
+        prompt: JSON.stringify({ objective: projectRow.objective ?? metadata.goal, acceptanceCriteria: metadata.successCriteria, implementation: delivery.agentSummary, automatedChecks: inspected.checks, previewUrl: inspected.previewUrl, pullRequestUrl: delivery.pullRequestUrl }),
+      });
       artifact = await createArtifact(db, {
         organizationId: input.organizationId,
         executionId: execution.id,
         artifactType: "report",
         title: `Founder review — ${projectRow.projectKey}`,
-        content: `# Founder review\n\n## What was built\n\n${delivery.agentSummary}\n\n## Review links\n\n- Preview: ${inspected.previewUrl}\n- Pull request: ${delivery.pullRequestUrl}\n- Commit: \`${delivery.commitSha}\`\n\n## Automated checks\n\n\`\`\`text\n${inspected.checks}\n\`\`\`\n\n## Decision\n\nApprove to mark this Office project complete, or request changes to send it through another isolated Engineering revision.`,
+        content: `# Founder review\n\n${review.text.trim()}\n\n## What was built\n\n${delivery.agentSummary}\n\n## Review links\n\n- Preview: ${inspected.previewUrl}\n- Pull request: ${delivery.pullRequestUrl}\n- Commit: \`${delivery.commitSha}\`\n\n## Automated checks\n\n\`\`\`text\n${inspected.checks}\n\`\`\`\n\n## Decision\n\nApprove to mark this Office project complete, or request changes to send it through another isolated Engineering revision.`,
         actorAgentId: agent.id,
       });
     } else {
-      artifact = await makeTextArtifact(db, { organizationId: input.organizationId, executionId: execution.id, agentId: agent.id, projectContext: context, goal: metadata.goal, successCriteria: metadata.successCriteria, title: `${getAgentOfficeIdentity(agent).title} — ${projectRow.projectKey}` });
+      artifact = await makeTextArtifact(db, { organizationId: input.organizationId, executionId: execution.id, agentId: agent.id, projectContext: context, goal: metadata.goal, successCriteria: metadata.successCriteria, title: `${getAgentOfficeIdentity(agent).title} — ${projectRow.projectKey}`, modelRole: metadata.stage === "product" ? "planning" : "review" });
     }
   }
 

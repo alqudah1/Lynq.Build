@@ -5,6 +5,7 @@ import { getToken } from "@vercel/connect";
 import { Sandbox } from "@vercel/sandbox";
 import { ToolLoopAgent, isStepCount, tool } from "ai";
 import { z } from "zod";
+import { getOfficeModel } from "./models";
 
 const CONNECTOR_ID = "github/lynq-office-github";
 const DEFAULT_REPOSITORY = "alqudah1/lynq.build";
@@ -119,14 +120,14 @@ export async function executeEngineeringDelivery(input: {
     tags: { purpose: "lynq-office", project: input.projectKey.slice(0, 30) },
   });
 
-  const root = `/vercel/sandbox/${repoName}`;
+  const root = path.posix.join(sandbox.cwd, repoName);
   try {
     await sandbox.runCommand({ cmd: "git", args: ["remote", "set-url", "origin", `https://github.com/${repository}.git`], cwd: root });
     await sandbox.runCommand({ cmd: "git", args: ["checkout", "-b", branch], cwd: root });
 
     const allowedCommands = new Set(["ls", "find", "rg", "sed", "pwd", "node", "npm", "npx", "pnpm", "yarn", "git"]);
     const engineeringAgent = new ToolLoopAgent({
-      model: "openai/gpt-5.4-mini",
+      model: getOfficeModel("engineering"),
       instructions:
         "You are LYNQ's Software Engineering Lead working inside an isolated feature-branch sandbox. Inspect the repository before editing. Implement the objective completely but narrowly, preserve existing authentication and security, and never access production data or secrets. Use write_file for edits and run_command for inspection and validation. You may inspect git status/diff/log, but you must not commit, push, merge, deploy, alter remotes, or create credentials; the Office performs source-control actions after validation. Run the relevant lint, typecheck, tests, and build. End with a concise factual summary of changes, checks, and unresolved risks.",
       stopWhen: isStepCount(36),
@@ -145,7 +146,7 @@ export async function executeEngineeringDelivery(input: {
           inputSchema: z.object({ file: z.string().min(1).max(500), content: z.string().max(200_000) }),
           execute: async ({ file, content }) => {
             const target = safeWorkspacePath(root, file);
-            await sandbox.mkDir(path.posix.dirname(target));
+            await sandbox.runCommand({ cmd: "mkdir", args: ["-p", path.posix.dirname(target)] });
             await sandbox.writeFiles([{ path: target, content }]);
             return { written: file, bytes: Buffer.byteLength(content) };
           },
