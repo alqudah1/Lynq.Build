@@ -5,6 +5,8 @@ import { requireDashboardUser } from "@/lib/dashboard/session-gate";
 import { getOrganizationBySlugForUser } from "@/lib/organizations/organizations";
 import { TenantResourceNotFoundError } from "@/lib/authz/errors";
 import { loadDashboardSummary } from "@/lib/dashboard/summary";
+import { loadOfficeView } from "@/lib/office/view";
+import { listWorkspacesForUser } from "@/lib/workspaces/workspaces";
 import { DashboardHome } from "@/components/dashboard/DashboardHome";
 
 export const dynamic = "force-dynamic";
@@ -31,15 +33,26 @@ export default async function OrganizationDashboardPage({ params }: { params: Pr
     throw err;
   }
 
-  const summary = await loadDashboardSummary(db, { organizationId: organization.id, actorUserId: user.userId });
+  const [summary, office, workspaces] = await Promise.all([
+    loadDashboardSummary(db, { organizationId: organization.id, actorUserId: user.userId }),
+    loadOfficeView(db, { organizationId: organization.id, actorUserId: user.userId }),
+    listWorkspacesForUser(db, user.userId),
+  ]);
+  const primaryWorkspace =
+    workspaces.find((workspace) => workspace.organizationId === organization.id && workspace.slug === "operations") ??
+    workspaces.find((workspace) => workspace.organizationId === organization.id) ??
+    null;
 
   return (
     <DashboardHome
       displayName={user.name ?? user.email}
       organizationName={organization.name}
-      workspaceName={null}
+      workspaceName={primaryWorkspace?.name ?? null}
+      organizationId={organization.id}
       organizationSlug={organizationSlug}
+      workspaceId={primaryWorkspace?.id ?? null}
       summary={summary}
+      office={office}
     />
   );
 }

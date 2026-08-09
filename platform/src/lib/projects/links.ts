@@ -13,6 +13,9 @@ import { resolveProjectAuthContext, requireProjectContentAuthority, requireProje
 import { recordProjectEvent } from "./events";
 import { DuplicateArtifactLinkError, DuplicateApprovalLinkError, ActiveExecutionAlreadyLinkedError } from "./errors";
 import { resolveKnowledgeAnalystAgent, createKnowledgeAnalystTask } from "@/lib/agents/knowledge-analyst";
+import { resolveAgentById } from "@/lib/agents/agents";
+import { createExecution } from "@/lib/agent-runtime/executions";
+import { assignExecution, startExecution } from "@/lib/agent-runtime/lifecycle";
 import type { KnowledgeDomain } from "@/lib/brain/knowledge-items";
 import type { ProjectLinkedEntityType } from "./validation";
 
@@ -163,6 +166,111 @@ export interface LaunchKnowledgeAnalystForTaskInput {
   allowedDomains: KnowledgeDomain[];
   maxResults?: number;
   actorUserId: string;
+}
+
+export interface LaunchAgentForTaskInput {
+  organizationId: string;
+  projectId: string;
+  taskId: string;
+  agentId: string;
+  goal: string;
+  successCriteria: string;
+  failureCriteria: string;
+  allowedDomains: KnowledgeDomain[];
+  priority?: number;
+  actorUserId: string;
+}
+
+/**
+ * Launches any deployed registry agent for a project task through the same
+ * audited Runtime used everywhere else. This is the office orchestrator's
+ * generic counterpart to `launchKnowledgeAnalystForTask`: it creates a real
+ * execution, assigns the selected employee, starts context gathering, and
+ * records the typed project link. It deliberately stops at
+ * `gathering_context`; later progress must come from the agent runtime rather
+ * than the human-facing route impersonating an agent.
+ */
+export async function launchAgentForTask(db: Db, input: LaunchAgentForTaskInput): Promise<ProjectExecutionLink> {
+  const project = await resolveProjectById(db, input.organizationId, input.projectId);
+  const task = await resolveTaskById(db, input.organizationId, input.taskId);
+  if (task.projectId !== project.id) throw new TenantResourceNotFoundError();
+
+  const ctx = await resolveProjectAuthContext(db, { organizationId: input.organizationId, project, actorUserId: input.actorUserId });
+  await requireLaunchAgentExecutionAuthority(db, ctx, project.id);
+
+  const existingActive = await db
+    .select({ id: projectExecutionLinks.id })
+    .from(projectExecutionLinks)
+    .innerJoin(agentExecutions, eq(agentExecutions.id, projectExecutionLinks.executionId))
+    .where(and(eq(projectExecutionLinks.taskId, task.id), inArray(agentExecutions.status, [...NON_TERMINAL_EXECUTION_STATUSES])));
+  if (existingActive.length > 0) throw new ActiveExecutionAlreadyLinkedError();
+
+  const agent = await resolveAgentById(db, input.agentId);
+  if (!agent || agent.organizationId !== input.organizationId || agent.lifecycleStage === "retired") {
+    throw new TenantResourceNotFoundError();
+  }
+
+  const created = await createExecution(db, {
+    organizationId: input.organizationId,
+    workspaceId: project.workspaceId,
+    ownerUserId: input.actorUserId,
+    goal: input.goal,
+    successCriteria: input.successCriteria,
+    failureCriteria: input.failureCriteria,
+    domainsRequested: input.allowedDomains,
+    priority: input.priority,
+    actorUserId: input.actorUserId,
+  });
+  const assigned = await assignExecution(db, {
+    organizationId: input.organizationId,
+    executionId: created.id,
+    assignedAgentId: agent.id,
+    actorUserId: input.actorUserId,
+  });
+  const started = await startExecution(db, {
+    organizationId: input.organizationId,
+    executionId: assigned.id,
+    actorUserId: input.actorUserId,
+  });
+
+  const [row] = await db
+    .insert(projectExecutionLinks)
+    .values({
+      id: randomUUID(),
+      organizationId: input.organizationId,
+      projectId: project.id,
+      taskId: task.id,
+      executionId: started.id,
+      launchedByUserId: input.actorUserId,
+    })
+    .returning();
+
+  await recordAuditEvent(db, {
+    eventType: "project_agent_execution_launched",
+    actorUserId: input.actorUserId,
+    organizationId: input.organizationId,
+    targetType: "project_task",
+    targetId: task.id,
+    metadata: { executionId: started.id, agentId: agent.id, source: "office_directive" },
+  });
+  await recordProjectEvent(db, {
+    organizationId: input.organizationId,
+    projectId: project.id,
+    eventType: "project_agent_execution_launched",
+    actorUserId: input.actorUserId,
+    targetType: "project_task",
+    targetId: task.id,
+    metadata: { executionId: started.id, agentId: agent.id, source: "office_directive" },
+  });
+
+  return {
+    id: row.id,
+    projectId: project.id,
+    taskId: task.id,
+    executionId: started.id,
+    executionStatus: started.status,
+    createdAt: row.createdAt,
+  };
 }
 
 /**

@@ -1,166 +1,194 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { InvitationStatusBanner } from "./InvitationStatusBanner";
-import { Card } from "@/components/ui/Card";
-import { Badge, type BadgeTone } from "@/components/ui/Badge";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { OfficeCommandCenter } from "./office/OfficeCommandCenter";
 import type { DashboardSummary } from "@/lib/dashboard/summary";
-import type { ProjectStatus } from "@/lib/projects/validation";
-import type { WorkflowExecutionStatus } from "@/lib/workflows/validation";
+import type { OfficeAgentProfile, OfficeView } from "@/lib/office/view";
 
-const PROJECT_STATUS_TONE: Record<ProjectStatus, BadgeTone> = {
-  proposed: "neutral",
-  planning: "info",
-  active: "success",
-  paused: "warning",
-  blocked: "danger",
-  completed: "accent",
-  cancelled: "neutral",
-  archived: "neutral",
+const STATUS_LABEL: Record<string, string> = {
+  queued: "Queued",
+  assigned: "Assigned",
+  gathering_context: "Gathering context",
+  planning: "Planning",
+  reasoning: "Thinking",
+  waiting: "Waiting",
+  executing: "Working",
+  delegating: "Delegating",
+  human_approval: "Needs approval",
+  verifying: "Reviewing",
+  paused: "Paused",
+  completed: "Completed",
+  failed: "Needs attention",
+  cancelled: "Cancelled",
+  archived: "Archived",
 };
 
-const EXECUTION_STATUS_TONE: Record<WorkflowExecutionStatus, BadgeTone> = {
-  queued: "neutral",
-  running: "info",
-  waiting: "warning",
-  waiting_for_approval: "warning",
-  paused: "warning",
-  completed: "success",
-  failed: "danger",
-  cancelled: "neutral",
-};
-
-function StatCard({ href, label, value, sublabel }: { href: string; label: string; value: number | string; sublabel?: string }) {
+function EmployeeOffice({ employee, organizationSlug }: { employee: OfficeAgentProfile; organizationSlug: string }) {
   return (
-    <Card as={Link} href={href} interactive className="flex flex-col gap-1.5">
-      <p className="text-xs uppercase tracking-[0.15em] text-subtle">{label}</p>
-      <p className="font-serif text-3xl italic font-light text-foreground">{value}</p>
-      {sublabel ? <p className="text-xs text-subtle">{sublabel}</p> : null}
-    </Card>
+    <Link
+      href={`/app/${organizationSlug}/office/${employee.id}`}
+      className="office-room group"
+      aria-label={`Enter ${employee.title}'s office`}
+    >
+      <div className="office-room__ambient" aria-hidden="true" />
+      <div className="relative z-[1] flex h-full flex-col">
+        <div className="flex items-start justify-between gap-3">
+          <div className="office-monogram" aria-hidden="true">{employee.monogram}</div>
+          <span className={`office-presence office-presence--${employee.presence}`}>{employee.presenceLabel}</span>
+        </div>
+
+        <div className="mt-8">
+          <p className="text-[0.62rem] uppercase tracking-[0.2em] text-subtle">{employee.room}</p>
+          <h3 className="mt-1 font-serif text-[1.65rem] leading-tight font-light text-foreground">{employee.title}</h3>
+          <p className="mt-1 text-xs text-muted">{employee.registryName}</p>
+        </div>
+
+        <div className="mt-auto border-t border-white/[0.08] pt-4">
+          {employee.currentAssignment ? (
+            <>
+              <p className="text-[0.6rem] uppercase tracking-[0.18em] text-subtle">Currently working on</p>
+              <p className="mt-1 line-clamp-2 text-sm leading-5 text-muted">{employee.currentAssignment}</p>
+            </>
+          ) : (
+            <p className="text-sm text-subtle">Available for a new assignment.</p>
+          )}
+          <div className="mt-4 flex items-center justify-between text-xs">
+            <span className="text-subtle">{employee.activeAssignmentCount} active · {employee.completedCount} completed</span>
+            <span className="text-accent-foreground opacity-0 transition-opacity group-hover:opacity-100">Enter office →</span>
+          </div>
+        </div>
+      </div>
+    </Link>
   );
 }
 
-/**
- * The real dashboard home (Step 5A, rebuilt in the UI/UX refinement pass
- * with real Projects/Workflows/CRM/pending-work sections). Every number
- * comes from `loadDashboardSummary`'s own real queries — no fabricated
- * metrics anywhere; an organization with no data yet sees an honest
- * empty state per section, never a placeholder number.
- */
 export function DashboardHome({
   displayName,
   organizationName,
-  workspaceName,
+  organizationId,
   organizationSlug,
+  workspaceId,
   summary,
+  office,
 }: {
   displayName: string;
   organizationName: string;
   workspaceName: string | null;
+  organizationId: string;
   organizationSlug: string;
+  workspaceId: string | null;
   summary: DashboardSummary;
+  office: OfficeView;
 }) {
   const base = `/app/${organizationSlug}`;
+  const firstName = displayName.split(/\s|@/)[0] || displayName;
   const pendingWorkTotal = summary.pendingTaskCount + summary.pendingApprovalCount + summary.pendingFollowUpCount;
+  const readyCount = office.employees.filter((employee) => employee.presence === "ready").length;
 
   return (
-    <div className="flex flex-col gap-8 px-6 py-8 md:px-10">
+    <div className="office-floor flex flex-col gap-10 px-5 py-7 md:px-8 lg:px-10 lg:py-9">
       <Suspense fallback={null}>
         <InvitationStatusBanner />
       </Suspense>
 
-      <header className="flex flex-col gap-2">
-        <p className="text-xs uppercase tracking-[0.3em] text-subtle">
-          {organizationName}
-          {workspaceName ? ` / ${workspaceName}` : ""}
-        </p>
-        <h1 className="font-serif text-3xl italic font-light text-foreground">Welcome, {displayName}</h1>
-        {!workspaceName ? <p className="text-sm text-muted">Select a workspace from the sidebar, or continue here at the organization level.</p> : null}
+      <header className="office-hero">
+        <div>
+          <p className="text-[0.65rem] uppercase tracking-[0.32em] text-accent-foreground">{organizationName} · Founder&apos;s office</p>
+          <h1 className="mt-3 max-w-3xl font-serif text-4xl leading-[0.98] font-light text-foreground md:text-6xl">
+            The company is <em className="text-accent-foreground">online.</em>
+          </h1>
+          <p className="mt-4 max-w-2xl text-sm leading-6 text-muted md:text-base">
+            Welcome back, {firstName}. Walk into any office to review an employee&apos;s work, or brief your Executive Assistant and let the team coordinate the project.
+          </p>
+        </div>
+        <div className="office-hero__pulse" aria-label={`${readyCount} employees ready and ${office.activeAssignmentCount} active assignments`}>
+          <span className="office-hero__pulse-dot" />
+          <div>
+            <strong>{readyCount} ready</strong>
+            <span>{office.activeAssignmentCount} assignments active</span>
+          </div>
+        </div>
       </header>
 
-      <section aria-label="Overview" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard href={`${base}/projects`} label="Active projects" value={summary.activeProjectCount} />
-        <StatCard href={`${base}/workflow-executions`} label="Running workflows" value={summary.runningExecutionCount} />
-        <StatCard
-          href={`${base}/crm/opportunities`}
-          label="Open opportunities"
-          value={summary.openOpportunityCount}
-          sublabel={summary.openOpportunityValue > 0 ? `${summary.openOpportunityValue.toLocaleString()} in pipeline` : undefined}
-        />
-        <StatCard href={`${base}/my-work`} label="Pending work" value={pendingWorkTotal} sublabel={pendingWorkTotal > 0 ? `${summary.pendingTaskCount} tasks · ${summary.pendingApprovalCount} approvals · ${summary.pendingFollowUpCount} follow-ups` : undefined} />
+      <OfficeCommandCenter
+        organizationId={organizationId}
+        organizationSlug={organizationSlug}
+        workspaceId={workspaceId}
+      />
+
+      <section aria-labelledby="office-team-heading">
+        <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-[0.65rem] uppercase tracking-[0.24em] text-subtle">Company floor</p>
+            <h2 id="office-team-heading" className="mt-1 font-serif text-3xl font-light text-foreground">Your leadership team</h2>
+          </div>
+          <Link href={`${base}/founder/agents`} className="text-xs text-subtle transition-colors hover:text-foreground">Workforce report →</Link>
+        </div>
+        <div className="office-grid">
+          {office.employees.map((employee) => (
+            <EmployeeOffice key={employee.id} employee={employee} organizationSlug={organizationSlug} />
+          ))}
+        </div>
       </section>
 
-      <section aria-label="Active projects" className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xs uppercase tracking-[0.1em] text-subtle">Active projects</h2>
-          <Link href={`${base}/projects`} className="lynq-transition text-xs text-subtle hover:text-foreground">
-            View all →
-          </Link>
-        </div>
-        {summary.activeProjects.length === 0 ? (
-          <EmptyState title="No active projects yet." description="Projects you own or are a member of will show up here." />
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {summary.activeProjects.map((project) => (
-              <li key={project.id}>
-                <Card as={Link} href={`${base}/projects/${project.id}`} interactive padding="sm" className="flex items-center justify-between gap-4">
-                  <div className="flex min-w-0 flex-col">
-                    <span className="truncate text-sm text-foreground">{project.name}</span>
-                    <span className="text-xs text-subtle">{project.projectKey}</span>
+      <div className="grid gap-5 xl:grid-cols-[1.25fr_0.75fr]">
+        <section aria-labelledby="office-activity-heading" className="office-panel">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[0.65rem] uppercase tracking-[0.2em] text-subtle">Live company feed</p>
+              <h2 id="office-activity-heading" className="mt-1 font-serif text-2xl font-light text-foreground">What&apos;s happening</h2>
+            </div>
+            <Link href={`${base}/my-work`} className="text-xs text-subtle hover:text-foreground">Open work →</Link>
+          </div>
+          {office.recentActivity.length > 0 ? (
+            <ol className="mt-5 flex flex-col">
+              {office.recentActivity.map((item) => (
+                <li key={item.id} className="office-activity-row">
+                  <span className={`office-activity-dot office-activity-dot--${item.status}`} aria-hidden="true" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                      <p className="text-sm text-foreground">{item.agentName}</p>
+                      <span className="text-[0.62rem] uppercase tracking-[0.12em] text-subtle">{STATUS_LABEL[item.status] ?? item.status}</span>
+                    </div>
+                    <p className="mt-1 truncate text-xs text-muted">{item.title}</p>
                   </div>
-                  <Badge tone={PROJECT_STATUS_TONE[project.status]}>{project.status.replace(/_/g, " ")}</Badge>
-                </Card>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="mt-5 text-sm text-subtle">The office is quiet. Send the first directive above.</p>
+          )}
+        </section>
 
-      <section aria-label="Workflow activity" className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xs uppercase tracking-[0.1em] text-subtle">Workflow activity</h2>
-          <Link href={`${base}/workflow-executions`} className="lynq-transition text-xs text-subtle hover:text-foreground">
-            View all →
-          </Link>
-        </div>
-        {summary.runningExecutions.length === 0 ? (
-          <EmptyState title="No workflows are running right now." description="Start a workflow from its definition page to see progress here." />
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {summary.runningExecutions.map((execution) => (
-              <li key={execution.id}>
-                <Card as={Link} href={`${base}/workflow-executions/${execution.id}`} interactive padding="sm" className="flex items-center justify-between gap-4">
-                  <span className="truncate text-sm text-foreground">Execution {execution.id.slice(0, 8)}</span>
-                  <Badge tone={EXECUTION_STATUS_TONE[execution.status]}>{execution.status.replace(/_/g, " ")}</Badge>
-                </Card>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section aria-label="CRM pipeline summary" className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xs uppercase tracking-[0.1em] text-subtle">Open opportunities</h2>
-          <Link href={`${base}/crm/opportunities`} className="lynq-transition text-xs text-subtle hover:text-foreground">
-            View all →
-          </Link>
-        </div>
-        {summary.openOpportunities.length === 0 ? (
-          <EmptyState title="No open opportunities yet." description="Opportunities created in CRM will show up here." />
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {summary.openOpportunities.map((opportunity) => (
-              <li key={opportunity.id}>
-                <Card as={Link} href={`${base}/crm/opportunities/${opportunity.id}`} interactive padding="sm" className="flex items-center justify-between gap-4">
-                  <span className="truncate text-sm text-foreground">{opportunity.name}</span>
-                  <span className="text-sm text-subtle">{opportunity.amount ? `${Number(opportunity.amount).toLocaleString()} ${opportunity.currency ?? ""}` : "—"}</span>
-                </Card>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+        <aside className="office-panel" aria-labelledby="office-company-heading">
+          <p className="text-[0.65rem] uppercase tracking-[0.2em] text-subtle">Founder&apos;s snapshot</p>
+          <h2 id="office-company-heading" className="mt-1 font-serif text-2xl font-light text-foreground">Company today</h2>
+          <dl className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-md border border-border bg-border">
+            <div className="bg-[#0c0c0c] p-4">
+              <dt className="text-[0.62rem] uppercase tracking-[0.12em] text-subtle">Projects</dt>
+              <dd className="mt-2 font-serif text-3xl font-light text-foreground">{summary.activeProjectCount}</dd>
+            </div>
+            <div className="bg-[#0c0c0c] p-4">
+              <dt className="text-[0.62rem] uppercase tracking-[0.12em] text-subtle">Completed</dt>
+              <dd className="mt-2 font-serif text-3xl font-light text-foreground">{office.completedThisPeriod}</dd>
+            </div>
+            <div className="bg-[#0c0c0c] p-4">
+              <dt className="text-[0.62rem] uppercase tracking-[0.12em] text-subtle">Pipeline</dt>
+              <dd className="mt-2 font-serif text-2xl font-light text-foreground">{summary.openOpportunityCount}</dd>
+            </div>
+            <div className="bg-[#0c0c0c] p-4">
+              <dt className="text-[0.62rem] uppercase tracking-[0.12em] text-subtle">Needs you</dt>
+              <dd className="mt-2 font-serif text-2xl font-light text-foreground">{pendingWorkTotal}</dd>
+            </div>
+          </dl>
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Link href={`${base}/projects`} className="office-mini-link">Projects</Link>
+            <Link href={`${base}/crm`} className="office-mini-link">CRM</Link>
+            <Link href={`${base}/marketing`} className="office-mini-link">Marketing</Link>
+            <Link href={`${base}/founder`} className="office-mini-link">Founder OS</Link>
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }

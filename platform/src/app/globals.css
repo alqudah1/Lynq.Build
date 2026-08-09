@@ -203,3 +203,306 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* -------------------------------------------------------------------------
+ * LYNQ Office — the founder enters a working company, not a generic admin
+ * dashboard. Surfaces stay within the existing glass token system while the
+ * stronger spatial borders, room labels, and ambient light make each agent
+ * read as an office the founder can step into.
+ * ---------------------------------------------------------------------- */
+.office-floor {
+  position: relative;
+  overflow: hidden;
+}
+
+.office-floor::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 32rem;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    radial-gradient(38rem 22rem at 72% 4%, rgba(210, 170, 100, 0.085), transparent 68%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent);
+}
+
+.office-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: clamp(1rem, 3vw, 2.5rem) 0 0;
+}
+
+.office-hero__pulse {
+  display: flex;
+  min-width: 13rem;
+  align-items: center;
+  gap: 0.75rem;
+  border-left: 1px solid var(--lynq-border-strong);
+  padding-left: 1.25rem;
+}
+
+.office-hero__pulse div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.office-hero__pulse strong { font-size: 0.8rem; font-weight: 500; color: var(--lynq-fg); }
+.office-hero__pulse span:not(.office-hero__pulse-dot) { font-size: 0.7rem; color: var(--lynq-fg-subtle); }
+.office-hero__pulse-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: var(--lynq-success);
+  box-shadow: 0 0 0 0.3rem var(--lynq-success-wash), 0 0 1.2rem rgba(111, 191, 139, 0.24);
+}
+
+.office-command {
+  position: relative;
+  display: flex;
+  gap: 1.25rem;
+  overflow: hidden;
+  border: 1px solid rgba(210, 170, 100, 0.25);
+  border-radius: var(--lynq-radius-lg);
+  background:
+    linear-gradient(115deg, rgba(210, 170, 100, 0.075), rgba(255, 255, 255, 0.025) 45%, rgba(255, 255, 255, 0.012)),
+    rgba(10, 10, 10, 0.78);
+  padding: clamp(1.1rem, 2.4vw, 1.75rem);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.06), var(--lynq-shadow-md);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+}
+
+.office-command::after {
+  content: "";
+  position: absolute;
+  inset: -50% auto auto 55%;
+  width: 26rem;
+  height: 18rem;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(210, 170, 100, 0.09), transparent 68%);
+}
+
+.office-command--compact { box-shadow: inset 0 1px rgba(255, 255, 255, 0.05); }
+
+.office-command__assistant {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 3.25rem;
+  height: 3.25rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(210, 170, 100, 0.32);
+  border-radius: 50%;
+  background: rgba(210, 170, 100, 0.08);
+  color: var(--lynq-accent-foreground);
+  font-family: var(--lynq-font-serif), serif;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+}
+
+.office-command__assistant i {
+  position: absolute;
+  right: 0;
+  bottom: 0.1rem;
+  width: 0.65rem;
+  height: 0.65rem;
+  border: 2px solid #0b0b0b;
+  border-radius: 50%;
+  background: var(--lynq-success);
+}
+
+.office-command__input {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  resize: vertical;
+  border: 1px solid var(--lynq-border-strong);
+  border-radius: var(--lynq-radius-md);
+  background: rgba(0, 0, 0, 0.26);
+  padding: 0.9rem 1rem;
+  color: var(--lynq-fg);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  transition: border-color 160ms var(--lynq-ease), background-color 160ms var(--lynq-ease);
+}
+.office-command__input::placeholder { color: var(--lynq-fg-subtle); }
+.office-command__input:hover { border-color: rgba(255, 255, 255, 0.2); }
+.office-command__input:focus { border-color: rgba(210, 170, 100, 0.5); background: rgba(0, 0, 0, 0.34); }
+
+.office-starter,
+.office-mini-link {
+  border: 1px solid var(--lynq-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.025);
+  padding: 0.4rem 0.7rem;
+  color: var(--lynq-fg-subtle);
+  font-size: 0.68rem;
+  transition: color 160ms var(--lynq-ease), border-color 160ms var(--lynq-ease), background 160ms var(--lynq-ease);
+}
+.office-starter:hover,
+.office-mini-link:hover { border-color: var(--lynq-border-strong); background: rgba(255, 255, 255, 0.045); color: var(--lynq-fg); }
+
+.office-dispatch-button {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  min-height: 2.6rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  border: 1px solid rgba(210, 170, 100, 0.42);
+  border-radius: var(--lynq-radius-sm);
+  background: var(--lynq-accent);
+  padding: 0.65rem 1rem;
+  color: #16120c;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: transform 160ms var(--lynq-ease), box-shadow 160ms var(--lynq-ease), opacity 160ms var(--lynq-ease);
+}
+.office-dispatch-button:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(210, 170, 100, 0.16); }
+.office-dispatch-button:disabled { cursor: not-allowed; opacity: 0.42; }
+
+.office-dispatch-result {
+  position: relative;
+  z-index: 1;
+  margin-top: 1rem;
+  border-top: 1px solid var(--lynq-border);
+  padding-top: 1rem;
+}
+
+.office-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16.5rem), 1fr));
+  gap: 1rem;
+}
+
+.office-room {
+  position: relative;
+  min-height: 19rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: var(--lynq-radius-lg);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.018) 54%, rgba(210, 170, 100, 0.025)),
+    rgba(9, 9, 9, 0.7);
+  padding: 1.25rem;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.055), inset 0 -1px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(18px) saturate(135%);
+  -webkit-backdrop-filter: blur(18px) saturate(135%);
+  transition: transform 200ms var(--lynq-ease), border-color 200ms var(--lynq-ease), box-shadow 200ms var(--lynq-ease);
+}
+
+.office-room:hover {
+  transform: translateY(-3px);
+  border-color: rgba(210, 170, 100, 0.28);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.075), 0 20px 44px -24px rgba(0, 0, 0, 0.85);
+}
+
+.office-room__ambient {
+  position: absolute;
+  inset: -6rem -6rem auto auto;
+  width: 14rem;
+  height: 14rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(210, 170, 100, 0.095), transparent 68%);
+  transition: transform 240ms var(--lynq-ease), opacity 240ms var(--lynq-ease);
+}
+.office-room:hover .office-room__ambient { transform: translate(-1rem, 1rem); opacity: 1.4; }
+
+.office-monogram,
+.employee-office-hero__monogram {
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(210, 170, 100, 0.22);
+  background: rgba(210, 170, 100, 0.055);
+  color: var(--lynq-accent-foreground);
+  font-family: var(--lynq-font-serif), serif;
+  letter-spacing: 0.08em;
+}
+.office-monogram { width: 2.8rem; height: 2.8rem; border-radius: 50%; font-size: 0.72rem; }
+
+.office-presence {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--lynq-border);
+  border-radius: 999px;
+  padding: 0.3rem 0.55rem;
+  color: var(--lynq-fg-subtle);
+  font-size: 0.58rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.office-presence::before { content: ""; width: 0.38rem; height: 0.38rem; border-radius: 50%; background: currentColor; }
+.office-presence--working { border-color: rgba(126, 166, 201, 0.25); background: var(--lynq-info-wash); color: var(--lynq-info); }
+.office-presence--ready { border-color: rgba(111, 191, 139, 0.25); background: var(--lynq-success-wash); color: var(--lynq-success); }
+.office-presence--attention { border-color: rgba(210, 162, 76, 0.25); background: var(--lynq-warning-wash); color: var(--lynq-warning); }
+.office-presence--offline { color: var(--lynq-fg-subtle); }
+
+.office-panel {
+  border: 1px solid var(--lynq-border);
+  border-radius: var(--lynq-radius-lg);
+  background: rgba(255, 255, 255, 0.025);
+  padding: clamp(1rem, 2vw, 1.5rem);
+}
+
+.office-activity-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  border-top: 1px solid var(--lynq-border);
+  padding: 0.9rem 0;
+}
+.office-activity-row:first-child { border-top: 0; padding-top: 0; }
+.office-activity-row:last-child { padding-bottom: 0; }
+.office-activity-dot { width: 0.45rem; height: 0.45rem; flex: 0 0 auto; margin-top: 0.35rem; border-radius: 50%; background: var(--lynq-fg-subtle); }
+.office-activity-dot--completed { background: var(--lynq-success); }
+.office-activity-dot--failed { background: var(--lynq-danger); }
+.office-activity-dot--human_approval,
+.office-activity-dot--waiting { background: var(--lynq-warning); }
+.office-activity-dot--executing,
+.office-activity-dot--reasoning,
+.office-activity-dot--planning,
+.office-activity-dot--gathering_context { background: var(--lynq-info); }
+
+.employee-office-hero {
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(1rem, 3vw, 2rem);
+  border-bottom: 1px solid var(--lynq-border);
+  padding: clamp(1rem, 3vw, 2.5rem) 0 2rem;
+}
+.employee-office-hero__monogram {
+  width: clamp(4.5rem, 9vw, 7rem);
+  height: clamp(4.5rem, 9vw, 7rem);
+  flex: 0 0 auto;
+  border-radius: 50%;
+  font-size: clamp(1rem, 2vw, 1.5rem);
+}
+.office-stat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid var(--lynq-border);
+  border-radius: var(--lynq-radius-md);
+  background: rgba(255, 255, 255, 0.025);
+  padding: 1rem 1.2rem;
+}
+.office-stat span { color: var(--lynq-fg-subtle); font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.office-stat strong { color: var(--lynq-fg); font-family: var(--lynq-font-serif), serif; font-size: 1.65rem; font-weight: 300; }
+
+@media (max-width: 767px) {
+  .office-hero { align-items: flex-start; flex-direction: column; }
+  .office-hero__pulse { min-width: 0; border-left: 0; padding-left: 0; }
+  .office-command { flex-direction: column; }
+  .employee-office-hero { flex-wrap: wrap; }
+  .employee-office-hero > .office-presence { margin-left: calc(clamp(4.5rem, 9vw, 7rem) + 1rem); }
+}

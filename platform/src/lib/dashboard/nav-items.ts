@@ -22,7 +22,7 @@ export interface NavItem {
 
 export function getNavItems(organizationSlug: string): NavItem[] {
   return [
-    { label: "Dashboard", href: `/app/${organizationSlug}` },
+    { label: "Office", href: `/app/${organizationSlug}` },
     { label: "Projects", href: `/app/${organizationSlug}/projects` },
     { label: "CRM", href: `/app/${organizationSlug}/crm` },
     { label: "Sales", href: `/app/${organizationSlug}/sales` },
