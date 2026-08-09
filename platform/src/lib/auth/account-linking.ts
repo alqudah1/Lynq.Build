@@ -241,10 +241,6 @@ export async function completeLink(
   currentUserId: string,
   context: LoginContext = { ipAddress: null, userAgent: null }
 ): Promise<LinkProviderOutcome> {
-  if (!identity.emailVerified) {
-    throw new IdentityConflictError(currentUserId);
-  }
-
   const [existingAccount] = await db
     .select({ userId: accounts.userId })
     .from(accounts)
@@ -257,14 +253,25 @@ export async function completeLink(
     throw new IdentityConflictError(existingAccount.userId);
   }
 
-  const normalizedEmail = identity.email.toLowerCase();
-  const [matchedUser] = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(sql`lower(${users.email}) = ${normalizedEmail}`);
+  // A verified provider email is an additional conflict signal, but it is
+  // never required for this explicit, already-authenticated linking path.
+  // Microsoft deliberately has `emailVerified: false` because its Entra ID
+  // token carries no Google-equivalent verification claim; the stable,
+  // cryptographically verified `{tid}.{oid}` provider identity plus the
+  // current LYNQ session is the authorization boundary here. Skipping the
+  // email lookup for Microsoft preserves the rule that its UPN/contact email
+  // is never used as an identity signal while still allowing the explicit
+  // linking flow the route was designed to provide.
+  if (identity.emailVerified) {
+    const normalizedEmail = identity.email.toLowerCase();
+    const [matchedUser] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(sql`lower(${users.email}) = ${normalizedEmail}`);
 
-  if (matchedUser && matchedUser.id !== currentUserId) {
-    throw new IdentityConflictError(matchedUser.id);
+    if (matchedUser && matchedUser.id !== currentUserId) {
+      throw new IdentityConflictError(matchedUser.id);
+    }
   }
 
   const accountId = randomUUID();

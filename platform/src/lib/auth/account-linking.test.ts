@@ -134,14 +134,19 @@ describe("completeLogin", () => {
 });
 
 describe("completeLink", () => {
-  it("rejects an unverified email immediately, without any query or transaction", async () => {
-    const fakeDb = createFakeDb([]);
+  it("links an unverified Microsoft identity through the explicit authenticated flow without using email as an identity signal", async () => {
+    const fakeDb = createFakeDb([[]]);
     const { fakeRawSql, fakeTransaction } = createFakeRawSql();
 
     await expect(
-      completeLink(fakeDb as never, fakeRawSql as never, identity({ emailVerified: false }), "current-user-1")
-    ).rejects.toThrow(IdentityConflictError);
-    expect(fakeTransaction).not.toHaveBeenCalled();
+      completeLink(
+        fakeDb as never,
+        fakeRawSql as never,
+        identity({ provider: "microsoft", emailVerified: false }),
+        "current-user-1"
+      )
+    ).resolves.toEqual({ outcome: "linked" });
+    expect(fakeTransaction).toHaveBeenCalledTimes(1);
   });
 
   it("is idempotent when already linked to the current user, without a transaction", async () => {
