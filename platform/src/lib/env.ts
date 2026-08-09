@@ -21,6 +21,7 @@ const envSchema = z.object({
   // never business-data access. Optional so existing environments/tests
   // that never touch the worker system keep working unmodified.
   WORKER_BOOTSTRAP_SECRET: z.string().min(1).optional(),
+  CRON_SECRET: z.string().min(32).optional(),
   // Module 16 — Communications Core. Symmetric key (32 raw bytes,
   // base64-encoded) used to encrypt integration connection credentials at
   // rest (`integration_credentials.ciphertext`, AES-256-GCM). Optional —
@@ -63,6 +64,7 @@ export function loadEnv(): Env {
     DATABASE_URL: process.env.DATABASE_URL,
     DATABASE_URL_UNPOOLED: process.env.DATABASE_URL_UNPOOLED,
     WORKER_BOOTSTRAP_SECRET: process.env.WORKER_BOOTSTRAP_SECRET,
+    CRON_SECRET: process.env.CRON_SECRET,
     INTEGRATION_CREDENTIAL_ENCRYPTION_KEY: process.env.INTEGRATION_CREDENTIAL_ENCRYPTION_KEY,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     RESEND_WEBHOOK_SECRET: process.env.RESEND_WEBHOOK_SECRET,

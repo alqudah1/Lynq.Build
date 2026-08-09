@@ -5,8 +5,11 @@ import { z } from "zod";
 import type { Agent } from "@/lib/agents/agents";
 import type { KnowledgeDomain } from "@/lib/brain/knowledge-items";
 import { getAgentOfficeIdentity } from "./view";
+import { officeDeliveryStageSchema } from "./task-metadata";
+import { OFFICE_ENGINEERING_AGENT_NAME, OFFICE_PRODUCT_AGENT_NAME, OFFICE_QA_AGENT_NAME } from "./team";
 
 const officePlanSchema = z.object({
+  executionMode: z.enum(["delivery", "advisory"]),
   projectName: z.string().trim().min(1).max(200),
   objective: z.string().trim().min(1).max(2000),
   assistantReply: z.string().trim().min(1).max(1000),
@@ -18,6 +21,7 @@ const officePlanSchema = z.object({
         goal: z.string().trim().min(1).max(2000),
         successCriteria: z.string().trim().min(1).max(2000),
         handoff: z.string().trim().max(500),
+        stage: officeDeliveryStageSchema,
       })
     )
     .min(1)
@@ -85,6 +89,32 @@ export function deriveDirectiveProjectName(instruction: string): string {
 }
 
 function fallbackPlan(instruction: string, agents: Agent[], preferredAgentId?: string | null): OfficeDirectivePlan {
+  const softwareDelivery = !preferredAgentId && /\b(build|create|develop|implement|code|application|app|website|platform|software|mvp|redesign|digital(?:ly)? transform)\b/i.test(instruction);
+  if (softwareDelivery) {
+    const required = [OFFICE_PRODUCT_AGENT_NAME, OFFICE_ENGINEERING_AGENT_NAME, OFFICE_QA_AGENT_NAME]
+      .map((name) => agents.find((agent) => agent.name === name))
+      .filter((agent): agent is Agent => Boolean(agent));
+    if (required.length === 3) {
+      const stages = ["product", "engineering", "qa"] as const;
+      const titles = ["Define the build-ready product brief", "Implement and validate the feature branch", "Verify the pull request and preview"];
+      const handoffs = ["Hand the approved scope and acceptance criteria to Engineering.", "Hand the pull request, checks, and preview evidence to QA.", "Return the verified preview and approval decision to the founder."];
+      return {
+        executionMode: "delivery",
+        projectName: deriveDirectiveProjectName(instruction),
+        objective: instruction,
+        assistantReply: "I opened the project and started the delivery chain. Product will define the scope, Engineering will build it in an isolated branch, and QA will return the preview for your approval.",
+        plannedByAI: false,
+        assignments: required.map((agent, index) => ({
+          agentId: agent.id,
+          title: titles[index],
+          goal: `${getAgentOfficeIdentity(agent).title} will complete the ${stages[index]} stage for this founder directive: ${instruction}`.slice(0, 2000),
+          successCriteria: index === 0 ? "A testable product brief and bounded acceptance criteria exist." : index === 1 ? "A feature-branch pull request exists with relevant validations executed." : "The pull request, automated checks, and Vercel preview are reviewed and returned for founder approval.",
+          handoff: handoffs[index],
+          stage: stages[index],
+        })),
+      };
+    }
+  }
   const selected = chooseFallbackAgents(instruction, agents, preferredAgentId);
   const assignments = selected.map((agent, index) => {
     const identity = getAgentOfficeIdentity(agent);
@@ -94,10 +124,12 @@ function fallbackPlan(instruction: string, agents: Agent[], preferredAgentId?: s
       goal: `${identity.title} will contribute to this founder directive: ${instruction}`.slice(0, 2000),
       successCriteria: `Produce a clear, reviewable ${identity.title.toLowerCase()} deliverable with assumptions, decisions, and next actions documented.`,
       handoff: index === selected.length - 1 ? "Return the completed workstream to the Executive Assistant for founder review." : `Share conclusions with ${getAgentOfficeIdentity(selected[index + 1]).title}.`,
+      stage: "advisory" as const,
     };
   });
 
   return {
+    executionMode: "advisory",
     projectName: deriveDirectiveProjectName(instruction),
     objective: instruction,
     assistantReply: `I opened the project and briefed ${assignments.length} employee${assignments.length === 1 ? "" : "s"}. Their workstreams are ready in the office.`,
@@ -133,7 +165,7 @@ export async function planOfficeDirective(input: {
       model: "openai/gpt-5.6-sol",
       output: Output.object({ name: "OfficeDirectivePlan", schema: officePlanSchema }),
       system:
-        "You are the LYNQ Executive Assistant. Convert a founder directive into a concise, executable company project. Select only agents from the supplied roster and copy their agentId exactly. Give each selected employee one distinct workstream. Include explicit handoffs so employees know who receives their output. Do not claim work is complete, do not invent employees, and do not schedule external actions or spending. Keep the founder-facing reply direct and confident.",
+        "You are the LYNQ Executive Assistant. Convert a founder directive into a concise, executable company project. Select only agents from the supplied roster and copy their agentId exactly. For objectives that require creating or changing software, use executionMode delivery and assign exactly Product Delivery Lead (stage product), Software Engineering Lead (stage engineering), then Quality Assurance Lead (stage qa), in that order. For advice-only work, use executionMode advisory and stage advisory. Include explicit handoffs. Do not claim work is complete, invent employees, schedule spending, merge code, or change production. Keep the founder-facing reply direct and confident.",
       prompt: JSON.stringify({
         founderDirective: input.instruction,
         preferredAgentId: input.preferredAgentId ?? null,
@@ -145,6 +177,10 @@ export async function planOfficeDirective(input: {
     const parsed = officePlanSchema.parse(result.output);
     const assignments = parsed.assignments.filter((assignment) => validIds.has(assignment.agentId));
     if (assignments.length === 0) return fallback;
+    if (parsed.executionMode === "delivery") {
+      const expected = ["product", "engineering", "qa"];
+      if (assignments.length !== 3 || assignments.some((assignment, index) => assignment.stage !== expected[index])) return fallback;
+    }
     if (input.preferredAgentId && !assignments.some((assignment) => assignment.agentId === input.preferredAgentId)) return fallback;
     return { ...parsed, assignments, plannedByAI: true };
   } catch {

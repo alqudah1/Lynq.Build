@@ -19,6 +19,7 @@ interface DirectiveResponse {
   data?: {
     assistantReply: string;
     plannedByAI: boolean;
+    executionMode: "delivery" | "advisory";
     project: { id: string; name: string; projectKey: string; status: string };
     assignments: DispatchAssignment[];
   };
@@ -150,10 +151,12 @@ export function OfficeCommandCenter({
             </div>
             <ul className="mt-4 grid gap-2 md:grid-cols-2">
               {result.assignments.map((assignment) => (
-                <li key={assignment.executionId} className="rounded-sm border border-border bg-black/10 px-3 py-2">
+                <li key={assignment.taskId} className="rounded-sm border border-border bg-black/10 px-3 py-2">
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-xs font-medium text-foreground">{assignment.role}</span>
-                    <span className="text-[0.6rem] uppercase tracking-[0.1em] text-success">Started</span>
+                    <span className={`text-[0.6rem] uppercase tracking-[0.1em] ${assignment.status === "backlog" ? "text-muted" : "text-success"}`}>
+                      {assignment.status === "backlog" ? "Queued" : "Started"}
+                    </span>
                   </div>
                   <p className="mt-1 line-clamp-2 text-xs text-muted">{assignment.title}</p>
                 </li>
@@ -165,4 +168,3 @@ export function OfficeCommandCenter({
     </section>
   );
 }
-

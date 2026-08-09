@@ -5,6 +5,7 @@ import { salesApprovalLinks, marketingApprovalLinks, communicationApprovalLinks 
 import { listPendingApprovalsForApprover, approveRequest, rejectRequest, requestRevision, type AgentApprovalRequest } from "@/lib/agent-runtime/approvals";
 import { recordAuditEvent } from "@/lib/audit";
 import { resolveFounderAuthContext, requireFounderViewAuthority } from "./authz";
+import { enqueueJob } from "@/lib/runtime/queue";
 
 type Db = NeonHttpDatabase<Record<string, unknown>>;
 
@@ -83,6 +84,15 @@ export async function decideFounderApproval(
   } else {
     result = await requestRevision(db, { organizationId: input.organizationId, approvalId: input.approvalId, decisionNote: input.decisionNote, actorUserId: input.actorUserId });
     await recordFounderApprovalDecision(db, { organizationId: input.organizationId, actorUserId: input.actorUserId, approvalId: input.approvalId, decision: "revision_requested" });
+  }
+  if (input.decision !== "reject" || !input.severe) {
+    await enqueueJob(db, {
+      organizationId: input.organizationId,
+      jobType: "execution_resume",
+      executionId: result.executionId,
+      idempotencyKey: `founder-approval-resume:${result.id}`,
+      priority: 100,
+    });
   }
   return result;
 }

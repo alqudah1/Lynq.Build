@@ -16,6 +16,9 @@ import { launchAgentForTask } from "@/lib/projects/links";
 import { getDirectiveDomains, planOfficeDirective } from "@/lib/office/directives";
 import { getAgentOfficeIdentity } from "@/lib/office/view";
 import { pollAndProcess } from "@/lib/runtime/worker";
+import { ensureOfficeDeliveryTeam } from "@/lib/office/team";
+import { formatOfficeTaskDescription } from "@/lib/office/task-metadata";
+import { addDependency } from "@/lib/projects/dependencies";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -52,6 +55,7 @@ export async function POST(request: Request, { params }: RouteParams) {
     const user = await getAuthenticatedUser(db);
     const body = await parseJsonBody(request, bodySchema);
 
+    await ensureOfficeDeliveryTeam(db, { organizationId, humanOwnerUserId: user.userId, actorUserId: user.userId });
     const agents = (await listAgents(db, { organizationId, actorUserId: user.userId })).filter(
       (agent) => agent.lifecycleStage !== "retired"
     );
@@ -92,6 +96,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       handoff: string;
     }> = [];
 
+    const prepared: Array<{ assignment: (typeof uniqueAssignments)[number]; agent: (typeof agents)[number]; task: Awaited<ReturnType<typeof createTask>> }> = [];
     for (const assignment of uniqueAssignments) {
       const agent = agentById.get(assignment.agentId);
       if (!agent) continue;
@@ -100,11 +105,34 @@ export async function POST(request: Request, { params }: RouteParams) {
         organizationId,
         projectId: project.id,
         title: assignment.title,
-        description: `${assignment.goal}\n\nHandoff: ${assignment.handoff}`,
+        description: formatOfficeTaskDescription({
+          version: 1,
+          stage: assignment.stage,
+          agentId: assignment.agentId,
+          goal: assignment.goal,
+          successCriteria: assignment.successCriteria,
+          handoff: assignment.handoff,
+        }),
         priority: "high",
-        taskType: "agent_report",
+        taskType: `office_${assignment.stage}`,
         actorUserId: user.userId,
       });
+      prepared.push({ assignment, agent, task });
+    }
+
+    if (plan.executionMode === "delivery") {
+      for (let index = 1; index < prepared.length; index += 1) {
+        await addDependency(db, {
+          organizationId,
+          blockedTaskId: prepared[index].task.id,
+          blockingTaskId: prepared[index - 1].task.id,
+          actorUserId: user.userId,
+        });
+      }
+    }
+
+    const launchNow = plan.executionMode === "delivery" ? prepared.slice(0, 1) : prepared;
+    for (const { assignment, agent, task } of launchNow) {
       const readyTask = await transitionTaskStatus(db, {
         organizationId,
         taskId: task.id,
@@ -144,6 +172,19 @@ export async function POST(request: Request, { params }: RouteParams) {
       });
     }
 
+    for (const { assignment, agent, task } of prepared.slice(launchNow.length)) {
+      dispatched.push({
+        agentId: agent.id,
+        agentName: agent.name,
+        role: getAgentOfficeIdentity(agent).title,
+        taskId: task.id,
+        executionId: `pending:${task.id}`,
+        status: "backlog",
+        title: assignment.title,
+        handoff: assignment.handoff,
+      });
+    }
+
     const activeProject =
       dispatched.length > 0
         ? await transitionProjectStatus(db, {
@@ -161,7 +202,7 @@ export async function POST(request: Request, { params }: RouteParams) {
         await pollAndProcess(db, rawSql, {
           leaseOwner: `office-directive:${project.id}`,
           jobTypes: ["execution_run"],
-          maxJobs: dispatched.length,
+          maxJobs: launchNow.length,
         });
       });
     }
@@ -170,6 +211,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       {
         assistantReply: plan.assistantReply,
         plannedByAI: plan.plannedByAI,
+        executionMode: plan.executionMode,
         project: {
           id: activeProject.id,
           name: activeProject.name,
