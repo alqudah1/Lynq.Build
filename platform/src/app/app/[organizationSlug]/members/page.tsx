@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { loadEnv } from "@/lib/env";
 import { createDbClient } from "@/db/client";
@@ -8,6 +9,7 @@ import { changeOrganizationRoleAction, removeOrganizationMemberAction } from "@/
 import { TenantResourceNotFoundError } from "@/lib/authz/errors";
 import { Breadcrumbs } from "@/components/dashboard/Breadcrumbs";
 import { OrganizationMemberRow } from "@/components/dashboard/OrganizationMemberRow";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -49,9 +51,20 @@ export default async function OrganizationMembersPage({ params }: { params: Prom
   return (
     <div className="flex flex-col gap-8 px-6 py-8 md:px-10">
       <Breadcrumbs items={[{ label: "LYNQ", href: "/app" }, { label: organizationName, href: `/app/${organizationSlug}` }, { label: "Members" }]} />
-      <header>
-        <h1 className="font-serif text-3xl italic font-light text-foreground">Members</h1>
-      </header>
+      <PageHeader
+        title="Members"
+        description="People who already have access to the LYNQ Office. Invite a teammate first, then manage their role here."
+        actions={
+          canManage ? (
+            <Link
+              href={`/app/${organizationSlug}/invitations`}
+              className="lynq-transition flex min-h-11 items-center rounded-sm bg-foreground px-5 text-xs font-medium uppercase tracking-[0.08em] text-background hover:opacity-90"
+            >
+              Invite teammate
+            </Link>
+          ) : null
+        }
+      />
 
       {members.length === 0 ? (
         <p className="text-sm text-muted">No members yet.</p>

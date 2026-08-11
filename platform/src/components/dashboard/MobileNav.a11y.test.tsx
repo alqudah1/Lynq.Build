@@ -61,12 +61,13 @@ describe("MobileNav", () => {
     expect(screen.getByRole("button", { name: /sign out/i })).toBeInTheDocument();
   });
 
-  it("marks unavailable modules as 'Coming later' with no link — never a broken route", () => {
+  it("only shows usable navigation routes", () => {
     render(<MobileNav {...BASE_PROPS} />);
     fireEvent.click(screen.getByRole("button", { name: /open navigation menu/i }));
 
-    expect(screen.getAllByText("Coming later").length).toBeGreaterThan(0);
-    expect(screen.queryByRole("link", { name: "Brain" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Coming later")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "My Work" })).toHaveAttribute("href", "/app/acme/my-work");
+    expect(screen.getByRole("link", { name: "Workflow Executions" })).toHaveAttribute("href", "/app/acme/workflow-executions");
   });
 
   it("closes on Escape and returns focus to the trigger button", async () => {

@@ -35,7 +35,11 @@ export function ProjectRow({
   return (
     <Tr>
       <Td>
-        <Link href={`/app/${organizationSlug}/projects/${project.id}`} className="lynq-transition text-foreground hover:text-accent-foreground">
+        <Link
+          href={`/app/${organizationSlug}/projects/${project.id}`}
+          aria-label={`Open project: ${project.name}`}
+          className="lynq-transition inline-flex min-h-11 items-center font-medium text-foreground underline decoration-border-strong underline-offset-4 hover:text-accent-foreground hover:decoration-current"
+        >
           {project.name}
         </Link>
       </Td>

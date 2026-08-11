@@ -57,7 +57,7 @@ export default async function ProjectsPage({ params }: { params: Promise<{ organ
       <Breadcrumbs items={[{ label: "LYNQ", href: "/app" }, { label: organizationName, href: `/app/${organizationSlug}` }, { label: "Projects" }]} />
       <PageHeader
         title="Projects"
-        description="Every real project this organization is running."
+        description="Open a project to see its tasks, employee handoffs, workflow activity, and approvals."
         actions={
           <Link href={`/app/${organizationSlug}/projects/new`} className="lynq-transition flex min-h-11 items-center rounded-sm bg-foreground px-5 text-xs font-medium uppercase tracking-[0.08em] text-background hover:opacity-90">
             New project
