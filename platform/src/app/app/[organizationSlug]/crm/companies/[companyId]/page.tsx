@@ -10,7 +10,8 @@ import { listContactsByIds } from "@/lib/crm/contacts";
 import { listActivitiesForUser } from "@/lib/crm/activities";
 import { searchOpportunities } from "@/lib/crm/search";
 import { listProjectLinksForCrmEntity } from "@/lib/crm/project-links";
-import { archiveCompanyAction, createActivityAction } from "@/lib/dashboard/actions/crm";
+import { listProjectsForUser } from "@/lib/projects/projects";
+import { archiveCompanyAction, createActivityAction, createProjectLinkAction } from "@/lib/dashboard/actions/crm";
 import { TenantResourceNotFoundError } from "@/lib/authz/errors";
 import { Breadcrumbs } from "@/components/dashboard/Breadcrumbs";
 import { ConfirmDialog } from "@/components/dashboard/ConfirmDialog";
@@ -46,17 +47,20 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
     throw err;
   }
 
-  const [relationships, activities, opportunities, projectLinks] = await Promise.all([
+  const [relationships, activities, opportunities, projectLinks, projects] = await Promise.all([
     listRelationshipsForCompany(db, { organizationId, companyId, actorUserId: user.userId }),
     listActivitiesForUser(db, { organizationId, actorUserId: user.userId, companyId, limit: 50 }),
     searchOpportunities(db, { organizationId, actorUserId: user.userId, companyId }),
     listProjectLinksForCrmEntity(db, { organizationId, crmEntityType: "company", crmEntityId: companyId, actorUserId: user.userId }),
+    listProjectsForUser(db, { organizationId, actorUserId: user.userId }),
   ]);
 
   const contactIds = relationships.map((r) => r.contactId);
   const contacts = await listContactsByIds(db, organizationId, contactIds);
   const contactNameById = new Map(contacts.map((c) => [c.id, c.displayName]));
   const redirectPath = `/app/${organizationSlug}/crm/companies/${companyId}`;
+  const linkedProjectIds = new Set(projectLinks.map((link) => link.projectId));
+  const availableProjects = projects.filter((project) => !linkedProjectIds.has(project.id));
 
   return (
     <div className="flex flex-col gap-8 px-6 py-8 md:px-10">
@@ -136,6 +140,25 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
             ))}
           </ul>
         )}
+        {availableProjects.length > 0 ? (
+          <form action={createProjectLinkAction.bind(null, organizationSlug)} className="flex flex-wrap items-end gap-3 rounded-md border border-border p-4">
+            <input type="hidden" name="crmEntityType" value="company" />
+            <input type="hidden" name="crmEntityId" value={companyId} />
+            <input type="hidden" name="redirectPath" value={redirectPath} />
+            <label className="flex min-w-56 flex-1 flex-col gap-1 text-xs uppercase tracking-[0.08em] text-subtle">
+              Link project
+              <select name="projectId" defaultValue="" className="min-h-11 rounded-sm border border-border bg-background px-3 text-sm normal-case tracking-normal text-foreground">
+                <option value="" disabled>Select a project</option>
+                {availableProjects.map((project) => (
+                  <option key={project.id} value={project.id}>{project.name}</option>
+                ))}
+              </select>
+            </label>
+            <button type="submit" className="lynq-transition min-h-11 rounded-sm border border-border px-4 text-xs font-medium uppercase tracking-[0.08em] text-foreground hover:border-border-strong">
+              Link project
+            </button>
+          </form>
+        ) : null}
       </section>
 
       <section className="flex flex-col gap-3">
