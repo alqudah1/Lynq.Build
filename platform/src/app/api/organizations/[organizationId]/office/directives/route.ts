@@ -120,7 +120,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       prepared.push({ assignment, agent, task });
     }
 
-    if (plan.executionMode === "delivery") {
+    if (plan.sequentialHandoffs) {
       for (let index = 1; index < prepared.length; index += 1) {
         await addDependency(db, {
           organizationId,
@@ -131,7 +131,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       }
     }
 
-    const launchNow = plan.executionMode === "delivery" ? prepared.slice(0, 1) : prepared;
+    const launchNow = plan.sequentialHandoffs ? prepared.slice(0, 1) : prepared;
     for (const { assignment, agent, task } of launchNow) {
       const readyTask = await transitionTaskStatus(db, {
         organizationId,

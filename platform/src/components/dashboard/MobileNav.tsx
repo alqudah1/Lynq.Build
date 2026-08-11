@@ -61,7 +61,7 @@ export function MobileNav({ user, organizations, currentOrganizationSlug, worksp
       </button>
 
       {open ? (
-        <div id="mobile-dashboard-nav" role="dialog" aria-modal="true" aria-label="Navigation" className="lynq-glass-strong fixed inset-0 z-50 flex flex-col motion-safe:animate-[lynq-fade-in_150ms_var(--lynq-ease)]">
+        <div id="mobile-dashboard-nav" role="dialog" aria-modal="true" aria-label="Navigation" className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[#0b0b0c] text-foreground shadow-2xl motion-safe:animate-[lynq-fade-in_150ms_var(--lynq-ease)]">
           <div className="flex items-center justify-between border-b border-border p-4">
             <span className="text-xs uppercase tracking-[0.2em] text-subtle">Menu</span>
             <button

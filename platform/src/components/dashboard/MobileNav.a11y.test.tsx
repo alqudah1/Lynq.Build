@@ -42,6 +42,8 @@ describe("MobileNav", () => {
 
     const dialog = screen.getByRole("dialog", { name: /navigation/i });
     expect(dialog).toHaveAttribute("aria-modal", "true");
+    expect(dialog.className).toMatch(/bg-\[#0b0b0c\]/);
+    expect(dialog.className).not.toMatch(/lynq-glass-strong/);
 
     await waitFor(() => expect(screen.getByRole("button", { name: /close navigation menu/i })).toHaveFocus());
 
