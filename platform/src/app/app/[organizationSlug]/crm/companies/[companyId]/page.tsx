@@ -62,6 +62,11 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
   const linkedProjectIds = new Set(projectLinks.map((link) => link.projectId));
   const availableProjects = projects.filter((project) => !linkedProjectIds.has(project.id));
 
+  async function linkProject(formData: FormData): Promise<void> {
+    "use server";
+    await createProjectLinkAction(organizationSlug, formData);
+  }
+
   return (
     <div className="flex flex-col gap-8 px-6 py-8 md:px-10">
       <Breadcrumbs
@@ -141,7 +146,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
           </ul>
         )}
         {availableProjects.length > 0 ? (
-          <form action={createProjectLinkAction.bind(null, organizationSlug)} className="flex flex-wrap items-end gap-3 rounded-md border border-border p-4">
+          <form action={linkProject} className="flex flex-wrap items-end gap-3 rounded-md border border-border p-4">
             <input type="hidden" name="crmEntityType" value="company" />
             <input type="hidden" name="crmEntityId" value={companyId} />
             <input type="hidden" name="redirectPath" value={redirectPath} />
