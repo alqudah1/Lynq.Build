@@ -52,10 +52,13 @@ export default async function MyWorkPage({ params }: { params: Promise<{ organiz
   return (
     <div className="flex flex-col gap-8 px-6 py-8 md:px-10">
       <Breadcrumbs items={[{ label: "LYNQ", href: "/app" }, { label: organizationName, href: `/app/${organizationSlug}` }, { label: "My work" }]} />
-      <PageHeader title="My work" description="Your project tasks, workflow tasks, and approvals in one place." actions={<AddMyWorkForm projects={projects.map((project) => ({ id: project.id, name: project.name }))} action={createPersonalTaskAction.bind(null, organizationSlug)} />} />
+      <PageHeader title="My work" description="Start here each day. Add a task, complete work assigned by a workflow, or approve a decision." actions={<AddMyWorkForm projects={projects.map((project) => ({ id: project.id, name: project.name }))} action={createPersonalTaskAction.bind(null, organizationSlug)} />} />
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-xs uppercase tracking-[0.1em] text-subtle">Project work</h2>
+        <div>
+          <h2 className="text-sm font-medium text-foreground">Your tasks</h2>
+          <p className="mt-1 text-sm text-subtle">Work you added or that is assigned to you inside a project.</p>
+        </div>
         {personalTasks.length > 0 ? (
           <ul className="flex flex-col gap-2">
             {personalTasks.map((task) => (
@@ -64,17 +67,20 @@ export default async function MyWorkPage({ params }: { params: Promise<{ organiz
                   <p className="text-sm text-foreground">{task.title}</p>
                   <p className="mt-1 text-xs text-subtle">{task.projectName} · {task.status.replace(/_/g, " ")} · {task.priority} priority</p>
                 </div>
-                <a href={`/app/${organizationSlug}/projects/${task.projectId}?tab=tasks`} className="text-xs text-subtle hover:text-foreground">Open project →</a>
+                <a href={`/app/${organizationSlug}/projects/${task.projectId}?tab=tasks`} className="text-xs font-medium text-foreground underline underline-offset-4 hover:text-accent-foreground">View task →</a>
               </li>
             ))}
           </ul>
         ) : (
-          <EmptyState title="No project tasks assigned to you yet. Use + Add work to create one for yourself." />
+          <EmptyState title="No tasks yet." description="Use + Add work to create your first task and attach it to a project." />
         )}
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-xs uppercase tracking-[0.1em] text-subtle">Assigned tasks</h2>
+        <div>
+          <h2 className="text-sm font-medium text-foreground">Workflow tasks</h2>
+          <p className="mt-1 text-sm text-subtle">Tasks the Office sends to you as part of a structured workflow.</p>
+        </div>
         {tasks.length > 0 ? (
           <ul className="flex flex-col gap-3">
             {tasks.map((task) => (
@@ -82,12 +88,15 @@ export default async function MyWorkPage({ params }: { params: Promise<{ organiz
             ))}
           </ul>
         ) : (
-          <EmptyState title="No workflow tasks assigned to you right now." />
+          <EmptyState title="No workflow tasks right now." description="When a workflow needs your decision or action, it will appear here." />
         )}
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-xs uppercase tracking-[0.1em] text-subtle">Pending approvals</h2>
+        <div>
+          <h2 className="text-sm font-medium text-foreground">Waiting for your approval</h2>
+          <p className="mt-1 text-sm text-subtle">Messages, content, or operational decisions that need your sign-off.</p>
+        </div>
         {approvals.length > 0 ? (
           <ul className="flex flex-col gap-3">
             {approvals.map((approval) => (
@@ -100,7 +109,7 @@ export default async function MyWorkPage({ params }: { params: Promise<{ organiz
             ))}
           </ul>
         ) : (
-          <EmptyState title="No pending approvals right now." />
+          <EmptyState title="Nothing needs approval right now." description="The Office will never send or publish work without showing it here first." />
         )}
       </section>
     </div>
