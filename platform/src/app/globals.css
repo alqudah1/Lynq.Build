@@ -14,13 +14,13 @@
  */
 :root {
   --lynq-bg: #080808;
-  --lynq-bg-elevated: #0e0e0e;
-  --lynq-bg-elevated-2: #131313;
+  --lynq-bg-elevated: #101010;
+  --lynq-bg-elevated-2: #171717;
   --lynq-fg: #ffffff;
   --lynq-fg-muted: rgba(255, 255, 255, 0.6);
   --lynq-fg-subtle: rgba(255, 255, 255, 0.38);
-  --lynq-border: rgba(255, 255, 255, 0.08);
-  --lynq-border-strong: rgba(255, 255, 255, 0.14);
+  --lynq-border: rgba(255, 255, 255, 0.11);
+  --lynq-border-strong: rgba(255, 255, 255, 0.18);
   --lynq-accent: #f4f7fb;
   --lynq-accent-foreground: #ffffff;
   --lynq-accent-wash: rgba(255, 255, 255, 0.08);
@@ -35,8 +35,8 @@
    * the pass's own "use glassmorphism selectively... maintain contrast
    * and readability" instruction.
    */
-  --lynq-glass-bg: rgba(255, 255, 255, 0.04);
-  --lynq-glass-bg-strong: rgba(255, 255, 255, 0.06);
+  --lynq-glass-bg: rgba(255, 255, 255, 0.055);
+  --lynq-glass-bg-strong: rgba(255, 255, 255, 0.085);
   --lynq-glass-border: rgba(255, 255, 255, 0.1);
   --lynq-glass-blur: 16px;
 
@@ -108,6 +108,23 @@ body {
   background: var(--lynq-bg);
   color: var(--lynq-fg);
   font-family: var(--lynq-font-sans), sans-serif;
+  line-height: 1.5;
+}
+
+/* Product UI should feel quietly editorial, not like a fashion landing page.
+ * Preserve the existing component classes while making headings and data more
+ * legible and consistent across the Office, CRM, and Projects. */
+.lynq-app-shell .font-serif {
+  font-family: var(--lynq-font-sans), sans-serif;
+  font-style: normal;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+}
+
+.lynq-app-shell h1,
+.lynq-app-shell h2,
+.lynq-app-shell h3 {
+  text-wrap: balance;
 }
 
 /*
