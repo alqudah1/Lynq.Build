@@ -73,7 +73,7 @@ export function OrganizationSwitcher({
         </span>
       </button>
       {open ? (
-        <ul id={menuId} role="menu" aria-label="Organizations" className="lynq-glass-strong absolute z-20 mt-1.5 w-full rounded-md p-1 shadow-md motion-safe:animate-[lynq-fade-in_120ms_var(--lynq-ease)]">
+        <ul id={menuId} role="menu" aria-label="Organizations" className="lynq-menu-surface absolute z-20 mt-1.5 w-full rounded-md p-1 shadow-md motion-safe:animate-[lynq-fade-in_120ms_var(--lynq-ease)]">
           {organizations.map((org) => (
             <li key={org.slug} role="none">
               <Link

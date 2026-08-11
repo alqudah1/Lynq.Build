@@ -82,7 +82,7 @@ export function WorkspaceSwitcher({
         </span>
       </button>
       {open ? (
-        <ul id={menuId} role="menu" aria-label="Workspaces" className="lynq-glass-strong absolute z-20 mt-1.5 w-full rounded-md p-1 shadow-md motion-safe:animate-[lynq-fade-in_120ms_var(--lynq-ease)]">
+        <ul id={menuId} role="menu" aria-label="Workspaces" className="lynq-menu-surface absolute z-20 mt-1.5 w-full rounded-md p-1 shadow-md motion-safe:animate-[lynq-fade-in_120ms_var(--lynq-ease)]">
           {workspaces.map((ws) => (
             <li key={ws.slug} role="none">
               <Link

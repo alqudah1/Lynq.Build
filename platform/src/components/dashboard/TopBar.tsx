@@ -90,7 +90,7 @@ function UserMenu({ user }: { user: { name: string | null; email: string } }) {
         <span className="sr-only">Account menu for {user.name ?? user.email}</span>
       </button>
       {open ? (
-        <div id={menuId} role="menu" aria-label="Account" className="lynq-glass-strong absolute right-0 z-20 mt-2 w-56 rounded-md p-3 shadow-md motion-safe:animate-[lynq-fade-in_120ms_var(--lynq-ease)]">
+        <div id={menuId} role="menu" aria-label="Account" className="lynq-menu-surface absolute right-0 z-20 mt-2 w-56 rounded-md p-3 shadow-md motion-safe:animate-[lynq-fade-in_120ms_var(--lynq-ease)]">
           <div className="border-b border-border px-1 pb-3">
             <p className="truncate text-sm text-foreground">{user.name ?? user.email}</p>
             <p className="truncate text-xs text-subtle">{user.email}</p>

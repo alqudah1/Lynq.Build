@@ -153,6 +153,13 @@ body {
   border: 1px solid var(--lynq-border);
 }
 
+/* Menus sit above dense navigation, so they need a dependable opaque surface.
+ * This keeps their choices readable instead of letting the sidebar show through. */
+.lynq-menu-surface {
+  background: var(--lynq-bg-elevated-2);
+  border: 1px solid var(--lynq-border-strong);
+}
+
 @supports not (backdrop-filter: blur(1px)) {
   .lynq-glass, .lynq-glass-strong {
     background: var(--lynq-bg-elevated);
