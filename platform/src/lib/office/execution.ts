@@ -57,12 +57,23 @@ function parseEngineeringResult(content: string | null): EngineeringDeliveryResu
 }
 
 async function projectContext(db: Db, organizationId: string, projectId: string): Promise<string> {
-  const rows = await db
-    .select({ title: agentArtifacts.title, content: agentArtifacts.content, artifactType: agentArtifacts.artifactType })
-    .from(projectArtifactLinks)
-    .innerJoin(agentArtifacts, eq(agentArtifacts.id, projectArtifactLinks.artifactId))
-    .where(and(eq(projectArtifactLinks.organizationId, organizationId), eq(projectArtifactLinks.projectId, projectId)));
-  return rows.map((row) => `# ${row.title} (${row.artifactType})\n\n${row.content ?? ""}`).join("\n\n---\n\n").slice(0, 60_000);
+  const [projectRows, artifactRows] = await Promise.all([
+    db
+      .select({ name: projects.name, description: projects.description, objective: projects.objective })
+      .from(projects)
+      .where(and(eq(projects.organizationId, organizationId), eq(projects.id, projectId))),
+    db
+      .select({ title: agentArtifacts.title, content: agentArtifacts.content, artifactType: agentArtifacts.artifactType })
+      .from(projectArtifactLinks)
+      .innerJoin(agentArtifacts, eq(agentArtifacts.id, projectArtifactLinks.artifactId))
+      .where(and(eq(projectArtifactLinks.organizationId, organizationId), eq(projectArtifactLinks.projectId, projectId))),
+  ]);
+  const project = projectRows[0];
+  const projectBrief = project
+    ? `# ${project.name} — project brief\n\n${project.description ?? "No project description recorded."}${project.objective ? `\n\n## Objective\n\n${project.objective}` : ""}`
+    : "";
+  const artifacts = artifactRows.map((row) => `# ${row.title} (${row.artifactType})\n\n${row.content ?? ""}`).join("\n\n---\n\n");
+  return [projectBrief, artifacts].filter(Boolean).join("\n\n---\n\n").slice(0, 60_000);
 }
 
 async function latestEngineeringResult(db: Db, organizationId: string, projectId: string, createdAfter?: Date | null): Promise<EngineeringDeliveryResult | null> {
