@@ -14,7 +14,7 @@ import { createProject, updateProject, transitionProjectStatus } from "@/lib/pro
 import { addProjectMember, changeProjectMemberRole, removeProjectMember } from "@/lib/projects/members";
 import { createPhase, updatePhase } from "@/lib/projects/phases";
 import { createMilestone, updateMilestone } from "@/lib/projects/milestones";
-import { createTask, transitionTaskStatus, assignTask, unassignTask } from "@/lib/projects/tasks";
+import { createTask, createTaskAssignedToCreator, transitionTaskStatus, assignTask, unassignTask } from "@/lib/projects/tasks";
 import { addDependency, removeDependency } from "@/lib/projects/dependencies";
 import { linkArtifactToEntity, linkApprovalToEntity, launchKnowledgeAnalystForTask } from "@/lib/projects/links";
 import {
@@ -313,6 +313,41 @@ export async function createTaskAction(organizationSlug: string, projectId: stri
   }
 
   revalidatePath(`/app/${organizationSlug}/projects/${projectId}`);
+  return { ok: true };
+}
+
+const createPersonalTaskSchema = createTaskSchema.extend({ projectId: uuidParam });
+
+/** Adds a task to the caller's own My Work list. The task remains a real
+ * project task, with a project owner and audit trail, instead of becoming an
+ * untracked private note. */
+export async function createPersonalTaskAction(organizationSlug: string, formData: FormData): Promise<ActionResult> {
+  const { db, user, organization } = await context(organizationSlug, `/app/${organizationSlug}/my-work`);
+  const parsed = createPersonalTaskSchema.safeParse({
+    projectId: formData.get("projectId"),
+    title: formData.get("title"),
+    description: formData.get("description") || undefined,
+    priority: formData.get("priority") || undefined,
+    dueDate: formData.get("dueDate") || undefined,
+  });
+  if (!parsed.success) return toActionResult(parsed.error);
+
+  try {
+    const task = await createTaskAssignedToCreator(db, {
+      organizationId: organization.id,
+      projectId: parsed.data.projectId,
+      title: parsed.data.title,
+      description: parsed.data.description ?? null,
+      priority: parsed.data.priority,
+      dueDate: parsed.data.dueDate ? new Date(parsed.data.dueDate) : null,
+      actorUserId: user.userId,
+    });
+    revalidatePath(`/app/${organizationSlug}/projects/${task.projectId}`);
+  } catch (err) {
+    return toActionResult(err);
+  }
+
+  revalidatePath(`/app/${organizationSlug}/my-work`);
   return { ok: true };
 }
 

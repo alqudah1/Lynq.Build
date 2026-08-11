@@ -128,6 +128,23 @@ export async function createTask(db: Db, input: CreateTaskInput): Promise<Projec
   return toTask(row);
 }
 
+/** Creates a task and assigns it to its creator in one trusted operation.
+ * Used by the personal "My work" capture flow: a contributor may record
+ * work for themselves, but cannot assign work to other people. */
+export async function createTaskAssignedToCreator(db: Db, input: CreateTaskInput): Promise<ProjectTask> {
+  const task = await createTask(db, input);
+  const [assignment] = await db
+    .insert(projectTaskAssignments)
+    .values({ id: randomUUID(), organizationId: input.organizationId, taskId: task.id, userId: input.actorUserId, assignedByUserId: input.actorUserId })
+    .returning();
+
+  await recordAuditEvent(db, { eventType: "project_task_assigned", actorUserId: input.actorUserId, organizationId: input.organizationId, targetType: "project_task", targetId: task.id, metadata: { assigneeUserId: input.actorUserId, assignedOnCreate: true } });
+  await recordProjectEvent(db, { organizationId: input.organizationId, projectId: task.projectId, eventType: "project_task_assigned", actorUserId: input.actorUserId, targetType: "project_task", targetId: task.id, metadata: { assigneeUserId: input.actorUserId, assignedOnCreate: true } });
+
+  void assignment;
+  return task;
+}
+
 export interface ListTasksInput {
   organizationId: string;
   projectId: string;
