@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import type { ProjectTask } from "@/lib/projects/tasks";
 import type { ActionResult } from "@/lib/dashboard/actions/types";
 import { InlineStatusForm } from "./InlineStatusForm";
@@ -50,6 +50,7 @@ function UnassignButton({ userId, unassignAction }: { userId: string; unassignAc
 }
 
 export function TaskItem({ task, assignees, members, otherTasks, blockedByTitles, executionCount, canManageTaskBoard = false, transitionAction, assignAction, unassignAction, addDependencyAction, launchAgentAction }: TaskItemProps) {
+  const [isOpen, setIsOpen] = useState(false);
   const [assignState, assignFormAction] = useActionState(async (_prev: ActionResult, formData: FormData) => assignAction(formData), initialState);
   const [depState, depFormAction] = useActionState(async (_prev: ActionResult, formData: FormData) => addDependencyAction(formData), initialState);
   const [agentState, agentFormAction] = useActionState(async (_prev: ActionResult, formData: FormData) => launchAgentAction(formData), initialState);
@@ -57,20 +58,29 @@ export function TaskItem({ task, assignees, members, otherTasks, blockedByTitles
   const assignableMembers = members.filter((m) => !assignees.some((a) => a.userId === m.userId));
 
   return (
-    <Card as="li" padding="md">
+    <Card as="li" padding="md" className={isOpen ? "border-border-strong" : ""}>
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+        <button
+          type="button"
+          onClick={() => setIsOpen((open) => !open)}
+          aria-expanded={isOpen}
+          aria-controls={`task-detail-${task.id}`}
+          className="min-w-0 flex-1 text-left"
+        >
           <p className="text-sm font-medium text-foreground">{task.title}</p>
           <p className="text-xs uppercase tracking-[0.08em] text-subtle">
             {task.priority} priority{blockedByTitles.length > 0 ? ` · blocked by ${blockedByTitles.join(", ")}` : ""}
             {executionCount > 0 ? ` · ${executionCount} agent run${executionCount === 1 ? "" : "s"}` : ""}
           </p>
           {task.dueDate ? <p className="mt-1 text-xs text-muted">Due {task.dueDate.toLocaleDateString()}</p> : null}
-        </div>
-        <InlineStatusForm label={`Status for ${task.title}`} name="toStatus" currentValue={task.status} options={TASK_STATUS_OPTIONS} expectedRevision={task.revision} action={transitionAction} />
+          <p className="mt-2 text-xs font-medium text-foreground underline underline-offset-4">{isOpen ? "Close task" : "Open task"}</p>
+        </button>
+        {isOpen ? <InlineStatusForm label={`Status for ${task.title}`} name="toStatus" currentValue={task.status} options={TASK_STATUS_OPTIONS} expectedRevision={task.revision} action={transitionAction} /> : null}
       </div>
 
-      {task.description ? <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-muted">{task.description}</p> : null}
+      {isOpen ? <div id={`task-detail-${task.id}`} className="mt-5 border-t border-border pt-5">
+        <h3 className="text-xs font-medium uppercase tracking-[0.1em] text-subtle">Task brief</h3>
+        {task.description ? <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-muted">{task.description}</p> : <p className="mt-3 text-sm text-muted">No written brief has been added yet.</p>}
 
       {assignees.length > 0 ? (
         <ul className="mt-3 flex flex-wrap gap-2">
@@ -130,6 +140,7 @@ export function TaskItem({ task, assignees, members, otherTasks, blockedByTitles
           </form>
         </div>
       </details> : null}
+      </div> : null}
     </Card>
   );
 }
