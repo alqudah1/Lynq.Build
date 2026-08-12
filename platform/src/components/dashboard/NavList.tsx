@@ -12,7 +12,11 @@ import { NAV_ICON_BY_LABEL } from "./icons";
  * own dashboard home (`/app/{org}/{workspaceSlug}`), as opposed to one of
  * these sibling admin pages.
  */
-const NON_DASHBOARD_SEGMENTS = ["settings", "members", "workspaces", "invitations"];
+const NON_DASHBOARD_SEGMENTS = [
+  "settings", "members", "workspaces", "invitations", "projects", "my-work",
+  "workflows", "workflow-executions", "crm", "sales", "marketing", "communications",
+  "integrations", "analytics", "founder",
+];
 
 export function isItemActive(href: string, pathname: string, dashboardHref: string): boolean {
   if (href !== dashboardHref) {
@@ -40,10 +44,20 @@ export function isItemActive(href: string, pathname: string, dashboardHref: stri
  */
 export function NavList({ items, dashboardHref, onNavigate, collapsed = false }: { items: NavItem[]; dashboardHref: string; onNavigate?: () => void; collapsed?: boolean }) {
   const pathname = usePathname();
+  const groups = items.reduce<Array<{ section: NavItem["section"]; items: NavItem[] }>>((all, item) => {
+    const group = all.find((candidate) => candidate.section === item.section);
+    if (group) group.items.push(item);
+    else all.push({ section: item.section, items: [item] });
+    return all;
+  }, []);
 
   return (
-    <ul className="flex flex-col gap-0.5">
-      {items.map((item) => {
+    <div className="flex flex-col gap-5">
+      {groups.map(({ section, items: sectionItems }) => (
+        <section key={section} aria-label={section}>
+          {!collapsed ? <p className="mb-2 px-3 text-[0.65rem] font-medium uppercase tracking-[0.18em] text-subtle">{section}</p> : null}
+          <ul className="flex flex-col gap-0.5">
+      {sectionItems.map((item) => {
         const Icon = NAV_ICON_BY_LABEL[item.label];
         return item.href ? (
           <li key={item.label}>
@@ -69,6 +83,9 @@ export function NavList({ items, dashboardHref, onNavigate, collapsed = false }:
           </li>
         );
       })}
-    </ul>
+          </ul>
+        </section>
+      ))}
+    </div>
   );
 }

@@ -9,18 +9,14 @@ import type { NavItem } from "@/lib/dashboard/nav-items";
 /**
  * Desktop-only top bar (UI/UX refinement pass) — contextual page title
  * (derived from the active nav item, matching `NavList`'s own active-item
- * logic exactly rather than duplicating it), a visual-only search
- * affordance, and a compact user menu. Deliberately does **not** include a
+ * logic exactly rather than duplicating it) and a compact user menu.
+ * Deliberately does **not** include a
  * global "primary create action": every list page already has its own
  * correctly-scoped create control (new project, new contact, new
  * pipeline, ...); a second, generically-routed create button here would
  * either duplicate that or be non-functional, and the pass's own
  * instruction is explicit — "do not add nonfunctional controls."
  *
- * The search input is real but intentionally `disabled` — it renders the
- * affordance the design asked for without pretending a search backend
- * exists (none does yet); a disabled control reads honestly as "not yet
- * wired up" rather than silently doing nothing on submit.
  */
 export function TopBar({ navItems, dashboardHref, user }: { navItems: NavItem[]; dashboardHref: string; user: { name: string | null; email: string } }) {
   const pathname = usePathname();
@@ -31,25 +27,7 @@ export function TopBar({ navItems, dashboardHref, user }: { navItems: NavItem[];
     <header className="lynq-glass hidden items-center justify-between gap-6 border-b border-glass-border px-8 py-4 md:flex">
       <h1 className="text-sm font-medium tracking-[0.02em] text-foreground">{title}</h1>
 
-      <div className="flex flex-1 items-center justify-end gap-4">
-        <div className="relative w-full max-w-xs">
-          <span aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-subtle">
-            ⌕
-          </span>
-          <input
-            type="search"
-            disabled
-            aria-label="Search (coming soon)"
-            placeholder="Search…"
-            className="lynq-transition h-9 w-full rounded-sm border border-border bg-elevated py-1.5 pl-9 pr-3 text-sm text-foreground placeholder:text-subtle disabled:cursor-not-allowed disabled:opacity-60"
-          />
-          <kbd aria-hidden="true" className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded-sm border border-border px-1.5 py-0.5 text-[0.6rem] text-subtle">
-            ⌘K
-          </kbd>
-        </div>
-
-        <UserMenu user={user} />
-      </div>
+      <UserMenu user={user} />
     </header>
   );
 }

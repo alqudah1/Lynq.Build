@@ -38,8 +38,9 @@ export default async function OrganizationLayout({
   const user = await requireDashboardUser(db, `/app/${organizationSlug}`);
 
   let organization;
+  let membership;
   try {
-    ({ organization } = await getOrganizationBySlugForUser(db, organizationSlug, user.userId));
+    ({ organization, membership } = await getOrganizationBySlugForUser(db, organizationSlug, user.userId));
   } catch (err) {
     if (err instanceof TenantResourceNotFoundError) {
       notFound();
@@ -53,7 +54,8 @@ export default async function OrganizationLayout({
   ]);
   const workspaces = allWorkspaces.filter((ws) => ws.organizationId === organization.id);
 
-  const navItems = getNavItems(organizationSlug);
+  const isLeadership = membership.role === "owner" || membership.role === "admin";
+  const navItems = getNavItems(organizationSlug, membership.role);
   const dashboardHref = `/app/${organizationSlug}`;
   const organizationItems = toOrganizationSwitcherItems(organizations);
   const workspaceItems = toWorkspaceSwitcherItems(workspaces);
@@ -72,6 +74,7 @@ export default async function OrganizationLayout({
         workspaces={workspaceItems}
         navItems={navItems}
         dashboardHref={dashboardHref}
+        isLeadership={isLeadership}
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="lynq-glass flex items-center justify-between border-b border-glass-border p-4 md:hidden">
@@ -83,6 +86,7 @@ export default async function OrganizationLayout({
             workspaces={workspaceItems}
             navItems={navItems}
             dashboardHref={dashboardHref}
+            isLeadership={isLeadership}
           />
         </div>
         <TopBar navItems={navItems} dashboardHref={dashboardHref} user={displayUser} />

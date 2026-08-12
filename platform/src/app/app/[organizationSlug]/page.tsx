@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { loadEnv } from "@/lib/env";
 import { createDbClient } from "@/db/client";
 import { requireDashboardUser } from "@/lib/dashboard/session-gate";
@@ -24,13 +24,20 @@ export default async function OrganizationDashboardPage({ params }: { params: Pr
   const user = await requireDashboardUser(db, `/app/${organizationSlug}`);
 
   let organization;
+  let membership;
   try {
-    ({ organization } = await getOrganizationBySlugForUser(db, organizationSlug, user.userId));
+    ({ organization, membership } = await getOrganizationBySlugForUser(db, organizationSlug, user.userId));
   } catch (err) {
     if (err instanceof TenantResourceNotFoundError) {
       notFound();
     }
     throw err;
+  }
+
+  // Team members should enter a clear task-first page, rather than a
+  // founder's command centre full of tools they do not need.
+  if (membership.role === "member" || membership.role === "viewer") {
+    redirect(`/app/${organizationSlug}/my-work`);
   }
 
   const [summary, officeResult, workspaces] = await Promise.all([

@@ -16,6 +16,7 @@ export interface SidebarProps {
   workspaces: WorkspaceSwitcherItem[];
   navItems: NavItem[];
   dashboardHref: string;
+  isLeadership?: boolean;
 }
 
 /**
@@ -29,7 +30,7 @@ export interface SidebarProps {
  * workspace switchers and account block stay reachable via the "Expand"
  * toggle, never hidden without a way back.
  */
-export function Sidebar({ user, organizations, currentOrganizationSlug, workspaces, navItems, dashboardHref }: SidebarProps) {
+export function Sidebar({ user, organizations, currentOrganizationSlug, workspaces, navItems, dashboardHref, isLeadership = true }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -65,14 +66,14 @@ export function Sidebar({ user, organizations, currentOrganizationSlug, workspac
         >
           <span aria-hidden="true">»</span>
         </button>
-      ) : (
+      ) : organizations.length > 1 ? (
         <div className="flex flex-col gap-2">
           <span className="px-3 text-[0.65rem] uppercase tracking-[0.2em] text-subtle">Organization</span>
           <OrganizationSwitcher organizations={organizations} currentSlug={currentOrganizationSlug} />
         </div>
-      )}
+      ) : null}
 
-      {!collapsed && currentOrganizationSlug ? (
+      {!collapsed && currentOrganizationSlug && isLeadership && workspaces.length > 1 ? (
         <div className="flex flex-col gap-2">
           <span className="px-3 text-[0.65rem] uppercase tracking-[0.2em] text-subtle">Workspace</span>
           <WorkspaceSwitcher organizationSlug={currentOrganizationSlug} workspaces={workspaces} />

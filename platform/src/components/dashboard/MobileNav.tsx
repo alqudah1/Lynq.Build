@@ -15,7 +15,7 @@ import type { SidebarProps } from "./Sidebar";
  * trigger button; opening moves focus to the drawer's close button; body
  * scroll is locked while open.
  */
-export function MobileNav({ user, organizations, currentOrganizationSlug, workspaces, navItems, dashboardHref }: SidebarProps) {
+export function MobileNav({ user, organizations, currentOrganizationSlug, workspaces, navItems, dashboardHref, isLeadership = true }: SidebarProps) {
   const [open, setOpen] = useState(false);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -75,11 +75,11 @@ export function MobileNav({ user, organizations, currentOrganizationSlug, worksp
             </button>
           </div>
           <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-4">
-            <div className="flex flex-col gap-2">
+            {organizations.length > 1 ? <div className="flex flex-col gap-2">
               <span className="px-3 text-[0.65rem] uppercase tracking-[0.2em] text-subtle">Organization</span>
               <OrganizationSwitcher organizations={organizations} currentSlug={currentOrganizationSlug} />
-            </div>
-            {currentOrganizationSlug ? (
+            </div> : null}
+            {currentOrganizationSlug && isLeadership && workspaces.length > 1 ? (
               <div className="flex flex-col gap-2">
                 <span className="px-3 text-[0.65rem] uppercase tracking-[0.2em] text-subtle">Workspace</span>
                 <WorkspaceSwitcher organizationSlug={currentOrganizationSlug} workspaces={workspaces} />

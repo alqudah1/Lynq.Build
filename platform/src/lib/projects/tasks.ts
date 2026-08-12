@@ -268,6 +268,10 @@ export async function transitionTaskStatus(db: Db, input: TransitionTaskInput): 
   const isAssignee = await isTaskAssignee(db, task.id, input.actorUserId);
   await requireTaskUpdateAuthority(db, ctx, project.id, isAssignee);
 
+  // Choosing the already-selected status should be harmless. This avoids a
+  // confusing "ready to ready" error when someone clicks a status control.
+  if (input.toStatus === task.status) return task;
+
   const legalTargets = TASK_TRANSITIONS[task.status] ?? [];
   if (!legalTargets.includes(input.toStatus)) {
     throw new InvalidTaskTransitionError(task.status, input.toStatus);

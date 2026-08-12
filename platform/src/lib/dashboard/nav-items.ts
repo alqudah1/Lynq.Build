@@ -10,24 +10,41 @@ export interface NavItem {
   label: string;
   href?: string;
   comingLater?: boolean;
+  section: "Start" | "Work" | "Growth" | "Company" | "Administration";
 }
 
-export function getNavItems(organizationSlug: string): NavItem[] {
+type OrganizationRole = "owner" | "admin" | "member" | "viewer";
+
+/**
+ * The founder gets the full operating system. Team members get a deliberately
+ * smaller, task-first navigation so they never have to guess where to start
+ * or sift through founder-only tools.
+ */
+export function getNavItems(organizationSlug: string, role: OrganizationRole = "owner"): NavItem[] {
+  const base = `/app/${organizationSlug}`;
+
+  if (role === "member" || role === "viewer") {
+    return [
+      { label: "My Work", href: `${base}/my-work`, section: "Start" },
+      { label: "Projects", href: `${base}/projects`, section: "Work" },
+    ];
+  }
+
   return [
-    { label: "Office", href: `/app/${organizationSlug}` },
-    { label: "Projects", href: `/app/${organizationSlug}/projects` },
-    { label: "My Work", href: `/app/${organizationSlug}/my-work` },
-    { label: "Workflows", href: `/app/${organizationSlug}/workflows` },
-    { label: "Workflow Executions", href: `/app/${organizationSlug}/workflow-executions` },
-    { label: "CRM", href: `/app/${organizationSlug}/crm` },
-    { label: "Sales", href: `/app/${organizationSlug}/sales` },
-    { label: "Marketing", href: `/app/${organizationSlug}/marketing` },
-    { label: "Communications", href: `/app/${organizationSlug}/communications` },
-    { label: "Integrations", href: `/app/${organizationSlug}/integrations` },
-    { label: "Analytics", href: `/app/${organizationSlug}/analytics` },
-    { label: "Founder", href: `/app/${organizationSlug}/founder` },
-    { label: "Members", href: `/app/${organizationSlug}/members` },
-    { label: "Invitations", href: `/app/${organizationSlug}/invitations` },
-    { label: "Settings", href: `/app/${organizationSlug}/settings` },
+    { label: "Office", href: base, section: "Start" },
+    { label: "My Work", href: `${base}/my-work`, section: "Start" },
+    { label: "Projects", href: `${base}/projects`, section: "Work" },
+    { label: "Workflows", href: `${base}/workflows`, section: "Work" },
+    { label: "Workflow Executions", href: `${base}/workflow-executions`, section: "Work" },
+    { label: "Marketing", href: `${base}/marketing`, section: "Growth" },
+    { label: "CRM", href: `${base}/crm`, section: "Growth" },
+    { label: "Sales", href: `${base}/sales`, section: "Growth" },
+    { label: "Communications", href: `${base}/communications`, section: "Growth" },
+    { label: "Analytics", href: `${base}/analytics`, section: "Growth" },
+    { label: "Founder", href: `${base}/founder`, section: "Company" },
+    { label: "Integrations", href: `${base}/integrations`, section: "Administration" },
+    { label: "Members", href: `${base}/members`, section: "Administration" },
+    { label: "Invitations", href: `${base}/invitations`, section: "Administration" },
+    { label: "Settings", href: `${base}/settings`, section: "Administration" },
   ];
 }
