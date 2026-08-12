@@ -57,7 +57,7 @@ async function loadProjectDetailData(
   projectId: string,
   actorUserId: string
 ) {
-  const { organization } = await getOrganizationBySlugForUser(db, organizationSlug, actorUserId);
+  const { organization, membership } = await getOrganizationBySlugForUser(db, organizationSlug, actorUserId);
   const project = await getProjectForUser(db, { organizationId: organization.id, projectId, actorUserId });
 
   const [progress, phases, milestones, tasks, projectMembers, organizationMembers, events, artifactLinks, approvalLinks, executionLinks] = await Promise.all([
@@ -94,6 +94,12 @@ async function loadProjectDetailData(
   const actorNameById = new Map(actors.map((a) => [a.id, a.name ?? a.email]));
 
   const legalTargets = getLegalProjectTransitions(project.status);
+  const actorProjectRole = projectMembers.find((member) => member.userId === actorUserId)?.role ?? null;
+  const canManageTaskBoard =
+    membership.role === "owner" ||
+    membership.role === "admin" ||
+    actorProjectRole === "project_owner" ||
+    actorProjectRole === "project_manager";
 
   return {
     organizationName: organization.name,
@@ -116,6 +122,7 @@ async function loadProjectDetailData(
     taskTitleById,
     actorNameById,
     legalTargets,
+    canManageTaskBoard,
   };
 }
 
@@ -150,6 +157,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     taskTitleById,
     actorNameById,
     legalTargets,
+    canManageTaskBoard,
   } = data;
 
   const overviewContent = (
@@ -174,14 +182,14 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         ) : (
           <EmptyState title="No phases yet." />
         )}
-        <CreatePhaseForm action={createPhaseAction.bind(null, organizationSlug, projectId)} />
+        {canManageTaskBoard ? <CreatePhaseForm action={createPhaseAction.bind(null, organizationSlug, projectId)} /> : null}
       </section>
     </div>
   );
 
   const tasksContent = (
     <div className="flex flex-col gap-6">
-      <CreateTaskForm action={createTaskAction.bind(null, organizationSlug, projectId)} phases={phases} milestones={milestones} />
+      {canManageTaskBoard ? <CreateTaskForm action={createTaskAction.bind(null, organizationSlug, projectId)} phases={phases} milestones={milestones} /> : null}
       {tasksWithDetails.length === 0 ? (
         <EmptyState title="No tasks yet." />
       ) : (
@@ -195,6 +203,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
               otherTasks={tasks.filter((t) => t.id !== task.id).map((t) => ({ id: t.id, title: t.title }))}
               blockedByTitles={dependencies.blockedBy.map((d) => taskTitleById.get(d.blockingTaskId) ?? "another task")}
               executionCount={executionCount}
+              canManageTaskBoard={canManageTaskBoard}
               transitionAction={transitionTaskAction.bind(null, organizationSlug, projectId, task.id)}
               assignAction={assignTaskAction.bind(null, organizationSlug, projectId, task.id)}
               unassignAction={async (userId: string) => {
@@ -212,13 +221,13 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
   const milestonesContent = (
     <div className="flex flex-col gap-6">
-      <CreateMilestoneForm action={createMilestoneAction.bind(null, organizationSlug, projectId)} />
+      {canManageTaskBoard ? <CreateMilestoneForm action={createMilestoneAction.bind(null, organizationSlug, projectId)} /> : null}
       {milestonesWithProgress.length === 0 ? (
         <EmptyState title="No milestones yet." />
       ) : (
         <ul className="flex flex-col gap-2">
           {milestonesWithProgress.map(({ milestone, progress: milestoneProgress }) => (
-            <MilestoneItem key={milestone.id} milestone={milestone} progress={milestoneProgress} action={updateMilestoneStatusAction.bind(null, organizationSlug, projectId, milestone.id)} />
+              <MilestoneItem key={milestone.id} milestone={milestone} progress={milestoneProgress} action={updateMilestoneStatusAction.bind(null, organizationSlug, projectId, milestone.id)} />
           ))}
         </ul>
       )}
@@ -250,25 +259,30 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       <PageHeader
         eyebrow={project.projectKey}
         title={project.name}
-        actions={
+        actions={canManageTaskBoard ? (
           <Link
             href={`/app/${organizationSlug}/projects/${projectId}/settings`}
             className="lynq-transition flex min-h-11 items-center rounded-sm border border-border px-5 text-xs font-medium uppercase tracking-[0.08em] text-foreground hover:border-border-strong"
           >
             Settings
           </Link>
-        }
+        ) : undefined}
       />
 
       <ProjectTabs
-        tabs={[
-          { id: "overview", label: "Overview", content: overviewContent },
-          { id: "tasks", label: "Tasks", content: tasksContent },
-          { id: "milestones", label: "Milestones", content: milestonesContent },
-          { id: "activity", label: "Activity", content: activityContent },
-          { id: "artifacts", label: "Artifacts", content: artifactsContent },
-          { id: "agents", label: "Agents", content: agentsContent },
-        ]}
+        tabs={
+          canManageTaskBoard
+            ? [
+                { id: "overview", label: "Overview", content: overviewContent },
+                { id: "tasks", label: "Tasks", content: tasksContent },
+                { id: "milestones", label: "Milestones", content: milestonesContent },
+                { id: "activity", label: "Activity", content: activityContent },
+                { id: "artifacts", label: "Artifacts", content: artifactsContent },
+                { id: "agents", label: "Agents", content: agentsContent },
+              ]
+            : [{ id: "tasks", label: "My assigned work", content: tasksContent }]
+        }
+        initialTabId={canManageTaskBoard ? "overview" : "tasks"}
       />
     </div>
   );

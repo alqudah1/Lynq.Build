@@ -1,6 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { and, eq, desc, isNull } from "drizzle-orm";
+import { and, eq, desc, isNull, inArray } from "drizzle-orm";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { projectTasks, projectTaskAssignments, users } from "@/db/schema";
 import { requireOrganizationMembership, requireTenantScopedResource } from "@/lib/authz/helpers";
@@ -73,6 +73,18 @@ export async function resolveTaskById(db: Db, organizationId: string, taskId: st
 async function isTaskAssignee(db: Db, taskId: string, userId: string): Promise<boolean> {
   const [row] = await db.select({ id: projectTaskAssignments.id }).from(projectTaskAssignments).where(and(eq(projectTaskAssignments.taskId, taskId), eq(projectTaskAssignments.userId, userId)));
   return Boolean(row);
+}
+
+/** A contributor's work queue must not expose the founder's operating backlog.
+ * Owners, admins and task-board managers retain the complete project plan. */
+function canReadEveryTask(ctx: Awaited<ReturnType<typeof resolveProjectAuthContext>>): boolean {
+  return (
+    ctx.orgRole === "owner" ||
+    ctx.orgRole === "admin" ||
+    ctx.workspaceRole === "manager" ||
+    ctx.projectRole === "project_owner" ||
+    ctx.projectRole === "project_manager"
+  );
 }
 
 export interface CreateTaskInput {
@@ -161,6 +173,15 @@ export async function listTasks(db: Db, input: ListTasksInput): Promise<ProjectT
   await requireProjectViewAuthority(db, ctx, project.id);
 
   const conditions = [eq(projectTasks.projectId, project.id)];
+  if (!canReadEveryTask(ctx)) {
+    const assigned = await db
+      .select({ taskId: projectTaskAssignments.taskId })
+      .from(projectTaskAssignments)
+      .where(eq(projectTaskAssignments.userId, input.actorUserId));
+    const assignedTaskIds = assigned.map((row) => row.taskId);
+    if (assignedTaskIds.length === 0) return [];
+    conditions.push(inArray(projectTasks.id, assignedTaskIds));
+  }
   if (input.status) conditions.push(eq(projectTasks.status, input.status));
   if (input.phaseId) conditions.push(eq(projectTasks.phaseId, input.phaseId));
   if (input.milestoneId) conditions.push(eq(projectTasks.milestoneId, input.milestoneId));
@@ -175,6 +196,9 @@ export async function getTaskForUser(db: Db, input: { organizationId: string; ta
   const project = await resolveProjectById(db, input.organizationId, task.projectId);
   const ctx = await resolveProjectAuthContext(db, { organizationId: input.organizationId, project, actorUserId: input.actorUserId });
   await requireProjectViewAuthority(db, ctx, project.id);
+  if (!canReadEveryTask(ctx) && !(await isTaskAssignee(db, task.id, input.actorUserId))) {
+    throw new TenantResourceNotFoundError();
+  }
   return task;
 }
 

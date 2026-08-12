@@ -30,6 +30,7 @@ export interface TaskItemProps {
   otherTasks: { id: string; title: string }[];
   blockedByTitles: string[];
   executionCount: number;
+  canManageTaskBoard?: boolean;
   transitionAction: (formData: FormData) => Promise<ActionResult>;
   assignAction: (formData: FormData) => Promise<ActionResult>;
   unassignAction: (userId: string) => Promise<ActionResult>;
@@ -48,7 +49,7 @@ function UnassignButton({ userId, unassignAction }: { userId: string; unassignAc
   );
 }
 
-export function TaskItem({ task, assignees, members, otherTasks, blockedByTitles, executionCount, transitionAction, assignAction, unassignAction, addDependencyAction, launchAgentAction }: TaskItemProps) {
+export function TaskItem({ task, assignees, members, otherTasks, blockedByTitles, executionCount, canManageTaskBoard = false, transitionAction, assignAction, unassignAction, addDependencyAction, launchAgentAction }: TaskItemProps) {
   const [assignState, assignFormAction] = useActionState(async (_prev: ActionResult, formData: FormData) => assignAction(formData), initialState);
   const [depState, depFormAction] = useActionState(async (_prev: ActionResult, formData: FormData) => addDependencyAction(formData), initialState);
   const [agentState, agentFormAction] = useActionState(async (_prev: ActionResult, formData: FormData) => launchAgentAction(formData), initialState);
@@ -76,13 +77,13 @@ export function TaskItem({ task, assignees, members, otherTasks, blockedByTitles
           {assignees.map((a) => (
             <li key={a.userId} className="flex items-center gap-1 rounded-sm border border-border bg-elevated px-2 py-1 text-xs text-foreground">
               {a.name ?? a.email}
-              <UnassignButton userId={a.userId} unassignAction={unassignAction} />
+              {canManageTaskBoard ? <UnassignButton userId={a.userId} unassignAction={unassignAction} /> : null}
             </li>
           ))}
         </ul>
       ) : null}
 
-      <details className="mt-3">
+      {canManageTaskBoard ? <details className="mt-3">
         <summary className="cursor-pointer text-xs uppercase tracking-[0.08em] text-subtle">More actions</summary>
         <div className="mt-3 flex flex-col gap-4">
           {assignableMembers.length > 0 ? (
@@ -128,7 +129,7 @@ export function TaskItem({ task, assignees, members, otherTasks, blockedByTitles
             {!agentState.ok ? <StatusMessage tone="error" message={agentState.message} /> : null}
           </form>
         </div>
-      </details>
+      </details> : null}
     </Card>
   );
 }
