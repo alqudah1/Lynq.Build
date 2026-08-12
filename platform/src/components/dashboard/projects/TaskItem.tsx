@@ -88,7 +88,8 @@ export function TaskItem({ task, assignees, members, otherTasks, blockedByTitles
           {assignableMembers.length > 0 ? (
             <form action={assignFormAction} className="flex flex-wrap items-end gap-2">
               <SelectField label="Assign to" name="userId" options={assignableMembers.map((m) => ({ value: m.userId, label: m.name ?? m.email }))} />
-              <SubmitButton>Assign</SubmitButton>
+              <SubmitButton>Assign & notify</SubmitButton>
+              {assignState.ok && assignState.message ? <StatusMessage tone="success" message={assignState.message} /> : null}
               {!assignState.ok ? <StatusMessage tone="error" message={assignState.message} /> : null}
             </form>
           ) : null}

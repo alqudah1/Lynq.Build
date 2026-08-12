@@ -3,7 +3,7 @@ import { loadEnv } from "@/lib/env";
 import { createDbClient } from "@/db/client";
 import { requireDashboardUser } from "@/lib/dashboard/session-gate";
 import { getOrganizationBySlugForUser } from "@/lib/organizations/organizations";
-import { TenantResourceNotFoundError } from "@/lib/authz/errors";
+import { InsufficientRoleError, TenantResourceNotFoundError } from "@/lib/authz/errors";
 import { loadDashboardSummary } from "@/lib/dashboard/summary";
 import { loadOfficeView } from "@/lib/office/view";
 import { listWorkspacesForUser } from "@/lib/workspaces/workspaces";
@@ -40,13 +40,19 @@ export default async function OrganizationDashboardPage({ params }: { params: Pr
      * member must still be able to enter the Office and reach their projects
      * and work, even if that optional founder view is unavailable to them.
      */
-    loadOfficeView(db, { organizationId: organization.id, actorUserId: user.userId }).catch(() => ({
-      employees: [],
-      recentActivity: [],
-      activeAssignmentCount: 0,
-      completedThisPeriod: 0,
-      assistantAgentId: null,
-    })),
+    loadOfficeView(db, { organizationId: organization.id, actorUserId: user.userId }).catch((err) => {
+      // The leadership-floor report is optional for a normal member. Do not
+      // swallow infrastructure or data errors: only the expected capability
+      // boundary gets this member-safe fallback.
+      if (!(err instanceof InsufficientRoleError)) throw err;
+      return {
+        employees: [],
+        recentActivity: [],
+        activeAssignmentCount: 0,
+        completedThisPeriod: 0,
+        assistantAgentId: null,
+      };
+    }),
     listWorkspacesForUser(db, user.userId),
   ]);
   const primaryWorkspace =

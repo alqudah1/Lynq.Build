@@ -93,12 +93,12 @@ export function DashboardHome({
 
       <header className="office-hero">
         <div>
-          <p className="text-[0.65rem] uppercase tracking-[0.32em] text-accent-foreground">{organizationName} · Founder&apos;s office</p>
+          <p className="text-[0.65rem] uppercase tracking-[0.32em] text-accent-foreground">{organizationName} · LYNQ Office</p>
           <h1 className="mt-3 max-w-3xl font-serif text-4xl leading-[0.98] font-light text-foreground md:text-6xl">
             The company is <em className="text-accent-foreground">online.</em>
           </h1>
           <p className="mt-4 max-w-2xl text-sm leading-6 text-muted md:text-base">
-            Welcome back, {firstName}. Walk into any office to review an employee&apos;s work, or brief your Executive Assistant and let the team coordinate the project.
+            Welcome back, {firstName}. Start with your assigned work or open a project. Leaders can also brief the Executive Assistant to coordinate company work.
           </p>
         </div>
         <div className="office-hero__pulse" aria-label={`${readyCount} employees ready and ${office.activeAssignmentCount} active assignments`}>
@@ -109,6 +109,28 @@ export function DashboardHome({
           </div>
         </div>
       </header>
+
+      <section aria-labelledby="office-start-heading" className="grid gap-3 md:grid-cols-3">
+        <div className="office-panel md:col-span-2">
+          <p className="text-[0.65rem] uppercase tracking-[0.2em] text-subtle">Start here</p>
+          <h2 id="office-start-heading" className="mt-1 font-serif text-2xl font-light text-foreground">Find what you need</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">Your tasks live in My Work. Project briefs, tasks, and progress live in Projects. Use the Office home when you want a leader to coordinate a new piece of work.</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link href={`${base}/my-work`} className="office-mini-link">Open My Work</Link>
+            <Link href={`${base}/projects`} className="office-mini-link">Open Projects</Link>
+            <Link href={`${base}/workflows`} className="office-mini-link">View workflows</Link>
+          </div>
+        </div>
+        <aside className="office-panel">
+          <p className="text-[0.65rem] uppercase tracking-[0.2em] text-subtle">New here?</p>
+          <h2 className="mt-1 font-serif text-xl font-light text-foreground">Work in three steps</h2>
+          <ol className="mt-3 space-y-2 text-sm leading-5 text-muted">
+            <li><span className="mr-2 text-accent-foreground">1.</span>Open My Work.</li>
+            <li><span className="mr-2 text-accent-foreground">2.</span>Open the related project.</li>
+            <li><span className="mr-2 text-accent-foreground">3.</span>Update progress or ask for help.</li>
+          </ol>
+        </aside>
+      </section>
 
       <OfficeCommandCenter
         organizationId={organizationId}

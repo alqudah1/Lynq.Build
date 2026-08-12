@@ -8,5 +8,5 @@
  * data is refreshed via `revalidatePath`, not by trusting client state.
  */
 export type ActionResult =
-  | { ok: true }
+  | { ok: true; message?: string }
   | { ok: false; code: string; message: string; fieldErrors?: Record<string, string[]> };

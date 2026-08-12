@@ -381,13 +381,24 @@ export async function assignTaskAction(organizationSlug: string, projectId: stri
   if (!parsed.success) return toActionResult(parsed.error);
 
   try {
-    await assignTask(db, { organizationId: organization.id, taskId, targetUserId: parsed.data.userId, actorUserId: user.userId });
+    const assignment = await assignTask(db, { organizationId: organization.id, taskId, targetUserId: parsed.data.userId, actorUserId: user.userId });
+    const { resolveTaskById } = await import("@/lib/projects/tasks");
+    const { notifyTaskAssigned } = await import("@/lib/email/task-notifier");
+    const task = await resolveTaskById(db, organization.id, taskId);
+    const notification = await notifyTaskAssigned(db, {
+      organizationSlug,
+      task,
+      assigneeUserId: assignment.userId,
+      assignerUserId: user.userId,
+    });
+
+    revalidatePath(`/app/${organizationSlug}/projects/${projectId}`);
+    if (notification === "sent") return { ok: true, message: "Task assigned and email notification sent." };
+    if (notification === "not_configured") return { ok: true, message: "Task assigned. Email notifications are not connected yet." };
+    return { ok: true, message: "Task assigned. The email notification could not be delivered." };
   } catch (err) {
     return toActionResult(err);
   }
-
-  revalidatePath(`/app/${organizationSlug}/projects/${projectId}`);
-  return { ok: true };
 }
 
 export async function unassignTaskAction(organizationSlug: string, projectId: string, taskId: string, targetUserId: string): Promise<ActionResult> {
