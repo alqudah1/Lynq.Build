@@ -82,7 +82,11 @@ export async function createOrRefreshInvitationAction(organizationSlug: string, 
 
     await notifyInvitationCreated(db, result, user.userId);
 
-    revalidatePath(`/app/${organizationSlug}/invitations`);
+    /*
+     * Do not refresh the invitations page here. A refresh remounts the
+     * client form before it can show the one-time secure acceptance link
+     * returned below. The next regular visit will fetch the updated list.
+     */
     // This short-lived path is intentionally returned only to the inviting
     // owner/admin. The raw token is still never stored or logged; it is used
     // solely to let an organization share an invite securely when no email

@@ -70,7 +70,7 @@ export function CreateInvitationForm({
 
       {!state.ok ? <StatusMessage tone="error" message={state.message} /> : null}
       {state.ok && state !== initialState ? (
-        <StatusMessage tone="success" message={state.refreshed ? "Invitation refreshed. Copy the new secure link below." : "Invitation created. Copy the secure link below."} />
+        <StatusMessage tone="success" message={state.refreshed ? "Invitation refreshed. Copy the new secure link below before refreshing this page." : "Invitation created. Copy the secure link below before refreshing this page."} />
       ) : null}
       {state.ok && state !== initialState && state.invitationPath ? <InvitationLink invitationPath={state.invitationPath} /> : null}
 

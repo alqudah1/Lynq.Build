@@ -83,9 +83,9 @@ export function InvitationRow({
             {canResend ? (
               <ConfirmDialog
                 triggerLabel="Resend"
-                title="Resend invitation"
-                description={`Send a fresh invitation to ${email} for the same role? The previous link will stop working.`}
-                confirmLabel="Resend"
+                title="Generate a fresh invitation link"
+                description={`Generate a fresh secure link for ${email} with the same role? The previous link will stop working.`}
+                confirmLabel="Generate link"
                 formAction={resendAction}
                 onSuccess={(result) => {
                   if (result.invitationPath) setInvitationPath(result.invitationPath);
