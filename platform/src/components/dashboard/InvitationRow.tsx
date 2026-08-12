@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { ConfirmDialog } from "./ConfirmDialog";
 import type { ActionResult } from "@/lib/dashboard/actions/types";
 import type { CreateInvitationActionResult } from "@/lib/dashboard/actions/invitations";
+import { InvitationLink } from "./InvitationLink";
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "Pending",
@@ -53,6 +55,7 @@ export function InvitationRow({
   resendAction: (formData: FormData) => Promise<CreateInvitationActionResult>;
   revokeAction?: (formData: FormData) => Promise<ActionResult>;
 }) {
+  const [invitationPath, setInvitationPath] = useState<string | null>(null);
   const canResend = status === "pending" || status === "expired";
   const canRevoke = status === "pending" && revokeAction;
 
@@ -84,6 +87,9 @@ export function InvitationRow({
                 description={`Send a fresh invitation to ${email} for the same role? The previous link will stop working.`}
                 confirmLabel="Resend"
                 formAction={resendAction}
+                onSuccess={(result) => {
+                  if (result.invitationPath) setInvitationPath(result.invitationPath);
+                }}
                 hiddenFields={{
                   email,
                   role,
@@ -106,6 +112,7 @@ export function InvitationRow({
         ) : (
           <span className="text-xs text-subtle">No actions</span>
         )}
+        {invitationPath ? <InvitationLink invitationPath={invitationPath} /> : null}
       </td>
     </tr>
   );

@@ -6,6 +6,7 @@ import { FormField } from "./FormField";
 import { SelectField } from "./SelectField";
 import { SubmitButton } from "./SubmitButton";
 import { StatusMessage } from "./StatusMessage";
+import { InvitationLink } from "./InvitationLink";
 
 const NO_WORKSPACE = "";
 
@@ -69,8 +70,9 @@ export function CreateInvitationForm({
 
       {!state.ok ? <StatusMessage tone="error" message={state.message} /> : null}
       {state.ok && state !== initialState ? (
-        <StatusMessage tone="success" message={state.refreshed ? "Invitation refreshed and re-sent." : "Invitation sent."} />
+        <StatusMessage tone="success" message={state.refreshed ? "Invitation refreshed. Copy the new secure link below." : "Invitation created. Copy the secure link below."} />
       ) : null}
+      {state.ok && state !== initialState && state.invitationPath ? <InvitationLink invitationPath={state.invitationPath} /> : null}
 
       <div>
         <SubmitButton>Send invitation</SubmitButton>

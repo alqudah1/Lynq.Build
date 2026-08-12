@@ -64,9 +64,12 @@ export function TaskItem({ task, assignees, members, otherTasks, blockedByTitles
             {task.priority} priority{blockedByTitles.length > 0 ? ` · blocked by ${blockedByTitles.join(", ")}` : ""}
             {executionCount > 0 ? ` · ${executionCount} agent run${executionCount === 1 ? "" : "s"}` : ""}
           </p>
+          {task.dueDate ? <p className="mt-1 text-xs text-muted">Due {task.dueDate.toLocaleDateString()}</p> : null}
         </div>
         <InlineStatusForm label={`Status for ${task.title}`} name="toStatus" currentValue={task.status} options={TASK_STATUS_OPTIONS} expectedRevision={task.revision} action={transitionAction} />
       </div>
+
+      {task.description ? <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-muted">{task.description}</p> : null}
 
       {assignees.length > 0 ? (
         <ul className="mt-3 flex flex-wrap gap-2">

@@ -28,7 +28,9 @@ const createInvitationSchema = z
   });
 
 /** Success carries whether this call created a new invitation or refreshed an existing pending one — the UI's only way to tell the two apart, since `createOrRefreshInvitation` never distinguishes them in any other client-visible way. */
-export type CreateInvitationActionResult = { ok: true; refreshed: boolean } | Extract<ActionResult, { ok: false }>;
+export type CreateInvitationActionResult =
+  | { ok: true; refreshed: boolean; invitationPath?: string }
+  | Extract<ActionResult, { ok: false }>;
 
 /**
  * Creates a new pending invitation, or atomically refreshes an existing
@@ -81,7 +83,11 @@ export async function createOrRefreshInvitationAction(organizationSlug: string, 
     await notifyInvitationCreated(db, result, user.userId);
 
     revalidatePath(`/app/${organizationSlug}/invitations`);
-    return { ok: true, refreshed: result.refreshed };
+    // This short-lived path is intentionally returned only to the inviting
+    // owner/admin. The raw token is still never stored or logged; it is used
+    // solely to let an organization share an invite securely when no email
+    // transport has been configured yet.
+    return { ok: true, refreshed: result.refreshed, invitationPath: `/invite/${encodeURIComponent(result.rawToken)}` };
   } catch (err) {
     return toActionResult(err) as CreateInvitationActionResult;
   }

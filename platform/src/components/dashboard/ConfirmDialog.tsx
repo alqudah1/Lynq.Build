@@ -32,16 +32,18 @@ export function ConfirmDialog({
   variant = "default",
   triggerVariant = "default",
   disabled,
+  onSuccess,
 }: {
   triggerLabel: string;
   title: string;
   description: string;
   confirmLabel: string;
-  formAction: (formData: FormData) => Promise<ActionResult>;
+  formAction: (formData: FormData) => Promise<ActionResult & { invitationPath?: string }>;
   hiddenFields?: Record<string, string>;
   variant?: "default" | "danger";
   triggerVariant?: "default" | "danger" | "subtle";
   disabled?: boolean;
+  onSuccess?: (result: Extract<ActionResult, { ok: true }> & { invitationPath?: string }) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
@@ -77,6 +79,7 @@ export function ConfirmDialog({
       setError(result.message);
       return;
     }
+    onSuccess?.(result);
     close();
   }
 
