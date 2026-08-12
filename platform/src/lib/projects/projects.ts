@@ -226,12 +226,10 @@ export async function updateProject(db: Db, input: UpdateProjectInput): Promise<
 }
 
 /**
- * §-style bounded transition map (task's own exact examples). No
- * reopening path exists in this phase — `completed`/`cancelled` only ever
- * reach `archived`, and `archived` has no outbound edges at all, so
- * archived/completed projects reject any further normal work by
- * construction (there is no route through this function that would
- * accept one).
+ * Projects sometimes need to be reopened after a founder marks one complete
+ * or archived by mistake. Reopening is intentionally an explicit status
+ * transition, still protected by the project-management permission floor;
+ * it never changes history or quietly erases the prior outcome.
  */
 const PROJECT_TRANSITIONS: Record<ProjectStatus, ProjectStatus[]> = {
   proposed: ["planning", "cancelled"],
@@ -239,9 +237,9 @@ const PROJECT_TRANSITIONS: Record<ProjectStatus, ProjectStatus[]> = {
   active: ["paused", "blocked", "completed", "cancelled"],
   paused: ["active", "cancelled"],
   blocked: ["active", "cancelled"],
-  completed: ["archived"],
-  cancelled: ["archived"],
-  archived: [],
+  completed: ["active", "archived"],
+  cancelled: ["planning", "archived"],
+  archived: ["planning", "active"],
 };
 
 /** UI-facing: which target statuses are legal from here right now — so a status picker never even offers an illegal transition, rather than relying on the server to reject it after the fact. */
@@ -270,6 +268,8 @@ export async function transitionProjectStatus(db: Db, input: TransitionProjectIn
   const extra: Record<string, unknown> = {};
   if (input.toStatus === "completed") extra.actualCompletionDate = new Date();
   if (input.toStatus === "archived") extra.archivedAt = new Date();
+  if (input.toStatus !== "completed") extra.actualCompletionDate = null;
+  if (input.toStatus !== "archived") extra.archivedAt = null;
 
   const [row] = await db
     .update(projects)

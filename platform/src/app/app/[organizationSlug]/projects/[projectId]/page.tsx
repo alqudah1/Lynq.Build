@@ -14,6 +14,7 @@ import { listMilestones } from "@/lib/projects/milestones";
 import { listTasks, listTaskAssignments } from "@/lib/projects/tasks";
 import { listDependenciesForTask } from "@/lib/projects/dependencies";
 import { listProjectMembers } from "@/lib/projects/members";
+import { listOrganizationMembers } from "@/lib/organizations/memberships";
 import { listProjectEvents } from "@/lib/projects/events";
 import { listArtifactLinks, listApprovalLinks, listExecutionLinksForProject, listExecutionLinksForTask } from "@/lib/projects/links";
 import {
@@ -59,12 +60,13 @@ async function loadProjectDetailData(
   const { organization } = await getOrganizationBySlugForUser(db, organizationSlug, actorUserId);
   const project = await getProjectForUser(db, { organizationId: organization.id, projectId, actorUserId });
 
-  const [progress, phases, milestones, tasks, members, events, artifactLinks, approvalLinks, executionLinks] = await Promise.all([
+  const [progress, phases, milestones, tasks, projectMembers, organizationMembers, events, artifactLinks, approvalLinks, executionLinks] = await Promise.all([
     calculateProjectProgress(db, organization.id, projectId),
     listPhases(db, { organizationId: organization.id, projectId, actorUserId }),
     listMilestones(db, { organizationId: organization.id, projectId, actorUserId }),
     listTasks(db, { organizationId: organization.id, projectId, actorUserId }),
     listProjectMembers(db, { organizationId: organization.id, projectId, actorUserId }),
+    listOrganizationMembers(db, organization.id, actorUserId),
     listProjectEvents(db, projectId, 50),
     listArtifactLinks(db, { organizationId: organization.id, projectId, actorUserId }),
     listApprovalLinks(db, { organizationId: organization.id, projectId, actorUserId }),
@@ -102,7 +104,11 @@ async function loadProjectDetailData(
     milestonesWithProgress,
     tasks,
     tasksWithDetails,
-    members,
+    // A task may be assigned to any Office member. Project membership is a
+    // separate permission layer and must not make an invited teammate vanish
+    // from the assignment menu.
+    members: organizationMembers.map(({ userId, name, email }) => ({ userId, name, email })),
+    projectMembers,
     events,
     artifactLinks,
     approvalLinks,

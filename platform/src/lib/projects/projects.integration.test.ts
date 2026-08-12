@@ -138,7 +138,7 @@ describe("project status transitions", () => {
     expect(planning.status).toBe("planning");
   });
 
-  it("completed and archived projects reject any further transition except the one explicit allowed edge", async () => {
+  it("lets a project manager reopen completed or archived work", async () => {
     const ownerId = await makeUser();
     const orgId = await makeOrgWithOwner(ownerId);
     let project = await makeProject(orgId, ownerId);
@@ -147,12 +147,18 @@ describe("project status transitions", () => {
     project = await transitionProjectStatus(db, { organizationId: orgId, projectId: project.id, toStatus: "active", actorUserId: ownerId, expectedRevision: project.revision });
     project = await transitionProjectStatus(db, { organizationId: orgId, projectId: project.id, toStatus: "completed", actorUserId: ownerId, expectedRevision: project.revision });
 
-    await expect(transitionProjectStatus(db, { organizationId: orgId, projectId: project.id, toStatus: "active", actorUserId: ownerId, expectedRevision: project.revision })).rejects.toThrow(InvalidProjectTransitionError);
+    project = await transitionProjectStatus(db, { organizationId: orgId, projectId: project.id, toStatus: "active", actorUserId: ownerId, expectedRevision: project.revision });
+    expect(project.status).toBe("active");
+    expect(project.actualCompletionDate).toBeNull();
+
+    project = await transitionProjectStatus(db, { organizationId: orgId, projectId: project.id, toStatus: "completed", actorUserId: ownerId, expectedRevision: project.revision });
 
     project = await transitionProjectStatus(db, { organizationId: orgId, projectId: project.id, toStatus: "archived", actorUserId: ownerId, expectedRevision: project.revision });
     expect(project.archivedAt).not.toBeNull();
 
-    await expect(transitionProjectStatus(db, { organizationId: orgId, projectId: project.id, toStatus: "active", actorUserId: ownerId, expectedRevision: project.revision })).rejects.toThrow(InvalidProjectTransitionError);
+    project = await transitionProjectStatus(db, { organizationId: orgId, projectId: project.id, toStatus: "planning", actorUserId: ownerId, expectedRevision: project.revision });
+    expect(project.status).toBe("planning");
+    expect(project.archivedAt).toBeNull();
   });
 
   it("a project viewer cannot transition or update the project", async () => {
