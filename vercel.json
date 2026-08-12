@@ -11,14 +11,6 @@
       "permanent": false
     }
   ],
-  "redirects": [
-    {
-      "source": "/office",
-      "destination": "https://app.lynq.build/office",
-      "permanent": false
-    },
-    { "source": "/services", "destination": "/", "permanent": true }
-  ],
   "headers": [
     {
       "source": "/(.*).html",
@@ -34,39 +26,13 @@
     }
   ],
   "functions": {
-    "api/book-request.js":            { "maxDuration": 20 },
-    "api/run-pipeline.js":            { "maxDuration": 90 },
-    "api/lead-agent.js":               { "maxDuration": 60 },
-    "api/agent-demo.js":               { "maxDuration": 60 },
-    "api/build.js":                   { "maxDuration": 60 },
-    "api/chat.js":                    { "maxDuration": 30 },
-    "api/insurance-script.js":        { "maxDuration": 30 },
-    "api/reddit-insurance-leads.js":  { "maxDuration": 45 },
-    "api/natural-market.js":          { "maxDuration": 30 },
-    "api/assistant.js":               { "maxDuration": 30 },
-    "api/call-debrief.js":            { "maxDuration": 30 },
-    "api/telegram/webhook.js":        { "maxDuration": 90 },
-    "api/telegram/drafts.js":         { "maxDuration": 15 },
-    "api/telegram/action.js":         { "maxDuration": 15 },
-    "api/telegram/sync-bis.js":       { "maxDuration": 15 },
-    "api/auto-queue.js":              { "maxDuration": 90 },
-    "api/generate-image.js":          { "maxDuration": 60 },
-    "api/generate-voice.js":          { "maxDuration": 30 },
-    "api/generate-video.js":          { "maxDuration": 30 },
-    "api/brand-brain.js":             { "maxDuration": 30 },
-    "api/hook-engine.js":             { "maxDuration": 30 },
-    "api/image-director.js":          { "maxDuration": 30 },
-    "api/video-director.js":          { "maxDuration": 45 },
-    "api/auto-content.js":            { "maxDuration": 60 },
-    "api/content-factory.js":         { "maxDuration": 60 },
-    "api/content-calendar.js":        { "maxDuration": 120 },
-    "api/connections.js":             { "maxDuration": 15 },
-    "api/content-memory.js":          { "maxDuration": 15 },
-    "api/schedule.js":                { "maxDuration": 15 },
-    "api/asset-engine.js":            { "maxDuration": 90 },
-    "api/post-generator.js":          { "maxDuration": 30 },
-    "api/linkedin-generator.js":      { "maxDuration": 30 },
-    "api/telegram/send.js":           { "maxDuration": 15 },
-    "api/recording-director.js":      { "maxDuration": 30 }
+    "api/run-pipeline.js": { "maxDuration": 90 },
+    "api/build.js": { "maxDuration": 60 },
+    "api/chat.js": { "maxDuration": 30 },
+    "api/insurance-script.js": { "maxDuration": 30 },
+    "api/reddit-insurance-leads.js": { "maxDuration": 45 },
+    "api/natural-market.js": { "maxDuration": 30 },
+    "api/assistant.js": { "maxDuration": 30 },
+    "api/call-debrief.js": { "maxDuration": 30 }
   }
 }
