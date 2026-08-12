@@ -33,9 +33,20 @@ export default async function OrganizationDashboardPage({ params }: { params: Pr
     throw err;
   }
 
-  const [summary, office, workspaces] = await Promise.all([
+  const [summary, officeResult, workspaces] = await Promise.all([
     loadDashboardSummary(db, { organizationId: organization.id, actorUserId: user.userId }),
-    loadOfficeView(db, { organizationId: organization.id, actorUserId: user.userId }),
+    /*
+     * The leadership-floor view contains founder-only reporting. A regular
+     * member must still be able to enter the Office and reach their projects
+     * and work, even if that optional founder view is unavailable to them.
+     */
+    loadOfficeView(db, { organizationId: organization.id, actorUserId: user.userId }).catch(() => ({
+      employees: [],
+      recentActivity: [],
+      activeAssignmentCount: 0,
+      completedThisPeriod: 0,
+      assistantAgentId: null,
+    })),
     listWorkspacesForUser(db, user.userId),
   ]);
   const primaryWorkspace =
@@ -52,7 +63,7 @@ export default async function OrganizationDashboardPage({ params }: { params: Pr
       organizationSlug={organizationSlug}
       workspaceId={primaryWorkspace?.id ?? null}
       summary={summary}
-      office={office}
+      office={officeResult}
     />
   );
 }
