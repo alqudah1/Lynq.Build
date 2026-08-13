@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nour's Kitchen — Home Syrian Food · Toronto</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Caveat:wght@400;700&family=DM+Sans:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --bg:#f2e8d9; --cream:#f8f2e8; --dark:#150e07; --terra:#c4652a; --muted:#8a6e58; --white:#faf6ef; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--dark); font-family: 'DM Sans', sans-serif; font-weight: 300; overflow-x: hidden; }
+
+    .grain { position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; pointer-events: none; z-index: 9999; opacity: 0.046; }
+    #pgbar { position: fixed; top: 0; left: 0; height: 2px; background: var(--terra); width: 0; z-index: 600; display: none; transition: width 0.08s linear; }
+
+    nav { position: fixed; top: 0; left: 0; right: 0; z-index: 500; display: flex; justify-content: space-between; align-items: center; padding: 1.6rem 3rem; pointer-events: none; mix-blend-mode: difference; }
+    nav > * { pointer-events: all; }
+    .nav-logo { text-decoration: none; display: flex; flex-direction: column; gap: 0.1rem; }
+    .nav-logo-top { font-family: 'Caveat', cursive; font-size: 1.6rem; font-weight: 700; color: var(--white); line-height: 1; }
+    .nav-logo-bot { font-size: 0.5rem; letter-spacing: 0.28em; text-transform: uppercase; color: var(--white); opacity: 0.6; }
+    .nav-links { list-style: none; display: flex; gap: 2.2rem; }
+    .nav-links a { font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--white); text-decoration: none; }
+
+    .she { height: 100vh; position: relative; overflow: hidden; background: var(--dark); }
+    .she-bg { position: absolute; inset: 0; z-index: 1; }
+    .she-bg img { width: 100%; height: 100%; object-fit: cover; object-position: center 60%; display: block; }
+    .she-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(21,14,7,0.18) 0%, rgba(21,14,7,0.62) 100%); }
+    .she-media-wrap { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+    .she-media { position: relative; overflow: hidden; box-shadow: 0 32px 100px rgba(0,0,0,0.65); }
+    .she-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .she-veil { position: absolute; inset: 0; background: rgba(21,14,7,0.45); pointer-events: none; }
+    .she-texts { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+    .she-t { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 300; font-size: clamp(5.5rem, 13vw, 12rem); line-height: 0.88; color: var(--white); display: block; text-align: center; will-change: transform, opacity; }
+    .she-hint { position: absolute; bottom: 2.6rem; left: 50%; transform: translateX(-50%); z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 0.6rem; }
+    .she-hint-label { font-size: 0.58rem; letter-spacing: 0.28em; text-transform: uppercase; color: rgba(250,246,239,0.4); }
+    .she-hint-line { width: 1px; height: 36px; background: rgba(250,246,239,0.22); animation: scrollPulse 1.9s ease-in-out infinite; }
+    @keyframes scrollPulse { 0%{transform:scaleY(0);transform-origin:top;opacity:1} 45%{transform:scaleY(1);transform-origin:top;opacity:1} 46%{transform-origin:bottom} 90%{transform:scaleY(0);transform-origin:bottom;opacity:0} 100%{opacity:0} }
+    .she-sub { position: absolute; bottom: 2.6rem; left: 3rem; z-index: 3; display: flex; align-items: center; gap: 0.7rem; }
+    .she-sub span { font-size: 0.64rem; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(250,246,239,0.35); }
+    .she-sub .dot { opacity: 0.22; }
+
+    .zoom-parallax { height: 280vh; position: relative; }
+    .zp-sticky { position: sticky; top: 0; height: 100vh; overflow: hidden; background: var(--dark); }
+    .zp-label { position: absolute; top: 3rem; left: 3rem; z-index: 10; pointer-events: none; }
+    .zp-headline { position: absolute; bottom: 3.5rem; left: 3rem; z-index: 10; pointer-events: none; }
+    .zp-headline h2 { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 300; font-size: clamp(2rem, 4vw, 3.8rem); color: rgba(250,246,239,0.42); line-height: 1.15; }
+    .zp-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; will-change: transform; transform-origin: center center; }
+    .zp-img { position: relative; overflow: hidden; flex-shrink: 0; }
+    .zp-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    .s-label { font-size: 0.64rem; letter-spacing: 0.24em; text-transform: uppercase; color: var(--terra); display: block; margin-bottom: 1.6rem; }
+
+    .about { display: grid; grid-template-columns: 1fr 1fr; align-items: stretch; min-height: 88vh; }
+    .about-img { overflow: hidden; }
+    .about-img img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 1s ease; }
+    .about-img:hover img { transform: scale(1.03); }
+    .about-text { display: flex; flex-direction: column; justify-content: center; padding: 9vw 6vw; background: var(--cream); }
+    .about-text blockquote { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: clamp(1.4rem, 2.2vw, 2rem); line-height: 1.5; color: var(--dark); margin-bottom: 2rem; border-left: 2px solid var(--terra); padding-left: 1.5rem; }
+    .about-text p { font-size: 0.88rem; line-height: 1.9; color: var(--muted); }
+    .about-text p + p { margin-top: 1rem; }
+
+    .order { background: var(--dark); padding: 11vh 6vw; display: grid; grid-template-columns: 1fr 1fr; gap: 6vw; align-items: center; }
+    .order-left h2 { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 300; font-size: clamp(2.4rem, 4.5vw, 4rem); color: var(--white); line-height: 1.1; margin-bottom: 1.4rem; }
+    .order-left p { font-size: 0.88rem; line-height: 1.85; color: rgba(250,246,239,0.45); max-width: 480px; }
+    .order-steps { display: flex; flex-direction: column; }
+    .order-step { display: flex; gap: 1.8rem; align-items: flex-start; padding: 2rem 0; border-bottom: 1px solid rgba(250,246,239,0.07); }
+    .order-step:first-child { padding-top: 0; }
+    .order-step:last-child { border-bottom: none; }
+    .step-num { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 3rem; font-weight: 300; color: rgba(250,246,239,0.1); line-height: 1; flex-shrink: 0; width: 2.5rem; }
+    .step-title { font-size: 0.85rem; font-weight: 400; letter-spacing: 0.06em; color: var(--white); margin-bottom: 0.4rem; }
+    .step-desc { font-size: 0.8rem; line-height: 1.7; color: rgba(250,246,239,0.38); }
+
+    .menu-strip { background: var(--terra); }
+    .menu-strip-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+    .menu-block { background: rgba(0,0,0,0.12); padding: 3.5rem; }
+    .menu-block:nth-child(even) { background: rgba(0,0,0,0.06); }
+    .menu-block h3 { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 300; font-size: 1.6rem; color: rgba(250,246,239,0.95); margin-bottom: 1.6rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(250,246,239,0.18); }
+    .menu-item { display: flex; justify-content: space-between; align-items: baseline; padding: 0.7rem 0; border-bottom: 1px solid rgba(250,246,239,0.07); }
+    .menu-item:last-child { border-bottom: none; }
+    .mi-name { font-size: 0.85rem; color: rgba(250,246,239,0.82); }
+    .mi-desc { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 0.78rem; color: rgba(250,246,239,0.4); margin-top: 0.15rem; }
+    .mi-price { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1rem; color: rgba(250,246,239,0.7); flex-shrink: 0; margin-left: 1rem; }
+    .menu-note { grid-column: 1 / -1; background: rgba(0,0,0,0.18); padding: 1.8rem 3.5rem; font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 0.95rem; color: rgba(250,246,239,0.38); text-align: center; }
+
+    .contact { background: var(--dark); padding: 13vh 6vw; display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .contact h2 { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 300; font-size: clamp(2.8rem, 6vw, 5rem); color: var(--white); line-height: 1.08; margin-bottom: 2.2rem; }
+    .contact-ctas { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; margin-bottom: 2.5rem; }
+    .btn-wa { display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.9rem 2rem; background: #25D366; color: #fff; text-decoration: none; font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; border-radius: 3px; transition: opacity 0.2s; }
+    .btn-wa:hover { opacity: 0.88; }
+    .btn-ig { display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.9rem 2rem; border: 1.5px solid rgba(250,246,239,0.22); color: rgba(250,246,239,0.65); text-decoration: none; font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; border-radius: 3px; transition: border-color 0.2s, color 0.2s; }
+    .btn-ig:hover { border-color: rgba(250,246,239,0.5); color: var(--white); }
+    .contact-note { font-size: 0.72rem; color: rgba(250,246,239,0.2); letter-spacing: 0.08em; }
+
+    footer { background: var(--dark); border-top: 1px solid rgba(250,246,239,0.05); padding: 1.6rem 3rem; display: flex; justify-content: space-between; align-items: center; }
+    .f-logo { font-family: 'Caveat', cursive; font-size: 1.3rem; font-weight: 700; color: rgba(250,246,239,0.25); }
+    .f-copy { font-size: 0.62rem; letter-spacing: 0.1em; color: rgba(250,246,239,0.12); }
+    .f-lynq { font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(250,246,239,0.12); }
+    .f-lynq a { color: rgba(196,101,42,0.5); text-decoration: none; transition: color 0.2s; }
+    .f-lynq a:hover { color: var(--terra); }
+
+    .reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.7s ease, transform 0.7s ease; }
+    .reveal.in { opacity: 1; transform: none; }
+
+    @media (max-width: 860px) {
+      nav { padding: 1.2rem 1.5rem; }
+      .nav-links { display: none; }
+      .she-sub { left: 1.5rem; }
+      .about { grid-template-columns: 1fr; }
+      .about-img { height: 72vw; }
+      .about-text { padding: 10vw 6vw; }
+      .order { grid-template-columns: 1fr; gap: 3rem; padding: 9vh 5vw; }
+      .menu-strip-inner { grid-template-columns: 1fr; }
+      .menu-block { padding: 2.5rem 1.8rem; }
+      .zp-headline h2 { font-size: 1.55rem; }
+      footer { flex-direction: column; gap: 0.6rem; text-align: center; }
+    }
+
+/* ── ART MOTION ── */
+.lr{overflow:hidden;display:block}
+.lr>span{display:block;transform:translateY(106%);transition:transform 1s cubic-bezier(0.16,1,0.3,1)}
+.lr.in>span{transform:translateY(0)}
+.lr:nth-child(2)>span{transition-delay:0.1s}
+.lr:nth-child(3)>span{transition-delay:0.2s}
+.lr:nth-child(4)>span{transition-delay:0.3s}
+.lr:nth-child(5)>span{transition-delay:0.4s}
+.img-curtain{overflow:hidden}
+.img-curtain img{transform:scale(1.07);clip-path:inset(0 0 100% 0);transition:clip-path 1.4s cubic-bezier(0.16,1,0.3,1),transform 1.4s cubic-bezier(0.16,1,0.3,1)}
+.img-curtain.in img{clip-path:inset(0 0 0% 0);transform:scale(1)}
+.art-mq{overflow:hidden;padding:18px 0}
+.art-mq.dk{border-top:1px solid rgba(255,255,255,0.07);border-bottom:1px solid rgba(255,255,255,0.07)}
+.art-mq.lt{border-top:1px solid rgba(0,0,0,0.08);border-bottom:1px solid rgba(0,0,0,0.08)}
+.am-tr{display:inline-flex;animation:am-roll 26s linear infinite;white-space:nowrap}
+.am-tr span{font-size:0.68rem;letter-spacing:0.26em;text-transform:uppercase;padding-right:52px}
+.art-mq.dk .am-tr span{color:rgba(255,255,255,0.25)}
+.art-mq.lt .am-tr span{color:rgba(0,0,0,0.22)}
+@keyframes am-roll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  </style>
+</head>
+<body>
+
+<svg class="grain" aria-hidden="true">
+  <filter id="gr" x="0%" y="0%" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.70" numOctaves="4" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+  <rect width="100%" height="100%" filter="url(#gr)"/>
+</svg>
+
+<div id="pgbar"></div>
+
+<nav>
+  <a class="nav-logo" href="#">
+    <span class="nav-logo-top">Nour's</span>
+    <span class="nav-logo-bot">Kitchen · Toronto</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#food">the food</a></li>
+    <li><a href="#about">about</a></li>
+    <li><a href="#order">order</a></li>
+    <li><a href="#contact">contact</a></li>
+  </ul>
+</nav>
+
+<div class="art-mq dk">
+  <div class="am-tr">
+    <span>Syrian Flavours</span><span>—</span><span>Made to Order</span><span>—</span><span>Pickup & Delivery</span><span>—</span><span>Toronto</span><span>—</span><span>Fresh Daily</span><span>—</span><span>Syrian Flavours</span><span>—</span><span>Made to Order</span><span>—</span><span>Pickup & Delivery</span><span>—</span><span>Toronto</span><span>—</span><span>Fresh Daily</span><span>—</span>
+  </div>
+</div>
+
+<!-- SCROLL EXPANSION HERO -->
+<section class="she" id="top">
+  <div class="she-bg" id="sheBg">
+    <img src="https://images.unsplash.com/photo-1512058564366-18510be2db19?w=1800&h=1200&fit=crop&auto=format&q=88" alt="" />
+  </div>
+  <div class="she-media-wrap">
+    <div class="she-media" id="sheMedia">
+      <img src="https://images.unsplash.com/photo-1547592180-85f173990554?w=900&h=1200&fit=crop&auto=format&q=90" alt="Nour's Kitchen" />
+      <div class="she-veil" id="sheVeil"></div>
+    </div>
+  </div>
+  <div class="she-texts">
+    <span class="she-t" id="sheL">Nour's</span>
+    <span class="she-t" id="sheR">Kitchen</span>
+  </div>
+  <div class="she-hint" id="sheHint">
+    <span class="she-hint-label">scroll</span>
+    <div class="she-hint-line"></div>
+  </div>
+  <div class="she-sub" id="sheSub">
+    <span>home cooking</span><span class="dot">·</span>
+    <span>syrian flavours</span><span class="dot">·</span>
+    <span>toronto</span>
+  </div>
+</section>
+
+<!-- ZOOM PARALLAX -->
+<section class="zoom-parallax" id="food">
+  <div class="zp-sticky">
+    <div class="zp-label"><span class="s-label" style="color:rgba(250,246,239,0.3)">the food</span></div>
+    <div class="zp-headline" id="zpHeadline">
+      <h2>
+        <span class="lr"><span>slow-cooked.</span></span>
+        <span class="lr"><span>generous.</span></span>
+        <span class="lr"><span>from the heart.</span></span>
+      </h2>
+    </div>
+    <div class="zp-layer" data-scale-max="4">
+      <div class="zp-img" style="width:24vw;height:26vh;">
+        <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&h=800&fit=crop&auto=format&q=85" alt="" loading="lazy" />
+      </div>
+    </div>
+    <div class="zp-layer" data-scale-max="5">
+      <div class="zp-img" style="width:32vw;height:28vh;top:-28vh;left:6vw;">
+        <img src="https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=800&h=600&fit=crop&auto=format&q=82" alt="" loading="lazy" />
+      </div>
+    </div>
+    <div class="zp-layer" data-scale-max="6">
+      <div class="zp-img" style="width:18vw;height:42vh;top:-8vh;left:-26vw;">
+        <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&h=900&fit=crop&auto=format&q=82" alt="" loading="lazy" />
+      </div>
+    </div>
+    <div class="zp-layer" data-scale-max="5">
+      <div class="zp-img" style="width:22vw;height:24vh;left:26vw;">
+        <img src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=700&h=700&fit=crop&auto=format&q=85" alt="" loading="lazy" />
+      </div>
+    </div>
+    <div class="zp-layer" data-scale-max="6.5">
+      <div class="zp-img" style="width:18vw;height:22vh;top:26vh;left:6vw;">
+        <img src="https://images.unsplash.com/photo-1574484284002-952d92456975?w=600&h=600&fit=crop&auto=format&q=82" alt="" loading="lazy" />
+      </div>
+    </div>
+    <div class="zp-layer" data-scale-max="7.5">
+      <div class="zp-img" style="width:26vw;height:22vh;top:28vh;left:-24vw;">
+        <img src="https://images.unsplash.com/photo-1529042410759-befb1204b468?w=700&h=600&fit=crop&auto=format&q=82" alt="" loading="lazy" />
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section class="about" id="about">
+  <div class="about-text">
+    <span class="s-label">about nour</span>
+    <blockquote class="reveal">"Syrian by roots. Canadian by home. In the kitchen, there's no difference — it all goes into the pot."</blockquote>
+    <p class="reveal" style="transition-delay:.1s">Nour grew up watching her mother cook for everyone who came through the door — relatives, neighbours, strangers who left as friends. The table was never small enough to say no.</p>
+    <p class="reveal" style="transition-delay:.18s">Now based in Toronto, she brings those same recipes forward: kibbeh the way her grandmother made it, fattoush with whatever's freshest that week, musakhan with enough sumac to mean it. All made to order, all from scratch.</p>
+  </div>
+  <div class="about-img img-curtain">
+    <img src="https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=900&h=1100&fit=crop&auto=format&q=85" alt="Nour cooking" loading="lazy" />
+  </div>
+</section>
+
+<!-- ORDER -->
+<section class="order" id="order">
+  <div class="order-left">
+    <span class="s-label" style="color:rgba(250,246,239,0.28)">how to order</span>
+    <h2>
+      <span class="lr"><span>Simple.</span></span>
+      <span class="lr"><span>Personal.</span></span>
+      <span class="lr"><span><em>Just message.</em></span></span>
+    </h2>
+    <p class="reveal" style="transition-delay:.1s">No app. No middleman. Message Nour directly on WhatsApp or Instagram — she'll confirm what's on this week and arrange pickup or local delivery across Toronto.</p>
+  </div>
+  <div class="order-steps">
+    <div class="order-step reveal">
+      <span class="step-num">01</span>
+      <div class="step-body">
+        <div class="step-title">Message to order</div>
+        <div class="step-desc">WhatsApp or Instagram DM — tell Nour what you want and how many people you're feeding.</div>
+      </div>
+    </div>
+    <div class="order-step reveal" style="transition-delay:.1s">
+      <span class="step-num">02</span>
+      <div class="step-body">
+        <div class="step-title">Pick your dishes</div>
+        <div class="step-desc">Choose from the weekly menu — built around what's fresh. 24–48 hrs notice appreciated.</div>
+      </div>
+    </div>
+    <div class="order-step reveal" style="transition-delay:.18s">
+      <span class="step-num">03</span>
+      <div class="step-body">
+        <div class="step-title">Pickup or delivery</div>
+        <div class="step-desc">Pickup from Scarborough, or local delivery within Toronto for orders over $40.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MENU -->
+<section class="menu-strip">
+  <div class="menu-strip-inner">
+    <div class="menu-block">
+      <h3>Mains</h3>
+      <div class="menu-item"><div><div class="mi-name">Kibbeh bil sanieh</div><div class="mi-desc">Baked, bulgur, minced lamb & pine nuts</div></div><div class="mi-price">$22</div></div>
+      <div class="menu-item"><div><div class="mi-name">Musakhan</div><div class="mi-desc">Roasted chicken, caramelised onion, sumac, taboon</div></div><div class="mi-price">$26</div></div>
+      <div class="menu-item"><div><div class="mi-name">Maqlouba</div><div class="mi-desc">Upside-down rice, lamb, aubergine & cauliflower</div></div><div class="mi-price">$28</div></div>
+      <div class="menu-item"><div><div class="mi-name">Stuffed grape leaves</div><div class="mi-desc">Rice, herbs, lemon — slow-cooked</div></div><div class="mi-price">$18</div></div>
+    </div>
+    <div class="menu-block">
+      <h3>Mezze & Sides</h3>
+      <div class="menu-item"><div><div class="mi-name">Hummus bil lahme</div><div class="mi-desc">Warm hummus, spiced minced lamb</div></div><div class="mi-price">$14</div></div>
+      <div class="menu-item"><div><div class="mi-name">Fattoush</div><div class="mi-desc">Whatever's fresh, pomegranate molasses</div></div><div class="mi-price">$12</div></div>
+      <div class="menu-item"><div><div class="mi-name">Baba ganoush</div><div class="mi-desc">Fire-roasted aubergine, tahini, olive oil</div></div><div class="mi-price">$11</div></div>
+      <div class="menu-item"><div><div class="mi-name">Manaqeesh</div><div class="mi-desc">Za'atar flatbread, baked fresh to order</div></div><div class="mi-price">$8</div></div>
+    </div>
+    <div class="menu-block">
+      <h3>Sweets</h3>
+      <div class="menu-item"><div><div class="mi-name">Baklava tray</div><div class="mi-desc">Pistachio & walnut, rose water syrup — 12 pcs</div></div><div class="mi-price">$20</div></div>
+      <div class="menu-item"><div><div class="mi-name">Maamoul</div><div class="mi-desc">Semolina cookies, date or pistachio — 6 pcs</div></div><div class="mi-price">$14</div></div>
+      <div class="menu-item"><div><div class="mi-name">Halawet el jibn</div><div class="mi-desc">Sweet cheese rolls with ashta cream</div></div><div class="mi-price">$16</div></div>
+    </div>
+    <div class="menu-block">
+      <h3>Family Trays</h3>
+      <div class="menu-item"><div><div class="mi-name">Full mezze spread</div><div class="mi-desc">Hummus, baba ganoush, fattoush, grape leaves — 4–6</div></div><div class="mi-price">$55</div></div>
+      <div class="menu-item"><div><div class="mi-name">Family kibbeh tray</div><div class="mi-desc">Large baked tray, serves 5–7</div></div><div class="mi-price">$65</div></div>
+      <div class="menu-item"><div><div class="mi-name">Custom spread</div><div class="mi-desc">Message Nour — she'll build around your group</div></div><div class="mi-price">Ask</div></div>
+    </div>
+    <div class="menu-note">Menu changes weekly — message to see what's available this week.</div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section class="contact" id="contact">
+  <span class="s-label" style="color:rgba(250,246,239,0.28)">place an order</span>
+  <h2 class="reveal">Ready to feed<br>some people?</h2>
+  <div class="contact-ctas reveal" style="transition-delay:.1s">
+    <a href="https://wa.me/14165550000" class="btn-wa" target="_blank" rel="noopener">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      Order on WhatsApp
+    </a>
+    <a href="https://instagram.com/nourskitchen.to" class="btn-ig" target="_blank" rel="noopener">DM on Instagram</a>
+  </div>
+  <p class="contact-note reveal" style="transition-delay:.2s">Pickup · Scarborough &nbsp;|&nbsp; Delivery · Toronto &nbsp;|&nbsp; 24–48 hrs notice appreciated</p>
+</section>
+
+<footer>
+  <span class="f-logo">Nour's Kitchen</span>
+  <span class="f-copy">© 2026 · Home cooking, Toronto</span>
+  <span class="f-lynq">Site by <a href="https://lynq.build" target="_blank" rel="noopener">LYNQ</a></span>
+</footer>
+
+<script>
+  const sheBg=document.getElementById('sheBg'),sheMedia=document.getElementById('sheMedia'),sheVeil=document.getElementById('sheVeil'),sheL=document.getElementById('sheL'),sheR=document.getElementById('sheR'),sheHint=document.getElementById('sheHint'),sheSub=document.getElementById('sheSub'),pgbar=document.getElementById('pgbar');
+  let progress=0,isExpanded=false,touchStartY=0,isMobile=window.innerWidth<768;
+  function startSize(){return isMobile?{w:220,h:340}:{w:280,h:400};}
+  function applyHero(p){
+    progress=Math.max(0,Math.min(1,p));
+    const{w:sw,h:sh}=startSize(),tw=window.innerWidth,th=window.innerHeight;
+    const w=sw+progress*(tw-sw),h=sh+progress*(th-sh),br=(1-progress)*12;
+    sheMedia.style.width=w+'px';sheMedia.style.height=h+'px';sheMedia.style.borderRadius=br+'px';
+    sheBg.style.opacity=1-progress;
+    sheVeil.style.opacity=Math.max(0,0.45-progress*0.45);
+    const tx=progress*(isMobile?44:38),top=Math.max(0,1-progress*1.6);
+    sheL.style.transform=`translateX(-${tx}vw)`;sheR.style.transform=`translateX(${tx}vw)`;
+    sheL.style.opacity=top;sheR.style.opacity=top;
+    const aux=Math.max(0,1-progress*5);
+    sheHint.style.opacity=aux;sheSub.style.opacity=aux;
+  }
+  window.addEventListener('wheel',e=>{
+    if(isExpanded&&e.deltaY<0&&window.scrollY<=2){isExpanded=false;pgbar.style.display='none';e.preventDefault();}
+    else if(!isExpanded){e.preventDefault();applyHero(progress+e.deltaY*0.0011);if(progress>=1){isExpanded=true;pgbar.style.display='block';}}
+  },{passive:false});
+  window.addEventListener('scroll',()=>{
+    if(!isExpanded){window.scrollTo(0,0);return;}
+    const total=document.body.scrollHeight-window.innerHeight;
+    if(total>0)pgbar.style.width=(window.scrollY/total*100)+'%';
+  },{passive:false});
+  window.addEventListener('touchstart',e=>{touchStartY=e.touches[0].clientY;},{passive:true});
+  window.addEventListener('touchmove',e=>{
+    if(!touchStartY)return;
+    const dy=touchStartY-e.touches[0].clientY;
+    if(isExpanded&&dy<-20&&window.scrollY<=2){isExpanded=false;pgbar.style.display='none';e.preventDefault();}
+    else if(!isExpanded){e.preventDefault();applyHero(progress+dy*(dy<0?0.009:0.006));if(progress>=1){isExpanded=true;pgbar.style.display='block';}touchStartY=e.touches[0].clientY;}
+  },{passive:false});
+  window.addEventListener('touchend',()=>{touchStartY=0;});
+  window.addEventListener('resize',()=>{isMobile=window.innerWidth<768;applyHero(progress);});
+  applyHero(0);
+
+  (function(){
+    const section=document.querySelector('.zoom-parallax');
+    if(!section)return;
+    const layers=section.querySelectorAll('.zp-layer'),headline=document.getElementById('zpHeadline');
+    function updateZP(){
+      const rect=section.getBoundingClientRect(),scrolled=-rect.top,total=rect.height-window.innerHeight,p=Math.max(0,Math.min(1,scrolled/total));
+      layers.forEach(l=>{l.style.transform=`scale(${1+p*(parseFloat(l.dataset.scaleMax)-1)})`;});
+      if(headline)headline.style.opacity=Math.max(0,1-p*5);
+    }
+    window.addEventListener('scroll',updateZP,{passive:true});
+    updateZP();
+  })();
+
+  const revObs=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in');}),{threshold:0.12});
+  document.querySelectorAll('.reveal').forEach(el=>revObs.observe(el));
+
+/* art motion observer */
+const _ao=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');_ao.unobserve(e.target)}})},{threshold:0.12});
+document.querySelectorAll('.lr,.img-curtain').forEach(el=>_ao.observe(el));
+</script>
+</body>
+</html>

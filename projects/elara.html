@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Elara Studio — Home Beauty · Toronto</title>
+<meta name="description" content="A private beauty studio in Rosedale, Toronto. Hair, skin, lash, and brow services by appointment. Unhurried, personal, precise.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blush:  #f5ede5;
+  --blush2: #ede0d4;
+  --plum:   #2a1520;
+  --rose:   #b87060;
+  --rose2:  #d4917f;
+  --cream:  #fdf8f4;
+  --muted:  #a08878;
+  --ink:    #1e0f0a;
+  --line:   rgba(42,21,32,0.08);
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--cream);
+  color: var(--ink);
+  font-family: 'DM Sans', sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── GRAIN ── */
+.grain {
+  position: fixed;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  pointer-events: none;
+  z-index: 9000;
+  opacity: 0.022;
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 44px;
+  background: rgba(253,248,244,0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--line);
+}
+.nav-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 1.5rem;
+  color: var(--ink);
+  letter-spacing: 0.04em;
+  text-decoration: none;
+}
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+.nav-right a {
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.nav-right a:hover { color: var(--ink); }
+.nav-book {
+  background: var(--plum) !important;
+  color: var(--blush) !important;
+  padding: 10px 22px !important;
+  border-radius: 5px !important;
+  font-weight: 500 !important;
+  transition: opacity 0.2s !important;
+}
+.nav-book:hover { opacity: 0.85 !important; }
+
+/* ── HERO ── */
+.hero {
+  position: relative;
+  height: 100vh;
+  min-height: 600px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+}
+.hero-img {
+  position: absolute;
+  inset: 0;
+}
+.hero-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    160deg,
+    rgba(245,237,229,0.05) 0%,
+    rgba(42,21,32,0.55) 100%
+  );
+}
+.hero-overlay2 {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(42,21,32,0.75) 0%, transparent 55%);
+}
+.hero-content {
+  position: relative;
+  z-index: 2;
+  padding: 0 64px 72px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  width: 100%;
+}
+.hero-text {}
+.hero-tag {
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(245,237,229,0.5);
+  margin-bottom: 16px;
+}
+.hero-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(3.5rem, 7vw, 7rem);
+  color: var(--blush);
+  letter-spacing: -0.03em;
+  line-height: 0.98;
+}
+.hero-sub {
+  font-size: 0.78rem;
+  color: rgba(245,237,229,0.38);
+  margin-top: 18px;
+  letter-spacing: 0.1em;
+  max-width: 320px;
+  line-height: 1.7;
+  font-weight: 300;
+}
+.hero-aside {
+  text-align: right;
+}
+.hero-availability {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid rgba(245,237,229,0.15);
+  border-radius: 40px;
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(245,237,229,0.45);
+  margin-bottom: 14px;
+}
+.avail-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: #7ec88a;
+  box-shadow: 0 0 6px #7ec88a;
+  flex-shrink: 0;
+}
+.hero-book-btn {
+  display: block;
+  padding: 14px 28px;
+  background: var(--rose);
+  color: #fff;
+  border-radius: 5px;
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.hero-book-btn:hover { opacity: 0.9; transform: translateY(-2px); }
+
+/* ── INTRO QUOTE ── */
+.intro-quote {
+  padding: 100px 44px;
+  text-align: center;
+  max-width: 780px;
+  margin: 0 auto;
+}
+.intro-quote blockquote {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  line-height: 1.5;
+  opacity: 0.65;
+}
+.intro-quote cite {
+  display: block;
+  margin-top: 20px;
+  font-family: 'DM Sans', sans-serif;
+  font-style: normal;
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--rose);
+}
+
+/* ── SERVICES ── */
+.services {
+  padding: 0 44px 100px;
+  max-width: 1160px;
+  margin: 0 auto;
+}
+.services-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 52px;
+  border-top: 1px solid var(--line);
+  padding-top: 40px;
+}
+.section-tag {
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.section-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(2rem, 3.5vw, 3.2rem);
+  color: var(--ink);
+  letter-spacing: -0.03em;
+}
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2px;
+  background: var(--line);
+}
+.service-card {
+  background: var(--cream);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  overflow: hidden;
+  transition: background 0.3s;
+}
+.service-card:hover { background: var(--blush); }
+.service-img {
+  height: 280px;
+  overflow: hidden;
+}
+.service-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.8s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+.service-card:hover .service-img img { transform: scale(1.05); }
+.service-body {
+  padding: 36px 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.service-cat {
+  font-size: 0.6rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--rose);
+  margin-bottom: 10px;
+}
+.service-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 400;
+  font-size: 1.5rem;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+}
+.service-desc {
+  font-size: 0.78rem;
+  line-height: 1.75;
+  color: var(--muted);
+  font-weight: 300;
+  margin-bottom: 20px;
+}
+.service-from {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-weight: 300;
+}
+.service-from strong {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 1.2rem;
+  font-weight: 300;
+  color: var(--rose);
+  margin-left: 4px;
+}
+
+/* ── ABOUT ── */
+.about {
+  background: var(--plum);
+  padding: 120px 44px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+.about-img {
+  border-radius: 3px;
+  overflow: hidden;
+  height: 560px;
+}
+.about-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: brightness(0.88);
+}
+.about-text {}
+.about-tag {
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(245,237,229,0.35);
+  margin-bottom: 28px;
+}
+.about-text h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(2.2rem, 3.5vw, 3.4rem);
+  color: var(--blush);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin-bottom: 28px;
+}
+.about-text p {
+  font-size: 0.86rem;
+  line-height: 1.9;
+  color: rgba(245,237,229,0.42);
+  font-weight: 300;
+  margin-bottom: 14px;
+}
+.about-rule {
+  width: 36px; height: 1px;
+  background: var(--rose);
+  margin: 28px 0;
+}
+.about-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 1.05rem;
+  color: rgba(245,237,229,0.5);
+}
+
+/* ── GALLERY STRIP ── */
+.gallery-strip {
+  display: flex;
+  gap: 3px;
+  padding: 80px 44px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.gallery-strip::-webkit-scrollbar { display: none; }
+.gs-item {
+  flex-shrink: 0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.gs-item img {
+  display: block;
+  height: 380px;
+  width: auto;
+  object-fit: cover;
+  transition: filter 0.4s;
+  filter: brightness(0.9) saturate(0.85);
+}
+.gs-item:hover img { filter: brightness(1) saturate(1); }
+
+/* ── BOOKING ── */
+.booking {
+  padding: 120px 44px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+  max-width: 1160px;
+  margin: 0 auto;
+  border-top: 1px solid var(--line);
+}
+.booking-text {}
+.booking-tag {
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 24px;
+}
+.booking-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(2.4rem, 4vw, 3.8rem);
+  color: var(--ink);
+  letter-spacing: -0.03em;
+  line-height: 1.06;
+  margin-bottom: 24px;
+}
+.booking-sub {
+  font-size: 0.82rem;
+  line-height: 1.8;
+  color: var(--muted);
+  font-weight: 300;
+  margin-bottom: 36px;
+}
+.booking-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 32px;
+  background: var(--plum);
+  color: var(--blush);
+  border-radius: 5px;
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.booking-btn:hover { opacity: 0.88; transform: translateY(-2px); }
+.booking-info {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.booking-info-item {}
+.bi-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.bi-val {
+  font-size: 0.9rem;
+  color: var(--ink);
+  font-weight: 300;
+  line-height: 1.6;
+}
+
+/* ── FOOTER ── */
+footer {
+  background: var(--plum);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 44px;
+}
+.footer-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 1.15rem;
+  color: rgba(245,237,229,0.22);
+}
+.footer-lynq {
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  color: rgba(245,237,229,0.12);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.footer-lynq:hover { color: rgba(245,237,229,0.4); }
+
+/* ── REVEAL ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.75s cubic-bezier(0.25,0.46,0.45,0.94),
+              transform 0.75s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+.reveal.in { opacity: 1; transform: none; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 860px) {
+  nav { padding: 16px 20px; }
+  .nav-right a:not(.nav-book) { display: none; }
+  .hero-content { padding: 0 24px 44px; flex-direction: column; align-items: flex-start; gap: 28px; }
+  .intro-quote { padding: 64px 20px; }
+  .services { padding: 0 20px 60px; }
+  .services-grid { grid-template-columns: 1fr; }
+  .service-card { grid-template-columns: 1fr; }
+  .service-img { height: 220px; }
+  .about { grid-template-columns: 1fr; padding: 80px 20px; gap: 40px; }
+  .about-img { height: 320px; }
+  .gallery-strip { padding: 40px 20px; }
+  .gs-item img { height: 260px; }
+  .booking { grid-template-columns: 1fr; padding: 80px 20px; gap: 40px; }
+  footer { padding: 18px 20px; }
+}
+
+/* ── ART MOTION ── */
+.lr{overflow:hidden;display:block}
+.lr>span{display:block;transform:translateY(106%);transition:transform 1s cubic-bezier(0.16,1,0.3,1)}
+.lr.in>span{transform:translateY(0)}
+.lr:nth-child(2)>span{transition-delay:0.1s}
+.lr:nth-child(3)>span{transition-delay:0.2s}
+.lr:nth-child(4)>span{transition-delay:0.3s}
+.lr:nth-child(5)>span{transition-delay:0.4s}
+.img-curtain{overflow:hidden}
+.img-curtain img{transform:scale(1.07);clip-path:inset(0 0 100% 0);transition:clip-path 1.4s cubic-bezier(0.16,1,0.3,1),transform 1.4s cubic-bezier(0.16,1,0.3,1)}
+.img-curtain.in img{clip-path:inset(0 0 0% 0);transform:scale(1)}
+.art-mq{overflow:hidden;padding:18px 0}
+.art-mq.dk{border-top:1px solid rgba(255,255,255,0.07);border-bottom:1px solid rgba(255,255,255,0.07)}
+.art-mq.lt{border-top:1px solid rgba(0,0,0,0.08);border-bottom:1px solid rgba(0,0,0,0.08)}
+.am-tr{display:inline-flex;animation:am-roll 26s linear infinite;white-space:nowrap}
+.am-tr span{font-size:0.68rem;letter-spacing:0.26em;text-transform:uppercase;padding-right:52px}
+.art-mq.dk .am-tr span{color:rgba(255,255,255,0.25)}
+.art-mq.lt .am-tr span{color:rgba(0,0,0,0.22)}
+@keyframes am-roll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+</style>
+</head>
+<body>
+
+<svg class="grain" aria-hidden="true">
+  <filter id="gr" x="0%" y="0%" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.68" numOctaves="4" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+  <rect width="100%" height="100%" filter="url(#gr)"/>
+</svg>
+
+<nav>
+  <a href="#" class="nav-logo">Elara</a>
+  <div class="nav-right">
+    <a href="#services">Services</a>
+    <a href="#about">About</a>
+    <a href="#booking">Booking</a>
+    <a href="#booking" class="nav-book">Book now</a>
+  </div>
+</nav>
+
+<div class="art-mq lt">
+  <div class="am-tr">
+    <span>Lash Extensions</span><span>—</span><span>Facials</span><span>—</span><span>Brow Tinting</span><span>—</span><span>Toronto</span><span>—</span><span>By Appointment</span><span>—</span><span>Lash Extensions</span><span>—</span><span>Facials</span><span>—</span><span>Brow Tinting</span><span>—</span><span>Toronto</span><span>—</span><span>By Appointment</span><span>—</span>
+  </div>
+</div>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-img">
+    <img src="https://images.unsplash.com/photo-1560066984-138dadb4c035?w=2400&h=1600&fit=crop&auto=format&q=90" alt="Elara Studio">
+  </div>
+  <div class="hero-overlay"></div>
+  <div class="hero-overlay2"></div>
+  <div class="hero-content">
+    <div class="hero-text">
+      <div class="hero-tag">Private Beauty Studio · Rosedale, Toronto</div>
+      <h1 class="hero-title">
+        <span class="lr"><span>Elara</span></span>
+        <span class="lr"><span>Studio</span></span>
+      </h1>
+      <div class="hero-sub">A quiet space for hair, skin, and self. No rush, no noise. Just you and the work.</div>
+    </div>
+    <div class="hero-aside">
+      <div class="hero-availability">
+        <span class="avail-dot"></span>
+        Taking new clients
+      </div>
+      <a href="#booking" class="hero-book-btn">Book an appointment →</a>
+    </div>
+  </div>
+</section>
+
+<!-- Quote -->
+<div class="intro-quote">
+  <blockquote class="reveal">
+    "Beauty isn't a performance. It's a decision to take care of yourself — slowly, properly, and without apology."
+  </blockquote>
+  <cite class="reveal">— Elara Nasser, founder</cite>
+</div>
+
+<!-- Services -->
+<section class="services" id="services">
+  <div class="services-header reveal">
+    <span class="section-tag">What we offer</span>
+    <h2 class="section-title">The services.</h2>
+  </div>
+  <div class="services-grid">
+    <div class="service-card reveal">
+      <div class="service-img">
+        <img src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&h=700&fit=crop&auto=format&q=88" alt="Hair">
+      </div>
+      <div class="service-body">
+        <div class="service-cat">Hair</div>
+        <div class="service-name">Cut &amp; Colour</div>
+        <div class="service-desc">Precision cuts, balayage, full colour, and treatments. Every session begins with a proper consultation.</div>
+        <div class="service-from">From <strong>$85</strong></div>
+      </div>
+    </div>
+    <div class="service-card reveal">
+      <div class="service-img">
+        <img src="https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=800&h=700&fit=crop&auto=format&q=88" alt="Makeup">
+      </div>
+      <div class="service-body">
+        <div class="service-cat">Makeup</div>
+        <div class="service-name">Artistry &amp; Bridal</div>
+        <div class="service-desc">Editorial, everyday, and full bridal packages. Emphasis on skin finish and longevity, not coverage.</div>
+        <div class="service-from">From <strong>$120</strong></div>
+      </div>
+    </div>
+    <div class="service-card reveal">
+      <div class="service-img">
+        <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=800&h=700&fit=crop&auto=format&q=88" alt="Skin">
+      </div>
+      <div class="service-body">
+        <div class="service-cat">Skin</div>
+        <div class="service-name">Facials &amp; Treatments</div>
+        <div class="service-desc">Custom facials, gua sha, and targeted skin treatments. Results-focused, never rushed.</div>
+        <div class="service-from">From <strong>$95</strong></div>
+      </div>
+    </div>
+    <div class="service-card reveal">
+      <div class="service-img">
+        <img src="https://images.unsplash.com/photo-1604654894610-df63bc536371?w=800&h=700&fit=crop&auto=format&q=88" alt="Brows &amp; Lashes">
+      </div>
+      <div class="service-body">
+        <div class="service-cat">Brow &amp; Lash</div>
+        <div class="service-name">Shape &amp; Tint</div>
+        <div class="service-desc">Brow mapping, lamination, tinting, and lash lifts. Architecture for your face, not just your brows.</div>
+        <div class="service-from">From <strong>$65</strong></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- About -->
+<section class="about" id="about">
+  <div class="about-img img-curtain reveal">
+    <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=1200&h=1600&fit=crop&auto=format&q=88" alt="Elara Nasser">
+  </div>
+  <div class="about-text">
+    <div class="about-tag reveal">About Elara</div>
+    <h2 class="reveal">Twelve years.<br>One client at a time.</h2>
+    <p class="reveal">I'm Elara — a licensed aesthetician and hair artist with twelve years in private studios across Toronto and London. In 2021, I opened my own space in Rosedale.</p>
+    <p class="reveal">I work with one client at a time. No receptionists, no overlapping appointments. You get the full space, the full focus, and the full session — never a rushed finish.</p>
+    <p class="reveal">I specialize in colour work and skin-focused makeup. Most of my clients have been coming for three or more years. That relationship is everything to me.</p>
+    <div class="about-rule reveal"></div>
+    <div class="about-name reveal">— Elara Nasser</div>
+  </div>
+</section>
+
+<!-- Gallery strip -->
+<div class="gallery-strip">
+  <div class="gs-item">
+    <img src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=500&h=600&fit=crop&auto=format&q=88" alt="">
+  </div>
+  <div class="gs-item">
+    <img src="https://images.unsplash.com/photo-1560066984-138dadb4c035?w=700&h=600&fit=crop&auto=format&q=88" alt="">
+  </div>
+  <div class="gs-item">
+    <img src="https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=500&h=600&fit=crop&auto=format&q=88" alt="">
+  </div>
+  <div class="gs-item">
+    <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=600&h=600&fit=crop&auto=format&q=88" alt="">
+  </div>
+  <div class="gs-item">
+    <img src="https://images.unsplash.com/photo-1604654894610-df63bc536371?w=500&h=600&fit=crop&auto=format&q=88" alt="">
+  </div>
+</div>
+
+<!-- Booking -->
+<section class="booking" id="booking">
+  <div class="booking-text">
+    <div class="booking-tag reveal">Book a session</div>
+    <h2 class="booking-title reveal">Ready to come in?</h2>
+    <div class="booking-sub reveal">New clients are welcome. Please book at least 48 hours in advance. Bridal and event bookings require a short consultation call first.</div>
+    <a href="mailto:hello@elarastudio.ca" class="booking-btn reveal">Book by email →</a>
+  </div>
+  <div class="booking-info">
+    <div class="booking-info-item reveal">
+      <div class="bi-label">Location</div>
+      <div class="bi-val">Private studio, Rosedale<br>Toronto, Ontario<br><span style="color:var(--muted);font-size:0.78rem;">Exact address shared at booking</span></div>
+    </div>
+    <div class="booking-info-item reveal">
+      <div class="bi-label">Hours</div>
+      <div class="bi-val">Tuesday – Saturday<br>9:00am – 6:00pm</div>
+    </div>
+    <div class="booking-info-item reveal">
+      <div class="bi-label">Contact</div>
+      <div class="bi-val">hello@elarastudio.ca<br>+1 (416) 000 0000</div>
+    </div>
+    <div class="booking-info-item reveal">
+      <div class="bi-label">Cancellation</div>
+      <div class="bi-val">24-hour notice required.<br>Late cancellations are charged at 50%.</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo">Elara</div>
+  <a href="https://lynq.build" class="footer-lynq">Site by LYNQ</a>
+</footer>
+
+<script>
+const reveals = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+  });
+}, { threshold: 0.08 });
+reveals.forEach(el => io.observe(el));
+
+/* art motion observer */
+const _ao=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');_ao.unobserve(e.target)}})},{threshold:0.12});
+document.querySelectorAll('.lr,.img-curtain').forEach(el=>_ao.observe(el));
+</script>
+</body>
+</html>

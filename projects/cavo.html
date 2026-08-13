@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Cavo — Private Yacht Charters · Mediterranean</title>
+<meta name="description" content="Private crewed yacht charters across the Mediterranean. Greece, Croatia, Amalfi, Ibiza. Bespoke itineraries, fully crewed vessels.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:   #0b1929;
+  --navy2:  #0f2035;
+  --ocean:  #1a4a72;
+  --gold:   #b89a52;
+  --gold2:  #d4b872;
+  --white:  #fff;
+  --cream:  #f5f0e8;
+  --muted:  rgba(245,240,232,0.42);
+  --line:   rgba(184,154,82,0.18);
+  --line2:  rgba(255,255,255,0.08);
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--navy);
+  color: var(--cream);
+  font-family: 'DM Sans', sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── GRAIN ── */
+.grain {
+  position: fixed;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  pointer-events: none;
+  z-index: 9000;
+  opacity: 0.028;
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 52px;
+}
+.nav-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 1.55rem;
+  color: var(--cream);
+  letter-spacing: 0.04em;
+  text-decoration: none;
+}
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+}
+.nav-right a {
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.nav-right a:hover { color: var(--cream); }
+.nav-charter {
+  border: 1px solid rgba(184,154,82,0.4) !important;
+  color: var(--gold) !important;
+  padding: 10px 22px !important;
+  border-radius: 4px !important;
+  transition: background 0.2s, color 0.2s !important;
+}
+.nav-charter:hover { background: var(--gold) !important; color: var(--navy) !important; }
+
+/* ── HERO ── */
+.hero {
+  position: relative;
+  height: 100vh;
+  min-height: 640px;
+  overflow: hidden;
+}
+.hero-img {
+  position: absolute;
+  inset: 0;
+}
+.hero-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: brightness(0.65) saturate(0.85);
+  transform: scale(1.04);
+  animation: slowZoom 22s ease-out forwards;
+}
+@keyframes slowZoom {
+  from { transform: scale(1.04); }
+  to   { transform: scale(1.0); }
+}
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(11,25,41,0.3) 0%,
+    rgba(11,25,41,0.15) 40%,
+    rgba(11,25,41,0.7) 100%
+  );
+}
+.hero-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  z-index: 2;
+  padding: 0 40px;
+}
+.hero-eyebrow {
+  font-size: 0.6rem;
+  letter-spacing: 0.36em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 24px;
+  animation: fadeUp 0.8s 0.4s both;
+}
+.hero-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(3.5rem, 8vw, 7.5rem);
+  color: var(--white);
+  letter-spacing: -0.02em;
+  line-height: 1.0;
+  margin-bottom: 28px;
+  animation: fadeUp 0.8s 0.6s both;
+}
+.hero-sub {
+  font-size: 0.82rem;
+  font-weight: 300;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  margin-bottom: 44px;
+  animation: fadeUp 0.8s 0.8s both;
+}
+.hero-cta-row {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  animation: fadeUp 0.8s 1.0s both;
+}
+.btn-gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 36px;
+  background: var(--gold);
+  color: var(--navy);
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.btn-gold:hover { opacity: 0.9; transform: translateY(-2px); }
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 15px 32px;
+  border: 1px solid rgba(184,154,82,0.35);
+  color: var(--cream);
+  border-radius: 4px;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+.btn-outline:hover { border-color: var(--gold); background: rgba(184,154,82,0.06); }
+.hero-scroll {
+  position: absolute;
+  bottom: 36px;
+  left: 52px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  z-index: 3;
+}
+.hero-scroll span {
+  font-size: 0.6rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.scroll-bar {
+  width: 40px; height: 1px;
+  background: var(--gold);
+  opacity: 0.5;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── STATS STRIP ── */
+.stats {
+  display: flex;
+  border-bottom: 1px solid var(--line2);
+}
+.stat {
+  flex: 1;
+  padding: 40px 44px;
+  border-right: 1px solid var(--line2);
+  text-align: center;
+}
+.stat:last-child { border-right: none; }
+.stat-val {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 2.8rem;
+  font-weight: 300;
+  color: var(--gold);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.stat-lbl {
+  font-size: 0.6rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ── DESTINATIONS ── */
+.destinations {
+  padding: 100px 52px;
+}
+.section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 52px;
+}
+.section-tag {
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.section-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(2.2rem, 4vw, 3.8rem);
+  color: var(--cream);
+  letter-spacing: -0.03em;
+}
+.dest-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+}
+.dest-card {
+  position: relative;
+  overflow: hidden;
+  height: 400px;
+  cursor: pointer;
+}
+.dest-card img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.9s cubic-bezier(0.25,0.46,0.45,0.94), filter 0.5s;
+  filter: brightness(0.7) saturate(0.8);
+}
+.dest-card:hover img { transform: scale(1.06); filter: brightness(0.85) saturate(1); }
+.dest-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(11,25,41,0.85) 0%, transparent 55%);
+}
+.dest-info {
+  position: absolute;
+  bottom: 32px;
+  left: 32px;
+  transition: transform 0.4s;
+}
+.dest-card:hover .dest-info { transform: translateY(-8px); }
+.dest-country {
+  font-size: 0.6rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+.dest-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 1.8rem;
+  color: var(--white);
+  letter-spacing: -0.01em;
+}
+.dest-nights {
+  font-size: 0.62rem;
+  color: var(--muted);
+  margin-top: 4px;
+  letter-spacing: 0.08em;
+}
+
+/* ── VESSELS ── */
+.vessels {
+  background: var(--navy2);
+  border-top: 1px solid var(--line2);
+  border-bottom: 1px solid var(--line2);
+  padding: 100px 0;
+}
+.vessels-header {
+  padding: 0 52px 52px;
+}
+.vessels-strip {
+  display: flex;
+  gap: 3px;
+  overflow-x: auto;
+  padding: 0 52px;
+  scrollbar-width: none;
+}
+.vessels-strip::-webkit-scrollbar { display: none; }
+.vessel-card {
+  flex-shrink: 0;
+  width: 440px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 3px;
+}
+.vessel-img {
+  height: 320px;
+  overflow: hidden;
+}
+.vessel-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.8s;
+  filter: brightness(0.78);
+}
+.vessel-card:hover .vessel-img img { transform: scale(1.04); }
+.vessel-body {
+  background: rgba(15,32,53,0.95);
+  padding: 28px 32px;
+  border-top: 1px solid var(--line);
+}
+.vessel-type {
+  font-size: 0.6rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+.vessel-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 400;
+  font-size: 1.4rem;
+  color: var(--cream);
+  letter-spacing: -0.01em;
+  margin-bottom: 10px;
+}
+.vessel-specs {
+  display: flex;
+  gap: 20px;
+}
+.vs-item { }
+.vs-val {
+  font-size: 0.82rem;
+  color: var(--cream);
+  opacity: 0.6;
+}
+.vs-lbl {
+  font-size: 0.58rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* ── EXPERIENCE ── */
+.experience {
+  padding: 120px 52px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+.exp-img {
+  height: 540px;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.exp-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: brightness(0.8);
+}
+.exp-text {}
+.exp-tag { font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); margin-bottom: 24px; }
+.exp-text h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(2.2rem, 3.5vw, 3.4rem);
+  color: var(--cream);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin-bottom: 28px;
+}
+.exp-text p {
+  font-size: 0.86rem;
+  line-height: 1.9;
+  color: var(--muted);
+  font-weight: 300;
+  margin-bottom: 14px;
+}
+.exp-includes {
+  margin-top: 36px;
+  padding-top: 32px;
+  border-top: 1px solid var(--line2);
+}
+.exp-includes-title {
+  font-size: 0.6rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 18px;
+}
+.includes-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 24px;
+}
+.inc-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-weight: 300;
+}
+.inc-dot {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--gold);
+  flex-shrink: 0;
+}
+
+/* ── ENQUIRE ── */
+.enquire {
+  background: var(--gold);
+  padding: 120px 52px;
+  text-align: center;
+}
+.enquire-tag { font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(11,25,41,0.45); margin-bottom: 24px; }
+.enquire h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(3rem, 6vw, 5.5rem);
+  color: var(--navy);
+  letter-spacing: -0.03em;
+  line-height: 1.04;
+  margin-bottom: 36px;
+}
+.enquire-sub {
+  font-size: 0.82rem;
+  color: rgba(11,25,41,0.5);
+  margin-bottom: 44px;
+  font-weight: 300;
+  letter-spacing: 0.04em;
+}
+.enquire-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 44px;
+  background: var(--navy);
+  color: var(--cream);
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.enquire-btn:hover { opacity: 0.9; transform: translateY(-2px); }
+
+/* ── FOOTER ── */
+footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 52px;
+  border-top: 1px solid var(--line2);
+}
+.footer-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 1.15rem;
+  color: rgba(245,240,232,0.18);
+}
+.footer-lynq { font-size: 0.65rem; letter-spacing: 0.12em; color: rgba(245,240,232,0.12); text-decoration: none; transition: color 0.2s; }
+.footer-lynq:hover { color: rgba(245,240,232,0.42); }
+
+/* ── REVEAL ── */
+.reveal { opacity: 0; transform: translateY(22px); transition: opacity 0.75s cubic-bezier(0.25,0.46,0.45,0.94), transform 0.75s cubic-bezier(0.25,0.46,0.45,0.94); }
+.reveal.in { opacity: 1; transform: none; }
+
+/* ── ART MOTION ── */
+.lr{overflow:hidden;display:block}
+.lr>span{display:block;transform:translateY(106%);transition:transform 1s cubic-bezier(0.16,1,0.3,1)}
+.lr.in>span{transform:translateY(0)}
+.lr:nth-child(2)>span{transition-delay:0.1s}
+.lr:nth-child(3)>span{transition-delay:0.2s}
+.lr:nth-child(4)>span{transition-delay:0.3s}
+.lr:nth-child(5)>span{transition-delay:0.4s}
+.img-curtain{overflow:hidden}
+.img-curtain img{transform:scale(1.07);clip-path:inset(0 0 100% 0);transition:clip-path 1.4s cubic-bezier(0.16,1,0.3,1),transform 1.4s cubic-bezier(0.16,1,0.3,1)}
+.img-curtain.in img{clip-path:inset(0 0 0% 0);transform:scale(1)}
+.art-mq{overflow:hidden;padding:18px 0}
+.art-mq.dk{border-top:1px solid rgba(255,255,255,0.07);border-bottom:1px solid rgba(255,255,255,0.07)}
+.art-mq.lt{border-top:1px solid rgba(0,0,0,0.08);border-bottom:1px solid rgba(0,0,0,0.08)}
+.am-tr{display:inline-flex;animation:am-roll 26s linear infinite;white-space:nowrap}
+.am-tr span{font-size:0.68rem;letter-spacing:0.26em;text-transform:uppercase;padding-right:52px}
+.art-mq.dk .am-tr span{color:rgba(255,255,255,0.25)}
+.art-mq.lt .am-tr span{color:rgba(0,0,0,0.22)}
+@keyframes am-roll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 860px) {
+  nav { padding: 18px 20px; }
+  .nav-right a:not(.nav-charter) { display: none; }
+  .stats { flex-wrap: wrap; }
+  .stat { flex: 1 1 50%; border-right: none; border-bottom: 1px solid var(--line2); }
+  .destinations, .vessels-header, .experience, .enquire { padding: 64px 20px; }
+  .vessels-strip { padding: 0 20px; }
+  .dest-grid { grid-template-columns: 1fr; }
+  .experience { grid-template-columns: 1fr; gap: 40px; }
+  .exp-img { height: 300px; }
+  footer { padding: 18px 20px; }
+}
+</style>
+</head>
+<body>
+
+<svg class="grain" aria-hidden="true">
+  <filter id="gr" x="0%" y="0%" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.68" numOctaves="4" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+  <rect width="100%" height="100%" filter="url(#gr)"/>
+</svg>
+
+<nav>
+  <a href="#" class="nav-logo">Cavo</a>
+  <div class="nav-right">
+    <a href="#destinations">Destinations</a>
+    <a href="#vessels">Vessels</a>
+    <a href="#enquire">Charter</a>
+    <a href="#enquire" class="nav-charter">Enquire</a>
+  </div>
+</nav>
+<div class="art-mq dk">
+  <div class="am-tr">
+    <span>Luxury Charters</span><span>—</span><span>Mediterranean</span><span>—</span><span>Up to 12 Guests</span><span>—</span><span>Bespoke Itineraries</span><span>—</span><span>Croatia · Greece · Italy</span><span>—</span><span>Luxury Charters</span><span>—</span><span>Mediterranean</span><span>—</span><span>Up to 12 Guests</span><span>—</span><span>Bespoke Itineraries</span><span>—</span><span>Croatia · Greece · Italy</span><span>—</span>
+  </div>
+</div>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-img">
+    <img src="https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=2400&h=1400&fit=crop&auto=format&q=90" alt="Cavo Yacht Charter">
+  </div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">Private Crewed Charters · Mediterranean</div>
+    <h1 class="hero-title"><span class="lr"><span>Days on the water,</span></span><span class="lr"><span>unlike any other.</span></span></h1>
+    <p class="hero-sub">Bespoke itineraries across Greece, Croatia, Amalfi, and Ibiza.</p>
+    <div class="hero-cta-row">
+      <a href="#enquire" class="btn-gold">Plan your charter →</a>
+      <a href="#destinations" class="btn-outline">View destinations</a>
+    </div>
+  </div>
+  <div class="hero-scroll">
+    <div class="scroll-bar"></div>
+    <span>Scroll</span>
+  </div>
+</section>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat reveal">
+    <div class="stat-val">8</div>
+    <div class="stat-lbl">Private vessels</div>
+  </div>
+  <div class="stat reveal">
+    <div class="stat-val">14</div>
+    <div class="stat-lbl">Destinations</div>
+  </div>
+  <div class="stat reveal">
+    <div class="stat-val">All-inc.</div>
+    <div class="stat-lbl">Fully crewed</div>
+  </div>
+  <div class="stat reveal">
+    <div class="stat-val">2012</div>
+    <div class="stat-lbl">Since</div>
+  </div>
+</div>
+
+<!-- Destinations -->
+<section class="destinations" id="destinations">
+  <div class="section-header reveal">
+    <span class="section-tag">Where we sail</span>
+    <h2 class="section-title"><span class="lr"><span>The routes.</span></span></h2>
+  </div>
+  <div class="dest-grid">
+    <div class="dest-card reveal">
+      <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=900&h=700&fit=crop&auto=format&q=88" alt="Greece">
+      <div class="dest-overlay"></div>
+      <div class="dest-info">
+        <div class="dest-country">Greece</div>
+        <div class="dest-name">The Cyclades</div>
+        <div class="dest-nights">7 – 14 nights from Athens</div>
+      </div>
+    </div>
+    <div class="dest-card reveal">
+      <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=900&h=700&fit=crop&auto=format&q=88" alt="Croatia">
+      <div class="dest-overlay"></div>
+      <div class="dest-info">
+        <div class="dest-country">Croatia</div>
+        <div class="dest-name">Dalmatian Coast</div>
+        <div class="dest-nights">5 – 10 nights from Split</div>
+      </div>
+    </div>
+    <div class="dest-card reveal">
+      <img src="https://images.unsplash.com/photo-1533587851505-d119e13fa0d7?w=900&h=700&fit=crop&auto=format&q=88" alt="Amalfi">
+      <div class="dest-overlay"></div>
+      <div class="dest-info">
+        <div class="dest-country">Italy</div>
+        <div class="dest-name">Amalfi &amp; Capri</div>
+        <div class="dest-nights">5 – 8 nights from Naples</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Vessels -->
+<section class="vessels" id="vessels">
+  <div class="vessels-header">
+    <div class="section-header reveal">
+      <span class="section-tag">The fleet</span>
+      <h2 class="section-title"><span class="lr"><span>Our vessels.</span></span></h2>
+    </div>
+  </div>
+  <div class="vessels-strip">
+    <div class="vessel-card reveal">
+      <div class="vessel-img">
+        <img src="https://images.unsplash.com/photo-1537819191377-d3305ffddce4?w=900&h=600&fit=crop&auto=format&q=88" alt="Albatross">
+      </div>
+      <div class="vessel-body">
+        <div class="vessel-type">Sailing Yacht</div>
+        <div class="vessel-name">Albatross</div>
+        <div class="vessel-specs">
+          <div class="vs-item"><div class="vs-val">52ft</div><div class="vs-lbl">Length</div></div>
+          <div class="vs-item"><div class="vs-val">6</div><div class="vs-lbl">Guests</div></div>
+          <div class="vs-item"><div class="vs-val">3</div><div class="vs-lbl">Crew</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="vessel-card reveal">
+      <div class="vessel-img">
+        <img src="https://images.unsplash.com/photo-1467664631004-58beab1ece0d?w=900&h=600&fit=crop&auto=format&q=88" alt="Milos">
+      </div>
+      <div class="vessel-body">
+        <div class="vessel-type">Motor Yacht</div>
+        <div class="vessel-name">Milos</div>
+        <div class="vessel-specs">
+          <div class="vs-item"><div class="vs-val">68ft</div><div class="vs-lbl">Length</div></div>
+          <div class="vs-item"><div class="vs-val">8</div><div class="vs-lbl">Guests</div></div>
+          <div class="vs-item"><div class="vs-val">4</div><div class="vs-lbl">Crew</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="vessel-card reveal">
+      <div class="vessel-img">
+        <img src="https://images.unsplash.com/photo-1500514966906-fe245eea9344?w=900&h=600&fit=crop&auto=format&q=88" alt="Thalassa">
+      </div>
+      <div class="vessel-body">
+        <div class="vessel-type">Gulet</div>
+        <div class="vessel-name">Thalassa</div>
+        <div class="vessel-specs">
+          <div class="vs-item"><div class="vs-val">78ft</div><div class="vs-lbl">Length</div></div>
+          <div class="vs-item"><div class="vs-val">10</div><div class="vs-lbl">Guests</div></div>
+          <div class="vs-item"><div class="vs-val">5</div><div class="vs-lbl">Crew</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Experience -->
+<section class="experience">
+  <div class="exp-img reveal">
+    <img src="https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=1200&h=1400&fit=crop&auto=format&q=88" alt="On board">
+  </div>
+  <div class="exp-text">
+    <div class="exp-tag reveal">On board</div>
+    <h2 class="reveal"><span class="lr"><span>Nothing arranged,</span></span><span class="lr"><span>everything considered.</span></span></h2>
+    <p class="reveal">Every Cavo charter is built around you. Private chef, preferred wines, provisioning before departure — the details you'd spend months coordinating, handled before you board.</p>
+    <p class="reveal">Our crew has an average of 12 years at sea. They know the anchorages that don't appear on apps, the villages that close by noon, the nights worth staying out for.</p>
+    <div class="exp-includes reveal">
+      <div class="exp-includes-title">All charters include</div>
+      <div class="includes-list">
+        <div class="inc-item"><span class="inc-dot"></span>Experienced crew</div>
+        <div class="inc-item"><span class="inc-dot"></span>Private chef</div>
+        <div class="inc-item"><span class="inc-dot"></span>All meals & drinks</div>
+        <div class="inc-item"><span class="inc-dot"></span>Fuel & marina fees</div>
+        <div class="inc-item"><span class="inc-dot"></span>Snorkelling gear</div>
+        <div class="inc-item"><span class="inc-dot"></span>Custom itinerary</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Enquire -->
+<section class="enquire" id="enquire">
+  <div class="enquire-tag">Ready to sail</div>
+  <h2><span class="lr"><span>Your voyage</span></span><span class="lr"><span>starts here.</span></span></h2>
+  <div class="enquire-sub">Tell us where you want to go. We'll handle everything else.</div>
+  <a href="mailto:charter@cavo.com" class="enquire-btn">Begin enquiry →</a>
+</section>
+
+<footer>
+  <div class="footer-logo">Cavo</div>
+  <a href="https://lynq.build" class="footer-lynq">Site by LYNQ</a>
+</footer>
+
+<script>
+const reveals = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+}, { threshold: 0.08 });
+reveals.forEach(el => io.observe(el));
+/* art motion observer */
+const _ao=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');_ao.unobserve(e.target)}})},{threshold:0.12});
+document.querySelectorAll('.lr,.img-curtain').forEach(el=>_ao.observe(el));
+</script>
+</body>
+</html>

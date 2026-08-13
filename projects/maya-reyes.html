@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Maya Reyes — Photographer · Toronto</title>
+<meta name="description" content="Portrait and editorial photographer based in Toronto. Available for commissions worldwide.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:     #0b0b0c;
+  --bg2:    #111113;
+  --cream:  #ede8e0;
+  --rose:   #c27b6a;
+  --muted:  rgba(237,232,224,0.35);
+  --line:   rgba(237,232,224,0.06);
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--cream);
+  font-family: 'DM Sans', sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── GRAIN ── */
+.grain {
+  position: fixed;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  pointer-events: none;
+  z-index: 9000;
+  opacity: 0.038;
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 44px;
+}
+.nav-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.nav-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 1.1rem;
+  color: var(--cream);
+  letter-spacing: 0.02em;
+}
+.nav-discipline {
+  font-size: 0.58rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+.nav-right a {
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.nav-right a:hover { color: var(--cream); }
+
+/* ── HERO ── */
+.hero {
+  position: relative;
+  height: 100vh;
+  min-height: 640px;
+  overflow: hidden;
+}
+.hero-img {
+  position: absolute;
+  inset: 0;
+}
+.hero-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: brightness(0.55) contrast(1.05);
+}
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(11,11,12,0.9) 0%,
+    rgba(11,11,12,0.2) 55%,
+    rgba(11,11,12,0.1) 100%
+  );
+}
+.hero-content {
+  position: absolute;
+  bottom: 56px;
+  left: 56px;
+  right: 56px;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.hero-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(3rem, 6vw, 5.5rem);
+  color: #fff;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.hero-title em {
+  display: block;
+  font-style: normal;
+  font-weight: 300;
+}
+.hero-meta {
+  text-align: right;
+}
+.hero-meta-item {
+  font-size: 0.6rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.28);
+  margin-bottom: 6px;
+}
+.hero-meta-item:last-child { margin-bottom: 0; }
+
+/* ── CATEGORIES ── */
+.categories {
+  display: flex;
+  align-items: center;
+  padding: 0 44px;
+  border-bottom: 1px solid var(--line);
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.categories::-webkit-scrollbar { display: none; }
+.cat-btn {
+  padding: 18px 24px;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: color 0.2s, border-color 0.2s;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  font-family: 'DM Sans', sans-serif;
+}
+.cat-btn.active, .cat-btn:hover {
+  color: var(--cream);
+  border-bottom-color: var(--rose);
+}
+.cat-count {
+  font-size: 0.55rem;
+  color: var(--rose);
+  margin-left: 5px;
+}
+
+/* ── GALLERY GRID ── */
+.gallery {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-rows: auto;
+  gap: 3px;
+  padding: 3px;
+  background: #000;
+}
+.g-item {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg2);
+  cursor: pointer;
+}
+.g-item:nth-child(1) { grid-row: span 2; }
+.g-item:nth-child(4) { grid-column: span 2; }
+.g-item img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  min-height: 280px;
+  transition: transform 0.9s cubic-bezier(0.25,0.46,0.45,0.94),
+              filter 0.5s;
+  filter: brightness(0.85) grayscale(0.15);
+}
+.g-item:hover img {
+  transform: scale(1.05);
+  filter: brightness(0.95) grayscale(0);
+}
+.g-item-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(11,11,12,0);
+  transition: background 0.4s;
+  display: flex;
+  align-items: flex-end;
+  padding: 24px;
+}
+.g-item:hover .g-item-overlay { background: rgba(11,11,12,0.4); }
+.g-item-label {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.4s, transform 0.4s;
+}
+.g-item:hover .g-item-label {
+  opacity: 1;
+  transform: none;
+}
+.g-item-cat {
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--rose);
+  margin-bottom: 4px;
+}
+.g-item-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 1.2rem;
+  font-weight: 300;
+  color: #fff;
+}
+
+/* ── SELECTED WORK TEXT ── */
+.work-section {
+  padding: 100px 44px;
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 80px;
+}
+.work-left {}
+.work-tag {
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--rose);
+  margin-bottom: 20px;
+}
+.work-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(2rem, 3vw, 2.8rem);
+  color: var(--cream);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+.work-right {}
+.work-list {
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+.work-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 0;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  transition: padding-left 0.3s;
+}
+.work-item:hover { padding-left: 12px; }
+.work-item-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 400;
+  font-size: 1.2rem;
+  color: var(--cream);
+  letter-spacing: -0.01em;
+}
+.work-item-meta {
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.work-item-year {
+  font-size: 0.72rem;
+  color: rgba(237,232,224,0.2);
+  flex-shrink: 0;
+  margin-left: 16px;
+}
+
+/* ── ABOUT ── */
+.about {
+  background: var(--bg2);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 120px 44px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+.about-text {}
+.about-tag {
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--rose);
+  margin-bottom: 28px;
+}
+.about-text h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(2.2rem, 3.5vw, 3.2rem);
+  color: var(--cream);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin-bottom: 28px;
+}
+.about-text p {
+  font-size: 0.86rem;
+  line-height: 1.9;
+  color: var(--muted);
+  font-weight: 300;
+  margin-bottom: 14px;
+}
+.about-img {
+  position: relative;
+  height: 580px;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.about-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.about-img::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 60%, rgba(11,11,12,0.3));
+}
+
+/* ── CONTACT ── */
+.contact {
+  padding: 160px 44px;
+  text-align: center;
+}
+.contact-tag {
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 32px;
+}
+.contact h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(3rem, 7vw, 6.5rem);
+  color: var(--cream);
+  letter-spacing: -0.04em;
+  line-height: 1.0;
+  margin-bottom: 52px;
+}
+.contact h2 span {
+  color: var(--rose);
+}
+.contact-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+}
+.contact-link {
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(237,232,224,0.12);
+  padding-bottom: 4px;
+  transition: color 0.2s, border-color 0.2s;
+}
+.contact-link:hover { color: var(--cream); border-bottom-color: var(--rose); }
+.contact-dot {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--muted);
+  opacity: 0.4;
+}
+
+/* ── FOOTER ── */
+footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 44px;
+  border-top: 1px solid var(--line);
+}
+.footer-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 1rem;
+  color: rgba(237,232,224,0.2);
+}
+.footer-lynq {
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  color: rgba(237,232,224,0.15);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.footer-lynq:hover { color: rgba(237,232,224,0.45); }
+
+/* ── REVEAL ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.8s cubic-bezier(0.25,0.46,0.45,0.94),
+              transform 0.8s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+.reveal.in { opacity: 1; transform: none; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 860px) {
+  nav { padding: 18px 20px; }
+  .nav-right a { display: none; }
+  .hero-content { left: 24px; right: 24px; bottom: 36px; flex-direction: column; align-items: flex-start; gap: 20px; }
+  .gallery { grid-template-columns: 1fr 1fr; }
+  .g-item:nth-child(1) { grid-row: span 1; }
+  .g-item:nth-child(4) { grid-column: span 1; }
+  .categories { padding: 0 20px; }
+  .work-section, .about { grid-template-columns: 1fr; padding: 60px 20px; gap: 40px; }
+  .about-img { height: 340px; }
+  .contact { padding: 100px 20px; }
+  footer { padding: 18px 20px; }
+}
+/* ── ART MOTION ── */
+.lr{overflow:hidden;display:block}
+.lr>span{display:block;transform:translateY(106%);transition:transform 1s cubic-bezier(0.16,1,0.3,1)}
+.lr.in>span{transform:translateY(0)}
+.lr:nth-child(2)>span{transition-delay:0.1s}
+.lr:nth-child(3)>span{transition-delay:0.2s}
+.lr:nth-child(4)>span{transition-delay:0.3s}
+.lr:nth-child(5)>span{transition-delay:0.4s}
+.img-curtain{overflow:hidden}
+.img-curtain img{transform:scale(1.07);clip-path:inset(0 0 100% 0);transition:clip-path 1.4s cubic-bezier(0.16,1,0.3,1),transform 1.4s cubic-bezier(0.16,1,0.3,1)}
+.img-curtain.in img{clip-path:inset(0 0 0% 0);transform:scale(1)}
+.art-mq{overflow:hidden;padding:18px 0}
+.art-mq.dk{border-top:1px solid rgba(255,255,255,0.07);border-bottom:1px solid rgba(255,255,255,0.07)}
+.art-mq.lt{border-top:1px solid rgba(0,0,0,0.08);border-bottom:1px solid rgba(0,0,0,0.08)}
+.am-tr{display:inline-flex;animation:am-roll 26s linear infinite;white-space:nowrap}
+.am-tr span{font-size:0.68rem;letter-spacing:0.26em;text-transform:uppercase;padding-right:52px}
+.art-mq.dk .am-tr span{color:rgba(255,255,255,0.25)}
+.art-mq.lt .am-tr span{color:rgba(0,0,0,0.22)}
+@keyframes am-roll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+</style>
+</head>
+<body>
+
+<svg class="grain" aria-hidden="true">
+  <filter id="gr" x="0%" y="0%" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.70" numOctaves="4" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+  <rect width="100%" height="100%" filter="url(#gr)"/>
+</svg>
+
+<nav>
+  <div class="nav-left">
+    <div class="nav-name">Maya Reyes</div>
+    <div class="nav-discipline">Photographer · Toronto</div>
+  </div>
+  <div class="nav-right">
+    <a href="#work">Work</a>
+    <a href="#about">About</a>
+    <a href="#contact">Contact</a>
+  </div>
+</nav>
+<div class="art-mq dk">
+  <div class="am-tr">
+    <span>Portrait</span><span>—</span><span>Documentary</span><span>—</span><span>Editorial</span><span>—</span><span>Toronto</span><span>—</span><span>Available Worldwide</span><span>—</span><span>Portrait</span><span>—</span><span>Documentary</span><span>—</span><span>Editorial</span><span>—</span><span>Toronto</span><span>—</span><span>Available Worldwide</span><span>—</span>
+  </div>
+</div>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-img img-curtain">
+    <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=2400&h=1600&fit=crop&auto=format&q=90" alt="Portrait work">
+  </div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-title">
+      <em>Maya</em>
+      Reyes
+    </div>
+    <div class="hero-meta">
+      <div class="hero-meta-item">Portrait · Editorial</div>
+      <div class="hero-meta-item">Available for commissions</div>
+      <div class="hero-meta-item">Toronto — Worldwide</div>
+    </div>
+  </div>
+</section>
+
+<!-- Categories filter -->
+<div class="categories">
+  <button class="cat-btn active">All <span class="cat-count">24</span></button>
+  <button class="cat-btn">Portrait <span class="cat-count">11</span></button>
+  <button class="cat-btn">Editorial <span class="cat-count">7</span></button>
+  <button class="cat-btn">Events <span class="cat-count">4</span></button>
+  <button class="cat-btn">Campaign <span class="cat-count">2</span></button>
+</div>
+
+<!-- Gallery grid -->
+<section id="work">
+  <div class="gallery">
+    <div class="g-item">
+      <img src="https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=1200&h=1600&fit=crop&auto=format&q=88" alt="">
+      <div class="g-item-overlay">
+        <div class="g-item-label">
+          <div class="g-item-cat">Portrait</div>
+          <div class="g-item-name">Stillness Study</div>
+        </div>
+      </div>
+    </div>
+    <div class="g-item">
+      <img src="https://images.unsplash.com/photo-1542596594-649edbc13630?w=900&h=700&fit=crop&auto=format&q=88" alt="">
+      <div class="g-item-overlay">
+        <div class="g-item-label">
+          <div class="g-item-cat">Editorial</div>
+          <div class="g-item-name">Lux Magazine</div>
+        </div>
+      </div>
+    </div>
+    <div class="g-item">
+      <img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=900&h=700&fit=crop&auto=format&q=88" alt="">
+      <div class="g-item-overlay">
+        <div class="g-item-label">
+          <div class="g-item-cat">Campaign</div>
+          <div class="g-item-name">Autumn / 2025</div>
+        </div>
+      </div>
+    </div>
+    <div class="g-item">
+      <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=1600&h=800&fit=crop&auto=format&q=88" alt="">
+      <div class="g-item-overlay">
+        <div class="g-item-label">
+          <div class="g-item-cat">Portrait</div>
+          <div class="g-item-name">Natural Light Series</div>
+        </div>
+      </div>
+    </div>
+    <div class="g-item">
+      <img src="https://images.unsplash.com/photo-1509631179647-0177331693ae?w=900&h=700&fit=crop&auto=format&q=88" alt="">
+      <div class="g-item-overlay">
+        <div class="g-item-label">
+          <div class="g-item-cat">Editorial</div>
+          <div class="g-item-name">The Quiet Hour</div>
+        </div>
+      </div>
+    </div>
+    <div class="g-item">
+      <img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=900&h=700&fit=crop&auto=format&q=88" alt="">
+      <div class="g-item-overlay">
+        <div class="g-item-label">
+          <div class="g-item-cat">Events</div>
+          <div class="g-item-name">Collective Opening</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Selected work list -->
+<section class="work-section">
+  <div class="work-left reveal">
+    <div class="work-tag">Selected projects</div>
+    <h2 class="work-title">
+      <span class="lr"><span>Recent</span></span>
+      <span class="lr"><span>commissions.</span></span>
+    </h2>
+  </div>
+  <div class="work-right">
+    <ul class="work-list">
+      <li class="work-item reveal">
+        <div>
+          <div class="work-item-name">Nordstrom Campaign SS26</div>
+          <div class="work-item-meta">Campaign · Fashion</div>
+        </div>
+        <div class="work-item-year">2026</div>
+      </li>
+      <li class="work-item reveal">
+        <div>
+          <div class="work-item-name">Lux Magazine — Cover Story</div>
+          <div class="work-item-meta">Editorial · Magazine</div>
+        </div>
+        <div class="work-item-year">2025</div>
+      </li>
+      <li class="work-item reveal">
+        <div>
+          <div class="work-item-name">Collective Art Opening, AGO</div>
+          <div class="work-item-meta">Events · Documentary</div>
+        </div>
+        <div class="work-item-year">2025</div>
+      </li>
+      <li class="work-item reveal">
+        <div>
+          <div class="work-item-name">Stillness — Personal Series</div>
+          <div class="work-item-meta">Portrait · Personal</div>
+        </div>
+        <div class="work-item-year">2024</div>
+      </li>
+      <li class="work-item reveal">
+        <div>
+          <div class="work-item-name">Autumn / 2024 Lookbook</div>
+          <div class="work-item-meta">Campaign · Apparel</div>
+        </div>
+        <div class="work-item-year">2024</div>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- About -->
+<section class="about" id="about">
+  <div class="about-text">
+    <div class="about-tag reveal">About</div>
+    <h2>
+      <span class="lr"><span>I photograph</span></span>
+      <span class="lr"><span>people as they are.</span></span>
+    </h2>
+    <p class="reveal">I'm Maya — a portrait and editorial photographer based in Toronto, working wherever the light is right. My work is about stillness. Finding the second before the mask goes back on.</p>
+    <p class="reveal">I've shot for Lux, The Sunday Times, and independent labels across North America and Europe. I'm drawn to natural light, quiet rooms, and faces that have a story.</p>
+    <p class="reveal">Available for portrait commissions, editorial, events, and campaign work. I travel for the right project.</p>
+  </div>
+  <div class="about-img reveal">
+    <img src="https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=1200&h=1600&fit=crop&auto=format&q=88" alt="Maya Reyes">
+  </div>
+</section>
+
+<!-- Contact -->
+<section class="contact" id="contact">
+  <div class="contact-tag reveal">Get in touch</div>
+  <h2>
+    <span class="lr"><span>Let's make</span></span>
+    <span class="lr"><span><span style="color:var(--rose)">something real.</span></span></span>
+  </h2>
+  <div class="contact-links">
+    <a href="mailto:maya@mayareyes.ca" class="contact-link reveal">maya@mayareyes.ca</a>
+    <div class="contact-dot"></div>
+    <a href="#" class="contact-link reveal">@mayareyes</a>
+    <div class="contact-dot"></div>
+    <a href="#" class="contact-link reveal">+1 (416) 000 0000</a>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-name">Maya Reyes</div>
+  <a href="https://lynq.build" class="footer-lynq">Site by LYNQ</a>
+</footer>
+
+<script>
+const reveals = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+  });
+}, { threshold: 0.08 });
+reveals.forEach(el => io.observe(el));
+
+document.querySelectorAll('.cat-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+/* art motion observer */
+const _ao=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');_ao.unobserve(e.target)}})},{threshold:0.12});
+document.querySelectorAll('.lr,.img-curtain').forEach(el=>_ao.observe(el));
+</script>
+</body>
+</html>

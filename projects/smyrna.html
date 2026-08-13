@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>SMYRNA by Cem — Turkish Mediterranean · Barceloneta</title>
+<meta name="description" content="Turkish-Mediterranean cuisine on the Barceloneta waterfront. Mezze, slow-cooked mains, and sunset cocktails. Family-run by Cem since 2011.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:    #09080a;
+  --bg2:   #100f12;
+  --teal:  #2a6b6e;
+  --teal2: #3d8e92;
+  --terr:  #c4552b;
+  --cream: #f2e8d5;
+  --gold:  #c49e44;
+  --muted: rgba(242,232,213,0.35);
+  --line:  rgba(242,232,213,0.07);
+  --line2: rgba(42,107,110,0.2);
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--cream);
+  font-family: 'DM Sans', sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── GRAIN ── */
+.grain {
+  position: fixed;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  pointer-events: none;
+  z-index: 9000;
+  opacity: 0.042;
+}
+
+/* ── PROGRESS ── */
+#pgbar {
+  position: fixed;
+  top: 0; left: 0;
+  height: 2px;
+  width: 0%;
+  background: var(--terr);
+  z-index: 8000;
+  transition: width 0.08s linear;
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 48px;
+  mix-blend-mode: difference;
+}
+.nav-logo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-decoration: none;
+}
+.nav-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 1.4rem;
+  color: var(--cream);
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+.nav-sub {
+  font-size: 0.58rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(242,232,213,0.32);
+}
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+.nav-right a {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(242,232,213,0.42);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.nav-right a:hover { color: var(--cream); }
+.nav-reserve {
+  border: 1px solid rgba(196,85,43,0.4) !important;
+  color: var(--terr) !important;
+  padding: 9px 20px !important;
+  border-radius: 4px !important;
+  transition: background 0.2s !important;
+}
+.nav-reserve:hover { background: var(--terr) !important; color: var(--cream) !important; }
+
+/* ── HERO (scroll expansion) ── */
+.hero-wrap {
+  position: relative;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 7vw;
+}
+.hero-left, .hero-right {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(4.5rem, 10vw, 9rem);
+  color: var(--cream);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  z-index: 3;
+  will-change: transform;
+  text-shadow: 0 2px 40px rgba(0,0,0,0.6);
+  pointer-events: none;
+}
+.hero-right { text-align: right; }
+.hero-card {
+  position: relative;
+  z-index: 2;
+  width: 280px;
+  height: 380px;
+  border-radius: 5px;
+  overflow: hidden;
+  will-change: width, height, border-radius;
+  cursor: pointer;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.7);
+  flex-shrink: 0;
+}
+.hero-card img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: brightness(0.85);
+}
+.hero-scroll-hint {
+  position: absolute;
+  bottom: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.hero-scroll-hint span {
+  font-size: 0.58rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(242,232,213,0.28);
+}
+.scroll-line {
+  width: 1px; height: 40px;
+  background: linear-gradient(to bottom, var(--terr), transparent);
+  animation: sl 1.8s ease-in-out infinite;
+}
+@keyframes sl {
+  0%   { transform: scaleY(0); transform-origin: top; opacity: 0; }
+  40%  { transform: scaleY(1); transform-origin: top; opacity: 1; }
+  60%  { transform: scaleY(1); transform-origin: bottom; }
+  100% { transform: scaleY(0); transform-origin: bottom; opacity: 0; }
+}
+
+/* ── INTRO STRIP ── */
+.intro-strip {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+}
+.strip-item {
+  flex: 1;
+  padding: 36px 44px;
+  border-right: 1px solid var(--line);
+  text-align: center;
+}
+.strip-item:last-child { border-right: none; }
+.strip-val {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 2.4rem;
+  font-weight: 300;
+  color: var(--terr);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.strip-lbl {
+  font-size: 0.6rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ── MENU ── */
+.menu-section {
+  padding: 100px 48px;
+}
+.section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 56px;
+}
+.section-tag { font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--terr); }
+.section-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(2rem, 3.5vw, 3.4rem);
+  color: var(--cream);
+  letter-spacing: -0.03em;
+}
+.menu-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  background: var(--line);
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.menu-col {
+  background: var(--bg);
+  padding: 44px 40px;
+}
+.menu-col-title {
+  font-size: 0.6rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--teal2);
+  margin-bottom: 28px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line2);
+}
+.menu-item {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+}
+.menu-item:last-child { border-bottom: none; }
+.mi-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 4px;
+}
+.mi-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 400;
+  font-size: 1.1rem;
+  color: var(--cream);
+  letter-spacing: -0.01em;
+}
+.mi-price {
+  font-size: 0.76rem;
+  color: var(--gold);
+  font-weight: 300;
+  flex-shrink: 0;
+}
+.mi-desc {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-weight: 300;
+  line-height: 1.6;
+}
+
+/* ── STORY ── */
+.story {
+  background: var(--bg2);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 120px 48px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+.story-img {
+  border-radius: 3px;
+  overflow: hidden;
+  height: 540px;
+}
+.story-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: brightness(0.75) saturate(0.8);
+  transition: transform 0.8s;
+}
+.story-img:hover img { transform: scale(1.03); }
+.story-text {}
+.story-tag { font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--terr); margin-bottom: 24px; }
+.story-text h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(2rem, 3.5vw, 3.2rem);
+  color: var(--cream);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin-bottom: 28px;
+}
+.story-text blockquote {
+  border-left: 2px solid var(--terr);
+  padding-left: 20px;
+  margin-bottom: 24px;
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 1.15rem;
+  color: rgba(242,232,213,0.5);
+  line-height: 1.6;
+}
+.story-text p {
+  font-size: 0.84rem;
+  line-height: 1.9;
+  color: var(--muted);
+  font-weight: 300;
+  margin-bottom: 12px;
+}
+.story-rule { width: 32px; height: 1px; background: var(--terr); margin: 28px 0; }
+.story-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 1rem;
+  color: rgba(242,232,213,0.4);
+}
+
+/* ── VISIT ── */
+.visit {
+  padding: 120px 48px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+.visit-text {}
+.visit-tag { font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--teal2); margin-bottom: 24px; }
+.visit-text h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(2.2rem, 3.5vw, 3.5rem);
+  color: var(--cream);
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+  margin-bottom: 40px;
+}
+.visit-detail { margin-bottom: 22px; }
+.vd-lbl { font-size: 0.6rem; letter-spacing: 0.24em; text-transform: uppercase; color: rgba(242,232,213,0.22); margin-bottom: 6px; }
+.vd-val { font-size: 0.88rem; color: var(--muted); font-weight: 300; line-height: 1.6; }
+.visit-img {
+  border-radius: 3px;
+  overflow: hidden;
+  height: 480px;
+}
+.visit-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: brightness(0.7) saturate(0.8);
+}
+
+/* ── RESERVE ── */
+.reserve {
+  background: var(--terr);
+  padding: 120px 48px;
+  text-align: center;
+}
+.reserve-tag { font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(242,232,213,0.45); margin-bottom: 24px; }
+.reserve h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(3rem, 6vw, 5.5rem);
+  color: var(--cream);
+  letter-spacing: -0.04em;
+  line-height: 1.04;
+  margin-bottom: 36px;
+}
+.reserve-sub {
+  font-size: 0.82rem;
+  color: rgba(242,232,213,0.5);
+  margin-bottom: 44px;
+  font-weight: 300;
+  letter-spacing: 0.04em;
+}
+.reserve-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 44px;
+  background: var(--bg);
+  color: var(--cream);
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.reserve-btn:hover { opacity: 0.9; transform: translateY(-2px); }
+
+/* ── FOOTER ── */
+footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 48px;
+  border-top: 1px solid var(--line);
+}
+.footer-logo { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.1rem; color: rgba(242,232,213,0.18); }
+.footer-lynq { font-size: 0.65rem; letter-spacing: 0.12em; color: rgba(242,232,213,0.12); text-decoration: none; transition: color 0.2s; }
+.footer-lynq:hover { color: rgba(242,232,213,0.42); }
+
+/* ── REVEAL ── */
+.reveal { opacity: 0; transform: translateY(22px); transition: opacity 0.75s cubic-bezier(0.25,0.46,0.45,0.94), transform 0.75s cubic-bezier(0.25,0.46,0.45,0.94); }
+.reveal.in { opacity: 1; transform: none; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 860px) {
+  nav { padding: 16px 20px; }
+  .nav-right a:not(.nav-reserve) { display: none; }
+  .hero-left, .hero-right { font-size: clamp(3rem, 10vw, 5rem); }
+  .intro-strip { flex-wrap: wrap; }
+  .strip-item { flex: 1 1 50%; }
+  .menu-section, .story, .visit { padding: 64px 20px; }
+  .menu-grid { grid-template-columns: 1fr; }
+  .story { grid-template-columns: 1fr; gap: 40px; }
+  .story-img { height: 300px; }
+  .visit { grid-template-columns: 1fr; gap: 40px; }
+  .visit-img { height: 280px; }
+  .reserve { padding: 80px 20px; }
+  footer { padding: 18px 20px; }
+}
+
+/* ── ART MOTION ── */
+.lr{overflow:hidden;display:block}
+.lr>span{display:block;transform:translateY(106%);transition:transform 1s cubic-bezier(0.16,1,0.3,1)}
+.lr.in>span{transform:translateY(0)}
+.lr:nth-child(2)>span{transition-delay:0.1s}
+.lr:nth-child(3)>span{transition-delay:0.2s}
+.lr:nth-child(4)>span{transition-delay:0.3s}
+.lr:nth-child(5)>span{transition-delay:0.4s}
+.img-curtain{overflow:hidden}
+.img-curtain img{transform:scale(1.07);clip-path:inset(0 0 100% 0);transition:clip-path 1.4s cubic-bezier(0.16,1,0.3,1),transform 1.4s cubic-bezier(0.16,1,0.3,1)}
+.img-curtain.in img{clip-path:inset(0 0 0% 0);transform:scale(1)}
+.art-mq{overflow:hidden;padding:18px 0}
+.art-mq.dk{border-top:1px solid rgba(255,255,255,0.07);border-bottom:1px solid rgba(255,255,255,0.07)}
+.art-mq.lt{border-top:1px solid rgba(0,0,0,0.08);border-bottom:1px solid rgba(0,0,0,0.08)}
+.am-tr{display:inline-flex;animation:am-roll 26s linear infinite;white-space:nowrap}
+.am-tr span{font-size:0.68rem;letter-spacing:0.26em;text-transform:uppercase;padding-right:52px}
+.art-mq.dk .am-tr span{color:rgba(255,255,255,0.25)}
+.art-mq.lt .am-tr span{color:rgba(0,0,0,0.22)}
+@keyframes am-roll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+</style>
+</head>
+<body>
+
+<svg class="grain" aria-hidden="true">
+  <filter id="gr" x="0%" y="0%" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.70" numOctaves="4" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+  <rect width="100%" height="100%" filter="url(#gr)"/>
+</svg>
+<div id="pgbar"></div>
+
+<nav>
+  <a href="#" class="nav-logo">
+    <span class="nav-name">SMYRNA</span>
+    <span class="nav-sub">by Cem · Barceloneta</span>
+  </a>
+  <div class="nav-right">
+    <a href="#menu">Menu</a>
+    <a href="#story">Story</a>
+    <a href="#visit">Visit</a>
+    <a href="#reserve" class="nav-reserve">Reserve</a>
+  </div>
+</nav>
+
+<div class="art-mq dk">
+  <div class="am-tr">
+    <span>Mediterranean Kitchen</span><span>—</span><span>Barceloneta</span><span>—</span><span>Open Tues–Sun</span><span>—</span><span>Reserve a Table</span><span>—</span><span>Turkish Roots</span><span>—</span><span>Mediterranean Kitchen</span><span>—</span><span>Barceloneta</span><span>—</span><span>Open Tues–Sun</span><span>—</span><span>Reserve a Table</span><span>—</span><span>Turkish Roots</span><span>—</span>
+  </div>
+</div>
+
+<!-- Scroll expansion hero -->
+<section class="hero-wrap" id="heroWrap">
+  <div class="hero-left" id="heroLeft">SMYRNA</div>
+  <div class="hero-card" id="heroCard">
+    <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=2400&h=1600&fit=crop&auto=format&q=90" alt="SMYRNA by Cem">
+  </div>
+  <div class="hero-right" id="heroRight">by Cem</div>
+  <div class="hero-scroll-hint" id="heroHint">
+    <div class="scroll-line"></div>
+    <span>Scroll</span>
+  </div>
+</section>
+
+<!-- Intro strip -->
+<div class="intro-strip">
+  <div class="strip-item reveal"><div class="strip-val">2011</div><div class="strip-lbl">Since</div></div>
+  <div class="strip-item reveal"><div class="strip-val">Sea</div><div class="strip-lbl">Barceloneta waterfront</div></div>
+  <div class="strip-item reveal"><div class="strip-val">Family</div><div class="strip-lbl">Run by Cem &amp; family</div></div>
+  <div class="strip-item reveal"><div class="strip-val">Daily</div><div class="strip-lbl">Lunch &amp; dinner</div></div>
+</div>
+
+<!-- Menu -->
+<section class="menu-section" id="menu">
+  <div class="section-header reveal">
+    <span class="section-tag">What we cook</span>
+    <h2 class="section-title">The menu.</h2>
+  </div>
+  <div class="menu-grid">
+    <div class="menu-col reveal">
+      <div class="menu-col-title">Mezze &amp; Starters</div>
+      <div class="menu-item">
+        <div class="mi-row"><span class="mi-name">Hummus al carbón</span><span class="mi-price">€9</span></div>
+        <div class="mi-desc">Charred hummus, smoked paprika oil, hand-torn pide</div>
+      </div>
+      <div class="menu-item">
+        <div class="mi-row"><span class="mi-name">Labneh con dukkah</span><span class="mi-price">€8</span></div>
+        <div class="mi-desc">Strained yoghurt, walnut dukkah, wildflower honey, sumac</div>
+      </div>
+      <div class="menu-item">
+        <div class="mi-row"><span class="mi-name">Calamares a la plancha</span><span class="mi-price">€14</span></div>
+        <div class="mi-desc">Grilled squid, Turkish butter, lemon, fresh dill</div>
+      </div>
+      <div class="menu-item">
+        <div class="mi-row"><span class="mi-name">Börek de espinacas</span><span class="mi-price">€11</span></div>
+        <div class="mi-desc">Hand-rolled phyllo, spinach, aged feta, black sesame</div>
+      </div>
+      <div class="menu-item">
+        <div class="mi-row"><span class="mi-name">Gambas a la Smyrna</span><span class="mi-price">€18</span></div>
+        <div class="mi-desc">Grilled prawns, chermoula, preserved lemon butter, coriander</div>
+      </div>
+    </div>
+    <div class="menu-col reveal">
+      <div class="menu-col-title">Mains &amp; Paella</div>
+      <div class="menu-item">
+        <div class="mi-row"><span class="mi-name">Paella Barceloneta</span><span class="mi-price">€28</span></div>
+        <div class="mi-desc">Bomba rice, whole fish, shellfish, saffron, aioli</div>
+      </div>
+      <div class="menu-item">
+        <div class="mi-row"><span class="mi-name">Kebab de cordero</span><span class="mi-price">€26</span></div>
+        <div class="mi-desc">Wood-fired lamb, yoghurt, pickled chilies, fresh herbs</div>
+      </div>
+      <div class="menu-item">
+        <div class="mi-row"><span class="mi-name">Dorada entera</span><span class="mi-price">€34</span></div>
+        <div class="mi-desc">Whole sea bream, olive oil, sea salt, charred lemon</div>
+      </div>
+      <div class="menu-item">
+        <div class="mi-row"><span class="mi-name">Menemen</span><span class="mi-price">€16</span></div>
+        <div class="mi-desc">Turkish eggs, slow-cooked tomato, peppers, aged kashar</div>
+      </div>
+      <div class="menu-item">
+        <div class="mi-row"><span class="mi-name">Arroz a banda</span><span class="mi-price">€24</span></div>
+        <div class="mi-desc">Separated seafood rice, ali-oli, sea cucumber</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Story -->
+<section class="story" id="story">
+  <div class="story-img reveal">
+    <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&h=1500&fit=crop&auto=format&q=88" alt="Cem's kitchen">
+  </div>
+  <div class="story-text">
+    <div class="story-tag reveal">The story</div>
+    <h2>
+      <span class="lr"><span>From Izmir</span></span>
+      <span class="lr"><span>to the sea.</span></span>
+    </h2>
+    <blockquote class="reveal">"In Turkey we eat together for hours. I wanted to bring that to Barcelona."</blockquote>
+    <p class="reveal">Cem Akyüz arrived in Barcelona in 2009 from Izmir — a port city on the Aegean that gave this restaurant its name. He spent two years cooking in other people's kitchens before opening his own on the Barceloneta seafront in 2011.</p>
+    <p class="reveal">The menu is neither Turkish nor Spanish. It borrows from both coasts of the same sea — the one that connects Izmir to Barcelona, that made both cities what they are. The paella uses saffron from Turkey. The börek uses olive oil from Catalonia.</p>
+    <div class="story-rule reveal"></div>
+    <div class="story-name reveal">— Cem Akyüz, chef &amp; owner</div>
+  </div>
+</section>
+
+<!-- Visit -->
+<section class="visit" id="visit">
+  <div class="visit-text">
+    <div class="visit-tag reveal">Find us</div>
+    <h2>
+      <span class="lr"><span>Every day,</span></span>
+      <span class="lr"><span>by the water.</span></span>
+    </h2>
+    <div class="visit-detail reveal">
+      <div class="vd-lbl">Address</div>
+      <div class="vd-val">Passeig Marítim de la Barceloneta 38<br>08003 Barcelona</div>
+    </div>
+    <div class="visit-detail reveal">
+      <div class="vd-lbl">Hours</div>
+      <div class="vd-val">Daily: 13:00 – 16:00 &nbsp;&amp;&nbsp; 20:00 – 23:30<br>Kitchen closes promptly</div>
+    </div>
+    <div class="visit-detail reveal">
+      <div class="vd-lbl">Reservations</div>
+      <div class="vd-val">+34 93 221 00 14<br>reservas@smyrnabarcelona.com</div>
+    </div>
+  </div>
+  <div class="visit-img reveal">
+    <img src="https://images.unsplash.com/photo-1533587851505-d119e13fa0d7?w=1200&h=1000&fit=crop&auto=format&q=88" alt="Barceloneta waterfront">
+  </div>
+</section>
+
+<!-- Reserve -->
+<section class="reserve" id="reserve">
+  <div class="reserve-tag reveal">Reservations</div>
+  <h2 class="reveal">Join us<br>for dinner.</h2>
+  <p class="reserve-sub reveal">Tables available daily for lunch and dinner. Walk-ins welcome, reservations preferred.</p>
+  <a href="mailto:reservas@smyrnabarcelona.com" class="reserve-btn reveal">Book a table →</a>
+</section>
+
+<footer>
+  <div class="footer-logo">SMYRNA</div>
+  <a href="https://lynq.build" class="footer-lynq">Site by LYNQ</a>
+</footer>
+
+<script>
+window.addEventListener('scroll', () => {
+  const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+  document.getElementById('pgbar').style.width = pct + '%';
+}, { passive: true });
+
+const heroWrap  = document.getElementById('heroWrap');
+const heroCard  = document.getElementById('heroCard');
+const heroLeft  = document.getElementById('heroLeft');
+const heroRight = document.getElementById('heroRight');
+const heroHint  = document.getElementById('heroHint');
+let progress = 0, isExpanded = false, touching = false, touchStartY = 0;
+
+function applyHero(p) {
+  progress = Math.max(0, Math.min(1, p));
+  const ease = progress < 0.5 ? 4*progress*progress*progress : 1 - Math.pow(-2*progress+2,3)/2;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  heroCard.style.width        = (280 + (vw-280)*ease) + 'px';
+  heroCard.style.height       = (380 + (vh-380)*ease) + 'px';
+  heroCard.style.borderRadius = (5*(1-ease)) + 'px';
+  heroLeft.style.transform    = `translateX(-${ease*34}vw)`;
+  heroRight.style.transform   = `translateX(${ease*34}vw)`;
+  heroHint.style.opacity      = Math.max(0, 1 - progress*4).toString();
+  if (progress >= 1 && !isExpanded) { isExpanded=true; heroWrap.style.zIndex='0'; document.body.style.overflow=''; }
+}
+document.body.style.overflow = 'hidden';
+applyHero(0);
+window.addEventListener('wheel', e => {
+  if (isExpanded && e.deltaY<0 && window.scrollY<=2) collapse();
+  else if (!isExpanded) { e.preventDefault(); applyHero(progress + e.deltaY*0.0011); }
+}, { passive:false });
+window.addEventListener('touchstart', e => { touching=true; touchStartY=e.touches[0].clientY; }, { passive:true });
+window.addEventListener('touchmove', e => {
+  if (!touching||isExpanded) return; e.preventDefault();
+  const dy=touchStartY-e.touches[0].clientY; touchStartY=e.touches[0].clientY; applyHero(progress+dy*0.0022);
+}, { passive:false });
+window.addEventListener('touchend', () => { touching=false; });
+function collapse() {
+  isExpanded=false; document.body.style.overflow='hidden'; heroWrap.style.zIndex='10';
+  const tick=()=>{ progress=Math.max(0,progress-0.04); applyHero(progress); if(progress>0) requestAnimationFrame(tick); else document.body.style.overflow=''; };
+  requestAnimationFrame(tick);
+}
+
+const reveals = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);} });
+}, { threshold:0.08 });
+reveals.forEach(el=>io.observe(el));
+
+/* art motion observer */
+const _ao=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');_ao.unobserve(e.target)}})},{threshold:0.12});
+document.querySelectorAll('.lr,.img-curtain').forEach(el=>_ao.observe(el));
+</script>
+</body>
+</html>

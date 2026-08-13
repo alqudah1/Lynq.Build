@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Forma Studio — Architecture & Interior Design</title>
+<meta name="description" content="Architecture and interior design studio based in Toronto. Residential, commercial, and hospitality projects across North America and Europe.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --white: #fafaf8;
+  --off:   #f2f2ee;
+  --black: #0e0e0e;
+  --dark:  #1a1a1a;
+  --muted: rgba(14,14,14,0.38);
+  --line:  rgba(14,14,14,0.1);
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--white);
+  color: var(--black);
+  font-family: 'Space Grotesk', sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 48px;
+  background: rgba(250,250,248,0.95);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--line);
+}
+.nav-logo {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--black);
+  text-decoration: none;
+}
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+}
+.nav-right a {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.nav-right a:hover { color: var(--black); }
+
+/* ── HERO ── */
+.hero {
+  padding-top: 72px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-bottom: 0;
+  position: relative;
+  overflow: hidden;
+}
+.hero-overline {
+  position: absolute;
+  top: 112px;
+  left: 48px;
+  font-size: 0.62rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.hero-title-wrap {
+  padding: 0 48px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 48px;
+}
+.hero-title {
+  font-size: clamp(6rem, 16vw, 18rem);
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  color: var(--black);
+  line-height: 0.88;
+  text-transform: uppercase;
+}
+.hero-title .outline {
+  -webkit-text-stroke: 1.5px var(--black);
+  color: transparent;
+}
+.hero-meta-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 32px 48px 40px;
+  border-bottom: 1px solid var(--line);
+}
+.hero-desc {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(1.1rem, 2vw, 1.55rem);
+  color: rgba(14,14,14,0.5);
+  letter-spacing: 0.01em;
+  max-width: 480px;
+  line-height: 1.5;
+}
+.hero-stats {
+  display: flex;
+  gap: 44px;
+}
+.hs-item {}
+.hs-val {
+  font-size: 1.8rem;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  color: var(--black);
+  line-height: 1;
+}
+.hs-lbl {
+  font-size: 0.58rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+/* ── PROJECTS GRID ── */
+.projects {
+  padding: 0;
+}
+.projects-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 44px 48px;
+  border-bottom: 1px solid var(--line);
+}
+.projects-header h2 {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.projects-count {
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+.proj-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  border-bottom: 1px solid var(--line);
+}
+.proj-item {
+  position: relative;
+  border-right: 1px solid var(--line);
+  overflow: hidden;
+  cursor: pointer;
+}
+.proj-item:last-child { border-right: none; }
+.proj-item:nth-child(3n) { border-right: none; }
+.proj-img {
+  height: 360px;
+  overflow: hidden;
+  position: relative;
+}
+.proj-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: grayscale(0.4) brightness(0.9);
+  transition: transform 0.9s cubic-bezier(0.25,0.46,0.45,0.94), filter 0.5s;
+}
+.proj-item:hover .proj-img img {
+  transform: scale(1.06);
+  filter: grayscale(0) brightness(1);
+}
+.proj-body {
+  padding: 24px 28px 28px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.proj-name {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--black);
+  margin-bottom: 4px;
+}
+.proj-type {
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.proj-year {
+  font-size: 0.68rem;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+/* ── PHILOSOPHY ── */
+.philosophy {
+  background: var(--black);
+  padding: 120px 48px;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 80px;
+  align-items: start;
+}
+.phil-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.22);
+  padding-top: 8px;
+}
+.phil-quote {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(1.8rem, 3.5vw, 3rem);
+  color: rgba(255,255,255,0.78);
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+  margin-bottom: 48px;
+}
+.phil-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 44px;
+}
+.phil-item {}
+.phil-num {
+  font-size: 0.62rem;
+  letter-spacing: 0.24em;
+  color: rgba(255,255,255,0.2);
+  margin-bottom: 14px;
+}
+.phil-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.78);
+  letter-spacing: -0.01em;
+  margin-bottom: 10px;
+}
+.phil-desc {
+  font-size: 0.78rem;
+  line-height: 1.75;
+  color: rgba(255,255,255,0.28);
+  font-weight: 300;
+}
+
+/* ── SERVICES ── */
+.services {
+  padding: 0;
+}
+.service-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 32px 48px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  transition: background 0.2s, padding-left 0.3s;
+}
+.service-row:hover { background: var(--off); padding-left: 60px; }
+.sr-num {
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+  width: 40px;
+  flex-shrink: 0;
+}
+.sr-name {
+  flex: 1;
+  font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--black);
+}
+.sr-type {
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: right;
+}
+
+/* ── CONTACT ── */
+.contact {
+  padding: 120px 48px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: start;
+  border-top: 1px solid var(--line);
+}
+.contact-left {}
+.contact-tag { font-size: 0.62rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; }
+.contact-title {
+  font-size: clamp(2.4rem, 5vw, 5rem);
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  color: var(--black);
+  line-height: 0.92;
+}
+.contact-right {
+  padding-top: 8px;
+}
+.contact-detail { margin-bottom: 28px; }
+.cd-lbl { font-size: 0.6rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.cd-val { font-size: 0.92rem; color: var(--black); font-weight: 300; line-height: 1.6; }
+.contact-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 28px;
+  padding: 15px 32px;
+  border: 2px solid var(--black);
+  color: var(--black);
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: background 0.2s, color 0.2s;
+}
+.contact-cta:hover { background: var(--black); color: var(--white); }
+
+/* ── FOOTER ── */
+footer {
+  background: var(--black);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 48px;
+}
+.footer-logo { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.28em; text-transform: uppercase; color: rgba(250,250,248,0.18); }
+.footer-lynq { font-size: 0.65rem; letter-spacing: 0.12em; color: rgba(250,250,248,0.12); text-decoration: none; transition: color 0.2s; }
+.footer-lynq:hover { color: rgba(250,250,248,0.4); }
+
+/* ── REVEAL ── */
+.reveal { opacity: 0; transform: translateY(22px); transition: opacity 0.75s cubic-bezier(0.25,0.46,0.45,0.94), transform 0.75s cubic-bezier(0.25,0.46,0.45,0.94); }
+.reveal.in { opacity: 1; transform: none; }
+
+/* ── ART MOTION ── */
+.lr{overflow:hidden;display:block}
+.lr>span{display:block;transform:translateY(106%);transition:transform 1s cubic-bezier(0.16,1,0.3,1)}
+.lr.in>span{transform:translateY(0)}
+.lr:nth-child(2)>span{transition-delay:0.1s}
+.lr:nth-child(3)>span{transition-delay:0.2s}
+.lr:nth-child(4)>span{transition-delay:0.3s}
+.lr:nth-child(5)>span{transition-delay:0.4s}
+.img-curtain{overflow:hidden}
+.img-curtain img{transform:scale(1.07);clip-path:inset(0 0 100% 0);transition:clip-path 1.4s cubic-bezier(0.16,1,0.3,1),transform 1.4s cubic-bezier(0.16,1,0.3,1)}
+.img-curtain.in img{clip-path:inset(0 0 0% 0);transform:scale(1)}
+.art-mq{overflow:hidden;padding:18px 0}
+.art-mq.dk{border-top:1px solid rgba(255,255,255,0.07);border-bottom:1px solid rgba(255,255,255,0.07)}
+.art-mq.lt{border-top:1px solid rgba(0,0,0,0.08);border-bottom:1px solid rgba(0,0,0,0.08)}
+.am-tr{display:inline-flex;animation:am-roll 26s linear infinite;white-space:nowrap}
+.am-tr span{font-size:0.68rem;letter-spacing:0.26em;text-transform:uppercase;padding-right:52px}
+.art-mq.dk .am-tr span{color:rgba(255,255,255,0.25)}
+.art-mq.lt .am-tr span{color:rgba(0,0,0,0.22)}
+@keyframes am-roll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 860px) {
+  nav { padding: 18px 20px; }
+  .nav-right a:not(:last-child) { display: none; }
+  .hero-overline { left: 20px; }
+  .hero-title-wrap { padding: 0 20px 32px; }
+  .hero-meta-row { flex-direction: column; padding: 24px 20px 28px; gap: 24px; }
+  .projects-header { padding: 28px 20px; }
+  .proj-grid { grid-template-columns: 1fr; }
+  .proj-item { border-right: none; border-bottom: 1px solid var(--line); }
+  .philosophy { grid-template-columns: 1fr; padding: 72px 20px; gap: 36px; }
+  .phil-body { grid-template-columns: 1fr; gap: 28px; }
+  .service-row { padding: 24px 20px; }
+  .service-row:hover { padding-left: 28px; }
+  .contact { grid-template-columns: 1fr; padding: 72px 20px; gap: 40px; }
+  footer { padding: 18px 20px; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="#" class="nav-logo">Forma</a>
+  <div class="nav-right">
+    <a href="#projects">Work</a>
+    <a href="#services">Services</a>
+    <a href="#contact">Studio</a>
+  </div>
+</nav>
+<div class="art-mq dk">
+  <div class="am-tr">
+    <span>Architecture Studio</span><span>—</span><span>Toronto</span><span>—</span><span>Residential & Commercial</span><span>—</span><span>Since 2014</span><span>—</span><span>Architecture Studio</span><span>—</span><span>Toronto</span><span>—</span><span>Residential & Commercial</span><span>—</span><span>Since 2014</span><span>—</span>
+  </div>
+</div>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-overline">Architecture &amp; Interior Design · Toronto · Est. 2011</div>
+  <div class="hero-title-wrap">
+    <div class="hero-title lr">
+      <span>FOR<span class="outline">MA</span></span>
+    </div>
+  </div>
+  <div class="hero-meta-row">
+    <p class="hero-desc">"Every building we make is a precise argument about how space should feel."</p>
+    <div class="hero-stats">
+      <div class="hs-item">
+        <div class="hs-val">84</div>
+        <div class="hs-lbl">Projects built</div>
+      </div>
+      <div class="hs-item">
+        <div class="hs-val">12</div>
+        <div class="hs-lbl">Countries</div>
+      </div>
+      <div class="hs-item">
+        <div class="hs-val">2011</div>
+        <div class="hs-lbl">Founded</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Projects -->
+<section class="projects" id="projects">
+  <div class="projects-header">
+    <h2>Selected work</h2>
+    <span class="projects-count">12 of 84</span>
+  </div>
+  <div class="proj-grid">
+    <div class="proj-item reveal">
+      <div class="proj-img img-curtain">
+        <img src="https://images.unsplash.com/photo-1487958449943-2429e8be8625?w=900&h=700&fit=crop&auto=format&q=88" alt="The Moreau Residence">
+      </div>
+      <div class="proj-body">
+        <div>
+          <div class="proj-name">The Moreau Residence</div>
+          <div class="proj-type">Residential · Montréal</div>
+        </div>
+        <div class="proj-year">2025</div>
+      </div>
+    </div>
+    <div class="proj-item reveal">
+      <div class="proj-img img-curtain">
+        <img src="https://images.unsplash.com/photo-1531971589569-0d9370cbe1e5?w=900&h=700&fit=crop&auto=format&q=88" alt="Linden Hotel">
+      </div>
+      <div class="proj-body">
+        <div>
+          <div class="proj-name">Linden Hotel Lobby</div>
+          <div class="proj-type">Hospitality · Toronto</div>
+        </div>
+        <div class="proj-year">2025</div>
+      </div>
+    </div>
+    <div class="proj-item reveal">
+      <div class="proj-img img-curtain">
+        <img src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=900&h=700&fit=crop&auto=format&q=88" alt="Axis Tower">
+      </div>
+      <div class="proj-body">
+        <div>
+          <div class="proj-name">Axis Mixed-Use Tower</div>
+          <div class="proj-type">Commercial · Vancouver</div>
+        </div>
+        <div class="proj-year">2024</div>
+      </div>
+    </div>
+    <div class="proj-item reveal">
+      <div class="proj-img img-curtain">
+        <img src="https://images.unsplash.com/photo-1599901860904-17e6ed7083a0?w=900&h=700&fit=crop&auto=format&q=88" alt="Private Villa">
+      </div>
+      <div class="proj-body">
+        <div>
+          <div class="proj-name">Alentejo Private Villa</div>
+          <div class="proj-type">Residential · Portugal</div>
+        </div>
+        <div class="proj-year">2024</div>
+      </div>
+    </div>
+    <div class="proj-item reveal">
+      <div class="proj-img img-curtain">
+        <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=900&h=700&fit=crop&auto=format&q=88" alt="Studio Office">
+      </div>
+      <div class="proj-body">
+        <div>
+          <div class="proj-name">Studio M Headquarters</div>
+          <div class="proj-type">Commercial · Berlin</div>
+        </div>
+        <div class="proj-year">2023</div>
+      </div>
+    </div>
+    <div class="proj-item reveal">
+      <div class="proj-img img-curtain">
+        <img src="https://images.unsplash.com/photo-1572120360610-d971b9d7767c?w=900&h=700&fit=crop&auto=format&q=88" alt="Cascade Spa">
+      </div>
+      <div class="proj-body">
+        <div>
+          <div class="proj-name">Cascade Wellness Centre</div>
+          <div class="proj-type">Hospitality · Banff</div>
+        </div>
+        <div class="proj-year">2023</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Philosophy -->
+<section class="philosophy reveal">
+  <div class="phil-label">Our approach</div>
+  <div>
+    <p class="phil-quote">"We don't decorate space. We reason about it until the room tells you what it's for."</p>
+    <div class="phil-body">
+      <div class="phil-item">
+        <div class="phil-num">01</div>
+        <div class="phil-title">Material first</div>
+        <div class="phil-desc">Every decision starts with what the building is made of. Material isn't finish — it's structure, weight, and meaning.</div>
+      </div>
+      <div class="phil-item">
+        <div class="phil-num">02</div>
+        <div class="phil-title">Light as design</div>
+        <div class="phil-desc">We spend more time on how light moves through a space than on any surface treatment. It changes everything.</div>
+      </div>
+      <div class="phil-item">
+        <div class="phil-num">03</div>
+        <div class="phil-title">Long life</div>
+        <div class="phil-desc">We design for 50 years, not 5. Buildings that age well are buildings that weren't trying too hard.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Services -->
+<section class="services" id="services">
+  <div class="service-row reveal">
+    <span class="sr-num">01</span>
+    <span class="sr-name">Architecture</span>
+    <span class="sr-type">Residential · Commercial</span>
+  </div>
+  <div class="service-row reveal">
+    <span class="sr-num">02</span>
+    <span class="sr-name">Interior Design</span>
+    <span class="sr-type">Full scope · FF&amp;E</span>
+  </div>
+  <div class="service-row reveal">
+    <span class="sr-num">03</span>
+    <span class="sr-name">Landscape</span>
+    <span class="sr-type">Site · Garden · Public</span>
+  </div>
+  <div class="service-row reveal">
+    <span class="sr-num">04</span>
+    <span class="sr-name">Feasibility &amp; Planning</span>
+    <span class="sr-type">Zoning · Pre-design</span>
+  </div>
+</section>
+
+<!-- Contact -->
+<section class="contact" id="contact">
+  <div class="contact-left">
+    <div class="contact-tag reveal">Start a project</div>
+    <h2 class="contact-title reveal"><span class="lr"><span>Let's</span></span><span class="lr"><span>talk.</span></span></h2>
+  </div>
+  <div class="contact-right">
+    <div class="contact-detail reveal">
+      <div class="cd-lbl">Studio</div>
+      <div class="cd-val">220 King St W, Suite 410<br>Toronto, ON</div>
+    </div>
+    <div class="contact-detail reveal">
+      <div class="cd-lbl">New projects</div>
+      <div class="cd-val">hello@formastudio.ca</div>
+    </div>
+    <div class="contact-detail reveal">
+      <div class="cd-lbl">Phone</div>
+      <div class="cd-val">+1 (416) 000 0000</div>
+    </div>
+    <a href="mailto:hello@formastudio.ca" class="contact-cta reveal">Send a brief →</a>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo">Forma</div>
+  <a href="https://lynq.build" class="footer-lynq">Site by LYNQ</a>
+</footer>
+
+<script>
+const reveals = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+}, { threshold: 0.08 });
+reveals.forEach(el => io.observe(el));
+/* art motion observer */
+const _ao=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');_ao.unobserve(e.target)}})},{threshold:0.12});
+document.querySelectorAll('.lr,.img-curtain').forEach(el=>_ao.observe(el));
+</script>
+</body>
+</html>

@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Greek Pastry — Authentic Greek Bakery · Barceloneta</title>
+<meta name="description" content="Traditional Greek pastries, phyllo pies, baklava, and bougatsa made fresh every morning in the heart of Barceloneta, Barcelona.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ivory:  #faf5ee;
+  --cream:  #f2e9d8;
+  --navy:   #182b40;
+  --navy2:  #0f1e2e;
+  --gold:   #b08a30;
+  --gold2:  #d4a838;
+  --ink:    #1a130a;
+  --muted:  #8a7c68;
+  --line:   rgba(26,19,10,0.08);
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--ivory);
+  color: var(--ink);
+  font-family: 'DM Sans', sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── GRAIN ── */
+.grain {
+  position: fixed;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  pointer-events: none;
+  z-index: 9000;
+  opacity: 0.030;
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 44px;
+  background: rgba(250,245,238,0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--line);
+}
+.nav-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 1.4rem;
+  color: var(--ink);
+  letter-spacing: 0.02em;
+  text-decoration: none;
+}
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+.nav-right a {
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.nav-right a:hover { color: var(--ink); }
+.nav-order {
+  background: var(--navy) !important;
+  color: #fff !important;
+  padding: 9px 20px !important;
+  border-radius: 5px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.05em !important;
+}
+.nav-order:hover { opacity: 0.88 !important; }
+
+/* ── HERO ── */
+.hero {
+  position: relative;
+  height: 100vh;
+  min-height: 600px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+}
+.hero-img {
+  position: absolute;
+  inset: 0;
+  background: url('https://images.unsplash.com/photo-1519676867240-f03562e64548?w=2400&h=1400&fit=crop&auto=format&q=90') center/cover no-repeat;
+}
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(24,43,64,0.92) 0%,
+    rgba(24,43,64,0.45) 50%,
+    rgba(24,43,64,0.12) 100%
+  );
+}
+.hero-content {
+  position: relative;
+  z-index: 2;
+  padding: 0 64px 72px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  width: 100%;
+}
+.hero-text {}
+.hero-tag {
+  font-size: 0.6rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(212,168,56,0.7);
+  margin-bottom: 18px;
+}
+.hero-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(3.5rem, 7vw, 7rem);
+  color: #fff;
+  letter-spacing: -0.03em;
+  line-height: 1.0;
+}
+.hero-sub {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.38);
+  margin-top: 16px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.hero-scroll {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.hero-scroll span {
+  font-size: 0.6rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.22);
+  writing-mode: vertical-rl;
+}
+.scroll-line {
+  width: 1px;
+  height: 48px;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.3), transparent);
+  animation: scrollLine 2s ease-in-out infinite;
+}
+@keyframes scrollLine {
+  0%   { transform: scaleY(0); transform-origin: top; }
+  50%  { transform: scaleY(1); transform-origin: top; }
+  51%  { transform-origin: bottom; }
+  100% { transform: scaleY(0); transform-origin: bottom; }
+}
+
+/* ── INTRO STRIP ── */
+.intro-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 48px;
+  padding: 32px 44px;
+  border-bottom: 1px solid var(--line);
+  background: var(--ivory);
+}
+.strip-item {
+  text-align: center;
+}
+.strip-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 2.2rem;
+  font-weight: 300;
+  color: var(--gold);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.strip-lbl {
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.strip-rule {
+  width: 1px;
+  height: 36px;
+  background: var(--line);
+  flex-shrink: 0;
+}
+
+/* ── MENU / PASTRIES ── */
+.pastries {
+  padding: 100px 44px;
+  max-width: 1160px;
+  margin: 0 auto;
+}
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+  margin-bottom: 56px;
+}
+.section-tag {
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.section-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(2.4rem, 4vw, 3.8rem);
+  color: var(--ink);
+  letter-spacing: -0.03em;
+}
+.pastry-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  background: var(--line);
+}
+.pastry-card {
+  background: var(--ivory);
+  overflow: hidden;
+  position: relative;
+}
+.pastry-img {
+  height: 280px;
+  overflow: hidden;
+}
+.pastry-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transition: transform 0.8s cubic-bezier(0.25,0.46,0.45,0.94);
+  display: block;
+}
+.pastry-card:hover .pastry-img img { transform: scale(1.06); }
+.pastry-body {
+  padding: 24px 28px 32px;
+}
+.pastry-origin {
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+.pastry-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 400;
+  font-size: 1.35rem;
+  color: var(--ink);
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+.pastry-desc {
+  font-size: 0.78rem;
+  line-height: 1.7;
+  color: var(--muted);
+  font-weight: 300;
+  margin-bottom: 16px;
+}
+.pastry-price {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 1.1rem;
+  color: var(--gold);
+}
+
+/* ── STORY ── */
+.story {
+  padding: 0 44px 100px;
+  max-width: 1160px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+.story-img {
+  border-radius: 3px;
+  overflow: hidden;
+  height: 560px;
+}
+.story-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.8s ease;
+}
+.story-img:hover img { transform: scale(1.03); }
+.story-tag {
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 24px;
+}
+.story-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(2rem, 3.5vw, 3rem);
+  color: var(--ink);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin-bottom: 28px;
+}
+.story-text p {
+  font-size: 0.86rem;
+  line-height: 1.9;
+  color: var(--muted);
+  font-weight: 300;
+  margin-bottom: 16px;
+}
+.story-rule {
+  width: 40px;
+  height: 1px;
+  background: var(--gold);
+  margin: 28px 0;
+}
+.story-founder {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 1.05rem;
+  color: var(--ink);
+  opacity: 0.6;
+}
+
+/* ── VISIT (NAVY) ── */
+.visit {
+  background: var(--navy);
+  padding: 120px 44px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+.visit-left {}
+.visit-tag {
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(212,168,56,0.6);
+  margin-bottom: 28px;
+}
+.visit-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(2.4rem, 4vw, 4rem);
+  color: #fff;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+  margin-bottom: 40px;
+}
+.visit-detail {
+  margin-bottom: 20px;
+}
+.visit-detail-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+  margin-bottom: 6px;
+}
+.visit-detail-val {
+  font-size: 0.92rem;
+  color: rgba(255,255,255,0.65);
+  font-weight: 300;
+}
+.visit-right {
+  border-radius: 3px;
+  overflow: hidden;
+  height: 420px;
+}
+.visit-right img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: brightness(0.7);
+}
+
+/* ── FOOTER ── */
+footer {
+  background: var(--navy2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 44px;
+}
+.footer-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 1.1rem;
+  color: rgba(255,255,255,0.2);
+}
+.footer-lynq {
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  color: rgba(255,255,255,0.12);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.footer-lynq:hover { color: rgba(255,255,255,0.4); }
+
+/* ── REVEAL ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s cubic-bezier(0.25,0.46,0.45,0.94),
+              transform 0.7s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+.reveal.in { opacity: 1; transform: none; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 860px) {
+  nav { padding: 16px 20px; }
+  .nav-right a:not(.nav-order) { display: none; }
+  .hero-content { padding: 0 24px 48px; flex-direction: column; align-items: flex-start; gap: 24px; }
+  .intro-strip { gap: 20px; padding: 24px 20px; flex-wrap: wrap; }
+  .pastries, .story { padding: 60px 20px; }
+  .pastry-grid { grid-template-columns: 1fr; }
+  .story { grid-template-columns: 1fr; }
+  .story-img { height: 300px; }
+  .visit { grid-template-columns: 1fr; padding: 80px 20px; gap: 40px; }
+  .visit-right { height: 260px; }
+  footer { padding: 18px 20px; }
+}
+/* ── ART MOTION ── */
+.lr{overflow:hidden;display:block}
+.lr>span{display:block;transform:translateY(106%);transition:transform 1s cubic-bezier(0.16,1,0.3,1)}
+.lr.in>span{transform:translateY(0)}
+.lr:nth-child(2)>span{transition-delay:0.1s}
+.lr:nth-child(3)>span{transition-delay:0.2s}
+.lr:nth-child(4)>span{transition-delay:0.3s}
+.lr:nth-child(5)>span{transition-delay:0.4s}
+.img-curtain{overflow:hidden}
+.img-curtain img{transform:scale(1.07);clip-path:inset(0 0 100% 0);transition:clip-path 1.4s cubic-bezier(0.16,1,0.3,1),transform 1.4s cubic-bezier(0.16,1,0.3,1)}
+.img-curtain.in img{clip-path:inset(0 0 0% 0);transform:scale(1)}
+.art-mq{overflow:hidden;padding:18px 0}
+.art-mq.dk{border-top:1px solid rgba(255,255,255,0.07);border-bottom:1px solid rgba(255,255,255,0.07)}
+.art-mq.lt{border-top:1px solid rgba(0,0,0,0.08);border-bottom:1px solid rgba(0,0,0,0.08)}
+.am-tr{display:inline-flex;animation:am-roll 26s linear infinite;white-space:nowrap}
+.am-tr span{font-size:0.68rem;letter-spacing:0.26em;text-transform:uppercase;padding-right:52px}
+.art-mq.dk .am-tr span{color:rgba(255,255,255,0.25)}
+.art-mq.lt .am-tr span{color:rgba(0,0,0,0.22)}
+@keyframes am-roll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+</style>
+</head>
+<body>
+
+<svg class="grain" aria-hidden="true">
+  <filter id="gr" x="0%" y="0%" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.68" numOctaves="4" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+  <rect width="100%" height="100%" filter="url(#gr)"/>
+</svg>
+
+<nav>
+  <a href="#" class="nav-logo">Greek Pastry</a>
+  <div class="nav-right">
+    <a href="#pastries">Menu</a>
+    <a href="#story">About</a>
+    <a href="#visit">Visit</a>
+    <a href="#visit" class="nav-order">Order now</a>
+  </div>
+</nav>
+<div class="art-mq lt">
+  <div class="am-tr">
+    <span>Baked Fresh Daily</span><span>—</span><span>Barcelona</span><span>—</span><span>Baklava</span><span>—</span><span>Galaktoboureko</span><span>—</span><span>Koulouri</span><span>—</span><span>Baked Fresh Daily</span><span>—</span><span>Barcelona</span><span>—</span><span>Baklava</span><span>—</span><span>Galaktoboureko</span><span>—</span><span>Koulouri</span><span>—</span>
+  </div>
+</div>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-img"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-text">
+      <div class="hero-tag">Barceloneta · Barcelona · Est. 2014</div>
+      <h1 class="hero-title">Greek Pastry</h1>
+      <div class="hero-sub">Made fresh each morning · From Athens, with love</div>
+    </div>
+    <div class="hero-scroll">
+      <div class="scroll-line"></div>
+      <span>Scroll</span>
+    </div>
+  </div>
+</section>
+
+<!-- Strip -->
+<div class="intro-strip">
+  <div class="strip-item reveal">
+    <div class="strip-num">12+</div>
+    <div class="strip-lbl">Pastry varieties</div>
+  </div>
+  <div class="strip-rule"></div>
+  <div class="strip-item reveal">
+    <div class="strip-num">Daily</div>
+    <div class="strip-lbl">Baked fresh</div>
+  </div>
+  <div class="strip-rule"></div>
+  <div class="strip-item reveal">
+    <div class="strip-num">Athens</div>
+    <div class="strip-lbl">Family recipes</div>
+  </div>
+  <div class="strip-rule"></div>
+  <div class="strip-item reveal">
+    <div class="strip-num">2014</div>
+    <div class="strip-lbl">Since</div>
+  </div>
+</div>
+
+<!-- Pastries -->
+<section class="pastries" id="pastries">
+  <div class="section-header reveal">
+    <span class="section-tag">Our pastries</span>
+    <h2 class="section-title">Baked this morning.</h2>
+  </div>
+  <div class="pastry-grid">
+    <div class="pastry-card reveal">
+      <div class="pastry-img img-curtain">
+        <img src="https://images.unsplash.com/photo-1519676867240-f03562e64548?w=900&h=600&fit=crop&auto=format&q=88" alt="Baklava">
+      </div>
+      <div class="pastry-body">
+        <div class="pastry-origin">Classic</div>
+        <div class="pastry-name">Baklava</div>
+        <div class="pastry-desc">Layers of hand-rolled phyllo, crushed walnuts, and orange blossom honey syrup. Grandmother's recipe, unchanged.</div>
+        <div class="pastry-price">€4.50</div>
+      </div>
+    </div>
+    <div class="pastry-card reveal">
+      <div class="pastry-img img-curtain">
+        <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=900&h=600&fit=crop&auto=format&q=88" alt="Spanakopita">
+      </div>
+      <div class="pastry-body">
+        <div class="pastry-origin">Savory</div>
+        <div class="pastry-name">Spanakopita</div>
+        <div class="pastry-desc">Crispy phyllo filled with fresh spinach, wild herbs, and aged Greek feta. A morning staple in every Athenian home.</div>
+        <div class="pastry-price">€5.50</div>
+      </div>
+    </div>
+    <div class="pastry-card reveal">
+      <div class="pastry-img img-curtain">
+        <img src="https://images.unsplash.com/photo-1509365465985-25d11c17e812?w=900&h=600&fit=crop&auto=format&q=88" alt="Loukoumades">
+      </div>
+      <div class="pastry-body">
+        <div class="pastry-origin">Sweet</div>
+        <div class="pastry-name">Loukoumades</div>
+        <div class="pastry-desc">Fried honey puffs dusted with cinnamon and sesame. Served warm, eaten immediately. No other way.</div>
+        <div class="pastry-price">€6.00</div>
+      </div>
+    </div>
+    <div class="pastry-card reveal">
+      <div class="pastry-img img-curtain">
+        <img src="https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=900&h=600&fit=crop&auto=format&q=88" alt="Bougatsa">
+      </div>
+      <div class="pastry-body">
+        <div class="pastry-origin">Breakfast</div>
+        <div class="pastry-name">Bougatsa</div>
+        <div class="pastry-desc">Semolina custard wrapped in paper-thin phyllo, dusted with powdered sugar. Thessaloniki's greatest export.</div>
+        <div class="pastry-price">€4.00</div>
+      </div>
+    </div>
+    <div class="pastry-card reveal">
+      <div class="pastry-img img-curtain">
+        <img src="https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=900&h=600&fit=crop&auto=format&q=88" alt="Tiropita">
+      </div>
+      <div class="pastry-body">
+        <div class="pastry-origin">Savory</div>
+        <div class="pastry-name">Tiropita</div>
+        <div class="pastry-desc">Three-cheese phyllo pie — graviera, feta, and mizithra — baked golden. Pairs with Greek mountain tea.</div>
+        <div class="pastry-price">€5.00</div>
+      </div>
+    </div>
+    <div class="pastry-card reveal">
+      <div class="pastry-img img-curtain">
+        <img src="https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?w=900&h=600&fit=crop&auto=format&q=88" alt="Galaktoboureko">
+      </div>
+      <div class="pastry-body">
+        <div class="pastry-origin">Special</div>
+        <div class="pastry-name">Galaktoboureko</div>
+        <div class="pastry-desc">Silky semolina custard between layers of buttered phyllo, drenched in lemony syrup. Weekend special only.</div>
+        <div class="pastry-price">€6.50</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Story -->
+<section class="story" id="story">
+  <div class="story-img reveal">
+    <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1200&h=1600&fit=crop&auto=format&q=88" alt="Bakery kitchen">
+  </div>
+  <div class="story-text">
+    <div class="story-tag reveal">Our story</div>
+    <h2 class="story-title">
+      <span class="lr"><span>From a small kitchen</span></span>
+      <span class="lr"><span>in Pagrati, Athens.</span></span>
+    </h2>
+    <p class="reveal">Maria came to Barcelona in 2014 with a suitcase and her mother's recipe book. She found a small corner space in Barceloneta, two streets from the sea, and started baking at 4am every morning.</p>
+    <p class="reveal">The phyllo is made by hand. The honey comes from Crete. The feta is imported from a single dairy in Epirus. Nothing is rushed, nothing is frozen.</p>
+    <p class="reveal">Twelve years later, the line still wraps the corner on Saturday mornings. The recipes haven't changed once.</p>
+    <div class="story-rule reveal"></div>
+    <div class="story-founder reveal">— Maria Papadopoulou, founder</div>
+  </div>
+</section>
+
+<!-- Visit -->
+<section class="visit" id="visit">
+  <div class="visit-left">
+    <div class="visit-tag reveal">Come find us</div>
+    <h2 class="visit-title">
+      <span class="lr"><span>We're here</span></span>
+      <span class="lr"><span>every morning.</span></span>
+    </h2>
+    <div class="visit-detail reveal">
+      <div class="visit-detail-label">Address</div>
+      <div class="visit-detail-val">Carrer del Mar 14, Barceloneta<br>08003 Barcelona</div>
+    </div>
+    <div class="visit-detail reveal">
+      <div class="visit-detail-label">Hours</div>
+      <div class="visit-detail-val">Mon – Sat &nbsp; 7:00 – 14:00<br>Sunday &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 8:00 – 13:00</div>
+    </div>
+    <div class="visit-detail reveal">
+      <div class="visit-detail-label">Contact</div>
+      <div class="visit-detail-val">+34 93 221 48 02<br>hola@greekpastry.es</div>
+    </div>
+  </div>
+  <div class="visit-right reveal">
+    <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&h=900&fit=crop&auto=format&q=88" alt="Barceloneta cafe view">
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo">Greek Pastry</div>
+  <a href="https://lynq.build" class="footer-lynq">Site by LYNQ</a>
+</footer>
+
+<script>
+const reveals = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+  });
+}, { threshold: 0.1 });
+reveals.forEach(el => io.observe(el));
+/* art motion observer */
+const _ao=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');_ao.unobserve(e.target)}})},{threshold:0.12});
+document.querySelectorAll('.lr,.img-curtain').forEach(el=>_ao.observe(el));
+</script>
+</body>
+</html>

@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Solstice — Yoga & Wellness Studio · Toronto</title>
+<meta name="description" content="A grounded yoga and wellness studio in the Annex, Toronto. Classes, workshops, and private sessions. Find your practice.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:     #f5efe4;
+  --bg2:    #ede5d8;
+  --sage:   #6e8f72;
+  --sage2:  #8aab8e;
+  --earth:  #4a3728;
+  --clay:   #9e6448;
+  --cream:  #fdf8f0;
+  --muted:  #8a7060;
+  --line:   rgba(74,55,40,0.1);
+  --line2:  rgba(74,55,40,0.06);
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--earth);
+  font-family: 'DM Sans', sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── GRAIN ── */
+.grain {
+  position: fixed;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  pointer-events: none;
+  z-index: 9000;
+  opacity: 0.025;
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 48px;
+  background: rgba(245,239,228,0.93);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--line);
+}
+.nav-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 1.45rem;
+  color: var(--earth);
+  letter-spacing: 0.04em;
+  text-decoration: none;
+}
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+.nav-right a {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.nav-right a:hover { color: var(--earth); }
+.nav-book {
+  background: var(--sage) !important;
+  color: var(--cream) !important;
+  padding: 10px 22px !important;
+  border-radius: 40px !important;
+  transition: opacity 0.2s !important;
+}
+.nav-book:hover { opacity: 0.88 !important; }
+
+/* ── HERO ── */
+.hero {
+  position: relative;
+  height: 100vh;
+  min-height: 620px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+}
+.hero-img {
+  position: absolute;
+  inset: 0;
+}
+.hero-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: brightness(0.72) saturate(0.7);
+}
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(74,55,40,0.82) 0%,
+    rgba(74,55,40,0.2) 55%,
+    transparent 100%
+  );
+}
+.hero-content {
+  position: relative;
+  z-index: 2;
+  padding: 0 60px 68px;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.hero-text {}
+.hero-tag {
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(253,248,240,0.45);
+  margin-bottom: 16px;
+}
+.hero-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(3.5rem, 7vw, 7rem);
+  color: var(--cream);
+  letter-spacing: -0.03em;
+  line-height: 0.97;
+}
+.hero-sub {
+  font-size: 0.8rem;
+  color: rgba(253,248,240,0.38);
+  margin-top: 18px;
+  font-weight: 300;
+  letter-spacing: 0.06em;
+  max-width: 320px;
+  line-height: 1.7;
+}
+.hero-right {
+  text-align: right;
+}
+.hero-season {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 0.88rem;
+  color: rgba(253,248,240,0.3);
+  margin-bottom: 12px;
+}
+.hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 28px;
+  background: var(--sage);
+  color: var(--cream);
+  border-radius: 40px;
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.hero-cta:hover { opacity: 0.9; transform: translateY(-2px); }
+
+/* ── OFFERINGS ── */
+.offerings {
+  padding: 100px 48px;
+}
+.section-tag { font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--sage); margin-bottom: 12px; }
+.section-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(2.2rem, 4vw, 3.6rem);
+  color: var(--earth);
+  letter-spacing: -0.03em;
+  margin-bottom: 52px;
+}
+.offer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  background: var(--line);
+}
+.offer-card {
+  background: var(--bg);
+  overflow: hidden;
+  transition: background 0.3s;
+}
+.offer-card:hover { background: var(--cream); }
+.offer-img {
+  height: 260px;
+  overflow: hidden;
+}
+.offer-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: saturate(0.65) brightness(0.88);
+  transition: transform 0.8s, filter 0.5s;
+}
+.offer-card:hover .offer-img img { transform: scale(1.05); filter: saturate(0.85) brightness(0.95); }
+.offer-body {
+  padding: 28px 28px 32px;
+}
+.offer-level {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: var(--line2);
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.offer-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 400;
+  font-size: 1.35rem;
+  color: var(--earth);
+  letter-spacing: -0.01em;
+  margin-bottom: 10px;
+}
+.offer-desc {
+  font-size: 0.78rem;
+  line-height: 1.75;
+  color: var(--muted);
+  font-weight: 300;
+  margin-bottom: 18px;
+}
+.offer-duration {
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  color: var(--sage);
+  text-transform: uppercase;
+}
+
+/* ── ABOUT ── */
+.about {
+  background: var(--earth);
+  padding: 120px 48px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+.about-text {}
+.about-tag { font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(253,248,240,0.28); margin-bottom: 24px; }
+.about-text h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(2rem, 3.5vw, 3.2rem);
+  color: var(--cream);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin-bottom: 28px;
+}
+.about-text blockquote {
+  border-left: 2px solid var(--sage);
+  padding-left: 20px;
+  margin-bottom: 24px;
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 1.15rem;
+  color: rgba(253,248,240,0.5);
+  line-height: 1.5;
+}
+.about-text p {
+  font-size: 0.84rem;
+  line-height: 1.9;
+  color: rgba(253,248,240,0.38);
+  font-weight: 300;
+  margin-bottom: 12px;
+}
+.about-img {
+  border-radius: 3px;
+  overflow: hidden;
+  height: 520px;
+}
+.about-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: brightness(0.8) saturate(0.7);
+}
+
+/* ── SCHEDULE ── */
+.schedule {
+  padding: 100px 48px;
+}
+.schedule-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 2px;
+  background: var(--line);
+  margin-top: 48px;
+}
+.day-col {
+  background: var(--bg);
+  padding: 24px 20px;
+}
+.day-name {
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--sage);
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+.class-slot {
+  margin-bottom: 14px;
+}
+.class-time {
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+.class-name {
+  font-size: 0.82rem;
+  color: var(--earth);
+  font-weight: 400;
+  margin-bottom: 2px;
+}
+.class-teacher {
+  font-size: 0.62rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* ── BOOK ── */
+.book {
+  background: var(--sage);
+  padding: 120px 48px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+.book-text {}
+.book-tag { font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(253,248,240,0.45); margin-bottom: 22px; }
+.book-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(2.4rem, 4.5vw, 4rem);
+  color: var(--cream);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  margin-bottom: 24px;
+}
+.book-sub {
+  font-size: 0.84rem;
+  line-height: 1.8;
+  color: rgba(253,248,240,0.55);
+  font-weight: 300;
+}
+.book-options { display: flex; flex-direction: column; gap: 3px; }
+.book-option {
+  background: rgba(253,248,240,0.08);
+  border: 1px solid rgba(253,248,240,0.14);
+  border-radius: 5px;
+  padding: 22px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+.book-option:hover { background: rgba(253,248,240,0.15); }
+.bo-name {
+  font-size: 0.92rem;
+  color: var(--cream);
+  font-weight: 400;
+}
+.bo-price {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 1.3rem;
+  color: rgba(253,248,240,0.6);
+}
+
+/* ── FOOTER ── */
+footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 48px;
+  border-top: 1px solid var(--line);
+  background: var(--bg2);
+}
+.footer-logo { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.1rem; color: rgba(74,55,40,0.28); }
+.footer-lynq { font-size: 0.65rem; letter-spacing: 0.12em; color: rgba(74,55,40,0.2); text-decoration: none; transition: color 0.2s; }
+.footer-lynq:hover { color: rgba(74,55,40,0.5); }
+
+/* ── REVEAL ── */
+.reveal { opacity: 0; transform: translateY(22px); transition: opacity 0.75s cubic-bezier(0.25,0.46,0.45,0.94), transform 0.75s cubic-bezier(0.25,0.46,0.45,0.94); }
+.reveal.in { opacity: 1; transform: none; }
+
+/* ── ART MOTION ── */
+.lr{overflow:hidden;display:block}
+.lr>span{display:block;transform:translateY(106%);transition:transform 1s cubic-bezier(0.16,1,0.3,1)}
+.lr.in>span{transform:translateY(0)}
+.lr:nth-child(2)>span{transition-delay:0.1s}
+.lr:nth-child(3)>span{transition-delay:0.2s}
+.lr:nth-child(4)>span{transition-delay:0.3s}
+.lr:nth-child(5)>span{transition-delay:0.4s}
+.img-curtain{overflow:hidden}
+.img-curtain img{transform:scale(1.07);clip-path:inset(0 0 100% 0);transition:clip-path 1.4s cubic-bezier(0.16,1,0.3,1),transform 1.4s cubic-bezier(0.16,1,0.3,1)}
+.img-curtain.in img{clip-path:inset(0 0 0% 0);transform:scale(1)}
+.art-mq{overflow:hidden;padding:18px 0}
+.art-mq.dk{border-top:1px solid rgba(255,255,255,0.07);border-bottom:1px solid rgba(255,255,255,0.07)}
+.art-mq.lt{border-top:1px solid rgba(0,0,0,0.08);border-bottom:1px solid rgba(0,0,0,0.08)}
+.am-tr{display:inline-flex;animation:am-roll 26s linear infinite;white-space:nowrap}
+.am-tr span{font-size:0.68rem;letter-spacing:0.26em;text-transform:uppercase;padding-right:52px}
+.art-mq.dk .am-tr span{color:rgba(255,255,255,0.25)}
+.art-mq.lt .am-tr span{color:rgba(0,0,0,0.22)}
+@keyframes am-roll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 860px) {
+  nav { padding: 16px 20px; }
+  .nav-right a:not(.nav-book) { display: none; }
+  .hero-content { padding: 0 24px 44px; flex-direction: column; align-items: flex-start; gap: 24px; }
+  .offerings, .schedule { padding: 64px 20px; }
+  .offer-grid { grid-template-columns: 1fr; }
+  .about { grid-template-columns: 1fr; padding: 80px 20px; gap: 40px; }
+  .about-img { height: 300px; }
+  .schedule-grid { grid-template-columns: 1fr 1fr; }
+  .book { grid-template-columns: 1fr; padding: 80px 20px; gap: 40px; }
+  footer { padding: 18px 20px; }
+}
+</style>
+</head>
+<body>
+
+<svg class="grain" aria-hidden="true">
+  <filter id="gr" x="0%" y="0%" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.68" numOctaves="4" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+  <rect width="100%" height="100%" filter="url(#gr)"/>
+</svg>
+
+<nav>
+  <a href="#" class="nav-logo">Solstice</a>
+  <div class="nav-right">
+    <a href="#offerings">Classes</a>
+    <a href="#schedule">Schedule</a>
+    <a href="#about">Studio</a>
+    <a href="#book" class="nav-book">Book a class</a>
+  </div>
+</nav>
+<div class="art-mq lt">
+  <div class="am-tr">
+    <span>Morning Flow</span><span>—</span><span>Vinyasa</span><span>—</span><span>Yin</span><span>—</span><span>Toronto</span><span>—</span><span>New Students Welcome</span><span>—</span><span>Morning Flow</span><span>—</span><span>Vinyasa</span><span>—</span><span>Yin</span><span>—</span><span>Toronto</span><span>—</span><span>New Students Welcome</span><span>—</span>
+  </div>
+</div>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-img">
+    <img src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=2400&h=1400&fit=crop&auto=format&q=90" alt="Solstice Yoga">
+  </div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-text">
+      <div class="hero-tag">The Annex, Toronto · Est. 2018</div>
+      <h1 class="hero-title"><span class="lr"><span>Find</span></span><span class="lr"><span>stillness.</span></span></h1>
+      <div class="hero-sub">A grounded yoga and movement studio. No mirrors, no performance. Just practice.</div>
+    </div>
+    <div class="hero-right">
+      <div class="hero-season">Spring schedule now live</div>
+      <a href="#book" class="hero-cta">Book a class →</a>
+    </div>
+  </div>
+</section>
+
+<!-- Offerings -->
+<section class="offerings" id="offerings">
+  <div class="section-tag reveal">Our classes</div>
+  <h2 class="section-title reveal"><span class="lr"><span>Find your practice.</span></span></h2>
+  <div class="offer-grid">
+    <div class="offer-card reveal">
+      <div class="offer-img">
+        <img src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=900&h=600&fit=crop&auto=format&q=88" alt="Hatha Flow">
+      </div>
+      <div class="offer-body">
+        <span class="offer-level">All levels</span>
+        <div class="offer-name">Hatha Flow</div>
+        <div class="offer-desc">Breath-led movement connecting posture and presence. A complete class at any pace you need.</div>
+        <div class="offer-duration">60 or 90 min</div>
+      </div>
+    </div>
+    <div class="offer-card reveal">
+      <div class="offer-img">
+        <img src="https://images.unsplash.com/photo-1599901860904-17e6ed7083a0?w=900&h=600&fit=crop&auto=format&q=88" alt="Yin">
+      </div>
+      <div class="offer-body">
+        <span class="offer-level">Restorative</span>
+        <div class="offer-name">Yin &amp; Restore</div>
+        <div class="offer-desc">Long-held postures, props, and complete stillness. For the moments you most need to slow down.</div>
+        <div class="offer-duration">75 min</div>
+      </div>
+    </div>
+    <div class="offer-card reveal">
+      <div class="offer-img">
+        <img src="https://images.unsplash.com/photo-1588286840104-8957b019727f?w=900&h=600&fit=crop&auto=format&q=88" alt="Meditation">
+      </div>
+      <div class="offer-body">
+        <span class="offer-level">Beginner friendly</span>
+        <div class="offer-name">Meditation</div>
+        <div class="offer-desc">Guided sitting practice — breath awareness, body scan, and open awareness. No prior experience needed.</div>
+        <div class="offer-duration">45 min</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- About -->
+<section class="about" id="about">
+  <div class="about-text">
+    <div class="about-tag reveal">The studio</div>
+    <h2 class="reveal"><span class="lr"><span>A place to arrive,</span></span><span class="lr"><span>not perform.</span></span></h2>
+    <blockquote class="reveal">"Yoga isn't about touching your toes. It's about what you learn on the way down."</blockquote>
+    <p class="reveal">Solstice opened in 2018 in the Annex with twelve mats, a heated room, and a simple principle: practice is for you, not an audience. No mirrors, no leaderboards, no livestreams.</p>
+    <p class="reveal">We have four resident teachers with a combined 60 years of practice. Small class sizes (max 14) mean you get real guidance, real adjustment, and real silence when you need it.</p>
+  </div>
+  <div class="about-img reveal">
+    <img src="https://images.unsplash.com/photo-1575052814086-f385e2e2ad1b?w=1200&h=1500&fit=crop&auto=format&q=88" alt="Solstice studio">
+  </div>
+</section>
+
+<!-- Schedule -->
+<section class="schedule" id="schedule">
+  <div class="section-tag reveal">Weekly timetable</div>
+  <h2 class="section-title reveal"><span class="lr"><span>This week's classes.</span></span></h2>
+  <div class="schedule-grid reveal">
+    <div class="day-col">
+      <div class="day-name">Monday</div>
+      <div class="class-slot"><div class="class-time">7:00am</div><div class="class-name">Hatha Flow</div><div class="class-teacher">with Priya</div></div>
+      <div class="class-slot"><div class="class-time">12:00pm</div><div class="class-name">Yin</div><div class="class-teacher">with Marcus</div></div>
+      <div class="class-slot"><div class="class-time">6:30pm</div><div class="class-name">Vinyasa</div><div class="class-teacher">with Priya</div></div>
+    </div>
+    <div class="day-col">
+      <div class="day-name">Tuesday</div>
+      <div class="class-slot"><div class="class-time">8:00am</div><div class="class-name">Meditation</div><div class="class-teacher">with Sana</div></div>
+      <div class="class-slot"><div class="class-time">6:00pm</div><div class="class-name">Hatha Flow</div><div class="class-teacher">with Tom</div></div>
+      <div class="class-slot"><div class="class-time">7:30pm</div><div class="class-name">Restorative</div><div class="class-teacher">with Sana</div></div>
+    </div>
+    <div class="day-col">
+      <div class="day-name">Wednesday</div>
+      <div class="class-slot"><div class="class-time">7:00am</div><div class="class-name">Vinyasa</div><div class="class-teacher">with Priya</div></div>
+      <div class="class-slot"><div class="class-time">12:30pm</div><div class="class-name">Meditation</div><div class="class-teacher">with Marcus</div></div>
+      <div class="class-slot"><div class="class-time">6:30pm</div><div class="class-name">Yin</div><div class="class-teacher">with Tom</div></div>
+    </div>
+    <div class="day-col">
+      <div class="day-name">Thursday</div>
+      <div class="class-slot"><div class="class-time">6:30am</div><div class="class-name">Early Hatha</div><div class="class-teacher">with Sana</div></div>
+      <div class="class-slot"><div class="class-time">6:00pm</div><div class="class-name">Vinyasa</div><div class="class-teacher">with Priya</div></div>
+      <div class="class-slot"><div class="class-time">7:30pm</div><div class="class-name">Meditation</div><div class="class-teacher">with Marcus</div></div>
+    </div>
+    <div class="day-col">
+      <div class="day-name">Saturday</div>
+      <div class="class-slot"><div class="class-time">9:00am</div><div class="class-name">Community Flow</div><div class="class-teacher">All teachers</div></div>
+      <div class="class-slot"><div class="class-time">11:00am</div><div class="class-name">Yin &amp; Restore</div><div class="class-teacher">with Sana</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- Book -->
+<section class="book" id="book">
+  <div class="book-text">
+    <div class="book-tag reveal">Memberships</div>
+    <h2 class="book-title reveal"><span class="lr"><span>Choose how</span></span><span class="lr"><span>you practice.</span></span></h2>
+    <p class="book-sub reveal">Drop-in anytime, or commit to a regular practice with one of our memberships. All include unlimited class booking and a 30-minute intake call.</p>
+  </div>
+  <div class="book-options reveal">
+    <a href="#" class="book-option">
+      <div class="bo-name">Single class</div>
+      <div class="bo-price">$22</div>
+    </a>
+    <a href="#" class="book-option">
+      <div class="bo-name">10-class pass</div>
+      <div class="bo-price">$185</div>
+    </a>
+    <a href="#" class="book-option">
+      <div class="bo-name">Monthly unlimited</div>
+      <div class="bo-price">$120/mo</div>
+    </a>
+    <a href="#" class="book-option">
+      <div class="bo-name">Private session</div>
+      <div class="bo-price">$95</div>
+    </a>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo">Solstice</div>
+  <a href="https://lynq.build" class="footer-lynq">Site by LYNQ</a>
+</footer>
+
+<script>
+const reveals = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+}, { threshold: 0.08 });
+reveals.forEach(el => io.observe(el));
+/* art motion observer */
+const _ao=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');_ao.unobserve(e.target)}})},{threshold:0.12});
+document.querySelectorAll('.lr,.img-curtain').forEach(el=>_ao.observe(el));
+</script>
+</body>
+</html>

@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AURA — The Future of Sound</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+
+/* ── Reset & base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg:           #09090b;
+  --bg-card:      #0f0f12;
+  --bg-raised:    #141418;
+  --border:       #1f1f26;
+  --border-light: #2a2a35;
+  --text:         #f4f4f6;
+  --text-dim:     #a1a1b5;
+  --text-muted:   #52526a;
+  --purple:       #7c3aed;
+  --purple-light: #9d5ffd;
+  --purple-dim:   #6d28d9;
+  --purple-faint: rgba(124, 58, 237, 0.08);
+  --purple-glow:  rgba(124, 58, 237, 0.35);
+  --purple-glow2: rgba(124, 58, 237, 0.15);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Space Grotesk', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+a { text-decoration: none; color: inherit; }
+
+/* ── Background atmosphere ────────────────────────────────────────────────── */
+.bg-orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(120px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bg-orb-1 {
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%);
+  top: -200px;
+  left: 50%;
+  transform: translateX(-50%);
+  animation: orbFloat 8s ease-in-out infinite alternate;
+}
+
+.bg-orb-2 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(124,58,237,0.1) 0%, transparent 70%);
+  bottom: 20%;
+  right: -100px;
+  animation: orbFloat 11s ease-in-out infinite alternate-reverse;
+}
+
+.bg-orb-3 {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(157,95,253,0.08) 0%, transparent 70%);
+  bottom: 40%;
+  left: -80px;
+  animation: orbFloat 9s ease-in-out infinite alternate;
+}
+
+@keyframes orbFloat {
+  from { transform: translateY(0) translateX(-50%); }
+  to   { transform: translateY(40px) translateX(-50%); }
+}
+
+.bg-orb-2, .bg-orb-3 {
+  animation: orbDrift 10s ease-in-out infinite alternate;
+}
+
+@keyframes orbDrift {
+  from { transform: translateY(0); }
+  to   { transform: translateY(30px); }
+}
+
+/* ── Noise overlay ────────────────────────────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.025;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* All content sits above bg */
+nav, main, footer, .watermark { position: relative; z-index: 2; }
+
+/* ── Nav ──────────────────────────────────────────────────────────────────── */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 1px solid var(--border);
+  background: rgba(9, 9, 11, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.nav-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 32px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-logo {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.nav-logo span {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  background: var(--purple);
+  border-radius: 50%;
+  margin-left: 3px;
+  vertical-align: super;
+  box-shadow: 0 0 8px var(--purple-glow);
+}
+
+.nav-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.nav-center-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--purple);
+  box-shadow: 0 0 6px var(--purple-glow);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.85); }
+}
+
+.btn-preorder {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 22px;
+  background: var(--purple);
+  color: #fff;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+  box-shadow: 0 0 20px var(--purple-glow2);
+  white-space: nowrap;
+}
+
+.btn-preorder:hover {
+  background: var(--purple-light);
+  box-shadow: 0 0 30px var(--purple-glow);
+  transform: translateY(-1px);
+}
+
+.btn-preorder:active { transform: translateY(0); }
+
+/* ── Hero ─────────────────────────────────────────────────────────────────── */
+.hero {
+  text-align: center;
+  padding: 120px 32px 100px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  background: var(--purple-faint);
+  border: 1px solid rgba(124,58,237,0.25);
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--purple-light);
+  margin-bottom: 36px;
+  animation: fadeDown 0.7s ease both;
+}
+
+.hero-badge-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--purple-light);
+  box-shadow: 0 0 6px var(--purple-light);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.hero-headline {
+  font-size: clamp(3.2rem, 8vw, 7.5rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  margin-bottom: 28px;
+  animation: fadeDown 0.7s 0.1s ease both;
+}
+
+.hero-headline .glow-word {
+  background: linear-gradient(135deg, #c4b5fd 0%, var(--purple-light) 40%, var(--purple) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 40px rgba(124,58,237,0.5));
+}
+
+.hero-sub {
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  font-weight: 400;
+  color: var(--text-dim);
+  max-width: 520px;
+  margin: 0 auto 48px;
+  line-height: 1.65;
+  animation: fadeDown 0.7s 0.2s ease both;
+}
+
+.hero-cta-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  animation: fadeDown 0.7s 0.3s ease both;
+}
+
+.btn-hero {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 36px;
+  background: var(--purple);
+  color: #fff;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+  box-shadow:
+    0 0 40px rgba(124,58,237,0.4),
+    0 4px 20px rgba(124,58,237,0.25),
+    inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+.btn-hero:hover {
+  background: var(--purple-light);
+  box-shadow:
+    0 0 60px rgba(124,58,237,0.55),
+    0 8px 32px rgba(124,58,237,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.15);
+  transform: translateY(-2px);
+}
+
+.btn-hero:active { transform: translateY(0); }
+
+.hero-link {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.2s;
+  padding: 16px 12px;
+}
+
+.hero-link:hover { color: var(--text-dim); }
+
+.hero-link svg { width: 14px; height: 14px; transition: transform 0.2s; }
+.hero-link:hover svg { transform: translateX(3px); }
+
+/* Hero visual */
+.hero-visual {
+  margin: 80px auto 0;
+  max-width: 680px;
+  animation: fadeUp 0.9s 0.4s ease both;
+}
+
+.headphone-mockup {
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px var(--border),
+    0 40px 80px rgba(0,0,0,0.6),
+    0 0 120px rgba(124,58,237,0.12);
+}
+
+.mockup-glow {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(124,58,237,0.22) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
+  50%       { opacity: 1;   transform: translate(-50%, -50%) scale(1.12); }
+}
+
+/* SVG headphone illustration */
+.mockup-headphone {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  animation: floatUpDown 4s ease-in-out infinite;
+}
+
+@keyframes floatUpDown {
+  0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+  50%       { transform: translate(-50%, -50%) translateY(-12px); }
+}
+
+.mockup-rings {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(124,58,237,0.18);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  animation: ringExpand 3s ease-out infinite;
+}
+
+.ring:nth-child(1) { width: 180px; height: 180px; animation-delay: 0s;    }
+.ring:nth-child(2) { width: 280px; height: 280px; animation-delay: 0.8s;  }
+.ring:nth-child(3) { width: 380px; height: 380px; animation-delay: 1.6s;  }
+
+@keyframes ringExpand {
+  0%   { opacity: 0.6; transform: translate(-50%, -50%) scale(0.85); }
+  100% { opacity: 0;   transform: translate(-50%, -50%) scale(1.1);  }
+}
+
+.mockup-label {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.mockup-specs {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.spec-pill {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--purple-light);
+  background: rgba(124,58,237,0.12);
+  border: 1px solid rgba(124,58,237,0.2);
+  padding: 3px 10px;
+  border-radius: 20px;
+  animation: fadeIn 0.5s ease both;
+}
+
+.spec-pill:nth-child(1) { animation-delay: 1s; }
+.spec-pill:nth-child(2) { animation-delay: 1.2s; }
+.spec-pill:nth-child(3) { animation-delay: 1.4s; }
+
+/* ── Divider ──────────────────────────────────────────────────────────────── */
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* ── Countdown ────────────────────────────────────────────────────────────── */
+.countdown-section {
+  padding: 72px 32px;
+  text-align: center;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.countdown-eyebrow {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--purple-light);
+  margin-bottom: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.countdown-eyebrow::before,
+.countdown-eyebrow::after {
+  content: '';
+  width: 40px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(124,58,237,0.4));
+}
+
+.countdown-eyebrow::after {
+  background: linear-gradient(90deg, rgba(124,58,237,0.4), transparent);
+}
+
+.countdown-grid {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.countdown-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 100px;
+}
+
+.countdown-box {
+  width: 100px;
+  height: 100px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s;
+}
+
+.countdown-box::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(124,58,237,0.5), transparent);
+}
+
+.countdown-box.ticking {
+  border-color: rgba(124,58,237,0.4);
+  box-shadow: 0 0 20px rgba(124,58,237,0.1);
+}
+
+.countdown-label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.countdown-sep {
+  font-size: 2.5rem;
+  font-weight: 300;
+  color: var(--text-muted);
+  padding-bottom: 28px;
+  align-self: flex-start;
+  margin-top: 22px;
+}
+
+/* ── Features ─────────────────────────────────────────────────────────────── */
+.features-section {
+  padding: 80px 32px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 56px;
+}
+
+.section-eyebrow {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--purple-light);
+  margin-bottom: 14px;
+}
+
+.section-title {
+  font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.section-sub {
+  font-size: 15px;
+  color: var(--text-dim);
+  margin-top: 12px;
+  font-weight: 400;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.feature-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 36px 32px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top left, rgba(124,58,237,0.07) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.feature-card:hover {
+  border-color: rgba(124,58,237,0.35);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 48px rgba(0,0,0,0.4), 0 0 30px rgba(124,58,237,0.1);
+}
+
+.feature-card:hover::before { opacity: 1; }
+
+.feature-icon-wrap {
+  width: 52px;
+  height: 52px;
+  background: var(--purple-faint);
+  border: 1px solid rgba(124,58,237,0.2);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 22px;
+  transition: background 0.25s, box-shadow 0.25s;
+}
+
+.feature-card:hover .feature-icon-wrap {
+  background: rgba(124,58,237,0.15);
+  box-shadow: 0 0 20px rgba(124,58,237,0.2);
+}
+
+.feature-icon-wrap svg {
+  width: 22px;
+  height: 22px;
+  color: var(--purple-light);
+}
+
+.feature-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+  margin-bottom: 10px;
+}
+
+.feature-value {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--purple-light);
+  background: rgba(124,58,237,0.1);
+  border: 1px solid rgba(124,58,237,0.2);
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-bottom: 14px;
+}
+
+.feature-desc {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-dim);
+  line-height: 1.65;
+}
+
+/* ── Specs bar ────────────────────────────────────────────────────────────── */
+.specs-bar {
+  background: var(--bg-raised);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.specs-bar-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 32px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.spec-item {
+  padding: 36px 24px;
+  text-align: center;
+  border-right: 1px solid var(--border);
+}
+
+.spec-item:last-child { border-right: none; }
+
+.spec-number {
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.spec-number span { color: var(--purple-light); }
+
+.spec-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ── Email capture ────────────────────────────────────────────────────────── */
+.email-section {
+  padding: 100px 32px;
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.email-icon {
+  width: 56px;
+  height: 56px;
+  background: var(--purple-faint);
+  border: 1px solid rgba(124,58,237,0.2);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 28px;
+}
+
+.email-icon svg { width: 24px; height: 24px; color: var(--purple-light); }
+
+.email-heading {
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin-bottom: 14px;
+}
+
+.email-sub {
+  font-size: 15px;
+  color: var(--text-dim);
+  font-weight: 400;
+  line-height: 1.65;
+  margin-bottom: 40px;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.email-form {
+  display: flex;
+  gap: 10px;
+  max-width: 460px;
+  margin: 0 auto 14px;
+}
+
+.email-input {
+  flex: 1;
+  padding: 14px 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.email-input::placeholder { color: var(--text-muted); }
+
+.email-input:focus {
+  border-color: rgba(124,58,237,0.5);
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.1);
+}
+
+.btn-submit {
+  padding: 14px 24px;
+  background: var(--purple);
+  color: #fff;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+  box-shadow: 0 0 20px rgba(124,58,237,0.3);
+  white-space: nowrap;
+}
+
+.btn-submit:hover {
+  background: var(--purple-light);
+  box-shadow: 0 0 32px rgba(124,58,237,0.45);
+  transform: translateY(-1px);
+}
+
+.btn-submit:active { transform: translateY(0); }
+
+.email-note {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.email-note svg { width: 12px; height: 12px; }
+
+.email-success {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  animation: fadeDown 0.4s ease both;
+}
+
+.email-success.visible { display: flex; }
+
+.success-check {
+  width: 48px;
+  height: 48px;
+  background: rgba(34,197,94,0.1);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.success-check svg { width: 22px; height: 22px; color: #22c55e; }
+.success-text { font-size: 16px; font-weight: 600; color: var(--text); }
+.success-sub  { font-size: 13.5px; color: var(--text-dim); }
+
+/* ── Footer ───────────────────────────────────────────────────────────────── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 32px;
+  text-align: center;
+}
+
+.footer-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.footer-logo {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.footer-copy { font-size: 13px; color: var(--text-muted); }
+
+.footer-links {
+  display: flex;
+  gap: 20px;
+}
+
+.footer-links a {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  transition: color 0.18s;
+}
+
+.footer-links a:hover { color: var(--text-dim); }
+
+/* ── Animations ───────────────────────────────────────────────────────────── */
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Watermark ────────────────────────────────────────────────────────────── */
+.watermark {
+  position: fixed;
+  bottom: 16px;
+  right: 20px;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 9999;
+  letter-spacing: 0.2px;
+}
+
+.watermark strong { color: var(--purple-light); font-weight: 600; }
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .features-grid { grid-template-columns: 1fr; gap: 14px; }
+  .specs-bar-inner { grid-template-columns: repeat(2, 1fr); }
+  .spec-item:nth-child(2) { border-right: none; }
+  .spec-item:nth-child(3) { border-right: 1px solid var(--border); }
+  .spec-item:nth-child(3),
+  .spec-item:nth-child(4) { border-top: 1px solid var(--border); }
+}
+
+@media (max-width: 640px) {
+  .nav-center { display: none; }
+  .hero { padding: 80px 20px 70px; }
+  .countdown-section { padding: 56px 20px; }
+  .countdown-box { width: 76px; height: 76px; font-size: 2.2rem; }
+  .countdown-unit { min-width: 76px; }
+  .countdown-sep { font-size: 1.8rem; margin-top: 14px; }
+  .features-section { padding: 60px 20px; }
+  .email-section { padding: 72px 20px; }
+  .email-form { flex-direction: column; }
+  .btn-submit { width: 100%; }
+  .footer-inner { flex-direction: column; text-align: center; }
+  .specs-bar-inner { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 400px) {
+  .specs-bar-inner { grid-template-columns: 1fr; }
+  .spec-item { border-right: none; border-bottom: 1px solid var(--border); }
+  .spec-item:last-child { border-bottom: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- Background atmosphere -->
+<div class="bg-orb bg-orb-1" aria-hidden="true"></div>
+<div class="bg-orb bg-orb-2" aria-hidden="true"></div>
+<div class="bg-orb bg-orb-3" aria-hidden="true"></div>
+
+<!-- ── Nav ────────────────────────────────────────────────────────────────── -->
+<nav>
+  <div class="nav-inner">
+    <div class="nav-logo">AURA<span></span></div>
+
+    <div class="nav-center">
+      <div class="nav-center-dot"></div>
+      Launching in
+      <span id="nav-countdown">30 days</span>
+    </div>
+
+    <a href="#preorder" class="btn-preorder">
+      Pre-order
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;">
+        <line x1="5" y1="12" x2="19" y2="12"/>
+        <polyline points="12 5 19 12 12 19"/>
+      </svg>
+    </a>
+  </div>
+</nav>
+
+<!-- ── Hero ───────────────────────────────────────────────────────────────── -->
+<main>
+<section class="hero">
+  <div class="hero-badge">
+    <div class="hero-badge-dot"></div>
+    Pre-order now open
+  </div>
+
+  <h1 class="hero-headline">
+    The <span class="glow-word">Future</span><br>of Sound
+  </h1>
+
+  <p class="hero-sub">
+    Premium wireless headphones engineered for perfection.
+    Every frequency. Every detail. Reimagined.
+  </p>
+
+  <div class="hero-cta-row">
+    <a href="#preorder" class="btn-hero" id="preorder">
+      Pre-order — $299
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;">
+        <line x1="5" y1="12" x2="19" y2="12"/>
+        <polyline points="12 5 19 12 12 19"/>
+      </svg>
+    </a>
+    <a href="#features" class="hero-link">
+      Explore features
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="5" y1="12" x2="19" y2="12"/>
+        <polyline points="12 5 19 12 12 19"/>
+      </svg>
+    </a>
+  </div>
+
+  <!-- Headphone mockup -->
+  <div class="hero-visual">
+    <div class="headphone-mockup">
+      <div class="mockup-glow"></div>
+
+      <div class="mockup-rings">
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="ring"></div>
+      </div>
+
+      <!-- SVG headphone illustration -->
+      <div class="mockup-headphone">
+        <svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Headband arc -->
+          <path d="M 40 110 C 40 55 160 55 160 110" stroke="#3d3d52" stroke-width="14" fill="none" stroke-linecap="round"/>
+          <!-- Band highlight -->
+          <path d="M 45 110 C 45 60 155 60 155 110" stroke="url(#bandGrad)" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.6"/>
+          <!-- Left ear cup outer -->
+          <rect x="22" y="102" width="36" height="52" rx="12" fill="#1a1a24" stroke="#2e2e42" stroke-width="1.5"/>
+          <!-- Left ear cup inner -->
+          <rect x="30" y="110" width="20" height="36" rx="8" fill="#141420" stroke="url(#purpleGrad)" stroke-width="1"/>
+          <!-- Left driver mesh -->
+          <circle cx="40" cy="128" r="7" fill="none" stroke="#3d3d52" stroke-width="1"/>
+          <circle cx="40" cy="128" r="3.5" fill="#252535"/>
+          <!-- Right ear cup outer -->
+          <rect x="142" y="102" width="36" height="52" rx="12" fill="#1a1a24" stroke="#2e2e42" stroke-width="1.5"/>
+          <!-- Right ear cup inner -->
+          <rect x="150" y="110" width="20" height="36" rx="8" fill="#141420" stroke="url(#purpleGrad)" stroke-width="1"/>
+          <!-- Right driver mesh -->
+          <circle cx="160" cy="128" r="7" fill="none" stroke="#3d3d52" stroke-width="1"/>
+          <circle cx="160" cy="128" r="3.5" fill="#252535"/>
+          <!-- Purple accent glow on cups -->
+          <rect x="22" y="102" width="36" height="52" rx="12" fill="url(#cupGlow)" opacity="0.5"/>
+          <rect x="142" y="102" width="36" height="52" rx="12" fill="url(#cupGlow)" opacity="0.5"/>
+          <!-- Stem connectors -->
+          <rect x="51" y="106" width="8" height="20" rx="3" fill="#222232"/>
+          <rect x="141" y="106" width="8" height="20" rx="3" fill="#222232"/>
+          <!-- Small LED dot -->
+          <circle cx="52" cy="152" r="2.5" fill="#7c3aed" opacity="0.9">
+            <animate attributeName="opacity" values="0.9;0.3;0.9" dur="2s" repeatCount="indefinite"/>
+          </circle>
+          <circle cx="148" cy="152" r="2.5" fill="#7c3aed" opacity="0.9">
+            <animate attributeName="opacity" values="0.3;0.9;0.3" dur="2s" repeatCount="indefinite"/>
+          </circle>
+          <defs>
+            <linearGradient id="bandGrad" x1="40" y1="80" x2="160" y2="80" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.3"/>
+              <stop offset="50%" stop-color="#c4b5fd" stop-opacity="0.8"/>
+              <stop offset="100%" stop-color="#7c3aed" stop-opacity="0.3"/>
+            </linearGradient>
+            <linearGradient id="purpleGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.6"/>
+              <stop offset="100%" stop-color="#7c3aed" stop-opacity="0.1"/>
+            </linearGradient>
+            <radialGradient id="cupGlow" cx="50%" cy="0%" r="80%">
+              <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+        </svg>
+      </div>
+
+      <div class="mockup-specs">
+        <div class="spec-pill">40h Battery</div>
+        <div class="spec-pill">Spatial Audio</div>
+        <div class="spec-pill">Active NC</div>
+      </div>
+
+      <div class="mockup-label">AURA Pro — Wireless Over-Ear</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Countdown ──────────────────────────────────────────────────────────── -->
+<div class="divider"></div>
+
+<section class="countdown-section">
+  <div class="countdown-eyebrow">Launch Countdown</div>
+  <div class="countdown-grid">
+    <div class="countdown-unit">
+      <div class="countdown-box" id="cd-days">30</div>
+      <div class="countdown-label">Days</div>
+    </div>
+    <div class="countdown-sep">:</div>
+    <div class="countdown-unit">
+      <div class="countdown-box" id="cd-hours">00</div>
+      <div class="countdown-label">Hours</div>
+    </div>
+    <div class="countdown-sep">:</div>
+    <div class="countdown-unit">
+      <div class="countdown-box" id="cd-minutes">00</div>
+      <div class="countdown-label">Minutes</div>
+    </div>
+    <div class="countdown-sep">:</div>
+    <div class="countdown-unit">
+      <div class="countdown-box" id="cd-seconds">00</div>
+      <div class="countdown-label">Seconds</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ── Specs bar ──────────────────────────────────────────────────────────── -->
+<div class="specs-bar">
+  <div class="specs-bar-inner">
+    <div class="spec-item">
+      <div class="spec-number">40<span>h</span></div>
+      <div class="spec-label">Battery Life</div>
+    </div>
+    <div class="spec-item">
+      <div class="spec-number">30<span>m</span></div>
+      <div class="spec-label">Fast Charge</div>
+    </div>
+    <div class="spec-item">
+      <div class="spec-number">-42<span>dB</span></div>
+      <div class="spec-label">Noise Reduction</div>
+    </div>
+    <div class="spec-item">
+      <div class="spec-number">10<span>m</span></div>
+      <div class="spec-label">Range</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Features ───────────────────────────────────────────────────────────── -->
+<section class="features-section" id="features">
+  <div class="section-header">
+    <div class="section-eyebrow">What's Inside</div>
+    <h2 class="section-title">Engineered Without Compromise</h2>
+    <p class="section-sub">Three technologies working as one.</p>
+  </div>
+
+  <div class="features-grid">
+
+    <!-- 40h Battery -->
+    <div class="feature-card">
+      <div class="feature-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="7" width="16" height="10" rx="2"/>
+          <path d="M22 11v2"/>
+          <path d="M6 11h4"/>
+          <path d="M11 9v6"/>
+        </svg>
+      </div>
+      <div class="feature-value">Up to 40 Hours</div>
+      <div class="feature-title">All-Day Battery</div>
+      <p class="feature-desc">
+        From morning commute to late-night listening, AURA's 40-hour battery outlasts your day. A 30-minute quick charge gives you 8 more hours when you need it most.
+      </p>
+    </div>
+
+    <!-- Spatial Audio -->
+    <div class="feature-card">
+      <div class="feature-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
+          <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+        </svg>
+      </div>
+      <div class="feature-value">360° Spatial</div>
+      <div class="feature-title">Spatial Audio</div>
+      <p class="feature-desc">
+        Proprietary head-tracking algorithms position sound precisely in three-dimensional space. Movies, music, and games feel physically present around you.
+      </p>
+    </div>
+
+    <!-- ANC -->
+    <div class="feature-card">
+      <div class="feature-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M4.93 4.93l14.14 14.14"/>
+          <path d="M9 9a3 3 0 0 0 4.24 4.24"/>
+        </svg>
+      </div>
+      <div class="feature-value">-42dB Reduction</div>
+      <div class="feature-title">Active Noise Cancellation</div>
+      <p class="feature-desc">
+        Six adaptive microphones continuously sample your environment and generate precise anti-noise signals, eliminating up to 42dB of ambient sound in real time.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ── Email capture ──────────────────────────────────────────────────────── -->
+<section class="email-section">
+  <div class="email-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+      <polyline points="22,6 12,13 2,6"/>
+    </svg>
+  </div>
+
+  <h2 class="email-heading">Be the First to Know</h2>
+  <p class="email-sub">
+    Get exclusive early access, launch-day pricing, and AURA updates delivered to your inbox.
+  </p>
+
+  <div id="email-form-wrap">
+    <form class="email-form" id="email-form" onsubmit="handleEmailSubmit(event)">
+      <input
+        class="email-input"
+        type="email"
+        id="email-input"
+        placeholder="Enter your email address"
+        required
+        autocomplete="email"
+      >
+      <button type="submit" class="btn-submit">Notify Me</button>
+    </form>
+    <p class="email-note">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+      No spam. Unsubscribe anytime.
+    </p>
+  </div>
+
+  <div class="email-success" id="email-success">
+    <div class="success-check">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+    <div class="success-text">You're on the list.</div>
+    <div class="success-sub">We'll notify you the moment AURA launches.</div>
+  </div>
+</section>
+</main>
+
+<!-- ── Footer ─────────────────────────────────────────────────────────────── -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">AURA</div>
+    <div class="footer-copy">© 2026 AURA. All rights reserved.</div>
+    <div class="footer-links">
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+      <a href="#">Contact</a>
+    </div>
+  </div>
+</footer>
+
+<!-- Watermark -->
+<div class="watermark">Designed by <strong>LYNQ</strong></div>
+
+<script>
+// ── Countdown timer ─────────────────────────────────────────────────────────
+// Target = 30 days from the first time this page is loaded.
+// Stored in sessionStorage so it stays consistent within the same session.
+
+(function initCountdown() {
+  const STORAGE_KEY = 'aura-launch-target';
+  let target = sessionStorage.getItem(STORAGE_KEY);
+
+  if (!target) {
+    // Set target to exactly 30 days from now
+    target = Date.now() + 30 * 24 * 60 * 60 * 1000;
+    sessionStorage.setItem(STORAGE_KEY, target);
+  } else {
+    target = parseInt(target, 10);
+  }
+
+  const daysEl    = document.getElementById('cd-days');
+  const hoursEl   = document.getElementById('cd-hours');
+  const minsEl    = document.getElementById('cd-minutes');
+  const secsEl    = document.getElementById('cd-seconds');
+  const navEl     = document.getElementById('nav-countdown');
+
+  function pad(n) { return String(Math.max(0, n)).padStart(2, '0'); }
+
+  function flashBox(el) {
+    el.classList.add('ticking');
+    setTimeout(() => el.classList.remove('ticking'), 300);
+  }
+
+  let prevSecs = -1;
+
+  function tick() {
+    const now  = Date.now();
+    const diff = Math.max(0, target - now);
+
+    const totalSecs = Math.floor(diff / 1000);
+    const days  = Math.floor(totalSecs / 86400);
+    const hours = Math.floor((totalSecs % 86400) / 3600);
+    const mins  = Math.floor((totalSecs % 3600) / 60);
+    const secs  = totalSecs % 60;
+
+    if (secs !== prevSecs) {
+      // Animate seconds box on every tick
+      flashBox(secsEl);
+      secsEl.textContent = pad(secs);
+
+      // Only update + flash others when they change
+      const newMins  = pad(mins);
+      const newHours = pad(hours);
+      const newDays  = pad(days);
+
+      if (minsEl.textContent !== newMins) {
+        minsEl.textContent = newMins;
+        flashBox(minsEl);
+      }
+      if (hoursEl.textContent !== newHours) {
+        hoursEl.textContent = newHours;
+        flashBox(hoursEl);
+      }
+      if (daysEl.textContent !== newDays) {
+        daysEl.textContent = newDays;
+        flashBox(daysEl);
+      }
+
+      // Update nav label
+      if (navEl) {
+        navEl.textContent = days > 0 ? `${days}d ${pad(hours)}h` : `${pad(hours)}:${pad(mins)}:${pad(secs)}`;
+      }
+
+      prevSecs = secs;
+    }
+
+    if (diff > 0) {
+      requestAnimationFrame(tick);
+    } else {
+      daysEl.textContent = hoursEl.textContent = minsEl.textContent = secsEl.textContent = '00';
+      if (navEl) navEl.textContent = 'Live Now!';
+    }
+  }
+
+  tick();
+})();
+
+// ── Email form ──────────────────────────────────────────────────────────────
+function handleEmailSubmit(e) {
+  e.preventDefault();
+  const email   = document.getElementById('email-input').value.trim();
+  const formWrap = document.getElementById('email-form-wrap');
+  const success  = document.getElementById('email-success');
+
+  if (!email) return;
+
+  // Simulate async submission
+  const btn = e.target.querySelector('.btn-submit');
+  btn.textContent = 'Joining…';
+  btn.disabled = true;
+
+  setTimeout(() => {
+    formWrap.style.display = 'none';
+    success.classList.add('visible');
+  }, 700);
+}
+
+// ── Period button clicks (features, etc.) ───────────────────────────────────
+// Smooth scroll polyfill for anchor links
+document.querySelectorAll('a[href^="#"]').forEach(link => {
+  link.addEventListener('click', e => {
+    const id = link.getAttribute('href').slice(1);
+    const target = document.getElementById(id);
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+</script>
+
+</body>
+</html>

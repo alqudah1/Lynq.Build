@@ -1,0 +1,38 @@
+{
+  "buildCommand": null,
+  "outputDirectory": ".",
+  "framework": null,
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "redirects": [
+    {
+      "source": "/office",
+      "destination": "https://app.lynq.build/office",
+      "permanent": false
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*).html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/admin",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" }
+      ]
+    }
+  ],
+  "functions": {
+    "api/run-pipeline.js":            { "maxDuration": 90 },
+    "api/build.js":                   { "maxDuration": 60 },
+    "api/chat.js":                    { "maxDuration": 30 },
+    "api/insurance-script.js":        { "maxDuration": 30 },
+    "api/reddit-insurance-leads.js":  { "maxDuration": 45 },
+    "api/natural-market.js":          { "maxDuration": 30 },
+    "api/assistant.js":               { "maxDuration": 30 },
+    "api/call-debrief.js":            { "maxDuration": 30 }
+  }
+}

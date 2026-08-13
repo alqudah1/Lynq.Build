@@ -1,0 +1,1674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LYNQ Admin — Lead Pipeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0a;
+  --bg-card: #111111;
+  --border: #1a1a1a;
+  --border-light: #2a2a2a;
+  --text: #e8e8e8;
+  --text-dim: #777777;
+  --white: #ffffff;
+  --green: #22c55e;
+  --red: #ef4444;
+  --yellow: #eab308;
+  --blue: #60a5fa;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+/* ── TOP NAV ── */
+.top-nav { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--border); }
+.nav-page { display: flex; align-items: center; gap: 14px; padding: 18px 40px; cursor: pointer; border: none; background: none; font-family: inherit; color: var(--text-dim); transition: background 0.15s, color 0.15s; text-align: left; border-right: 1px solid var(--border); }
+.nav-page:last-child { border-right: none; }
+.nav-page:hover { background: rgba(255,255,255,0.03); }
+.nav-page.active { background: rgba(255,255,255,0.04); color: var(--white); }
+.nav-page.active.ins { background: rgba(96,165,250,0.07); }
+.nav-icon { width: 38px; height: 38px; border-radius: 10px; background: var(--border); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; transition: background 0.15s; }
+.nav-page.active .nav-icon { background: var(--white); }
+.nav-page.active.ins .nav-icon { background: #60a5fa; }
+.nav-label { font-size: 0.95rem; font-weight: 600; margin-bottom: 2px; }
+.nav-sub { font-size: 0.74rem; color: var(--text-dim); }
+.nav-page.active .nav-label { color: var(--white); }
+.nav-page.active.ins .nav-label { color: #93c5fd; }
+.nav-active-bar { height: 2px; background: var(--white); position: absolute; bottom: 0; left: 0; right: 0; border-radius: 2px; display: none; }
+.nav-page.active .nav-active-bar { display: block; }
+
+/* ── INSURANCE ── */
+#ins-section { display: none; padding: 40px; max-width: 1280px; margin: 0 auto; }
+.ins-form-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+.ins-form-card h3 { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-dim); margin-bottom: 18px; }
+.ins-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.ins-input { background: var(--bg); border: 1px solid var(--border-light); border-radius: 8px; padding: 11px 14px; color: var(--white); font-family: inherit; font-size: 0.88rem; outline: none; width: 100%; transition: border-color 0.2s; }
+.ins-input:focus { border-color: #555; }
+.ins-select { background: var(--bg); border: 1px solid var(--border-light); border-radius: 8px; padding: 11px 14px; color: var(--white); font-family: inherit; font-size: 0.88rem; outline: none; width: 100%; cursor: pointer; }
+.ins-contacts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.ins-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; transition: border-color 0.2s; }
+.ins-card:hover { border-color: var(--border-light); }
+.ins-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+.ins-name { font-size: 0.95rem; font-weight: 600; color: var(--white); }
+.ins-rel { font-size: 0.7rem; font-weight: 600; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+.rel-family     { background: rgba(168,85,247,0.15); color: #c084fc; }
+.rel-friend     { background: rgba(96,165,250,0.15); color: #60a5fa; }
+.rel-colleague  { background: rgba(34,197,94,0.15);  color: #4ade80; }
+.rel-acquaintance { background: rgba(251,191,36,0.15); color: #fbbf24; }
+.ins-info-row { display: flex; align-items: center; gap: 7px; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 5px; }
+.ins-status-wrap { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+.ins-status-select { flex: 1; background: var(--bg); border: 1px solid var(--border-light); border-radius: 6px; padding: 6px 10px; color: var(--white); font-family: inherit; font-size: 0.78rem; outline: none; cursor: pointer; }
+.ins-btn-script { font-size: 0.75rem; font-weight: 600; padding: 6px 12px; border-radius: 6px; border: none; cursor: pointer; background: #60a5fa; color: #000; font-family: inherit; transition: opacity 0.15s; white-space: nowrap; }
+.ins-btn-script:hover { opacity: 0.85; }
+.ins-btn-del { font-size: 0.75rem; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-light); background: none; color: var(--text-dim); cursor: pointer; font-family: inherit; transition: color 0.15s, border-color 0.15s; }
+.ins-btn-del:hover { color: var(--red); border-color: var(--red); }
+.ins-notes { font-size: 0.78rem; color: var(--text-dim); margin-top: 6px; font-style: italic; line-height: 1.4; }
+
+/* ── NATURAL MARKET ── */
+.nm-results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; margin-bottom: 20px; }
+.nm-card { background: var(--bg); border: 1px solid var(--border-light); border-radius: 10px; padding: 18px; }
+.nm-card-name { font-size: 0.88rem; font-weight: 700; color: var(--white); margin-bottom: 4px; }
+.nm-card-why { font-size: 0.78rem; color: var(--text-dim); margin-bottom: 10px; line-height: 1.4; }
+.nm-card-reach { font-size: 0.72rem; font-weight: 600; color: #60a5fa; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.4px; }
+.nm-prompts { display: flex; flex-direction: column; gap: 6px; }
+.nm-prompt { font-size: 0.8rem; color: #aaa; padding: 8px 10px; background: rgba(255,255,255,0.03); border-radius: 6px; border-left: 2px solid var(--border-light); line-height: 1.4; cursor: pointer; transition: border-color 0.15s; }
+.nm-prompt:hover { border-left-color: #60a5fa; color: var(--white); }
+.nm-quickwins { background: rgba(96,165,250,0.06); border: 1px solid rgba(96,165,250,0.15); border-radius: 10px; padding: 18px; margin-bottom: 14px; }
+.nm-quickwins h4 { font-size: 0.78rem; font-weight: 700; color: #60a5fa; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+.nm-win { margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(96,165,250,0.1); }
+.nm-win:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+.nm-win-type { font-size: 0.85rem; font-weight: 600; color: var(--white); margin-bottom: 2px; }
+.nm-win-reason { font-size: 0.78rem; color: var(--text-dim); margin-bottom: 3px; }
+.nm-win-approach { font-size: 0.76rem; color: #60a5fa; font-style: italic; }
+
+/* ── FOLLOW-UP DASHBOARD ── */
+.followup-section { margin-bottom: 28px; }
+.followup-section h3 { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-dim); margin-bottom: 14px; }
+.followup-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+.fu-card { border-radius: 10px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: opacity 0.15s; border: 1px solid transparent; }
+.fu-card:hover { opacity: 0.85; }
+.fu-card.urgent { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.2); }
+.fu-card.due    { background: rgba(234,179,8,0.07);  border-color: rgba(234,179,8,0.2); }
+.fu-card.ok     { background: rgba(255,255,255,0.03); border-color: var(--border); }
+.fu-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.fu-card.urgent .fu-dot { background: var(--red); box-shadow: 0 0 6px var(--red); }
+.fu-card.due    .fu-dot { background: var(--yellow); }
+.fu-card.ok     .fu-dot { background: #444; }
+.fu-info { flex: 1; min-width: 0; }
+.fu-name { font-size: 0.88rem; font-weight: 600; color: var(--white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fu-detail { font-size: 0.74rem; color: var(--text-dim); margin-top: 2px; }
+.fu-card.urgent .fu-detail { color: #f87171; }
+.fu-card.due .fu-detail    { color: #fbbf24; }
+.fu-action { font-size: 0.72rem; font-weight: 600; padding: 4px 10px; border-radius: 5px; border: none; cursor: pointer; font-family: inherit; white-space: nowrap; }
+.fu-card.urgent .fu-action { background: rgba(239,68,68,0.2); color: #f87171; }
+.fu-card.due    .fu-action { background: rgba(234,179,8,0.15); color: #fbbf24; }
+.fu-card.ok     .fu-action { background: var(--border); color: var(--text-dim); }
+.fu-empty { font-size: 0.84rem; color: var(--text-dim); padding: 16px 0; }
+
+/* ── OBJECTION HANDLER ── */
+.objection-list { display: flex; flex-direction: column; gap: 8px; padding-top: 14px; }
+.obj-btn { background: var(--bg); border: 1px solid var(--border-light); border-radius: 8px; padding: 11px 14px; color: var(--text); font-family: inherit; font-size: 0.84rem; text-align: left; cursor: pointer; transition: border-color 0.15s, background 0.15s; line-height: 1.4; }
+.obj-btn:hover { border-color: #444; background: rgba(255,255,255,0.03); }
+.obj-btn.selected { border-color: #60a5fa; background: rgba(96,165,250,0.07); color: var(--white); }
+.obj-response { margin-top: 14px; background: var(--bg); border: 1px solid var(--border-light); border-radius: 8px; padding: 14px; font-size: 0.83rem; color: #ccc; line-height: 1.7; display: none; }
+.obj-response.show { display: block; }
+
+/* Status dot colours */
+.status-new        { color: var(--text-dim); }
+.status-called     { color: var(--blue); }
+.status-meeting    { color: var(--yellow); }
+.status-presented  { color: #c084fc; }
+.status-sold       { color: var(--green); }
+.status-notNow     { color: #555; }
+
+/* Script modal */
+#ins-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:200; align-items:center; justify-content:center; padding:16px; }
+#ins-modal-inner { background:#111; border:1px solid #2a2a2a; border-radius:14px; width:540px; max-width:100%; max-height:90vh; overflow-y:auto; }
+.ins-modal-tabs { display:flex; gap:4px; padding:20px 24px 0; border-bottom:1px solid #1a1a1a; }
+.ins-modal-tab { padding:8px 14px; background:none; border:none; border-bottom:2px solid transparent; color:#555; font-family:inherit; font-size:0.82rem; font-weight:500; cursor:pointer; margin-bottom:-1px; transition:color 0.2s, border-color 0.2s; }
+.ins-modal-tab.active { color:#60a5fa; border-bottom-color:#60a5fa; }
+
+/* ── REDDIT LEADS ── */
+.reddit-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+.reddit-panel h3 { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-dim); margin-bottom: 6px; }
+.reddit-panel .reddit-desc { font-size: 0.82rem; color: var(--text-dim); margin-bottom: 18px; line-height: 1.5; }
+.reddit-search-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.btn-reddit { background: #ff4500; color: #fff; border: none; border-radius: 8px; padding: 12px 22px; font-family: inherit; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: opacity 0.15s; white-space: nowrap; }
+.btn-reddit:hover { opacity: 0.85; }
+.btn-reddit:disabled { opacity: 0.4; cursor: not-allowed; }
+.reddit-status { font-size: 0.82rem; color: var(--text-dim); }
+.reddit-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; margin-top: 16px; }
+.reddit-card { background: var(--bg); border: 1px solid var(--border-light); border-radius: 10px; padding: 16px; }
+.reddit-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.reddit-username { font-size: 0.88rem; font-weight: 600; color: #ff6534; }
+.reddit-sub { font-size: 0.72rem; color: var(--text-dim); background: rgba(255,69,0,0.1); padding: 2px 7px; border-radius: 4px; color: #ff6534; white-space: nowrap; }
+.reddit-title { font-size: 0.82rem; font-weight: 500; color: var(--white); margin-bottom: 6px; line-height: 1.4; }
+.reddit-snippet { font-size: 0.78rem; color: var(--text-dim); line-height: 1.5; margin-bottom: 10px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.reddit-footer { display: flex; align-items: center; gap: 8px; padding-top: 10px; border-top: 1px solid var(--border); }
+.reddit-meta { font-size: 0.72rem; color: #555; flex: 1; }
+.btn-reddit-add { font-size: 0.75rem; font-weight: 600; padding: 5px 12px; border-radius: 6px; border: none; cursor: pointer; background: #60a5fa; color: #000; font-family: inherit; transition: opacity 0.15s; white-space: nowrap; }
+.btn-reddit-add:hover { opacity: 0.85; }
+.btn-reddit-add.added { background: var(--green); cursor: default; }
+
+/* ── GATE ── */
+#gate { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 100; }
+#gate-box { width: 340px; text-align: center; }
+#gate-box .logo { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 8px; color: var(--white); }
+#gate-box .tagline { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 32px; }
+#gate-box input { width: 100%; background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 8px; padding: 14px 16px; color: var(--white); font-family: inherit; font-size: 0.95rem; outline: none; margin-bottom: 12px; transition: border-color 0.2s; }
+#gate-box input:focus { border-color: #555; }
+#gate-box button { width: 100%; background: var(--white); color: #000; border: none; border-radius: 8px; padding: 14px; font-family: inherit; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+#gate-box button:hover { opacity: 0.9; }
+.gate-error { color: var(--red); font-size: 0.83rem; margin-top: 10px; min-height: 18px; }
+
+/* ── DASHBOARD ── */
+#dashboard { display: none; min-height: 100vh; }
+
+header { border-bottom: 1px solid var(--border); padding: 18px 40px; display: flex; align-items: center; justify-content: space-between; }
+header .logo { font-size: 1rem; font-weight: 700; letter-spacing: -0.5px; color: var(--white); }
+header .badge { font-size: 0.75rem; font-weight: 500; padding: 5px 12px; border-radius: 100px; border: 1px solid var(--border-light); color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
+
+.main { padding: 40px; max-width: 1280px; margin: 0 auto; }
+h1 { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px; color: var(--white); }
+.subtitle { color: var(--text-dim); font-size: 0.92rem; margin-bottom: 36px; }
+
+/* Stats */
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+.stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; }
+.stat-card .label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px; }
+.stat-card .value { font-size: 2.2rem; font-weight: 700; color: var(--white); letter-spacing: -1.5px; line-height: 1; }
+.stat-card .sub { font-size: 0.78rem; color: var(--text-dim); margin-top: 6px; }
+
+/* Run card */
+.run-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 24px; display: flex; align-items: center; gap: 24px; }
+.run-info { flex: 1; }
+.run-info h3 { font-size: 1rem; font-weight: 600; color: var(--white); margin-bottom: 4px; }
+.run-info p { font-size: 0.85rem; color: var(--text-dim); }
+.progress-wrap { display: none; margin-top: 14px; }
+.progress-bar-bg { background: var(--border); border-radius: 100px; height: 3px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: var(--white); border-radius: 100px; transition: width 0.4s ease; width: 0%; }
+.progress-label { font-size: 0.78rem; color: var(--text-dim); margin-top: 6px; }
+.btn-run { background: var(--white); color: #000; border: none; border-radius: 8px; padding: 14px 28px; font-family: inherit; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.15s, transform 0.1s; white-space: nowrap; }
+.btn-run:hover { opacity: 0.88; }
+.btn-run:active { transform: scale(0.97); }
+.btn-run:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+.btn-stop { background: transparent; color: var(--red); border: 1px solid var(--red); border-radius: 8px; padding: 14px 28px; font-family: inherit; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: background 0.2s; white-space: nowrap; display: none; }
+.btn-stop:hover { background: rgba(239,68,68,0.08); }
+
+/* Selectors grid */
+.selectors-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.card-header h3 { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-dim); }
+.select-all { font-size: 0.78rem; color: var(--text-dim); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; background: none; border: none; font-family: inherit; }
+.select-all:hover { color: var(--white); }
+.check-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.check-item { display: flex; align-items: center; gap: 8px; font-size: 0.86rem; cursor: pointer; padding: 6px 8px; border-radius: 6px; transition: background 0.15s; }
+.check-item:hover { background: rgba(255,255,255,0.04); }
+.check-item input[type="checkbox"] { width: 14px; height: 14px; accent-color: var(--white); cursor: pointer; flex-shrink: 0; }
+.check-item span { color: var(--text); }
+
+/* Email setup card */
+.email-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+.email-card h3 { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-dim); margin-bottom: 16px; }
+.email-sequence { display: flex; flex-direction: column; gap: 12px; }
+.seq-step { display: flex; align-items: flex-start; gap: 14px; padding: 14px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px; }
+.seq-num { width: 24px; height: 24px; border-radius: 50%; background: var(--border-light); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600; color: var(--text-dim); flex-shrink: 0; margin-top: 1px; }
+.seq-info { flex: 1; }
+.seq-info .seq-title { font-size: 0.88rem; font-weight: 600; color: var(--white); margin-bottom: 3px; }
+.seq-info .seq-desc { font-size: 0.8rem; color: var(--text-dim); }
+.seq-info textarea { width: 100%; background: var(--bg); border: 1px solid var(--border-light); border-radius: 6px; padding: 10px 12px; color: var(--text); font-family: inherit; font-size: 0.82rem; line-height: 1.6; resize: vertical; outline: none; margin-top: 8px; min-height: 80px; }
+.seq-info textarea:focus { border-color: #444; }
+.seq-delay { font-size: 0.75rem; color: var(--text-dim); padding: 3px 8px; background: var(--border); border-radius: 4px; white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
+
+/* Log */
+.log-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.log-header { padding: 14px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.log-header h3 { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-dim); }
+.btn-clear { font-size: 0.78rem; color: var(--text-dim); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; background: none; border: none; font-family: inherit; }
+.btn-clear:hover { color: var(--white); }
+#log-output { padding: 18px 24px; font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace; font-size: 0.79rem; line-height: 1.9; color: var(--text-dim); height: 320px; overflow-y: auto; }
+.log-success { color: var(--green); }
+.log-error { color: var(--red); }
+.log-info { color: var(--blue); }
+.log-warn { color: var(--yellow); }
+.log-skip { color: #333; }
+
+/* Results grid */
+.results-section { margin-bottom: 24px; display: none; }
+.results-section h3 { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-dim); margin-bottom: 14px; }
+.results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+.biz-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: border-color 0.2s; }
+.biz-card:hover { border-color: var(--border-light); }
+.biz-photo { width: 100%; height: 140px; object-fit: cover; background: var(--border); display: block; }
+.biz-photo-placeholder { width: 100%; height: 140px; background: var(--border); display: flex; align-items: center; justify-content: center; font-size: 2rem; color: var(--border-light); }
+.biz-body { padding: 16px; }
+.biz-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.biz-name { font-size: 0.95rem; font-weight: 600; color: var(--white); line-height: 1.3; }
+.biz-score { flex-shrink: 0; font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; }
+.score-bad  { background: rgba(239,68,68,0.15); color: var(--red); }
+.score-mid  { background: rgba(234,179,8,0.15); color: var(--yellow); }
+.score-ok   { background: rgba(34,197,94,0.15); color: var(--green); }
+.biz-category { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 10px; }
+.biz-row { display: flex; align-items: center; gap: 7px; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 5px; }
+.biz-row a { color: var(--blue); text-decoration: none; }
+.biz-row a:hover { text-decoration: underline; }
+.biz-rating { display: flex; align-items: center; gap: 5px; margin-bottom: 8px; }
+.stars { color: #eab308; font-size: 0.8rem; }
+.biz-issues { margin-top: 10px; padding: 8px 10px; background: rgba(239,68,68,0.06); border-radius: 6px; border: 1px solid rgba(239,68,68,0.15); font-size: 0.74rem; color: #f87171; line-height: 1.5; }
+.biz-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+.biz-status { font-size: 0.72rem; }
+.biz-btn { font-size: 0.75rem; font-weight: 600; padding: 5px 12px; border-radius: 6px; border: none; cursor: pointer; background: var(--white); color: #000; font-family: inherit; transition: opacity 0.15s; }
+.biz-btn:hover { opacity: 0.8; }
+
+/* Status dot */
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-dim); display: inline-block; }
+.dot.active { background: var(--green); box-shadow: 0 0 6px var(--green); animation: blink 1.4s infinite; }
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+@media (max-width: 900px) {
+  header { padding: 14px 20px; }
+  .main { padding: 24px 16px; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .selectors-grid { grid-template-columns: 1fr; }
+  .run-card { flex-direction: column; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── OUTREACH MODAL ── -->
+<div id="email-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:200;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#111;border:1px solid #2a2a2a;border-radius:14px;width:520px;max-width:100%;max-height:90vh;overflow-y:auto">
+    <!-- Header -->
+    <div style="padding:22px 24px 0">
+      <div style="font-size:1rem;font-weight:600;color:#fff;margin-bottom:2px" id="modal-biz-name"></div>
+      <div style="font-size:0.78rem;color:#666;margin-bottom:16px" id="modal-biz-detail"></div>
+      <!-- Tabs -->
+      <div style="display:flex;gap:4px;margin-bottom:0;border-bottom:1px solid #1a1a1a;padding-bottom:0">
+        <button onclick="switchTab('email')" id="tab-email" style="padding:8px 14px;background:none;border:none;border-bottom:2px solid #fff;color:#fff;font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer;margin-bottom:-1px">Email</button>
+        <button onclick="switchTab('sms')"   id="tab-sms"   style="padding:8px 14px;background:none;border:none;border-bottom:2px solid transparent;color:#555;font-family:inherit;font-size:0.82rem;font-weight:500;cursor:pointer;margin-bottom:-1px">SMS</button>
+        <button onclick="switchTab('call')"  id="tab-call"  style="padding:8px 14px;background:none;border:none;border-bottom:2px solid transparent;color:#555;font-family:inherit;font-size:0.82rem;font-weight:500;cursor:pointer;margin-bottom:-1px">Call Script</button>
+      </div>
+    </div>
+
+    <!-- Generate step (shown first) -->
+    <div id="modal-generate" style="padding:20px 24px">
+      <div style="font-size:0.82rem;color:#555;margin-bottom:14px">Claude will write a personalised email, SMS, and call script based on this business's specific issues — then you can send or copy each one.</div>
+      <input id="modal-email" type="email" placeholder="Email address (optional — to send now)"
+        style="width:100%;background:#0a0a0a;border:1px solid #2a2a2a;border-radius:8px;padding:11px 14px;color:#fff;font-family:inherit;font-size:0.88rem;outline:none;margin-bottom:14px">
+      <div style="display:flex;gap:10px">
+        <button onclick="closeModal()" style="flex:1;background:transparent;border:1px solid #2a2a2a;border-radius:8px;padding:11px;color:#666;font-family:inherit;font-size:0.88rem;cursor:pointer">Cancel</button>
+        <button id="modal-send-btn" onclick="generateOutreach()" style="flex:2;background:#fff;border:none;border-radius:8px;padding:11px;color:#000;font-family:inherit;font-size:0.88rem;font-weight:600;cursor:pointer">Generate with Claude</button>
+      </div>
+      <div id="modal-status" style="font-size:0.8rem;margin-top:10px;min-height:18px;text-align:center"></div>
+    </div>
+
+    <!-- Results (shown after generate) -->
+    <div id="modal-results" style="display:none;padding:0 24px 24px">
+      <!-- Email tab -->
+      <div id="panel-email" style="padding-top:16px">
+        <div style="font-size:0.75rem;color:#555;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Subject</div>
+        <div id="res-subject" style="font-size:0.88rem;color:#fff;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:10px 12px;margin-bottom:12px"></div>
+        <div style="font-size:0.75rem;color:#555;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Body</div>
+        <textarea id="res-email" style="width:100%;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:10px 12px;color:#ccc;font-family:inherit;font-size:0.83rem;line-height:1.7;resize:vertical;outline:none;min-height:160px"></textarea>
+        <div id="email-sent-note" style="font-size:0.78rem;color:#22c55e;margin-top:6px;display:none">✓ Email sent from hello@lynq.build</div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button onclick="copyText('res-email')" style="flex:1;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:7px;padding:9px;color:#ccc;font-family:inherit;font-size:0.82rem;cursor:pointer">Copy</button>
+          <button id="btn-send-email" onclick="sendEmailNow()" style="flex:2;background:#fff;border:none;border-radius:7px;padding:9px;color:#000;font-family:inherit;font-size:0.82rem;font-weight:600;cursor:pointer">Send from hello@lynq.build</button>
+        </div>
+      </div>
+      <!-- SMS tab -->
+      <div id="panel-sms" style="display:none;padding-top:16px">
+        <div style="font-size:0.75rem;color:#555;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Text Message (copy & send from your phone)</div>
+        <textarea id="res-sms" style="width:100%;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:10px 12px;color:#ccc;font-family:inherit;font-size:0.88rem;line-height:1.6;resize:vertical;outline:none;min-height:100px"></textarea>
+        <div id="sms-chars" style="font-size:0.75rem;color:#555;margin-top:4px;text-align:right"></div>
+        <button onclick="copyText('res-sms')" style="width:100%;margin-top:10px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:7px;padding:10px;color:#ccc;font-family:inherit;font-size:0.85rem;cursor:pointer">Copy SMS</button>
+        <div id="res-phone" style="font-size:0.82rem;color:#60a5fa;margin-top:8px;text-align:center"></div>
+      </div>
+      <!-- Call tab -->
+      <div id="panel-call" style="display:none;padding-top:16px">
+        <div style="font-size:0.75rem;color:#555;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">30-Second Call Opener</div>
+        <textarea id="res-call" style="width:100%;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:10px 12px;color:#ccc;font-family:inherit;font-size:0.88rem;line-height:1.7;resize:vertical;outline:none;min-height:140px"></textarea>
+        <button onclick="copyText('res-call')" style="width:100%;margin-top:10px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:7px;padding:10px;color:#ccc;font-family:inherit;font-size:0.85rem;cursor:pointer">Copy Script</button>
+        <div id="res-phone2" style="font-size:0.82rem;color:#60a5fa;margin-top:8px;text-align:center"></div>
+      </div>
+      <button onclick="closeModal()" style="width:100%;margin-top:14px;background:transparent;border:1px solid #1a1a1a;border-radius:7px;padding:9px;color:#444;font-family:inherit;font-size:0.82rem;cursor:pointer">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── GATE ── -->
+<div id="gate">
+  <div id="gate-box">
+    <div class="logo">LYNQ</div>
+    <div class="tagline">Admin — Lead Pipeline</div>
+    <input type="password" id="pw" placeholder="Password" onkeydown="if(event.key==='Enter')auth()">
+    <button onclick="auth()">Enter Dashboard</button>
+    <div class="gate-error" id="pw-err"></div>
+  </div>
+</div>
+
+<!-- ── DASHBOARD ── -->
+<div id="dashboard">
+  <header>
+    <div class="logo">LYNQ <span style="color:var(--text-dim);font-weight:400">/ Admin</span></div>
+    <div class="badge"><span class="dot" id="dot"></span><span id="status-txt">Idle</span></div>
+  </header>
+
+  <!-- ── MAIN NAV ── -->
+  <div class="top-nav">
+    <button class="nav-page active" id="tab-web-btn" onclick="switchPage('web')">
+      <div class="nav-icon">W</div>
+      <div>
+        <div class="nav-label">Web Design Leads</div>
+        <div class="nav-sub">GTA business prospecting pipeline</div>
+      </div>
+    </button>
+    <button class="nav-page ins" id="tab-ins-btn" onclick="switchPage('ins')">
+      <div class="nav-icon">I</div>
+      <div>
+        <div class="nav-label">Insurance Leads</div>
+        <div class="nav-sub">Natural market CRM + Reddit finder</div>
+      </div>
+    </button>
+  </div>
+
+  <!-- ── INSURANCE SECTION ── -->
+  <div id="ins-section">
+    <h1 style="margin-bottom:4px">Insurance — Natural Market</h1>
+    <p class="subtitle">Track your personal network, generate call scripts, and log every touchpoint.</p>
+
+    <!-- Follow-up Dashboard -->
+    <div class="followup-section" id="fu-section" style="display:none">
+      <h3 id="fu-heading">Follow-Up Queue</h3>
+      <div class="followup-grid" id="fu-grid"></div>
+    </div>
+
+    <!-- Insurance stats -->
+    <div class="stats-row">
+      <div class="stat-card"><div class="label">Contacts</div><div class="value" id="ins-s-total">0</div><div class="sub">In your list</div></div>
+      <div class="stat-card"><div class="label">Called</div><div class="value" id="ins-s-called">0</div><div class="sub">Reached out</div></div>
+      <div class="stat-card"><div class="label">Meetings</div><div class="value" id="ins-s-meetings">0</div><div class="sub">Booked</div></div>
+      <div class="stat-card"><div class="label">Policies Sold</div><div class="value" id="ins-s-sold">0</div><div class="sub">Closed</div></div>
+    </div>
+
+    <!-- Add contact -->
+    <div class="ins-form-card">
+      <h3>Add Contact — Natural Market</h3>
+      <div class="ins-form-grid">
+        <input class="ins-input" id="ins-name"     placeholder="Full name *">
+        <input class="ins-input" id="ins-phone"    placeholder="Phone number">
+        <input class="ins-input" id="ins-email"    type="email" placeholder="Email address">
+        <input class="ins-input" id="ins-age"      placeholder="Approx. age (optional)">
+        <select class="ins-select" id="ins-rel">
+          <option value="family">Family</option>
+          <option value="friend" selected>Friend</option>
+          <option value="colleague">Colleague</option>
+          <option value="acquaintance">Acquaintance</option>
+        </select>
+        <input class="ins-input" id="ins-notes" placeholder="Notes (e.g. has kids, self-employed…)">
+      </div>
+      <div style="display:flex;align-items:center;gap:14px">
+        <button class="btn-run" onclick="insAddContact()" style="padding:12px 28px">Add Contact</button>
+        <span id="ins-add-status" style="font-size:0.83rem;color:var(--text-dim)"></span>
+      </div>
+    </div>
+
+    <!-- Reddit Lead Finder -->
+    <div class="reddit-panel">
+      <h3>Reddit Lead Finder</h3>
+      <p class="reddit-desc">Scans r/PersonalFinanceCanada, r/toronto, r/brampton and more for people asking about life insurance. Add them as contacts to follow up on Reddit, then get their real info for a call.</p>
+      <div class="reddit-search-row">
+        <button class="btn-reddit" id="btn-reddit-search" onclick="redditSearch()">Find Reddit Leads</button>
+        <span class="reddit-status" id="reddit-status"></span>
+      </div>
+      <div id="reddit-results" style="display:none">
+        <div style="font-size:0.78rem;color:var(--text-dim);margin-bottom:10px" id="reddit-count"></div>
+        <div class="reddit-cards" id="reddit-cards"></div>
+      </div>
+    </div>
+
+    <!-- Natural Market Generator -->
+    <div class="ins-form-card" id="nm-panel">
+      <h3>Natural Market Generator</h3>
+      <p style="font-size:0.82rem;color:var(--text-dim);margin-bottom:18px;line-height:1.5">Answer 3 quick questions and Claude will generate a full list of memory prompts — every category of person you know who could need life insurance.</p>
+      <div class="ins-form-grid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:12px">
+        <input class="ins-input" id="nm-school"    placeholder="School(s) attended">
+        <input class="ins-input" id="nm-jobs"      placeholder="Previous jobs">
+        <input class="ins-input" id="nm-hobbies"   placeholder="Sports, gym, hobbies">
+        <input class="ins-input" id="nm-community" placeholder="Mosque, church, cultural group…" style="grid-column:span 2">
+        <input class="ins-input" id="nm-other"     placeholder="Anything else (e.g. grew up in Brampton)">
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+        <button class="btn-run" id="nm-btn" onclick="nmGenerate()" style="padding:12px 28px">Generate My List</button>
+        <span id="nm-status" style="font-size:0.83rem;color:var(--text-dim)"></span>
+      </div>
+      <div id="nm-results" style="display:none"></div>
+    </div>
+
+    <!-- Contact cards -->
+    <div id="ins-cards-section" style="display:none;margin-bottom:24px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <h3 style="font-size:0.8rem;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-dim)" id="ins-cards-heading">Contacts</h3>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select class="ins-select" id="ins-filter" onchange="insRender()" style="width:auto;padding:6px 10px;font-size:0.78rem">
+            <option value="all">All statuses</option>
+            <option value="new">New</option>
+            <option value="called">Called</option>
+            <option value="meeting">Meeting Set</option>
+            <option value="presented">Presented</option>
+            <option value="sold">Policy Sold</option>
+            <option value="notNow">Not Right Now</option>
+          </select>
+        </div>
+      </div>
+      <div class="ins-contacts-grid" id="ins-cards-grid"></div>
+    </div>
+  </div>
+
+  <!-- ── INSURANCE SCRIPT MODAL ── -->
+  <div id="ins-modal">
+    <div id="ins-modal-inner">
+      <div style="padding:22px 24px 0">
+        <div style="font-size:1rem;font-weight:600;color:#fff;margin-bottom:2px" id="ins-modal-name"></div>
+        <div style="font-size:0.78rem;color:#666;margin-bottom:14px" id="ins-modal-detail"></div>
+        <div class="ins-modal-tabs">
+          <button class="ins-modal-tab active" onclick="insModalTab('call')">Call Script</button>
+          <button class="ins-modal-tab"        onclick="insModalTab('sms')">SMS</button>
+          <button class="ins-modal-tab"        onclick="insModalTab('followup')">Follow-Up</button>
+          <button class="ins-modal-tab"        onclick="insModalTab('objections')">Objections</button>
+        </div>
+      </div>
+      <!-- Generate step -->
+      <div id="ins-modal-gen" style="padding:20px 24px">
+        <div style="font-size:0.82rem;color:#555;margin-bottom:14px">Claude will write a natural, non-pushy call script, SMS, and follow-up tailored to your relationship with this person.</div>
+        <div style="display:flex;gap:10px">
+          <button onclick="insCloseModal()" style="flex:1;background:transparent;border:1px solid #2a2a2a;border-radius:8px;padding:11px;color:#666;font-family:inherit;font-size:0.88rem;cursor:pointer">Cancel</button>
+          <button id="ins-gen-btn" onclick="insGenerate()" style="flex:2;background:#60a5fa;border:none;border-radius:8px;padding:11px;color:#000;font-family:inherit;font-size:0.88rem;font-weight:600;cursor:pointer">Generate Scripts</button>
+        </div>
+        <div id="ins-gen-status" style="font-size:0.8rem;margin-top:10px;min-height:18px;text-align:center;color:#777"></div>
+      </div>
+      <!-- Results -->
+      <div id="ins-modal-results" style="display:none;padding:0 24px 24px">
+        <div id="ins-panel-call" style="padding-top:16px">
+          <div style="font-size:0.75rem;color:#555;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">30-Second Call Opener</div>
+          <textarea id="ins-res-call" style="width:100%;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:10px 12px;color:#ccc;font-family:inherit;font-size:0.83rem;line-height:1.7;resize:vertical;outline:none;min-height:180px"></textarea>
+          <button onclick="insCopy('ins-res-call')" style="width:100%;margin-top:10px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:7px;padding:9px;color:#ccc;font-family:inherit;font-size:0.82rem;cursor:pointer">Copy Script</button>
+        </div>
+        <div id="ins-panel-sms" style="display:none;padding-top:16px">
+          <div style="font-size:0.75rem;color:#555;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Text Message</div>
+          <textarea id="ins-res-sms" style="width:100%;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:10px 12px;color:#ccc;font-family:inherit;font-size:0.88rem;line-height:1.6;resize:vertical;outline:none;min-height:100px"></textarea>
+          <button onclick="insCopy('ins-res-sms')" style="width:100%;margin-top:10px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:7px;padding:10px;color:#ccc;font-family:inherit;font-size:0.85rem;cursor:pointer">Copy SMS</button>
+        </div>
+        <div id="ins-panel-followup" style="display:none;padding-top:16px">
+          <div style="font-size:0.75rem;color:#555;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Follow-Up Script (3–5 days later)</div>
+          <textarea id="ins-res-followup" style="width:100%;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:10px 12px;color:#ccc;font-family:inherit;font-size:0.83rem;line-height:1.7;resize:vertical;outline:none;min-height:160px"></textarea>
+          <button onclick="insCopy('ins-res-followup')" style="width:100%;margin-top:10px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:7px;padding:9px;color:#ccc;font-family:inherit;font-size:0.82rem;cursor:pointer">Copy Follow-Up</button>
+        </div>
+        <button onclick="insCloseModal()" style="width:100%;margin-top:14px;background:transparent;border:1px solid #1a1a1a;border-radius:7px;padding:9px;color:#444;font-family:inherit;font-size:0.82rem;cursor:pointer">Close</button>
+      </div>
+      <!-- Objections panel — always accessible, outside results wrapper -->
+      <div id="ins-panel-objections" style="display:none;padding:0 24px 24px">
+        <div style="font-size:0.75rem;color:#555;margin-top:14px;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px">They said — pick the objection:</div>
+        <div class="objection-list">
+          <button class="obj-btn" onclick="insShowObjection(this,'already')">I already have insurance through work.</button>
+          <button class="obj-btn" onclick="insShowObjection(this,'think')">I need to think about it / I'll get back to you.</button>
+          <button class="obj-btn" onclick="insShowObjection(this,'afford')">I can't afford it right now.</button>
+          <button class="obj-btn" onclick="insShowObjection(this,'young')">I'm too young to worry about this.</button>
+          <button class="obj-btn" onclick="insShowObjection(this,'spouse')">My spouse handles all the finances.</button>
+          <button class="obj-btn" onclick="insShowObjection(this,'busy')">I'm really busy — call me another time.</button>
+          <button class="obj-btn" onclick="insShowObjection(this,'notinterested')">I'm not interested.</button>
+        </div>
+        <div class="obj-response" id="obj-response-box"></div>
+        <button id="obj-copy-btn" onclick="insCopyObjResponse()" style="display:none;width:100%;margin-top:10px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:7px;padding:9px;color:#ccc;font-family:inherit;font-size:0.82rem;cursor:pointer">Copy Response</button>
+        <button onclick="insCloseModal()" style="width:100%;margin-top:10px;background:transparent;border:1px solid #1a1a1a;border-radius:7px;padding:9px;color:#444;font-family:inherit;font-size:0.82rem;cursor:pointer">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <h1>Lead Engine</h1>
+    <p class="subtitle">Automated prospecting across the GTA. Scrape → Qualify → Enrich → Outreach.</p>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card"><div class="label">Scraped</div><div class="value" id="s-found">0</div><div class="sub">This session</div></div>
+      <div class="stat-card"><div class="label">Qualified</div><div class="value" id="s-qual">0</div><div class="sub">Score &lt; 60/100</div></div>
+      <div class="stat-card"><div class="label">Sent</div><div class="value" id="s-sent">0</div><div class="sub">→ Make → Clay → Instantly</div></div>
+      <div class="stat-card"><div class="label">Skipped</div><div class="value" id="s-skip">0</div><div class="sub">Already processed</div></div>
+    </div>
+
+    <!-- Run Controls -->
+    <div class="run-card">
+      <div class="run-info">
+        <h3>Pipeline Controls</h3>
+        <p id="run-msg">Select cities and industries, then press Run.</p>
+        <div class="progress-wrap" id="prog-wrap">
+          <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-fill"></div></div>
+          <div class="progress-label" id="prog-lbl">Starting…</div>
+        </div>
+      </div>
+      <button class="btn-stop" id="btn-stop" onclick="stop()">Stop</button>
+      <button class="btn-run" id="btn-run" onclick="run()">Run Pipeline</button>
+    </div>
+
+    <!-- Selectors -->
+    <div class="selectors-grid">
+      <div class="card">
+        <div class="card-header">
+          <h3>GTA Cities</h3>
+          <button class="select-all" onclick="toggleAll('city-cb')">Toggle all</button>
+        </div>
+        <div class="check-grid" id="city-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3>Industries</h3>
+          <button class="select-all" onclick="toggleAll('ind-cb')">Toggle all</button>
+        </div>
+        <div class="check-grid" id="ind-list"></div>
+      </div>
+    </div>
+
+    <!-- Results cards -->
+    <div class="results-section" id="results-section">
+      <h3 id="results-heading">Qualified Leads</h3>
+      <div class="results-grid" id="results-grid"></div>
+    </div>
+
+    <!-- Manual Lead → Agent -->
+    <div class="card" style="margin-bottom:24px">
+      <div class="card-header" style="margin-bottom:20px">
+        <h3>Send Lead to Agent</h3>
+        <span style="font-size:0.78rem;color:var(--text-dim)">→ Make → Clay → Instantly</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <input id="a-first"   placeholder="First name"   style="background:var(--bg);border:1px solid var(--border-light);border-radius:8px;padding:11px 14px;color:var(--white);font-family:inherit;font-size:0.88rem;outline:none;width:100%">
+        <input id="a-last"    placeholder="Last name"    style="background:var(--bg);border:1px solid var(--border-light);border-radius:8px;padding:11px 14px;color:var(--white);font-family:inherit;font-size:0.88rem;outline:none;width:100%">
+        <input id="a-email"   placeholder="Email"        type="email" style="background:var(--bg);border:1px solid var(--border-light);border-radius:8px;padding:11px 14px;color:var(--white);font-family:inherit;font-size:0.88rem;outline:none;width:100%">
+        <input id="a-company" placeholder="Company"      style="background:var(--bg);border:1px solid var(--border-light);border-radius:8px;padding:11px 14px;color:var(--white);font-family:inherit;font-size:0.88rem;outline:none;width:100%">
+        <input id="a-linkedin" placeholder="LinkedIn URL (optional)" style="background:var(--bg);border:1px solid var(--border-light);border-radius:8px;padding:11px 14px;color:var(--white);font-family:inherit;font-size:0.88rem;outline:none;width:100%;grid-column:span 2">
+      </div>
+      <div style="display:flex;align-items:center;gap:14px">
+        <button id="btn-agent" class="btn-run" onclick="sendToAgent()" style="padding:12px 28px">Start Agent</button>
+        <span id="agent-status" style="font-size:0.83rem;color:var(--text-dim)"></span>
+      </div>
+    </div>
+
+    <!-- Email Sequence -->
+    <div class="email-card">
+      <h3>Email Sequence (copy into Instantly campaign)</h3>
+      <div class="email-sequence">
+        <div class="seq-step">
+          <div class="seq-num">1</div>
+          <div class="seq-info">
+            <div class="seq-title">Initial Outreach — Day 1</div>
+            <div class="seq-desc">Subject: Quick question about {{company}}'s online presence</div>
+            <textarea readonly>Hi {{first_name}},
+
+I was looking up {{company}} online and noticed you don't have a website yet — or the current one isn't showing up well on mobile.
+
+We're LYNQ, a web design agency. We build clean, fast websites for local businesses in the GTA that help you get found on Google and turn visitors into customers.
+
+We've done this for restaurants, dental offices, law firms, and more across Brampton and Mississauga.
+
+Would it make sense to hop on a 15-min call this week to see if we can help?
+
+— Mustafa
+lynq.build</textarea>
+          </div>
+          <div class="seq-delay">Day 1</div>
+        </div>
+
+        <div class="seq-step">
+          <div class="seq-num">2</div>
+          <div class="seq-info">
+            <div class="seq-title">Follow-up — Day 4</div>
+            <div class="seq-desc">Subject: Re: Quick question about {{company}}'s online presence</div>
+            <textarea readonly>Hi {{first_name}},
+
+Just following up on my message from earlier this week.
+
+A lot of businesses we work with were in the same spot — no website, or one that wasn't bringing in any new customers. Most see a noticeable difference within 30 days of going live.
+
+Happy to share a couple of examples if you'd like to see what it looks like for businesses similar to {{company}}.
+
+Worth a quick chat?
+
+— Mustafa
+lynq.build</textarea>
+          </div>
+          <div class="seq-delay">+3 days</div>
+        </div>
+
+        <div class="seq-step">
+          <div class="seq-num">3</div>
+          <div class="seq-info">
+            <div class="seq-title">Break-up Email — Day 9</div>
+            <div class="seq-desc">Subject: Closing the loop on {{company}}</div>
+            <textarea readonly>Hi {{first_name}},
+
+I'll keep this short — I don't want to keep showing up in your inbox if the timing isn't right.
+
+If you ever decide to build or upgrade {{company}}'s website, we'd love to be the team you call. We're local, fast, and focused on results.
+
+Feel free to reach out anytime at lynq.build.
+
+Wishing you a great week,
+Mustafa</textarea>
+          </div>
+          <div class="seq-delay">+5 days</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Log -->
+    <div class="log-card">
+      <div class="log-header">
+        <h3>Live Log</h3>
+        <button class="btn-clear" onclick="clearLog()">Clear</button>
+      </div>
+      <div id="log-output"><span class="log-info">Pipeline ready. Configure targets above and press Run.</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PASS = 'lynq2026';
+
+const CITIES = [
+  'Downtown Toronto, Ontario, Canada',
+  'Toronto, Ontario, Canada',
+  'North York, Ontario, Canada',
+  'Scarborough, Ontario, Canada',
+  'Etobicoke, Ontario, Canada',
+  'Mississauga, Ontario, Canada',
+  'Brampton, Ontario, Canada',
+  'Vaughan, Ontario, Canada',
+  'Richmond Hill, Ontario, Canada',
+  'Markham, Ontario, Canada',
+  'Oakville, Ontario, Canada',
+  'Burlington, Ontario, Canada',
+  'Ajax, Ontario, Canada',
+  'Pickering, Ontario, Canada',
+  'Oshawa, Ontario, Canada',
+];
+
+const INDUSTRIES = [
+  'restaurants',
+  'dental clinics',
+  'real estate agents',
+  'plumbers',
+  'hair salons',
+  'auto repair shops',
+  'law firms',
+  'physiotherapy clinics',
+  'accounting firms',
+  'landscaping companies',
+  'cleaning services',
+  'gyms and fitness centers',
+];
+
+let stopping = false;
+let S = { found: 0, qual: 0, sent: 0, skip: 0 };
+const LEAD_STORE = {}; // index → lead object, avoids JSON-in-onclick issues
+let leadIdx = 0;
+
+function auth() {
+  if (document.getElementById('pw').value === PASS) {
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    build();
+  } else {
+    document.getElementById('pw-err').textContent = 'Wrong password.';
+    document.getElementById('pw').value = '';
+  }
+}
+
+function build() {
+  const cityEl = document.getElementById('city-list');
+  const indEl = document.getElementById('ind-list');
+
+  CITIES.forEach((c, i) => {
+    const lbl = document.createElement('label');
+    lbl.className = 'check-item';
+    lbl.innerHTML = `<input type="checkbox" class="city-cb" value="${c}" ${i < 1 ? 'checked' : ''}><span>${c.split(',')[0]}</span>`;
+    cityEl.appendChild(lbl);
+  });
+
+  INDUSTRIES.forEach(ind => {
+    const lbl = document.createElement('label');
+    lbl.className = 'check-item';
+    lbl.innerHTML = `<input type="checkbox" class="ind-cb" value="${ind}" checked><span>${ind.charAt(0).toUpperCase() + ind.slice(1)}</span>`;
+    indEl.appendChild(lbl);
+  });
+}
+
+function toggleAll(cls) {
+  const boxes = document.querySelectorAll('.' + cls);
+  const allOn = [...boxes].every(b => b.checked);
+  boxes.forEach(b => b.checked = !allOn);
+}
+
+function checked(cls) {
+  return [...document.querySelectorAll('.' + cls + ':checked')].map(b => b.value);
+}
+
+function log(msg, type = '') {
+  const el = document.getElementById('log-output');
+  const ts = new Date().toTimeString().slice(0, 8);
+  el.innerHTML += `<br><span class="${type ? 'log-' + type : ''}">[${ts}] ${msg}</span>`;
+  el.scrollTop = el.scrollHeight;
+}
+
+function clearLog() {
+  document.getElementById('log-output').innerHTML = '<span class="log-info">Log cleared.</span>';
+}
+
+function setStatus(active, txt) {
+  document.getElementById('dot').className = 'dot' + (active ? ' active' : '');
+  document.getElementById('status-txt').textContent = txt;
+}
+
+function updateStats() {
+  document.getElementById('s-found').textContent = S.found;
+  document.getElementById('s-qual').textContent = S.qual;
+  document.getElementById('s-sent').textContent = S.sent;
+  document.getElementById('s-skip').textContent = S.skip;
+}
+
+async function run() {
+  const cities = checked('city-cb');
+  const industries = checked('ind-cb');
+  if (!cities.length || !industries.length) { log('Select at least one city and one industry.', 'error'); return; }
+
+  stopping = false;
+  S = { found: 0, qual: 0, sent: 0, skip: 0 };
+  updateStats();
+
+  document.getElementById('btn-run').disabled = true;
+  document.getElementById('btn-stop').style.display = 'block';
+  document.getElementById('prog-wrap').style.display = 'block';
+  setStatus(true, 'Running');
+
+  const jobs = [];
+  cities.forEach(c => industries.forEach(i => jobs.push({ city: c, industry: i })));
+  const total = jobs.length;
+  let done = 0;
+
+  log(`Pipeline started: ${cities.length} cities × ${industries.length} industries = ${total} jobs`, 'info');
+
+  for (const job of jobs) {
+    if (stopping) { log('Stopped.', 'warn'); break; }
+
+    const cityShort = job.city.split(',')[0];
+    log(`Scraping ${job.industry} in ${cityShort}…`);
+    document.getElementById('run-msg').textContent = `${job.industry} in ${cityShort}`;
+
+    try {
+      const res = await fetch('/api/run-pipeline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ city: job.city, industry: job.industry }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        log(`Error: ${data.error || res.statusText}`, 'error');
+      } else {
+        S.found += data.found || 0;
+        S.qual += data.qualified || 0;
+        S.sent += data.sent || 0;
+        S.skip += data.skipped || 0;
+        updateStats();
+
+        const grid = document.getElementById('results-grid');
+        const section = document.getElementById('results-section');
+
+        (data.leads || []).forEach(l => {
+          const tag = l.sent ? '✓ sent' : l.qualified ? '🟢 qualified' : '🔴 skip';
+          log(`  [${tag}] ${l.name} — Score: ${l.websiteScore}/100 — ${l.reason}`, l.sent ? 'success' : l.qualified ? '' : 'skip');
+          grid.insertAdjacentHTML('afterbegin', renderCard(l));
+          section.style.display = 'block';
+        });
+
+        const total_cards = grid.children.length;
+        document.getElementById('results-heading').textContent = `All Businesses (${total_cards}) — ${data.qualified} qualified`;
+        log(`✓ ${data.found} scraped · ${data.qualified} qualified · ${data.sent} sent to Make`, 'success');
+        if (data.debug) log(`ℹ ${data.debug}`, 'warn');
+      }
+    } catch (err) {
+      log(`Request failed: ${err.message}`, 'error');
+    }
+
+    done++;
+    const pct = Math.round((done / total) * 100);
+    document.getElementById('prog-fill').style.width = pct + '%';
+    document.getElementById('prog-lbl').textContent = `${done} / ${total} jobs (${pct}%)`;
+  }
+
+  document.getElementById('btn-run').disabled = false;
+  document.getElementById('btn-stop').style.display = 'none';
+  setStatus(false, 'Idle');
+  document.getElementById('run-msg').textContent = `Last run: ${S.qual} qualified · ${S.sent} sent to pipeline.`;
+  log(`Pipeline complete — ${S.found} scraped · ${S.qual} qualified · ${S.sent} sent`, 'info');
+}
+
+function stop() { stopping = true; }
+
+function renderCard(l) {
+  const scoreClass = l.websiteScore < 30 ? 'score-bad' : l.websiteScore < 60 ? 'score-mid' : 'score-ok';
+  const cardBorder = l.qualified ? (l.sent ? 'border-color:#22c55e' : 'border-color:#2a2a2a') : 'border-color:#1a1a1a;opacity:0.5';
+  const stars = l.rating ? '★'.repeat(Math.round(l.rating)) + '·'.repeat(5 - Math.round(l.rating)) : '';
+  const photo = l.photo
+    ? `<img class="biz-photo" src="${l.photo}" alt="${l.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+    + `<div class="biz-photo-placeholder" style="display:none"></div>`
+    : `<div class="biz-photo-placeholder"></div>`;
+
+  const hours = l.hours && typeof l.hours === 'object'
+    ? Object.entries(l.hours).slice(0, 2).map(([d, h]) => `${d}: ${h}`).join(' · ')
+    : '';
+
+  const websiteRow = l.website
+    ? `<div class="biz-row"><a href="${l.website}" target="_blank" rel="noopener">${l.website.replace(/^https?:\/\/(www\.)?/, '')}</a></div>`
+    : `<div class="biz-row" style="color:var(--red)">No website</div>`;
+
+  const phoneRow = l.phone ? `<div class="biz-row">${l.phone}</div>` : '';
+  const addrRow  = l.address ? `<div class="biz-row">${l.address}</div>` : '';
+  const hoursRow = hours ? `<div class="biz-row">${hours}</div>` : '';
+  const descRow  = l.description ? `<div class="biz-row" style="display:block;line-height:1.5;margin-top:4px">${l.description.slice(0, 120)}${l.description.length > 120 ? '…' : ''}</div>` : '';
+
+  const ratingBlock = l.rating
+    ? `<div class="biz-rating"><span class="stars">${stars}</span><span style="font-size:0.8rem;color:var(--text-dim)">${l.rating} (${l.reviews} reviews)</span></div>`
+    : '';
+
+  const issuesBlock = l.reason && l.reason !== 'No website'
+    ? `<div class="biz-issues">${l.reason}</div>`
+    : l.websiteScore === 0 ? `<div class="biz-issues">No website — cold outreach target</div>` : '';
+
+  const sentBadge = l.sent
+    ? `<span class="biz-status" style="color:var(--green)">✓ Sent to pipeline</span>`
+    : l.qualified
+      ? `<span class="biz-status" style="color:var(--yellow)">Qualified</span>`
+      : `<span class="biz-status" style="color:var(--text-dim)">✓ Good website</span>`;
+  const emailTag = l.email
+    ? `<div class="biz-row" style="color:#22c55e">${l.email}</div>`
+    : `<div class="biz-row" style="color:#555">No email found</div>`;
+  const idx = leadIdx++;
+  LEAD_STORE[idx] = l;
+  const sendBtn = `<button class="biz-btn" style="background:#fff;margin-left:6px" onclick="openModal(LEAD_STORE[${idx}])">AI Email</button>`;
+
+  return `
+  <div class="biz-card" style="${cardBorder}">
+    ${photo}
+    <div class="biz-body">
+      <div class="biz-top">
+        <div class="biz-name">${l.name}</div>
+        <span class="biz-score ${scoreClass}">${l.websiteScore}/100</span>
+      </div>
+      <div class="biz-category">${l.category || l.industry}</div>
+      ${ratingBlock}
+      ${websiteRow}
+      ${phoneRow}
+      ${addrRow}
+      ${hoursRow}
+      ${emailTag}
+      ${descRow}
+      ${issuesBlock}
+      <div class="biz-footer">
+        ${sentBadge}
+        ${sendBtn}
+      </div>
+    </div>
+  </div>`;
+}
+
+let _modalLead = null;
+let _outreachData = null;
+
+function openModal(lead) {
+  _modalLead = lead;
+  _outreachData = null;
+  document.getElementById('modal-biz-name').textContent = lead.name;
+  document.getElementById('modal-biz-detail').textContent = `${lead.category || lead.industry} · ${lead.address || lead.city}`;
+  document.getElementById('modal-email').value = lead.email || '';
+  document.getElementById('modal-status').textContent = '';
+  document.getElementById('modal-send-btn').disabled = false;
+  document.getElementById('modal-send-btn').textContent = 'Generate with Claude';
+  document.getElementById('modal-generate').style.display = 'block';
+  document.getElementById('modal-results').style.display = 'none';
+  document.getElementById('email-sent-note').style.display = 'none';
+  switchTab('email');
+  document.getElementById('email-modal').style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('email-modal').style.display = 'none';
+  _modalLead = null;
+}
+
+function switchTab(tab) {
+  ['email','sms','call'].forEach(t => {
+    document.getElementById(`tab-${t}`).style.borderBottomColor = t === tab ? '#fff' : 'transparent';
+    document.getElementById(`tab-${t}`).style.color = t === tab ? '#fff' : '#555';
+    document.getElementById(`panel-${t}`).style.display = t === tab ? 'block' : 'none';
+  });
+}
+
+function copyText(id) {
+  const el = document.getElementById(id);
+  navigator.clipboard.writeText(el.value || el.textContent).then(() => {
+    const orig = el.previousElementSibling?.textContent;
+  });
+  // Flash feedback
+  const btns = el.parentElement.querySelectorAll('button');
+  btns.forEach(b => { if (b.textContent.startsWith('Copy')) { b.textContent = '✓ Copied!'; setTimeout(() => b.textContent = b.textContent.includes('SMS') ? 'Copy SMS' : b.textContent.includes('Script') ? 'Copy Script' : 'Copy', 1500); }});
+}
+
+async function generateOutreach() {
+  const btn = document.getElementById('modal-send-btn');
+  const statusEl = document.getElementById('modal-status');
+  btn.disabled = true;
+  btn.textContent = 'Claude is writing…';
+  statusEl.style.color = '#777';
+  statusEl.textContent = 'Generating email, SMS, and call script…';
+
+  const toEmail = document.getElementById('modal-email').value.trim();
+
+  try {
+    const res = await fetch('/api/outreach', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lead: _modalLead, toEmail, sendEmail: false }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+
+    _outreachData = data;
+
+    // Populate fields
+    document.getElementById('res-subject').textContent = data.subject || '';
+    document.getElementById('res-email').value = data.email || '';
+    document.getElementById('res-sms').value = data.sms || '';
+    document.getElementById('res-call').value = data.callScript || '';
+    const smsLen = (data.sms || '').length;
+    document.getElementById('sms-chars').textContent = `${smsLen}/160 chars`;
+    const phone = _modalLead.phone || '';
+    document.getElementById('res-phone').textContent  = phone ? `📞 ${phone}` : '';
+    document.getElementById('res-phone2').textContent = phone ? `📞 ${phone}` : '';
+
+    document.getElementById('modal-generate').style.display = 'none';
+    document.getElementById('modal-results').style.display = 'block';
+
+    // Auto-send email if address was entered
+    if (toEmail && toEmail.includes('@')) {
+      await sendEmailNow();
+    }
+
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'Generate with Claude';
+    statusEl.textContent = err.message;
+    statusEl.style.color = '#ef4444';
+  }
+}
+
+async function sendEmailNow() {
+  const toEmail = document.getElementById('modal-email').value.trim() ||
+                  prompt('Enter email address to send to:');
+  if (!toEmail || !toEmail.includes('@')) return;
+
+  const btn = document.getElementById('btn-send-email');
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+
+  try {
+    const res = await fetch('/api/outreach', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lead: _modalLead, toEmail, sendEmail: true }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Send failed');
+    btn.textContent = '✓ Sent!';
+    btn.style.background = '#22c55e';
+    document.getElementById('email-sent-note').style.display = 'block';
+    log(`✉ Email sent → ${_modalLead.name} &lt;${toEmail}&gt;`, 'success');
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'Send from hello@lynq.build';
+    alert('Send failed: ' + err.message);
+  }
+}
+
+document.getElementById('email-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('email-modal')) closeModal();
+});
+
+async function sendLeadManual(l) {
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  try {
+    const res = await fetch('https://hook.us2.make.com/di7iq2r22kae4ru93kkf6tni1n7lnhf7', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        first_name: l.ownerName || l.name.split(' ')[0] || 'Owner',
+        last_name: l.name.split(' ').slice(1).join(' ') || '',
+        email: '',
+        company: l.name,
+        linkedin_url: '',
+        phone: l.phone || '',
+        website: l.website || '',
+        address: l.address || '',
+        industry: l.industry,
+        website_score: l.websiteScore,
+        website_issues: l.reason,
+      }),
+    });
+    if (res.ok) {
+      btn.textContent = '✓ Sent';
+      btn.style.background = 'var(--green)';
+      btn.style.color = '#000';
+      log(`Manually sent: ${l.name}`, 'success');
+    } else {
+      btn.textContent = 'Failed';
+      btn.style.background = 'var(--red)';
+      btn.disabled = false;
+    }
+  } catch {
+    btn.textContent = 'Error';
+    btn.disabled = false;
+  }
+}
+
+async function sendToAgent() {
+  const first_name  = document.getElementById('a-first').value.trim();
+  const last_name   = document.getElementById('a-last').value.trim();
+  const email       = document.getElementById('a-email').value.trim();
+  const company     = document.getElementById('a-company').value.trim();
+  const linkedin_url = document.getElementById('a-linkedin').value.trim();
+
+  if (!first_name || !email || !company) {
+    document.getElementById('agent-status').textContent = 'First name, email and company are required.';
+    document.getElementById('agent-status').style.color = 'var(--red)';
+    return;
+  }
+
+  const btn = document.getElementById('btn-agent');
+  const statusEl = document.getElementById('agent-status');
+  btn.disabled = true;
+  btn.textContent = 'Agent Running...';
+  statusEl.textContent = '';
+  statusEl.style.color = 'var(--text-dim)';
+
+  try {
+    const res = await fetch('https://hook.us2.make.com/di7iq2r22kae4ru93kkf6tni1n7lnhf7', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ first_name, last_name, email, company, linkedin_url }),
+    });
+
+    if (res.ok) {
+      statusEl.textContent = '✓ Lead sent successfully';
+      statusEl.style.color = 'var(--green)';
+      log(`Agent triggered → ${first_name} ${last_name} &lt;${email}&gt; / ${company}`, 'success');
+      // Clear form
+      ['a-first','a-last','a-email','a-company','a-linkedin'].forEach(id => document.getElementById(id).value = '');
+    } else {
+      const txt = await res.text().catch(() => res.statusText);
+      statusEl.textContent = `Error: ${res.status} — ${txt}`;
+      statusEl.style.color = 'var(--red)';
+      console.error('Webhook error:', res.status, txt);
+      log(`Agent webhook error ${res.status}: ${txt}`, 'error');
+    }
+  } catch (err) {
+    statusEl.textContent = 'Network error — check console.';
+    statusEl.style.color = 'var(--red)';
+    console.error('sendToAgent failed:', err);
+    log(`Agent request failed: ${err.message}`, 'error');
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Start Agent';
+}
+
+// ═══════════════════════════════════════════════
+//  PAGE TAB SWITCHING
+// ═══════════════════════════════════════════════
+function switchPage(tab) {
+  const isIns = tab === 'ins';
+  document.getElementById('ins-section').style.display  = isIns ? 'block' : 'none';
+  document.querySelector('.main').style.display          = isIns ? 'none'  : 'block';
+  document.getElementById('tab-web-btn').classList.toggle('active', !isIns);
+  document.getElementById('tab-ins-btn').classList.toggle('active',  isIns);
+  if (isIns) insRender();
+}
+// Auto-switch to insurance if hash in URL
+if (location.hash === '#insurance') switchPage('ins');
+
+// ═══════════════════════════════════════════════
+//  INSURANCE — STORAGE & RENDER
+// ═══════════════════════════════════════════════
+const INS_KEY = 'lynq_ins_contacts';
+
+function insLoad()   { try { return JSON.parse(localStorage.getItem(INS_KEY)) || []; } catch { return []; } }
+function insSave(arr){ localStorage.setItem(INS_KEY, JSON.stringify(arr)); }
+
+const STATUS_LABELS = {
+  new:        { label: 'New',            cls: 'status-new' },
+  called:     { label: 'Called',         cls: 'status-called' },
+  meeting:    { label: 'Meeting Set',    cls: 'status-meeting' },
+  presented:  { label: 'Presented',      cls: 'status-presented' },
+  sold:       { label: 'Policy Sold',    cls: 'status-sold' },
+  notNow:     { label: 'Not Right Now',  cls: 'status-notNow' },
+};
+
+const REL_LABELS = {
+  family:       'rel-family',
+  friend:       'rel-friend',
+  colleague:    'rel-colleague',
+  acquaintance: 'rel-acquaintance',
+};
+
+function insStats(contacts) {
+  document.getElementById('ins-s-total').textContent    = contacts.length;
+  document.getElementById('ins-s-called').textContent   = contacts.filter(c => ['called','meeting','presented','sold'].includes(c.status)).length;
+  document.getElementById('ins-s-meetings').textContent = contacts.filter(c => ['meeting','presented','sold'].includes(c.status)).length;
+  document.getElementById('ins-s-sold').textContent     = contacts.filter(c => c.status === 'sold').length;
+}
+
+function insRender() {
+  const contacts = insLoad();
+  const filter   = document.getElementById('ins-filter')?.value || 'all';
+  const filtered = filter === 'all' ? contacts : contacts.filter(c => c.status === filter);
+  insStats(contacts);
+  insFollowUpRender(contacts);
+
+  const section = document.getElementById('ins-cards-section');
+  const grid    = document.getElementById('ins-cards-grid');
+  const heading = document.getElementById('ins-cards-heading');
+
+  if (!contacts.length) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  heading.textContent   = `Contacts (${filtered.length}${filter !== 'all' ? ' filtered' : ''})`;
+
+  grid.innerHTML = filtered.map(c => {
+    const rel   = c.relationship || 'friend';
+    const relCls= REL_LABELS[rel] || 'rel-friend';
+    const relLbl= rel.charAt(0).toUpperCase() + rel.slice(1);
+    const st    = STATUS_LABELS[c.status] || STATUS_LABELS.new;
+    return `
+    <div class="ins-card" id="ins-card-${c.id}">
+      <div class="ins-card-top">
+        <div class="ins-name">${c.name}</div>
+        <span class="ins-rel ${relCls}">${relLbl}</span>
+      </div>
+      ${c.phone ? `<div class="ins-info-row">${c.phone}</div>` : ''}
+      ${c.email ? `<div class="ins-info-row">${c.email}</div>` : ''}
+      ${c.age   ? `<div class="ins-info-row">~${c.age} yrs old</div>` : ''}
+      ${c.notes ? `<div class="ins-notes">${c.notes}</div>` : ''}
+      <div class="ins-status-wrap">
+        <select class="ins-status-select" onchange="insUpdateStatus('${c.id}', this.value)">
+          ${Object.entries(STATUS_LABELS).map(([k,v]) => `<option value="${k}" ${c.status===k?'selected':''}>${v.label}</option>`).join('')}
+        </select>
+        <button class="ins-btn-script" onclick="insOpenModal('${c.id}')">Scripts</button>
+        <button class="ins-btn-del" onclick="insDelete('${c.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function insAddContact() {
+  const name = document.getElementById('ins-name').value.trim();
+  if (!name) {
+    document.getElementById('ins-add-status').textContent = 'Name is required.';
+    document.getElementById('ins-add-status').style.color = 'var(--red)';
+    return;
+  }
+  const c = {
+    id:           Date.now().toString(),
+    name,
+    phone:        document.getElementById('ins-phone').value.trim(),
+    email:        document.getElementById('ins-email').value.trim(),
+    age:          document.getElementById('ins-age').value.trim(),
+    relationship: document.getElementById('ins-rel').value,
+    notes:        document.getElementById('ins-notes').value.trim(),
+    status:       'new',
+    addedAt:      Date.now(),
+  };
+  const contacts = insLoad();
+  contacts.unshift(c);
+  insSave(contacts);
+
+  ['ins-name','ins-phone','ins-email','ins-age','ins-notes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('ins-rel').value = 'friend';
+  const st = document.getElementById('ins-add-status');
+  st.style.color = 'var(--green)';
+  st.textContent = `✓ ${name} added.`;
+  setTimeout(() => st.textContent = '', 3000);
+  insRender();
+}
+
+function insUpdateStatus(id, status) {
+  const contacts = insLoad();
+  const c = contacts.find(x => x.id === id);
+  if (c) {
+    c.status = status;
+    c.lastContactedAt = Date.now();
+    insSave(contacts);
+    insStats(contacts);
+    insFollowUpRender(contacts);
+  }
+}
+
+function insDelete(id) {
+  const contacts = insLoad().filter(c => c.id !== id);
+  insSave(contacts);
+  insRender();
+}
+
+// ═══════════════════════════════════════════════
+//  FOLLOW-UP DASHBOARD
+// ═══════════════════════════════════════════════
+function insFollowUpRender(contacts) {
+  contacts = contacts || insLoad();
+  const now  = Date.now();
+  const DAY  = 86400000;
+
+  // Only show active contacts (not sold / notNow)
+  const active = contacts.filter(c => !['sold','notNow'].includes(c.status));
+
+  const queue = active.map(c => {
+    const lastTs  = c.lastContactedAt || c.addedAt || now;
+    const daysSince = (now - lastTs) / DAY;
+    const status  = c.status;
+
+    let urgency, label;
+    if (status === 'new' && daysSince >= 1) {
+      urgency = 'urgent'; label = `New — not contacted yet (${Math.floor(daysSince)}d)`;
+    } else if (status === 'called' && daysSince >= 5) {
+      urgency = 'urgent'; label = `Called ${Math.floor(daysSince)}d ago — follow up now`;
+    } else if (status === 'called' && daysSince >= 3) {
+      urgency = 'due'; label = `Called ${Math.floor(daysSince)}d ago — due for follow-up`;
+    } else if (status === 'meeting' && daysSince >= 2) {
+      urgency = 'due'; label = `Meeting set — confirm with them`;
+    } else if (status === 'presented' && daysSince >= 4) {
+      urgency = 'due'; label = `Presented ${Math.floor(daysSince)}d ago — check in`;
+    } else if (status === 'new' && daysSince >= 0.5) {
+      urgency = 'ok'; label = `Added recently — reach out today`;
+    } else {
+      return null; // nothing to flag yet
+    }
+    return { c, urgency, label };
+  }).filter(Boolean);
+
+  // Sort: urgent first, then due, then ok
+  const order = { urgent: 0, due: 1, ok: 2 };
+  queue.sort((a, b) => order[a.urgency] - order[b.urgency]);
+
+  const section = document.getElementById('fu-section');
+  const grid    = document.getElementById('fu-grid');
+  const heading = document.getElementById('fu-heading');
+
+  if (!queue.length) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+
+  const urgentCount = queue.filter(x => x.urgency === 'urgent').length;
+  heading.textContent = urgentCount
+    ? `Follow-Up Queue — ${urgentCount} need attention now`
+    : `Follow-Up Queue — ${queue.length} contacts due`;
+
+  grid.innerHTML = queue.map(({ c, urgency, label }) => `
+    <div class="fu-card ${urgency}" onclick="insOpenModal('${c.id}')">
+      <div class="fu-dot"></div>
+      <div class="fu-info">
+        <div class="fu-name">${c.name}</div>
+        <div class="fu-detail">${label}</div>
+      </div>
+      <button class="fu-action" onclick="event.stopPropagation();insOpenModal('${c.id}')">
+        ${urgency === 'urgent' ? 'Call now' : 'Follow up'}
+      </button>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════
+//  INSURANCE SCRIPT MODAL
+// ═══════════════════════════════════════════════
+let _insContact = null;
+
+function insOpenModal(id) {
+  _insContact = insLoad().find(c => c.id === id);
+  if (!_insContact) return;
+  document.getElementById('ins-modal-name').textContent   = _insContact.name;
+  document.getElementById('ins-modal-detail').textContent = `${_insContact.relationship} · ${_insContact.phone || _insContact.email || 'No contact info'}`;
+  document.getElementById('ins-modal-gen').style.display     = 'block';
+  document.getElementById('ins-modal-results').style.display = 'none';
+  document.getElementById('ins-gen-btn').disabled   = false;
+  document.getElementById('ins-gen-btn').textContent = 'Generate Scripts';
+  document.getElementById('ins-gen-status').textContent = '';
+  // Reset objection panel
+  document.querySelectorAll('.obj-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('obj-response-box').classList.remove('show');
+  document.getElementById('obj-copy-btn').style.display = 'none';
+  insModalTab('call');
+  document.getElementById('ins-modal').style.display = 'flex';
+}
+
+function insCloseModal() {
+  document.getElementById('ins-modal').style.display = 'none';
+  _insContact = null;
+}
+
+function insModalTab(tab) {
+  const isObj = tab === 'objections';
+  // Toggle gen + results visibility when switching to/from objections
+  const genEl = document.getElementById('ins-modal-gen');
+  const resEl = document.getElementById('ins-modal-results');
+  const objEl = document.getElementById('ins-panel-objections');
+  if (isObj) {
+    if (genEl) genEl.style.display = 'none';
+    if (resEl) resEl.style.display = 'none';
+    if (objEl) objEl.style.display = 'block';
+  } else {
+    if (objEl) objEl.style.display = 'none';
+    // Restore previous state of gen/results
+    const hasResults = document.getElementById('ins-res-call')?.value;
+    if (genEl) genEl.style.display = hasResults ? 'none' : 'block';
+    if (resEl) resEl.style.display = hasResults ? 'block' : 'none';
+    ['call','sms','followup'].forEach(t => {
+      const pnl = document.getElementById(`ins-panel-${t}`);
+      if (pnl) pnl.style.display = t === tab ? 'block' : 'none';
+    });
+  }
+  // Update tab button styles
+  ['call','sms','followup','objections'].forEach(t => {
+    const btn = document.querySelector(`.ins-modal-tab[onclick="insModalTab('${t}')"]`);
+    if (btn) btn.classList.toggle('active', t === tab);
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  OBJECTION HANDLER
+// ═══════════════════════════════════════════════
+const OBJECTIONS = {
+  already: {
+    label: 'I already have insurance through work.',
+    response: `"That's great, honestly — group coverage through work is a solid start. The thing is, it usually only covers 1-2x your salary, and it disappears the moment you leave that job or get laid off. What I help people with is having something portable that stays with you no matter what happens at work. I'm not here to replace anything — I just want to show you what you might be missing. Can we grab a quick 20-minute coffee so I can walk you through it?"`,
+  },
+  think: {
+    label: 'I need to think about it / I\'ll get back to you.',
+    response: `"Totally fair — this is an important decision and I'd never want you to rush. Can I ask, is there anything specific holding you back? Sometimes when people say they need to think about it, there's a specific concern I can actually address. I'd rather answer it now than have you sit with a question for weeks. And if you genuinely just need time, that's completely fine — can I follow up in 3 days?"`,
+  },
+  afford: {
+    label: 'I can\'t afford it right now.',
+    response: `"I hear you, and that's actually one of the biggest reasons people get coverage now — not later. The younger and healthier you are when you lock it in, the cheaper it stays for life. I've helped people get solid coverage for less than a coffee a day. I'm not going to sell you something you can't afford — let me just show you the range and you can decide what, if anything, makes sense. Can we do a quick 20 minutes?"`,
+  },
+  young: {
+    label: 'I\'m too young to worry about this.',
+    response: `"That's actually the best time to get it — I'm not kidding. When you're young and healthy, premiums are at their lowest and you lock that rate in forever. The people who wait until their 40s end up paying 3-4x more for the same coverage, and if anything changes with their health in between, they might not qualify at all. I got my licence because I watched people I know get caught off guard. It literally takes 20 minutes for me to show you what it looks like — coffee on me?"`,
+  },
+  spouse: {
+    label: 'My spouse handles all the finances.',
+    response: `"That's perfect — would it be possible to grab a coffee with both of you? Even 20 minutes. I'd love to walk you both through what I do. Half the time the person who 'handles the finances' ends up being the most interested once they see the numbers. If that doesn't work, is there a time I could connect with them directly? I promise I'll keep it short and pressure-free."`,
+  },
+  busy: {
+    label: 'I\'m really busy — call me another time.',
+    response: `"Absolutely — I respect that. What does your schedule look like next week? I just need 20 minutes, we can even do it over a quick call or Zoom if that's easier. I'll work around you completely. Would [day] morning or evening work better?"`,
+  },
+  notinterested: {
+    label: 'I\'m not interested.',
+    response: `"I completely respect that. Can I just ask — is it life insurance in general, or is it the timing? I'm not trying to push anything, I genuinely just started out and thought of you because I care about the people in my life being protected. If it's truly not something you want to explore, no hard feelings at all. And if anything ever changes — new baby, new house, new job — I'd love to be the person you call."`,
+  },
+};
+
+function insShowObjection(btn, key) {
+  document.querySelectorAll('.obj-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const obj = OBJECTIONS[key];
+  if (!obj) return;
+  const box = document.getElementById('obj-response-box');
+  box.textContent = obj.response;
+  box.classList.add('show');
+  document.getElementById('obj-copy-btn').style.display = 'block';
+}
+
+function insCopyObjResponse() {
+  const text = document.getElementById('obj-response-box').textContent;
+  navigator.clipboard.writeText(text);
+  const btn = document.getElementById('obj-copy-btn');
+  btn.textContent = 'Copied!';
+  setTimeout(() => btn.textContent = 'Copy Response', 1500);
+}
+
+async function insGenerate() {
+  const btn = document.getElementById('ins-gen-btn');
+  const st  = document.getElementById('ins-gen-status');
+  btn.disabled = true;
+  btn.textContent = 'Claude is writing…';
+  st.textContent  = 'Generating call script, SMS, and follow-up…';
+  st.style.color  = '#777';
+
+  const c = _insContact;
+  try {
+    const res = await fetch('/api/insurance-script', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contact: c }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+
+    document.getElementById('ins-res-call').value    = data.callScript    || '';
+    document.getElementById('ins-res-sms').value     = data.smsScript     || '';
+    document.getElementById('ins-res-followup').value= data.followUpScript|| '';
+
+    document.getElementById('ins-modal-gen').style.display     = 'none';
+    document.getElementById('ins-modal-results').style.display = 'block';
+    insModalTab('call');
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'Generate Scripts';
+    st.textContent  = err.message;
+    st.style.color  = 'var(--red)';
+  }
+}
+
+function insCopy(id) {
+  const el = document.getElementById(id);
+  navigator.clipboard.writeText(el.value);
+  const btn = el.nextElementSibling;
+  if (btn) { const orig = btn.textContent; btn.textContent = '✓ Copied!'; setTimeout(() => btn.textContent = orig, 1500); }
+}
+
+document.getElementById('ins-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('ins-modal')) insCloseModal();
+});
+
+// ═══════════════════════════════════════════════
+//  NATURAL MARKET GENERATOR
+// ═══════════════════════════════════════════════
+async function nmGenerate() {
+  const btn = document.getElementById('nm-btn');
+  const st  = document.getElementById('nm-status');
+  btn.disabled = true;
+  btn.textContent = 'Claude is thinking…';
+  st.textContent  = 'Generating your full natural market list…';
+
+  const profile = {
+    school:    document.getElementById('nm-school').value.trim()    || 'not specified',
+    jobs:      document.getElementById('nm-jobs').value.trim()      || 'not specified',
+    hobbies:   document.getElementById('nm-hobbies').value.trim()   || 'not specified',
+    community: document.getElementById('nm-community').value.trim() || 'not specified',
+    other:     document.getElementById('nm-other').value.trim()     || 'none',
+  };
+
+  try {
+    const res = await fetch('/api/natural-market', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profile }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+
+    const out = document.getElementById('nm-results');
+    out.style.display = 'block';
+
+    // Quick Wins section
+    const wins = (data.quickWins || []).map(w => `
+      <div class="nm-win">
+        <div class="nm-win-type">${escHtml(w.type)}</div>
+        <div class="nm-win-reason">${escHtml(w.reason)}</div>
+        <div class="nm-win-approach">${escHtml(w.approach)}</div>
+      </div>`).join('');
+
+    // Category cards
+    const cards = (data.categories || []).map(cat => `
+      <div class="nm-card">
+        <div class="nm-card-name">${escHtml(cat.name)}</div>
+        <div class="nm-card-why">${escHtml(cat.why)}</div>
+        <div class="nm-card-reach">${escHtml(cat.reach)}</div>
+        <div class="nm-prompts">
+          ${(cat.prompts || []).map(p => `<div class="nm-prompt" title="Click to copy" onclick="navigator.clipboard.writeText(this.textContent.trim())">${escHtml(p)}</div>`).join('')}
+        </div>
+      </div>`).join('');
+
+    out.innerHTML = `
+      ${wins ? `<div class="nm-quickwins"><h4>Quick Wins — Call These First</h4>${wins}</div>` : ''}
+      <div style="font-size:0.78rem;color:var(--text-dim);margin-bottom:12px">Click any prompt to copy it — use it to jog your memory and write names on paper, then add them as contacts.</div>
+      <div class="nm-results-grid">${cards}</div>`;
+
+    st.textContent = `${(data.categories || []).length} categories generated`;
+    st.style.color = 'var(--green)';
+  } catch (err) {
+    st.textContent = err.message;
+    st.style.color = 'var(--red)';
+  }
+  btn.disabled = false;
+  btn.textContent = 'Regenerate';
+}
+
+// ═══════════════════════════════════════════════
+//  REDDIT INSURANCE LEAD FINDER
+// ═══════════════════════════════════════════════
+const REDDIT_STORE = {};
+let redditIdx = 0;
+
+async function redditSearch() {
+  const btn = document.getElementById('btn-reddit-search');
+  const statusEl = document.getElementById('reddit-status');
+  btn.disabled = true;
+  btn.textContent = 'Searching Reddit…';
+  statusEl.textContent = 'Scanning r/PersonalFinanceCanada, r/toronto, r/brampton…';
+
+  try {
+    const res = await fetch('/api/reddit-insurance-leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Search failed');
+
+    const leads = data.leads || [];
+    if (!leads.length) {
+      statusEl.textContent = 'No new leads found. Try again later.';
+      btn.disabled = false;
+      btn.textContent = 'Find Reddit Leads';
+      return;
+    }
+
+    statusEl.textContent = `Found ${leads.length} potential leads`;
+    document.getElementById('reddit-count').textContent =
+      `${leads.length} people found discussing life insurance — click "Add Contact" to save them to your list`;
+
+    const cards = document.getElementById('reddit-cards');
+    cards.innerHTML = '';
+
+    leads.forEach(lead => {
+      const i = redditIdx++;
+      REDDIT_STORE[i] = lead;
+      const timeAgo = redditTimeAgo(lead.created);
+      const snippet = lead.snippet && lead.snippet !== lead.title
+        ? `<div class="reddit-snippet">${escHtml(lead.snippet)}</div>`
+        : '';
+      cards.insertAdjacentHTML('beforeend', `
+        <div class="reddit-card" id="reddit-card-${i}">
+          <div class="reddit-card-top">
+            <span class="reddit-username">u/${escHtml(lead.username)}</span>
+            <span class="reddit-sub">r/${escHtml(lead.subreddit)}</span>
+          </div>
+          <div class="reddit-title">${escHtml(lead.title)}</div>
+          ${snippet}
+          <div class="reddit-footer">
+            <span class="reddit-meta">${timeAgo} · <a href="${escHtml(lead.url)}" target="_blank" rel="noopener" style="color:#555;text-decoration:underline">view post</a></span>
+            <button class="btn-reddit-add" id="reddit-add-${i}" onclick="redditAddContact(${i})">+ Add Contact</button>
+          </div>
+        </div>`);
+    });
+
+    document.getElementById('reddit-results').style.display = 'block';
+  } catch (err) {
+    statusEl.textContent = `Error: ${err.message}`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Refresh Leads';
+}
+
+function redditAddContact(i) {
+  const lead = REDDIT_STORE[i];
+  if (!lead) return;
+
+  const c = {
+    id:           Date.now().toString(),
+    name:         'u/' + lead.username,
+    phone:        '',
+    email:        '',
+    age:          '',
+    relationship: 'acquaintance',
+    notes:        `Reddit lead — r/${lead.subreddit}. Post: "${lead.title.slice(0, 100)}". Reach out via Reddit DM first, then get their contact info. reddit.com${lead.url.replace('https://www.reddit.com','')}`,
+    status:       'new',
+    addedAt:      Date.now(),
+  };
+
+  const contacts = insLoad();
+  // Don't add duplicates
+  if (contacts.some(x => x.name === c.name)) {
+    const btn = document.getElementById(`reddit-add-${i}`);
+    if (btn) { btn.textContent = 'Already added'; btn.classList.add('added'); }
+    return;
+  }
+  contacts.unshift(c);
+  insSave(contacts);
+  insStats(contacts);
+
+  const btn = document.getElementById(`reddit-add-${i}`);
+  if (btn) { btn.textContent = '✓ Added'; btn.classList.add('added'); }
+
+  // Flash the insurance contacts section heading to show it was added
+  const st = document.getElementById('ins-add-status');
+  if (st) { st.style.color = 'var(--green)'; st.textContent = `✓ u/${lead.username} added to contacts.`; setTimeout(() => st.textContent = '', 3000); }
+  insRender();
+}
+
+function redditTimeAgo(unixTs) {
+  const secs = Math.floor(Date.now() / 1000) - unixTs;
+  if (secs < 3600)  return `${Math.floor(secs / 60)}m ago`;
+  if (secs < 86400) return `${Math.floor(secs / 3600)}h ago`;
+  if (secs < 2592000) return `${Math.floor(secs / 86400)}d ago`;
+  return `${Math.floor(secs / 2592000)}mo ago`;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
