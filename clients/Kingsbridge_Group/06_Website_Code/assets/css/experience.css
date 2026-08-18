@@ -1,0 +1,222 @@
+/* ============ EXPERIENCE LAYER ============
+   Intro sequence, page transitions, cinematic hero motion, the pinned
+   Create/Build/Manage gallery, portfolio ambient zoom + prev/next, and the
+   property-management flow diagram. Every animated rule here has a
+   prefers-reduced-motion counterpart below — nothing here should ever be
+   the only path to seeing content. */
+
+/* ---------- Intro sequence (home page, first load only) ---------- */
+.intro-veil {
+  position: fixed; inset: 0; z-index: 999; background: var(--ink);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  transition: opacity .7s var(--ease), visibility .7s var(--ease);
+}
+.intro-veil .blueprint {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  color: var(--bronze); opacity: 0; transform: scale(1.06);
+  transition: opacity .8s ease, transform 2.4s var(--ease);
+}
+.intro-veil .bp-path {
+  stroke-dasharray: 900; stroke-dashoffset: 900;
+  transition: stroke-dashoffset 1.1s var(--ease) calc(var(--i) * 0.12s);
+}
+.intro-veil.draw-bp .blueprint { opacity: .55; transform: scale(1); }
+.intro-veil.draw-bp .bp-path { stroke-dashoffset: 0; }
+.intro-veil.hide .blueprint { opacity: 0 !important; transition: opacity .6s ease; }
+.intro-veil .intro-logo {
+  position: relative; width: min(280px, 62vw); height: auto; opacity: 0; transform: scale(0.92);
+  transition: opacity 1s var(--ease), transform 1s var(--ease);
+}
+.intro-veil .intro-line { position: relative; width: 0; height: 1px; background: var(--bronze); margin-top: 26px; transition: width .9s var(--ease); }
+.intro-veil.show .intro-logo { opacity: 1; transform: scale(1); }
+.intro-veil.draw .intro-line { width: 64px; }
+.intro-veil.hide { opacity: 0; visibility: hidden; pointer-events: none; }
+
+/* ---------- Page transition veil (all pages) ---------- */
+.page-veil {
+  position: fixed; inset: 0; z-index: 998; background: var(--ink);
+  opacity: 0; pointer-events: none; transition: opacity .4s ease;
+  display: flex; align-items: center; justify-content: center;
+}
+.page-veil .pv-inner { display: flex; flex-direction: column; align-items: center; }
+.page-veil .pv-mark {
+  width: 38px; height: 38px; object-fit: contain; opacity: 0; transform: scale(0.8);
+  transition: opacity .45s var(--ease), transform .45s var(--ease);
+}
+.page-veil .pv-line { width: 0; height: 1px; background: var(--bronze); margin-top: 16px; transition: width .4s var(--ease) .1s; }
+.page-veil.active { opacity: 1; }
+.page-veil.active .pv-mark { opacity: 1; transform: scale(1); }
+.page-veil.active .pv-line { width: 48px; }
+
+/* ---------- Hero cinematic pan (stands in for video until real footage exists) ---------- */
+.hero-media .ph-photo { animation: heroPan 22s ease-in-out infinite alternate; transform-origin: 55% 45%; }
+@keyframes heroPan { from { transform: scale(1.0) translate3d(0,0,0); } to { transform: scale(1.07) translate3d(-1%, -1%, 0); } }
+
+/* ================= HERO STORY — VISION / DESIGN / BUILD / MANAGEMENT ================= */
+.hero-story { position: relative; background: var(--ink); height: 100vh; }
+.hero-story-track { position: relative; width: 100%; height: 100%; overflow: hidden; }
+.hs-stage { position: absolute; inset: 0; opacity: 0; }
+.hs-stage[data-stage="0"] { opacity: 1; }
+.hs-stage .ph-photo { position: absolute; inset: 0; animation: heroPan 26s ease-in-out infinite alternate; transform-origin: 55% 45%; }
+.hero-story-track::after {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(180deg, rgba(14,14,14,0.34) 0%, rgba(14,14,14,0.18) 30%, rgba(14,14,14,0.62) 78%, rgba(14,14,14,0.94) 100%);
+}
+
+/* Blueprint stage */
+.hs-blueprint { position: absolute; inset: 0; background: var(--ink); }
+.hs-bp {
+  position: absolute; left: 50%; top: 50%; width: min(74vw, 760px); height: auto;
+  color: var(--bronze); opacity: 0;
+  animation: bpDrift 16s ease-in-out infinite;
+}
+.hs-bp-elevation { opacity: 1; }
+.hs-bp .bp-path { stroke-dasharray: 900; stroke-dashoffset: 0; }
+.hs-bp .bp-text { font-size: 11px; }
+@keyframes bpDrift {
+  0%   { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+  50%  { transform: translate(-50%, -50%) scale(1.015) rotate(.25deg); }
+  100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+}
+@media (prefers-reduced-motion: reduce) { .hs-bp { animation: none; } }
+
+.hero-story-copy {
+  position: absolute; z-index: 2; left: 0; right: 0; bottom: 0;
+  padding: 0 var(--gutter) 72px; pointer-events: none;
+}
+.hero-story-copy > * { pointer-events: auto; }
+@media (min-width: 900px) { .hero-story-copy { padding: 0 56px 96px; } }
+.hero-story-copy .hs-stage-label {
+  display: inline-block; color: var(--bronze); font-size: 11px; letter-spacing: 0.3em;
+  text-transform: uppercase; margin-bottom: 18px;
+}
+.hero-story-copy h1 {
+  font-size: clamp(38px, 6.4vw, 82px); color: var(--ivory); line-height: 1.04; max-width: 15ch;
+  margin-bottom: 22px;
+}
+.hero-story-copy .cbm-tag { margin-bottom: 30px; }
+
+.hs-progress {
+  position: absolute; z-index: 2; right: var(--gutter); top: 50%; transform: translateY(-50%);
+  display: none; flex-direction: column; gap: 12px;
+}
+@media (min-width: 900px) {
+  .hs-progress { display: flex; right: 56px; }
+}
+.hs-progress span { width: 2px; height: 22px; background: var(--line-on-ink); transition: background .3s ease, height .3s ease; }
+.hs-progress span.current { background: var(--bronze); height: 32px; }
+
+@media (min-width: 900px) {
+  .hero-story { height: 600vh; }
+  .hero-story-track { position: sticky; top: 0; height: 100vh; }
+}
+
+/* Mobile / reduced-motion fallback: single static frame, no pin, no scroll-story */
+@media (max-width: 899px), (prefers-reduced-motion: reduce) {
+  .hero-story { height: auto; }
+  .hero-story-track { height: 88vh; min-height: 560px; }
+  .hs-blueprint { display: none; }
+  .hs-stage { position: absolute; inset: 0; opacity: 0; }
+  .hs-stage[data-stage="1"] { opacity: 1; }
+  .hs-progress { display: none; }
+  .hero-story-copy .hs-stage-label { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hs-stage .ph-photo { animation: none !important; }
+}
+
+/* ---------- Reveal mask (cinematic text reveal for signature moments) ---------- */
+.reveal-mask { overflow: hidden; }
+.reveal-mask > * { transform: translateY(110%); transition: transform 1s var(--ease); }
+.reveal-mask.in > * { transform: translateY(0); }
+
+/* ---------- Parallax utility ---------- */
+[data-parallax] .ph-photo { will-change: transform; }
+
+/* ================= CREATE / BUILD / MANAGE — PINNED CINEMA ================= */
+.cbm-cinema { position: relative; }
+.cbm-track { display: flex; }
+.cbm-slide {
+  position: relative; flex: 0 0 100%; min-height: 60vh; overflow: hidden;
+  display: flex; align-items: flex-end;
+}
+.cbm-slide .ph-photo { position: absolute; inset: 0; }
+.cbm-slide::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(14,14,14,0.15) 0%, rgba(14,14,14,0.35) 45%, rgba(14,14,14,0.92) 100%);
+}
+.cbm-copy { position: relative; z-index: 2; padding: 40px var(--gutter) 56px; width: 100%; }
+.cbm-copy .cbm-num { font-family: var(--font-display); font-size: 13px; color: var(--bronze); display: block; margin-bottom: 14px; }
+.cbm-copy h3 { color: var(--ivory); font-size: clamp(34px, 6vw, 64px); margin-bottom: 14px; }
+.cbm-copy p { color: var(--text-muted-on-ink); font-size: 15px; line-height: 1.7; max-width: 46ch; margin-bottom: 20px; }
+.cbm-copy .cbm-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+.cbm-copy .cbm-list span { font-size: 11px; letter-spacing: 0.04em; color: var(--text-muted-on-ink); border: 1px solid var(--line-on-ink); border-radius: 999px; padding: 7px 13px; }
+
+@media (min-width: 900px) {
+  .cbm-cinema.pinned { height: 300vh; }
+  .cbm-cinema.pinned .cbm-track { position: sticky; top: 0; height: 100vh; will-change: transform; }
+  .cbm-cinema.pinned .cbm-slide { min-height: 100vh; }
+  .cbm-cinema.pinned .cbm-copy { padding: 0 72px 90px; max-width: 620px; }
+  .cbm-progress { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%); z-index: 5; display: flex; gap: 10px; opacity: 0; transition: opacity .3s ease; pointer-events: none; }
+  .cbm-cinema.pinned.active .cbm-progress { opacity: 1; }
+  .cbm-progress span { width: 22px; height: 2px; background: var(--line-on-ink); transition: background .3s ease; }
+  .cbm-progress span.current { background: var(--bronze); }
+}
+
+/* ================= PROPERTY MANAGEMENT MEDIA COLUMN ================= */
+.pm-grid { display: grid; grid-template-columns: 1fr; gap: 44px; margin-bottom: 40px; }
+@media (min-width: 900px) { .pm-grid { grid-template-columns: 0.85fr 1.15fr; gap: 72px; align-items: start; } }
+.pm-media .ph-photo { aspect-ratio: 4/5; border-radius: var(--radius); }
+
+/* ================= PROPERTY MANAGEMENT FLOW ================= */
+.flow-diagram { display: flex; flex-direction: column; align-items: flex-start; margin: 44px 0 0; max-width: 320px; }
+.flow-node { display: flex; align-items: center; gap: 16px; }
+.flow-node .fn-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--bronze); flex: none; }
+.flow-node .fn-label { font-family: var(--font-display); font-size: 18px; color: var(--ink); }
+.flow-connector { width: 1px; height: 0; background: var(--bronze-deep); margin-left: 4px; transition: height .8s var(--ease); }
+.flow-diagram.in .flow-connector { height: 40px; }
+
+/* ================= PORTFOLIO AMBIENT ZOOM + PREV/NEXT ================= */
+.concept-hero .ph-photo { animation: heroPan 24s ease-in-out infinite alternate; }
+.concept-nav { display: flex; justify-content: space-between; gap: 20px; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line-on-ivory); }
+.concept-nav a { font-size: 13px; font-weight: 600; color: var(--text-on-ivory); display: flex; align-items: center; gap: 8px; }
+.concept-nav a:hover { color: var(--bronze-deep); }
+.concept-nav a.next { margin-left: auto; }
+.concept-nav svg { width: 13px; height: 13px; }
+
+/* ================= CUSTOM CURSOR ACCENT ================= */
+.kb-cursor {
+  position: fixed; top: 0; left: 0; width: 22px; height: 22px; border-radius: 50%;
+  border: 1px solid var(--bronze); pointer-events: none; z-index: 500;
+  opacity: 0; transition: opacity .3s ease, width .25s var(--ease), height .25s var(--ease), background .25s ease;
+}
+.kb-cursor.active { opacity: .8; }
+.kb-cursor.hover { width: 46px; height: 46px; background: rgba(184,148,85,0.10); }
+@media (hover: none), (pointer: coarse) { .kb-cursor { display: none !important; } }
+
+/* ================= MICRO-INTERACTIONS ================= */
+.btn-line { position: relative; overflow: hidden; }
+.btn-line::after { content: ''; position: absolute; left: 0; right: 100%; bottom: 0; height: 1.5px; background: var(--bronze); transition: right .3s var(--ease); }
+.btn-line:hover::after { right: 0; }
+.card-art, .tile-art, .cinema-panel .ph-photo { will-change: transform; }
+
+/* ================= REDUCED MOTION — full override ================= */
+@media (prefers-reduced-motion: reduce) {
+  .intro-veil { display: none !important; }
+  .kb-cursor { display: none !important; }
+  .hero-media .ph-photo, .concept-hero .ph-photo { animation: none !important; }
+  .reveal-mask > * { transform: none !important; transition: none !important; }
+  .page-veil { display: none !important; }
+  .cbm-cinema.pinned { height: auto !important; }
+  .cbm-cinema.pinned .cbm-track { position: static !important; height: auto !important; flex-direction: column !important; transform: none !important; }
+  .cbm-cinema.pinned .cbm-slide { min-height: 70vh !important; }
+  .flow-connector { height: 40px !important; transition: none !important; }
+}
+
+/* ================= MOBILE / TABLET FALLBACK for pinned gallery ================= */
+@media (max-width: 899px) {
+  .cbm-cinema.pinned { height: auto !important; }
+  .cbm-track { position: static !important; height: auto !important; flex-direction: column !important; transform: none !important; }
+  .cbm-slide { min-height: 70vh; }
+  .cbm-progress { display: none; }
+}

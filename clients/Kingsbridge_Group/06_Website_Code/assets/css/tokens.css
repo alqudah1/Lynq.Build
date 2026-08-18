@@ -1,0 +1,32 @@
+:root {
+  /* Color — FINAL: Obsidian Black / Graphite / Refined Gold / Warm White.
+     Variable names kept stable from the previous palette round so component
+     CSS doesn't need touching — only the hex values changed. */
+  --ink: #0E0E0E;        /* Obsidian Black — primary background */
+  --charcoal: #1A1A1A;   /* Graphite — secondary dark surface */
+  --ivory: #F4F0E8;      /* Warm White — primary light background / text on dark */
+  --stone: #E4DCC9;      /* soft warm neutral — hover/secondary bg on light sections */
+  --bronze: #B89455;     /* Refined Gold — accent: logo, borders, hovers, section numbers */
+  --bronze-deep: #7C5E29;/* darkened gold — AA-safe for small text on light backgrounds */
+  --gold-light: #D1B77C; /* Light Gold — brighter highlight variant, used sparingly */
+
+  --text-on-ivory: rgba(14, 14, 14, 0.86);
+  --text-muted-on-ivory: rgba(14, 14, 14, 0.56);
+  --text-on-ink: rgba(244, 240, 232, 0.9);
+  --text-muted-on-ink: rgba(244, 240, 232, 0.56);
+  --line-on-ivory: rgba(14, 14, 14, 0.12);
+  --line-on-ink: rgba(244, 240, 232, 0.14);
+
+  /* Type */
+  --font-display: 'Libre Caslon Display', Georgia, serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Spacing / layout */
+  --container: 1320px;
+  --gutter: 24px;
+  --radius: 3px;
+
+  /* Motion */
+  --ease: cubic-bezier(.19,1,.22,1);
+  --dur: .6s;
+}
