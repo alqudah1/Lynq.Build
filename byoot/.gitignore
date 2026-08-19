@@ -1,0 +1,21 @@
+# Next.js
+.next/
+out/
+build/
+next-env.d.ts
+
+# dependencies
+node_modules/
+
+# env — never commit real values
+.env
+.env.local
+.env*.local
+
+# misc
+.DS_Store
+*.tsbuildinfo
+coverage/
+
+# Vercel (created by `vercel link` — see README.md, not done yet)
+.vercel
