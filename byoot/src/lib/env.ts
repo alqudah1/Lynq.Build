@@ -11,11 +11,16 @@ import { z } from "zod";
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
   DATABASE_URL_UNPOOLED: z.string().min(1, "DATABASE_URL_UNPOOLED is required"),
-  // Distinct Postgres role from DATABASE_URL — see schema.ts's RLS policy
-  // and src/db/client.ts's createVowReaderDbClient(). Optional at the env
-  // level so the rest of the app boots without it; getVowData() itself
-  // throws a clear, specific error if it's missing when actually needed,
-  // rather than the whole app failing to start over one gated feature.
+  // Distinct Postgres ROLE from DATABASE_URL, same pooled Neon endpoint —
+  // see docs/adr/0001-vow-tier-isolation.md and src/db/client.ts's
+  // createVowReaderDbClient(). Pooled, not DATABASE_URL_UNPOOLED: this
+  // connection is read at request time from getVowData(), the same usage
+  // pattern as DATABASE_URL, not the migration-only, long-lived,
+  // low-concurrency usage DATABASE_URL_UNPOOLED exists for. Optional at
+  // the env level so the rest of the app boots without it; getVowData()
+  // itself throws a clear, specific error if it's missing when actually
+  // needed, rather than the whole app failing to start over one gated
+  // feature.
   DATABASE_URL_VOW_READER: z.string().min(1).optional(),
   // TRREB/PropTx credentials — read only by the sync stub
   // (src/lib/sync/trebb-sync.ts), which makes no live calls yet. Optional
@@ -62,12 +67,37 @@ export function loadEnv(): Env {
  * src/lib/listings/vow-gate.ts. Separate from loadEnv() so a missing VOW
  * credential fails at the one call site that actually needs it, not at
  * app boot.
+ *
+ * Also asserts the two connection strings are not literally identical.
+ * This is the one misconfiguration that would silently defeat the entire
+ * tier-isolation design without producing any error anywhere: if an
+ * operator pastes DATABASE_URL's value into DATABASE_URL_VOW_READER (copy-
+ * paste mistake, or "I'll just use the same one for now, I'll fix it
+ * later"), the app boots fine, getVowData() runs fine, RLS still holds
+ * (queries are running under whatever role DATABASE_URL actually
+ * authenticates as — if that role is the normal, non-vow_reader role, the
+ * RLS policy will correctly deny the read and getVowData() will simply
+ * fail; if by some misconfiguration DATABASE_URL's role happens to BE
+ * vow_reader, the "normal" client would also have VOW access, which is
+ * the exact isolation failure this whole design exists to prevent) — and
+ * nothing about that failure mode is loud or obvious from application
+ * behavior alone. Failing fast on string equality here catches the most
+ * common, most silent version of that mistake at the one call site that
+ * would otherwise mask it.
  */
 export function requireVowReaderDatabaseUrl(env: Env): string {
   if (!env.DATABASE_URL_VOW_READER) {
     throw new Error(
       "DATABASE_URL_VOW_READER is not configured — the VOW-tier database role has not " +
         "been provisioned yet. See byoot/README.md. Refusing to fall back to DATABASE_URL."
+    );
+  }
+  if (env.DATABASE_URL_VOW_READER === env.DATABASE_URL) {
+    throw new Error(
+      "DATABASE_URL_VOW_READER is identical to DATABASE_URL — this defeats the vow_reader " +
+        "role-separation design entirely (see docs/adr/0001-vow-tier-isolation.md). " +
+        "They must be two distinct Postgres roles on the same database, not the same " +
+        "connection string used twice. Refusing to proceed."
     );
   }
   return env.DATABASE_URL_VOW_READER;

@@ -39,15 +39,20 @@ to — every environment stays synthetic-data-only until the compliance
 questions in the transformation plan's Assumption Register are actually
 resolved with the client.
 
-From the Neon project, you'll get:
-- A pooled connection string → `DATABASE_URL`
-- A direct/unpooled connection string → `DATABASE_URL_UNPOOLED`
+From the Neon project, you'll get one pooled and one direct connection
+string, used for two different purposes — not a role/permissions
+difference:
+- Pooled → `DATABASE_URL` (the app reads/writes at request time)
+- Direct/unpooled → `DATABASE_URL_UNPOOLED` (drizzle-kit migrations only —
+  DDL should not run over the pooled connection)
 
 ### 2. Two Postgres roles — this is the part that actually matters
 
 The VOW gate's database-level enforcement (`src/db/schema.ts`,
-`BYOOT_TRANSFORMATION_PLAN.md` Section C) depends on **two distinct
-Postgres roles**, not one shared role with an app-level `if`:
+`BYOOT_TRANSFORMATION_PLAN.md` Section C,
+`docs/adr/0001-vow-tier-isolation.md` for the full reasoning) depends on
+**two distinct Postgres roles**, not one shared role with an app-level
+`if`:
 
 1. **The normal app role** (whatever Neon gives your `DATABASE_URL` by
    default is fine) — must have **no grant** on `listings_vow`.
@@ -68,32 +73,41 @@ REVOKE ALL ON listings_vow FROM PUBLIC;
 REVOKE ALL ON listings_vow FROM <your normal app role>;
 ```
 
-Take the connection string for that role (same host/database, different
-user/password) → `DATABASE_URL_VOW_READER`.
+Take the **pooled** connection string for that role (same host/database,
+different user/password — pooled, same reasoning as `DATABASE_URL`: this
+is read at request time from `getVowData()`, not a migration path) →
+`DATABASE_URL_VOW_READER`. It must be a different value from
+`DATABASE_URL` — `src/lib/env.ts` refuses to proceed if the two are
+identical, on purpose (see the ADR).
 
-**Verify it, don't assume it.** Once this exists, `npm run test:integration`
-runs `src/lib/listings/vow-gate.integration.test.ts` — the actually-
-adversarial test that connects with the *normal* role and tries to read
-`listings_vow` directly, bypassing `getVowData()` entirely. It should fail
-to read anything. If that test doesn't fail the read, the role separation
-isn't actually configured correctly yet, regardless of what the
-application code does.
-
-### 3. Seed synthetic data
-
-```
-npm run seed
-```
-
-Inserts 300 synthetic listings (`src/db/seed-data.ts`) plus VOW records for
-the ones marked "Sold." Never real data — see that file's own comments for
-the messy-real-world cases it deliberately includes.
-
-### 4. A Vercel project (when you're ready to deploy)
+### 3. A Vercel project (when you're ready to deploy)
 
 Not needed for local dev. When it's time: a new Vercel project, sibling to
 `platform/`'s, root directory set to `byoot/`. Not done as part of this
 scaffold.
+
+### Now run `npm run verify:vow`
+
+This is the completion criterion for everything above — not a separate,
+optional check.
+
+```
+set -a; source .env.local; set +a   # or export the three DATABASE_URL* vars however you normally do
+npm run verify:vow
+```
+
+One command: applies migrations, seeds synthetic data
+(`src/db/seed-data.ts` — never real data), and runs
+`vow-gate.integration.test.ts` — the actually-adversarial test that
+connects with the *normal* role and tries to read `listings_vow` directly,
+bypassing `getVowData()` entirely. It fails loudly and non-zero if any
+step fails, if the required env vars are missing, if
+`DATABASE_URL_VOW_READER` turns out to equal `DATABASE_URL`, or if it
+can't find explicit evidence in the test output that assertions actually
+ran and passed — see `scripts/verify-vow.mjs`'s own comments for exactly
+what "loudly" means here. **If this command doesn't print `PASSED` at the
+end, the role separation isn't configured correctly yet, regardless of
+what the application code does or what any other command reports.**
 
 ## Deliberate scope decisions in this pass — not gaps, but worth naming
 
@@ -132,9 +146,13 @@ scaffold.
   produces the required messy edge cases (`seed-data.test.ts`).
 - `npm run build` — Next.js can produce a production build of the scaffold
   as it stands.
-- `npm run test:integration` (not runnable yet) — once a database and the
-  two Postgres roles above exist, this is the test that actually proves
-  the VOW gate holds at the database level, independent of the application
-  code. This is the one that matters most and the one this scaffold cannot
-  prove on its own — see `src/lib/listings/vow-gate.integration.test.ts`'s
-  own comments.
+- `npm run verify:vow` (not runnable yet — no database exists) — once a
+  database and the two Postgres roles above exist, this is the command
+  that actually proves the VOW gate holds at the database level,
+  independent of the application code, and refuses to report success on
+  anything less than real, positive evidence. This is the one that matters
+  most and the one this scaffold cannot prove on its own — see
+  `src/lib/listings/vow-gate.integration.test.ts` and
+  `scripts/verify-vow.mjs`'s own comments, and
+  `docs/adr/0001-vow-tier-isolation.md` for why the design is shaped the
+  way it is.
