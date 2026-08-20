@@ -40,45 +40,71 @@ questions in the transformation plan's Assumption Register are actually
 resolved with the client.
 
 From the Neon project, you'll get one pooled and one direct connection
-string, used for two different purposes — not a role/permissions
-difference:
-- Pooled → `DATABASE_URL` (the app reads/writes at request time)
-- Direct/unpooled → `DATABASE_URL_UNPOOLED` (drizzle-kit migrations only —
-  DDL should not run over the pooled connection)
+string for Neon's default role — used for two different purposes below,
+**neither of which is `DATABASE_URL`** (see the ownership warning in step
+2 before wiring these up as you might expect from a simpler project).
 
-### 2. Two Postgres roles — this is the part that actually matters
+### 2. THREE Postgres roles, not two — this is the part that actually matters
 
-The VOW gate's database-level enforcement (`src/db/schema.ts`,
-`BYOOT_TRANSFORMATION_PLAN.md` Section C,
-`docs/adr/0001-vow-tier-isolation.md` for the full reasoning) depends on
-**two distinct Postgres roles**, not one shared role with an app-level
-`if`:
+**Correction, recorded here rather than silently fixed:** an earlier draft
+of these instructions said "whatever Neon gives you by default is fine"
+for the normal app role, with migrations running as that same role over
+`DATABASE_URL_UNPOOLED`. That's wrong, in a way that would have made the
+whole isolation design a no-op: **a Postgres table owner bypasses RLS and
+ignores `REVOKE` entirely — ownership isn't a grant that can be revoked.**
+The role that runs `drizzle-kit migrate` creates `listings_vow` and
+therefore owns it. If that's also the role `DATABASE_URL` authenticates
+as, the app's "normal" connection can read `listings_vow` regardless of
+any RLS policy or `REVOKE ALL` statement — not because something is
+misconfigured, but because ownership is a stronger, separate permission
+that those don't touch. `scripts/verify-vow.mjs`'s role-separation check
+(step 3) would have caught this the first time anyone actually ran it
+against a real database — see `docs/adr/0001-vow-tier-isolation.md` for
+the full record.
 
-1. **The normal app role** (whatever Neon gives your `DATABASE_URL` by
-   default is fine) — must have **no grant** on `listings_vow`.
-2. **A `vow_reader` role** — must have `SELECT` on `listings_vow` only.
+So: **three roles**, not two.
+
+1. **The migration/owner role** — Neon's default role is fine here. Used
+   **only** for `DATABASE_URL_UNPOOLED`. Never used to serve the running
+   application.
+2. **The app role** — a NEW role you create explicitly, granted ordinary
+   read/write on `users`, `sessions`, `audit_logs`, `rate_limit_counters`,
+   and `listings` — and explicitly **not** the table owner of anything, so
+   it has no ownership bypass to worry about. This is what `DATABASE_URL`
+   authenticates as.
+3. **`vow_reader`** — granted `SELECT` on `listings_vow` only, via the RLS
+   policy already defined in `schema.ts`. This is what
+   `DATABASE_URL_VOW_READER` authenticates as.
 
 After running migrations (`npm run db:generate && npm run db:migrate`,
-once `DATABASE_URL_UNPOOLED` is set), run this once, by hand, against the
-database (the RLS policy itself is defined in `schema.ts` and will be
-created by the migration — this part, the role and its connection string,
-Drizzle can't do for you):
+using Neon's default role over `DATABASE_URL_UNPOOLED`), run this once, by
+hand, against the database:
 
 ```sql
-CREATE ROLE vow_reader LOGIN PASSWORD '<a real generated password>';
-GRANT SELECT ON listings_vow TO vow_reader;
+-- The app role: ordinary access to everything except listings_vow, and
+-- explicitly NOT an owner of anything (CREATE ROLE never makes it one).
+CREATE ROLE byoot_app LOGIN PASSWORD '<a real generated password>';
+GRANT SELECT, INSERT, UPDATE, DELETE ON users, sessions, audit_logs, rate_limit_counters, listings TO byoot_app;
+REVOKE ALL ON listings_vow FROM byoot_app;
 REVOKE ALL ON listings_vow FROM PUBLIC;
--- Confirm your normal app role has no grant on listings_vow — if you
--- created it before this step, explicitly revoke:
-REVOKE ALL ON listings_vow FROM <your normal app role>;
+
+-- vow_reader: read-only on listings_vow, matching schema.ts's RLS policy.
+CREATE ROLE vow_reader LOGIN PASSWORD '<a different real generated password>';
+GRANT SELECT ON listings_vow TO vow_reader;
 ```
 
-Take the **pooled** connection string for that role (same host/database,
-different user/password — pooled, same reasoning as `DATABASE_URL`: this
-is read at request time from `getVowData()`, not a migration path) →
-`DATABASE_URL_VOW_READER`. It must be a different value from
-`DATABASE_URL` — `src/lib/env.ts` refuses to proceed if the two are
-identical, on purpose (see the ADR).
+Take the **pooled** connection string for `byoot_app` → `DATABASE_URL`.
+Take the **pooled** connection string for `vow_reader` (pooled, same
+reasoning as `DATABASE_URL`: read at request time from `getVowData()`,
+not a migration path) → `DATABASE_URL_VOW_READER`.
+
+Both must be genuinely different roles from each other AND from whatever
+ran the migration. `src/lib/env.ts` refuses to proceed if `DATABASE_URL`
+and `DATABASE_URL_VOW_READER` are textually identical — but that check
+cannot catch two different connection strings that happen to authenticate
+as the same role (or as the table owner). `npm run verify:vow`'s step 3
+is what actually proves the roles are distinct and that ownership isn't
+silently defeating everything above — see below.
 
 ### 3. A Vercel project (when you're ready to deploy)
 

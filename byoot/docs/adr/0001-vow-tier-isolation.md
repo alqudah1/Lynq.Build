@@ -60,6 +60,45 @@ Verified in `src/lib/listings/vow-gate.integration.test.ts`: the
 adversarial case is a raw query against `listings_vow` using the *normal*
 role's connection, bypassing `getVowData()` entirely.
 
+## A specific Postgres gotcha this design depends on getting right: ownership bypasses RLS
+
+Discovered while writing `scripts/verify-vow.mjs`'s role-comparison check
+(step 3), before any real database existed to hit — worth recording here
+because it's exactly the kind of thing that looks like it's working right
+up until someone provisions real infrastructure and it silently doesn't.
+
+**RLS policies and `REVOKE` statements only govern non-owners.** The role
+that runs `CREATE TABLE listings_vow` (i.e., whatever role runs
+migrations) becomes that table's owner, and table owners bypass RLS
+entirely — `ALTER TABLE ... FORCE ROW LEVEL SECURITY` exists precisely
+because this is otherwise true even when RLS is enabled. An earlier draft
+of `README.md` described `DATABASE_URL` and `DATABASE_URL_UNPOOLED` as
+"the same role, different endpoint," meaning the role serving the running
+application would also be the role that ran migrations — and therefore
+the owner of `listings_vow`. Under that setup, this entire ADR's decision
+would be silently defeated: the "normal" role would read `listings_vow`
+freely, not because of a missing grant (which `REVOKE` would fix) but
+because of ownership (which `REVOKE` cannot touch). No test that only
+checks for a grant would catch this — it requires actually querying the
+table as that role and observing that the query succeeds when it should
+be denied, which is exactly what `verify-vow.mjs` step 3 does.
+
+**Fixed by introducing a third role**, so no role used to serve the
+running application is ever the owner of anything: a migration/owner role
+(Neon's default, used only for `DATABASE_URL_UNPOOLED`) is now distinct
+from `byoot_app` (`DATABASE_URL`) and `vow_reader`
+(`DATABASE_URL_VOW_READER`), neither of which ever runs `CREATE TABLE`.
+See `README.md`'s "THREE Postgres roles" section for the provisioning
+SQL.
+
+**The rule going forward, stated plainly so it isn't rediscovered the hard
+way:** no role that serves the running application may ever be the same
+role that ran a migration. If a future change reintroduces that overlap —
+for convenience, for a one-off script, for "it's just staging" — it
+silently reintroduces this exact bypass, and no grant-based check will
+show it. Only a real query against `listings_vow` as that role, expecting
+and getting a permission error, proves it isn't happening.
+
 ## Known limitation — record this plainly, don't let it get discovered later
 
 **Role separation is coarse. It gives tier isolation (VOW vs. not-VOW)
