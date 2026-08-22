@@ -74,6 +74,15 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ org
   );
 
   const memberNameById = new Map(members.map((m) => [m.userId, m.name ?? m.email]));
+  const contactPhone = contact?.primaryPhone ?? company?.phone;
+  const contactPhoneDigits = contactPhone?.replace(/\D/g, "") ?? "";
+  const senderCountryCode = contactPhoneDigits.startsWith("962")
+    ? "JO"
+    : contactPhoneDigits.startsWith("1")
+      ? "CA"
+      : typeof company?.address?.countryCode === "string"
+        ? company.address.countryCode
+        : null;
   const redirectPath = `/app/${organizationSlug}/crm/leads/${leadId}`;
   const target = { leadId };
   const canManage = true; // service layer re-derives and enforces the real authority on every action; this only controls whether the controls render
@@ -122,9 +131,9 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ org
             </p>
             <ContactActions
               email={contact?.primaryEmail}
-              phone={contact?.primaryPhone ?? company?.phone}
+              phone={contactPhone}
               businessName={company?.name ?? contact?.displayName ?? `Lead ${lead.id.slice(0, 8)}`}
-              countryCode={typeof company?.address?.countryCode === "string" ? company.address.countryCode : null}
+              countryCode={senderCountryCode}
             />
           </div>
         ) : null}
