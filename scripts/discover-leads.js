@@ -143,6 +143,12 @@ function writeOutputs(final = false) {
   }
 
   if (final) {
+    const blockingReasons = [];
+    const businessAddressConfigured = process.env.DISCOVERY_BUSINESS_ADDRESS_CONFIGURED === 'true'
+      || Boolean(process.env.LYNQ_BUSINESS_ADDRESS);
+    if (!businessAddressConfigured) blockingReasons.push('Configure a valid LYNQ business mailing address before Canadian commercial email');
+    if (!leads.some(lead => lead.email)) blockingReasons.push('No qualified prospect published an email address');
+    if (leads.some(lead => lead.countryCode === 'JO')) blockingReasons.push('Jordan electronic follow-up requires prior consent');
     const summary = {
       completedAt: new Date().toISOString(),
       target,
@@ -157,7 +163,7 @@ function writeOutputs(final = false) {
       failedJobs,
       fatalError: fatalError || null,
       outreachSent: 0,
-      blockingReason: 'A valid LYNQ business mailing address is required before compliant Canadian commercial email can be sent; Jordan electronic follow-up requires prior consent.',
+      blockingReason: blockingReasons.join('; ') || null,
     };
     fs.writeFileSync(path.join(outputDir, 'lynq-prospects-summary.json'), JSON.stringify(summary, null, 2));
   }
@@ -165,6 +171,20 @@ function writeOutputs(final = false) {
 
 function buildJobs() {
   const jobs = [];
+  const priorityCountry = String(process.env.DISCOVERY_PRIORITY_COUNTRY || '').toUpperCase();
+  if (priorityCountry === 'JO' || priorityCountry === 'CA') {
+    const firstMarkets = priorityCountry === 'JO' ? JORDAN_MARKETS : CANADA_MARKETS;
+    const secondMarkets = priorityCountry === 'JO' ? CANADA_MARKETS : JORDAN_MARKETS;
+    for (const industry of INDUSTRIES) {
+      for (const city of firstMarkets) jobs.push({ city, industry, countryCode: priorityCountry, language: priorityCountry === 'JO' ? 'ar' : 'en' });
+    }
+    const secondCountry = priorityCountry === 'JO' ? 'CA' : 'JO';
+    for (const industry of INDUSTRIES) {
+      for (const city of secondMarkets) jobs.push({ city, industry, countryCode: secondCountry, language: secondCountry === 'JO' ? 'ar' : 'en' });
+    }
+    return jobs;
+  }
+
   for (const industry of INDUSTRIES) {
     const maxMarkets = Math.max(CANADA_MARKETS.length, JORDAN_MARKETS.length);
     for (let index = 0; index < maxMarkets; index += 1) {
@@ -209,9 +229,19 @@ async function main() {
       prospects.set(prospectKey(lead), lead);
     }
     scanned = Number(process.env.DISCOVERY_SCANNED) || prospects.size;
+    completedJobs = Number(process.env.DISCOVERY_COMPLETED_JOBS) || 0;
     writeOutputs(true);
     process.stdout.write(`repaired: ${prospects.size} prospects\n`);
     return;
+  }
+
+  if (process.env.DISCOVERY_SEED_INPUT) {
+    const seed = JSON.parse(fs.readFileSync(process.env.DISCOVERY_SEED_INPUT, 'utf8'));
+    for (const rawLead of seed.prospects || []) {
+      const lead = normalizeLead(rawLead);
+      prospects.set(prospectKey(lead), lead);
+    }
+    process.stdout.write(`seeded: ${prospects.size} existing prospects\n`);
   }
 
   const requiredVariables = process.env.DISCOVERY_API_URL
