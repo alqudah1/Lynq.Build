@@ -364,7 +364,7 @@ export async function listLeadsForUser(db: Db, input: ListLeadsInput): Promise<C
   if (input.contactId) conditions.push(eq(crmLeads.contactId, input.contactId));
   if (input.companyId) conditions.push(eq(crmLeads.companyId, input.companyId));
 
-  const limit = Math.min(Math.max(input.limit ?? 50, 1), 200);
+  const limit = Math.min(Math.max(input.limit ?? 50, 1), 1000);
   const rows = await db.select().from(crmLeads).where(and(...conditions)).limit(limit);
   return rows as CrmLead[];
 }

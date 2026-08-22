@@ -1,6 +1,5 @@
 "use server";
 
-import { createHash } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -12,7 +11,6 @@ import { uuidParam } from "@/lib/http/validation";
 import { createContact, archiveContact } from "@/lib/crm/contacts";
 import { createCompany, archiveCompany } from "@/lib/crm/companies";
 import { createContactCompanyRelationship } from "@/lib/crm/relationships";
-import { DuplicateRelationshipError } from "@/lib/crm/errors";
 import { createLead, qualifyLead, disqualifyLead, convertLead } from "@/lib/crm/leads";
 import { createPipeline, setDefaultPipeline } from "@/lib/crm/pipelines";
 import { createStage } from "@/lib/crm/stages";
@@ -21,9 +19,10 @@ import { createActivity } from "@/lib/crm/activities";
 import { createNote, archiveNote } from "@/lib/crm/notes";
 import { createFollowUp, completeFollowUp, cancelFollowUp } from "@/lib/crm/follow-ups";
 import { createTag, assignTag } from "@/lib/crm/tags";
-import { listSourcesForUser, seedBuiltInSources } from "@/lib/crm/sources";
+import { seedBuiltInSources } from "@/lib/crm/sources";
 import { createProjectLink } from "@/lib/crm/project-links";
 import { grantCrmAgentPermission, revokeCrmAgentPermission } from "@/lib/crm/agent-permissions";
+import { importProspects, prospectImportSchema } from "@/lib/crm/prospect-import";
 import {
   crmDisplayNameSchema,
   crmNameSchema,
@@ -231,43 +230,6 @@ export async function createLeadAction(organizationSlug: string, formData: FormD
   redirect(`/app/${organizationSlug}/crm/leads/${lead.id}`);
 }
 
-const prospectImportItemSchema = z.object({
-  placeId: z.string().trim().max(300).optional().default(""),
-  name: crmNameSchema,
-  phone: crmPhoneSchema.optional().or(z.literal("")),
-  email: crmEmailSchema.optional().or(z.literal("")),
-  website: z.string().trim().max(500).optional().or(z.literal("")),
-  address: z.string().trim().max(1000).optional().default(""),
-  industry: z.string().trim().max(200).optional().default(""),
-  city: z.string().trim().max(300).optional().default(""),
-  countryCode: z.enum(["CA", "JO"]),
-  rating: z.number().min(0).max(5).nullable().optional(),
-  reviews: z.number().int().min(0).max(10_000_000).optional().default(0),
-  websiteScore: z.number().int().min(0).max(100),
-  opportunityScore: z.number().int().min(0).max(100),
-  qualificationReasons: z.array(z.string().trim().max(500)).max(10).optional().default([]),
-  qualified: z.literal(true),
-}).passthrough();
-
-const prospectImportSchema = z.object({
-  version: z.literal(1),
-  prospects: z.array(prospectImportItemSchema).min(1).max(100),
-}).strict();
-
-function prospectImportKey(prospect: z.infer<typeof prospectImportItemSchema>): string {
-  const stableIdentity = prospect.placeId || `${prospect.countryCode}|${prospect.name}|${prospect.address}`;
-  return createHash("sha256").update(stableIdentity).digest("hex").slice(0, 40);
-}
-
-function domainFromWebsite(website: string): string | undefined {
-  if (!website) return undefined;
-  try {
-    return new URL(website).hostname.replace(/^www\./, "");
-  } catch {
-    return undefined;
-  }
-}
-
 /** Imports a reviewed LYNQ discovery export into CRM Core. Records remain `new`; this action never qualifies or contacts them. */
 export async function importProspectsAction(organizationSlug: string, formData: FormData): Promise<ActionResult> {
   const path = `/app/${organizationSlug}/crm/leads/import`;
@@ -288,78 +250,12 @@ export async function importProspectsAction(organizationSlug: string, formData: 
   }
   const validation = prospectImportSchema.safeParse(rawImport);
   if (!validation.success) return toActionResult(validation.error);
-  const parsed = validation.data;
-
   try {
-    await seedBuiltInSources(db, { organizationId: organization.id });
-    const sources = await listSourcesForUser(db, { organizationId: organization.id, actorUserId: user.userId, activeOnly: true });
-    const importSourceId = sources.find((source) => source.sourceKey === "IMPORT")?.id;
-
-    for (let index = 0; index < parsed.prospects.length; index += 5) {
-      await Promise.all(parsed.prospects.slice(index, index + 5).map(async (prospect) => {
-        const key = prospectImportKey(prospect);
-        const companyResult = await createCompany(db, {
-          organizationId: organization.id,
-          name: prospect.name,
-          domain: domainFromWebsite(prospect.website || ""),
-          website: prospect.website || undefined,
-          industry: prospect.industry || undefined,
-          phone: prospect.phone || undefined,
-          address: prospect.address ? { formatted: prospect.address, city: prospect.city, countryCode: prospect.countryCode } : undefined,
-          lifecycleStage: "lead",
-          sourceId: importSourceId,
-          idempotencyKey: `lynq-prospect-company:${key}`,
-          actorUserId: user.userId,
-        });
-
-        let contactId: string | undefined;
-        if (prospect.email || prospect.phone) {
-          const contactResult = await createContact(db, {
-            organizationId: organization.id,
-            displayName: `${prospect.name} business contact`,
-            primaryEmail: prospect.email || undefined,
-            primaryPhone: prospect.phone || undefined,
-            lifecycleStage: "lead",
-            sourceId: importSourceId,
-            idempotencyKey: `lynq-prospect-contact:${key}`,
-            actorUserId: user.userId,
-          });
-          contactId = contactResult.contact.id;
-          try {
-            await createContactCompanyRelationship(db, {
-              organizationId: organization.id,
-              contactId,
-              companyId: companyResult.company.id,
-              relationshipType: "other",
-              isPrimary: true,
-              actorUserId: user.userId,
-            });
-          } catch (err) {
-            if (!(err instanceof DuplicateRelationshipError)) throw err;
-          }
-        }
-
-        const notes = [
-          `LYNQ discovery — ${prospect.city || prospect.countryCode}`,
-          prospect.rating ? `${prospect.rating}★ from ${prospect.reviews} reviews` : `${prospect.reviews} reviews`,
-          `Website score ${prospect.websiteScore}/100`,
-          `Opportunity score ${prospect.opportunityScore}/100`,
-          ...prospect.qualificationReasons,
-        ].join(" | ").slice(0, 5000);
-
-        await createLead(db, {
-          organizationId: organization.id,
-          contactId,
-          companyId: companyResult.company.id,
-          sourceId: importSourceId,
-          score: prospect.opportunityScore,
-          qualificationNotes: notes,
-          nextAction: "Review the business and approve the first outreach manually",
-          idempotencyKey: `lynq-prospect-lead:${key}`,
-          actorUserId: user.userId,
-        });
-      }));
-    }
+    await importProspects(db, {
+      organizationId: organization.id,
+      actorUserId: user.userId,
+      prospectImport: validation.data,
+    });
   } catch (err) {
     return toActionResult(err);
   }
@@ -368,7 +264,7 @@ export async function importProspectsAction(organizationSlug: string, formData: 
   revalidatePath(`/app/${organizationSlug}/crm/companies`);
   revalidatePath(`/app/${organizationSlug}/crm/contacts`);
   revalidatePath(`/app/${organizationSlug}/crm/leads`);
-  return { ok: true, message: `${parsed.prospects.length} prospects are now staged in LYNQ CRM as new leads. No outreach was sent.` };
+  return { ok: true, message: `${validation.data.prospects.length} prospects are now staged in LYNQ CRM as new leads. No outreach was sent.` };
 }
 
 const revisionSchema = z.object({ expectedRevision: z.coerce.number().int().min(1) });

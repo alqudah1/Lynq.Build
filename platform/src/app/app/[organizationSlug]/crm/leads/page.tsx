@@ -7,8 +7,8 @@ import { users } from "@/db/schema";
 import { requireDashboardUser } from "@/lib/dashboard/session-gate";
 import { getOrganizationBySlugForUser } from "@/lib/organizations/organizations";
 import { listLeadsForUser } from "@/lib/crm/leads";
-import { listContactsForUser } from "@/lib/crm/contacts";
-import { listCompaniesForUser } from "@/lib/crm/companies";
+import { listContactsByIds, listContactsForUser } from "@/lib/crm/contacts";
+import { listCompaniesByIds, listCompaniesForUser } from "@/lib/crm/companies";
 import { createLeadAction } from "@/lib/dashboard/actions/crm";
 import { TenantResourceNotFoundError } from "@/lib/authz/errors";
 import { Breadcrumbs } from "@/components/dashboard/Breadcrumbs";
@@ -38,10 +38,19 @@ export default async function LeadsPage({ params }: { params: Promise<{ organiza
   }
 
   const [leads, contacts, companies] = await Promise.all([
-    listLeadsForUser(db, { organizationId, actorUserId: user.userId, limit: 200 }),
+    listLeadsForUser(db, { organizationId, actorUserId: user.userId, limit: 1000 }),
     listContactsForUser(db, { organizationId, actorUserId: user.userId, limit: 200 }),
     listCompaniesForUser(db, { organizationId, actorUserId: user.userId, limit: 200 }),
   ]);
+
+  const leadContactIds = [...new Set(leads.map((lead) => lead.contactId).filter((id): id is string => Boolean(id)))];
+  const leadCompanyIds = [...new Set(leads.map((lead) => lead.companyId).filter((id): id is string => Boolean(id)))];
+  const [leadContacts, leadCompanies] = await Promise.all([
+    listContactsByIds(db, organizationId, leadContactIds),
+    listCompaniesByIds(db, organizationId, leadCompanyIds),
+  ]);
+  const contactById = new Map(leadContacts.map((contact) => [contact.id, contact]));
+  const companyById = new Map(leadCompanies.map((company) => [company.id, company]));
 
   const ownerIds = [...new Set(leads.map((l) => l.ownerUserId).filter((id): id is string => Boolean(id)))];
   const owners = ownerIds.length > 0 ? await db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(inArray(users.id, ownerIds)) : [];
@@ -74,16 +83,28 @@ export default async function LeadsPage({ params }: { params: Promise<{ organiza
         <Table>
           <THead>
             <Tr>
-              <Th>Lead</Th>
+              <Th>Business</Th>
               <Th>Status</Th>
               <Th className="hidden sm:table-cell">Score</Th>
-              <Th className="hidden md:table-cell">Estimated value</Th>
+              <Th className="hidden md:table-cell">Contact</Th>
               <Th className="hidden lg:table-cell">Owner</Th>
+              <Th>Actions</Th>
             </Tr>
           </THead>
           <TBody>
             {leads.map((lead) => (
-              <LeadRow key={lead.id} organizationSlug={organizationSlug} lead={lead} ownerName={lead.ownerUserId ? (ownerNameById.get(lead.ownerUserId) ?? "—") : "—"} />
+              <LeadRow
+                key={lead.id}
+                organizationSlug={organizationSlug}
+                lead={lead}
+                ownerName={lead.ownerUserId ? (ownerNameById.get(lead.ownerUserId) ?? "—") : "—"}
+                companyName={lead.companyId ? (companyById.get(lead.companyId)?.name ?? `Lead ${lead.id.slice(0, 8)}`) : `Lead ${lead.id.slice(0, 8)}`}
+                contact={lead.contactId && contactById.has(lead.contactId) ? {
+                  name: contactById.get(lead.contactId)!.displayName,
+                  email: contactById.get(lead.contactId)!.primaryEmail,
+                  phone: contactById.get(lead.contactId)!.primaryPhone,
+                } : undefined}
+              />
             ))}
           </TBody>
         </Table>

@@ -19,6 +19,7 @@ import { LeadQualificationControls } from "@/components/dashboard/crm/LeadQualif
 import { CreateActivityForm } from "@/components/dashboard/crm/CreateActivityForm";
 import { CreateNoteForm } from "@/components/dashboard/crm/CreateNoteForm";
 import { NoteCard } from "@/components/dashboard/crm/NoteCard";
+import { ContactActions } from "@/components/dashboard/crm/ContactActions";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Card } from "@/components/ui/Card";
 import { Badge, type BadgeTone } from "@/components/ui/Badge";
@@ -112,6 +113,20 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ org
           )}
         </p>
         {lead.qualificationNotes ? <p className="mt-2 text-sm text-foreground">{lead.qualificationNotes}</p> : null}
+        {contact || company ? (
+          <div className="mt-3 flex flex-col gap-2">
+            <p className="text-sm text-muted">
+              {contact?.primaryEmail ?? "No published email"}
+              {" · "}
+              {contact?.primaryPhone ?? company?.phone ?? "No phone number"}
+            </p>
+            <ContactActions
+              email={contact?.primaryEmail}
+              phone={contact?.primaryPhone ?? company?.phone}
+              businessName={company?.name ?? contact?.displayName ?? `Lead ${lead.id.slice(0, 8)}`}
+            />
+          </div>
+        ) : null}
       </header>
 
       <section className="flex flex-col gap-3">
