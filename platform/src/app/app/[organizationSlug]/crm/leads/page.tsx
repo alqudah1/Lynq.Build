@@ -64,6 +64,12 @@ export default async function LeadsPage({ params }: { params: Promise<{ organiza
     if (digits.startsWith("1")) return "CA";
     return null;
   };
+  const demoSlugForCompany = (companyId: string | null): string | null => {
+    if (!companyId) return null;
+    const key = companyById.get(companyId)?.idempotencyKey;
+    const prefix = "lynq-prospect-company:";
+    return key?.startsWith(prefix) ? key.slice(prefix.length) : null;
+  };
 
   const ownerIds = [...new Set(leads.map((l) => l.ownerUserId).filter((id): id is string => Boolean(id)))];
   const owners = ownerIds.length > 0 ? await db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(inArray(users.id, ownerIds)) : [];
@@ -113,6 +119,7 @@ export default async function LeadsPage({ params }: { params: Promise<{ organiza
                 ownerName={lead.ownerUserId ? (ownerNameById.get(lead.ownerUserId) ?? "—") : "—"}
                 companyName={lead.companyId ? (companyById.get(lead.companyId)?.name ?? `Lead ${lead.id.slice(0, 8)}`) : `Lead ${lead.id.slice(0, 8)}`}
                 countryCode={countryCodeForLead(lead.companyId, lead.contactId ? contactById.get(lead.contactId)?.primaryPhone : null)}
+                demoSlug={demoSlugForCompany(lead.companyId)}
                 contact={lead.contactId && contactById.has(lead.contactId) ? {
                   name: contactById.get(lead.contactId)!.displayName,
                   email: contactById.get(lead.contactId)!.primaryEmail,

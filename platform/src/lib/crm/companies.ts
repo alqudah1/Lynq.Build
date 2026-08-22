@@ -29,6 +29,7 @@ export interface CrmCompany {
   status: "active" | "archived";
   ownerUserId: string | null;
   sourceId: string | null;
+  idempotencyKey: string | null;
   createdByUserId: string | null;
   revision: number;
   archivedAt: Date | null;

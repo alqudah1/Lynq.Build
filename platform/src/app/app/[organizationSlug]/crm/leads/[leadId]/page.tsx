@@ -84,6 +84,8 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ org
       : contactPhoneDigits.startsWith("1")
         ? "CA"
         : null;
+  const demoPrefix = "lynq-prospect-company:";
+  const demoSlug = company?.idempotencyKey?.startsWith(demoPrefix) ? company.idempotencyKey.slice(demoPrefix.length) : null;
   const redirectPath = `/app/${organizationSlug}/crm/leads/${leadId}`;
   const target = { leadId };
   const canManage = true; // service layer re-derives and enforces the real authority on every action; this only controls whether the controls render
@@ -135,6 +137,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ org
               phone={contactPhone}
               businessName={company?.name ?? contact?.displayName ?? `Lead ${lead.id.slice(0, 8)}`}
               countryCode={senderCountryCode}
+              demoSlug={demoSlug}
             />
           </div>
         ) : null}

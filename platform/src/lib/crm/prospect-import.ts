@@ -87,7 +87,7 @@ export async function importProspects(
         actorUserId: input.actorUserId,
       });
       const companyAddress = companyResult.company.address ?? {};
-      if (companyAddress.countryCode !== prospect.countryCode) {
+      if (companyAddress.countryCode !== prospect.countryCode || companyAddress.photo !== prospect.photo) {
         await db
           .update(crmCompanies)
           .set({
@@ -96,6 +96,12 @@ export async function importProspects(
               formatted: prospect.address || companyAddress.formatted,
               city: prospect.city || companyAddress.city,
               countryCode: prospect.countryCode,
+              photo: prospect.photo || companyAddress.photo,
+              description: prospect.description || companyAddress.description,
+              category: prospect.category || companyAddress.category,
+              rating: prospect.rating ?? companyAddress.rating,
+              reviews: prospect.reviews,
+              hours: prospect.hours ?? companyAddress.hours,
             },
             updatedAt: new Date(),
           })
