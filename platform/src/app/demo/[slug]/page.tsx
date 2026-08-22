@@ -39,18 +39,59 @@ function safeImageUrl(address: Record<string, unknown> | null): string | null {
   }
 }
 
-function serviceSet(industry: string, arabic: boolean): string[] {
+function hoursField(address: Record<string, unknown> | null): Array<{ day: string; hours: string }> {
+  const value = address?.hours;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return [];
+  return Object.entries(value as Record<string, unknown>).flatMap(([day, raw]) => {
+    const entries = Array.isArray(raw) ? raw.filter((item): item is string => typeof item === "string") : [];
+    return entries.length ? [{ day, hours: entries.join(" · ") }] : [];
+  });
+}
+
+type Experience = { index: string; title: string; description: string };
+
+function experienceSet(industry: string, arabic: boolean): Experience[] {
   const value = industry.toLowerCase();
-  if (/restaurant|food|cafe|coffee|bakery|مطعم|مقهى/.test(value)) return arabic ? ["عرض المنيو", "الطلبات والحجوزات", "الموقع وساعات العمل", "تواصل سريع"] : ["Menu showcase", "Orders and reservations", "Location and hours", "Fast customer contact"];
-  if (/dent|clinic|medical|physio|عيادة|طب|علاج/.test(value)) return arabic ? ["عرض الخدمات", "حجز المواعيد", "استفسارات المرضى", "تذكير ومتابعة"] : ["Service overview", "Appointment booking", "Patient enquiries", "Reminders and follow ups"];
-  if (/salon|barber|beauty|spa|صالون|حلاق|تجميل/.test(value)) return arabic ? ["عرض الخدمات", "الحجز أونلاين", "واتساب مباشر", "متابعة العملاء"] : ["Service showcase", "Online booking", "Direct WhatsApp", "Customer follow up"];
-  if (/law|legal|محامي/.test(value)) return arabic ? ["مجالات الخبرة", "طلب استشارة", "استقبال الحالات", "متابعة العملاء"] : ["Areas of expertise", "Consultation requests", "Client intake", "Client follow up"];
-  return arabic ? ["عرض الخدمات", "طلبات العملاء", "واتساب مباشر", "إدارة ومتابعة"] : ["Service showcase", "Customer enquiries", "Direct WhatsApp", "Customer management"];
+  if (/restaurant|food|cafe|coffee|bakery|مطعم|مقهى/.test(value)) {
+    return arabic ? [
+      { index: "01", title: "المنيو والتجربة", description: "عرض واضح للأطباق والتجربة التي تميز المكان." },
+      { index: "02", title: "الحجز والطلبات", description: "طريق أقصر من الاكتشاف إلى الحجز أو الطلب." },
+      { index: "03", title: "الموقع وساعات العمل", description: "كل ما يحتاجه الضيف قبل الزيارة في مكان واحد." },
+    ] : [
+      { index: "01", title: "Menu & experience", description: "A considered showcase of the dishes and atmosphere that make the business memorable." },
+      { index: "02", title: "Reservations & orders", description: "A shorter path from discovery to booking, ordering or getting in touch." },
+      { index: "03", title: "Visit information", description: "Location, hours and the details guests need before they arrive." },
+    ];
+  }
+  if (/salon|barber|beauty|spa|صالون|حلاق|تجميل/.test(value)) {
+    return arabic ? [
+      { index: "01", title: "الخدمات", description: "تقديم راقٍ وواضح للخدمات والتخصصات." },
+      { index: "02", title: "الحجز", description: "تجربة حجز مباشرة وسهلة من الهاتف." },
+      { index: "03", title: "الزيارة والتواصل", description: "الموقع والساعات وواتساب في مكان واحد." },
+    ] : [
+      { index: "01", title: "Services", description: "A refined, easy-to-understand presentation of services and specialties." },
+      { index: "02", title: "Booking", description: "A direct mobile-first appointment experience." },
+      { index: "03", title: "Visit & contact", description: "Location, hours and WhatsApp in one place." },
+    ];
+  }
+  return arabic ? [
+    { index: "01", title: "الخدمات", description: "عرض واضح لما يقدمه النشاط ولماذا يختاره العملاء." },
+    { index: "02", title: "طلبات العملاء", description: "طريقة مباشرة لاستقبال الاستفسارات والطلبات." },
+    { index: "03", title: "الزيارة والتواصل", description: "الموقع والساعات والتواصل في مكان واحد." },
+  ] : [
+    { index: "01", title: "Services", description: "A clear presentation of what the business offers and why customers choose it." },
+    { index: "02", title: "Customer enquiries", description: "A direct way to capture questions, requests and new opportunities." },
+    { index: "03", title: "Visit & contact", description: "Location, hours and contact details in one place." },
+  ];
+}
+
+function businessInitials(name: string): string {
+  return name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]).join("").toUpperCase();
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const company = await getDemoCompany((await params).slug);
-  return company ? { title: `${company.name} website concept`, description: `A website concept prepared for ${company.name} by LYNQ.` } : { title: "Website concept by LYNQ" };
+  return company ? { title: company.name, description: `A digital experience concept prepared for ${company.name}.` } : { title: "Digital experience concept" };
 }
 
 export default async function DemoPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -60,62 +101,107 @@ export default async function DemoPage({ params }: { params: Promise<{ slug: str
   const address = company.address && typeof company.address === "object" && !Array.isArray(company.address) ? company.address as Record<string, unknown> : null;
   const countryCode = textField(address, "countryCode");
   const arabic = countryCode === "JO";
-  const category = textField(address, "category") || company.industry || (arabic ? "نشاط محلي" : "Local business");
+  const category = textField(address, "category") || company.industry || (arabic ? "وجهة محلية" : "Local destination");
   const description = textField(address, "description");
   const formattedAddress = textField(address, "formatted");
+  const city = textField(address, "city");
   const photo = safeImageUrl(address);
   const rating = numberField(address, "rating");
   const reviews = numberField(address, "reviews");
-  const services = serviceSet(`${company.industry ?? ""} ${category}`, arabic);
+  const hours = hoursField(address);
+  const experiences = experienceSet(`${company.industry ?? ""} ${category}`, arabic);
   const phoneDigits = company.phone?.replace(/\D/g, "") ?? "";
-  const price = arabic ? "25 دينار بالشهر" : "$100 CAD per month";
+  const initials = businessInitials(company.name);
+  const mapUrl = formattedAddress ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(formattedAddress)}` : null;
+  const placeLabel = formattedAddress || city || (arabic ? "الأردن" : "Canada");
 
   return (
-    <main dir={arabic ? "rtl" : "ltr"} className="min-h-screen bg-[#f4f1ea] text-[#17211d]">
-      <div className="bg-[#17211d] px-5 py-3 text-center text-xs uppercase tracking-[0.18em] text-[#d8c69c]">
-        {arabic ? "نموذج موقع تجريبي من LYNQ" : "Website concept prepared by LYNQ"}
-      </div>
+    <main dir={arabic ? "rtl" : "ltr"} className="min-h-screen overflow-hidden bg-[#0a0a09] text-[#f5f2ea] selection:bg-[#d8c4a0] selection:text-[#11110f]">
+      <section className="relative isolate min-h-[92svh] overflow-hidden border-b border-white/10">
+        {photo ? <div className="absolute inset-0 -z-30 scale-[1.02] bg-cover bg-center" style={{ backgroundImage: `url(${photo})` }} /> : <div className="absolute inset-0 -z-30 bg-[#28271f]" />}
+        <div className="absolute inset-0 -z-20 bg-[linear-gradient(180deg,rgba(8,8,7,.34)_0%,rgba(8,8,7,.18)_28%,rgba(8,8,7,.78)_78%,rgba(8,8,7,.96)_100%)]" />
+        <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(7,7,6,.65)_0%,transparent_55%)] rtl:bg-[linear-gradient(270deg,rgba(7,7,6,.65)_0%,transparent_55%)]" />
 
-      <section className="relative isolate flex min-h-[72vh] items-end overflow-hidden px-6 py-14 md:px-14 md:py-20">
-        {photo ? <div className="absolute inset-0 -z-20 bg-cover bg-center" style={{ backgroundImage: `url(${photo})` }} /> : null}
-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(11,25,20,.94),rgba(11,25,20,.52),rgba(11,25,20,.2))]" />
-        <div className="max-w-4xl text-white">
-          <p className="mb-5 text-sm uppercase tracking-[0.22em] text-[#e2cf9f]">{category}</p>
-          <h1 className="max-w-3xl font-serif text-5xl leading-[.95] md:text-8xl">{company.name}</h1>
-          <p className="mt-7 max-w-2xl text-lg leading-8 text-white/80">
-            {description || (arabic ? "واجهة رقمية بسيطة وواضحة تساعد الزبائن يعرفوا خدماتكم ويتواصلوا معكم بسرعة." : "A clear, modern online presence that helps customers understand your services and reach you quickly.")}
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            {phoneDigits ? <a href={`https://wa.me/${phoneDigits}`} className="rounded-full bg-[#e2cf9f] px-6 py-3 text-sm font-semibold text-[#17211d]">{arabic ? "تواصل معنا" : "Contact us"}</a> : null}
-            {formattedAddress ? <span className="rounded-full border border-white/30 px-6 py-3 text-sm text-white/85">{formattedAddress}</span> : null}
+        <nav className="mx-auto flex max-w-[1500px] items-center justify-between px-5 py-5 md:px-10 md:py-7">
+          <a href="#top" className="flex items-center gap-3" aria-label={company.name}>
+            <span className="grid size-11 place-items-center border border-white/35 bg-black/20 text-xs font-semibold tracking-[0.18em] backdrop-blur-md">{initials}</span>
+            <span className="max-w-48 text-sm font-medium leading-tight tracking-[-0.01em] md:max-w-none md:text-base">{company.name}</span>
+          </a>
+          <div className="hidden items-center gap-8 text-xs uppercase tracking-[0.18em] text-white/65 md:flex">
+            <a href="#story" className="transition hover:text-white">{arabic ? "قصتنا" : "Story"}</a>
+            <a href="#experience" className="transition hover:text-white">{arabic ? "التجربة" : "Experience"}</a>
+            <a href="#visit" className="transition hover:text-white">{arabic ? "الزيارة" : "Visit"}</a>
           </div>
-        </div>
-      </section>
+          {phoneDigits ? <a href={`https://wa.me/${phoneDigits}`} className="border border-white/30 bg-white/10 px-4 py-3 text-xs font-semibold backdrop-blur-md transition hover:bg-white hover:text-black md:px-6">{arabic ? "احجز أو تواصل" : "Book or contact"}</a> : null}
+        </nav>
 
-      <section className="px-6 py-20 md:px-14">
-        <div className="mx-auto max-w-6xl">
-          <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
+        <div id="top" className="mx-auto flex min-h-[calc(92svh-100px)] max-w-[1500px] flex-col justify-end px-5 pb-10 md:px-10 md:pb-16">
+          <div className="grid items-end gap-10 lg:grid-cols-[minmax(0,1fr)_360px]">
             <div>
-              <p className="text-sm uppercase tracking-[0.2em] text-[#8b6f3d]">{arabic ? "ماذا يمكن أن يقدم الموقع" : "What the website can do"}</p>
-              <h2 className="mt-4 max-w-2xl font-serif text-4xl md:text-6xl">{arabic ? "تجربة أسهل للزبائن وشغل أرتب لكم" : "A better customer experience and a simpler way to grow"}</h2>
+              <p className="mb-5 flex items-center gap-3 text-[0.68rem] font-medium uppercase tracking-[0.28em] text-[#e0cfad]"><span className="h-px w-9 bg-current" />{category}</p>
+              <h1 className="max-w-5xl text-[clamp(3.4rem,9vw,8.8rem)] font-medium leading-[0.82] tracking-[-0.075em] text-white">{company.name}</h1>
+              <p className="mt-8 max-w-2xl text-base leading-7 text-white/72 md:text-xl md:leading-8">{description || (arabic ? "تجربة محلية لها حضورها الخاص. مكان يعرفه ضيوفه، وهوية رقمية تليق باسمه وسمعته." : "A local experience with a character of its own, translated into a digital presence worthy of its reputation.")}</p>
             </div>
-            {rating ? <p className="text-lg text-[#4e5b55]">{rating.toFixed(1)} ★ {reviews ? `(${reviews.toLocaleString()} ${arabic ? "تقييم" : "reviews"})` : ""}</p> : null}
-          </div>
-
-          <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {services.map((service, index) => <article key={service} className="min-h-48 rounded-3xl border border-[#d6d0c3] bg-white p-7"><span className="text-sm text-[#9a7b42]">0{index + 1}</span><h3 className="mt-12 text-xl font-medium">{service}</h3></article>)}
+            <div className="border-t border-white/30 pt-5 text-sm text-white/70 lg:border-s lg:border-t-0 lg:ps-7 lg:pt-0">
+              <p className="text-[0.65rem] uppercase tracking-[0.22em] text-white/45">{arabic ? "اكتشف المكان" : "Discover the place"}</p>
+              <p className="mt-3 text-base text-white">{placeLabel}</p>
+              {rating ? <p className="mt-5 text-[#e0cfad]"><span className="text-2xl font-medium text-white">{rating.toFixed(1)}</span> / 5&nbsp;&nbsp;★ {reviews ? `${reviews.toLocaleString()} ${arabic ? "تقييم" : "reviews"}` : ""}</p> : null}
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="bg-[#17211d] px-6 py-20 text-white md:px-14">
-        <div className="mx-auto flex max-w-6xl flex-col justify-between gap-8 md:flex-row md:items-center">
-          <div><p className="text-sm uppercase tracking-[0.2em] text-[#d8c69c]">LYNQ</p><h2 className="mt-3 font-serif text-4xl md:text-6xl">{arabic ? "جاهزين نكملها معكم" : "Ready to make it yours"}</h2><p className="mt-4 max-w-xl text-white/65">{arabic ? "نخصص التصميم والمحتوى ونضيف الحجز والواتساب وإدارة العملاء حسب احتياجكم." : "We will tailor the design and content, then add booking, WhatsApp and customer management around your workflow."}</p></div>
-          <div className="rounded-3xl border border-white/15 p-7 text-center"><p className="text-sm text-white/55">{arabic ? "الباقة" : "Launch package"}</p><p className="mt-2 text-2xl font-semibold text-[#e2cf9f]">{price}</p></div>
+      <section id="story" className="mx-auto grid max-w-[1500px] gap-12 px-5 py-24 md:px-10 md:py-36 lg:grid-cols-[0.75fr_1.25fr] lg:gap-24">
+        <div>
+          <p className="text-[0.68rem] uppercase tracking-[0.26em] text-[#b9a47f]">{arabic ? "عن المكان" : "About"}</p>
+          <p className="mt-5 max-w-sm text-sm leading-7 text-white/48">{arabic ? "هوية مصممة لتشعر وكأنها امتداد طبيعي للمكان، لا قالب جاهز تم تبديل اسمه." : "A digital identity designed to feel like a natural extension of the business, never a template with the name replaced."}</p>
+        </div>
+        <div>
+          <h2 className="max-w-4xl text-4xl font-medium leading-[1.02] tracking-[-0.045em] md:text-7xl">{arabic ? "حضور رقمي يحوّل السمعة القوية إلى تجربة يثق بها الزبون من أول زيارة." : "A digital presence that turns a strong reputation into an experience customers trust from the first visit."}</h2>
+          <div className="mt-12 grid gap-px bg-white/10 sm:grid-cols-3">
+            <div className="bg-[#0a0a09] py-6 pe-6"><p className="text-3xl font-medium">{rating ? rating.toFixed(1) : "—"}</p><p className="mt-2 text-xs uppercase tracking-[0.16em] text-white/42">{arabic ? "التقييم" : "Rating"}</p></div>
+            <div className="bg-[#0a0a09] px-0 py-6 sm:px-6"><p className="text-3xl font-medium">{reviews ? reviews.toLocaleString() : "—"}</p><p className="mt-2 text-xs uppercase tracking-[0.16em] text-white/42">{arabic ? "آراء الضيوف" : "Guest reviews"}</p></div>
+            <div className="bg-[#0a0a09] py-6 sm:ps-6"><p className="text-3xl font-medium">{arabic ? "مباشر" : "Direct"}</p><p className="mt-2 text-xs uppercase tracking-[0.16em] text-white/42">{arabic ? "الحجز والتواصل" : "Booking & contact"}</p></div>
+          </div>
         </div>
       </section>
 
-      <footer className="bg-[#0d1612] px-6 py-6 text-center text-xs text-white/45">{arabic ? "هذا نموذج تجريبي أعدته LYNQ وليس الموقع الرسمي للنشاط." : "This is a concept prepared by LYNQ and is not the business's official website."}</footer>
+      <section className="mx-3 overflow-hidden md:mx-6">
+        <div className="relative min-h-[68svh] bg-[#24231e]">
+          {photo ? <div className="absolute inset-0 bg-cover bg-[center_68%] md:bg-fixed" style={{ backgroundImage: `url(${photo})` }} /> : null}
+          <div className="absolute inset-0 bg-black/28" />
+          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 to-transparent" />
+          <p className="absolute bottom-7 start-7 max-w-xl text-xl font-medium leading-tight text-white md:bottom-12 md:start-12 md:text-4xl">{arabic ? "من الصورة الأولى إلى آخر تفصيل، كل شيء يحكي قصة المكان نفسه." : "From the first image to the last detail, every element tells the story of the place itself."}</p>
+        </div>
+      </section>
+
+      <section id="experience" className="mx-auto max-w-[1500px] px-5 py-24 md:px-10 md:py-36">
+        <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-24">
+          <div><p className="text-[0.68rem] uppercase tracking-[0.26em] text-[#b9a47f]">{arabic ? "تجربة الضيف" : "Guest experience"}</p><h2 className="mt-5 max-w-xl text-5xl font-medium leading-[0.94] tracking-[-0.05em] md:text-7xl">{arabic ? "كل ما يحتاجه الزبون، بلا تعقيد." : "Everything a customer needs, without the friction."}</h2></div>
+          <div className="divide-y divide-white/12 border-t border-white/12">
+            {experiences.map((experience) => <article key={experience.index} className="grid gap-5 py-8 md:grid-cols-[60px_1fr] md:py-10"><span className="text-xs text-[#b9a47f]">{experience.index}</span><div><h3 className="text-2xl font-medium md:text-3xl">{experience.title}</h3><p className="mt-3 max-w-xl text-sm leading-7 text-white/48 md:text-base">{experience.description}</p></div></article>)}
+          </div>
+        </div>
+      </section>
+
+      <section id="visit" className="border-y border-white/10 bg-[#f0ede5] text-[#141411]">
+        <div className="mx-auto grid max-w-[1500px] lg:grid-cols-2">
+          <div className="px-5 py-20 md:px-10 md:py-28 lg:border-e lg:border-black/10">
+            <p className="text-[0.68rem] uppercase tracking-[0.26em] text-black/48">{arabic ? "خطط لزيارتك" : "Plan your visit"}</p><h2 className="mt-5 text-5xl font-medium tracking-[-0.05em] md:text-7xl">{arabic ? "أهلاً وسهلاً" : "Come say hello"}</h2><p className="mt-8 max-w-lg text-base leading-7 text-black/62">{placeLabel}</p>
+            <div className="mt-10 flex flex-wrap gap-3">{mapUrl ? <a href={mapUrl} target="_blank" rel="noreferrer" className="bg-[#141411] px-6 py-4 text-xs font-semibold uppercase tracking-[0.12em] text-white">{arabic ? "افتح الخريطة" : "Open map"}</a> : null}{phoneDigits ? <a href={`https://wa.me/${phoneDigits}`} className="border border-black/25 px-6 py-4 text-xs font-semibold uppercase tracking-[0.12em]">{arabic ? "تواصل عبر واتساب" : "Contact on WhatsApp"}</a> : null}</div>
+          </div>
+          <div className="px-5 py-20 md:px-10 md:py-28">
+            <p className="text-[0.68rem] uppercase tracking-[0.26em] text-black/48">{arabic ? "ساعات العمل" : "Opening hours"}</p>
+            <div className="mt-7 divide-y divide-black/12 border-y border-black/12">{(hours.length ? hours : [{ day: arabic ? "يومياً" : "Daily", hours: arabic ? "تواصل معنا لمعرفة ساعات العمل" : "Contact us for opening hours" }]).map((item) => <div key={item.day} className="flex items-center justify-between gap-6 py-4 text-sm"><span className="font-medium">{item.day}</span><span className="text-black/58">{item.hours}</span></div>)}</div>
+          </div>
+        </div>
+      </section>
+
+      <section className="px-5 py-24 text-center md:px-10 md:py-36">
+        <p className="text-[0.68rem] uppercase tracking-[0.26em] text-[#b9a47f]">{company.name}</p><h2 className="mx-auto mt-5 max-w-4xl text-5xl font-medium leading-[0.9] tracking-[-0.06em] md:text-8xl">{arabic ? "زيارتكم تبدأ من هنا." : "Your next visit starts here."}</h2>{phoneDigits ? <a href={`https://wa.me/${phoneDigits}`} className="mt-10 inline-flex min-h-14 items-center border border-white/28 px-8 text-xs font-semibold uppercase tracking-[0.14em] transition hover:bg-white hover:text-black">{arabic ? "احجز أو تواصل" : "Book or contact"}</a> : null}
+      </section>
+
+      <footer className="border-t border-white/10 px-5 py-6 md:px-10"><div className="mx-auto flex max-w-[1500px] flex-col gap-3 text-[0.64rem] uppercase tracking-[0.16em] text-white/32 md:flex-row md:items-center md:justify-between"><p>{company.name}</p><p>{arabic ? "تصور مبدئي للهوية الرقمية، أعدته LYNQ" : "Digital experience concept by LYNQ"}</p></div></footer>
     </main>
   );
 }
