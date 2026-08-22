@@ -28,6 +28,7 @@ const INDUSTRIES = [
 
 const target = Math.min(1000, Math.max(1, Number(process.env.DISCOVERY_LIMIT) || 1000));
 const concurrency = Math.min(5, Math.max(1, Number(process.env.DISCOVERY_CONCURRENCY) || 3));
+const maxRecords = Math.max(1, Number(process.env.DISCOVERY_MAX_RECORDS) || 1500);
 const outputDir = process.env.DISCOVERY_OUTPUT_DIR || path.resolve(__dirname, '../../../outputs');
 const prospects = new Map();
 let scanned = 0;
@@ -57,8 +58,62 @@ function requestFor(job) {
   };
 }
 
+async function invokePipeline(job) {
+  if (process.env.DISCOVERY_API_URL) {
+    if (!process.env.LYNQ_ADMIN_SESSION_TOKEN) throw new Error('Missing LYNQ_ADMIN_SESSION_TOKEN');
+    const response = await fetch(process.env.DISCOVERY_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        cookie: `lynq_admin_session=${process.env.LYNQ_ADMIN_SESSION_TOKEN}`,
+      },
+      body: JSON.stringify({ ...job, limit: 25 }),
+    });
+    const body = await response.json().catch(() => ({ error: `Non-JSON response (${response.status})` }));
+    return { statusCode: response.status, body };
+  }
+
+  const response = responseCollector();
+  await runPipeline(requestFor(job), response);
+  return response;
+}
+
 function prospectKey(lead) {
   return lead.placeId || `${lead.countryCode}|${String(lead.name).toLowerCase()}|${String(lead.address).toLowerCase()}`;
+}
+
+function normalizeLead(lead, job = {}) {
+  const city = lead.city || job.city || '';
+  const countryCode = lead.countryCode || job.countryCode || (city.includes('Jordan') ? 'JO' : 'CA');
+  const rating = Number(lead.rating) || 0;
+  const reviews = Number(lead.reviews) || 0;
+  const websiteScore = Number(lead.websiteScore) || 0;
+  const reputationScore = (rating >= 4.7 ? 25 : rating >= 4.4 ? 20 : rating >= 4 ? 10 : 0)
+    + (reviews >= 100 ? 15 : reviews >= 30 ? 10 : reviews >= 10 ? 5 : 0);
+  const digitalNeedScore = !lead.website ? 50 : Math.round(Math.max(0, (55 - websiteScore) / 55 * 50));
+  const contactabilityScore = (lead.email ? 5 : 0) + (lead.phone ? 5 : 0);
+  const reason = lead.reason || (!lead.website ? 'No website' : 'Weak website');
+
+  return {
+    ...lead,
+    placeId: lead.placeId || '',
+    countryCode,
+    city,
+    industry: lead.industry || job.industry || '',
+    language: lead.language || job.language || (countryCode === 'JO' ? 'ar' : 'en'),
+    rating: rating || null,
+    reviews,
+    websiteScore,
+    reason,
+    opportunityScore: Number.isFinite(Number(lead.opportunityScore))
+      ? Number(lead.opportunityScore)
+      : Math.min(100, reputationScore + digitalNeedScore + contactabilityScore),
+    qualificationReasons: lead.qualificationReasons || [
+      reason,
+      rating ? `${rating}★ from ${reviews} reviews` : 'No review signal',
+      lead.email || lead.phone ? 'Direct contact channel found' : 'No direct contact channel found',
+    ],
+  };
 }
 
 function rankedProspects() {
@@ -91,6 +146,7 @@ function writeOutputs(final = false) {
     const summary = {
       completedAt: new Date().toISOString(),
       target,
+      maxRecords,
       scanned,
       qualifiedUnique: leads.length,
       canada: leads.filter(lead => lead.countryCode === 'CA').length,
@@ -120,8 +176,7 @@ function buildJobs() {
 }
 
 async function processJob(job) {
-  const res = responseCollector();
-  await runPipeline(requestFor(job), res);
+  const res = await invokePipeline(job);
   completedJobs += 1;
   if (res.statusCode !== 200) {
     failedJobs += 1;
@@ -135,8 +190,9 @@ async function processJob(job) {
   }
 
   scanned += res.body.found || 0;
-  for (const lead of res.body.leads || []) {
-    if (!lead.qualified) continue;
+  for (const rawLead of res.body.leads || []) {
+    if (!rawLead.qualified) continue;
+    const lead = normalizeLead(rawLead, job);
     const key = prospectKey(lead);
     const existing = prospects.get(key);
     if (!existing || lead.opportunityScore > existing.opportunityScore) prospects.set(key, lead);
@@ -146,14 +202,29 @@ async function processJob(job) {
 }
 
 async function main() {
-  for (const required of ['OUTSCRAPER_API_KEY', 'LYNQ_ADMIN_SESSION_SECRET']) {
+  if (process.env.DISCOVERY_REPAIR_INPUT) {
+    const input = JSON.parse(fs.readFileSync(process.env.DISCOVERY_REPAIR_INPUT, 'utf8'));
+    for (const rawLead of input.prospects || []) {
+      const lead = normalizeLead(rawLead);
+      prospects.set(prospectKey(lead), lead);
+    }
+    scanned = Number(process.env.DISCOVERY_SCANNED) || prospects.size;
+    writeOutputs(true);
+    process.stdout.write(`repaired: ${prospects.size} prospects\n`);
+    return;
+  }
+
+  const requiredVariables = process.env.DISCOVERY_API_URL
+    ? ['LYNQ_ADMIN_SESSION_TOKEN']
+    : ['OUTSCRAPER_API_KEY', 'LYNQ_ADMIN_SESSION_SECRET'];
+  for (const required of requiredVariables) {
     if (!process.env[required]) throw new Error(`Missing ${required}`);
   }
 
   const jobs = buildJobs();
   let nextJob = 0;
   async function worker() {
-    while (!fatalError && nextJob < jobs.length && prospects.size < target) {
+    while (!fatalError && nextJob < jobs.length && prospects.size < target && scanned < maxRecords) {
       const job = jobs[nextJob];
       nextJob += 1;
       await processJob(job);
