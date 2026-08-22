@@ -312,9 +312,13 @@ h1 { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.5px; margin-bottom:
       <!-- Email tab -->
       <div id="panel-email" style="padding-top:16px">
         <div style="font-size:0.75rem;color:#555;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Subject</div>
-        <div id="res-subject" style="font-size:0.88rem;color:#fff;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:10px 12px;margin-bottom:12px"></div>
+        <input id="res-subject" style="width:100%;font-size:0.88rem;color:#fff;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:10px 12px;margin-bottom:12px;font-family:inherit;outline:none">
         <div style="font-size:0.75rem;color:#555;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Body</div>
         <textarea id="res-email" style="width:100%;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:10px 12px;color:#ccc;font-family:inherit;font-size:0.83rem;line-height:1.7;resize:vertical;outline:none;min-height:160px"></textarea>
+        <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.76rem;color:#888;line-height:1.4;margin-top:10px;cursor:pointer">
+          <input id="outreach-approval" type="checkbox" style="margin-top:2px">
+          <span id="outreach-approval-label">I reviewed this exact message and confirmed we have a lawful basis to contact this business.</span>
+        </label>
         <div id="email-sent-note" style="font-size:0.78rem;color:#22c55e;margin-top:6px;display:none">✓ Email sent from hello@lynq.build</div>
         <div style="display:flex;gap:8px;margin-top:10px">
           <button onclick="copyText('res-email')" style="flex:1;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:7px;padding:9px;color:#ccc;font-family:inherit;font-size:0.82rem;cursor:pointer">Copy</button>
@@ -538,7 +542,7 @@ h1 { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.5px; margin-bottom:
     <div class="stats-row">
       <div class="stat-card"><div class="label">Scraped</div><div class="value" id="s-found">0</div><div class="sub">This session</div></div>
       <div class="stat-card"><div class="label">Qualified</div><div class="value" id="s-qual">0</div><div class="sub">Score &lt; 60/100</div></div>
-      <div class="stat-card"><div class="label">Sent</div><div class="value" id="s-sent">0</div><div class="sub">→ Make → Clay → Instantly</div></div>
+      <div class="stat-card"><div class="label">Office-ready</div><div class="value" id="s-sent">0</div><div class="sub">Qualified export queue</div></div>
       <div class="stat-card"><div class="label">Skipped</div><div class="value" id="s-skip">0</div><div class="sub">Already processed</div></div>
     </div>
 
@@ -560,7 +564,7 @@ h1 { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.5px; margin-bottom:
     <div class="selectors-grid">
       <div class="card">
         <div class="card-header">
-          <h3>GTA Cities</h3>
+          <h3>Canada + Jordan Markets</h3>
           <button class="select-all" onclick="toggleAll('city-cb')">Toggle all</button>
         </div>
         <div class="check-grid" id="city-list"></div>
@@ -576,7 +580,10 @@ h1 { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.5px; margin-bottom:
 
     <!-- Results cards -->
     <div class="results-section" id="results-section">
-      <h3 id="results-heading">Qualified Leads</h3>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px">
+        <h3 id="results-heading" style="margin-bottom:0">Qualified Leads</h3>
+        <button id="btn-office-export" class="select-all" onclick="downloadOfficeImport()" disabled>Download for LYNQ Office</button>
+      </div>
       <div class="results-grid" id="results-grid"></div>
     </div>
 
@@ -678,24 +685,22 @@ Mustafa</textarea>
 </div>
 
 <script>
-const PASS = 'lynq2026';
-
-const CITIES = [
-  'Downtown Toronto, Ontario, Canada',
-  'Toronto, Ontario, Canada',
-  'North York, Ontario, Canada',
-  'Scarborough, Ontario, Canada',
-  'Etobicoke, Ontario, Canada',
-  'Mississauga, Ontario, Canada',
-  'Brampton, Ontario, Canada',
-  'Vaughan, Ontario, Canada',
-  'Richmond Hill, Ontario, Canada',
-  'Markham, Ontario, Canada',
-  'Oakville, Ontario, Canada',
-  'Burlington, Ontario, Canada',
-  'Ajax, Ontario, Canada',
-  'Pickering, Ontario, Canada',
-  'Oshawa, Ontario, Canada',
+const MARKETS = [
+  { city: 'Downtown Toronto, Ontario, Canada', countryCode: 'CA', language: 'en' },
+  { city: 'Toronto, Ontario, Canada', countryCode: 'CA', language: 'en' },
+  { city: 'North York, Ontario, Canada', countryCode: 'CA', language: 'en' },
+  { city: 'Scarborough, Ontario, Canada', countryCode: 'CA', language: 'en' },
+  { city: 'Etobicoke, Ontario, Canada', countryCode: 'CA', language: 'en' },
+  { city: 'Mississauga, Ontario, Canada', countryCode: 'CA', language: 'en' },
+  { city: 'Brampton, Ontario, Canada', countryCode: 'CA', language: 'en' },
+  { city: 'Vaughan, Ontario, Canada', countryCode: 'CA', language: 'en' },
+  { city: 'Richmond Hill, Ontario, Canada', countryCode: 'CA', language: 'en' },
+  { city: 'Markham, Ontario, Canada', countryCode: 'CA', language: 'en' },
+  { city: 'Oakville, Ontario, Canada', countryCode: 'CA', language: 'en' },
+  { city: 'Burlington, Ontario, Canada', countryCode: 'CA', language: 'en' },
+  { city: 'Amman, Jordan', countryCode: 'JO', language: 'en' },
+  { city: 'Irbid, Jordan', countryCode: 'JO', language: 'en' },
+  { city: 'Zarqa, Jordan', countryCode: 'JO', language: 'en' },
 ];
 
 const INDUSTRIES = [
@@ -716,27 +721,55 @@ const INDUSTRIES = [
 let stopping = false;
 let S = { found: 0, qual: 0, sent: 0, skip: 0 };
 const LEAD_STORE = {}; // index → lead object, avoids JSON-in-onclick issues
+const OFFICE_IMPORT_STORE = new Map();
 let leadIdx = 0;
 
-function auth() {
-  if (document.getElementById('pw').value === PASS) {
-    document.getElementById('gate').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
-    build();
-  } else {
-    document.getElementById('pw-err').textContent = 'Wrong password.';
-    document.getElementById('pw').value = '';
+let dashboardBuilt = false;
+
+async function auth() {
+  const errorEl = document.getElementById('pw-err');
+  errorEl.textContent = '';
+  try {
+    const res = await fetch('/api/admin-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: document.getElementById('pw').value }),
+    });
+    const data = await res.json();
+    if (res.ok && data.authenticated) {
+      showDashboard();
+    } else {
+      errorEl.textContent = data.error || 'Wrong password.';
+      document.getElementById('pw').value = '';
+    }
+  } catch {
+    errorEl.textContent = 'Login is temporarily unavailable.';
   }
+}
+
+function showDashboard() {
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  if (!dashboardBuilt) build();
+  dashboardBuilt = true;
+}
+
+async function restoreSession() {
+  try {
+    const res = await fetch('/api/admin-session', { cache: 'no-store' });
+    const data = await res.json();
+    if (data.authenticated) showDashboard();
+  } catch {}
 }
 
 function build() {
   const cityEl = document.getElementById('city-list');
   const indEl = document.getElementById('ind-list');
 
-  CITIES.forEach((c, i) => {
+  MARKETS.forEach((market, i) => {
     const lbl = document.createElement('label');
     lbl.className = 'check-item';
-    lbl.innerHTML = `<input type="checkbox" class="city-cb" value="${c}" ${i < 1 ? 'checked' : ''}><span>${c.split(',')[0]}</span>`;
+    lbl.innerHTML = `<input type="checkbox" class="city-cb" value="${market.city}" data-country="${market.countryCode}" data-language="${market.language}" ${i < 1 || market.city.startsWith('Amman') ? 'checked' : ''}><span>${market.city.split(',')[0]} <small style="color:#555">${market.countryCode}</small></span>`;
     cityEl.appendChild(lbl);
   });
 
@@ -758,10 +791,22 @@ function checked(cls) {
   return [...document.querySelectorAll('.' + cls + ':checked')].map(b => b.value);
 }
 
+function checkedMarkets() {
+  return [...document.querySelectorAll('.city-cb:checked')].map(box => ({
+    city: box.value,
+    countryCode: box.dataset.country,
+    language: box.dataset.language,
+  }));
+}
+
 function log(msg, type = '') {
   const el = document.getElementById('log-output');
   const ts = new Date().toTimeString().slice(0, 8);
-  el.innerHTML += `<br><span class="${type ? 'log-' + type : ''}">[${ts}] ${msg}</span>`;
+  el.appendChild(document.createElement('br'));
+  const row = document.createElement('span');
+  if (type) row.className = 'log-' + type;
+  row.textContent = `[${ts}] ${msg}`;
+  el.appendChild(row);
   el.scrollTop = el.scrollHeight;
 }
 
@@ -777,17 +822,19 @@ function setStatus(active, txt) {
 function updateStats() {
   document.getElementById('s-found').textContent = S.found;
   document.getElementById('s-qual').textContent = S.qual;
-  document.getElementById('s-sent').textContent = S.sent;
+  document.getElementById('s-sent').textContent = selectedOfficeProspects().length;
   document.getElementById('s-skip').textContent = S.skip;
 }
 
 async function run() {
-  const cities = checked('city-cb');
+  const markets = checkedMarkets();
   const industries = checked('ind-cb');
-  if (!cities.length || !industries.length) { log('Select at least one city and one industry.', 'error'); return; }
+  if (!markets.length || !industries.length) { log('Select at least one city and one industry.', 'error'); return; }
 
   stopping = false;
   S = { found: 0, qual: 0, sent: 0, skip: 0 };
+  OFFICE_IMPORT_STORE.clear();
+  document.getElementById('btn-office-export').disabled = true;
   updateStats();
 
   document.getElementById('btn-run').disabled = true;
@@ -796,11 +843,11 @@ async function run() {
   setStatus(true, 'Running');
 
   const jobs = [];
-  cities.forEach(c => industries.forEach(i => jobs.push({ city: c, industry: i })));
+  markets.forEach(market => industries.forEach(industry => jobs.push({ ...market, industry })));
   const total = jobs.length;
   let done = 0;
 
-  log(`Pipeline started: ${cities.length} cities × ${industries.length} industries = ${total} jobs`, 'info');
+  log(`Pipeline started: ${markets.length} cities × ${industries.length} industries = ${total} jobs`, 'info');
 
   for (const job of jobs) {
     if (stopping) { log('Stopped.', 'warn'); break; }
@@ -813,7 +860,7 @@ async function run() {
       const res = await fetch('/api/run-pipeline', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ city: job.city, industry: job.industry }),
+        body: JSON.stringify(job),
       });
       const data = await res.json();
 
@@ -834,11 +881,23 @@ async function run() {
           log(`  [${tag}] ${l.name} — Score: ${l.websiteScore}/100 — ${l.reason}`, l.sent ? 'success' : l.qualified ? '' : 'skip');
           grid.insertAdjacentHTML('afterbegin', renderCard(l));
           section.style.display = 'block';
+          if (l.qualified) {
+            const key = l.placeId || `${l.countryCode}|${l.name}|${l.address}`;
+            OFFICE_IMPORT_STORE.set(key, l);
+          }
         });
+        updateStats();
+
+        const exportButton = document.getElementById('btn-office-export');
+        const selected = selectedOfficeProspects();
+        const canadaCount = selected.filter(lead => lead.countryCode === 'CA').length;
+        const jordanCount = selected.filter(lead => lead.countryCode === 'JO').length;
+        exportButton.disabled = selected.length === 0;
+        exportButton.textContent = `Download for Office · CA ${canadaCount}/25 · JO ${jordanCount}/25`;
 
         const total_cards = grid.children.length;
         document.getElementById('results-heading').textContent = `All Businesses (${total_cards}) — ${data.qualified} qualified`;
-        log(`✓ ${data.found} scraped · ${data.qualified} qualified · ${data.sent} sent to Make`, 'success');
+        log(`✓ ${data.found} scraped · ${data.qualified} qualified · ${selectedOfficeProspects().length} selected for Office`, 'success');
         if (data.debug) log(`ℹ ${data.debug}`, 'warn');
       }
     } catch (err) {
@@ -854,40 +913,75 @@ async function run() {
   document.getElementById('btn-run').disabled = false;
   document.getElementById('btn-stop').style.display = 'none';
   setStatus(false, 'Idle');
-  document.getElementById('run-msg').textContent = `Last run: ${S.qual} qualified · ${S.sent} sent to pipeline.`;
-  log(`Pipeline complete — ${S.found} scraped · ${S.qual} qualified · ${S.sent} sent`, 'info');
+  document.getElementById('run-msg').textContent = `Last run: ${S.qual} qualified · ${selectedOfficeProspects().length} selected for Office.`;
+  log(`Pipeline complete — ${S.found} scraped · ${S.qual} qualified · no outreach sent`, 'info');
 }
 
 function stop() { stopping = true; }
 
+function selectedOfficeProspects() {
+  const ranked = [...OFFICE_IMPORT_STORE.values()].sort((left, right) => (Number(right.opportunityScore) || 0) - (Number(left.opportunityScore) || 0));
+  return [
+    ...ranked.filter(lead => lead.countryCode === 'CA').slice(0, 25),
+    ...ranked.filter(lead => lead.countryCode === 'JO').slice(0, 25),
+  ];
+}
+
+function downloadOfficeImport() {
+  const prospects = selectedOfficeProspects();
+  if (!prospects.length) return;
+  const payload = JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), prospects }, null, 2);
+  const url = URL.createObjectURL(new Blob([payload], { type: 'application/json' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `lynq-prospects-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  log(`Prepared ${prospects.length} qualified prospects for LYNQ Office. No outreach sent.`, 'success');
+}
+
 function renderCard(l) {
-  const scoreClass = l.websiteScore < 30 ? 'score-bad' : l.websiteScore < 60 ? 'score-mid' : 'score-ok';
+  const h = value => escHtml(value == null ? '' : value);
+  const safeUrl = value => {
+    try {
+      const parsed = new URL(value);
+      return ['http:', 'https:'].includes(parsed.protocol) ? parsed.href : '';
+    } catch { return ''; }
+  };
+  const opportunityScore = Number(l.opportunityScore) || 0;
+  const scoreClass = opportunityScore >= 75 ? 'score-ok' : opportunityScore >= 55 ? 'score-mid' : 'score-bad';
   const cardBorder = l.qualified ? (l.sent ? 'border-color:#22c55e' : 'border-color:#2a2a2a') : 'border-color:#1a1a1a;opacity:0.5';
-  const stars = l.rating ? '★'.repeat(Math.round(l.rating)) + '·'.repeat(5 - Math.round(l.rating)) : '';
-  const photo = l.photo
-    ? `<img class="biz-photo" src="${l.photo}" alt="${l.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+  const roundedRating = Math.min(5, Math.max(0, Math.round(Number(l.rating) || 0)));
+  const stars = roundedRating ? '★'.repeat(roundedRating) + '·'.repeat(5 - roundedRating) : '';
+  const photoUrl = safeUrl(l.photo);
+  const photo = photoUrl
+    ? `<img class="biz-photo" src="${h(photoUrl)}" alt="${h(l.name)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
     + `<div class="biz-photo-placeholder" style="display:none"></div>`
     : `<div class="biz-photo-placeholder"></div>`;
 
   const hours = l.hours && typeof l.hours === 'object'
-    ? Object.entries(l.hours).slice(0, 2).map(([d, h]) => `${d}: ${h}`).join(' · ')
+    ? Object.entries(l.hours).slice(0, 2).map(([day, value]) => `${day}: ${value}`).join(' · ')
     : '';
 
-  const websiteRow = l.website
-    ? `<div class="biz-row"><a href="${l.website}" target="_blank" rel="noopener">${l.website.replace(/^https?:\/\/(www\.)?/, '')}</a></div>`
+  const websiteUrl = safeUrl(l.website);
+  const websiteRow = websiteUrl
+    ? `<div class="biz-row"><a href="${h(websiteUrl)}" target="_blank" rel="noopener">${h(websiteUrl.replace(/^https?:\/\/(www\.)?/, ''))}</a></div>`
     : `<div class="biz-row" style="color:var(--red)">No website</div>`;
 
-  const phoneRow = l.phone ? `<div class="biz-row">${l.phone}</div>` : '';
-  const addrRow  = l.address ? `<div class="biz-row">${l.address}</div>` : '';
-  const hoursRow = hours ? `<div class="biz-row">${hours}</div>` : '';
-  const descRow  = l.description ? `<div class="biz-row" style="display:block;line-height:1.5;margin-top:4px">${l.description.slice(0, 120)}${l.description.length > 120 ? '…' : ''}</div>` : '';
+  const phoneRow = l.phone ? `<div class="biz-row">${h(l.phone)}</div>` : '';
+  const addrRow  = l.address ? `<div class="biz-row">${h(l.address)}</div>` : '';
+  const hoursRow = hours ? `<div class="biz-row">${h(hours)}</div>` : '';
+  const description = String(l.description || '');
+  const descRow  = description ? `<div class="biz-row" style="display:block;line-height:1.5;margin-top:4px">${h(description.slice(0, 120))}${description.length > 120 ? '…' : ''}</div>` : '';
 
   const ratingBlock = l.rating
-    ? `<div class="biz-rating"><span class="stars">${stars}</span><span style="font-size:0.8rem;color:var(--text-dim)">${l.rating} (${l.reviews} reviews)</span></div>`
+    ? `<div class="biz-rating"><span class="stars">${h(stars)}</span><span style="font-size:0.8rem;color:var(--text-dim)">${h(l.rating)} (${h(l.reviews)} reviews)</span></div>`
     : '';
 
   const issuesBlock = l.reason && l.reason !== 'No website'
-    ? `<div class="biz-issues">${l.reason}</div>`
+    ? `<div class="biz-issues">${h(l.reason)}</div>`
     : l.websiteScore === 0 ? `<div class="biz-issues">No website — cold outreach target</div>` : '';
 
   const sentBadge = l.sent
@@ -896,7 +990,7 @@ function renderCard(l) {
       ? `<span class="biz-status" style="color:var(--yellow)">Qualified</span>`
       : `<span class="biz-status" style="color:var(--text-dim)">✓ Good website</span>`;
   const emailTag = l.email
-    ? `<div class="biz-row" style="color:#22c55e">${l.email}</div>`
+    ? `<div class="biz-row" style="color:#22c55e">${h(l.email)}</div>`
     : `<div class="biz-row" style="color:#555">No email found</div>`;
   const idx = leadIdx++;
   LEAD_STORE[idx] = l;
@@ -907,10 +1001,10 @@ function renderCard(l) {
     ${photo}
     <div class="biz-body">
       <div class="biz-top">
-        <div class="biz-name">${l.name}</div>
-        <span class="biz-score ${scoreClass}">${l.websiteScore}/100</span>
+        <div class="biz-name">${h(l.name)}</div>
+        <span class="biz-score ${scoreClass}">Lead ${h(opportunityScore)}/100</span>
       </div>
-      <div class="biz-category">${l.category || l.industry}</div>
+      <div class="biz-category">${h(l.category || l.industry)}</div>
       ${ratingBlock}
       ${websiteRow}
       ${phoneRow}
@@ -942,6 +1036,10 @@ function openModal(lead) {
   document.getElementById('modal-generate').style.display = 'block';
   document.getElementById('modal-results').style.display = 'none';
   document.getElementById('email-sent-note').style.display = 'none';
+  document.getElementById('outreach-approval').checked = false;
+  document.getElementById('outreach-approval-label').textContent = lead.countryCode === 'JO'
+    ? 'I reviewed this exact message and confirm this Jordan business gave prior consent to electronic follow-up.'
+    : 'I reviewed this exact message and confirmed the Canadian business contact basis and recipient relevance.';
   switchTab('email');
   document.getElementById('email-modal').style.display = 'flex';
 }
@@ -977,13 +1075,11 @@ async function generateOutreach() {
   statusEl.style.color = '#777';
   statusEl.textContent = 'Generating email, SMS, and call script…';
 
-  const toEmail = document.getElementById('modal-email').value.trim();
-
   try {
     const res = await fetch('/api/outreach', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ lead: _modalLead, toEmail, sendEmail: false }),
+      body: JSON.stringify({ action: 'draft', lead: _modalLead }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed');
@@ -991,7 +1087,7 @@ async function generateOutreach() {
     _outreachData = data;
 
     // Populate fields
-    document.getElementById('res-subject').textContent = data.subject || '';
+    document.getElementById('res-subject').value = data.subject || '';
     document.getElementById('res-email').value = data.email || '';
     document.getElementById('res-sms').value = data.sms || '';
     document.getElementById('res-call').value = data.callScript || '';
@@ -1003,11 +1099,6 @@ async function generateOutreach() {
 
     document.getElementById('modal-generate').style.display = 'none';
     document.getElementById('modal-results').style.display = 'block';
-
-    // Auto-send email if address was entered
-    if (toEmail && toEmail.includes('@')) {
-      await sendEmailNow();
-    }
 
   } catch (err) {
     btn.disabled = false;
@@ -1022,6 +1113,12 @@ async function sendEmailNow() {
                   prompt('Enter email address to send to:');
   if (!toEmail || !toEmail.includes('@')) return;
 
+  if (!document.getElementById('outreach-approval').checked) {
+    alert('Review the exact message and confirm the lawful contact basis first.');
+    return;
+  }
+  if (!confirm(`Send this exact reviewed email to ${toEmail}?`)) return;
+
   const btn = document.getElementById('btn-send-email');
   btn.disabled = true;
   btn.textContent = 'Sending…';
@@ -1030,7 +1127,18 @@ async function sendEmailNow() {
     const res = await fetch('/api/outreach', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ lead: _modalLead, toEmail, sendEmail: true }),
+      body: JSON.stringify({
+        action: 'send',
+        lead: _modalLead,
+        toEmail,
+        approvedSubject: document.getElementById('res-subject').value,
+        approvedEmail: document.getElementById('res-email').value,
+        approval: {
+          messageReviewed: true,
+          contactBasisConfirmed: true,
+          priorConsentConfirmed: _modalLead.countryCode === 'JO',
+        },
+      }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Send failed');
@@ -1054,7 +1162,7 @@ async function sendLeadManual(l) {
   btn.disabled = true;
   btn.textContent = 'Sending…';
   try {
-    const res = await fetch('https://hook.us2.make.com/di7iq2r22kae4ru93kkf6tni1n7lnhf7', {
+    const res = await fetch('/api/agent-webhook', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1108,7 +1216,7 @@ async function sendToAgent() {
   statusEl.style.color = 'var(--text-dim)';
 
   try {
-    const res = await fetch('https://hook.us2.make.com/di7iq2r22kae4ru93kkf6tni1n7lnhf7', {
+    const res = await fetch('/api/agent-webhook', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ first_name, last_name, email, company, linkedin_url }),
@@ -1669,6 +1777,8 @@ function redditTimeAgo(unixTs) {
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+restoreSession();
 </script>
 </body>
 </html>

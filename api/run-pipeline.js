@@ -1,6 +1,7 @@
 const https = require('https');
 const http = require('http');
 const { URL } = require('url');
+const { requireAdmin } = require('./_admin-auth');
 
 function httpRequest(url, options = {}, body = null) {
   return new Promise((resolve, reject) => {
@@ -78,14 +79,26 @@ async function checkWebsite(url) {
 }
 
 module.exports = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (!requireAdmin(req, res)) return;
 
-  const { city, industry } = req.body || {};
+  const {
+    city,
+    industry,
+    countryCode = 'CA',
+    language = 'en',
+    limit = 10,
+    minRating,
+    minReviews,
+  } = req.body || {};
   if (!city || !industry) return res.status(400).json({ error: 'city and industry required' });
+
+  const region = String(countryCode).toUpperCase();
+  if (!['CA', 'JO'].includes(region)) return res.status(400).json({ error: 'countryCode must be CA or JO' });
+  const safeLanguage = ['en', 'ar'].includes(language) ? language : 'en';
+  const safeLimit = Math.min(25, Math.max(1, Number(limit) || 10));
+  const ratingFloor = Number(minRating) || (region === 'JO' ? 4.3 : 4.4);
+  const reviewFloor = Number(minReviews) || (region === 'JO' ? 20 : 30);
 
   const OUTSCRAPER_KEY = process.env.OUTSCRAPER_API_KEY;
   if (!OUTSCRAPER_KEY) return res.status(500).json({ error: 'Missing OUTSCRAPER_API_KEY' });
@@ -95,8 +108,8 @@ module.exports = async (req, res) => {
 
   // ── Scrape via sync API (instant, no polling needed) ──────────────────────
   const params = new URLSearchParams({
-    query, limit: '10', language: 'en', region: 'CA', async: 'false',
-    fields: 'name,full_address,phone,site,owner_name,rating,reviews,type,photo,description',
+    query, limit: String(safeLimit), language: safeLanguage, region, async: 'false',
+    fields: 'place_id,name,full_address,phone,site,owner_name,rating,reviews,type,photo,description,working_hours',
   });
 
   let results = [];
@@ -213,6 +226,15 @@ module.exports = async (req, res) => {
     } catch { return { score: 5, reason: 'Site error', email: '' }; }
   }
 
+  // Avoid charging for duplicate analysis when the provider returns the same place twice.
+  const seen = new Set();
+  results = results.filter(biz => {
+    const key = biz.place_id || `${String(biz.name || '').toLowerCase()}|${String(biz.full_address || '').toLowerCase()}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
   // ── Run all analysis in parallel ──────────────────────────────────────────
   const analyses = await Promise.all(results.map(biz => analyseAndFindEmail(biz.site)));
 
@@ -220,24 +242,44 @@ module.exports = async (req, res) => {
     const { score, reason, email } = analyses[i];
     const websiteScore = biz.site ? score : 0;
     const finalReason  = biz.site ? reason : 'No website';
-    // Qualified = genuinely needs help: no site OR bad site (score < 55)
-    const qualified    = !biz.site || websiteScore < 55;
+    const rating = Number(biz.rating) || 0;
+    const reviews = Number(biz.reviews) || 0;
+    const digitalNeed = !biz.site || websiteScore < 55;
+    const reputationFit = rating >= ratingFloor && reviews >= reviewFloor;
+    const qualified = digitalNeed && reputationFit;
+
+    const reputationScore = (rating >= 4.7 ? 25 : rating >= 4.4 ? 20 : rating >= 4 ? 10 : 0)
+      + (reviews >= 100 ? 15 : reviews >= 30 ? 10 : reviews >= 10 ? 5 : 0);
+    const digitalNeedScore = !biz.site ? 50 : Math.round(Math.max(0, (55 - websiteScore) / 55 * 50));
+    const contactabilityScore = (email ? 5 : 0) + (biz.phone ? 5 : 0);
+    const opportunityScore = Math.min(100, reputationScore + digitalNeedScore + contactabilityScore);
+    const qualificationReasons = [
+      digitalNeed ? finalReason : 'Website is already reasonably strong',
+      rating ? `${rating}★ from ${reviews} reviews` : 'No review signal',
+      email || biz.phone ? 'Direct contact channel found' : 'No direct contact channel found',
+    ];
     return {
+      placeId:     biz.place_id      || '',
       name:        biz.name         || '',
       phone:       biz.phone        || '',
       website:     biz.site         || '',
       address:     biz.full_address || '',
       industry,
       city,
-      rating:      biz.rating       || null,
-      reviews:     biz.reviews      || 0,
+      countryCode: region,
+      language:    safeLanguage,
+      rating:      rating           || null,
+      reviews,
       category:    biz.type         || industry,
       photo:       biz.photo        || '',
       description: biz.description  || '',
       ownerName:   biz.owner_name   || '',
+      hours:       biz.working_hours || null,
       email,
       websiteScore,
       reason:      finalReason,
+      opportunityScore,
+      qualificationReasons,
       qualified,
       sent:        false,
     };
@@ -245,9 +287,10 @@ module.exports = async (req, res) => {
 
   return res.status(200).json({
     found:     leads.length,
-    qualified: leads.length,
+    qualified: leads.filter(lead => lead.qualified).length,
     sent:      0,
-    skipped:   0,
-    leads,
+    skipped:   leads.filter(lead => !lead.qualified).length,
+    leads:     leads.sort((a, b) => b.opportunityScore - a.opportunityScore),
+    criteria:  { countryCode: region, minRating: ratingFloor, minReviews: reviewFloor, websiteScoreBelow: 55 },
   });
 };

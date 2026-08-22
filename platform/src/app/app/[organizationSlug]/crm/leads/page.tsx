@@ -1,4 +1,5 @@
 import { inArray } from "drizzle-orm";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { loadEnv } from "@/lib/env";
 import { createDbClient } from "@/db/client";
@@ -49,7 +50,17 @@ export default async function LeadsPage({ params }: { params: Promise<{ organiza
   return (
     <div className="flex flex-col gap-8 px-6 py-8 md:px-10">
       <Breadcrumbs items={[{ label: "LYNQ", href: "/app" }, { label: organizationName, href: `/app/${organizationSlug}` }, { label: "CRM", href: `/app/${organizationSlug}/crm` }, { label: "Leads" }]} />
-      <PageHeader title="Leads" />
+      <PageHeader
+        title="Leads"
+        actions={
+          <Link
+            href={`/app/${organizationSlug}/crm/leads/import`}
+            className="lynq-transition flex min-h-11 items-center rounded-sm bg-foreground px-5 text-xs font-medium uppercase tracking-[0.08em] text-background hover:opacity-90"
+          >
+            Import prospects
+          </Link>
+        }
+      />
 
       <CreateLeadForm
         contacts={contacts.map((c) => ({ id: c.id, name: c.displayName }))}
