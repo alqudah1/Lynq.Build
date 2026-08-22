@@ -57,10 +57,12 @@ export default async function LeadsPage({ params }: { params: Promise<{ organiza
     return typeof countryCode === "string" ? countryCode : null;
   };
   const countryCodeForLead = (companyId: string | null, phone?: string | null): string | null => {
+    const companyCountryCode = countryCodeForCompany(companyId);
+    if (companyCountryCode === "CA" || companyCountryCode === "JO") return companyCountryCode;
     const digits = phone?.replace(/\D/g, "") ?? "";
     if (digits.startsWith("962")) return "JO";
     if (digits.startsWith("1")) return "CA";
-    return countryCodeForCompany(companyId);
+    return null;
   };
 
   const ownerIds = [...new Set(leads.map((l) => l.ownerUserId).filter((id): id is string => Boolean(id)))];

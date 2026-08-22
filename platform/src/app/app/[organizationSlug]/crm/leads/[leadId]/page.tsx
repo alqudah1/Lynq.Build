@@ -76,12 +76,13 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ org
   const memberNameById = new Map(members.map((m) => [m.userId, m.name ?? m.email]));
   const contactPhone = contact?.primaryPhone ?? company?.phone;
   const contactPhoneDigits = contactPhone?.replace(/\D/g, "") ?? "";
-  const senderCountryCode = contactPhoneDigits.startsWith("962")
-    ? "JO"
-    : contactPhoneDigits.startsWith("1")
-      ? "CA"
-      : typeof company?.address?.countryCode === "string"
-        ? company.address.countryCode
+  const companyCountryCode = typeof company?.address?.countryCode === "string" ? company.address.countryCode : null;
+  const senderCountryCode = companyCountryCode === "CA" || companyCountryCode === "JO"
+    ? companyCountryCode
+    : contactPhoneDigits.startsWith("962")
+      ? "JO"
+      : contactPhoneDigits.startsWith("1")
+        ? "CA"
         : null;
   const redirectPath = `/app/${organizationSlug}/crm/leads/${leadId}`;
   const target = { leadId };
