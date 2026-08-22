@@ -8,8 +8,11 @@ function isValidEmail(value) {
 
 function complianceFooter() {
   const address = process.env.LYNQ_BUSINESS_ADDRESS;
+  const replyEmail = process.env.OUTREACH_REPLY_TO || 'mustafa@lynq.build';
+  const whatsapp = process.env.OUTREACH_WHATSAPP_NUMBER;
+  const contactLine = [replyEmail, whatsapp ? `WhatsApp ${whatsapp}` : '', 'https://lynq.build'].filter(Boolean).join(' · ');
   if (!address) return '\n\n[Configure LYNQ_BUSINESS_ADDRESS before sending]\nhello@lynq.build · https://lynq.build\nReply “unsubscribe” to stop receiving messages.';
-  return `\n\nLYNQ — ${address}\nhello@lynq.build · https://lynq.build\nReply “unsubscribe” to stop receiving messages.`;
+  return `\n\nLYNQ — ${address}\n${contactLine}\nReply “unsubscribe” to stop receiving messages.`;
 }
 
 // Pick a relevant portfolio example based on industry
