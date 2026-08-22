@@ -51,6 +51,11 @@ export default async function LeadsPage({ params }: { params: Promise<{ organiza
   ]);
   const contactById = new Map(leadContacts.map((contact) => [contact.id, contact]));
   const companyById = new Map(leadCompanies.map((company) => [company.id, company]));
+  const countryCodeForCompany = (companyId: string | null): string | null => {
+    if (!companyId) return null;
+    const countryCode = companyById.get(companyId)?.address?.countryCode;
+    return typeof countryCode === "string" ? countryCode : null;
+  };
 
   const ownerIds = [...new Set(leads.map((l) => l.ownerUserId).filter((id): id is string => Boolean(id)))];
   const owners = ownerIds.length > 0 ? await db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(inArray(users.id, ownerIds)) : [];
@@ -99,6 +104,7 @@ export default async function LeadsPage({ params }: { params: Promise<{ organiza
                 lead={lead}
                 ownerName={lead.ownerUserId ? (ownerNameById.get(lead.ownerUserId) ?? "—") : "—"}
                 companyName={lead.companyId ? (companyById.get(lead.companyId)?.name ?? `Lead ${lead.id.slice(0, 8)}`) : `Lead ${lead.id.slice(0, 8)}`}
+                countryCode={countryCodeForCompany(lead.companyId)}
                 contact={lead.contactId && contactById.has(lead.contactId) ? {
                   name: contactById.get(lead.contactId)!.displayName,
                   email: contactById.get(lead.contactId)!.primaryEmail,

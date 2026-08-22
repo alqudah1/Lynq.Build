@@ -13,7 +13,7 @@ const STATUS_TONE: Record<string, BadgeTone> = {
   converted: "success",
 };
 
-export function LeadRow({ organizationSlug, lead, ownerName, companyName, contact }: { organizationSlug: string; lead: CrmLead; ownerName: string; companyName: string; contact?: { name: string; email: string | null; phone: string | null } }) {
+export function LeadRow({ organizationSlug, lead, ownerName, companyName, contact, countryCode }: { organizationSlug: string; lead: CrmLead; ownerName: string; companyName: string; contact?: { name: string; email: string | null; phone: string | null }; countryCode?: string | null }) {
   return (
     <Tr className="[content-visibility:auto] [contain-intrinsic-size:56px]">
       <Td>
@@ -27,7 +27,7 @@ export function LeadRow({ organizationSlug, lead, ownerName, companyName, contac
       <Td className="hidden text-muted sm:table-cell">{lead.score ?? "—"}</Td>
       <Td className="hidden text-muted md:table-cell">{contact ? <span title={contact.email ?? contact.phone ?? undefined}>{contact.name}</span> : "—"}</Td>
       <Td className="hidden text-muted lg:table-cell">{ownerName}</Td>
-      <Td><ContactActions email={contact?.email} phone={contact?.phone} businessName={companyName} /></Td>
+      <Td><ContactActions email={contact?.email} phone={contact?.phone} businessName={companyName} countryCode={countryCode} /></Td>
     </Tr>
   );
 }

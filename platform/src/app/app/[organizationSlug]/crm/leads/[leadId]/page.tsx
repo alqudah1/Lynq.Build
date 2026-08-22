@@ -124,6 +124,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ org
               email={contact?.primaryEmail}
               phone={contact?.primaryPhone ?? company?.phone}
               businessName={company?.name ?? contact?.displayName ?? `Lead ${lead.id.slice(0, 8)}`}
+              countryCode={typeof company?.address?.countryCode === "string" ? company.address.countryCode : null}
             />
           </div>
         ) : null}
