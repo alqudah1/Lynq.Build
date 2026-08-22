@@ -1,7 +1,9 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { z } from "zod";
+import { and, eq } from "drizzle-orm";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
+import { crmCompanies } from "@/db/schema";
 import { createContact } from "./contacts";
 import { createCompany } from "./companies";
 import { createContactCompanyRelationship } from "./relationships";
@@ -84,6 +86,21 @@ export async function importProspects(
         idempotencyKey: `lynq-prospect-company:${key}`,
         actorUserId: input.actorUserId,
       });
+      const companyAddress = companyResult.company.address ?? {};
+      if (companyAddress.countryCode !== prospect.countryCode) {
+        await db
+          .update(crmCompanies)
+          .set({
+            address: {
+              ...companyAddress,
+              formatted: prospect.address || companyAddress.formatted,
+              city: prospect.city || companyAddress.city,
+              countryCode: prospect.countryCode,
+            },
+            updatedAt: new Date(),
+          })
+          .where(and(eq(crmCompanies.organizationId, input.organizationId), eq(crmCompanies.id, companyResult.company.id)));
+      }
 
       let contactId: string | undefined;
       if (prospect.email || prospect.phone) {
