@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "discover:leads": "node scripts/discover-leads.js"
   },
   "dependencies": {
     "nodemailer": "^9.0.5"
