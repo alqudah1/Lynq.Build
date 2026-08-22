@@ -26,6 +26,22 @@ export interface ProviderCredential {
   externalAccountId: string | null;
 }
 
+/**
+ * A provider-native approved-template directive. WhatsApp business-initiated
+ * messages MUST be an approved template, not free text — the rendered
+ * `bodyText` on the message row is what a human reviews and what LYNQ
+ * stores, while THIS is what the provider is actually asked to send. The
+ * two are kept identical by construction (see `lib/lead-gen/outreach.ts`).
+ * Providers with no template concept ignore it.
+ */
+export interface ProviderTemplateDirective {
+  name: string;
+  /** BCP-47 tag the provider expects, e.g. "en". */
+  languageCode: string;
+  /** Positional body parameters in `{{1}}`…`{{n}}` order. */
+  bodyParameters: string[];
+}
+
 export interface SendMessageInput {
   organizationId: string;
   connectionId: string;
@@ -34,6 +50,7 @@ export interface SendMessageInput {
   subject: string | null;
   bodyText: string;
   idempotencyKey: string;
+  providerTemplate?: ProviderTemplateDirective | null;
 }
 
 export interface SendMessageResult {

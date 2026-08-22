@@ -9,7 +9,9 @@ import { resolveProviderAdapter } from "./providers/registry";
 import { findOrCreateConversationUnauthorized } from "./conversations";
 import { ingestInboundMessage } from "./messages";
 import { resolveContactByIdentity, recordExternalIdentitySeen } from "./identity";
-import type { CommunicationDeliveryEventType, IntegrationProvider } from "./validation";
+import { suppressIdentity, upsertConsent, getActiveSuppression, liftSuppression } from "./consent";
+import { detectOptOutIntent } from "@/lib/lead-gen/outreach";
+import type { CommunicationChannel, CommunicationDeliveryEventType, IntegrationProvider } from "./validation";
 
 type Db = NeonHttpDatabase<Record<string, unknown>>;
 
@@ -99,7 +101,91 @@ async function handleNormalizedInbound(db: Db, input: { organizationId: string; 
     receivedAt: event.receivedAt,
   });
 
+  await applyOptOutIntent(db, {
+    organizationId: input.organizationId,
+    channel: connection.integrationType,
+    rawIdentity: event.senderReference,
+    contactId,
+    bodyText: event.bodyText,
+  });
+
   return { processingStatus: "processed", normalizedEntityType: "communication_message", normalizedEntityId: message.id };
+}
+
+/**
+ * ============================================================================
+ * STOP / START — applied inside the webhook, before anything else
+ * ============================================================================
+ * Opt-out is a compliance obligation, not a classification task. A
+ * recipient who replies "STOP" is suppressed here, synchronously, by a
+ * deterministic keyword check — never by a model, never by a queued job,
+ * and never contingent on a human or an agent getting to the reply. The
+ * suppression insert deliberately runs with a `null` actor and no
+ * authority check: there is no user on a provider callback, and an
+ * opt-out must take effect even if every other step fails.
+ *
+ * The consent RECORD is best-effort on top of that. It needs an actor
+ * holding `communications_manage_consent`, so it runs as the org owner
+ * (the same bootstrap-authority actor the CRM-activity path already
+ * uses) and is swallowed on failure — losing the audit-friendly consent
+ * row is regrettable, losing the suppression would be a violation.
+ */
+export async function applyOptOutIntent(
+  db: Db,
+  input: { organizationId: string; channel: CommunicationChannel; rawIdentity: string; contactId: string | null; bodyText: string }
+): Promise<"opted_out" | "opted_in" | "no_intent"> {
+  // Only channels a person can actually reply "STOP" on.
+  if (input.channel !== "whatsapp" && input.channel !== "sms") return "no_intent";
+
+  const intent = detectOptOutIntent(input.bodyText);
+  if (!intent) return "no_intent";
+
+  const { resolveOrganizationOwnerUserId } = await import("./crm-integration");
+  const systemActor = await resolveOrganizationOwnerUserId(db, input.organizationId);
+
+  if (intent === "opt_out") {
+    await suppressIdentity(db, {
+      organizationId: input.organizationId,
+      channel: input.channel,
+      rawIdentity: input.rawIdentity,
+      suppressionReason: "user_opt_out",
+      source: "reply_stop",
+      actorUserId: null,
+    });
+    if (systemActor) {
+      await upsertConsent(db, {
+        organizationId: input.organizationId,
+        channel: input.channel,
+        rawIdentity: input.rawIdentity,
+        contactId: input.contactId,
+        consentStatus: "opted_out",
+        consentSource: "reply_stop",
+        actorUserId: systemActor,
+      }).catch(() => undefined);
+    }
+    await recordAuditEvent(db, { eventType: "communication_consent_updated", organizationId: input.organizationId, targetType: "communication_consent_record", targetId: null, metadata: { channel: input.channel, source: "reply_stop", consentStatus: "opted_out" } });
+    return "opted_out";
+  }
+
+  // "START" only lifts a suppression that this same opt-out mechanism
+  // created. A hard bounce, a complaint or a compliance hold is never
+  // undone by an inbound keyword.
+  const active = await getActiveSuppression(db, { organizationId: input.organizationId, channel: input.channel, rawIdentity: input.rawIdentity });
+  if (active && active.suppressionReason === "user_opt_out" && systemActor) {
+    await liftSuppression(db, { organizationId: input.organizationId, suppressionId: active.id, actorUserId: systemActor }).catch(() => undefined);
+  }
+  if (systemActor) {
+    await upsertConsent(db, {
+      organizationId: input.organizationId,
+      channel: input.channel,
+      rawIdentity: input.rawIdentity,
+      contactId: input.contactId,
+      consentStatus: "opted_in",
+      consentSource: "reply_start",
+      actorUserId: systemActor,
+    }).catch(() => undefined);
+  }
+  return "opted_in";
 }
 
 async function applyDeliveryEvent(db: Db, input: { organizationId: string; provider: IntegrationProvider; providerEventId: string; delivery: ReturnType<NonNullable<ReturnType<typeof resolveProviderAdapter>["normalizeDeliveryEvent"]>> }): Promise<{ processingStatus: "processed" | "failed"; normalizedEntityType: string | null; normalizedEntityId: string | null }> {

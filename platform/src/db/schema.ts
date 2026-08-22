@@ -3288,6 +3288,16 @@ export const crmCompanies = pgTable("crm_companies", {
   annualRevenueRange: text("annual_revenue_range"),
   phone: text("phone"),
   address: jsonb("address"),
+  /**
+   * The recorded outcome of the demo quality review for this business's
+   * generated demo — score, the individual check results, the reviewer
+   * and when. Outreach eligibility reads THIS, never a live recompute at
+   * send time, so what a human (or a Claude reviewer) actually signed off
+   * on is what gates the message. Null means "never reviewed", which is
+   * not the same as "failed" and is equally ineligible.
+   * Validated by `demoReviewRecordSchema` in `lib/lead-gen/demo-quality.ts`.
+   */
+  demoReview: jsonb("demo_review"),
   lifecycleStage: crmLifecycleStageEnum("lifecycle_stage").notNull().default("lead"),
   status: crmRecordStatusEnum("status").notNull().default("active"),
   ownerUserId: uuid("owner_user_id").references(() => users.id, { onDelete: "set null" }),
@@ -4942,6 +4952,18 @@ export const communicationMessages = pgTable("communication_messages", {
   recipientReference: text("recipient_reference"),
   subject: text("subject"),
   bodyText: text("body_text"),
+  /**
+   * The provider-native approved-template directive this outbound message
+   * must be dispatched as — `{ name, languageCode, bodyParameters[] }`,
+   * validated by `providerTemplateDirectiveSchema` at every write. Null for
+   * every channel and message that sends as free text. WhatsApp
+   * business-initiated messages are template-only, so this is what the
+   * Cloud API adapter actually sends; `bodyText` stays the human-reviewable
+   * rendering of exactly the same content, and the two are produced
+   * together (see `lib/lead-gen/outreach.ts`) so approving one approves
+   * the other. Never carries a credential or any provider identifier.
+   */
+  providerTemplate: jsonb("provider_template"),
   contentArtifactId: uuid("content_artifact_id").references(() => agentArtifacts.id, { onDelete: "set null" }),
   status: communicationMessageStatusEnum("status").notNull().default("draft"),
   providerMessageId: text("provider_message_id"),
@@ -5150,6 +5172,27 @@ export const communicationBulkRecipients = pgTable("communication_bulk_recipient
   messageId: uuid("message_id").references(() => communicationMessages.id, { onDelete: "set null" }),
   status: communicationBulkRecipientStatusEnum("status").notNull().default("pending"),
   skipReason: text("skip_reason"),
+  /**
+   * Per-recipient template values, frozen at snapshot time alongside the
+   * recipient itself. A personalized campaign gives every business its own
+   * name, its own demo URL and its own market price; the batch-level
+   * `templateValues` passed to `startBulkBatch` remains the default these
+   * are merged over. Without this the whole batch could only ever send one
+   * identical rendered body.
+   */
+  templateValues: jsonb("template_values"),
+  /** The frozen provider-native approved-template directive for this recipient (WhatsApp). */
+  providerTemplate: jsonb("provider_template"),
+  /**
+   * Which sender this recipient is messaged from. Per-recipient rather than
+   * per-batch because an organization legitimately runs one connection per
+   * market — the Jordanian number and the Canadian number are different
+   * WhatsApp Business phone numbers — and a recipient must be reached from
+   * their own market's sender.
+   */
+  integrationConnectionId: uuid("integration_connection_id").references(() => integrationConnections.id, { onDelete: "set null" }),
+  /** The provider-native thread key, frozen so an inbound reply matches the conversation this send opened. */
+  externalThreadId: text("external_thread_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   foreignKey({

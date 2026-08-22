@@ -88,3 +88,35 @@ export const templateVariableSchema = z.object({
 export const templateVariableSchemaArray = z.array(templateVariableSchema).max(30);
 
 export const idempotencyKeySchema = z.string().trim().min(1).max(200);
+
+/**
+ * A provider-native approved-template directive, validated at every write
+ * so a malformed one is impossible to persist rather than discovered by
+ * Meta at send time. WhatsApp template names are lowercase alphanumeric
+ * plus underscore; parameters may not contain a newline or tab (Meta
+ * rejects the whole message if they do).
+ */
+export const providerTemplateDirectiveSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1)
+    .max(512)
+    .regex(/^[a-z0-9_]+$/, "template name must be lowercase letters, numbers and underscores"),
+  languageCode: z
+    .string()
+    .trim()
+    .min(2)
+    .max(15)
+    .regex(/^[a-zA-Z]{2,3}(_[A-Za-z]{2,4})?$/, "language code must look like \"en\" or \"en_US\""),
+  bodyParameters: z
+    .array(
+      z
+        .string()
+        .min(1)
+        .max(1024)
+        .refine((value) => !/[\n\r\t]/.test(value), "template parameters must not contain a newline or tab")
+    )
+    .max(30),
+});
+export type ProviderTemplateDirectiveInput = z.infer<typeof providerTemplateDirectiveSchema>;

@@ -3,6 +3,7 @@ import type { CrmLead } from "@/lib/crm/leads";
 import { Tr, Td } from "@/components/ui/Table";
 import { Badge, type BadgeTone } from "@/components/ui/Badge";
 import { ContactActions } from "@/components/dashboard/crm/ContactActions";
+import type { CompanyOutreachContext } from "@/lib/lead-gen/company-facts";
 
 const STATUS_TONE: Record<string, BadgeTone> = {
   new: "neutral",
@@ -13,7 +14,7 @@ const STATUS_TONE: Record<string, BadgeTone> = {
   converted: "success",
 };
 
-export function LeadRow({ organizationSlug, lead, ownerName, companyName, contact, countryCode, demoSlug }: { organizationSlug: string; lead: CrmLead; ownerName: string; companyName: string; contact?: { name: string; email: string | null; phone: string | null }; countryCode?: string | null; demoSlug?: string | null }) {
+export function LeadRow({ organizationSlug, lead, ownerName, companyName, contact, outreachContext }: { organizationSlug: string; lead: CrmLead; ownerName: string; companyName: string; contact?: { name: string; email: string | null; phone: string | null }; outreachContext: CompanyOutreachContext | null }) {
   return (
     <Tr className="[content-visibility:auto] [contain-intrinsic-size:56px]">
       <Td>
@@ -27,7 +28,17 @@ export function LeadRow({ organizationSlug, lead, ownerName, companyName, contac
       <Td className="hidden text-muted sm:table-cell">{lead.score ?? "—"}</Td>
       <Td className="hidden text-muted md:table-cell">{contact ? <span title={contact.email ?? contact.phone ?? undefined}>{contact.name}</span> : "—"}</Td>
       <Td className="hidden text-muted lg:table-cell">{ownerName}</Td>
-      <Td><ContactActions email={contact?.email} phone={contact?.phone} businessName={companyName} countryCode={countryCode} demoSlug={demoSlug} /></Td>
+      <Td>
+        <ContactActions
+          email={contact?.email}
+          phone={contact?.phone}
+          businessName={companyName}
+          market={outreachContext?.market ?? null}
+          demoUrl={outreachContext?.demoUrl ?? null}
+          outreach={outreachContext?.outreach ?? null}
+          eligibility={outreachContext?.eligibility ?? { eligible: false, reason: "never_reviewed", detail: "No prospect company is linked to this lead.", score: null }}
+        />
+      </Td>
     </Tr>
   );
 }

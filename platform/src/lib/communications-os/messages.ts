@@ -16,6 +16,7 @@ import {
   RecipientSuppressedError,
   ConsentRequiredError,
   InvalidRecipientError,
+  ProviderTemporarilyUnavailableError,
 } from "./errors";
 import { resolveConversationById, touchConversationLastMessageAt } from "./conversations";
 import { resolveConnectionById, requireConnectionUsable } from "./connections";
@@ -24,8 +25,9 @@ import { getActiveSuppression } from "./consent";
 import { requestMessageSendApproval } from "./agents";
 import { enforceSendRateLimits } from "./rate-limits";
 import { recordCommunicationCrmActivity } from "./crm-integration";
+import { providerTemplateDirectiveSchema } from "./validation";
 import type { CommunicationChannel, CommunicationDirection, CommunicationMessageStatus, CommunicationFailureClass, IntegrationProvider } from "./validation";
-import type { SendMessageResult } from "./providers/types";
+import type { ProviderTemplateDirective, SendMessageResult } from "./providers/types";
 
 type Db = NeonHttpDatabase<Record<string, unknown>>;
 
@@ -41,6 +43,7 @@ export interface CommunicationMessage {
   recipientReference: string | null;
   subject: string | null;
   bodyText: string | null;
+  providerTemplate: ProviderTemplateDirective | null;
   contentArtifactId: string | null;
   status: CommunicationMessageStatus;
   providerMessageId: string | null;
@@ -70,7 +73,13 @@ const ALLOWED_TRANSITIONS: Record<CommunicationMessageStatus, CommunicationMessa
   pending_approval: ["approved", "draft", "cancelled"],
   approved: ["queued", "cancelled"],
   queued: ["sending", "cancelled"],
-  sending: ["sent", "failed"],
+  // `sending -> queued` exists for exactly one case: the provider
+  // POSITIVELY refused the request (a rate limit, an explicit 429) and
+  // therefore created nothing, so releasing the claim and letting the
+  // durable job retry with backoff cannot duplicate a delivery. It is
+  // never used for an UNCERTAIN outcome — that still parks at `sending`
+  // for reconciliation, because a blind retry there could double-send.
+  sending: ["sent", "failed", "queued"],
   sent: ["delivered", "failed"],
   delivered: [],
   failed: [],
@@ -91,6 +100,14 @@ export interface CreateDraftMessageInput {
   recipientReference: string;
   subject?: string | null;
   bodyText: string;
+  /**
+   * Required for any business-initiated WhatsApp message — Meta will not
+   * deliver free text to someone outside an open 24-hour service window.
+   * `bodyText` must be the rendering of this same template with these
+   * same parameters, so the human approving the draft is approving the
+   * exact string Meta will deliver.
+   */
+  providerTemplate?: ProviderTemplateDirective | null;
   idempotencyKey: string;
   createdByAgentId?: string | null;
   actorUserId: string;
@@ -107,6 +124,11 @@ export async function createDraftMessage(db: Db, input: CreateDraftMessageInput)
     if (!validation.valid) throw new InvalidRecipientError(validation.reason ?? "invalid recipient");
   }
 
+  // Validated here rather than at send time: a template directive Meta
+  // would reject must never reach an approved batch, where the failure
+  // would surface one recipient at a time in production.
+  const providerTemplate = input.providerTemplate ? providerTemplateDirectiveSchema.parse(input.providerTemplate) : null;
+
   const [row] = await db
     .insert(communicationMessages)
     .values({
@@ -119,6 +141,7 @@ export async function createDraftMessage(db: Db, input: CreateDraftMessageInput)
       recipientReference: input.recipientReference,
       subject: input.subject ?? null,
       bodyText: input.bodyText,
+      providerTemplate,
       idempotencyKey: input.idempotencyKey,
       createdByUserId: input.createdByAgentId ? null : input.actorUserId,
       createdByAgentId: input.createdByAgentId ?? null,
@@ -387,7 +410,16 @@ export async function processSendJob(db: Db, input: { organizationId: string; me
   try {
     result = await adapter.sendMessage(
       { secret: secret ?? "", externalAccountId: connection.externalAccountId },
-      { organizationId: input.organizationId, connectionId: connection.id, recipientReference: claimed.recipientReference, senderReference: claimed.senderReference, subject: claimed.subject, bodyText: claimed.bodyText ?? "", idempotencyKey: claimed.idempotencyKey }
+      {
+        organizationId: input.organizationId,
+        connectionId: connection.id,
+        recipientReference: claimed.recipientReference,
+        senderReference: claimed.senderReference,
+        subject: claimed.subject,
+        bodyText: claimed.bodyText ?? "",
+        idempotencyKey: claimed.idempotencyKey,
+        providerTemplate: claimed.providerTemplate,
+      }
     );
   } catch (err) {
     const mapped = adapter.mapProviderError(err);
@@ -396,6 +428,16 @@ export async function processSendJob(db: Db, input: { organizationId: string; me
   }
 
   if (result.outcome === "rejected") {
+    if (result.failureClass === "transient_provider_error") {
+      // The provider refused the request outright and created nothing —
+      // a rate limit or a throttle. Release the claim back to `queued`
+      // and throw, so the DURABLE job retries with the queue's own
+      // exponential backoff instead of this message dying on a condition
+      // that clears itself in seconds. Safe against duplication
+      // precisely because "rejected" means no message exists provider-side.
+      await transitionMessageStatus(db, { organizationId: input.organizationId, messageId: input.messageId, fromStatus: claimed.status, toStatus: "queued", expectedRevision: claimed.revision, extraSet: { failureCode: result.failureCode } });
+      throw new ProviderTemporarilyUnavailableError(result.failureCode ?? "transient_provider_error");
+    }
     await failMessage(db, claimed, result.failureClass ?? "provider_rejected", result.failureCode);
     return { outcome: "failed" };
   }
@@ -416,7 +458,7 @@ export async function processSendJob(db: Db, input: { organizationId: string; me
     fromStatus: claimed.status,
     toStatus: "sent",
     expectedRevision: claimed.revision,
-    extraSet: { sentAt, providerMessageId: result.providerMessageId, provider: connection.provider },
+    extraSet: { sentAt, providerMessageId: result.providerMessageId, provider: connection.provider, failureCode: null, failureClass: null },
   });
 
   await recordAuditEvent(db, { eventType: "communication_message_sent", organizationId: input.organizationId, targetType: "communication_message", targetId: sent.id, metadata: { channel: sent.channel, provider: connection.provider } });

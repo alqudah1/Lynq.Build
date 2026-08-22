@@ -9,6 +9,7 @@ import { StaleCrmUpdateError } from "./errors";
 import { isPostgresUniqueViolation } from "@/lib/brain/db-errors";
 import { normalizeDomain } from "./normalize";
 import type { CrmLifecycleStage } from "./validation";
+import { demoReviewRecordSchema, type DemoReviewRecord } from "@/lib/lead-gen/demo-quality";
 
 type Db = NeonHttpDatabase<Record<string, unknown>>;
 
@@ -25,6 +26,8 @@ export interface CrmCompany {
   annualRevenueRange: string | null;
   phone: string | null;
   address: Record<string, unknown> | null;
+  /** Raw stored demo quality verdict; parse with `parseDemoReview` before trusting its shape. */
+  demoReview: unknown;
   lifecycleStage: CrmLifecycleStage;
   status: "active" | "archived";
   ownerUserId: string | null;
@@ -157,6 +160,12 @@ export interface UpdateCompanyInput {
   annualRevenueRange?: string | null;
   phone?: string | null;
   address?: Record<string, unknown> | null;
+  /**
+   * The demo quality verdict. Validated here rather than trusted from the
+   * caller, so an unparseable review can never be stored — and a stored
+   * review is therefore always something `evaluateDemoEligibility` can read.
+   */
+  demoReview?: DemoReviewRecord | null;
   lifecycleStage?: CrmLifecycleStage;
   ownerUserId?: string | null;
   sourceId?: string | null;
@@ -180,6 +189,7 @@ export async function updateCompany(db: Db, input: UpdateCompanyInput): Promise<
   if (input.employeeRange !== undefined) values.employeeRange = input.employeeRange;
   if (input.annualRevenueRange !== undefined) values.annualRevenueRange = input.annualRevenueRange;
   if (input.phone !== undefined) values.phone = input.phone;
+  if (input.demoReview !== undefined) values.demoReview = input.demoReview === null ? null : demoReviewRecordSchema.parse(input.demoReview);
   if (input.address !== undefined) values.address = input.address;
   if (input.lifecycleStage !== undefined) values.lifecycleStage = input.lifecycleStage;
   if (input.ownerUserId !== undefined) values.ownerUserId = input.ownerUserId;

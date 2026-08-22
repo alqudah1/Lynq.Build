@@ -20,6 +20,7 @@ import { CreateActivityForm } from "@/components/dashboard/crm/CreateActivityFor
 import { CreateNoteForm } from "@/components/dashboard/crm/CreateNoteForm";
 import { NoteCard } from "@/components/dashboard/crm/NoteCard";
 import { ContactActions } from "@/components/dashboard/crm/ContactActions";
+import { resolveCompanyOutreachContext } from "@/lib/lead-gen/company-facts";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Card } from "@/components/ui/Card";
 import { Badge, type BadgeTone } from "@/components/ui/Badge";
@@ -75,17 +76,9 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ org
 
   const memberNameById = new Map(members.map((m) => [m.userId, m.name ?? m.email]));
   const contactPhone = contact?.primaryPhone ?? company?.phone;
-  const contactPhoneDigits = contactPhone?.replace(/\D/g, "") ?? "";
-  const companyCountryCode = typeof company?.address?.countryCode === "string" ? company.address.countryCode : null;
-  const senderCountryCode = companyCountryCode === "CA" || companyCountryCode === "JO"
-    ? companyCountryCode
-    : contactPhoneDigits.startsWith("962")
-      ? "JO"
-      : contactPhoneDigits.startsWith("1")
-        ? "CA"
-        : null;
-  const demoPrefix = "lynq-prospect-company:";
-  const demoSlug = company?.idempotencyKey?.startsWith(demoPrefix) ? company.idempotencyKey.slice(demoPrefix.length) : null;
+  // Same single derivation the leads table uses — market, price, demo URL
+  // and demo eligibility never diverge between the two views.
+  const outreachContext = company ? resolveCompanyOutreachContext(company, contact) : null;
   const redirectPath = `/app/${organizationSlug}/crm/leads/${leadId}`;
   const target = { leadId };
   const canManage = true; // service layer re-derives and enforces the real authority on every action; this only controls whether the controls render
@@ -136,8 +129,10 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ org
               email={contact?.primaryEmail}
               phone={contactPhone}
               businessName={company?.name ?? contact?.displayName ?? `Lead ${lead.id.slice(0, 8)}`}
-              countryCode={senderCountryCode}
-              demoSlug={demoSlug}
+              market={outreachContext?.market ?? null}
+              demoUrl={outreachContext?.demoUrl ?? null}
+              outreach={outreachContext?.outreach ?? null}
+              eligibility={outreachContext?.eligibility ?? { eligible: false, reason: "never_reviewed", detail: "No prospect company is linked to this lead.", score: null }}
             />
           </div>
         ) : null}

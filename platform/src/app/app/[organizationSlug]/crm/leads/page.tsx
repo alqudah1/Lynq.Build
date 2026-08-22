@@ -14,6 +14,7 @@ import { TenantResourceNotFoundError } from "@/lib/authz/errors";
 import { Breadcrumbs } from "@/components/dashboard/Breadcrumbs";
 import { CreateLeadForm } from "@/components/dashboard/crm/CreateLeadForm";
 import { LeadRow } from "@/components/dashboard/crm/LeadRow";
+import { resolveCompanyOutreachContext } from "@/lib/lead-gen/company-facts";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Table, THead, TBody, Tr, Th } from "@/components/ui/Table";
@@ -51,24 +52,13 @@ export default async function LeadsPage({ params }: { params: Promise<{ organiza
   ]);
   const contactById = new Map(leadContacts.map((contact) => [contact.id, contact]));
   const companyById = new Map(leadCompanies.map((company) => [company.id, company]));
-  const countryCodeForCompany = (companyId: string | null): string | null => {
+  // Market, price, demo URL and demo eligibility all come from the single
+  // shared derivation — never re-implemented per page (which is how the
+  // list and the detail view previously drifted apart).
+  const outreachContextForLead = (companyId: string | null, contact?: { primaryEmail?: string | null; primaryPhone?: string | null } | null) => {
     if (!companyId) return null;
-    const countryCode = companyById.get(companyId)?.address?.countryCode;
-    return typeof countryCode === "string" ? countryCode : null;
-  };
-  const countryCodeForLead = (companyId: string | null, phone?: string | null): string | null => {
-    const companyCountryCode = countryCodeForCompany(companyId);
-    if (companyCountryCode === "CA" || companyCountryCode === "JO") return companyCountryCode;
-    const digits = phone?.replace(/\D/g, "") ?? "";
-    if (digits.startsWith("962")) return "JO";
-    if (digits.startsWith("1")) return "CA";
-    return null;
-  };
-  const demoSlugForCompany = (companyId: string | null): string | null => {
-    if (!companyId) return null;
-    const key = companyById.get(companyId)?.idempotencyKey;
-    const prefix = "lynq-prospect-company:";
-    return key?.startsWith(prefix) ? key.slice(prefix.length) : null;
+    const company = companyById.get(companyId);
+    return company ? resolveCompanyOutreachContext(company, contact) : null;
   };
 
   const ownerIds = [...new Set(leads.map((l) => l.ownerUserId).filter((id): id is string => Boolean(id)))];
@@ -118,8 +108,7 @@ export default async function LeadsPage({ params }: { params: Promise<{ organiza
                 lead={lead}
                 ownerName={lead.ownerUserId ? (ownerNameById.get(lead.ownerUserId) ?? "—") : "—"}
                 companyName={lead.companyId ? (companyById.get(lead.companyId)?.name ?? `Lead ${lead.id.slice(0, 8)}`) : `Lead ${lead.id.slice(0, 8)}`}
-                countryCode={countryCodeForLead(lead.companyId, lead.contactId ? contactById.get(lead.contactId)?.primaryPhone : null)}
-                demoSlug={demoSlugForCompany(lead.companyId)}
+                outreachContext={outreachContextForLead(lead.companyId, lead.contactId ? contactById.get(lead.contactId) : null)}
                 contact={lead.contactId && contactById.has(lead.contactId) ? {
                   name: contactById.get(lead.contactId)!.displayName,
                   email: contactById.get(lead.contactId)!.primaryEmail,
