@@ -1,11 +1,11 @@
 function outreachText(countryCode: string | null | undefined, businessName: string, demoUrl?: string | null): string {
   if (countryCode === "JO") {
-    const demoLine = demoUrl ? `\n\nعملنا لكم نموذج سريع حتى تشوفوا الفكرة بشكل واضح:\n${demoUrl}` : "";
-    return `مرحبا، معك مصطفى من LYNQ. شفت ${businessName} وعجبني شغلكم وتقييمكم، وحبيت أشارككم فكرة تساعدكم تظهروا بشكل أقوى أونلاين.${demoLine}\n\nالنموذج يقدر يعرض خدماتكم وموقعكم ويسهّل تواصل الزبائن معكم. وإذا عجبكم الاتجاه، بنقدر نكمله ونضيف الحجز والواتساب وإدارة العملاء والمتابعة حسب احتياجكم. الاشتراك 25 دينار أردني بالشهر. إذا بتحبوا أشرح لكم أكثر أنا جاهز. وإذا ما بتحبوا نتواصل معكم مرة ثانية اكتبوا توقف.`;
+    const demoLine = demoUrl ? `\n\nهذا التصور اللي عملته لكم:\n${demoUrl}` : "";
+    return `مرحبا، معك مصطفى من LYNQ. لفتني ${businessName}، خصوصاً تقييمكم القوي، فحبيت أوريكم كيف ممكن يكون حضوركم أونلاين بشكل يليق بشغلكم.${demoLine}\n\nهذا مش الموقع النهائي ولا قالب جاهز. هو مجرد بداية حتى تشوفوا الاتجاه. إذا حبيتوه، بنبني النسخة الكاملة حول هويتكم الحقيقية ونضيف المنيو أو الخدمات والحجز والطلبات والواتساب وإدارة العملاء حسب شغلكم.\n\nحاب أعرف رأيكم بصراحة: نكمل بهذا الاتجاه، ولا بتفضلوا ستايل مختلف؟\n\nالاشتراك 25 دينار بالشهر. وإذا ما بتحبوا نتواصل معكم مرة ثانية اكتبوا توقف.`;
   }
 
-  const demoLine = demoUrl ? `\n\nI put together a quick concept so you can see the idea:\n${demoUrl}` : "";
-  return `Hi, this is Mustafa from LYNQ. I came across ${businessName} and was impressed by your reviews. I wanted to share an idea that could strengthen how your business shows up online.${demoLine}\n\nThe concept can showcase your services and location and make it easier for customers to reach you. If you like the direction, we can finish it and add booking, WhatsApp, customer management and follow ups based on what you need. The price is $100 CAD per month. Happy to walk you through it. If you would rather not hear from us again, just reply STOP.`;
+  const demoLine = demoUrl ? `\n\nHere is the direction I created for you:\n${demoUrl}` : "";
+  return `Hi, this is Mustafa from LYNQ. ${businessName} stood out to me, especially the strength of your reviews, so I wanted to show you what your online presence could look like when it truly matches the quality of the business.${demoLine}\n\nThis is not the finished website or an off-the-shelf template. It is simply a starting point so you can see the direction. If you like it, we would build the full version around your real brand and add the services or menu, booking, orders, WhatsApp and customer follow-up your business needs.\n\nI would genuinely value your reaction: should we keep developing this direction, or would a different style fit you better?\n\nIt is $100 CAD per month. If you would rather not hear from us again, reply STOP.`;
 }
 
 function whatsappUrl(phone: string, businessName: string, countryCode?: string | null, demoUrl?: string | null): string {

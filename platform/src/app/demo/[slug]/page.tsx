@@ -85,6 +85,65 @@ function experienceSet(industry: string, arabic: boolean): Experience[] {
   ];
 }
 
+function editorialCopy(industry: string, arabic: boolean) {
+  const value = industry.toLowerCase();
+  if (/restaurant|food|cafe|coffee|bakery|مطعم|مقهى/.test(value)) {
+    return arabic ? {
+      eyebrow: "عن المكان",
+      intro: "المذاق يجذب الضيف أول مرة، أما التجربة المتكاملة فهي التي تجعله يعود.",
+      headline: "مكان له سمعته. وتجربة رقمية تجعل اكتشافه وحجزه أسهل من أول زيارة.",
+      imageLine: "تبدأ التجربة قبل الوصول: صورة تشهي، تفاصيل واضحة، وطريق مباشر للحجز أو الطلب.",
+      experienceLabel: "تجربة الضيف",
+      experienceTitle: "من الاكتشاف إلى الطاولة، بلا تعقيد.",
+      closing: "طاولتكم التالية تبدأ من هنا.",
+    } : {
+      eyebrow: "The place",
+      intro: "The food earns the first visit. A complete guest experience earns the next one.",
+      headline: "A place with a reputation, made easier to discover, choose and visit.",
+      imageLine: "The experience starts before arrival: appetite, clarity and a direct path to the table.",
+      experienceLabel: "Guest experience",
+      experienceTitle: "From discovery to the table, without the friction.",
+      closing: "Your next table starts here.",
+    };
+  }
+  if (/salon|barber|beauty|spa|صالون|حلاق|تجميل/.test(value)) {
+    return arabic ? {
+      eyebrow: "عن المكان",
+      intro: "الانطباع الأول مهم، والحضور الرقمي يجب أن يعكس نفس العناية الموجودة في كل خدمة.",
+      headline: "خبرة يثق بها العملاء، بهوية رقمية تجعل اختيار الخدمة والحجز أسهل.",
+      imageLine: "من أول نظرة إلى موعد مؤكد، تجربة واضحة تليق باسم المكان.",
+      experienceLabel: "تجربة العميل",
+      experienceTitle: "الخدمة المناسبة والموعد المناسب، بخطوات أقل.",
+      closing: "موعدك القادم يبدأ من هنا.",
+    } : {
+      eyebrow: "The studio",
+      intro: "First impressions matter. The digital experience should reflect the same care as every appointment.",
+      headline: "Trusted expertise, presented with an identity that makes choosing and booking effortless.",
+      imageLine: "From first look to confirmed appointment, a clear experience worthy of the name.",
+      experienceLabel: "Client experience",
+      experienceTitle: "The right service and the right time, in fewer steps.",
+      closing: "Your next appointment starts here.",
+    };
+  }
+  return arabic ? {
+    eyebrow: "عن المكان",
+    intro: "الحضور الرقمي الأقوى لا يغيّر هوية النشاط، بل يجعل قيمته أوضح وأسهل للوصول.",
+    headline: "سمعة قوية، مترجمة إلى تجربة رقمية يثق بها العميل من أول زيارة.",
+    imageLine: "من الصورة الأولى إلى آخر تفصيل، كل شيء يحكي قصة المكان نفسه.",
+    experienceLabel: "تجربة العميل",
+    experienceTitle: "كل ما يحتاجه العميل، بلا تعقيد.",
+    closing: "خطوتك التالية تبدأ من هنا.",
+  } : {
+    eyebrow: "About",
+    intro: "A stronger digital presence does not change the business. It makes its value clearer and easier to reach.",
+    headline: "A strong reputation, translated into a digital experience customers trust from the first visit.",
+    imageLine: "From the first image to the last detail, every element tells the story of the business itself.",
+    experienceLabel: "Customer experience",
+    experienceTitle: "Everything a customer needs, without the friction.",
+    closing: "Your next step starts here.",
+  };
+}
+
 function businessInitials(name: string): string {
   return name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]).join("").toUpperCase();
 }
@@ -110,6 +169,7 @@ export default async function DemoPage({ params }: { params: Promise<{ slug: str
   const reviews = numberField(address, "reviews");
   const hours = hoursField(address);
   const experiences = experienceSet(`${company.industry ?? ""} ${category}`, arabic);
+  const copy = editorialCopy(`${company.industry ?? ""} ${category}`, arabic);
   const phoneDigits = company.phone?.replace(/\D/g, "") ?? "";
   const initials = businessInitials(company.name);
   const mapUrl = formattedAddress ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(formattedAddress)}` : null;
@@ -153,11 +213,11 @@ export default async function DemoPage({ params }: { params: Promise<{ slug: str
 
       <section id="story" className="mx-auto grid max-w-[1500px] gap-12 px-5 py-24 md:px-10 md:py-36 lg:grid-cols-[0.75fr_1.25fr] lg:gap-24">
         <div>
-          <p className="text-[0.68rem] uppercase tracking-[0.26em] text-[#b9a47f]">{arabic ? "عن المكان" : "About"}</p>
-          <p className="mt-5 max-w-sm text-sm leading-7 text-white/48">{arabic ? "هوية مصممة لتشعر وكأنها امتداد طبيعي للمكان، لا قالب جاهز تم تبديل اسمه." : "A digital identity designed to feel like a natural extension of the business, never a template with the name replaced."}</p>
+          <p className="text-[0.68rem] uppercase tracking-[0.26em] text-[#b9a47f]">{copy.eyebrow}</p>
+          <p className="mt-5 max-w-sm text-sm leading-7 text-white/48">{copy.intro}</p>
         </div>
         <div>
-          <h2 className="max-w-4xl text-4xl font-medium leading-[1.02] tracking-[-0.045em] md:text-7xl">{arabic ? "حضور رقمي يحوّل السمعة القوية إلى تجربة يثق بها الزبون من أول زيارة." : "A digital presence that turns a strong reputation into an experience customers trust from the first visit."}</h2>
+          <h2 className="max-w-4xl text-4xl font-medium leading-[1.02] tracking-[-0.045em] md:text-7xl">{copy.headline}</h2>
           <div className="mt-12 grid gap-px bg-white/10 sm:grid-cols-3">
             <div className="bg-[#0a0a09] py-6 pe-6"><p className="text-3xl font-medium">{rating ? rating.toFixed(1) : "—"}</p><p className="mt-2 text-xs uppercase tracking-[0.16em] text-white/42">{arabic ? "التقييم" : "Rating"}</p></div>
             <div className="bg-[#0a0a09] px-0 py-6 sm:px-6"><p className="text-3xl font-medium">{reviews ? reviews.toLocaleString() : "—"}</p><p className="mt-2 text-xs uppercase tracking-[0.16em] text-white/42">{arabic ? "آراء الضيوف" : "Guest reviews"}</p></div>
@@ -171,13 +231,13 @@ export default async function DemoPage({ params }: { params: Promise<{ slug: str
           {photo ? <div className="absolute inset-0 bg-cover bg-[center_68%] md:bg-fixed" style={{ backgroundImage: `url(${photo})` }} /> : null}
           <div className="absolute inset-0 bg-black/28" />
           <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 to-transparent" />
-          <p className="absolute bottom-7 start-7 max-w-xl text-xl font-medium leading-tight text-white md:bottom-12 md:start-12 md:text-4xl">{arabic ? "من الصورة الأولى إلى آخر تفصيل، كل شيء يحكي قصة المكان نفسه." : "From the first image to the last detail, every element tells the story of the place itself."}</p>
+          <p className="absolute bottom-7 start-7 max-w-xl text-xl font-medium leading-tight text-white md:bottom-12 md:start-12 md:text-4xl">{copy.imageLine}</p>
         </div>
       </section>
 
       <section id="experience" className="mx-auto max-w-[1500px] px-5 py-24 md:px-10 md:py-36">
         <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-24">
-          <div><p className="text-[0.68rem] uppercase tracking-[0.26em] text-[#b9a47f]">{arabic ? "تجربة الضيف" : "Guest experience"}</p><h2 className="mt-5 max-w-xl text-5xl font-medium leading-[0.94] tracking-[-0.05em] md:text-7xl">{arabic ? "كل ما يحتاجه الزبون، بلا تعقيد." : "Everything a customer needs, without the friction."}</h2></div>
+          <div><p className="text-[0.68rem] uppercase tracking-[0.26em] text-[#b9a47f]">{copy.experienceLabel}</p><h2 className="mt-5 max-w-xl text-5xl font-medium leading-[0.94] tracking-[-0.05em] md:text-7xl">{copy.experienceTitle}</h2></div>
           <div className="divide-y divide-white/12 border-t border-white/12">
             {experiences.map((experience) => <article key={experience.index} className="grid gap-5 py-8 md:grid-cols-[60px_1fr] md:py-10"><span className="text-xs text-[#b9a47f]">{experience.index}</span><div><h3 className="text-2xl font-medium md:text-3xl">{experience.title}</h3><p className="mt-3 max-w-xl text-sm leading-7 text-white/48 md:text-base">{experience.description}</p></div></article>)}
           </div>
@@ -198,10 +258,10 @@ export default async function DemoPage({ params }: { params: Promise<{ slug: str
       </section>
 
       <section className="px-5 py-24 text-center md:px-10 md:py-36">
-        <p className="text-[0.68rem] uppercase tracking-[0.26em] text-[#b9a47f]">{company.name}</p><h2 className="mx-auto mt-5 max-w-4xl text-5xl font-medium leading-[0.9] tracking-[-0.06em] md:text-8xl">{arabic ? "زيارتكم تبدأ من هنا." : "Your next visit starts here."}</h2>{phoneDigits ? <a href={`https://wa.me/${phoneDigits}`} className="mt-10 inline-flex min-h-14 items-center border border-white/28 px-8 text-xs font-semibold uppercase tracking-[0.14em] transition hover:bg-white hover:text-black">{arabic ? "احجز أو تواصل" : "Book or contact"}</a> : null}
+        <p className="text-[0.68rem] uppercase tracking-[0.26em] text-[#b9a47f]">{company.name}</p><h2 className="mx-auto mt-5 max-w-4xl text-5xl font-medium leading-[0.9] tracking-[-0.06em] md:text-8xl">{copy.closing}</h2>{phoneDigits ? <a href={`https://wa.me/${phoneDigits}`} className="mt-10 inline-flex min-h-14 items-center border border-white/28 px-8 text-xs font-semibold uppercase tracking-[0.14em] transition hover:bg-white hover:text-black">{arabic ? "احجز أو تواصل" : "Book or contact"}</a> : null}
       </section>
 
-      <footer className="border-t border-white/10 px-5 py-6 md:px-10"><div className="mx-auto flex max-w-[1500px] flex-col gap-3 text-[0.64rem] uppercase tracking-[0.16em] text-white/32 md:flex-row md:items-center md:justify-between"><p>{company.name}</p><p>{arabic ? "تصور مبدئي للهوية الرقمية، أعدته LYNQ" : "Digital experience concept by LYNQ"}</p></div></footer>
+      <footer className="border-t border-white/10 px-5 py-6 md:px-10"><div className="mx-auto flex max-w-[1500px] flex-col gap-3 text-[0.64rem] uppercase tracking-[0.16em] text-white/32 md:flex-row md:items-center md:justify-between"><p>{company.name}</p><p>{city || category}</p></div></footer>
     </main>
   );
 }
