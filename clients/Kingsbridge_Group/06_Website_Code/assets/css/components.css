@@ -628,37 +628,54 @@ body.menu-open .mobile-menu { opacity: 1; pointer-events: auto; }
 }
 @media (min-width: 760px) { .build-row p { grid-column: 3 / 4; } }
 
-/* ============ COMMERCIAL EXPERIENCE — 20+ years + a real property index. No cards, no photos:
-   oversized numerals and thin gold rules carry the section, closer to a project index than
-   a stats block. ============ */
+/* ============ COMMERCIAL EXPERIENCE — architectural experience index. No cards, no photos:
+   the 20+ figure stands as its own credibility line, then an oversized 01/02/03 index carries
+   the three properties as three quiet columns rather than a stacked list. ============ */
 .pm-experience { padding-top: 64px; padding-bottom: 72px; }
-.pm-exp-head {
-  display: flex; flex-direction: column; gap: 28px;
-}
-@media (min-width: 760px) { .pm-exp-head { flex-direction: row; justify-content: space-between; align-items: flex-end; gap: 40px; } }
-.pm-exp-intro h2 { font-size: clamp(28px, 4vw, 44px); margin-top: 12px; text-wrap: balance; max-width: 16ch; }
-.pm-exp-note { font-size: clamp(15px, 1.6vw, 17px); color: var(--text-muted-on-ivory); margin-top: 14px; max-width: 42ch; }
-.pm-exp-figure { display: flex; flex-direction: column; }
-@media (min-width: 760px) { .pm-exp-figure { text-align: right; align-items: flex-end; } }
-.pm-exp-num { font-family: var(--font-display); font-size: clamp(56px, 7vw, 96px); line-height: 0.9; color: var(--ink); }
+
+.pm-exp-credibility { display: flex; align-items: baseline; gap: 20px; }
+.pm-exp-num { font-family: var(--font-display); font-size: clamp(40px, 4.6vw, 56px); line-height: 1; color: var(--ink); }
 .pm-exp-label {
-  font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--bronze-deep); margin-top: 8px;
+  font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--bronze-deep); max-width: 22ch;
 }
 
-.pm-property-index { margin-top: 64px; }
-.pp-row {
-  padding: 32px 0; border-bottom: 1px solid var(--bronze);
-  display: flex; align-items: baseline; gap: 28px; transition-delay: 0s;
+.pm-exp-head { margin-top: 56px; }
+.pm-exp-note { font-size: clamp(16px, 1.8vw, 19px); color: var(--text-muted-on-ivory); margin-top: 14px; max-width: 48ch; }
+
+.pm-property-grid {
+  margin-top: 64px; padding-top: 28px; border-top: 1px solid var(--bronze);
+  display: grid; grid-template-columns: 1fr; gap: 0;
 }
-.pp-row:nth-child(2) { transition-delay: .08s; }
-.pp-row:nth-child(3) { transition-delay: .16s; }
+@media (min-width: 768px) {
+  .pm-property-grid { grid-template-columns: repeat(3, 1fr); column-gap: 28px; }
+}
+@media (min-width: 1024px) {
+  .pm-property-grid { column-gap: 56px; }
+}
+.pp-col {
+  padding: 28px 0; border-bottom: 1px solid var(--line-on-ivory); transition-delay: 0s;
+  transition: transform .5s ease, opacity .5s ease;
+}
+@media (min-width: 768px) {
+  .pp-col { padding: 0; border-bottom: none; }
+  .pp-col + .pp-col { border-left: 1px solid var(--line-on-ivory); padding-left: 24px; }
+}
+@media (min-width: 1024px) {
+  .pp-col + .pp-col { padding-left: 40px; }
+}
+.pp-col:nth-child(2) { transition-delay: .08s; }
+.pp-col:nth-child(3) { transition-delay: .16s; }
+@media (hover: hover) {
+  .pp-col:hover .pp-num { color: var(--ink); }
+  .pp-col:hover .pp-address p:first-child { transform: translateY(-2px); }
+}
 .pp-num {
-  font-family: var(--font-display); font-size: clamp(38px, 5vw, 60px); color: var(--bronze-deep);
-  line-height: 1; flex: none; width: 76px;
+  display: block; font-family: var(--font-display); font-size: clamp(44px, 4.6vw, 68px); color: var(--bronze-deep);
+  line-height: 1; transition: color .3s ease;
 }
-@media (min-width: 760px) { .pp-num { width: 96px; } }
-.pp-address p { font-family: var(--font-display); font-size: clamp(19px, 2.2vw, 24px); color: var(--ink); line-height: 1.4; }
-.pp-address p + p { font-size: clamp(14px, 1.5vw, 16px); color: var(--text-muted-on-ivory); margin-top: 2px; }
+.pp-address { margin-top: 20px; }
+.pp-address p { font-family: var(--font-display); font-size: clamp(19px, 2vw, 23px); color: var(--ink); line-height: 1.4; transition: transform .3s ease; }
+.pp-address p + p { font-family: inherit; font-size: 13px; letter-spacing: 0.02em; color: var(--text-muted-on-ivory); margin-top: 6px; }
 
 /* ============ SERVICE INDEX — Property Management service groups, always visible so the
    full depth reads at a glance rather than hiding behind an accordion. ============ */
