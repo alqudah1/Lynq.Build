@@ -1,0 +1,10 @@
+{
+  "redirects": [
+    { "source": "/projects", "destination": "/custom-homes/", "permanent": true },
+    { "source": "/projects/(.*)", "destination": "/custom-homes/", "permanent": true },
+    { "source": "/about", "destination": "/#about", "permanent": true },
+    { "source": "/about/(.*)", "destination": "/#about", "permanent": true },
+    { "source": "/services", "destination": "/", "permanent": true },
+    { "source": "/services/(.*)", "destination": "/", "permanent": true }
+  ]
+}

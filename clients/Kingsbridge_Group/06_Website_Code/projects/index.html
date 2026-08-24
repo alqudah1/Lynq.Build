@@ -3,75 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Concept Collection | Kingsbridge Group</title>
-<meta name="description" content="A concept collection spanning custom homes, renovations, development, mixed-use, commercial, and property management — visioning work, not completed Kingsbridge projects.">
-<link rel="canonical" href="https://www.kingsbridgegroup.ca/projects/">
-<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/assets/img/favicon-16.png">
-<link rel="shortcut icon" href="/assets/img/favicon.ico">
-<link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
-<meta name="theme-color" content="#0E0E0E">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Kingsbridge Group">
-<meta property="og:title" content="Concept Collection | Kingsbridge Group">
-<meta property="og:description" content="A concept collection spanning custom homes, renovations, development, mixed-use, commercial, and property management.">
-<meta property="og:url" content="https://www.kingsbridgegroup.ca/projects/">
-<meta property="og:image" content="https://www.kingsbridgegroup.ca/assets/img/og-image.jpg">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Concept Collection | Kingsbridge Group">
-<meta name="twitter:description" content="A concept collection spanning custom homes, renovations, development, mixed-use, commercial, and property management.">
-<meta name="twitter:image" content="https://www.kingsbridgegroup.ca/assets/img/og-image.jpg">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/css/tokens.css">
-<link rel="stylesheet" href="/assets/css/base.css">
-<link rel="stylesheet" href="/assets/css/components.css">
-<link rel="stylesheet" href="/assets/css/experience.css">
+<title>Kingsbridge Group</title>
+<meta name="robots" content="noindex">
+<link rel="canonical" href="https://www.kingsbridgegroup.ca/custom-homes/">
+<meta http-equiv="refresh" content="0; url=/custom-homes/">
+<script>location.replace('/custom-homes/');</script>
 </head>
-<body data-page="projects">
-<div class="page-veil" id="page-veil"><div class="pv-inner"><img class="pv-mark" src="/assets/img/logo/kingsbridge-icon.png" alt=""><span class="pv-line"></span></div></div>
-
-
-<div id="header-root"></div>
-
-<section class="page-header">
-  <div class="container">
-    <span class="eyebrow">Concept Collection</span>
-    <h1>A walk through what we envision.</h1>
-    <p>The pieces below are Kingsbridge concept work &mdash; a design direction,
-      not completed projects. Real project profiles will replace them here as
-      they&rsquo;re confirmed, across Toronto, the GTA, and Southern Ontario.</p>
-  </div>
-</section>
-
-<div class="cinema-stack" id="cinema-stack"></div>
-
-<div id="footer-root"></div>
-
-<script src="/assets/js/projects-data.js"></script>
-<script src="/assets/js/include.js"></script>
-<script src="/assets/js/main.js"></script>
-<script src="/assets/js/experience.js"></script>
-<script>
-  document.addEventListener('partials:ready', function () {
-    var stack = document.getElementById('cinema-stack');
-    if (!stack || typeof KB_PROJECTS === 'undefined') return;
-    stack.innerHTML = KB_PROJECTS.map(function (p, idx) {
-      var align = idx % 2 === 1 ? ' align-right' : '';
-      return '<a class="cinema-panel' + align + '" href="/projects/project.html?slug=' + p.slug + '" data-reveal>' +
-        '<span class="cinema-index">' + String(idx + 1).padStart(2, '0') + ' / ' + String(KB_PROJECTS.length).padStart(2, '0') + '</span>' +
-        '<div class="ph-photo" data-label="' + p.photoLabel + '"><img src="' + p.image + '" alt="' + p.title + '" loading="lazy"></div>' +
-        '<div class="cinema-copy">' +
-        '<span class="eyebrow">' + p.category + '</span>' +
-        '<h3>' + p.title + '</h3>' +
-        '<p class="desc">' + p.description + '</p>' +
-        '<div class="cinema-features">' + p.features.map(function (f) { return '<span>' + f + '</span>'; }).join('') + '</div>' +
-        '<span class="text-link" style="color:var(--ivory)">Explore Concept →</span>' +
-        '</div></a>';
-    }).join('');
-    initScrollReveal();
-  });
-</script>
+<body>
+<!-- Custom Homes now has its own dedicated page, per client direction. This page redirects;
+     see vercel.json for the server-side 301 and this meta-refresh/script as a fallback. -->
+<p><a href="/custom-homes/">Continue to Kingsbridge Custom Homes</a></p>
 </body>
 </html>

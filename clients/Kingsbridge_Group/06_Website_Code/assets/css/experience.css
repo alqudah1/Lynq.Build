@@ -35,21 +35,25 @@
 /* ---------- Page transition veil (all pages) ---------- */
 .page-veil {
   position: fixed; inset: 0; z-index: 998; background: var(--ink);
-  opacity: 0; pointer-events: none; transition: opacity .4s ease;
+  opacity: 0; pointer-events: none; transition: opacity .18s ease;
   display: flex; align-items: center; justify-content: center;
 }
 .page-veil .pv-inner { display: flex; flex-direction: column; align-items: center; }
 .page-veil .pv-mark {
   width: 38px; height: 38px; object-fit: contain; opacity: 0; transform: scale(0.8);
-  transition: opacity .45s var(--ease), transform .45s var(--ease);
+  transition: opacity .18s var(--ease), transform .18s var(--ease);
 }
-.page-veil .pv-line { width: 0; height: 1px; background: var(--bronze); margin-top: 16px; transition: width .4s var(--ease) .1s; }
+.page-veil .pv-line { width: 0; height: 1px; background: var(--bronze); margin-top: 16px; transition: width .18s var(--ease); }
 .page-veil.active { opacity: 1; }
 .page-veil.active .pv-mark { opacity: 1; transform: scale(1); }
 .page-veil.active .pv-line { width: 48px; }
 
 /* ---------- Hero cinematic pan (stands in for video until real footage exists) ---------- */
-.hero-media .ph-photo { animation: heroPan 22s ease-in-out infinite alternate; transform-origin: 55% 45%; }
+.hero-media .ph-photo {
+  animation: heroEnter 1.8s var(--ease) forwards, heroPan 22s ease-in-out 1.8s infinite alternate;
+  transform-origin: 55% 45%;
+}
+@keyframes heroEnter { from { transform: scale(1.12); opacity: 0.001; } to { transform: scale(1.0); opacity: 1; } }
 @keyframes heroPan { from { transform: scale(1.0) translate3d(0,0,0); } to { transform: scale(1.07) translate3d(-1%, -1%, 0); } }
 
 /* ================= HERO STORY — VISION / DESIGN / BUILD / MANAGEMENT ================= */
@@ -204,7 +208,8 @@
 @media (prefers-reduced-motion: reduce) {
   .intro-veil { display: none !important; }
   .kb-cursor { display: none !important; }
-  .hero-media .ph-photo, .concept-hero .ph-photo { animation: none !important; }
+  .hero-media .ph-photo, .concept-hero .ph-photo, .page-hero .hero-media .ph-photo { animation: none !important; opacity: 1 !important; }
+  .ab-rule { transition: none !important; transform: scaleX(1) !important; }
   .reveal-mask > * { transform: none !important; transition: none !important; }
   .page-veil { display: none !important; }
   .cbm-cinema.pinned { height: auto !important; }
