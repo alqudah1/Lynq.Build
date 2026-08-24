@@ -637,6 +637,7 @@ body.menu-open .mobile-menu { opacity: 1; pointer-events: auto; }
 }
 @media (min-width: 760px) { .pm-exp-head { flex-direction: row; justify-content: space-between; align-items: flex-end; gap: 40px; } }
 .pm-exp-intro h2 { font-size: clamp(28px, 4vw, 44px); margin-top: 12px; text-wrap: balance; max-width: 16ch; }
+.pm-exp-note { font-size: clamp(15px, 1.6vw, 17px); color: var(--text-muted-on-ivory); margin-top: 14px; max-width: 42ch; }
 .pm-exp-figure { display: flex; flex-direction: column; }
 @media (min-width: 760px) { .pm-exp-figure { text-align: right; align-items: flex-end; } }
 .pm-exp-num { font-family: var(--font-display); font-size: clamp(56px, 7vw, 96px); line-height: 0.9; color: var(--ink); }
