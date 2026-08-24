@@ -628,24 +628,32 @@ body.menu-open .mobile-menu { opacity: 1; pointer-events: auto; }
 }
 @media (min-width: 760px) { .build-row p { grid-column: 3 / 4; } }
 
-/* ============ SERVICE ACCORDION — Property Management service groups, one open at a time ============ */
-.service-accordion { margin-top: 48px; border-top: 1px solid var(--line-on-ivory); }
-.sa-item { border-bottom: 1px solid var(--line-on-ivory); }
-.sa-trigger {
-  width: 100%; display: flex; align-items: center; gap: 24px; padding: 28px 0;
-  text-align: left; color: var(--ink);
+/* ============ EXPERIENCE — one large numeral, one sentence. No stat grid. ============ */
+.pm-experience { padding-top: 64px; padding-bottom: 64px; }
+.pm-exp-grid { display: grid; grid-template-columns: 1fr; gap: 24px; align-items: center; }
+@media (min-width: 760px) { .pm-exp-grid { grid-template-columns: auto 1fr; gap: 56px; } }
+.pm-exp-figure { display: flex; flex-direction: column; }
+.pm-exp-num { font-family: var(--font-display); font-size: clamp(64px, 10vw, 128px); line-height: 0.9; color: var(--ink); }
+.pm-exp-label {
+  font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--bronze-deep); margin-top: 10px;
 }
-.sa-trigger .sa-num { font-family: var(--font-display); font-size: 13px; color: var(--bronze-deep); flex: none; width: 24px; }
-.sa-trigger .sa-title { font-family: var(--font-display); font-size: clamp(19px, 2.2vw, 24px); flex: 1; }
-.sa-trigger .sa-icon { width: 16px; height: 16px; flex: none; color: var(--bronze-deep); transition: transform .3s var(--ease); }
-.sa-item.is-open .sa-trigger .sa-icon { transform: rotate(45deg); }
-.sa-panel { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .4s var(--ease); }
-.sa-panel > p {
-  overflow: hidden; font-size: 15.5px; line-height: 1.7; color: var(--text-muted-on-ivory);
-  max-width: 56ch; padding-left: 48px; padding-bottom: 0;
+.pm-exp-copy { font-size: 17px; line-height: 1.7; color: var(--text-muted-on-ivory); max-width: 46ch; }
+
+/* ============ SERVICE INDEX — Property Management service groups, always visible so the
+   full depth reads at a glance rather than hiding behind an accordion. ============ */
+.service-index { margin-top: 48px; border-top: 1px solid var(--line-on-ivory); }
+.si-row {
+  display: grid; grid-template-columns: auto 1fr; align-items: baseline; gap: 8px 24px;
+  padding: 30px 0; border-bottom: 1px solid var(--line-on-ivory); transition: padding-left .35s var(--ease);
 }
-.sa-item.is-open .sa-panel { grid-template-rows: 1fr; }
-.sa-item.is-open .sa-panel > p { padding-bottom: 28px; }
+@media (min-width: 760px) { .si-row { grid-template-columns: 60px 1fr 1.3fr; align-items: center; } }
+.si-row:hover { padding-left: 16px; }
+.si-num { font-family: var(--font-display); font-size: 14px; color: var(--bronze-deep); }
+.si-title { font-family: var(--font-display); font-size: clamp(21px, 2.4vw, 26px); }
+.si-row p {
+  grid-column: 2 / 3; font-size: 15.5px; line-height: 1.7; color: var(--text-muted-on-ivory); max-width: 52ch;
+}
+@media (min-width: 760px) { .si-row p { grid-column: 3 / 4; } }
 
 /* ============ CONTACT CTA — compact closing invitation, not a giant empty section ============ */
 .contact-cta { padding: 88px 0; }

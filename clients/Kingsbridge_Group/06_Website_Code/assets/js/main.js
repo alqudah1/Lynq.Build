@@ -9,28 +9,6 @@ document.addEventListener('partials:ready', function () {
 
 // Reveal-on-scroll works on static content already in the DOM, independent of partials.
 document.addEventListener('DOMContentLoaded', initScrollReveal);
-document.addEventListener('DOMContentLoaded', initServiceAccordion);
-
-/* Property Management service groups — one open at a time, so the page stays scannable
-   instead of showing every service as a wall of text at once. */
-function initServiceAccordion() {
-  var items = document.querySelectorAll('.sa-item');
-  if (!items.length) return;
-  items.forEach(function (item) {
-    var trigger = item.querySelector('.sa-trigger');
-    trigger.addEventListener('click', function () {
-      var alreadyOpen = item.classList.contains('is-open');
-      items.forEach(function (other) {
-        other.classList.remove('is-open');
-        other.querySelector('.sa-trigger').setAttribute('aria-expanded', 'false');
-      });
-      if (!alreadyOpen) {
-        item.classList.add('is-open');
-        trigger.setAttribute('aria-expanded', 'true');
-      }
-    });
-  });
-}
 
 // Delegated on document, so it works before/after partials inject the nav — no need to
 // wait for partials:ready.
