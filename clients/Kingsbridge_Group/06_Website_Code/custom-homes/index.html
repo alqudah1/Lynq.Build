@@ -42,7 +42,7 @@
   <div class="hero-media">
     <div class="ph-photo"><picture>
       <source srcset="/assets/img/photography/custom-homes-hero.webp" type="image/webp">
-      <img src="/assets/img/photography/custom-homes-hero.jpg" alt="A modern Kingsbridge custom home exterior with a pool and courtyard" fetchpriority="high">
+      <img src="/assets/img/photography/custom-homes-hero.jpg" alt="Conceptual contemporary custom home exterior" fetchpriority="high">
     </picture></div>
   </div>
   <div class="hero-content">
@@ -79,6 +79,25 @@
     </div>
   </div>
 </section>
+
+<!-- ============ CUSTOM HOME VIEWS — same approved gallery treatment as the homepage ============ -->
+<section class="section tight" id="custom-home-views" style="padding-bottom:0">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <span class="eyebrow">Custom Home Views</span>
+      <h2>Considered from every angle.</h2>
+      <p class="intro concept-notice">Conceptual imagery showing the front,
+        side, rear and interior design direction. These are not completed projects.</p>
+    </div>
+  </div>
+</section>
+<div class="concept-gallery-wrap">
+  <div class="concept-gallery" id="custom-home-gallery" data-reveal></div>
+  <div class="cg-nav">
+    <button class="cg-prev" aria-label="Previous custom home view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 6l-6 6 6 6"/></svg></button>
+    <button class="cg-next" aria-label="Next custom home view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 6l6 6-6 6"/></svg></button>
+  </div>
+</div>
 
 <!-- ============ DESIGN + BUILD PROCESS ============ -->
 <section class="section-on-ink section tight rule-top">
@@ -123,8 +142,27 @@
 <div id="footer-root"></div>
 
 <script src="/assets/js/site-config.js" defer></script>
+<script src="/assets/js/projects-data.js" defer></script>
 <script src="/assets/js/include.js" defer></script>
 <script src="/assets/js/main.js" defer></script>
 <script src="/assets/js/experience.js" defer></script>
+<script>
+  document.addEventListener('partials:ready', function () {
+    var gallery = document.getElementById('custom-home-gallery');
+    if (!gallery || typeof KB_CONCEPTS === 'undefined') return;
+    gallery.innerHTML = KB_CONCEPTS.filter(function (c) { return c.slug !== 'the-build'; }).map(function (c, idx, list) {
+      return '<div class="cg-item" data-reveal><picture><source srcset="' + c.image.replace(/\.jpg$/, '.webp') + '" type="image/webp">' +
+        '<img src="' + c.image + '" alt="Conceptual ' + c.title.toLowerCase() + ' custom home view" loading="lazy"></picture>' +
+        '<div class="cg-content"><span class="cg-index">' + String(idx + 1).padStart(2, '0') + ' / ' + String(list.length).padStart(2, '0') + '</span>' +
+        '<h3>' + c.title + '</h3><p>' + c.description + '</p></div></div>';
+    }).join('');
+    initScrollReveal();
+    var prev = document.querySelector('.concept-gallery-wrap .cg-prev');
+    var next = document.querySelector('.concept-gallery-wrap .cg-next');
+    function step() { var item = gallery.querySelector('.cg-item'); return item ? item.getBoundingClientRect().width + 20 : 320; }
+    if (prev) prev.addEventListener('click', function () { gallery.scrollBy({ left: -step(), behavior: 'smooth' }); });
+    if (next) next.addEventListener('click', function () { gallery.scrollBy({ left: step(), behavior: 'smooth' }); });
+  });
+</script>
 </body>
 </html>

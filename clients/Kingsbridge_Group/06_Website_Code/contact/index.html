@@ -160,14 +160,12 @@
 
   document.addEventListener('partials:ready', function () {
     var requested = new URLSearchParams(location.search).get('path');
-    // Legacy links from before the August 20, 2026 direction (build-home, renovate,
-    // residential-management, mixed-use, development) fold into the closest of the
-    // three current paths rather than breaking.
+    // Keep older custom-home and commercial-management links working without
+    // exposing any additional inquiry categories.
     var legacyMap = {
       'build': 'custom-home', 'build-home': 'custom-home', 'renovate': 'custom-home',
       'manage': 'commercial-management', 'manage-property': 'commercial-management',
-      'commercial': 'commercial-management', 'residential-management': 'general',
-      'mixed-use': 'general', 'development': 'general'
+      'commercial': 'commercial-management'
     };
     var normalized = legacyMap[requested] || requested;
     var selected = PATH_LABELS[normalized] ? normalized : 'general';
@@ -189,16 +187,18 @@
 
   document.getElementById('inquiry-form').addEventListener('submit', function (e) {
     e.preventDefault();
-    // No backend wired yet — see development-plan.md for the planned
-    // api/ + CRM integration path. This confirms receipt only; nothing is
-    // sent anywhere yet, and this message never claims otherwise.
-    var toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.textContent = 'Thank you. A member of our team will be in touch shortly.';
-    document.body.appendChild(toast);
-    requestAnimationFrame(function () { toast.classList.add('show'); });
-    setTimeout(function () { toast.classList.remove('show'); setTimeout(function () { toast.remove(); }, 300); }, 2600);
-    e.target.reset();
+    if (!e.currentTarget.reportValidity()) return;
+    var selected = document.querySelector('.path-pill.selected');
+    var inquiryType = selected ? PATH_LABELS[selected.getAttribute('data-path')] : PATH_LABELS.general;
+    var data = new FormData(e.currentTarget);
+    var lines = ['Inquiry type: ' + inquiryType];
+    data.forEach(function (value, key) {
+      if (value && String(value).trim()) lines.push(key + ': ' + String(value).trim());
+    });
+    var recipient = (typeof KB_CONFIG !== 'undefined' && KB_CONFIG.email) ? KB_CONFIG.email : 'admin@kingsbridgegroup.ca';
+    window.location.href = 'mailto:' + recipient + '?subject=' +
+      encodeURIComponent(inquiryType + ' - ' + (data.get('name') || 'Website Inquiry')) +
+      '&body=' + encodeURIComponent(lines.join('\n'));
   });
 </script>
 </body>

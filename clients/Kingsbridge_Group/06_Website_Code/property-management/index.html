@@ -42,7 +42,7 @@
   <div class="hero-media">
     <div class="ph-photo"><picture>
       <source srcset="/assets/img/photography/commercial-detail.webp" type="image/webp">
-      <img src="/assets/img/photography/commercial-detail.jpg" alt="A modern commercial building entrance with a landscaped approach" fetchpriority="high">
+      <img src="/assets/img/photography/commercial-detail.jpg" alt="Conceptual commercial property with a landscaped common entrance" fetchpriority="high">
     </picture></div>
   </div>
   <div class="hero-content">
@@ -64,30 +64,41 @@
   </div>
   <div class="container pm-exp-head" data-reveal>
     <span class="eyebrow">Commercial Experience</span>
-    <p class="pm-exp-note">A selection of commercial properties Kingsbridge has worked with over the years.</p>
+    <p class="pm-exp-note">Owned and managed over 175,000 square feet.</p>
   </div>
-  <div class="container pm-property-grid">
-    <div class="pp-col" data-reveal>
-      <span class="pp-num">01</span>
-      <div class="pp-address">
-        <p>360 Ontario Street</p>
-        <p>St. Catharines, Ontario</p>
-      </div>
-    </div>
-    <div class="pp-col" data-reveal>
-      <span class="pp-num">02</span>
-      <div class="pp-address">
-        <p>4465 Drummond Road</p>
-      </div>
-    </div>
-    <div class="pp-col" data-reveal>
-      <span class="pp-num">03</span>
-      <div class="pp-address">
-        <p>176 Griffin Street</p>
-      </div>
+</section>
+
+<!-- ============ MANAGED PROPERTY IMAGERY — existing editorial gallery pattern ============ -->
+<section class="section tight" id="property-care-gallery" style="padding-bottom:0">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <span class="eyebrow">Property Care</span>
+      <h2>Managed with care, inside and out.</h2>
+      <p class="intro concept-notice">Conceptual commercial-property imagery
+        illustrating the standard of care, not specific managed-property claims.</p>
     </div>
   </div>
 </section>
+<div class="concept-gallery-wrap">
+  <div class="concept-gallery" id="managed-property-gallery" data-reveal>
+    <div class="cg-item">
+      <picture><source srcset="/assets/img/photography/commercial-detail.webp" type="image/webp"><img src="/assets/img/photography/commercial-detail.jpg" alt="Conceptual well-maintained commercial property exterior" loading="lazy"></picture>
+      <div class="cg-content"><span class="cg-index">01 / 03</span><h3>Property Exterior</h3><p>Clean approaches, maintained landscaping and consistent common-area care.</p></div>
+    </div>
+    <div class="cg-item">
+      <picture><source srcset="/assets/img/photography/managed-retail-plaza.webp" type="image/webp"><img src="/assets/img/photography/managed-retail-plaza.jpg" alt="Conceptual well-maintained commercial retail plaza" loading="lazy"></picture>
+      <div class="cg-content"><span class="cg-index">02 / 03</span><h3>Retail &amp; Plaza Care</h3><p>Organized, presentable shared spaces that support tenants and visitors.</p></div>
+    </div>
+    <div class="cg-item">
+      <picture><source srcset="/assets/img/photography/managed-common-area.webp" type="image/webp"><img src="/assets/img/photography/managed-common-area.jpg" alt="Conceptual pristine commercial property common-area lobby" loading="lazy"></picture>
+      <div class="cg-content"><span class="cg-index">03 / 03</span><h3>Common Areas</h3><p>Ongoing attention to the shared spaces people use every day.</p></div>
+    </div>
+  </div>
+  <div class="cg-nav">
+    <button class="cg-prev" aria-label="Previous managed property image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 6l-6 6 6 6"/></svg></button>
+    <button class="cg-next" aria-label="Next managed property image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 6l6 6-6 6"/></svg></button>
+  </div>
+</div>
 
 <!-- ============ HOW WE MANAGE (always visible, so the depth reads at a glance) ============ -->
 <section class="section tight" id="services">
@@ -100,30 +111,28 @@
       <div class="si-row">
         <span class="si-num">01</span>
         <span class="si-title">Property Operations</span>
-        <p>Kingsbridge places tenants, collects rent and manages direct
-          rental payments, so day-to-day operations run smoothly from the
-          start.</p>
+        <p>Day-to-day commercial property operations and tenant communication
+          are handled with clear, consistent follow-through.</p>
       </div>
       <div class="si-row">
         <span class="si-num">02</span>
         <span class="si-title">Maintenance &amp; Response</span>
-        <p>Property maintenance, maintenance requests, work orders and
-          vendor coordination are handled directly, backed by 24/7 emergency
-          support so issues don&rsquo;t wait.</p>
+        <p>Maintenance requests, work orders and vendor coordination are
+          organized and tracked so issues receive timely attention.</p>
       </div>
       <div class="si-row">
         <span class="si-num">03</span>
-        <span class="si-title">Financial Visibility</span>
-        <p>Detailed accounting and online financial reporting give owners a
-          clear, current view of their property&rsquo;s finances.</p>
+        <span class="si-title">Inspections &amp; Common Areas</span>
+        <p>Routine inspections and common-area oversight help keep the property
+          presentable, functional and consistently cared for.</p>
       </div>
       <div class="si-row">
         <span class="si-num">04</span>
         <span class="si-title">Owner Support</span>
-        <p>Direct client communication and ongoing operational oversight,
-          improving operational efficiency and supporting property
-          performance. Kingsbridge coordinates with an external lawyer when
-          legal matters arise.</p>
+        <p>Direct owner communication, documentation and reporting provide a
+          clear view of ongoing property care. When legal expertise is needed,
+          Kingsbridge can coordinate access to external legal counsel.
+          Kingsbridge does not provide legal services.</p>
       </div>
     </div>
   </div>
@@ -146,5 +155,16 @@
 <script src="/assets/js/include.js" defer></script>
 <script src="/assets/js/main.js" defer></script>
 <script src="/assets/js/experience.js" defer></script>
+<script>
+  document.addEventListener('partials:ready', function () {
+    var gallery = document.getElementById('managed-property-gallery');
+    var prev = document.querySelector('.concept-gallery-wrap .cg-prev');
+    var next = document.querySelector('.concept-gallery-wrap .cg-next');
+    if (!gallery) return;
+    function step() { var item = gallery.querySelector('.cg-item'); return item ? item.getBoundingClientRect().width + 20 : 320; }
+    if (prev) prev.addEventListener('click', function () { gallery.scrollBy({ left: -step(), behavior: 'smooth' }); });
+    if (next) next.addEventListener('click', function () { gallery.scrollBy({ left: step(), behavior: 'smooth' }); });
+  });
+</script>
 </body>
 </html>

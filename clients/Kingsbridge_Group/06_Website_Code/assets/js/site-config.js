@@ -6,7 +6,7 @@
 // arrive (see 07_Feedback/Client_Presentation/client-assets-needed.md).
 var KB_CONFIG = {
   phone: null, // e.g. "(647) 000-0000" — new business line, not yet issued
-  email: null, // e.g. "info@kingsbridgegroup.ca"
+  email: "admin@kingsbridgegroup.ca",
   offices: [
     { label: "Mississauga", address: "77 City Centre Dr, Suite 501, Mississauga, ON L5B 1M5" },
     { label: "Vaughan", address: "400 Applewood Crescent, Suite 100, Vaughan, ON L4K 0C3" }
