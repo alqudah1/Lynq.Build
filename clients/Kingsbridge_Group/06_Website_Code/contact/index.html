@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Contact Kingsbridge Group</title>
-<meta name="description" content="Start a conversation about building a custom home or managing your commercial property with Kingsbridge Group.">
+<meta name="description" content="Contact Kingsbridge Group about a custom home or commercial property management inquiry.">
 <link rel="canonical" href="https://www.kingsbridgegroup.ca/contact/">
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/assets/img/favicon-16.png">
@@ -14,12 +14,12 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Kingsbridge Group">
 <meta property="og:title" content="Contact Kingsbridge Group">
-<meta property="og:description" content="Start a conversation about building a custom home or managing your commercial property.">
+<meta property="og:description" content="Contact Kingsbridge Group about a custom home or commercial property management inquiry.">
 <meta property="og:url" content="https://www.kingsbridgegroup.ca/contact/">
 <meta property="og:image" content="https://www.kingsbridgegroup.ca/assets/img/og-image.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Contact Kingsbridge Group">
-<meta name="twitter:description" content="Start a conversation about building a custom home or managing your commercial property.">
+<meta name="twitter:description" content="Contact Kingsbridge Group about a custom home or commercial property management inquiry.">
 <meta name="twitter:image" content="https://www.kingsbridgegroup.ca/assets/img/og-image.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -38,9 +38,9 @@
 
 <section class="page-header">
   <div class="container">
-    <span class="eyebrow">Start a Conversation</span>
-    <h1>Tell us what you&rsquo;re building, or what you need managed.</h1>
-    <p>Choose the path that fits, and a member of the Kingsbridge team will follow up directly.</p>
+    <span class="eyebrow">Contact Kingsbridge</span>
+    <h1>Tell us about your project or commercial property.</h1>
+    <p>Submit the form below. Your inquiry will be emailed directly to the Kingsbridge team for follow-up.</p>
   </div>
 </section>
 
@@ -56,6 +56,9 @@
       <p class="form-intro" id="form-intro"></p>
 
       <form class="inquiry-form" id="inquiry-form">
+        <div class="hp-field" aria-hidden="true">
+          <label for="website">Website</label><input id="website" name="website" tabindex="-1" autocomplete="off">
+        </div>
         <div class="row-2">
           <div class="field"><label for="name">Full Name</label><input id="name" name="name" required></div>
           <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" required></div>
@@ -116,6 +119,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </button>
         </div>
+        <p class="form-status" id="form-status" role="status" aria-live="polite"></p>
       </form>
     </div>
 
@@ -133,10 +137,6 @@
 <script src="/assets/js/main.js" defer></script>
 <script src="/assets/js/experience.js" defer></script>
 <script>
-  // Inquiry routing structure only — no CRM/backend connected yet (see
-  // 06_Website_Code/development-plan.md). Field names map directly to the
-  // three confirmed inquiry types so a future integration needs no markup
-  // changes.
   var PATH_LABELS = {
     'custom-home': 'Custom Home Inquiry',
     'commercial-management': 'Commercial Property Management Inquiry',
@@ -179,26 +179,46 @@
     if (details && typeof KB_CONFIG !== 'undefined') {
       var rows = [];
       if (KB_CONFIG.phone) rows.push('<a href="tel:' + KB_CONFIG.phone.replace(/[^\d+]/g, '') + '">' + KB_CONFIG.phone + '</a>');
-      if (KB_CONFIG.email) rows.push('<a href="mailto:' + KB_CONFIG.email + '">' + KB_CONFIG.email + '</a>');
       (KB_CONFIG.offices || []).forEach(function (o) { if (o.address) rows.push('<span class="office"><span class="office-label">' + o.label + '</span><span class="office-address">' + o.address + '</span></span>'); });
       if (rows.length) details.innerHTML = rows.join('');
     }
   });
 
-  document.getElementById('inquiry-form').addEventListener('submit', function (e) {
+  document.getElementById('inquiry-form').addEventListener('submit', async function (e) {
     e.preventDefault();
     if (!e.currentTarget.reportValidity()) return;
     var selected = document.querySelector('.path-pill.selected');
+    var selectedPath = selected ? selected.getAttribute('data-path') : 'general';
     var inquiryType = selected ? PATH_LABELS[selected.getAttribute('data-path')] : PATH_LABELS.general;
     var data = new FormData(e.currentTarget);
-    var lines = ['Inquiry type: ' + inquiryType];
-    data.forEach(function (value, key) {
-      if (value && String(value).trim()) lines.push(key + ': ' + String(value).trim());
-    });
-    var recipient = (typeof KB_CONFIG !== 'undefined' && KB_CONFIG.email) ? KB_CONFIG.email : 'admin@kingsbridgegroup.ca';
-    window.location.href = 'mailto:' + recipient + '?subject=' +
-      encodeURIComponent(inquiryType + ' - ' + (data.get('name') || 'Website Inquiry')) +
-      '&body=' + encodeURIComponent(lines.join('\n'));
+    var payload = { inquiryType: inquiryType };
+    data.forEach(function (value, key) { payload[key] = String(value || '').trim(); });
+    var button = e.currentTarget.querySelector('button[type="submit"]');
+    var status = document.getElementById('form-status');
+    var originalButton = button.innerHTML;
+    button.disabled = true;
+    button.textContent = 'Sending...';
+    status.className = 'form-status';
+    status.textContent = '';
+    try {
+      var response = await fetch('/api/kingsbridge-contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      var result = await response.json().catch(function () { return {}; });
+      if (!response.ok) throw new Error(result.error || 'Unable to send your inquiry.');
+      e.currentTarget.reset();
+      setPath(selectedPath);
+      status.className = 'form-status success';
+      status.textContent = 'Thank you. Your inquiry has been emailed directly to Kingsbridge.';
+    } catch (error) {
+      status.className = 'form-status error';
+      status.textContent = error.message || 'Unable to send your inquiry. Please try again.';
+    } finally {
+      button.disabled = false;
+      button.innerHTML = originalButton;
+    }
   });
 </script>
 </body>

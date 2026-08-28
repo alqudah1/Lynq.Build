@@ -374,6 +374,11 @@ body.menu-open .mobile-menu { opacity: 1; pointer-events: auto; }
 }
 .field input:focus, .field textarea:focus { outline: none; border-color: var(--bronze-deep); }
 .field textarea { resize: vertical; min-height: 110px; }
+.hp-field { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.form-status { min-height: 22px; font-size: 13.5px; line-height: 1.6; color: var(--text-muted-on-ivory); }
+.form-status.success { color: #47664f; }
+.form-status.error { color: #9c3f35; }
+.inquiry-form button[disabled] { opacity: .62; cursor: wait; }
 
 .toast {
   position: fixed; left: 50%; bottom: 30px; transform: translate(-50%,10px); opacity: 0;
@@ -631,7 +636,13 @@ body.menu-open .mobile-menu { opacity: 1; pointer-events: auto; }
 /* ============ COMMERCIAL EXPERIENCE — architectural experience index. No cards, no photos:
    the 20+ figure stands as its own credibility line, then an oversized 01/02/03 index carries
    the three properties as three quiet columns rather than a stacked list. ============ */
-.pm-experience { padding-top: 64px; padding-bottom: 72px; }
+.pm-experience { padding-top: 64px; padding-bottom: 64px; }
+
+.pm-exp-grid { display: grid; grid-template-columns: 1fr; gap: 42px; }
+@media (min-width: 760px) {
+  .pm-exp-grid { grid-template-columns: 1fr 1fr; align-items: center; gap: 72px; }
+  .pm-exp-head { border-left: 1px solid var(--line-on-ivory); padding-left: 64px; }
+}
 
 .pm-exp-credibility { display: flex; align-items: baseline; gap: 20px; }
 .pm-exp-num { font-family: var(--font-display); font-size: clamp(40px, 4.6vw, 56px); line-height: 1; color: var(--ink); }
@@ -639,7 +650,7 @@ body.menu-open .mobile-menu { opacity: 1; pointer-events: auto; }
   font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--bronze-deep); max-width: 22ch;
 }
 
-.pm-exp-head { margin-top: 56px; }
+.pm-exp-head { margin-top: 0; }
 .pm-exp-note { font-size: clamp(16px, 1.8vw, 19px); color: var(--text-muted-on-ivory); margin-top: 14px; max-width: 48ch; }
 
 .pm-property-grid {
