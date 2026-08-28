@@ -201,7 +201,7 @@
     status.className = 'form-status';
     status.textContent = '';
     try {
-      var response = await fetch('/api/kingsbridge-contact', {
+      var response = await fetch('https://lynq-build.vercel.app/api/kingsbridge-contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

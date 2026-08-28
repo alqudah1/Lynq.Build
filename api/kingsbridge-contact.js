@@ -6,6 +6,10 @@ const ALLOWED_INQUIRIES = new Set([
   'Commercial Property Management Inquiry',
   'General Inquiry',
 ]);
+const ALLOWED_ORIGINS = new Set([
+  'https://www.kingsbridgegroup.ca',
+  'https://kingsbridgegroup.ca',
+]);
 
 function clean(value, max = 500) {
   return String(value || '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').trim().slice(0, max);
@@ -16,6 +20,14 @@ function isEmail(value) {
 }
 
 module.exports = async function kingsbridgeContact(req, res) {
+  const origin = req.headers && req.headers.origin;
+  if (ALLOWED_ORIGINS.has(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method === 'GET') {
     return res.status(200).json({ ok: true, emailConfigured: Boolean(process.env.ZOHO_APP_PASSWORD) });
   }
