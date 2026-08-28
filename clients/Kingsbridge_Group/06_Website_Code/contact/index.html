@@ -214,7 +214,14 @@
       status.textContent = 'Thank you. Your inquiry has been emailed directly to Kingsbridge.';
     } catch (error) {
       status.className = 'form-status error';
-      status.textContent = error.message || 'Unable to send your inquiry. Please try again.';
+      var subject = encodeURIComponent('Kingsbridge — ' + inquiryType);
+      var body = encodeURIComponent(
+        'Name: ' + (payload.name || '') + '\n' +
+        'Email: ' + (payload.email || '') + '\n' +
+        'Phone: ' + (payload.phone || '') + '\n\n' +
+        (payload.message || '')
+      );
+      status.innerHTML = 'Automatic delivery is temporarily unavailable. <a href="mailto:admin@kingsbridgegroup.ca?subject=' + subject + '&amp;body=' + body + '">Email Kingsbridge directly</a>.';
     } finally {
       button.disabled = false;
       button.innerHTML = originalButton;
