@@ -1,5 +1,3 @@
-const nodemailer = require('nodemailer');
-
 const TARGET_EMAIL = 'admin@kingsbridgegroup.ca';
 const ALLOWED_INQUIRIES = new Set([
   'Custom Home Inquiry',
@@ -19,6 +17,31 @@ function isEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
+function microsoftConfigured() {
+  return Boolean(
+    process.env.MS365_TENANT_ID &&
+    process.env.MS365_CLIENT_ID &&
+    process.env.MS365_REFRESH_TOKEN
+  );
+}
+
+async function getMicrosoftAccessToken() {
+  const body = new URLSearchParams({
+    client_id: process.env.MS365_CLIENT_ID,
+    grant_type: 'refresh_token',
+    refresh_token: process.env.MS365_REFRESH_TOKEN,
+    scope: 'https://graph.microsoft.com/Mail.Send offline_access',
+  });
+  if (process.env.MS365_CLIENT_SECRET) body.set('client_secret', process.env.MS365_CLIENT_SECRET);
+  const response = await fetch(
+    `https://login.microsoftonline.com/${encodeURIComponent(process.env.MS365_TENANT_ID)}/oauth2/v2.0/token`,
+    { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body }
+  );
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || !result.access_token) throw new Error(`Microsoft token request failed (${response.status})`);
+  return result.access_token;
+}
+
 module.exports = async function kingsbridgeContact(req, res) {
   const origin = req.headers && req.headers.origin;
   if (ALLOWED_ORIGINS.has(origin)) {
@@ -29,7 +52,7 @@ module.exports = async function kingsbridgeContact(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method === 'GET') {
-    return res.status(200).json({ ok: true, emailConfigured: Boolean(process.env.ZOHO_APP_PASSWORD) });
+    return res.status(200).json({ ok: true, provider: 'microsoft365', emailConfigured: microsoftConfigured() });
   }
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
@@ -50,7 +73,7 @@ module.exports = async function kingsbridgeContact(req, res) {
   if (!name || !isEmail(email) || !message || !ALLOWED_INQUIRIES.has(inquiryType)) {
     return res.status(400).json({ error: 'Please complete your name, email, inquiry type and message.' });
   }
-  if (!process.env.ZOHO_APP_PASSWORD) {
+  if (!microsoftConfigured()) {
     return res.status(503).json({ error: 'Email delivery is temporarily unavailable. Please try again shortly.' });
   }
 
@@ -79,20 +102,22 @@ module.exports = async function kingsbridgeContact(req, res) {
   ].filter(Boolean).join('\n');
 
   try {
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.zohocloud.ca',
-      port: 465,
-      secure: true,
-      auth: { user: 'hello@lynq.build', pass: process.env.ZOHO_APP_PASSWORD },
+    const accessToken = await getMicrosoftAccessToken();
+    const graphResponse = await fetch('https://graph.microsoft.com/v1.0/me/sendMail', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: {
+          subject: `${inquiryType} — ${name.replace(/[\r\n]/g, ' ')}`,
+          body: { contentType: 'Text', content: text },
+          toRecipients: [{ emailAddress: { address: TARGET_EMAIL } }],
+          replyTo: [{ emailAddress: { name: name.replace(/["<>]/g, ''), address: email } }],
+        },
+        saveToSentItems: true,
+      }),
     });
-    const info = await transporter.sendMail({
-      from: '"Kingsbridge Website" <hello@lynq.build>',
-      replyTo: `"${name.replace(/["<>]/g, '')}" <${email}>`,
-      to: TARGET_EMAIL,
-      subject: `${inquiryType} — ${name.replace(/[\r\n]/g, ' ')}`,
-      text,
-    });
-    return res.status(200).json({ ok: true, delivered: true, messageId: info.messageId });
+    if (!graphResponse.ok) throw new Error(`Microsoft Graph send failed (${graphResponse.status})`);
+    return res.status(200).json({ ok: true, delivered: true });
   } catch (error) {
     console.error('Kingsbridge contact delivery failed:', error.message);
     return res.status(500).json({ error: 'Unable to send your inquiry right now. Please try again.' });
