@@ -143,3 +143,20 @@ export class UncertainSendOutcomeError extends DomainRuleViolationError {
     this.name = "UncertainSendOutcomeError";
   }
 }
+
+/**
+ * Thrown out of `processSendJob` when the provider POSITIVELY refused the
+ * request — a rate limit or throttle — and therefore created nothing. The
+ * message has already been released back to `queued`; throwing is what
+ * makes the durable Runtime job retry with its own exponential backoff.
+ * Deliberately NOT a `DomainRuleViolationError`: the worker's
+ * `classifyExecutionError` must fall through to its `"transient"` default
+ * so the job is retried rather than dead-lettered.
+ */
+export class ProviderTemporarilyUnavailableError extends Error {
+  readonly reason = "provider_temporarily_unavailable";
+  constructor(failureCode: string) {
+    super(`The provider temporarily refused this send (${failureCode}); it has been re-queued for retry.`);
+    this.name = "ProviderTemporarilyUnavailableError";
+  }
+}

@@ -5,6 +5,8 @@ import { and, eq } from "drizzle-orm";
 import { createDbClient } from "@/db/client";
 import { crmCompanies } from "@/db/schema";
 import { loadEnv } from "@/lib/env";
+import { usesArabicContent } from "@/lib/lead-gen/demo-quality";
+import { isDemoContentStale, parseDemoContent } from "@/lib/lead-gen/demo-content";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +14,7 @@ const getDemoCompany = cache(async (slug: string) => {
   if (!/^[a-f0-9]{40}$/.test(slug)) return null;
   const db = createDbClient(loadEnv());
   const [company] = await db
-    .select({ name: crmCompanies.name, industry: crmCompanies.industry, phone: crmCompanies.phone, address: crmCompanies.address })
+    .select({ name: crmCompanies.name, industry: crmCompanies.industry, phone: crmCompanies.phone, website: crmCompanies.website, address: crmCompanies.address })
     .from(crmCompanies)
     .where(and(eq(crmCompanies.idempotencyKey, `lynq-prospect-company:${slug}`), eq(crmCompanies.status, "active")))
     .limit(1);
@@ -158,8 +160,16 @@ export default async function DemoPage({ params }: { params: Promise<{ slug: str
   if (!company) notFound();
 
   const address = company.address && typeof company.address === "object" && !Array.isArray(company.address) ? company.address as Record<string, unknown> : null;
-  const countryCode = textField(address, "countryCode");
-  const arabic = countryCode === "JO";
+  // RTL follows the CONTENT, never the country. A Jordanian business whose
+  // own name, category and description are in English gets an English,
+  // left-to-right page; only genuinely Arabic listing content produces an
+  // Arabic, right-to-left one. Keying this off `countryCode === "JO"` (as
+  // it did) wrapped English text in a right-to-left layout.
+  const arabic = usesArabicContent({
+    name: company.name,
+    category: textField(address, "category") || company.industry,
+    description: textField(address, "description"),
+  });
   const category = textField(address, "category") || company.industry || (arabic ? "وجهة محلية" : "Local destination");
   const description = textField(address, "description");
   const formattedAddress = textField(address, "formatted");
@@ -168,12 +178,46 @@ export default async function DemoPage({ params }: { params: Promise<{ slug: str
   const rating = numberField(address, "rating");
   const reviews = numberField(address, "reviews");
   const hours = hoursField(address);
-  const experiences = experienceSet(`${company.industry ?? ""} ${category}`, arabic);
-  const copy = editorialCopy(`${company.industry ?? ""} ${category}`, arabic);
+  // Business-specific copy when a reviewer-approved generation exists for
+  // exactly these facts; the keyword-matched house copy otherwise. Stale
+  // copy (facts changed since it was written) is deliberately NOT used —
+  // the fallback is generic but true, which is the safer of the two.
+  const storedContent = parseDemoContent((address as Record<string, unknown> | null)?.demoContent);
+  const factsForContent = {
+    name: company.name,
+    category: textField(address, "category") || company.industry,
+    city: textField(address, "city"),
+    countryCode: textField(address, "countryCode"),
+    rating: numberField(address, "rating"),
+    reviewCount: numberField(address, "reviews"),
+    description: textField(address, "description"),
+    photoUrl: textField(address, "photo") || null,
+    website: company.website ?? null,
+  };
+  const usableContent = storedContent && !isDemoContentStale(storedContent, factsForContent) ? storedContent : null;
+
+  const experiences = usableContent
+    ? usableContent.experiences.map((entry, index) => ({ index: String(index + 1).padStart(2, "0"), title: entry.title, description: entry.description }))
+    : experienceSet(`${company.industry ?? ""} ${category}`, arabic);
+  const copy = usableContent
+    ? {
+        eyebrow: usableContent.eyebrow,
+        intro: usableContent.intro,
+        headline: usableContent.headline,
+        imageLine: usableContent.imageLine,
+        experienceLabel: usableContent.experienceLabel,
+        experienceTitle: usableContent.experienceTitle,
+        closing: usableContent.closing,
+      }
+    : editorialCopy(`${company.industry ?? ""} ${category}`, arabic);
   const phoneDigits = company.phone?.replace(/\D/g, "") ?? "";
   const initials = businessInitials(company.name);
   const mapUrl = formattedAddress ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(formattedAddress)}` : null;
-  const placeLabel = formattedAddress || city || (arabic ? "الأردن" : "Canada");
+  // Never invent a location. The old fallback printed "Canada" (or
+  // "الأردن") for any business with no stored address, which put a
+  // fabricated country on a real business's page — and put "Canada" on
+  // Jordanian businesses whose listing content happened to be English.
+  const placeLabel = formattedAddress || city || null;
 
   return (
     <main dir={arabic ? "rtl" : "ltr"} className="min-h-screen overflow-hidden bg-[#0a0a09] text-[#f5f2ea] selection:bg-[#d8c4a0] selection:text-[#11110f]">
@@ -204,7 +248,7 @@ export default async function DemoPage({ params }: { params: Promise<{ slug: str
             </div>
             <div className="border-t border-white/30 pt-5 text-sm text-white/70 lg:border-s lg:border-t-0 lg:ps-7 lg:pt-0">
               <p className="text-[0.65rem] uppercase tracking-[0.22em] text-white/45">{arabic ? "اكتشف المكان" : "Discover the place"}</p>
-              <p className="mt-3 text-base text-white">{placeLabel}</p>
+              {placeLabel ? <p className="mt-3 text-base text-white">{placeLabel}</p> : null}
               {rating ? <p className="mt-5 text-[#e0cfad]"><span className="text-2xl font-medium text-white">{rating.toFixed(1)}</span> / 5&nbsp;&nbsp;★ {reviews ? `${reviews.toLocaleString()} ${arabic ? "تقييم" : "reviews"}` : ""}</p> : null}
             </div>
           </div>
@@ -247,7 +291,7 @@ export default async function DemoPage({ params }: { params: Promise<{ slug: str
       <section id="visit" className="border-y border-white/10 bg-[#f0ede5] text-[#141411]">
         <div className="mx-auto grid max-w-[1500px] lg:grid-cols-2">
           <div className="px-5 py-20 md:px-10 md:py-28 lg:border-e lg:border-black/10">
-            <p className="text-[0.68rem] uppercase tracking-[0.26em] text-black/48">{arabic ? "خطط لزيارتك" : "Plan your visit"}</p><h2 className="mt-5 text-5xl font-medium tracking-[-0.05em] md:text-7xl">{arabic ? "أهلاً وسهلاً" : "Come say hello"}</h2><p className="mt-8 max-w-lg text-base leading-7 text-black/62">{placeLabel}</p>
+            <p className="text-[0.68rem] uppercase tracking-[0.26em] text-black/48">{arabic ? "خطط لزيارتك" : "Plan your visit"}</p><h2 className="mt-5 text-5xl font-medium tracking-[-0.05em] md:text-7xl">{arabic ? "أهلاً وسهلاً" : "Come say hello"}</h2>{placeLabel ? <p className="mt-8 max-w-lg text-base leading-7 text-black/62">{placeLabel}</p> : null}
             <div className="mt-10 flex flex-wrap gap-3">{mapUrl ? <a href={mapUrl} target="_blank" rel="noreferrer" className="bg-[#141411] px-6 py-4 text-xs font-semibold uppercase tracking-[0.12em] text-white">{arabic ? "افتح الخريطة" : "Open map"}</a> : null}{phoneDigits ? <a href={`https://wa.me/${phoneDigits}`} className="border border-black/25 px-6 py-4 text-xs font-semibold uppercase tracking-[0.12em]">{arabic ? "تواصل عبر واتساب" : "Contact on WhatsApp"}</a> : null}</div>
           </div>
           <div className="px-5 py-20 md:px-10 md:py-28">

@@ -267,6 +267,13 @@
       "when": 1786292039221,
       "tag": "0037_founder_workspace_module18",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1786378439221,
+      "tag": "0038_whatsapp_cloud_api_and_demo_review",
+      "breakpoints": true
     }
   ]
 }

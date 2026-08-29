@@ -1,53 +1,111 @@
-function outreachText(countryCode: string | null | undefined, businessName: string, demoUrl?: string | null): string {
-  if (countryCode === "JO") {
-    const demoLine = demoUrl ? `\n\nهذا التصور اللي عملته لكم:\n${demoUrl}` : "";
-    return `مرحبا، معك مصطفى من LYNQ. لفتني ${businessName}، خصوصاً تقييمكم القوي، فحبيت أوريكم كيف ممكن يكون حضوركم أونلاين بشكل يليق بشغلكم.${demoLine}\n\nهذا مش الموقع النهائي ولا قالب جاهز. هو مجرد بداية حتى تشوفوا الاتجاه. إذا حبيتوه، بنبني النسخة الكاملة حول هويتكم الحقيقية ونضيف المنيو أو الخدمات والحجز والطلبات والواتساب وإدارة العملاء حسب شغلكم.\n\nحاب أعرف رأيكم بصراحة: نكمل بهذا الاتجاه، ولا بتفضلوا ستايل مختلف؟\n\nالاشتراك 25 دينار بالشهر. وإذا ما بتحبوا نتواصل معكم مرة ثانية اكتبوا توقف.`;
-  }
+import type { LeadGenMarket } from "@/lib/lead-gen/markets";
+import type { BuiltOutreach } from "@/lib/lead-gen/outreach";
+import type { DemoEligibility } from "@/lib/lead-gen/demo-quality";
 
-  const demoLine = demoUrl ? `\n\nHere is the direction I created for you:\n${demoUrl}` : "";
-  return `Hi, this is Mustafa from LYNQ. ${businessName} stood out to me, especially the strength of your reviews, so I wanted to show you what your online presence could look like when it truly matches the quality of the business.${demoLine}\n\nThis is not the finished website or an off-the-shelf template. It is simply a starting point so you can see the direction. If you like it, we would build the full version around your real brand and add the services or menu, booking, orders, WhatsApp and customer follow-up your business needs.\n\nI would genuinely value your reaction: should we keep developing this direction, or would a different style fit you better?\n\nIt is $100 CAD per month. If you would rather not hear from us again, reply STOP.`;
+/**
+ * Lead-row contact actions.
+ *
+ * Every string a prospect would read comes from `lib/lead-gen/outreach.ts`
+ * via `resolveCompanyOutreachContext` — this component composes no copy and
+ * knows no prices. It previously held both, in two languages, which is how
+ * the Jordanian message ended up in Arabic and the Canadian price ended up
+ * as the fallback for any lead with an unknown country.
+ *
+ * The WhatsApp and Email buttons here are MANUAL, one-at-a-time actions for
+ * a human: they open the operator's own WhatsApp or mail client with the
+ * text prefilled. LYNQ records nothing about them and cannot know whether
+ * anything was actually sent — which is exactly why they are labelled
+ * "manual" and why real, tracked campaigns go through an approved bulk
+ * batch on the WhatsApp Cloud API instead.
+ */
+
+function whatsappUrl(phone: string, bodyText: string): string {
+  return `https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(bodyText)}`;
 }
 
-function whatsappUrl(phone: string, businessName: string, countryCode?: string | null, demoUrl?: string | null): string {
-  const digits = phone.replace(/\D/g, "");
-  const message = outreachText(countryCode, businessName, demoUrl);
-  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
-}
-
-function emailUrl(email: string, businessName: string, countryCode?: string | null, demoUrl?: string | null): string {
-  const subject = countryCode === "JO" ? `فكرة جاهزة لـ ${businessName}` : `A website concept for ${businessName}`;
-  const body = outreachText(countryCode, businessName, demoUrl);
-  return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+function emailUrl(email: string, subject: string, bodyText: string): string {
+  return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
 }
 
 const actionClass = "lynq-transition inline-flex min-h-9 items-center justify-center rounded-sm border border-border-strong px-3 text-[0.68rem] font-medium uppercase tracking-[0.07em] text-foreground hover:bg-white/5";
 const disabledClass = "inline-flex min-h-9 cursor-not-allowed items-center justify-center rounded-sm border border-border px-3 text-[0.68rem] font-medium uppercase tracking-[0.07em] text-subtle opacity-60";
 
-const WHATSAPP_SENDER_BY_COUNTRY = {
-  CA: { label: "Canada", phone: "+1 647-892-7346" },
-  JO: { label: "Jordan", phone: "+962 79 694 0024" },
-} as const;
-
-export function ContactActions({ email, phone, businessName, countryCode, demoSlug }: { email?: string | null; phone?: string | null; businessName: string; countryCode?: string | null; demoSlug?: string | null }) {
-  const sender = countryCode === "CA" || countryCode === "JO" ? WHATSAPP_SENDER_BY_COUNTRY[countryCode] : null;
-  const demoUrl = demoSlug ? `https://app.lynq.build/demo/${demoSlug}` : null;
+export function ContactActions({
+  email,
+  phone,
+  businessName,
+  market,
+  demoUrl,
+  outreach,
+  eligibility,
+}: {
+  email?: string | null;
+  phone?: string | null;
+  businessName: string;
+  market: LeadGenMarket | null;
+  demoUrl: string | null;
+  outreach: Pick<BuiltOutreach, "bodyText" | "emailSubject"> | null;
+  eligibility: DemoEligibility;
+}) {
+  // No approved demo means no outreach text — a link to an unreviewed page
+  // is precisely what the quality gate exists to stop, and disabling the
+  // button is more honest than prefilling a message a human then has to
+  // remember not to send.
+  const canReachOut = Boolean(outreach) && eligibility.eligible;
+  const blockedReason = !market
+    ? "Market unknown — no price can be selected for this lead"
+    : !demoUrl
+      ? "No demo has been generated for this business yet"
+      : !eligibility.eligible
+        ? eligibility.detail
+        : null;
 
   return (
     <div className="flex flex-col gap-1.5" aria-label={`Contact ${businessName}`}>
       <div className="flex flex-wrap gap-2">
-        {email ? (
-          <a className={actionClass} href={emailUrl(email, businessName, countryCode, demoUrl)} aria-label={`Email ${businessName}`}>Email</a>
+        {email && canReachOut && outreach ? (
+          <a className={actionClass} href={emailUrl(email, outreach.emailSubject, outreach.bodyText)} aria-label={`Email ${businessName}`}>
+            Email
+          </a>
         ) : (
-          <span className={disabledClass} aria-disabled="true" title="No published email address">Email</span>
+          <span className={disabledClass} aria-disabled="true" title={email ? (blockedReason ?? "Unavailable") : "No published email address"}>
+            Email
+          </span>
         )}
-        {phone ? (
-          <a className={actionClass} href={whatsappUrl(phone, businessName, countryCode, demoUrl)} target="_blank" rel="noopener noreferrer" aria-label={`Open WhatsApp for ${businessName}`}>WhatsApp{countryCode ? ` · ${countryCode}` : ""}</a>
+
+        {phone && canReachOut && outreach ? (
+          <a
+            className={actionClass}
+            href={whatsappUrl(phone, outreach.bodyText)}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Opens your own WhatsApp with the message prefilled. LYNQ does not record or track this send."
+            aria-label={`Open WhatsApp manually for ${businessName}`}
+          >
+            WhatsApp · manual{market ? ` · ${market.code}` : ""}
+          </a>
         ) : (
-          <span className={disabledClass} aria-disabled="true" title="No phone number">WhatsApp</span>
+          <span className={disabledClass} aria-disabled="true" title={phone ? (blockedReason ?? "Unavailable") : "No phone number"}>
+            WhatsApp
+          </span>
         )}
-        {demoUrl ? <a className={actionClass} href={demoUrl} target="_blank" rel="noopener noreferrer" aria-label={`View demo for ${businessName}`}>Demo</a> : null}
+
+        {demoUrl ? (
+          <a className={actionClass} href={demoUrl} target="_blank" rel="noopener noreferrer" aria-label={`View demo for ${businessName}`}>
+            Demo
+          </a>
+        ) : null}
       </div>
-      {sender ? <span className="text-[0.65rem] text-subtle">Send from {sender.label}: {sender.phone}</span> : null}
+
+      {market ? (
+        <span className="text-[0.65rem] text-subtle">
+          {market.countryName} · {market.priceDisplay}/month · send from {market.senderPhoneDisplay}
+        </span>
+      ) : (
+        <span className="text-[0.65rem] text-subtle">No market resolved — set the company&apos;s country before contacting</span>
+      )}
+
+      {blockedReason && (email || phone) ? <span className="text-[0.65rem] text-subtle">Outreach blocked: {blockedReason}</span> : null}
     </div>
   );
 }

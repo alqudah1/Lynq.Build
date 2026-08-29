@@ -25,6 +25,14 @@ const envSchema = z.object({
   OFFICE_PLANNING_MODEL: z.string().regex(/^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/i).optional(),
   OFFICE_ENGINEERING_MODEL: z.string().regex(/^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/i).optional(),
   OFFICE_REVIEW_MODEL: z.string().regex(/^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/i).optional(),
+  // Lead-gen model routing — the same role-per-env-var shape the Office
+  // uses, defaulting to Anthropic Claude through the AI Gateway. Optional:
+  // `lib/lead-gen/models.ts` carries the defaults, so an unset environment
+  // is fully working rather than broken.
+  LEADGEN_RESEARCH_MODEL: z.string().regex(/^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/i).optional(),
+  LEADGEN_CONTENT_MODEL: z.string().regex(/^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/i).optional(),
+  LEADGEN_REVIEW_MODEL: z.string().regex(/^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/i).optional(),
+  LEADGEN_CLASSIFICATION_MODEL: z.string().regex(/^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/i).optional(),
   // Module 16 — Communications Core. Symmetric key (32 raw bytes,
   // base64-encoded) used to encrypt integration connection credentials at
   // rest (`integration_credentials.ciphertext`, AES-256-GCM). Optional —
@@ -46,6 +54,10 @@ const envSchema = z.object({
   // a real provider. Optional; if absent, the dev webhook route rejects
   // every request rather than accepting one unauthenticated.
   COMMUNICATIONS_DEV_WEBHOOK_SECRET: z.string().min(1).optional(),
+  // The public https origin prospect demo URLs are built from. Unset falls
+  // back to the Vercel production URL and then to app.lynq.build, so a
+  // preview deployment links to itself instead of to production.
+  LYNQ_PUBLIC_APP_ORIGIN: z.string().regex(/^https:\/\/[^\s/]+$/).optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -71,9 +83,17 @@ export function loadEnv(): Env {
     OFFICE_PLANNING_MODEL: process.env.OFFICE_PLANNING_MODEL,
     OFFICE_ENGINEERING_MODEL: process.env.OFFICE_ENGINEERING_MODEL,
     OFFICE_REVIEW_MODEL: process.env.OFFICE_REVIEW_MODEL,
+    LEADGEN_RESEARCH_MODEL: process.env.LEADGEN_RESEARCH_MODEL,
+    LEADGEN_CONTENT_MODEL: process.env.LEADGEN_CONTENT_MODEL,
+    LEADGEN_REVIEW_MODEL: process.env.LEADGEN_REVIEW_MODEL,
+    LEADGEN_CLASSIFICATION_MODEL: process.env.LEADGEN_CLASSIFICATION_MODEL,
     INTEGRATION_CREDENTIAL_ENCRYPTION_KEY: process.env.INTEGRATION_CREDENTIAL_ENCRYPTION_KEY,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     RESEND_WEBHOOK_SECRET: process.env.RESEND_WEBHOOK_SECRET,
+    // Was declared in the schema but never passed in, so it always parsed
+    // as undefined and every reader fell back to `process.env` directly.
+    COMMUNICATIONS_DEV_WEBHOOK_SECRET: process.env.COMMUNICATIONS_DEV_WEBHOOK_SECRET,
+    LYNQ_PUBLIC_APP_ORIGIN: process.env.LYNQ_PUBLIC_APP_ORIGIN,
   });
 
   if (!parsed.success) {

@@ -6,6 +6,7 @@ import { communicationsCreateDraftTool } from "./communications-create-draft";
 import { communicationsSendTool } from "./communications-send";
 import { communicationsGetStatusTool } from "./communications-get-status";
 import { communicationsListConversationTool } from "./communications-list-conversation";
+import { LEAD_GEN_TOOL_IMPLEMENTATIONS } from "@/lib/lead-gen/tools";
 
 /**
  * The complete set of tool implementations shipped so far. Module 8's own
@@ -24,6 +25,10 @@ const IMPLEMENTATIONS: Record<string, ToolImplementation> = {
   "communications.send@1": communicationsSendTool as ToolImplementation,
   "communications.get_status@1": communicationsGetStatusTool as ToolImplementation,
   "communications.list_conversation@1": communicationsListConversationTool as ToolImplementation,
+  // The lead-gen tools register through the same map rather than a second
+  // registry, so they inherit `invokeTool`'s permission floor, rate limit,
+  // approval gate, idempotency guard and audit trail unchanged.
+  ...Object.fromEntries(LEAD_GEN_TOOL_IMPLEMENTATIONS.map((tool) => [`${tool.toolKey}@${tool.version}`, tool])),
 };
 
 export function resolveToolImplementation(toolKey: string, version: number): ToolImplementation | null {
