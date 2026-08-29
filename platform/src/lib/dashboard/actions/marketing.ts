@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { loadEnv } from "@/lib/env";
 import { createDbClient } from "@/db/client";
@@ -38,6 +39,10 @@ import {
 } from "@/lib/marketing-os/validation";
 import { toActionResult } from "./errors";
 import type { ActionResult } from "./types";
+import { ensureDefaultBrandProfiles, generateContentConcepts, generateProductionPackage, saveStudioToPipeline, updateProductionPackage } from "@/lib/marketing-os/content-studio";
+import { contentStudioContentKindSchema, contentStudioPackageSchema } from "@/lib/marketing-os/validation";
+import { renderContentStudioMedia } from "@/lib/marketing-os/media-production";
+import { ensureDefaultChannelAccounts, recordPerformanceSnapshot } from "@/lib/marketing-os/command-center";
 
 async function context(organizationSlug: string, path: string) {
   const env = loadEnv();
@@ -48,6 +53,198 @@ async function context(organizationSlug: string, path: string) {
 }
 
 const uuidSchema = z.string().uuid();
+
+function parseStudioPackage(formData: FormData) {
+  const contentKind = contentStudioContentKindSchema.safeParse(formData.get("contentKind"));
+  if (!contentKind.success) return contentStudioPackageSchema.safeParse({ contentKind: formData.get("contentKind") });
+  const common = {
+    contentKind: contentKind.data,
+    title: formData.get("title"),
+    hooks: String(formData.get("hooks") ?? "").split("\n").map((value) => value.trim()).filter(Boolean),
+    selectedHook: formData.get("selectedHook"),
+    caption: formData.get("caption"),
+    coverText: formData.get("coverText"),
+    assetInstructions: String(formData.get("assetInstructions") ?? "").split("\n").map((value) => value.trim()).filter(Boolean),
+    callToAction: formData.get("callToAction"),
+  };
+  if (contentKind.data !== "short_video") {
+    const positions = formData.getAll("panelPosition").map(String);
+    const purposes = formData.getAll("panelPurpose").map(String);
+    const visuals = formData.getAll("panelVisual").map(String);
+    const overlayText = formData.getAll("panelOverlayText").map(String);
+    return contentStudioPackageSchema.safeParse({
+      ...common,
+      postCopy: formData.get("postCopy"),
+      panels: positions.map((position, index) => ({ position, purpose: purposes[index] ?? "", visual: visuals[index] ?? "", overlayText: overlayText[index] ?? "" })),
+      renderingStatus: "not_requested",
+      renderedAssets: [],
+      renderingError: null,
+    });
+  }
+  const timings = formData.getAll("shotTiming").map(String);
+  const visuals = formData.getAll("shotVisual").map(String);
+  const texts = formData.getAll("shotText").map(String);
+  const audio = formData.getAll("shotAudio").map(String);
+  return contentStudioPackageSchema.safeParse({
+    ...common,
+    script: formData.get("script"),
+    shots: timings.map((timing, index) => ({ timing, visual: visuals[index] ?? "", onScreenText: texts[index] ?? "", audio: audio[index] ?? "" })),
+    renderingStatus: "not_requested",
+    renderedAssets: [],
+    renderingError: null,
+  });
+}
+
+export async function setupContentStudioAction(organizationSlug: string): Promise<ActionResult> {
+  const { db, user, organization } = await context(organizationSlug, `/app/${organizationSlug}/marketing/content-studio`);
+  try {
+    await ensureDefaultBrandProfiles(db, { organizationId: organization.id, actorUserId: user.userId });
+    await seedMarketingAgents(db, { organizationId: organization.id, humanOwnerUserId: user.userId, actorUserId: user.userId });
+  } catch (err) {
+    return toActionResult(err);
+  }
+  revalidatePath(`/app/${organizationSlug}/marketing/content-studio`);
+  return { ok: true };
+}
+
+export async function setupMarketingCommandCenterAction(organizationSlug: string): Promise<ActionResult> {
+  const { db, user, organization } = await context(organizationSlug, `/app/${organizationSlug}/marketing/command-center`);
+  try {
+    await ensureDefaultBrandProfiles(db, { organizationId: organization.id, actorUserId: user.userId });
+    await ensureDefaultChannelAccounts(db, { organizationId: organization.id, actorUserId: user.userId });
+  } catch (err) {
+    return toActionResult(err);
+  }
+  revalidatePath(`/app/${organizationSlug}/marketing/command-center`);
+  return { ok: true };
+}
+
+const nonnegativeInt = z.coerce.number().int().min(0).max(2_000_000_000).default(0);
+const moneyAmount = z.coerce.number().min(0).max(1_000_000_000).default(0);
+const performanceSnapshotSchema = z.object({
+  contentItemId: uuidSchema,
+  channelAccountId: uuidSchema,
+  capturedAt: z.string().trim().optional(),
+  impressions: nonnegativeInt,
+  reach: nonnegativeInt,
+  views: nonnegativeInt,
+  likes: nonnegativeInt,
+  comments: nonnegativeInt,
+  shares: nonnegativeInt,
+  saves: nonnegativeInt,
+  clicks: nonnegativeInt,
+  leads: nonnegativeInt,
+  conversions: nonnegativeInt,
+  spendAmount: moneyAmount,
+  revenueAmount: moneyAmount,
+  notes: z.string().trim().max(1000).optional(),
+});
+
+export async function recordMarketingPerformanceAction(organizationSlug: string, formData: FormData): Promise<ActionResult> {
+  const { db, user, organization } = await context(organizationSlug, `/app/${organizationSlug}/marketing/command-center`);
+  const parsed = performanceSnapshotSchema.safeParse({
+    contentItemId: formData.get("contentItemId"), channelAccountId: formData.get("channelAccountId"), capturedAt: formData.get("capturedAt") || undefined,
+    impressions: formData.get("impressions") || 0, reach: formData.get("reach") || 0, views: formData.get("views") || 0,
+    likes: formData.get("likes") || 0, comments: formData.get("comments") || 0, shares: formData.get("shares") || 0, saves: formData.get("saves") || 0,
+    clicks: formData.get("clicks") || 0, leads: formData.get("leads") || 0, conversions: formData.get("conversions") || 0,
+    spendAmount: formData.get("spendAmount") || 0, revenueAmount: formData.get("revenueAmount") || 0, notes: formData.get("notes") || undefined,
+  });
+  if (!parsed.success) return toActionResult(parsed.error);
+  try {
+    await recordPerformanceSnapshot(db, {
+      ...parsed.data,
+      organizationId: organization.id,
+      actorUserId: user.userId,
+      capturedAt: parsed.data.capturedAt ? new Date(parsed.data.capturedAt) : undefined,
+      spendAmount: parsed.data.spendAmount.toFixed(2),
+      revenueAmount: parsed.data.revenueAmount.toFixed(2),
+    });
+  } catch (err) {
+    return toActionResult(err);
+  }
+  revalidatePath(`/app/${organizationSlug}/marketing/command-center`);
+  return { ok: true };
+}
+
+const generateStudioSchema = z.object({
+  brandProfileId: uuidSchema,
+  goal: z.string().trim().min(5).max(2000),
+  intendedChannel: z.string().trim().min(1).max(100),
+  plannedPublishAt: z.string().trim().optional(),
+});
+
+export async function generateContentStudioConceptsAction(organizationSlug: string, formData: FormData): Promise<ActionResult> {
+  const { db, user, organization } = await context(organizationSlug, `/app/${organizationSlug}/marketing/content-studio`);
+  const parsed = generateStudioSchema.safeParse({ brandProfileId: formData.get("brandProfileId"), goal: formData.get("goal"), intendedChannel: formData.get("intendedChannel"), plannedPublishAt: formData.get("plannedPublishAt") || undefined });
+  if (!parsed.success) return toActionResult(parsed.error);
+  let studioId: string;
+  try {
+    const studio = await generateContentConcepts(db, { organizationId: organization.id, brandProfileId: parsed.data.brandProfileId, goal: parsed.data.goal, intendedChannel: parsed.data.intendedChannel, plannedPublishAt: parsed.data.plannedPublishAt ? new Date(parsed.data.plannedPublishAt) : null, actorUserId: user.userId });
+    studioId = studio.id;
+  } catch (err) {
+    return toActionResult(err);
+  }
+  redirect(`/app/${organizationSlug}/marketing/content-studio/${studioId}`);
+}
+
+export async function generateContentStudioPackageAction(organizationSlug: string, studioId: string, formData: FormData): Promise<ActionResult> {
+  const { db, user, organization } = await context(organizationSlug, `/app/${organizationSlug}/marketing/content-studio/${studioId}`);
+  const parsed = z.object({ conceptId: z.string().trim().min(1).max(40), expectedRevision: z.coerce.number().int().min(1) }).safeParse({ conceptId: formData.get("conceptId"), expectedRevision: formData.get("expectedRevision") });
+  if (!parsed.success) return toActionResult(parsed.error);
+  try {
+    await generateProductionPackage(db, { organizationId: organization.id, studioId, actorUserId: user.userId, ...parsed.data });
+  } catch (err) {
+    return toActionResult(err);
+  }
+  revalidatePath(`/app/${organizationSlug}/marketing/content-studio/${studioId}`);
+  return { ok: true };
+}
+
+export async function updateContentStudioPackageAction(organizationSlug: string, studioId: string, formData: FormData): Promise<ActionResult> {
+  const { db, user, organization } = await context(organizationSlug, `/app/${organizationSlug}/marketing/content-studio/${studioId}`);
+  const expectedRevision = z.coerce.number().int().min(1).safeParse(formData.get("expectedRevision"));
+  const productionPackage = parseStudioPackage(formData);
+  if (!expectedRevision.success) return toActionResult(expectedRevision.error);
+  if (!productionPackage.success) return toActionResult(productionPackage.error);
+  try {
+    await updateProductionPackage(db, { organizationId: organization.id, studioId, productionPackage: productionPackage.data, expectedRevision: expectedRevision.data, actorUserId: user.userId });
+  } catch (err) {
+    return toActionResult(err);
+  }
+  revalidatePath(`/app/${organizationSlug}/marketing/content-studio/${studioId}`);
+  return { ok: true };
+}
+
+export async function saveContentStudioToPipelineAction(organizationSlug: string, studioId: string, formData: FormData): Promise<ActionResult> {
+  const { db, user, organization } = await context(organizationSlug, `/app/${organizationSlug}/marketing/content-studio/${studioId}`);
+  const parsed = z.object({ campaignId: uuidSchema.optional(), expectedRevision: z.coerce.number().int().min(1), decision: z.enum(["render", "review", "approve"]) }).safeParse({ campaignId: formData.get("campaignId") || undefined, expectedRevision: formData.get("expectedRevision"), decision: formData.get("decision") });
+  const productionPackage = parseStudioPackage(formData);
+  if (!parsed.success) return toActionResult(parsed.error);
+  if (!productionPackage.success) return toActionResult(productionPackage.error);
+  let contentItemId: string;
+  try {
+    const updatedStudio = await updateProductionPackage(db, { organizationId: organization.id, studioId, productionPackage: productionPackage.data, expectedRevision: parsed.data.expectedRevision, actorUserId: user.userId });
+    if (parsed.data.decision === "render") {
+      await renderContentStudioMedia(db, { organizationId: organization.id, studioId: updatedStudio.id, expectedRevision: updatedStudio.revision, actorUserId: user.userId });
+      revalidatePath(`/app/${organizationSlug}/marketing/content-studio/${studioId}`);
+      return { ok: true };
+    }
+    if (!parsed.data.campaignId) return toActionResult(new Error("Choose a campaign before saving to the pipeline"));
+    const saved = await saveStudioToPipeline(db, { organizationId: organization.id, studioId: updatedStudio.id, campaignId: parsed.data.campaignId, actorUserId: user.userId });
+    contentItemId = saved.contentItemId;
+    const content = await import("@/lib/marketing-os/content").then((module) => module.resolveContentItemById(db, organization.id, contentItemId));
+    const reviewed = await submitContentForReview(db, { organizationId: organization.id, contentItemId, toStatus: "review", expectedRevision: content.revision, actorUserId: user.userId });
+    const { approval } = await requestContentReviewApproval(db, { organizationId: organization.id, contentItemId, summary: `Review the Content Studio package for ${productionPackage.data.title}. No publishing action is included.`, actorUserId: user.userId });
+    if (parsed.data.decision === "approve") {
+      await approveRequest(db, { organizationId: organization.id, approvalId: approval.id, actorUserId: user.userId });
+      const approved = await applyContentApprovalDecision(db, { organizationId: organization.id, contentItemId, approvalRequestId: approval.id, decision: "approved", expectedRevision: reviewed.revision, actorUserId: user.userId });
+      if (saved.studio.plannedPublishAt) await scheduleContent(db, { organizationId: organization.id, contentItemId, toStatus: "scheduled", expectedRevision: approved.revision, actorUserId: user.userId });
+    }
+  } catch (err) {
+    return toActionResult(err);
+  }
+  redirect(`/app/${organizationSlug}/marketing/content/${contentItemId}`);
+}
 
 // ---------------------------------------------------------------------------
 // Configuration

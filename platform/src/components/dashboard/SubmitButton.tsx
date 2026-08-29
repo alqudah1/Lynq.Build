@@ -20,15 +20,19 @@ export function SubmitButton({
   children,
   pendingLabel,
   variant = "primary",
+  name,
+  value,
 }: {
   children: React.ReactNode;
   pendingLabel?: string;
   variant?: keyof typeof VARIANT;
+  name?: string;
+  value?: string;
 }) {
   const { pending } = useFormStatus();
 
   return (
-    <button type="submit" disabled={pending} className={`${BASE} ${VARIANT[variant]}`}>
+    <button type="submit" name={name} value={value} disabled={pending} className={`${BASE} ${VARIANT[variant]}`}>
       {pending ? (
         <>
           <span aria-hidden="true" className="h-3 w-3 shrink-0 animate-spin rounded-full border-[1.5px] border-current border-t-transparent" />

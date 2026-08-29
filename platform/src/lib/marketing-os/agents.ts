@@ -17,6 +17,23 @@ import { getCampaignForUser, resolveCampaignById } from "./campaigns";
 import { getAudienceForUser } from "./audiences";
 import { MarketingAgentNotSeededError } from "./errors";
 import { registerAgentTaskHandler, resolveReportArtifactTaskState, InvalidAgentTaskInputError } from "@/lib/agent-runtime/task-handlers";
+import type { ContentStudioPackage } from "./validation";
+
+function serializeContentStudioPackage(value: ContentStudioPackage): string {
+  const common = [
+    `# ${value.title}`,
+    "## Hooks", ...value.hooks.map((hook) => `- ${hook}`),
+    `## Selected hook\n${value.selectedHook}`,
+    `## Caption\n${value.caption}`,
+    `## Cover\n${value.coverText}`,
+    "## Assets", ...value.assetInstructions.map((item) => `- ${item}`),
+    `## CTA\n${value.callToAction}`,
+  ];
+  const formatSpecific = value.contentKind === "short_video"
+    ? [`## Script\n${value.script}`, "## Storyboard / shot list", ...value.shots.map((shot) => `### ${shot.timing}\n- Visual: ${shot.visual}\n- On-screen text: ${shot.onScreenText}\n- Audio: ${shot.audio}`), `## Rendering\n${value.renderingStatus === "ready" ? `${value.renderedAssets.length} rendered media asset(s) attached.` : "Media has not been rendered yet."}`]
+    : [`## Post copy\n${value.postCopy}`, "## Post panels", ...value.panels.map((panel) => `### ${panel.position}\n- Purpose: ${panel.purpose}\n- Visual: ${panel.visual}\n- Overlay text: ${panel.overlayText}`)];
+  return [...common, ...formatSpecific].join("\n\n");
+}
 
 type Db = NeonHttpDatabase<Record<string, unknown>>;
 
@@ -267,6 +284,32 @@ export async function createCampaignSummaryTask(db: Db, input: { organizationId:
 export interface ContentDraftTaskResult {
   execution: AgentExecution;
   artifact: AgentArtifact;
+}
+
+/** Creates the immutable Runtime artifact for an edited Content Studio package using the existing Content Draft Assistant shell. It never approves, schedules, publishes, or contacts a channel. */
+export async function createContentStudioPackageTask(db: Db, input: { organizationId: string; workspaceId?: string | null; contentItemId: string; productionPackage: ContentStudioPackage; actorUserId: string }): Promise<ContentDraftTaskResult> {
+  const { getContentItemForUser, attachArtifactVersion } = await import("./content");
+  const contentItem = await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId: input.contentItemId, actorUserId: input.actorUserId });
+  const agent = await resolveContentDraftAssistantAgent(db, input.organizationId);
+  const execution = await createExecution(db, {
+    organizationId: input.organizationId,
+    workspaceId: input.workspaceId ?? undefined,
+    ownerUserId: input.actorUserId,
+    goal: `Preserve the reviewed Content Studio production package for content item ${contentItem.id}`,
+    successCriteria: "The complete editable production package is stored as an immutable draft_text artifact and attached to the canonical Marketing OS content item",
+    failureCriteria: "The content item or Content Draft Assistant cannot be resolved",
+    domainsRequested: [],
+    actorUserId: input.actorUserId,
+  });
+  const { planId } = await driveThroughToExecuting(db, input.organizationId, execution.id, agent.id, input.actorUserId, ["Validate the supplied production package", "Create and attach the immutable package artifact"]);
+  await completePlanStep(db, { organizationId: input.organizationId, executionId: execution.id, planId, stepNumber: 1, actorAgentId: agent.id });
+  const artifact = await createArtifact(db, { organizationId: input.organizationId, executionId: execution.id, artifactType: "draft_text", title: `Production package — ${contentItem.title}`, content: serializeContentStudioPackage(input.productionPackage), actorAgentId: agent.id });
+  await attachArtifactVersion(db, { organizationId: input.organizationId, contentItemId: contentItem.id, artifactId: artifact.id, actorUserId: input.actorUserId, createdByAgentId: agent.id });
+  await completePlanStep(db, { organizationId: input.organizationId, executionId: execution.id, planId, stepNumber: 2, actorAgentId: agent.id });
+  await createCheckpoint(db, { organizationId: input.organizationId, executionId: execution.id, statusAtCheckpoint: "executing", stepPosition: "content_studio_package_attached", safeStateSummary: { contentItemId: contentItem.id, artifactId: artifact.id } });
+  await advanceExecution(db, { organizationId: input.organizationId, executionId: execution.id, toStatus: "verifying", actorAgentId: agent.id });
+  const completed = await completeExecution(db, { organizationId: input.organizationId, executionId: execution.id, actorAgentId: agent.id });
+  return { execution: completed, artifact };
 }
 
 /** The Content Draft Assistant's one task type — a deterministic structural draft, never fabricated "creative" copy. Attaches the resulting artifact to the content item as its newest version. */

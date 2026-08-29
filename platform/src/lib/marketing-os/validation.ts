@@ -122,6 +122,93 @@ export const MARKETING_SPEND_SOURCES = ["manual", "synced"] as const;
 export const marketingSpendSourceSchema = z.enum(MARKETING_SPEND_SOURCES);
 export type MarketingSpendSource = (typeof MARKETING_SPEND_SOURCES)[number];
 
+export const MARKETING_BRAND_KEYS = ["lynq", "codeitlearn"] as const;
+export const marketingBrandKeySchema = z.enum(MARKETING_BRAND_KEYS);
+export type MarketingBrandKey = (typeof MARKETING_BRAND_KEYS)[number];
+
+export const contentStudioConceptSchema = z.object({
+  id: z.string().trim().min(1).max(40),
+  title: z.string().trim().min(1).max(160),
+  angle: z.string().trim().min(1).max(500),
+  hookDirection: z.string().trim().min(1).max(300),
+  format: z.string().trim().min(1).max(120),
+}).strict();
+export const contentStudioConceptsSchema = z.array(contentStudioConceptSchema).length(3);
+export type ContentStudioConcept = z.infer<typeof contentStudioConceptSchema>;
+
+export const CONTENT_STUDIO_CONTENT_KINDS = ["short_video", "single_image_post", "carousel_post"] as const;
+export const contentStudioContentKindSchema = z.enum(CONTENT_STUDIO_CONTENT_KINDS);
+export type ContentStudioContentKind = z.infer<typeof contentStudioContentKindSchema>;
+
+export const contentStudioShotSchema = z.object({
+  timing: z.string().trim().min(1).max(40),
+  visual: z.string().trim().min(1).max(500),
+  onScreenText: z.string().trim().max(300),
+  audio: z.string().trim().max(500),
+}).strict();
+
+export const contentStudioRenderedAssetSchema = z.object({
+  pathname: z.string().trim().min(1).max(1000),
+  contentType: z.string().trim().min(1).max(120),
+  size: z.number().int().nonnegative(),
+  model: z.string().trim().min(1).max(200),
+  label: z.string().trim().min(1).max(120),
+  generatedAt: z.string().datetime(),
+}).strict();
+
+const contentStudioRenderingFields = {
+  renderingStatus: z.enum(["not_requested", "ready", "failed"]),
+  renderedAssets: z.array(contentStudioRenderedAssetSchema).max(10),
+  renderingError: z.string().trim().max(500).nullable(),
+};
+
+const contentStudioPackageBaseSchema = z.object({
+  contentKind: contentStudioContentKindSchema,
+  title: z.string().trim().min(1).max(200),
+  hooks: z.array(z.string().trim().min(1).max(240)).min(3).max(8),
+  selectedHook: z.string().trim().min(1).max(240),
+  caption: z.string().trim().min(1).max(3000),
+  coverText: z.string().trim().min(1).max(120),
+  assetInstructions: z.array(z.string().trim().min(1).max(500)).min(1).max(12),
+  callToAction: z.string().trim().min(1).max(300),
+}).strict();
+
+export const contentStudioVideoPackageSchema = contentStudioPackageBaseSchema.extend({
+  contentKind: z.literal("short_video"),
+  script: z.string().trim().min(1).max(5000),
+  shots: z.array(contentStudioShotSchema).min(3).max(12),
+  ...contentStudioRenderingFields,
+}).strict();
+
+export const contentStudioPostPanelSchema = z.object({
+  position: z.string().trim().min(1).max(40),
+  purpose: z.string().trim().min(1).max(300),
+  visual: z.string().trim().min(1).max(500),
+  overlayText: z.string().trim().max(300),
+}).strict();
+
+const contentStudioPostPackageBaseSchema = contentStudioPackageBaseSchema.extend({
+  postCopy: z.string().trim().min(1).max(5000),
+  ...contentStudioRenderingFields,
+}).strict();
+
+export const contentStudioSingleImagePostPackageSchema = contentStudioPostPackageBaseSchema.extend({
+  contentKind: z.literal("single_image_post"),
+  panels: z.array(contentStudioPostPanelSchema).length(1),
+}).strict();
+
+export const contentStudioCarouselPostPackageSchema = contentStudioPostPackageBaseSchema.extend({
+  contentKind: z.literal("carousel_post"),
+  panels: z.array(contentStudioPostPanelSchema).min(3).max(10),
+}).strict();
+
+export const contentStudioPackageSchema = z.discriminatedUnion("contentKind", [
+  contentStudioVideoPackageSchema,
+  contentStudioSingleImagePostPackageSchema,
+  contentStudioCarouselPostPackageSchema,
+]);
+export type ContentStudioPackage = z.infer<typeof contentStudioPackageSchema>;
+
 /** Deterministic campaign health classification — never an opaque AI score. */
 export const MARKETING_CAMPAIGN_HEALTH_STATUSES = ["healthy", "attention", "at_risk"] as const;
 export type MarketingCampaignHealthStatus = (typeof MARKETING_CAMPAIGN_HEALTH_STATUSES)[number];

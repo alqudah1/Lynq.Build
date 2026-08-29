@@ -4296,6 +4296,7 @@ export const marketingProjectLinkEntityTypeEnum = pgEnum("marketing_project_link
 export const marketingAttributionTouchTypeEnum = pgEnum("marketing_attribution_touch_type", ["first_touch", "last_touch"]);
 export const marketingDestinationTypeEnum = pgEnum("marketing_destination_type", ["external_url", "internal_reference"]);
 export const marketingSpendSourceEnum = pgEnum("marketing_spend_source", ["manual", "synced"]);
+export const marketingContentStudioStatusEnum = pgEnum("marketing_content_studio_status", ["concepts", "production", "saved"]);
 
 /** Organization/workspace-scoped configuration — one row per scope, mirroring `sales_configurations`'s exact singleton pattern (a workspace-scoped row and the org-wide row coexist safely via two partial unique indexes). */
 export const marketingConfigurations = pgTable("marketing_configurations", {
@@ -4533,6 +4534,125 @@ export const marketingContentItemArtifacts = pgTable("marketing_content_item_art
     foreignColumns: [marketingContentItems.id, marketingContentItems.organizationId],
   }).onDelete("cascade"),
   unique("marketing_content_item_artifacts_item_version_unique").on(t.contentItemId, t.versionNumber),
+]);
+
+/** Persistent, tenant-scoped brand truth used by Content Studio. A brand is intentionally not a campaign: it is reusable positioning, voice, visual and product context applied across many campaigns. */
+export const marketingBrandProfiles = pgTable("marketing_brand_profiles", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  workspaceId: uuid("workspace_id"),
+  brandKey: text("brand_key").notNull(),
+  name: text("name").notNull(),
+  positioning: text("positioning").notNull(),
+  audience: text("audience").notNull(),
+  voice: text("voice").notNull(),
+  visualRules: text("visual_rules").notNull(),
+  productContext: text("product_context").notNull(),
+  callsToAction: jsonb("calls_to_action").notNull().default([]),
+  approvedExamples: jsonb("approved_examples").notNull().default([]),
+  claimsGuardrails: text("claims_guardrails").notNull(),
+  revision: integer("revision").notNull().default(1),
+  ...timestamps,
+}, (t) => [
+  foreignKey({
+    name: "marketing_brand_profiles_workspace_org_fk",
+    columns: [t.workspaceId, t.organizationId],
+    foreignColumns: [workspaces.id, workspaces.organizationId],
+  }).onDelete("restrict"),
+  unique("marketing_brand_profiles_id_org_unique").on(t.id, t.organizationId),
+  uniqueIndex("marketing_brand_profiles_org_only_key_unique").on(t.organizationId, t.brandKey).where(sql`${t.workspaceId} IS NULL`),
+  uniqueIndex("marketing_brand_profiles_workspace_key_unique").on(t.organizationId, t.workspaceId, t.brandKey).where(sql`${t.workspaceId} IS NOT NULL`),
+]);
+
+/** Durable working record for the narrow Content Studio flow. The canonical pipeline/calendar record remains `marketing_content_items`; this row only preserves ideation and the editable pre-save production package. */
+export const marketingContentStudioDrafts = pgTable("marketing_content_studio_drafts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  workspaceId: uuid("workspace_id"),
+  brandProfileId: uuid("brand_profile_id").notNull(),
+  goal: text("goal").notNull(),
+  intendedChannel: text("intended_channel").notNull(),
+  plannedPublishAt: timestamp("planned_publish_at", { withTimezone: true }),
+  concepts: jsonb("concepts").notNull().default([]),
+  selectedConceptId: text("selected_concept_id"),
+  productionPackage: jsonb("production_package"),
+  status: marketingContentStudioStatusEnum("status").notNull().default("concepts"),
+  contentItemId: uuid("content_item_id"),
+  ownerUserId: uuid("owner_user_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  revision: integer("revision").notNull().default(1),
+  ...timestamps,
+}, (t) => [
+  foreignKey({
+    name: "marketing_content_studio_workspace_org_fk",
+    columns: [t.workspaceId, t.organizationId],
+    foreignColumns: [workspaces.id, workspaces.organizationId],
+  }).onDelete("restrict"),
+  foreignKey({
+    name: "marketing_content_studio_brand_org_fk",
+    columns: [t.brandProfileId, t.organizationId],
+    foreignColumns: [marketingBrandProfiles.id, marketingBrandProfiles.organizationId],
+  }).onDelete("restrict"),
+  foreignKey({
+    name: "marketing_content_studio_content_org_fk",
+    columns: [t.contentItemId, t.organizationId],
+    foreignColumns: [marketingContentItems.id, marketingContentItems.organizationId],
+  }).onDelete("cascade"),
+  index("marketing_content_studio_org_status_idx").on(t.organizationId, t.status),
+  index("marketing_content_studio_owner_idx").on(t.ownerUserId),
+]);
+
+/** A real social or paid-media account tracked by Marketing OS. V1 is manual-first: `connectionStatus` never implies provider credentials exist. */
+export const marketingChannelAccounts = pgTable("marketing_channel_accounts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  workspaceId: uuid("workspace_id"),
+  brandProfileId: uuid("brand_profile_id").notNull(),
+  platform: text("platform").notNull(),
+  accountKind: text("account_kind").notNull().default("organic"),
+  displayName: text("display_name").notNull(),
+  handle: text("handle"),
+  externalUrl: text("external_url"),
+  connectionStatus: text("connection_status").notNull().default("manual"),
+  ownerUserId: uuid("owner_user_id").references(() => users.id, { onDelete: "set null" }),
+  revision: integer("revision").notNull().default(1),
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
+  ...timestamps,
+}, (t) => [
+  foreignKey({ name: "marketing_channel_accounts_workspace_org_fk", columns: [t.workspaceId, t.organizationId], foreignColumns: [workspaces.id, workspaces.organizationId] }).onDelete("restrict"),
+  foreignKey({ name: "marketing_channel_accounts_brand_org_fk", columns: [t.brandProfileId, t.organizationId], foreignColumns: [marketingBrandProfiles.id, marketingBrandProfiles.organizationId] }).onDelete("restrict"),
+  unique("marketing_channel_accounts_id_org_unique").on(t.id, t.organizationId),
+  uniqueIndex("marketing_channel_accounts_scope_unique").on(t.organizationId, t.brandProfileId, t.platform, t.accountKind, t.displayName).where(sql`${t.archivedAt} IS NULL`),
+  index("marketing_channel_accounts_org_platform_idx").on(t.organizationId, t.platform),
+]);
+
+/** Append-only real performance observations. Manual entry works today; provider sync can write the same shape later without replacing it. */
+export const marketingContentPerformanceSnapshots = pgTable("marketing_content_performance_snapshots", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  contentItemId: uuid("content_item_id").notNull(),
+  channelAccountId: uuid("channel_account_id").notNull(),
+  capturedAt: timestamp("captured_at", { withTimezone: true }).notNull().defaultNow(),
+  source: text("source").notNull().default("manual"),
+  impressions: integer("impressions").notNull().default(0),
+  reach: integer("reach").notNull().default(0),
+  views: integer("views").notNull().default(0),
+  likes: integer("likes").notNull().default(0),
+  comments: integer("comments").notNull().default(0),
+  shares: integer("shares").notNull().default(0),
+  saves: integer("saves").notNull().default(0),
+  clicks: integer("clicks").notNull().default(0),
+  leads: integer("leads").notNull().default(0),
+  conversions: integer("conversions").notNull().default(0),
+  spendAmount: numeric("spend_amount", { precision: 14, scale: 2 }).notNull().default("0"),
+  revenueAmount: numeric("revenue_amount", { precision: 14, scale: 2 }).notNull().default("0"),
+  notes: text("notes"),
+  recordedByUserId: uuid("recorded_by_user_id").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  foreignKey({ name: "marketing_performance_content_org_fk", columns: [t.contentItemId, t.organizationId], foreignColumns: [marketingContentItems.id, marketingContentItems.organizationId] }).onDelete("cascade"),
+  foreignKey({ name: "marketing_performance_account_org_fk", columns: [t.channelAccountId, t.organizationId], foreignColumns: [marketingChannelAccounts.id, marketingChannelAccounts.organizationId] }).onDelete("cascade"),
+  index("marketing_performance_org_captured_idx").on(t.organizationId, t.capturedAt),
+  index("marketing_performance_content_idx").on(t.contentItemId),
 ]);
 
 export const marketingPlaybooks = pgTable("marketing_playbooks", {
