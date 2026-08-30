@@ -70,6 +70,38 @@
   </div>
 </section>
 
+<!-- ============ MANAGED PROPERTY IMAGERY ============ -->
+<section class="section tight" id="property-care-gallery" style="padding-bottom:0">
+  <div class="container">
+    <div class="section-head" data-reveal>
+      <span class="eyebrow">Property Care</span>
+      <h2>Commercial properties, carefully maintained.</h2>
+      <p class="intro concept-notice">Conceptual imagery illustrating the presentation
+        and ongoing care Kingsbridge brings to commercial properties.</p>
+    </div>
+  </div>
+</section>
+<div class="concept-gallery-wrap">
+  <div class="concept-gallery" id="managed-property-gallery" data-reveal>
+    <div class="cg-item">
+      <picture><source srcset="/assets/img/photography/commercial-plaza-walkway.webp" type="image/webp"><img src="/assets/img/photography/commercial-plaza-walkway.jpg" alt="Conceptual maintained commercial property walkway and entrance" loading="lazy"></picture>
+      <div class="cg-content"><span class="cg-index">01 / 03</span><h3>Property Maintenance &amp; Exterior Care</h3><p>Landscaping, snow removal, exterior maintenance, repairs, inspections and vendor services coordinated year-round.</p></div>
+    </div>
+    <div class="cg-item">
+      <picture><source srcset="/assets/img/photography/managed-retail-plaza.webp" type="image/webp"><img src="/assets/img/photography/managed-retail-plaza.jpg" alt="Conceptual well-maintained commercial retail and office property" loading="lazy"></picture>
+      <div class="cg-content"><span class="cg-index">02 / 03</span><h3>Retail &amp; Plaza Care</h3><p>Coordinated upkeep that keeps commercial plazas presentable for tenants and visitors.</p></div>
+    </div>
+    <div class="cg-item">
+      <picture><source srcset="/assets/img/photography/managed-common-area.webp" type="image/webp"><img src="/assets/img/photography/managed-common-area.jpg" alt="Conceptual pristine commercial property shared-area lobby" loading="lazy"></picture>
+      <div class="cg-content"><span class="cg-index">03 / 03</span><h3>Shared Space Maintenance &amp; Oversight</h3><p>Cleaning, lighting, repairs and general upkeep coordinated throughout shared areas.</p></div>
+    </div>
+  </div>
+  <div class="cg-nav">
+    <button class="cg-prev" aria-label="Previous managed property image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 6l-6 6 6 6"/></svg></button>
+    <button class="cg-next" aria-label="Next managed property image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 6l6 6-6 6"/></svg></button>
+  </div>
+</div>
+
 <!-- ============ HOW WE MANAGE (always visible, so the depth reads at a glance) ============ -->
 <section class="section tight" id="services">
   <div class="container">
@@ -126,5 +158,16 @@
 <script src="/assets/js/include.js" defer></script>
 <script src="/assets/js/main.js" defer></script>
 <script src="/assets/js/experience.js" defer></script>
+<script>
+  document.addEventListener('partials:ready', function () {
+    var gallery = document.getElementById('managed-property-gallery');
+    var prev = document.querySelector('.concept-gallery-wrap .cg-prev');
+    var next = document.querySelector('.concept-gallery-wrap .cg-next');
+    if (!gallery) return;
+    function step() { var item = gallery.querySelector('.cg-item'); return item ? item.getBoundingClientRect().width + 20 : 320; }
+    if (prev) prev.addEventListener('click', function () { gallery.scrollBy({ left: -step(), behavior: 'smooth' }); });
+    if (next) next.addEventListener('click', function () { gallery.scrollBy({ left: step(), behavior: 'smooth' }); });
+  });
+</script>
 </body>
 </html>

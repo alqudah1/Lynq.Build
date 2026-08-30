@@ -17,17 +17,17 @@ var KB_CONCEPTS = [
     slug: 'side-elevation',
     title: 'Side Elevation',
     label: 'Kingsbridge Concept',
-    photoLabel: 'Custom Home Side Elevation',
-    image: '/assets/img/photography/custom-home-side.jpg',
-    description: 'The same material palette carried along the side elevation and landscaped garden path.'
+    photoLabel: 'Brick and Cedar Side Courtyard',
+    image: '/assets/img/photography/concept-side-brick-courtyard.jpg',
+    description: 'A distinct brick-and-cedar custom home shaped around its side garden, walkway and private courtyard.'
   },
   {
     slug: 'rear-garden',
     title: 'Rear Garden',
     label: 'Kingsbridge Concept',
-    photoLabel: 'Custom Home Rear Elevation',
-    image: '/assets/img/photography/custom-home-rear.jpg',
-    description: 'A rear elevation designed around light, outdoor living and a direct connection to the garden.'
+    photoLabel: 'Transitional Home Rear Garden',
+    image: '/assets/img/photography/concept-rear-garden-transitional.jpg',
+    description: 'A separate transitional custom home designed around outdoor dining, garden views and indoor-outdoor living.'
   },
   {
     slug: 'the-interior',
