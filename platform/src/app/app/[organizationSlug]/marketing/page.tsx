@@ -74,7 +74,36 @@ export default async function MarketingDashboardPage({ params }: { params: Promi
   return (
     <div className="flex flex-col gap-8 px-6 py-8 md:px-10">
       <Breadcrumbs items={[{ label: "LYNQ", href: "/app" }, { label: organizationName, href: `/app/${organizationSlug}` }, { label: "Marketing" }]} />
-      <PageHeader title="Marketing" description="The operational layer for planning, executing, and measuring campaigns — built on CRM Core, Sales OS, and the Workflow Engine." />
+      <PageHeader
+        title="Marketing"
+        description="Create content, manage the publishing calendar, and track results for LYNQ and CodeItLearn from one place."
+        actions={
+          <Link href={`/app/${organizationSlug}/marketing/content-studio`} className="lynq-transition flex min-h-11 items-center rounded-sm bg-foreground px-5 text-xs font-medium uppercase tracking-[0.08em] text-background hover:opacity-90">
+            Create in Content Studio
+          </Link>
+        }
+      />
+
+      <section aria-label="Marketing workspace" className="grid gap-4 lg:grid-cols-3">
+        <Card as={Link} href={`/app/${organizationSlug}/marketing/content-studio`} interactive padding="lg" className="flex min-h-56 flex-col justify-between border-l-2 border-l-accent lg:col-span-2">
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-accent-foreground">Start here · Create</p>
+            <h2 className="mt-3 font-serif text-3xl italic font-light text-foreground">Content Studio</h2>
+            <p className="mt-3 max-w-2xl text-sm text-muted">Choose LYNQ or CodeItLearn, generate three concepts, build the script or post, render the media, review it, and add it to the calendar.</p>
+          </div>
+          <span className="mt-6 text-sm font-medium text-foreground">Open Content Studio →</span>
+        </Card>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+          <Card as={Link} href={`/app/${organizationSlug}/marketing/command-center`} interactive className="flex flex-col justify-between gap-4">
+            <div><p className="text-xs uppercase tracking-[0.15em] text-subtle">Track</p><h2 className="mt-2 text-lg text-foreground">Marketing Command Center</h2><p className="mt-1 text-xs text-subtle">See channels, progress, approvals, publishing dates, and results.</p></div>
+            <span className="text-xs text-foreground">Open command center →</span>
+          </Card>
+          <Card as={Link} href={`/app/${organizationSlug}/marketing/content`} interactive className="flex flex-col justify-between gap-4">
+            <div><p className="text-xs uppercase tracking-[0.15em] text-subtle">Manage</p><h2 className="mt-2 text-lg text-foreground">Content Library</h2><p className="mt-1 text-xs text-subtle">Review everything saved from Content Studio and its current status.</p></div>
+            <span className="text-xs text-foreground">Open content library →</span>
+          </Card>
+        </div>
+      </section>
 
       <section aria-label="Overview" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard href={`/app/${organizationSlug}/marketing/campaigns?status=active`} label="Active campaigns" value={activeCampaignCount} sublabel={`${analytics.campaignsStartingSoon} starting soon`} />

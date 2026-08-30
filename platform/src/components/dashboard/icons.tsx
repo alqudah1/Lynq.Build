@@ -50,6 +50,34 @@ export function IconSales(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+export function IconMarketing(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Base {...props}>
+      <path d="M4 15.5V19h3.5M6 15.5l4-4 3 2.5 5-6" />
+      <path d="M15 8h3v3" />
+    </Base>
+  );
+}
+
+export function IconContentStudio(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Base {...props}>
+      <rect x="4" y="5" width="16" height="14" rx="2" />
+      <path d="M9.5 9l5 3-5 3z" />
+      <path d="M16.5 4v3M15 5.5h3" />
+    </Base>
+  );
+}
+
+export function IconCommandCenter(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Base {...props}>
+      <rect x="3.5" y="4" width="17" height="16" rx="2" />
+      <path d="M7 15v2M12 11v6M17 8v9" />
+    </Base>
+  );
+}
+
 export function IconWorkflows(props: SVGProps<SVGSVGElement>) {
   return (
     <Base {...props}>
@@ -154,6 +182,9 @@ export const NAV_ICON_BY_LABEL: Record<string, (props: SVGProps<SVGSVGElement>) 
   Projects: IconProjects,
   CRM: IconCrm,
   Sales: IconSales,
+  Marketing: IconMarketing,
+  "Marketing Command Center": IconCommandCenter,
+  "Content Studio": IconContentStudio,
   Workflows: IconWorkflows,
   "Workflow Executions": IconExecutions,
   "My Work": IconMyWork,
