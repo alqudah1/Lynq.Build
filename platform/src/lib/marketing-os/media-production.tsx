@@ -16,6 +16,7 @@ import { recordAuditEvent } from "@/lib/audit";
 import { requireMarketingManageContentAuthority, resolveMarketingAuthContext } from "./authz";
 import { getStudioDraftForUser, listBrandProfiles, type ContentStudioDraft, type MarketingBrandProfile } from "./content-studio";
 import { contentStudioPackageSchema, type ContentStudioPackage } from "./validation";
+import { generateRunwayMotionClip, isRunwayPremiumRendererConfigured } from "./providers/runway";
 
 type Db = NeonHttpDatabase<Record<string, unknown>>;
 
@@ -260,6 +261,7 @@ type StoredAsset = ContentStudioPackage["renderedAssets"][number];
 type MediaProductionDependencies = {
   renderPostPanel?: (input: { brand: MarketingBrandProfile; pkg: Extract<ContentStudioPackage, { contentKind: "single_image_post" | "carousel_post" }>; panelIndex: number }) => Promise<{ bytes: Uint8Array; contentType: string; model: string }>;
   renderVideo?: (input: { brand: MarketingBrandProfile; pkg: Extract<ContentStudioPackage, { contentKind: "short_video" }> }) => Promise<{ bytes: Uint8Array; contentType: string; model: string }>;
+  renderPremiumVideo?: (input: { brand: MarketingBrandProfile; pkg: Extract<ContentStudioPackage, { contentKind: "short_video" }> }) => Promise<{ bytes: Uint8Array; contentType: string; model: string }>;
   store?: (input: { pathname: string; bytes: Uint8Array; contentType: string }) => Promise<{ pathname: string }>;
 };
 
@@ -396,6 +398,63 @@ async function renderVideo({ brand, pkg }: Parameters<NonNullable<MediaProductio
   }
 }
 
+async function renderPremiumMotionPlate(brand: MarketingBrandProfile) {
+  if (brand.brandKey === "codeitlearn") {
+    const assets = await loadCodeItAssets();
+    const response = new ImageResponse(
+      <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between", padding: "58px 42px 38px", background: "#fff7ee", position: "relative", overflow: "hidden" }}>
+        <div style={{ display: "flex", position: "absolute", width: "410px", height: "410px", borderRadius: "999px", background: "#ffd34f", opacity: 0.32, right: "-140px", top: "-120px" }} />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={assets.logo} alt="CodeIt" style={{ width: "220px", height: "120px", objectFit: "contain", zIndex: 2 }} />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={assets.mascot} alt="Pixel mascot" style={{ width: "690px", height: "850px", objectFit: "contain", objectPosition: "center bottom", zIndex: 2 }} />
+        <div style={{ display: "flex", color: "#17234a", fontSize: "31px", fontWeight: 900, fontFamily: "Arial, sans-serif", zIndex: 2 }}>Imagine it. Build it. See it work.</div>
+      </div>,
+      { width: 720, height: 1280 },
+    );
+    return {
+      bytes: new Uint8Array(await response.arrayBuffer()),
+      prompt: "Premium vertical commercial motion. Preserve the exact orange Pixel mascot, yellow hoodie, CodeIt logo, colors, proportions and all typography. Pixel looks up, smiles, gives a small excited wave, and the camera makes a subtle professional push-in. Gentle dimensional lighting and restrained background parallax. No new objects, no extra limbs, no text changes, no logo changes, no morphing, no camera shake.",
+    };
+  }
+  const assets = await loadLynqAssets();
+  const response = new ImageResponse(
+    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "54px", background: "#050505", position: "relative", overflow: "hidden" }}>
+      <div style={{ display: "flex", position: "absolute", width: "520px", height: "520px", borderRadius: "999px", border: "2px solid #c8ff00", opacity: 0.22, right: "-220px", top: "-180px" }} />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={assets.brandCard} alt="LYNQ premium identity" style={{ width: "660px", height: "920px", objectFit: "contain", zIndex: 2 }} />
+    </div>,
+    { width: 720, height: 1280 },
+  );
+  return {
+    bytes: new Uint8Array(await response.arrayBuffer()),
+    prompt: "Premium vertical technology brand film. Preserve the exact LYNQ identity, black and white composition, controlled neon-lime details, typography and logo. Add a slow editorial camera push, subtle layered depth, refined light sweep and restrained lime glow. No new words, no text changes, no logo changes, no morphing, no generic sci-fi elements, no camera shake.",
+  };
+}
+
+async function renderPremiumVideo({ brand, pkg }: Parameters<NonNullable<MediaProductionDependencies["renderPremiumVideo"]>>[0]) {
+  if (!ffmpegPath) throw new Error("The video renderer is unavailable on this runtime");
+  if (!isRunwayPremiumRendererConfigured()) throw new Error("Runway premium motion is not connected. Add RUNWAYML_API_SECRET to the isolated LYNQ Office Vercel project.");
+  const [base, plate] = await Promise.all([renderVideo({ brand, pkg }), renderPremiumMotionPlate(brand)]);
+  const hero = await generateRunwayMotionClip({ promptImage: plate.bytes, imageContentType: "image/png", promptText: plate.prompt });
+  const run = promisify(execFile);
+  const workdir = await mkdtemp(join(tmpdir(), "lynq-content-premium-video-"));
+  try {
+    const heroPath = join(workdir, `hero.${extensionFor(hero.contentType)}`);
+    const basePath = join(workdir, "director-cut.mp4");
+    const outputPath = join(workdir, "premium-director-cut.mp4");
+    await Promise.all([writeFile(heroPath, Buffer.from(hero.bytes)), writeFile(basePath, Buffer.from(base.bytes))]);
+    await run(ffmpegPath, [
+      "-y", "-i", heroPath, "-i", basePath,
+      "-filter_complex", "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,fps=30,format=yuv420p,setpts=PTS-STARTPTS[hero];[1:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,fps=30,format=yuv420p,setpts=PTS-STARTPTS[proof];[hero][proof]concat=n=2:v=1:a=0[v]",
+      "-map", "[v]", "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p", "-r", "30", "-movflags", "+faststart", outputPath,
+    ], { maxBuffer: 8 * 1024 * 1024 });
+    return { bytes: new Uint8Array(await readFile(outputPath)), contentType: "video/mp4", model: `${hero.model}+${base.model}` };
+  } finally {
+    await rm(workdir, { recursive: true, force: true });
+  }
+}
+
 async function storeAsset({ pathname, bytes, contentType }: Parameters<NonNullable<MediaProductionDependencies["store"]>>[0]) {
   const blob = await put(pathname, Buffer.from(bytes), { access: "private", contentType, addRandomSuffix: true });
   return { pathname: blob.pathname };
@@ -409,7 +468,7 @@ function extensionFor(contentType: string) {
 
 export async function renderContentStudioMedia(
   db: Db,
-  input: { organizationId: string; studioId: string; expectedRevision: number; actorUserId: string },
+  input: { organizationId: string; studioId: string; expectedRevision: number; actorUserId: string; renderMode?: "standard" | "premium" },
   dependencies: MediaProductionDependencies = {},
 ): Promise<ContentStudioDraft> {
   const studio = await getStudioDraftForUser(db, input);
@@ -422,7 +481,7 @@ export async function renderContentStudioMedia(
   if (!brand) throw new Error("The Content Studio brand profile is unavailable");
 
   const renderPanel = dependencies.renderPostPanel ?? renderPostPanel;
-  const renderClip = dependencies.renderVideo ?? renderVideo;
+  const renderClip = input.renderMode === "premium" ? (dependencies.renderPremiumVideo ?? renderPremiumVideo) : (dependencies.renderVideo ?? renderVideo);
   const store = dependencies.store ?? storeAsset;
   const generatedAt = new Date().toISOString();
   const assets: StoredAsset[] = [];
@@ -431,7 +490,7 @@ export async function renderContentStudioMedia(
     if (studio.productionPackage.contentKind === "short_video") {
       const media = await renderClip({ brand, pkg: studio.productionPackage });
       const stored = await store({ pathname: `content-studio/${input.organizationId}/${studio.id}/video.${extensionFor(media.contentType)}`, bytes: media.bytes, contentType: media.contentType });
-      assets.push({ pathname: stored.pathname, contentType: media.contentType, size: media.bytes.byteLength, model: media.model, label: "Rendered social video", generatedAt });
+      assets.push({ pathname: stored.pathname, contentType: media.contentType, size: media.bytes.byteLength, model: media.model, label: input.renderMode === "premium" ? "Premium motion director cut" : "Rendered social video", generatedAt });
     } else {
       for (let index = 0; index < studio.productionPackage.panels.length; index += 1) {
         const media = await renderPanel({ brand, pkg: studio.productionPackage, panelIndex: index });
@@ -443,7 +502,7 @@ export async function renderContentStudioMedia(
     const productionPackage = contentStudioPackageSchema.parse({ ...studio.productionPackage, renderingStatus: "ready", renderedAssets: assets, renderingError: null });
     const [row] = await db.update(marketingContentStudioDrafts).set({ productionPackage, revision: studio.revision + 1, updatedAt: new Date() }).where(and(eq(marketingContentStudioDrafts.id, studio.id), eq(marketingContentStudioDrafts.organizationId, input.organizationId), eq(marketingContentStudioDrafts.revision, studio.revision))).returning();
     if (!row) throw new Error("This Content Studio draft changed while media was rendering; refresh and try again");
-    await recordAuditEvent(db, { eventType: "marketing_content_studio_media_rendered", actorUserId: input.actorUserId, organizationId: input.organizationId, targetType: "marketing_content_studio", targetId: studio.id, metadata: { contentKind: productionPackage.contentKind, assetCount: assets.length, models: [...new Set(assets.map((asset) => asset.model))] } });
+    await recordAuditEvent(db, { eventType: "marketing_content_studio_media_rendered", actorUserId: input.actorUserId, organizationId: input.organizationId, targetType: "marketing_content_studio", targetId: studio.id, metadata: { contentKind: productionPackage.contentKind, renderMode: input.renderMode ?? "standard", assetCount: assets.length, models: [...new Set(assets.map((asset) => asset.model))] } });
     return getStudioDraftForUser(db, { organizationId: input.organizationId, studioId: row.id, actorUserId: input.actorUserId });
   } catch (error) {
     const message = error instanceof Error ? error.message.slice(0, 500) : "Media generation failed";

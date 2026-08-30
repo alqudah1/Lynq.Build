@@ -250,15 +250,15 @@ export async function updateContentStudioPackageAction(organizationSlug: string,
 
 export async function saveContentStudioToPipelineAction(organizationSlug: string, studioId: string, formData: FormData): Promise<ActionResult> {
   const { db, user, organization } = await context(organizationSlug, `/app/${organizationSlug}/marketing/content-studio/${studioId}`);
-  const parsed = z.object({ campaignId: uuidSchema.optional(), expectedRevision: z.coerce.number().int().min(1), decision: z.enum(["render", "review", "approve"]) }).safeParse({ campaignId: formData.get("campaignId") || undefined, expectedRevision: formData.get("expectedRevision"), decision: formData.get("decision") });
+  const parsed = z.object({ campaignId: uuidSchema.optional(), expectedRevision: z.coerce.number().int().min(1), decision: z.enum(["render", "render_premium", "review", "approve"]) }).safeParse({ campaignId: formData.get("campaignId") || undefined, expectedRevision: formData.get("expectedRevision"), decision: formData.get("decision") });
   const productionPackage = parseStudioPackage(formData);
   if (!parsed.success) return toActionResult(parsed.error);
   if (!productionPackage.success) return toActionResult(productionPackage.error);
   let contentItemId: string;
   try {
     const updatedStudio = await updateProductionPackage(db, { organizationId: organization.id, studioId, productionPackage: productionPackage.data, expectedRevision: parsed.data.expectedRevision, actorUserId: user.userId });
-    if (parsed.data.decision === "render") {
-      await renderContentStudioMedia(db, { organizationId: organization.id, studioId: updatedStudio.id, expectedRevision: updatedStudio.revision, actorUserId: user.userId });
+    if (parsed.data.decision === "render" || parsed.data.decision === "render_premium") {
+      await renderContentStudioMedia(db, { organizationId: organization.id, studioId: updatedStudio.id, expectedRevision: updatedStudio.revision, actorUserId: user.userId, renderMode: parsed.data.decision === "render_premium" ? "premium" : "standard" });
       revalidatePath(`/app/${organizationSlug}/marketing/content-studio/${studioId}`);
       return { ok: true };
     }

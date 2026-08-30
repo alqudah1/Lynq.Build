@@ -190,7 +190,17 @@ describe("Marketing Content Studio — isolation and vertical slice", () => {
     expect(rendered.productionPackage?.renderedAssets).toHaveLength(1);
     expect(rendered.productionPackage?.renderedAssets[0]?.model).toBe("lynq-office-codeit-director-cut-v4");
 
-    const saved = await saveStudioToPipeline(db, { organizationId, studioId: rendered.id, campaignId: campaign.id, actorUserId: ownerId });
+    const premiumRendered = await renderContentStudioMedia(db, { organizationId, studioId: rendered.id, expectedRevision: rendered.revision, actorUserId: ownerId, renderMode: "premium" }, {
+      renderPremiumVideo: async () => ({ bytes: new Uint8Array([0, 0, 0, 24, 102, 116, 121, 112]), contentType: "video/mp4", model: "runway/gen4.5+lynq-office-codeit-director-cut-v4" }),
+      store: async ({ pathname, bytes, contentType }) => {
+        expect(contentType).toBe("video/mp4");
+        expect(bytes).toHaveLength(8);
+        return { pathname: `private/${pathname}` };
+      },
+    });
+    expect(premiumRendered.productionPackage?.renderedAssets[0]).toMatchObject({ label: "Premium motion director cut", model: "runway/gen4.5+lynq-office-codeit-director-cut-v4" });
+
+    const saved = await saveStudioToPipeline(db, { organizationId, studioId: premiumRendered.id, campaignId: campaign.id, actorUserId: ownerId });
     expect(saved.studio.status).toBe("saved");
     const [content] = await db.select().from(marketingContentItems).where(and(eq(marketingContentItems.id, saved.contentItemId), eq(marketingContentItems.organizationId, organizationId)));
     expect(content.title).toBe(productionPackage.title);

@@ -3,6 +3,7 @@ import { promisify } from "node:util";
 
 import { list } from "@vercel/blob";
 import ffmpegPath from "ffmpeg-static";
+import { isRunwayPremiumRendererConfigured } from "@/lib/marketing-os/providers/runway";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,7 +24,7 @@ export async function GET() {
     await list({ limit: 1 });
 
     return Response.json(
-      { status: "ok", renderer: "ready", storage: "connected" },
+      { status: "ok", renderer: "ready", storage: "connected", premiumMotion: isRunwayPremiumRendererConfigured() ? "connected" : "not_configured" },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch {

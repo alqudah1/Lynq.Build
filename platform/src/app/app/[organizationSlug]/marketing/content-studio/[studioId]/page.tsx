@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/Badge";
 import { ActionForm } from "@/components/dashboard/ActionForm";
 import { SelectField } from "@/components/dashboard/SelectField";
 import { SubmitButton } from "@/components/dashboard/SubmitButton";
+import { isRunwayPremiumRendererConfigured } from "@/lib/marketing-os/providers/runway";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 800;
@@ -45,6 +46,7 @@ export default async function ContentStudioDetailPage({ params }: { params: Prom
   const campaigns = allCampaigns.filter((campaign) => campaign.workspaceId === studio.workspaceId && campaign.status !== "archived" && campaign.status !== "cancelled");
   const references = allReferences.filter((reference) => studio.creativeReferenceIds.includes(reference.id));
   const pkg = studio.productionPackage;
+  const premiumMotionConnected = isRunwayPremiumRendererConfigured();
 
   return (
     <div className="flex flex-col gap-8 px-6 py-8 md:px-10">
@@ -120,8 +122,12 @@ export default async function ContentStudioDetailPage({ params }: { params: Prom
           <Card className="flex flex-col gap-5 border-l-2 border-l-accent">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div><div className="flex items-center gap-3"><p className="text-sm text-foreground">Rendered media</p><Badge tone={pkg.renderingStatus === "ready" ? "success" : pkg.renderingStatus === "failed" ? "warning" : "neutral"}>{pkg.renderingStatus === "ready" ? "Ready" : pkg.renderingStatus === "failed" ? "Needs retry" : "Not rendered"}</Badge>{pkg.contentKind === "short_video" ? <Badge tone="neutral">V4 director cut · 1080×1920</Badge> : null}</div><p className="mt-1 max-w-2xl text-xs text-subtle">{brand?.brandKey === "codeitlearn" ? (pkg.contentKind === "short_video" ? "Generate a full-HD 9:16 director cut with storyboard timing, cinematic movement, polished transitions, Pixel, the CodeIt logo, and verified CodeItLearn product proof." : "Generate finished 1080×1350 artwork using the approved Pixel mascot, CodeIt logo, and real CodeItLearn product screens.") : (pkg.contentKind === "short_video" ? "Generate a full-HD 9:16 director cut with storyboard timing, editorial movement, polished transitions, exact on-screen text, and verified LYNQ work." : "Generate finished, downloadable 1080×1350 branded artwork with exact overlay text for every post or carousel panel.")}</p></div>
-              <SubmitButton name="decision" value="render" variant={pkg.renderingStatus === "ready" ? "glass" : "primary"} pendingLabel={pkg.contentKind === "short_video" ? "Rendering video… this can take several minutes" : "Rendering artwork…"}>{pkg.renderingStatus === "ready" ? "Render again" : pkg.renderingStatus === "failed" ? "Retry render" : "Generate final media"}</SubmitButton>
+              <div className="flex flex-wrap gap-2">
+                <SubmitButton name="decision" value="render" variant={pkg.renderingStatus === "ready" ? "glass" : "primary"} pendingLabel={pkg.contentKind === "short_video" ? "Rendering reliable director cut…" : "Rendering artwork…"}>{pkg.renderingStatus === "ready" ? "Render reliable cut" : pkg.renderingStatus === "failed" ? "Retry reliable render" : "Generate final media"}</SubmitButton>
+                {pkg.contentKind === "short_video" && premiumMotionConnected ? <SubmitButton name="decision" value="render_premium" variant="glass" pendingLabel="Generating premium motion… this can take several minutes">Generate premium motion · uses Runway credits</SubmitButton> : null}
+              </div>
             </div>
+            {pkg.contentKind === "short_video" ? <p className="text-xs text-subtle">{premiumMotionConnected ? "Premium motion is connected. Runway animates only the brand/mascot opening; verified product screens and final text stay controlled by LYNQ Office." : "Premium motion is not connected yet. The reliable director cut remains fully available; add RUNWAYML_API_SECRET to this isolated LYNQ Office project to enable the credit-using option."}</p> : null}
             {pkg.renderingError ? <p className="rounded-sm border border-danger/40 bg-danger-wash px-3 py-2 text-xs text-danger">{pkg.renderingError}</p> : null}
             {pkg.renderedAssets.length > 0 ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{pkg.renderedAssets.map((asset, index) => {
               const mediaUrl = `/api/organizations/${organization.id}/marketing/content-studio/${studio.id}/media/${index}`;

@@ -25,6 +25,11 @@ const envSchema = z.object({
   OFFICE_PLANNING_MODEL: z.string().regex(/^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/i).optional(),
   OFFICE_ENGINEERING_MODEL: z.string().regex(/^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/i).optional(),
   OFFICE_REVIEW_MODEL: z.string().regex(/^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/i).optional(),
+  // Optional premium Content Studio motion layer. When absent, the reliable
+  // deterministic renderer remains fully available and the UI never claims
+  // Runway is connected.
+  RUNWAYML_API_SECRET: z.string().min(1).optional(),
+  RUNWAYML_VIDEO_MODEL: z.string().regex(/^[a-z0-9][a-z0-9._-]*$/i).optional(),
   // Module 16 — Communications Core. Symmetric key (32 raw bytes,
   // base64-encoded) used to encrypt integration connection credentials at
   // rest (`integration_credentials.ciphertext`, AES-256-GCM). Optional —
@@ -71,6 +76,8 @@ export function loadEnv(): Env {
     OFFICE_PLANNING_MODEL: process.env.OFFICE_PLANNING_MODEL,
     OFFICE_ENGINEERING_MODEL: process.env.OFFICE_ENGINEERING_MODEL,
     OFFICE_REVIEW_MODEL: process.env.OFFICE_REVIEW_MODEL,
+    RUNWAYML_API_SECRET: process.env.RUNWAYML_API_SECRET,
+    RUNWAYML_VIDEO_MODEL: process.env.RUNWAYML_VIDEO_MODEL,
     INTEGRATION_CREDENTIAL_ENCRYPTION_KEY: process.env.INTEGRATION_CREDENTIAL_ENCRYPTION_KEY,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     RESEND_WEBHOOK_SECRET: process.env.RESEND_WEBHOOK_SECRET,
