@@ -11,6 +11,7 @@ import { getOfficeModel } from "@/lib/office/models";
 import { resolveMarketingAuthContext, requireMarketingManageContentAuthority, requireMarketingViewAuthority } from "./authz";
 import { createContentItem } from "./content";
 import { createContentStudioPackageTask, resolveContentDraftAssistantAgent } from "./agents";
+import { resolveCreativeReferences, serializeCreativeReferences, type CreativeReference } from "./creative-references";
 import {
   contentStudioConceptSchema,
   contentStudioConceptsSchema,
@@ -53,6 +54,7 @@ export interface ContentStudioDraft {
   goal: string;
   intendedChannel: string;
   plannedPublishAt: Date | null;
+  creativeReferenceIds: string[];
   concepts: ContentStudioConcept[];
   selectedConceptId: string | null;
   productionPackage: ContentStudioPackage | null;
@@ -110,6 +112,7 @@ function toStudio(row: typeof marketingContentStudioDrafts.$inferSelect): Conten
     : null;
   return {
     ...row,
+    creativeReferenceIds: Array.isArray(row.creativeReferenceIds) ? row.creativeReferenceIds as string[] : [],
     concepts: contentStudioConceptsSchema.parse(row.concepts),
     productionPackage: normalizedPackage ? contentStudioPackageSchema.parse(normalizedPackage) : null,
   };
@@ -178,8 +181,8 @@ export async function listStudioDrafts(db: Db, input: { organizationId: string; 
   return visible;
 }
 
-type ConceptGenerator = (input: { brand: MarketingBrandProfile; goal: string; channel: string; performanceEvidence: Array<{ title: string; channel: string | null; views: number; engagements: number; clicks: number; leads: number; notes: string | null }> }) => Promise<ContentStudioConcept[]>;
-type PackageGenerator = (input: { brand: MarketingBrandProfile; goal: string; channel: string; contentKind: ContentStudioContentKind; concept: ContentStudioConcept }) => Promise<ContentStudioPackage>;
+type ConceptGenerator = (input: { brand: MarketingBrandProfile; goal: string; channel: string; creativeReferences: CreativeReference[]; performanceEvidence: Array<{ title: string; channel: string | null; views: number; engagements: number; clicks: number; leads: number; notes: string | null }> }) => Promise<ContentStudioConcept[]>;
+type PackageGenerator = (input: { brand: MarketingBrandProfile; goal: string; channel: string; contentKind: ContentStudioContentKind; concept: ContentStudioConcept; creativeReferences: CreativeReference[] }) => Promise<ContentStudioPackage>;
 
 export function resolveContentStudioContentKind(channel: string): ContentStudioContentKind {
   const normalized = channel.toLowerCase();
@@ -302,7 +305,7 @@ export function enforceContentStudioProofQuality(input: { brand: MarketingBrandP
   return pkg;
 }
 
-const defaultConceptGenerator: ConceptGenerator = async ({ brand, goal, channel, performanceEvidence }) => {
+const defaultConceptGenerator: ConceptGenerator = async ({ brand, goal, channel, creativeReferences, performanceEvidence }) => {
   return withContentStudioGenerationFallback({
     kind: "concept",
     generate: async () => {
@@ -310,7 +313,7 @@ const defaultConceptGenerator: ConceptGenerator = async ({ brand, goal, channel,
       model: getOfficeModel("planning"),
       output: contentStudioConceptOutput,
       system: "You are LYNQ Office's Content Director. Produce exactly three strategically distinct, practical short-form content concepts. Follow the supplied brand profile literally. Never invent performance, product availability, customer proof or capabilities. Return structured data only.",
-      prompt: JSON.stringify({ brand, goal, channel, verifiedPastPerformance: performanceEvidence, requirements: ["Each concept must be producible today", "Prefer product or process proof over generic advice", "Make the three angles meaningfully different", "Use verified past performance only when supplied; never invent or extrapolate results", ...(brand.brandKey === "codeitlearn" ? ["When the goal mentions a game or project, the first concept must lead with a real playable result and never substitute the homepage, lesson map or sign-in screen"] : [])] }),
+      prompt: JSON.stringify({ brand, goal, channel, creativeReferences: serializeCreativeReferences(creativeReferences), verifiedPastPerformance: performanceEvidence, requirements: ["Each concept must be producible today", "Treat references as structural inspiration, never as brand truth", "Never transfer a competitor's claims, credentials, characters, protected assets, customer proof or product capabilities", "Prefer product or process proof over generic advice", "Make the three angles meaningfully different", "Use verified past performance only when supplied; never invent or extrapolate results", ...(brand.brandKey === "codeitlearn" ? ["When the goal mentions a game or project, the first concept must lead with a real playable result and never substitute the homepage, lesson map or sign-in screen"] : [])] }),
     });
     return contentStudioConceptsSchema.parse(result.output);
     },
@@ -318,14 +321,14 @@ const defaultConceptGenerator: ConceptGenerator = async ({ brand, goal, channel,
   });
 };
 
-const defaultPackageGenerator: PackageGenerator = async ({ brand, goal, channel, contentKind, concept }) => {
+const defaultPackageGenerator: PackageGenerator = async ({ brand, goal, channel, contentKind, concept, creativeReferences }) => {
   const isVideo = contentKind === "short_video";
   const isCodeItVideo = isVideo && brand.brandKey === "codeitlearn";
   const isLynqVideo = isVideo && brand.brandKey === "lynq";
   const system = isVideo
     ? `You are LYNQ Office's short-form Creative Director and Script Writer. Create a complete short-video production package that a social media manager can render, review and publish. Follow the supplied brand truth and claims guardrails. The storyboard must be specific and usable. ${isCodeItVideo ? "Create 5–8 concise shots for an 18–24 second product walkthrough. Every visual field must start with one approved scene token—pixel_mascot, brand_logo, project_builder, built_game, game_play, lessons_map, python_playground, code_output, explore, or cta—then add the production direction. When the goal involves a project or game, open with built_game or game_play showing a real playable result; never use the homepage, lesson map or sign-in screen as a substitute. Include the builder and at least two real product-proof scenes." : isLynqVideo ? "Create exactly 5 premium shots for a 15-second video. Every visual field must start with one approved scene token—brand, website, portfolio, systems, office, automation, or cta. Lead with websites/landing pages unless the user's goal explicitly asks for operations. Use website or portfolio proof in at least two shots. Keep neon lime controlled and editorial." : "Keep the total concept suitable for a concise 10–15 second social video."} Never put production directions in onScreenText; onScreenText is final audience-facing copy only. contentKind must be short_video. Set renderingStatus to not_requested, renderedAssets to an empty array and renderingError to null. Return structured data only.`
     : `You are LYNQ Office's Social Creative Director and Copywriter. Create a complete, publish-ready social post package with final copy and specific visual direction. Follow the supplied brand truth and claims guardrails. For a single-image post return exactly one panel; for a carousel return 3–10 ordered panels with a clear narrative. ${brand.brandKey === "lynq" ? "Start every panel visual with one approved scene token—brand, website, portfolio, systems, office, automation, or cta. Lead with websites or landing pages unless the goal explicitly asks for operations. Use real portfolio/site proof and premium black/white/neon-lime art direction." : "Start every panel visual with one approved scene token—pixel_mascot, brand_logo, project_builder, built_game, game_play, lessons_map, python_playground, code_output, explore, or cta. When the goal involves a project or game, panel one must use built_game or game_play and show the real playable result with its visible game UI. Never substitute the homepage, lesson map or sign-in screen. Use Pixel only as supporting brand art, not as fake product proof."} Set renderingStatus to not_requested, renderedAssets to an empty array and renderingError to null. Return structured data only.`;
-  const prompt = JSON.stringify({ brand, goal, channel, contentKind, selectedConcept: concept, requirements: isVideo
+  const prompt = JSON.stringify({ brand, goal, channel, contentKind, selectedConcept: concept, creativeReferences: serializeCreativeReferences(creativeReferences), referencePolicy: ["Borrow only the explicitly noted pacing, structure, framing, transition or storytelling principles", "Do not copy exact wording, protected characters, music, branding, footage, credentials, outcomes or product claims", "The supplied brand profile and claims guardrails always override a reference"], requirements: isVideo
       ? [isCodeItVideo ? "18–24 seconds with 5–8 shots" : isLynqVideo ? "15 seconds with exactly 5 shots" : "10–15 seconds", "3–6 strong hooks", "concise word-for-word script", "timed shot list", "caption and cover", "specific asset instructions", "one CTA", ...(isCodeItVideo ? ["Open with built_game or game_play when showing a project", "Use real project_builder, built_game, game_play, lessons_map, python_playground, code_output or explore scenes", "End with cta and codeitlearn.com"] : []), ...(isLynqVideo ? ["Lead with website/landing-page proof", "Use website or portfolio scenes twice", "End with cta and lynq.build"] : [])]
       : ["3–6 opening-line options", "final post copy", "platform-appropriate caption", "panel-by-panel visual and overlay text", "specific asset instructions", "one CTA", "no invented product features or results"] });
 
@@ -364,18 +367,19 @@ const defaultPackageGenerator: PackageGenerator = async ({ brand, goal, channel,
   });
 };
 
-export async function generateContentConcepts(db: Db, input: { organizationId: string; workspaceId?: string | null; brandProfileId: string; goal: string; intendedChannel: string; plannedPublishAt?: Date | null; actorUserId: string }, generator: ConceptGenerator = defaultConceptGenerator): Promise<ContentStudioDraft> {
+export async function generateContentConcepts(db: Db, input: { organizationId: string; workspaceId?: string | null; brandProfileId: string; goal: string; intendedChannel: string; plannedPublishAt?: Date | null; creativeReferenceIds?: string[]; actorUserId: string }, generator: ConceptGenerator = defaultConceptGenerator): Promise<ContentStudioDraft> {
   const workspaceId = input.workspaceId ?? null;
   const ctx = await resolveMarketingAuthContext(db, { organizationId: input.organizationId, actorUserId: input.actorUserId });
   await requireMarketingManageContentAuthority(db, ctx, "marketing_content_studio", "new");
   await requireExecutionVisibility(db, { organizationId: input.organizationId, workspaceId, actorUserId: input.actorUserId });
   const brand = await resolveBrand(db, input.organizationId, input.brandProfileId);
   if (brand.workspaceId !== workspaceId) throw new Error("Brand profile is outside this workspace");
+  const creativeReferences = await resolveCreativeReferences(db, { organizationId: input.organizationId, workspaceId, brandProfileId: brand.id, referenceIds: input.creativeReferenceIds, actorUserId: input.actorUserId });
   const performanceRows = await db.select({ title: marketingContentItems.title, channel: marketingContentItems.intendedChannel, views: marketingContentPerformanceSnapshots.views, likes: marketingContentPerformanceSnapshots.likes, comments: marketingContentPerformanceSnapshots.comments, shares: marketingContentPerformanceSnapshots.shares, saves: marketingContentPerformanceSnapshots.saves, clicks: marketingContentPerformanceSnapshots.clicks, leads: marketingContentPerformanceSnapshots.leads, notes: marketingContentPerformanceSnapshots.notes }).from(marketingContentPerformanceSnapshots).innerJoin(marketingContentItems, and(eq(marketingContentItems.id, marketingContentPerformanceSnapshots.contentItemId), eq(marketingContentItems.organizationId, marketingContentPerformanceSnapshots.organizationId))).innerJoin(marketingContentStudioDrafts, and(eq(marketingContentStudioDrafts.contentItemId, marketingContentItems.id), eq(marketingContentStudioDrafts.organizationId, marketingContentItems.organizationId))).where(and(eq(marketingContentPerformanceSnapshots.organizationId, input.organizationId), eq(marketingContentStudioDrafts.brandProfileId, brand.id))).orderBy(desc(marketingContentPerformanceSnapshots.capturedAt)).limit(12);
   const performanceEvidence = performanceRows.map((row) => ({ title: row.title, channel: row.channel, views: row.views, engagements: row.likes + row.comments + row.shares + row.saves, clicks: row.clicks, leads: row.leads, notes: row.notes }));
-  const concepts = contentStudioConceptsSchema.parse(await generator({ brand, goal: input.goal, channel: input.intendedChannel, performanceEvidence }));
-  const [row] = await db.insert(marketingContentStudioDrafts).values({ organizationId: input.organizationId, workspaceId, brandProfileId: brand.id, goal: input.goal, intendedChannel: input.intendedChannel, plannedPublishAt: input.plannedPublishAt ?? null, concepts, ownerUserId: input.actorUserId }).returning();
-  await recordAuditEvent(db, { eventType: "marketing_content_studio_started", actorUserId: input.actorUserId, organizationId: input.organizationId, targetType: "marketing_content_studio", targetId: row.id, metadata: { brandKey: brand.brandKey, channel: input.intendedChannel, workspaceScoped: Boolean(workspaceId) } });
+  const concepts = contentStudioConceptsSchema.parse(await generator({ brand, goal: input.goal, channel: input.intendedChannel, creativeReferences, performanceEvidence }));
+  const [row] = await db.insert(marketingContentStudioDrafts).values({ organizationId: input.organizationId, workspaceId, brandProfileId: brand.id, goal: input.goal, intendedChannel: input.intendedChannel, plannedPublishAt: input.plannedPublishAt ?? null, creativeReferenceIds: creativeReferences.map((reference) => reference.id), concepts, ownerUserId: input.actorUserId }).returning();
+  await recordAuditEvent(db, { eventType: "marketing_content_studio_started", actorUserId: input.actorUserId, organizationId: input.organizationId, targetType: "marketing_content_studio", targetId: row.id, metadata: { brandKey: brand.brandKey, channel: input.intendedChannel, creativeReferenceCount: creativeReferences.length, workspaceScoped: Boolean(workspaceId) } });
   return toStudio(row);
 }
 
@@ -386,8 +390,9 @@ export async function generateProductionPackage(db: Db, input: { organizationId:
   const concept = studio.concepts.find((item) => item.id === input.conceptId);
   if (!concept) throw new Error("Selected concept does not belong to this Content Studio draft");
   const brand = await resolveBrand(db, input.organizationId, studio.brandProfileId);
+  const creativeReferences = await resolveCreativeReferences(db, { organizationId: input.organizationId, workspaceId: studio.workspaceId, brandProfileId: brand.id, referenceIds: studio.creativeReferenceIds, actorUserId: input.actorUserId });
   const contentKind = resolveContentStudioContentKind(studio.intendedChannel);
-  const productionPackage = contentStudioPackageSchema.parse(await generator({ brand, goal: studio.goal, channel: studio.intendedChannel, contentKind, concept }));
+  const productionPackage = contentStudioPackageSchema.parse(await generator({ brand, goal: studio.goal, channel: studio.intendedChannel, contentKind, concept, creativeReferences }));
   const [row] = await db.update(marketingContentStudioDrafts).set({ selectedConceptId: concept.id, productionPackage, status: "production", revision: input.expectedRevision + 1, updatedAt: new Date() }).where(and(eq(marketingContentStudioDrafts.id, studio.id), eq(marketingContentStudioDrafts.organizationId, input.organizationId), eq(marketingContentStudioDrafts.revision, input.expectedRevision))).returning();
   if (!row) throw new Error("This Content Studio draft changed; refresh and try again");
   await recordAuditEvent(db, { eventType: "marketing_content_studio_package_created", actorUserId: input.actorUserId, organizationId: input.organizationId, targetType: "marketing_content_studio", targetId: row.id, metadata: { conceptId: concept.id } });

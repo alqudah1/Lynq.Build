@@ -43,6 +43,7 @@ import { ensureDefaultBrandProfiles, generateContentConcepts, generateProduction
 import { contentStudioContentKindSchema, contentStudioPackageSchema } from "@/lib/marketing-os/validation";
 import { renderContentStudioMedia } from "@/lib/marketing-os/media-production";
 import { ensureDefaultChannelAccounts, recordPerformanceSnapshot } from "@/lib/marketing-os/command-center";
+import { createCreativeReference, CREATIVE_REFERENCE_TYPES } from "@/lib/marketing-os/creative-references";
 
 async function context(organizationSlug: string, path: string) {
   const env = loadEnv();
@@ -171,15 +172,47 @@ const generateStudioSchema = z.object({
   goal: z.string().trim().min(5).max(2000),
   intendedChannel: z.string().trim().min(1).max(100),
   plannedPublishAt: z.string().trim().optional(),
+  creativeReferenceIds: z.array(uuidSchema).max(5).default([]),
 });
+
+const creativeReferenceSchema = z.object({
+  brandProfileId: uuidSchema,
+  title: z.string().trim().min(3).max(160),
+  referenceType: z.enum(CREATIVE_REFERENCE_TYPES),
+  sourceUrl: z.string().trim().url().max(2048).refine((value) => value.startsWith("https://") || value.startsWith("http://"), "Use an http(s) reference URL"),
+  transcript: z.string().trim().max(12_000).optional(),
+  creativeNotes: z.string().trim().min(5).max(4_000),
+  adaptationRules: z.string().trim().max(4_000).optional(),
+});
+
+export async function createCreativeReferenceAction(organizationSlug: string, formData: FormData): Promise<ActionResult> {
+  const { db, user, organization } = await context(organizationSlug, `/app/${organizationSlug}/marketing/content-studio`);
+  const parsed = creativeReferenceSchema.safeParse({
+    brandProfileId: formData.get("brandProfileId"),
+    title: formData.get("title"),
+    referenceType: formData.get("referenceType"),
+    sourceUrl: formData.get("sourceUrl"),
+    transcript: formData.get("transcript") || undefined,
+    creativeNotes: formData.get("creativeNotes"),
+    adaptationRules: formData.get("adaptationRules") || undefined,
+  });
+  if (!parsed.success) return toActionResult(parsed.error);
+  try {
+    await createCreativeReference(db, { organizationId: organization.id, actorUserId: user.userId, ...parsed.data });
+  } catch (err) {
+    return toActionResult(err);
+  }
+  revalidatePath(`/app/${organizationSlug}/marketing/content-studio`);
+  return { ok: true };
+}
 
 export async function generateContentStudioConceptsAction(organizationSlug: string, formData: FormData): Promise<ActionResult> {
   const { db, user, organization } = await context(organizationSlug, `/app/${organizationSlug}/marketing/content-studio`);
-  const parsed = generateStudioSchema.safeParse({ brandProfileId: formData.get("brandProfileId"), goal: formData.get("goal"), intendedChannel: formData.get("intendedChannel"), plannedPublishAt: formData.get("plannedPublishAt") || undefined });
+  const parsed = generateStudioSchema.safeParse({ brandProfileId: formData.get("brandProfileId"), goal: formData.get("goal"), intendedChannel: formData.get("intendedChannel"), plannedPublishAt: formData.get("plannedPublishAt") || undefined, creativeReferenceIds: formData.getAll("creativeReferenceIds").map(String) });
   if (!parsed.success) return toActionResult(parsed.error);
   let studioId: string;
   try {
-    const studio = await generateContentConcepts(db, { organizationId: organization.id, brandProfileId: parsed.data.brandProfileId, goal: parsed.data.goal, intendedChannel: parsed.data.intendedChannel, plannedPublishAt: parsed.data.plannedPublishAt ? new Date(parsed.data.plannedPublishAt) : null, actorUserId: user.userId });
+    const studio = await generateContentConcepts(db, { organizationId: organization.id, brandProfileId: parsed.data.brandProfileId, goal: parsed.data.goal, intendedChannel: parsed.data.intendedChannel, plannedPublishAt: parsed.data.plannedPublishAt ? new Date(parsed.data.plannedPublishAt) : null, creativeReferenceIds: parsed.data.creativeReferenceIds, actorUserId: user.userId });
     studioId = studio.id;
   } catch (err) {
     return toActionResult(err);

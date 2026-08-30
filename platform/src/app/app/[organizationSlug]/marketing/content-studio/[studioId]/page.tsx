@@ -7,6 +7,7 @@ import { requireDashboardUser } from "@/lib/dashboard/session-gate";
 import { getOrganizationBySlugForUser } from "@/lib/organizations/organizations";
 import { TenantResourceNotFoundError } from "@/lib/authz/errors";
 import { getStudioDraftForUser, listBrandProfiles } from "@/lib/marketing-os/content-studio";
+import { listCreativeReferences } from "@/lib/marketing-os/creative-references";
 import { listCampaignsForUser } from "@/lib/marketing-os/campaigns";
 import { generateContentStudioPackageAction, saveContentStudioToPipelineAction } from "@/lib/dashboard/actions/marketing";
 import { Breadcrumbs } from "@/components/dashboard/Breadcrumbs";
@@ -35,12 +36,14 @@ export default async function ContentStudioDetailPage({ params }: { params: Prom
   let studio;
   try { studio = await getStudioDraftForUser(db, { organizationId: organization.id, studioId, actorUserId: user.userId }); }
   catch (err) { if (err instanceof TenantResourceNotFoundError) notFound(); throw err; }
-  const [brands, allCampaigns] = await Promise.all([
+  const [brands, allCampaigns, allReferences] = await Promise.all([
     listBrandProfiles(db, { organizationId: organization.id, actorUserId: user.userId }),
     listCampaignsForUser(db, { organizationId: organization.id, actorUserId: user.userId }),
+    listCreativeReferences(db, { organizationId: organization.id, actorUserId: user.userId }),
   ]);
   const brand = brands.find((item) => item.id === studio.brandProfileId);
   const campaigns = allCampaigns.filter((campaign) => campaign.workspaceId === studio.workspaceId && campaign.status !== "archived" && campaign.status !== "cancelled");
+  const references = allReferences.filter((reference) => studio.creativeReferenceIds.includes(reference.id));
   const pkg = studio.productionPackage;
 
   return (
@@ -50,6 +53,8 @@ export default async function ContentStudioDetailPage({ params }: { params: Prom
         <div className="flex flex-wrap items-center gap-3"><h1 className="font-serif text-3xl italic font-light text-foreground">{pkg?.title ?? "Choose a concept"}</h1><Badge tone={studio.status === "saved" ? "success" : "neutral"}>{studio.status}</Badge></div>
         <p className="max-w-3xl text-sm text-muted">{brand?.name} · {studio.intendedChannel} · {studio.goal}</p>
       </header>
+
+      {references.length > 0 ? <Card className="flex flex-col gap-3 border-l-2 border-l-accent"><div><p className="text-xs uppercase tracking-[0.16em] text-accent-foreground">Creative direction used</p><p className="mt-1 text-xs text-subtle">These references ground structure and quality. Brand truth and claims guardrails override them.</p></div><div className="flex flex-wrap gap-2">{references.map((reference) => <a key={reference.id} href={reference.sourceUrl} target="_blank" rel="noreferrer" className="rounded-full border border-border px-3 py-1 text-xs text-foreground hover:border-accent/50">{reference.title} ↗</a>)}</div></Card> : null}
 
       {!pkg ? (
         <section className="grid gap-4 lg:grid-cols-3">

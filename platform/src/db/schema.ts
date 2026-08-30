@@ -4564,6 +4564,36 @@ export const marketingBrandProfiles = pgTable("marketing_brand_profiles", {
   uniqueIndex("marketing_brand_profiles_workspace_key_unique").on(t.organizationId, t.workspaceId, t.brandKey).where(sql`${t.workspaceId} IS NOT NULL`),
 ]);
 
+/** Tenant-scoped creative references that teach Content Studio structure and quality without turning competitor claims or protected assets into brand truth. */
+export const marketingCreativeReferences = pgTable("marketing_creative_references", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  workspaceId: uuid("workspace_id"),
+  brandProfileId: uuid("brand_profile_id").notNull(),
+  title: text("title").notNull(),
+  referenceType: text("reference_type").notNull().default("short_video"),
+  sourceUrl: text("source_url").notNull(),
+  transcript: text("transcript").notNull().default(""),
+  creativeNotes: text("creative_notes").notNull(),
+  adaptationRules: text("adaptation_rules").notNull().default(""),
+  createdByUserId: uuid("created_by_user_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
+  ...timestamps,
+}, (t) => [
+  foreignKey({
+    name: "marketing_creative_references_workspace_org_fk",
+    columns: [t.workspaceId, t.organizationId],
+    foreignColumns: [workspaces.id, workspaces.organizationId],
+  }).onDelete("restrict"),
+  foreignKey({
+    name: "marketing_creative_references_brand_org_fk",
+    columns: [t.brandProfileId, t.organizationId],
+    foreignColumns: [marketingBrandProfiles.id, marketingBrandProfiles.organizationId],
+  }).onDelete("restrict"),
+  unique("marketing_creative_references_id_org_unique").on(t.id, t.organizationId),
+  index("marketing_creative_references_org_brand_idx").on(t.organizationId, t.brandProfileId),
+]);
+
 /** Durable working record for the narrow Content Studio flow. The canonical pipeline/calendar record remains `marketing_content_items`; this row only preserves ideation and the editable pre-save production package. */
 export const marketingContentStudioDrafts = pgTable("marketing_content_studio_drafts", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -4573,6 +4603,7 @@ export const marketingContentStudioDrafts = pgTable("marketing_content_studio_dr
   goal: text("goal").notNull(),
   intendedChannel: text("intended_channel").notNull(),
   plannedPublishAt: timestamp("planned_publish_at", { withTimezone: true }),
+  creativeReferenceIds: jsonb("creative_reference_ids").notNull().default([]),
   concepts: jsonb("concepts").notNull().default([]),
   selectedConceptId: text("selected_concept_id"),
   productionPackage: jsonb("production_package"),

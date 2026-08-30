@@ -6,6 +6,7 @@ import { db, makeUser, makeOrgWithOwner, cleanupAgentRuntimeTestData, randMarket
 import { seedMarketingAgents } from "./agents";
 import { createCampaign } from "./campaigns";
 import { buildFallbackContentConcepts, buildFallbackProductionPackage, contentStudioConceptOutput, enforceContentStudioProofQuality, ensureDefaultBrandProfiles, generateContentConcepts, generateProductionPackage, getStudioDraftForUser, saveStudioToPipeline, withContentStudioGenerationFallback } from "./content-studio";
+import { createCreativeReference, listCreativeReferences, resolveCreativeReferences } from "./creative-references";
 import { classifyCodeItScene, renderContentStudioMedia, renderPostPanel } from "./media-production";
 import type { ContentStudioConcept, ContentStudioPackage } from "./validation";
 
@@ -110,6 +111,50 @@ describe("Marketing Content Studio — isolation and vertical slice", () => {
     const studio = await generateContentConcepts(db, { organizationId: orgA, brandProfileId: brandA.id, goal: "Create a tenant-safe concept set", intendedChannel: "Instagram Reels", actorUserId: ownerA }, async () => concepts);
 
     await expect(getStudioDraftForUser(db, { organizationId: orgB, studioId: studio.id, actorUserId: ownerB })).rejects.toThrow(TenantResourceNotFoundError);
+  });
+
+  it("persists brand references, grounds generation, and rejects cross-tenant reference IDs", async () => {
+    const ownerA = await makeUser();
+    const orgA = await makeOrgWithOwner(ownerA);
+    const ownerB = await makeUser();
+    const orgB = await makeOrgWithOwner(ownerB);
+    const brandsA = await ensureDefaultBrandProfiles(db, { organizationId: orgA, actorUserId: ownerA });
+    const brandsB = await ensureDefaultBrandProfiles(db, { organizationId: orgB, actorUserId: ownerB });
+    const brandA = brandsA.find((brand) => brand.brandKey === "codeitlearn")!;
+    const brandB = brandsB.find((brand) => brand.brandKey === "codeitlearn")!;
+    const reference = await createCreativeReference(db, {
+      organizationId: orgA,
+      brandProfileId: brandA.id,
+      title: "Parent reaction to playable proof",
+      referenceType: "tutorial",
+      sourceUrl: "https://www.instagram.com/reel/example/",
+      transcript: "Wait, my kid built this?",
+      creativeNotes: "Borrow the surprise hook, then show the real finished game before the tutorial.",
+      adaptationRules: "Use CodeItLearn and Pixel; do not copy characters, wording, credentials, or claims.",
+      actorUserId: ownerA,
+    });
+    expect(await listCreativeReferences(db, { organizationId: orgA, actorUserId: ownerA })).toHaveLength(1);
+    expect(await listCreativeReferences(db, { organizationId: orgB, actorUserId: ownerB })).toHaveLength(0);
+    await expect(resolveCreativeReferences(db, { organizationId: orgB, brandProfileId: brandB.id, referenceIds: [reference.id], actorUserId: ownerB })).rejects.toThrow(TenantResourceNotFoundError);
+
+    const studio = await generateContentConcepts(db, {
+      organizationId: orgA,
+      brandProfileId: brandA.id,
+      goal: "Show parents a child building a playable original game",
+      intendedChannel: "Instagram Reel",
+      creativeReferenceIds: [reference.id],
+      actorUserId: ownerA,
+    }, async (input) => {
+      expect(input.creativeReferences).toHaveLength(1);
+      expect(input.creativeReferences[0]?.transcript).toContain("my kid built this");
+      return concepts;
+    });
+    expect(studio.creativeReferenceIds).toEqual([reference.id]);
+
+    await generateProductionPackage(db, { organizationId: orgA, studioId: studio.id, conceptId: "proof", expectedRevision: studio.revision, actorUserId: ownerA }, async (input) => {
+      expect(input.creativeReferences[0]?.adaptationRules).toContain("do not copy");
+      return productionPackage;
+    });
   });
 
   it("generates three concepts, creates a package, and saves it to the canonical content pipeline as a Runtime artifact", async () => {
