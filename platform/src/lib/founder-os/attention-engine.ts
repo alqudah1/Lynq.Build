@@ -1,11 +1,13 @@
 import "server-only";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
-import { and, eq, lt, isNotNull, gte, lte, sql, count, desc } from "drizzle-orm";
+import { and, eq, lt, isNotNull, gte, lte, sql, count, desc, like } from "drizzle-orm";
 import {
   crmOpportunities,
   crmFollowUps,
   projects,
   projectMilestones,
+  projectExecutionLinks,
+  projectTasks,
   workflowExecutions,
   runtimeJobs,
   agentApprovalRequests,
@@ -457,6 +459,39 @@ async function agentsRules(ctx: EngineContext): Promise<AttentionItem[]> {
   }
 
   const recentWindow = new Date(ctx.now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const failedOfficeExecutions = await ctx.db
+    .select({ executionId: agentExecutions.id, projectId: projectExecutionLinks.projectId, taskTitle: projectTasks.title, failedAt: agentExecutions.failedAt })
+    .from(agentExecutions)
+    .innerJoin(projectExecutionLinks, eq(projectExecutionLinks.executionId, agentExecutions.id))
+    .innerJoin(projectTasks, eq(projectTasks.id, projectExecutionLinks.taskId))
+    .where(
+      and(
+        eq(agentExecutions.organizationId, ctx.organizationId),
+        eq(agentExecutions.status, "failed"),
+        isNotNull(agentExecutions.failedAt),
+        gte(agentExecutions.failedAt, recentWindow),
+        like(projectTasks.description, "%<!-- LYNQ_OFFICE_TASK %"),
+        workspaceScopeCondition(agentExecutions.workspaceId, ctx.workspaceId),
+      ),
+    )
+    .orderBy(desc(agentExecutions.failedAt))
+    .limit(20);
+  for (const row of failedOfficeExecutions) {
+    items.push({
+      id: `jarvis_execution_failed:${row.executionId}`,
+      severity: "urgent",
+      domain: "agents",
+      reasonCode: "jarvis_project_step_failed",
+      title: `Jarvis needs attention: ${row.taskTitle}`,
+      explanation: `A Jarvis project step failed${row.failedAt ? ` on ${row.failedAt.toISOString().slice(0, 10)}` : ""}. Open the project to review the failure before the next handoff continues.`,
+      recordType: "project",
+      recordId: row.projectId,
+      dueAt: null,
+      recommendedActionType: "review_jarvis_failure",
+      drilldown: { metricKey: "agent_executions_failed", recordType: "agent_execution", recordId: row.executionId },
+    });
+  }
+
   const repeatedFailures = await ctx.db
     .select({ agentId: agentExecutions.assignedAgentId, failureCount: count() })
     .from(agentExecutions)
