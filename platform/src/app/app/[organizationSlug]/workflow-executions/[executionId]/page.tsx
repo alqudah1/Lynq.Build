@@ -76,7 +76,7 @@ export default async function WorkflowExecutionDetailPage({ params }: { params: 
         items={[
           { label: "LYNQ", href: "/app" },
           { label: organizationName, href: `/app/${organizationSlug}` },
-          { label: "Workflow executions", href: `/app/${organizationSlug}/workflow-executions` },
+          { label: "Automation runs", href: `/app/${organizationSlug}/workflow-executions` },
           { label: definition.name },
         ]}
       />

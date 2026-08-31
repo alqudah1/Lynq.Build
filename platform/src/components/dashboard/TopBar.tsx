@@ -1,10 +1,35 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { isItemActive } from "./NavList";
 import { LogoutButton } from "./LogoutButton";
 import type { NavItem } from "@/lib/dashboard/nav-items";
+
+const SECTION_LABELS: Record<string, string> = {
+  "workflow-executions": "Automation runs",
+  workflows: "Automations",
+  projects: "Projects",
+  marketing: "Marketing",
+  crm: "Customers",
+  sales: "Sales",
+  communications: "Inbox",
+  analytics: "Reports",
+  members: "Team",
+  integrations: "Connected Apps",
+  settings: "Settings",
+};
+
+function getPageContext(pathname: string, dashboardHref: string, navItems: NavItem[]) {
+  const activeItem = navItems.find((item) => item.href && isItemActive(item.href, pathname, dashboardHref));
+  const routeParts = pathname.slice(dashboardHref.length).split("/").filter(Boolean);
+  const section = routeParts[0];
+  const isDeepPage = routeParts.length > 1;
+  const title = activeItem?.label ?? (section ? SECTION_LABELS[section] : undefined) ?? "Office";
+  const sectionHref = section === "workflow-executions" ? `${dashboardHref}/workflows` : section ? `${dashboardHref}/${section}` : dashboardHref;
+  return { activeItem, isDeepPage, sectionHref, title };
+}
 
 /**
  * Desktop-only top bar (UI/UX refinement pass) — contextual page title
@@ -20,15 +45,48 @@ import type { NavItem } from "@/lib/dashboard/nav-items";
  */
 export function TopBar({ navItems, dashboardHref, user }: { navItems: NavItem[]; dashboardHref: string; user: { name: string | null; email: string } }) {
   const pathname = usePathname();
-  const activeItem = navItems.find((item) => item.href && isItemActive(item.href, pathname, dashboardHref));
-  const title = activeItem?.label ?? "Dashboard";
+  const { activeItem, isDeepPage, sectionHref, title } = getPageContext(pathname, dashboardHref, navItems);
+  const parentLabel = activeItem?.label ?? title;
 
   return (
-    <header className="lynq-glass hidden items-center justify-between gap-6 border-b border-glass-border px-8 py-4 md:flex">
-      <h1 className="text-sm font-medium tracking-[0.02em] text-foreground">{title}</h1>
+    <header className="lynq-glass hidden items-center justify-between gap-6 border-b border-glass-border px-8 py-3 md:flex">
+      <div className="flex min-w-0 items-center gap-3">
+        {pathname !== dashboardHref ? (
+          <Link href={isDeepPage ? sectionHref : dashboardHref} className="lynq-transition inline-flex min-h-9 items-center gap-2 rounded-md border border-border bg-elevated px-3 text-xs font-medium text-foreground hover:border-border-strong">
+            <span aria-hidden="true">←</span>
+            Back to {isDeepPage ? parentLabel : "Office"}
+          </Link>
+        ) : null}
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold tracking-[-0.01em] text-foreground">{title}</p>
+        </div>
+      </div>
 
-      <UserMenu user={user} />
+      <div className="flex items-center gap-2">
+        {pathname !== dashboardHref ? <Link href={dashboardHref} className="lynq-transition min-h-9 rounded-md px-3 py-2 text-xs font-medium text-muted hover:bg-accent-wash hover:text-foreground">Office home</Link> : null}
+        <UserMenu user={user} />
+      </div>
     </header>
+  );
+}
+
+export function MobileTopBar({ navItems, dashboardHref }: { navItems: NavItem[]; dashboardHref: string }) {
+  const pathname = usePathname();
+  const { isDeepPage, sectionHref, title } = getPageContext(pathname, dashboardHref, navItems);
+  const backHref = isDeepPage ? sectionHref : dashboardHref;
+
+  return (
+    <div className="flex min-w-0 items-center gap-3">
+      {pathname !== dashboardHref ? (
+        <Link href={backHref} aria-label={`Back to ${isDeepPage ? title : "Office"}`} className="lynq-transition inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-border bg-elevated text-foreground hover:border-border-strong">
+          <span aria-hidden="true">←</span>
+        </Link>
+      ) : null}
+      <div className="min-w-0">
+        <p className="font-serif text-base italic font-light text-foreground">LYNQ</p>
+        <p className="truncate text-xs text-subtle">{title}</p>
+      </div>
+    </div>
   );
 }
 

@@ -38,11 +38,11 @@ export default async function WorkflowExecutionsPage({ params }: { params: Promi
 
   return (
     <div className="flex flex-col gap-8 px-6 py-8 md:px-10">
-      <Breadcrumbs items={[{ label: "LYNQ", href: "/app" }, { label: organizationName, href: `/app/${organizationSlug}` }, { label: "Workflow executions" }]} />
-      <PageHeader title="Workflow executions" />
+      <Breadcrumbs items={[{ label: "LYNQ", href: "/app" }, { label: organizationName, href: `/app/${organizationSlug}` }, { label: "Automation runs" }]} />
+      <PageHeader eyebrow="Automations" title="Run history" description="See what started, what finished, what is waiting for you, and where a run stopped." />
 
       {executions.length === 0 ? (
-        <EmptyState title="No workflow executions yet." />
+        <EmptyState title="No automation runs yet." description="Start a published automation and its progress will appear here." />
       ) : (
         <Table>
           <THead>

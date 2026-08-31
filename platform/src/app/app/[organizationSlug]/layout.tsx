@@ -9,7 +9,7 @@ import { toOrganizationSwitcherItems, toWorkspaceSwitcherItems } from "@/lib/das
 import { getNavItems } from "@/lib/dashboard/nav-items";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { MobileNav } from "@/components/dashboard/MobileNav";
-import { TopBar } from "@/components/dashboard/TopBar";
+import { MobileTopBar, TopBar } from "@/components/dashboard/TopBar";
 
 export const dynamic = "force-dynamic";
 
@@ -78,7 +78,7 @@ export default async function OrganizationLayout({
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="lynq-glass flex items-center justify-between border-b border-glass-border p-4 md:hidden">
-          <span className="font-serif text-lg italic font-light text-foreground">LYNQ</span>
+          <MobileTopBar navItems={navItems} dashboardHref={dashboardHref} />
           <MobileNav
             user={displayUser}
             organizations={organizationItems}

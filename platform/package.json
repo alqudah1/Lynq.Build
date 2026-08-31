@@ -12,6 +12,8 @@
     "test:watch": "vitest",
     "test:integration": "vitest run --config vitest.integration.config.mts",
     "test:a11y": "vitest run --config vitest.a11y.config.mts",
+    "deploy:preview": "node scripts/vercel-release.mjs preview",
+    "deploy:production": "node scripts/vercel-release.mjs production",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:check": "drizzle-kit check"
