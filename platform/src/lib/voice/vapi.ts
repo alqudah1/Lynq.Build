@@ -20,6 +20,7 @@ export class VapiJarvisVoiceTransport implements JarvisVoiceTransport {
 
   async notifyFounder(notification: JarvisVoiceNotification): Promise<void> {
     const destination = validateFounderVoiceDestination(this.config.founderPhoneNumber);
+    console.info("[jarvis-voice]", JSON.stringify({ event: "call-requested", provider: "vapi", notificationType: notification.kind }));
     const response = await this.fetchImpl(VAPI_CALLS_URL, {
       method: "POST",
       headers: {
@@ -46,6 +47,15 @@ export class VapiJarvisVoiceTransport implements JarvisVoiceTransport {
     if (!response.ok) {
       throw new Error(`Vapi call request failed with status ${response.status}`);
     }
+
+    const payload = (await response.json().catch(() => null)) as { id?: string; status?: string } | null;
+    console.info("[jarvis-voice]", JSON.stringify({
+      event: "call-accepted",
+      provider: "vapi",
+      notificationType: notification.kind,
+      providerCallId: payload?.id ?? null,
+      status: payload?.status ?? "queued",
+    }));
   }
 }
 
