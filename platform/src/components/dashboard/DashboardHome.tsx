@@ -98,7 +98,7 @@ export function DashboardHome({
             The company is <em className="text-accent-foreground">online.</em>
           </h1>
           <p className="mt-4 max-w-2xl text-sm leading-6 text-muted md:text-base">
-            Welcome back, {firstName}. Start with your assigned work or open a project. Leaders can also brief the Executive Assistant to coordinate company work.
+            Welcome back, {firstName}. Start with your assigned work or open a project. Leaders can ask Jarvis to coordinate company work and track every handoff.
           </p>
         </div>
         <div className="office-hero__pulse" aria-label={`${readyCount} employees ready and ${office.activeAssignmentCount} active assignments`}>
@@ -119,6 +119,7 @@ export function DashboardHome({
             <Link href={`${base}/my-work`} className="office-mini-link">Open My Work</Link>
             <Link href={`${base}/projects`} className="office-mini-link">Open Projects</Link>
             <Link href={`${base}/workflows`} className="office-mini-link">View workflows</Link>
+            <Link href={`${base}/jarvis`} className="office-mini-link">Ask Jarvis</Link>
           </div>
         </div>
         <aside className="office-panel">

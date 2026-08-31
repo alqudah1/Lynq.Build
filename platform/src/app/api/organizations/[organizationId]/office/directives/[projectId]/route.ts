@@ -1,5 +1,7 @@
 import "server-only";
 
+import { and, desc, eq, inArray } from "drizzle-orm";
+import { agentArtifacts, agentExecutions, projectArtifactLinks } from "@/db/schema";
 import { loadEnv } from "@/lib/env";
 import { createDbClient } from "@/db/client";
 import { getAuthenticatedUser } from "@/lib/http/auth";
@@ -9,6 +11,9 @@ import { getProjectForUser } from "@/lib/projects/projects";
 import { listTasks } from "@/lib/projects/tasks";
 import { listApprovalLinks, listExecutionLinksForProject } from "@/lib/projects/links";
 import { parseOfficeTaskMetadata } from "@/lib/office/task-metadata";
+import { extractEngineeringLinks, extractFounderDirective } from "@/lib/office/jarvis-presentation";
+import { listAgents } from "@/lib/agents/agents";
+import { getAgentOfficeIdentity } from "@/lib/office/view";
 
 export const dynamic = "force-dynamic";
 
@@ -27,18 +32,36 @@ export async function GET(_request: Request, { params }: RouteParams) {
     const user = await getAuthenticatedUser(db);
 
     const project = await getProjectForUser(db, { organizationId, projectId, actorUserId: user.userId });
-    const [tasks, executions, approvals] = await Promise.all([
+    const [tasks, executions, approvals, agents, artifacts] = await Promise.all([
       listTasks(db, { organizationId, projectId, actorUserId: user.userId }),
       listExecutionLinksForProject(db, { organizationId, projectId, actorUserId: user.userId }),
       listApprovalLinks(db, { organizationId, projectId, actorUserId: user.userId }),
+      listAgents(db, { organizationId, actorUserId: user.userId }),
+      db
+        .select({ taskId: projectArtifactLinks.linkedEntityId, artifactId: agentArtifacts.id, title: agentArtifacts.title, content: agentArtifacts.content, createdAt: agentArtifacts.createdAt })
+        .from(projectArtifactLinks)
+        .innerJoin(agentArtifacts, eq(agentArtifacts.id, projectArtifactLinks.artifactId))
+        .where(and(eq(projectArtifactLinks.organizationId, organizationId), eq(projectArtifactLinks.projectId, projectId), eq(projectArtifactLinks.linkedEntityType, "task")))
+        .orderBy(desc(agentArtifacts.createdAt)),
     ]);
+
+    const executionRows = executions.length > 0
+      ? await db.select({ id: agentExecutions.id, waitReason: agentExecutions.waitReason }).from(agentExecutions).where(and(eq(agentExecutions.organizationId, organizationId), inArray(agentExecutions.id, executions.map((execution) => execution.executionId))))
+      : [];
 
     const executionByTask = new Map(executions.map((execution) => [execution.taskId, execution]));
     const approvalByTask = new Map(approvals.map((approval) => [approval.linkedEntityId, approval]));
+    const waitReasonByExecution = new Map(executionRows.map((execution) => [execution.id, execution.waitReason]));
+    const agentById = new Map(agents.map((agent) => [agent.id, agent]));
+    const artifactByTask = new Map<string, (typeof artifacts)[number]>();
+    for (const artifact of artifacts) if (!artifactByTask.has(artifact.taskId)) artifactByTask.set(artifact.taskId, artifact);
     const steps = tasks.map((task) => {
       const metadata = parseOfficeTaskMetadata(task.description);
       const execution = executionByTask.get(task.id) ?? null;
       const approval = approvalByTask.get(task.id) ?? null;
+      const agent = metadata?.agentId ? agentById.get(metadata.agentId) ?? null : null;
+      const artifact = artifactByTask.get(task.id) ?? null;
+      const engineeringLinks = extractEngineeringLinks(artifact?.content ?? null);
       const state =
         approval?.status === "pending"
           ? "needs_approval"
@@ -59,10 +82,14 @@ export async function GET(_request: Request, { params }: RouteParams) {
         state,
         stage: metadata?.stage ?? "advisory",
         agentId: metadata?.agentId ?? null,
+        agent: agent ? { id: agent.id, name: agent.name, role: getAgentOfficeIdentity(agent).title } : null,
         goal: metadata?.goal ?? task.description,
         handoff: metadata?.handoff ?? null,
-        execution: execution ? { id: execution.executionId, status: execution.executionStatus } : null,
+        execution: execution ? { id: execution.executionId, status: execution.executionStatus, waitReason: waitReasonByExecution.get(execution.executionId) ?? null } : null,
         approval: approval ? { id: approval.approvalRequestId, status: approval.status } : null,
+        deliverable: artifact ? { id: artifact.artifactId, title: artifact.title } : null,
+        pullRequestUrl: engineeringLinks.pullRequestUrl,
+        previewUrl: engineeringLinks.previewUrl,
       };
     });
 
@@ -77,7 +104,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
             : "queued";
 
     return jsonSuccess({
-      project: { id: project.id, name: project.name, projectKey: project.projectKey, status: project.status, objective: project.objective },
+      project: { id: project.id, name: project.name, projectKey: project.projectKey, status: project.status, objective: project.objective, directive: extractFounderDirective(project.description) },
       overallState,
       steps,
       refreshAfterMs: overallState === "completed" || overallState === "failed" ? null : 5000,

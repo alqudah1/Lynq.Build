@@ -39,6 +39,7 @@ export function OfficeCommandCenter({
   preferredAgentId,
   employeeTitle,
   compact = false,
+  navigateToDirective = false,
 }: {
   organizationId: string;
   organizationSlug: string;
@@ -46,6 +47,7 @@ export function OfficeCommandCenter({
   preferredAgentId?: string | null;
   employeeTitle?: string;
   compact?: boolean;
+  navigateToDirective?: boolean;
 }) {
   const router = useRouter();
   const [instruction, setInstruction] = useState("");
@@ -75,7 +77,8 @@ export function OfficeCommandCenter({
       if (!response.ok || !payload.data) throw new Error(payload.error?.message ?? "The office could not dispatch this directive.");
       setResult(payload.data);
       setInstruction("");
-      router.refresh();
+      if (navigateToDirective) router.push(`/app/${organizationSlug}/jarvis/${payload.data.project.id}`);
+      else router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "The office could not dispatch this directive.");
     } finally {
@@ -86,15 +89,15 @@ export function OfficeCommandCenter({
   return (
     <section aria-labelledby={compact ? "employee-brief-heading" : "assistant-heading"} className={`office-command ${compact ? "office-command--compact" : ""}`}>
       <div className="office-command__assistant" aria-hidden="true">
-        <span>EA</span>
+        <span>J</span>
         <i />
       </div>
       <div className="min-w-0 flex-1">
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-[0.65rem] uppercase tracking-[0.24em] text-accent-foreground">{preferredAgentId ? "Direct assignment" : "Executive Assistant"}</p>
+            <p className="text-[0.65rem] uppercase tracking-[0.24em] text-accent-foreground">{preferredAgentId ? "Direct assignment" : "Jarvis Command Center"}</p>
             <h2 id={compact ? "employee-brief-heading" : "assistant-heading"} className="mt-1 font-serif text-2xl font-light text-foreground">
-              {preferredAgentId ? `Brief ${employeeTitle ?? "this employee"}` : "What should the company work on?"}
+              {preferredAgentId ? `Brief ${employeeTitle ?? "this employee"}` : "What should Jarvis coordinate?"}
             </h2>
           </div>
           <span className="office-presence office-presence--ready">Ready</span>
@@ -130,7 +133,7 @@ export function OfficeCommandCenter({
               <p className="text-xs text-subtle">This creates a real project task and tracked agent execution.</p>
             )}
             <button type="submit" disabled={submitting || instruction.trim().length < 10} className="office-dispatch-button">
-              {submitting ? "Briefing the team…" : preferredAgentId ? "Assign work" : "Send to the office"}
+              {submitting ? "Jarvis is briefing the team…" : preferredAgentId ? "Assign work" : "Send to Jarvis"}
               <span aria-hidden="true">↗</span>
             </button>
           </div>
@@ -148,6 +151,11 @@ export function OfficeCommandCenter({
               <Link href={`/app/${organizationSlug}/projects/${result.project.id}`} className="text-xs font-medium text-accent-foreground hover:text-foreground">
                 Open project →
               </Link>
+              {!preferredAgentId ? (
+                <Link href={`/app/${organizationSlug}/jarvis/${result.project.id}`} className="text-xs font-medium text-accent-foreground hover:text-foreground">
+                  Watch live in Jarvis →
+                </Link>
+              ) : null}
             </div>
             <ul className="mt-4 grid gap-2 md:grid-cols-2">
               {result.assignments.map((assignment) => (
