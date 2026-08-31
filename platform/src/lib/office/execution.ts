@@ -20,6 +20,7 @@ import { getDirectiveDomains } from "./directives";
 import { parseOfficeTaskMetadata } from "./task-metadata";
 import { getOfficeModel } from "./models";
 import { getAgentOfficeIdentity } from "./view";
+import { notifyJarvisApprovalNeeded } from "@/lib/email/jarvis-notifier";
 
 type Db = NeonHttpDatabase<Record<string, unknown>>;
 
@@ -237,8 +238,10 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
   if (!existingLinks.some((item) => item.artifactId === artifact!.id)) await linkArtifactToEntity(db, { organizationId: input.organizationId, projectId: link.projectId, artifactId: artifact.id, linkedEntityType: "task", linkedEntityId: link.taskId, actorUserId: execution.ownerUserId });
 
   if (metadata.stage === "qa") {
-    const approval = await requestApproval(db, { organizationId: input.organizationId, executionId: execution.id, requestedAction: "office_project_completion", summary: `Review the preview and pull request for ${projectRow.name}. Approving marks the Office project complete; requesting changes starts another isolated Engineering revision.`, riskLevel: "high", artifactId: artifact.id, proposedActionRef: { projectId: link.projectId, taskId: link.taskId }, actorAgentId: agent.id });
+    const approvalSummary = `Review the preview and pull request for ${projectRow.name}. Approving marks the Office project complete; requesting changes starts another isolated Engineering revision.`;
+    const approval = await requestApproval(db, { organizationId: input.organizationId, executionId: execution.id, requestedAction: "office_project_completion", summary: approvalSummary, riskLevel: "high", artifactId: artifact.id, proposedActionRef: { projectId: link.projectId, taskId: link.taskId }, actorAgentId: agent.id });
     await linkApprovalToEntity(db, { organizationId: input.organizationId, projectId: link.projectId, approvalRequestId: approval.request.id, linkedEntityType: "task", linkedEntityId: link.taskId, actorUserId: execution.ownerUserId });
+    await notifyJarvisApprovalNeeded(db, { organizationId: input.organizationId, ownerUserId: execution.ownerUserId, projectName: projectRow.name, summary: approvalSummary });
     return approval.execution;
   }
 
