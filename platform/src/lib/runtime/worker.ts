@@ -21,6 +21,7 @@ import { UnsupportedAgentTaskTypeError, AgentTaskEligibilityError, InvalidAgentT
 import { workflowNodeExecutions } from "@/db/schema";
 import { processSendJob, parseMessageIdFromSendJobKey } from "@/lib/communications-os/messages";
 import { reconcileCommunications } from "@/lib/communications-os/reconciliation";
+import { notifyJarvisExecutionStopped } from "@/lib/email/jarvis-notifier";
 
 type Db = NeonHttpDatabase<Record<string, unknown>>;
 type RawSql = NeonQueryFunction<false, false>;
@@ -173,6 +174,20 @@ export async function processClaimedJob(db: Db, rawSql: RawSql, job: RuntimeJob,
     const { failureClass, errorCode, requiresHumanReview } = classifyExecutionError(err);
     const errorMessage = err instanceof Error ? err.message : String(err);
     const outcome = await reportJobFailure(db, { jobId: job.id, leaseOwner, failureClass, errorCode, errorMessage, requiresHumanReview });
+    if (outcome.outcome !== "retry_scheduled" && job.organizationId && job.executionId) {
+      try {
+        if (await isOfficeDirectiveExecution(db, job.organizationId, job.executionId)) {
+          await notifyJarvisExecutionStopped(db, {
+            organizationId: job.organizationId,
+            executionId: job.executionId,
+            reason: errorMessage.slice(0, 1000),
+            requiresHumanReview: outcome.outcome === "dead_lettered" || requiresHumanReview,
+          });
+        }
+      } catch (notificationError) {
+        console.error("[jarvis] terminal failure notification could not be evaluated:", notificationError instanceof Error ? notificationError.message : "unknown error");
+      }
+    }
     return outcome.job;
   }
 }
