@@ -47,6 +47,8 @@ describe("JarvisDirectiveView accessibility", () => {
     await waitFor(() => expect(screen.getByRole("heading", { name: "Launch the client website" })).toBeInTheDocument());
     expect(screen.getByRole("heading", { name: "Jarvis needs your approval" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /review approval/i })).toHaveAttribute("href", "/app/lynq/my-work");
+    expect(screen.getByRole("link", { name: /view evidence/i })).toHaveAttribute("href", "/app/lynq/agent-executions/execution-1");
+    expect(screen.getByRole("link", { name: /read deliverable/i })).toHaveAttribute("href", "/app/lynq/agent-executions/execution-1#deliverables");
     expect(await axe(container)).toHaveNoViolations();
   });
 

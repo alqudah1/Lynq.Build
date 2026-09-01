@@ -135,7 +135,9 @@ export function JarvisDirectiveView({ organizationId, organizationSlug, projectI
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <h3 className="text-base font-medium text-foreground">{step.title}</h3>
-                  <span className={`rounded-full border px-2 py-1 text-[0.58rem] uppercase tracking-[0.1em] ${STATE_STYLE[step.state]}`}>{JARVIS_STATE_LABELS[step.state]}</span>
+                  <span className={`rounded-full border px-2 py-1 text-[0.58rem] uppercase tracking-[0.1em] ${STATE_STYLE[step.state]}`}>
+                    {step.state === "completed" && step.deliverable ? "Deliverable ready" : JARVIS_STATE_LABELS[step.state]}
+                  </span>
                 </div>
                 <p className="mt-2 text-sm leading-6 text-muted">{step.goal}</p>
                 {step.agent ? (
@@ -148,8 +150,8 @@ export function JarvisDirectiveView({ organizationId, organizationSlug, projectI
               </div>
               <div className="flex min-w-36 flex-col items-start gap-2 text-xs md:items-end">
                 {step.agent ? <Link href={`/app/${organizationSlug}/office/${step.agent.id}`} className="text-muted hover:text-foreground">Employee office →</Link> : null}
-                {step.execution ? <Link href={`/app/${organizationSlug}/workflow-executions/${step.execution.id}`} className="text-muted hover:text-foreground">Execution →</Link> : null}
-                {step.deliverable ? <Link href={`/app/${organizationSlug}/projects/${projectId}`} className="text-muted hover:text-foreground">Deliverable →</Link> : null}
+                {step.execution ? <Link href={`/app/${organizationSlug}/agent-executions/${step.execution.id}`} className="text-muted hover:text-foreground">View evidence →</Link> : null}
+                {step.deliverable && step.execution ? <Link href={`/app/${organizationSlug}/agent-executions/${step.execution.id}#deliverables`} className="text-muted hover:text-foreground">Read deliverable →</Link> : null}
                 {step.pullRequestUrl ? <a href={step.pullRequestUrl} target="_blank" rel="noreferrer" className="text-muted hover:text-foreground">Pull request ↗</a> : null}
                 {step.previewUrl ? <a href={step.previewUrl} target="_blank" rel="noreferrer" className="text-accent-foreground hover:text-foreground">Preview ↗</a> : null}
               </div>
