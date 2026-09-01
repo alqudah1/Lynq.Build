@@ -5,7 +5,10 @@ import { fileURLToPath } from "node:url";
 const RELEASE_MANAGER_TASK_ID = "019fe7a4-73fc-77d1-a074-d14ecc754f21";
 const mode = process.argv[2];
 const confirmation = process.argv.slice(3).includes("--confirm-app-lynq-build");
-const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+// This release script belongs to the Next.js Office application. Deploy from
+// the platform directory so Vercel cannot accidentally publish the legacy
+// static site that lives at the repository root.
+const applicationRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 if (mode !== "preview" && mode !== "production") {
   console.error("Usage: node scripts/vercel-release.mjs <preview|production>");
@@ -24,7 +27,7 @@ if (mode === "production") {
 }
 
 const args = mode === "production" ? ["vercel", "deploy", "--prod", "--yes"] : ["vercel", "deploy", "--yes"];
-const result = spawnSync("npx", ["--yes", "vercel@59.10.0", ...args.slice(1)], { cwd: repositoryRoot, env: process.env, stdio: "inherit" });
+const result = spawnSync("npx", ["--yes", "vercel@59.10.0", ...args.slice(1)], { cwd: applicationRoot, env: process.env, stdio: "inherit" });
 
 if (result.error) {
   console.error(result.error.message);
