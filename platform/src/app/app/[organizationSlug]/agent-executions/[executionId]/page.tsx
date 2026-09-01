@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { and, eq } from "drizzle-orm";
-import { projectExecutionLinks, projectTasks, projects } from "@/db/schema";
+import { and, desc, eq } from "drizzle-orm";
+import { projectExecutionLinks, projectTasks, projects, runtimeJobs } from "@/db/schema";
 import { loadEnv } from "@/lib/env";
 import { createDbClient } from "@/db/client";
 import { requireDashboardUser } from "@/lib/dashboard/session-gate";
@@ -74,7 +74,7 @@ export default async function AgentExecutionDetailPage({ params }: { params: Pro
     throw error;
   }
 
-  const [artifacts, timeline, plan, agent, linkedRows] = await Promise.all([
+  const [artifacts, timeline, plan, agent, linkedRows, runtimeJobRows] = await Promise.all([
       listArtifactsForExecution(db, organization.id, execution.id),
       getExecutionTimeline(db, { organizationId: organization.id, executionId: execution.id, limit: 100 }),
       getLatestPlan(db, execution.id),
@@ -86,9 +86,25 @@ export default async function AgentExecutionDetailPage({ params }: { params: Pro
         .innerJoin(projectTasks, and(eq(projectTasks.id, projectExecutionLinks.taskId), eq(projectTasks.organizationId, projectExecutionLinks.organizationId)))
         .where(and(eq(projectExecutionLinks.organizationId, organization.id), eq(projectExecutionLinks.executionId, execution.id)))
         .limit(1),
+      db
+        .select({
+          status: runtimeJobs.status,
+          attemptCount: runtimeJobs.attemptCount,
+          maxAttempts: runtimeJobs.maxAttempts,
+          availableAt: runtimeJobs.availableAt,
+          lastErrorCode: runtimeJobs.lastErrorCode,
+          lastErrorMessage: runtimeJobs.lastErrorMessage,
+          requiresHumanReview: runtimeJobs.requiresHumanReview,
+          updatedAt: runtimeJobs.updatedAt,
+        })
+        .from(runtimeJobs)
+        .where(and(eq(runtimeJobs.organizationId, organization.id), eq(runtimeJobs.executionId, execution.id)))
+        .orderBy(desc(runtimeJobs.createdAt))
+        .limit(1),
   ]);
   const steps = plan ? await getPlanSteps(db, plan.id) : [];
   const linked = linkedRows[0] ?? null;
+  const runtimeJob = runtimeJobRows[0] ?? null;
   const employee = agent ? getAgentOfficeIdentity(agent) : null;
   const hasExternalEvidence = artifacts.some((artifact) => Boolean(externalHttpUrl(artifact.externalRef)) || /https?:\/\//i.test(artifact.content ?? ""));
 
@@ -125,6 +141,29 @@ export default async function AgentExecutionDetailPage({ params }: { params: Pro
           <Card variant="flat" className="border-warning/40 bg-warning-wash">
             <p className="text-xs uppercase tracking-[0.16em] text-warning">Waiting reason</p>
             <p className="mt-2 text-sm text-foreground">{execution.waitReason}</p>
+          </Card>
+        ) : null}
+
+        {runtimeJob ? (
+          <Card variant="flat" className={runtimeJob.lastErrorMessage ? "border-danger/40 bg-danger-wash" : ""}>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.16em] text-subtle">Processing run</p>
+                <p className="mt-2 text-sm text-foreground">
+                  Worker status: <strong>{readable(runtimeJob.status)}</strong> · attempt {runtimeJob.attemptCount} of {runtimeJob.maxAttempts}
+                </p>
+              </div>
+              <Badge tone={runtimeJob.lastErrorMessage ? "danger" : runtimeJob.status === "completed" ? "success" : "info"}>{readable(runtimeJob.status)}</Badge>
+            </div>
+            {runtimeJob.lastErrorMessage ? (
+              <div className="mt-4 space-y-1 text-sm leading-6">
+                <p className="font-medium text-danger">{runtimeJob.lastErrorCode ? readable(runtimeJob.lastErrorCode) : "Processing error"}</p>
+                <p className="text-foreground">{runtimeJob.lastErrorMessage}</p>
+                {runtimeJob.requiresHumanReview ? <p className="text-warning">Jarvis needs a person to review this failure before continuing.</p> : null}
+              </div>
+            ) : null}
+            {runtimeJob.status === "retry_scheduled" ? <p className="mt-3 text-xs text-subtle">Automatic retry scheduled for {runtimeJob.availableAt.toLocaleString()}.</p> : null}
+            <p className="mt-3 text-xs text-subtle">Last updated {runtimeJob.updatedAt.toLocaleString()}.</p>
           </Card>
         ) : null}
 

@@ -12,6 +12,7 @@ import { reconcileToolInvocations } from "./reconciliation-tool-invocations";
 import { reconcileExecutions } from "./reconciliation-executions";
 import { cleanupExpiredSessions, cleanupStaleRateLimitCounters } from "./cleanup";
 import { LivePermissionRevalidationFailedError, NotAssignedAgentError, InvalidExecutionTransitionError } from "@/lib/agent-runtime/errors";
+import { failExecution } from "@/lib/agent-runtime/lifecycle";
 import { ToolPermissionDeniedError, ToolDisabledError, ToolApprovalRequiredError } from "@/lib/tools/errors";
 import { driveWorkflowForward, executeWorkflowNodeJob, continueWorkflowExecution } from "@/lib/workflows/engine";
 import { reconcileWorkflows } from "@/lib/workflows/reconciliation";
@@ -56,6 +57,21 @@ export function classifyExecutionError(err: unknown): { failureClass: JobFailure
   if (err instanceof AgentTaskEligibilityError) return { failureClass: "permanent", errorCode: "agent_task_ineligible", requiresHumanReview: true };
   if (err instanceof InvalidAgentTaskInputError) return { failureClass: "permanent", errorCode: "invalid_agent_task_input", requiresHumanReview: true };
   return { failureClass: "transient", errorCode: "runtime_error", requiresHumanReview: false };
+}
+
+function executionFailureClass(failureClass: JobFailureClass) {
+  switch (failureClass) {
+    case "permission_revoked":
+      return "permission_failure" as const;
+    case "cancelled":
+      return "cancellation" as const;
+    case "permanent":
+      return "permanent_tool_failure" as const;
+    case "unsafe_uncertain":
+      return "dependency_failure" as const;
+    case "transient":
+      return "runtime_error" as const;
+  }
 }
 
 /**
@@ -177,6 +193,12 @@ export async function processClaimedJob(db: Db, rawSql: RawSql, job: RuntimeJob,
     if (outcome.outcome !== "retry_scheduled" && job.organizationId && job.executionId) {
       try {
         if (await isOfficeDirectiveExecution(db, job.organizationId, job.executionId)) {
+          await failExecution(db, {
+            organizationId: job.organizationId,
+            executionId: job.executionId,
+            failureClass: executionFailureClass(failureClass),
+            reason: errorMessage.slice(0, 1000),
+          }).catch(() => undefined);
           await notifyJarvisExecutionStopped(db, {
             organizationId: job.organizationId,
             executionId: job.executionId,
