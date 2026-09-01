@@ -1,7 +1,7 @@
 import "server-only";
 
 import { and, desc, eq, inArray } from "drizzle-orm";
-import { agentArtifacts, agentExecutions, projectArtifactLinks } from "@/db/schema";
+import { agentArtifacts, agentExecutions, projectArtifactLinks, runtimeJobs } from "@/db/schema";
 import { loadEnv } from "@/lib/env";
 import { createDbClient } from "@/db/client";
 import { getAuthenticatedUser } from "@/lib/http/auth";
@@ -45,13 +45,23 @@ export async function GET(_request: Request, { params }: RouteParams) {
         .orderBy(desc(agentArtifacts.createdAt)),
     ]);
 
-    const executionRows = executions.length > 0
-      ? await db.select({ id: agentExecutions.id, waitReason: agentExecutions.waitReason }).from(agentExecutions).where(and(eq(agentExecutions.organizationId, organizationId), inArray(agentExecutions.id, executions.map((execution) => execution.executionId))))
-      : [];
+    const executionIds = executions.map((execution) => execution.executionId);
+    const [executionRows, runtimeJobRows] = executionIds.length > 0
+      ? await Promise.all([
+          db.select({ id: agentExecutions.id, waitReason: agentExecutions.waitReason }).from(agentExecutions).where(and(eq(agentExecutions.organizationId, organizationId), inArray(agentExecutions.id, executionIds))),
+          db
+            .select({ executionId: runtimeJobs.executionId, status: runtimeJobs.status, lastErrorMessage: runtimeJobs.lastErrorMessage })
+            .from(runtimeJobs)
+            .where(and(eq(runtimeJobs.organizationId, organizationId), inArray(runtimeJobs.executionId, executionIds)))
+            .orderBy(desc(runtimeJobs.createdAt)),
+        ])
+      : [[], []];
 
     const executionByTask = new Map(executions.map((execution) => [execution.taskId, execution]));
     const approvalByTask = new Map(approvals.map((approval) => [approval.linkedEntityId, approval]));
     const waitReasonByExecution = new Map(executionRows.map((execution) => [execution.id, execution.waitReason]));
+    const runtimeJobByExecution = new Map<string, (typeof runtimeJobRows)[number]>();
+    for (const job of runtimeJobRows) if (job.executionId && !runtimeJobByExecution.has(job.executionId)) runtimeJobByExecution.set(job.executionId, job);
     const agentById = new Map(agents.map((agent) => [agent.id, agent]));
     const artifactByTask = new Map<string, (typeof artifacts)[number]>();
     for (const artifact of artifacts) if (!artifactByTask.has(artifact.taskId)) artifactByTask.set(artifact.taskId, artifact);
@@ -61,11 +71,13 @@ export async function GET(_request: Request, { params }: RouteParams) {
       const approval = approvalByTask.get(task.id) ?? null;
       const agent = metadata?.agentId ? agentById.get(metadata.agentId) ?? null : null;
       const artifact = artifactByTask.get(task.id) ?? null;
+      const runtimeJob = execution ? runtimeJobByExecution.get(execution.executionId) ?? null : null;
+      const runtimeStopped = runtimeJob ? ["failed", "dead_lettered", "cancelled"].includes(runtimeJob.status) : false;
       const engineeringLinks = extractEngineeringLinks(artifact?.content ?? null);
       const state =
         approval?.status === "pending"
           ? "needs_approval"
-          : execution && ["failed", "cancelled"].includes(execution.executionStatus)
+          : runtimeStopped || (execution && ["failed", "cancelled"].includes(execution.executionStatus))
             ? "failed"
             : task.status === "completed"
               ? "completed"
@@ -85,7 +97,12 @@ export async function GET(_request: Request, { params }: RouteParams) {
         agent: agent ? { id: agent.id, name: agent.name, role: getAgentOfficeIdentity(agent).title } : null,
         goal: metadata?.goal ?? task.description,
         handoff: metadata?.handoff ?? null,
-        execution: execution ? { id: execution.executionId, status: execution.executionStatus, waitReason: waitReasonByExecution.get(execution.executionId) ?? null } : null,
+        execution: execution ? {
+          id: execution.executionId,
+          status: execution.executionStatus,
+          waitReason: runtimeJob?.lastErrorMessage ?? waitReasonByExecution.get(execution.executionId) ?? null,
+          runtimeStatus: runtimeJob?.status ?? null,
+        } : null,
         approval: approval ? { id: approval.approvalRequestId, status: approval.status } : null,
         deliverable: artifact ? { id: artifact.artifactId, title: artifact.title } : null,
         pullRequestUrl: engineeringLinks.pullRequestUrl,
