@@ -34,10 +34,9 @@ export function getNavItems(organizationSlug: string, role: OrganizationRole = "
 
   return [
     { label: "Office", href: base, section: "Start" },
+    { label: "Jarvis", href: `${base}/jarvis`, section: "Start" },
     { label: "My Work", href: `${base}/my-work`, section: "Start" },
     { label: "Projects", href: `${base}/projects`, section: "Work" },
-    { label: "Workflows", href: `${base}/workflows`, section: "Work" },
-    { label: "Workflow Executions", href: `${base}/workflow-executions`, section: "Work" },
     { label: "Marketing", href: `${base}/marketing`, section: "Growth" },
     { label: "Marketing Command Center", href: `${base}/marketing/command-center`, section: "Growth" },
     { label: "Content Studio", href: `${base}/marketing/content-studio`, section: "Growth" },
@@ -46,6 +45,8 @@ export function getNavItems(organizationSlug: string, role: OrganizationRole = "
     { label: "Communications", href: `${base}/communications`, section: "Growth" },
     { label: "Analytics", href: `${base}/analytics`, section: "Growth" },
     { label: "Founder", href: `${base}/founder`, section: "Company" },
+    { label: "Automation Setup", href: `${base}/workflows`, section: "Administration" },
+    { label: "Automation Runs", href: `${base}/workflow-executions`, section: "Administration" },
     { label: "Integrations", href: `${base}/integrations`, section: "Administration" },
     { label: "Members", href: `${base}/members`, section: "Administration" },
     { label: "Invitations", href: `${base}/invitations`, section: "Administration" },

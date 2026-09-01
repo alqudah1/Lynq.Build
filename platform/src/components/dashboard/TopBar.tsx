@@ -9,7 +9,8 @@ import type { NavItem } from "@/lib/dashboard/nav-items";
 
 const SECTION_LABELS: Record<string, string> = {
   "workflow-executions": "Automation runs",
-  workflows: "Automations",
+  workflows: "Automation Setup",
+  jarvis: "Jarvis",
   projects: "Projects",
   marketing: "Marketing",
   crm: "Customers",

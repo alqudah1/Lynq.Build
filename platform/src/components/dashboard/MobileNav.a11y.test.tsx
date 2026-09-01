@@ -66,8 +66,9 @@ describe("MobileNav", () => {
     fireEvent.click(screen.getByRole("button", { name: /open navigation menu/i }));
 
     expect(screen.queryByText("Coming later")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Jarvis" })).toHaveAttribute("href", "/app/acme/jarvis");
     expect(screen.getByRole("link", { name: "My Work" })).toHaveAttribute("href", "/app/acme/my-work");
-    expect(screen.getByRole("link", { name: "Workflow Executions" })).toHaveAttribute("href", "/app/acme/workflow-executions");
+    expect(screen.getByRole("link", { name: "Automation Runs" })).toHaveAttribute("href", "/app/acme/workflow-executions");
   });
 
   it("closes on Escape and returns focus to the trigger button", async () => {

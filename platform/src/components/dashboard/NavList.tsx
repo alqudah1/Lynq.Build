@@ -15,7 +15,7 @@ import { NAV_ICON_BY_LABEL } from "./icons";
 const NON_DASHBOARD_SEGMENTS = [
   "settings", "members", "workspaces", "invitations", "projects", "my-work",
   "workflows", "workflow-executions", "crm", "sales", "marketing", "communications",
-  "integrations", "analytics", "founder",
+  "integrations", "analytics", "founder", "jarvis",
 ];
 
 export function isItemActive(href: string, pathname: string, dashboardHref: string): boolean {

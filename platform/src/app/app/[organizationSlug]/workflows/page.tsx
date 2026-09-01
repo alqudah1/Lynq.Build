@@ -23,12 +23,10 @@ export default async function WorkflowsPage({ params }: { params: Promise<{ orga
   const db = createDbClient(env);
   const user = await requireDashboardUser(db, `/app/${organizationSlug}/workflows`);
 
-  let organizationName: string;
   let workflows: Awaited<ReturnType<typeof listWorkflowDefinitionsForUser>>;
   let workspaceNameById: Map<string, string>;
   try {
     const { organization } = await getOrganizationBySlugForUser(db, organizationSlug, user.userId);
-    organizationName = organization.name;
     workflows = await listWorkflowDefinitionsForUser(db, { organizationId: organization.id, actorUserId: user.userId });
     const workspaces = await listWorkspacesForUser(db, user.userId);
     workspaceNameById = new Map(workspaces.filter((w) => w.organizationId === organization.id).map((w) => [w.id, w.name]));
@@ -39,12 +37,15 @@ export default async function WorkflowsPage({ params }: { params: Promise<{ orga
 
   return (
     <div className="flex flex-col gap-8 px-6 py-8 md:px-10">
-      <Breadcrumbs items={[{ label: "LYNQ", href: "/app" }, { label: organizationName, href: `/app/${organizationSlug}` }, { label: "Workflows" }]} />
+      <Breadcrumbs items={[{ label: "Office", href: `/app/${organizationSlug}` }, { label: "Automation Setup" }]} />
       <PageHeader
-        title="Workflows"
-        description="Structured, repeatable business processes."
+        title="Automation Setup"
+        description="Administrative templates that power repeatable work. For daily company coordination, use Jarvis."
         actions={
           <>
+            <Link href={`/app/${organizationSlug}/jarvis`} className="lynq-transition flex min-h-11 items-center rounded-sm border border-border bg-elevated px-5 text-xs font-medium uppercase tracking-[0.08em] text-foreground hover:border-border-strong">
+              Open Jarvis
+            </Link>
             <SeedTemplatesForm action={seedTemplatesAction.bind(null, organizationSlug)} />
             <Link href={`/app/${organizationSlug}/workflows/new`} className="lynq-transition flex min-h-11 items-center rounded-sm bg-foreground px-5 text-xs font-medium uppercase tracking-[0.08em] text-background hover:opacity-90">
               New workflow
