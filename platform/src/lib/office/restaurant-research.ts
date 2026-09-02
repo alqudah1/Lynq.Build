@@ -1,8 +1,9 @@
 import "server-only";
 
-import { gateway, isStepCount, Output, ToolLoopAgent } from "ai";
+import { google } from "@ai-sdk/google";
+import { gateway, isStepCount, Output, ToolLoopAgent, type ToolSet } from "ai";
 import { z } from "zod";
-import { getOfficeGenerationConfig } from "./models";
+import { getOfficeGenerationConfig, isDirectGoogleModelConfigured } from "./models";
 
 const sourceSchema = z.object({
   title: z.string().trim().min(1).max(300),
@@ -76,20 +77,23 @@ export function renderRestaurantResearch(research: RestaurantResearch): string {
 }
 
 export async function researchRestaurantProspects(input: { directive: string; revisionNote?: string | null }): Promise<RestaurantResearch> {
+  const searchTools: ToolSet = isDirectGoogleModelConfigured()
+    ? { google_search: google.tools.googleSearch({}) }
+    : {
+        perplexity_search: gateway.tools.perplexitySearch({
+          maxResults: 12,
+          maxTokensPerPage: 1200,
+          maxTokens: 18_000,
+          searchLanguageFilter: ["en"],
+          country: "CA",
+        }),
+      };
   const agent = new ToolLoopAgent({
     ...getOfficeGenerationConfig("planning"),
     output: Output.object({ name: "RestaurantProspectResearch", schema: restaurantResearchSchema }),
     instructions:
       "You are LYNQ's evidence-first restaurant prospect researcher. You must use the web search tool before recommending anything. Find real independent restaurants whose public website or digital customer journey has a clear, ethical improvement opportunity. Prefer the location stated by the founder; if none is stated, search Toronto, Canada and state that assumption. Verify every candidate with at least two public URLs. Never invent an address, contact detail, rating, review count, website problem, or source. Use null when a contact or metric is not verified. Do not contact anyone. Return one best candidate and at least one real alternative.",
-    tools: {
-      perplexity_search: gateway.tools.perplexitySearch({
-        maxResults: 12,
-        maxTokensPerPage: 1200,
-        maxTokens: 18_000,
-        searchLanguageFilter: ["en"],
-        country: "CA",
-      }),
-    },
+    tools: searchTools,
     stopWhen: isStepCount(6),
   });
   const result = await agent.generate({

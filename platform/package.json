@@ -19,6 +19,7 @@
     "db:check": "drizzle-kit check"
   },
   "dependencies": {
+    "@ai-sdk/google": "^4.0.39",
     "@neondatabase/serverless": "1.1.0",
     "@vercel/blob": "^2.8.0",
     "@vercel/connect": "^0.6.1",

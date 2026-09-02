@@ -1,11 +1,13 @@
 import "server-only";
 
-import { gateway } from "ai";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { gateway, type LanguageModel } from "ai";
 
 export type OfficeModelRole = "planning" | "engineering" | "review";
 
 const DEFAULT_MODEL = "inclusionai/ling-3.0-flash-fin-free";
 const DEFAULT_FALLBACK_MODELS = ["minimax/minimax-m2.7-free", "poolside/laguna-s-2.1-free"];
+const DEFAULT_GOOGLE_AI_STUDIO_MODEL = "gemini-2.5-flash-lite";
 const ENV_BY_ROLE: Record<OfficeModelRole, string> = {
   planning: "OFFICE_PLANNING_MODEL",
   engineering: "OFFICE_ENGINEERING_MODEL",
@@ -35,9 +37,15 @@ export function getOfficeModel(role: OfficeModelRole): string {
  * fallbacks deliberately span providers and favor inexpensive models.
  */
 export function getOfficeGenerationConfig(role: OfficeModelRole): {
-  model: ReturnType<typeof gateway>;
-  providerOptions: { gateway: { models: string[]; tags: string[] } };
+  model: LanguageModel;
+  providerOptions?: { gateway: { models: string[]; tags: string[] } };
 } {
+  const googleApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim();
+  if (googleApiKey) {
+    const google = createGoogleGenerativeAI({ apiKey: googleApiKey });
+    return { model: google(process.env.GOOGLE_AI_STUDIO_MODEL?.trim() || DEFAULT_GOOGLE_AI_STUDIO_MODEL) };
+  }
+
   const model = getOfficeModel(role);
   const fallbackEnvName = `${ENV_BY_ROLE[role]}_FALLBACKS`;
   const configuredFallbacks = process.env[fallbackEnvName]
@@ -58,4 +66,8 @@ export function getOfficeGenerationConfig(role: OfficeModelRole): {
       },
     },
   };
+}
+
+export function isDirectGoogleModelConfigured(): boolean {
+  return Boolean(process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim());
 }
