@@ -41,7 +41,12 @@ export function getOfficeGenerationConfig(role: OfficeModelRole): {
   providerOptions?: { gateway: { models: string[]; tags: string[] } };
 } {
   const googleApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim();
-  if (googleApiKey) {
+  const explicitRoleModel = process.env[ENV_BY_ROLE[role]]?.trim();
+  // A direct Google key is the zero-cost default transport, but it must not
+  // silently replace an explicit role policy. This lets production use a
+  // premium planner/reviewer while retaining Google AI Studio as an optional
+  // budget-friendly default for roles that have not been deliberately routed.
+  if (googleApiKey && !explicitRoleModel) {
     const google = createGoogleGenerativeAI({ apiKey: googleApiKey });
     return { model: google(process.env.GOOGLE_AI_STUDIO_MODEL?.trim() || DEFAULT_GOOGLE_AI_STUDIO_MODEL) };
   }

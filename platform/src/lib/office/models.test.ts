@@ -46,4 +46,21 @@ describe("Office model routing", () => {
     });
     expect(getOfficeGenerationConfig("planning").providerOptions).toBeUndefined();
   });
+
+  it("keeps an explicit role policy when a direct Google key also exists", () => {
+    vi.stubEnv("GOOGLE_GENERATIVE_AI_API_KEY", "test-key");
+    vi.stubEnv("OFFICE_PLANNING_MODEL", "anthropic/claude-opus-5");
+    vi.stubEnv("OFFICE_PLANNING_MODEL_FALLBACKS", "google/gemini-3.1-pro, openai/gpt-5.6-sol");
+
+    expect(isDirectGoogleModelConfigured()).toBe(true);
+    expect(getOfficeGenerationConfig("planning")).toMatchObject({
+      model: { modelId: "anthropic/claude-opus-5", provider: "gateway" },
+      providerOptions: {
+        gateway: {
+          models: ["google/gemini-3.1-pro", "openai/gpt-5.6-sol"],
+          tags: ["feature:lynq-office", "role:planning"],
+        },
+      },
+    });
+  });
 });
