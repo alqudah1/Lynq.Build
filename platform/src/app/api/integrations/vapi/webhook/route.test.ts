@@ -1,37 +1,159 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { POST } from "./route";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+/**
+ * Webhook authentication, payload guards, and the phone-control feature flag.
+ *
+ * Every property asserted here is decided BEFORE any database work, so none of
+ * it needs a connection. `createDbClient` is stubbed to THROW, so any attempt
+ * to reach the database in a case that must not is a loud failure rather than
+ * a silent network call.
+ *
+ * The original three cases (bearer rejection, safe status logging, malformed
+ * JSON) are preserved unchanged in substance — the existing outbound founder
+ * notification lane must keep behaving exactly as it did.
+ */
+
+const createDbClient = vi.fn(() => {
+  throw new Error("the database must not be reached in this case");
+});
+vi.mock("@/db/client", () => ({ createDbClient }));
+
+const { POST } = await import("./route");
+
+const SECRET = "expected-secret";
+
+function post(body: unknown, headers: Record<string, string> = {}): Request {
+  return new Request("https://app.lynq.build/api/integrations/vapi/webhook", {
+    method: "POST",
+    headers: { "content-type": "application/json", ...headers },
+    body: typeof body === "string" ? body : JSON.stringify(body),
+  });
+}
+
+function authed(body: unknown): Request {
+  return post(body, { authorization: `Bearer ${SECRET}` });
+}
+
+beforeEach(() => {
+  vi.stubEnv("VAPI_WEBHOOK_SECRET", SECRET);
+  vi.stubEnv("JARVIS_PHONE_COMMANDS_ENABLED", "false");
+  createDbClient.mockClear();
+});
 
 afterEach(() => {
   vi.unstubAllEnvs();
   vi.restoreAllMocks();
 });
 
-describe("Vapi webhook", () => {
+describe("Vapi webhook — authentication", () => {
   it("rejects a request without the configured bearer secret", async () => {
-    vi.stubEnv("VAPI_WEBHOOK_SECRET", "expected-secret");
-    const response = await POST(new Request("https://app.lynq.build/api/integrations/vapi/webhook", { method: "POST", body: "{}" }));
+    const response = await POST(post("{}"));
+    expect(response.status).toBe(401);
+    expect(createDbClient).not.toHaveBeenCalled();
+  });
+
+  it("rejects a forged bearer token", async () => {
+    const response = await POST(post({ message: { type: "assistant-request" } }, { authorization: "Bearer not-the-secret" }));
+    expect(response.status).toBe(401);
+    expect(createDbClient).not.toHaveBeenCalled();
+  });
+
+  it("rejects a token that is a prefix of the real one", async () => {
+    const response = await POST(post({ message: { type: "assistant-request" } }, { authorization: `Bearer ${SECRET.slice(0, -1)}` }));
     expect(response.status).toBe(401);
   });
 
+  it("rejects every request when no secret is configured, rather than accepting unauthenticated events", async () => {
+    vi.stubEnv("VAPI_WEBHOOK_SECRET", "");
+    expect((await POST(authed({ message: { type: "status-update" } }))).status).toBe(401);
+  });
+});
+
+describe("Vapi webhook — payload guards", () => {
+  it("rejects malformed JSON", async () => {
+    const response = await POST(post("not-json", { authorization: `Bearer ${SECRET}` }));
+    expect(response.status).toBe(400);
+  });
+
+  it("rejects an oversized declared content length before reading the body", async () => {
+    const response = await POST(post({ message: {} }, { authorization: `Bearer ${SECRET}`, "content-length": "2000000" }));
+    expect(response.status).toBe(413);
+  });
+});
+
+describe("Vapi webhook — the existing founder notification lane", () => {
   it("accepts and safely logs a call status event", async () => {
-    vi.stubEnv("VAPI_WEBHOOK_SECRET", "expected-secret");
     const log = vi.spyOn(console, "info").mockImplementation(() => undefined);
-    const response = await POST(new Request("https://app.lynq.build/api/integrations/vapi/webhook", {
-      method: "POST",
-      headers: { authorization: "Bearer expected-secret", "content-type": "application/json" },
-      body: JSON.stringify({ message: { type: "status-update", status: "in-progress", call: { id: "call-123" } } }),
-    }));
+
+    const response = await POST(authed({ message: { type: "status-update", status: "in-progress", call: { id: "call-123" } } }));
+
     expect(response.status).toBe(200);
     expect(log).toHaveBeenCalledWith("[jarvis-voice]", expect.stringContaining("call-123"));
   });
 
-  it("rejects malformed JSON", async () => {
-    vi.stubEnv("VAPI_WEBHOOK_SECRET", "expected-secret");
-    const response = await POST(new Request("https://app.lynq.build/api/integrations/vapi/webhook", {
-      method: "POST",
-      headers: { authorization: "Bearer expected-secret" },
-      body: "not-json",
-    }));
-    expect(response.status).toBe(400);
+  it("logs no phone number even when the provider sends one", async () => {
+    const log = vi.spyOn(console, "info").mockImplementation(() => undefined);
+
+    await POST(authed({ message: { type: "status-update", status: "in-progress", call: { id: "call-1" }, customer: { number: "+14165551234" } } }));
+
+    expect(String(log.mock.calls.at(-1)?.[1] ?? "")).not.toContain("4165551234");
+  });
+
+  it("still logs an end-of-call report and a hang", async () => {
+    const log = vi.spyOn(console, "info").mockImplementation(() => undefined);
+
+    await POST(authed({ message: { type: "end-of-call-report", endedReason: "assistant-ended-call", call: { id: "call-2" } } }));
+    expect(String(log.mock.calls.at(-1)?.[1] ?? "")).toContain("end-of-call-report");
+
+    await POST(authed({ message: { type: "hang", call: { id: "call-3" } } }));
+    expect(String(log.mock.calls.at(-1)?.[1] ?? "")).toContain("hang");
+  });
+});
+
+describe("Vapi webhook — phone control is off by default", () => {
+  it("acknowledges an inbound assistant request without touching the database", async () => {
+    const response = await POST(authed({ message: { type: "assistant-request", call: { id: "call-1" }, customer: { number: "+14165551234" } } }));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ received: true });
+    expect(createDbClient).not.toHaveBeenCalled();
+  });
+
+  it("acknowledges a tool call without acting on it", async () => {
+    const response = await POST(
+      authed({ message: { type: "tool-calls", call: { id: "call-1" }, toolCalls: [{ id: "tc-1", function: { name: "confirm_command", arguments: { confirmed: true } } }] } })
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ received: true });
+    expect(createDbClient).not.toHaveBeenCalled();
+  });
+
+  it("stays off when the flag is present but not exactly true", async () => {
+    vi.stubEnv("JARVIS_PHONE_COMMANDS_ENABLED", "1");
+
+    const response = await POST(authed({ message: { type: "assistant-request", call: { id: "call-1" } } }));
+
+    expect(await response.json()).toEqual({ received: true });
+    expect(createDbClient).not.toHaveBeenCalled();
+  });
+
+  it("stays off when the flag is on but the rest of the configuration is missing, and names only the variables", async () => {
+    vi.stubEnv("JARVIS_PHONE_COMMANDS_ENABLED", "true");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    const response = await POST(authed({ message: { type: "assistant-request", call: { id: "call-1" } } }));
+
+    expect(await response.json()).toEqual({ received: true });
+    expect(createDbClient).not.toHaveBeenCalled();
+    const logged = String(warn.mock.calls.at(-1)?.[1] ?? "");
+    expect(logged).toContain("config-incomplete");
+    expect(logged).toContain("JARVIS_PHONE_ORGANIZATION_ID");
+  });
+
+  it("ignores an event type neither lane handles", async () => {
+    const response = await POST(authed({ message: { type: "speech-update", call: { id: "call-1" } } }));
+    expect(response.status).toBe(200);
+    expect(createDbClient).not.toHaveBeenCalled();
   });
 });

@@ -288,6 +288,13 @@
       "when": 1788046926637,
       "tag": "0040_aspiring_impossible_man",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1788389958154,
+      "tag": "0041_jarvis_secure_phone_control",
+      "breakpoints": true
     }
   ]
 }

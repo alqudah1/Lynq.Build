@@ -53,3 +53,20 @@ Use an approval-required test project owned by Mustafa. Confirm:
 4. The call names the correct project and explains the approval.
 5. The call never treats speech as approval; the decision remains inside **My Work**.
 6. Vapi status events appear in protected server logs without credentials or full phone numbers.
+
+---
+
+## Inbound phone control (separate lane)
+
+Everything above describes phase-one **outbound** founder notification calls,
+which are unchanged.
+
+Secure **two-way** phone control — where Mustafa calls Jarvis, describes work,
+and the confirmed instruction returns to LYNQ Office — is a separate lane,
+disabled by default behind `JARVIS_PHONE_COMMANDS_ENABLED`. It requires
+additional Vapi dashboard changes (a server URL for inbound, three extra
+server-message subscriptions, and a longer maximum duration on the inbound
+assistant only).
+
+See `platform/docs/JARVIS_PHONE_CONTROL.md` for the full design, the
+verification model, the approval boundary, and the exact dashboard steps.
