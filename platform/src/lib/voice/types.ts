@@ -6,6 +6,11 @@ export type JarvisVoiceNotification = {
   projectName: string;
   summary: string;
   actionUrl: string;
+  context?: {
+    organizationId: string;
+    ownerUserId: string;
+    projectId: string;
+  };
 };
 
 export type VoiceDeliveryStatus = "sent" | "not_configured" | "failed";

@@ -19,7 +19,7 @@ function escapeHtml(value: string): string {
 /** Best-effort founder notification. The approval remains authoritative in Agent Runtime/My Work. */
 export async function notifyJarvisApprovalNeeded(
   db: Db,
-  input: { organizationId: string; ownerUserId: string; projectName: string; summary: string },
+  input: { organizationId: string; ownerUserId: string; projectId: string; projectName: string; summary: string },
   transport: EmailTransport | null = resolveConfiguredEmailTransport(),
 ): Promise<JarvisNotificationOutcome> {
   try {
@@ -39,6 +39,7 @@ export async function notifyJarvisApprovalNeeded(
       projectName: input.projectName,
       summary: input.summary,
       actionUrl: approvalUrl,
+      context: { organizationId: input.organizationId, ownerUserId: input.ownerUserId, projectId: input.projectId },
     });
 
     let email: NotificationStatus = "not_configured";
@@ -91,6 +92,7 @@ export async function notifyJarvisExecutionStopped(
       projectName: context.projectName,
       summary: `${input.reason}. ${action}`.slice(0, 1000),
       actionUrl: projectUrl,
+      context: { organizationId: input.organizationId, ownerUserId: context.ownerUserId, projectId: context.projectId },
     });
 
     let email: NotificationStatus = "not_configured";

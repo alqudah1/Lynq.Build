@@ -31,6 +31,15 @@ export class VapiJarvisVoiceTransport implements JarvisVoiceTransport {
         assistantId: this.config.assistantId,
         phoneNumberId: this.config.phoneNumberId,
         customer: { number: destination },
+        metadata: notification.context
+          ? {
+              source: "lynq-office",
+              schemaVersion: 1,
+              organizationId: notification.context.organizationId,
+              ownerUserId: notification.context.ownerUserId,
+              projectId: notification.context.projectId,
+            }
+          : { source: "lynq-office", schemaVersion: 1 },
         assistantOverrides: {
           variableValues: {
             founder_name: notification.founderName,

@@ -122,6 +122,7 @@ export async function executeEngineeringDelivery(input: {
   const branch = `office/${input.projectKey.toLowerCase()}-${input.executionId.slice(0, 8)}`;
   const isRestaurantDemo = input.sharedContext.includes(RESTAURANT_RESEARCH_MARKER);
   const previewPath = isRestaurantDemo ? restaurantDemoPath(input.projectKey) : null;
+  const requiredDemoSource = previewPath ? `platform/src/app${previewPath}/page.tsx` : null;
   const sandbox = await Sandbox.create({
     source: {
       type: "git",
@@ -203,6 +204,17 @@ export async function executeEngineeringDelivery(input: {
     const changed = (await status.stdout()).trim();
     if (!changed) throw new Error("Engineering completed without producing repository changes");
     if (changed.split("\n").some((line) => /(?:^|\/)\.env(?:\.|$)/.test(line.slice(3)))) throw new Error("Engineering attempted to modify a protected environment file");
+    if (requiredDemoSource) {
+      const changedFiles = changed.split("\n").map((line) => line.slice(3).trim());
+      if (!changedFiles.includes(requiredDemoSource)) {
+        throw new Error(`Restaurant Engineering did not create the required demo route (${previewPath})`);
+      }
+      const demoSource = await sandbox.readFileToBuffer({ path: safeWorkspacePath(root, requiredDemoSource) });
+      const sourceText = demoSource?.toString("utf8") ?? "";
+      if (sourceText.length < 500 || !/export\s+default/.test(sourceText)) {
+        throw new Error(`Restaurant Engineering produced an incomplete demo route (${previewPath})`);
+      }
+    }
 
     await sandbox.runCommand({ cmd: "git", args: ["add", "--all"], cwd: root });
     await sandbox.runCommand({ cmd: "git", args: ["-c", "user.name=LYNQ Office", "-c", "user.email=office@lynq.build", "commit", "-m", `feat: ${input.projectName.slice(0, 60)}`], cwd: root });
