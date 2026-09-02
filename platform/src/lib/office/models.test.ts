@@ -8,10 +8,10 @@ describe("Office model routing", () => {
 
   it("uses a cross-provider fallback chain for the default model", () => {
     expect(getOfficeGenerationConfig("planning")).toMatchObject({
-      model: { modelId: "openai/gpt-5.4-mini", provider: "gateway" },
+      model: { modelId: "inclusionai/ling-3.0-flash-fin-free", provider: "gateway" },
       providerOptions: {
         gateway: {
-          models: ["openai/gpt-5-nano", "alibaba/qwen3.5-flash", "google/gemini-3-flash"],
+          models: ["minimax/minimax-m2.7-free", "poolside/laguna-s-2.1-free"],
           tags: ["feature:lynq-office", "role:planning"],
         },
       },

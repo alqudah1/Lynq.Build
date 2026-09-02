@@ -4,8 +4,8 @@ import { gateway } from "ai";
 
 export type OfficeModelRole = "planning" | "engineering" | "review";
 
-const DEFAULT_MODEL = "openai/gpt-5.4-mini";
-const DEFAULT_FALLBACK_MODELS = ["openai/gpt-5-nano", "alibaba/qwen3.5-flash", "google/gemini-3-flash"];
+const DEFAULT_MODEL = "inclusionai/ling-3.0-flash-fin-free";
+const DEFAULT_FALLBACK_MODELS = ["minimax/minimax-m2.7-free", "poolside/laguna-s-2.1-free"];
 const ENV_BY_ROLE: Record<OfficeModelRole, string> = {
   planning: "OFFICE_PLANNING_MODEL",
   engineering: "OFFICE_ENGINEERING_MODEL",
@@ -21,9 +21,8 @@ function validateModel(value: string, envName: string): string {
 
 /**
  * Role-level routing lets the Office use independent providers without
- * changing application code. Keep the free-tier OpenAI model as the safe
- * default; production can route Planning/Review to Claude after Gateway or
- * Anthropic API billing is enabled.
+ * changing application code. The default chain uses current zero-cost Gateway
+ * models with tool support; production can route roles to paid models later.
  */
 export function getOfficeModel(role: OfficeModelRole): string {
   const value = process.env[ENV_BY_ROLE[role]]?.trim() || DEFAULT_MODEL;
