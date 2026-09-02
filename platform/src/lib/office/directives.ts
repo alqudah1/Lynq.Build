@@ -132,7 +132,7 @@ function needsSoftwareDelivery(instruction: string): boolean {
 }
 
 export function isRestaurantProspectingDirective(instruction: string): boolean {
-  return /\brestaurant\b/i.test(instruction) && /\b(find|research|choose|select|prospect|outreach)\b/i.test(instruction) && /\b(build|create|demo|website|redesign)\b/i.test(instruction);
+  return /\brestaurants?\b/i.test(instruction) && /\b(find|research|choose|select|prospect|outreach)\b/i.test(instruction) && /\b(build|create|demo|website|redesign)\b/i.test(instruction);
 }
 
 function restaurantProspectingPlan(instruction: string, agents: Agent[]): OfficeDirectivePlan | null {

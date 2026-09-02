@@ -18,6 +18,11 @@ describe("deriveDirectiveProjectName", () => {
 describe("isRestaurantProspectingDirective", () => {
   it("recognizes the evidence-gated restaurant demo workflow", () => {
     expect(isRestaurantProspectingDirective("Find a restaurant, choose it, build a website demo, then outreach")).toBe(true);
+    expect(
+      isRestaurantProspectingDirective(
+        "Find three independent Toronto restaurants with weak websites, recommend one, build a demo, and draft outreach"
+      )
+    ).toBe(true);
   });
 
   it("does not hijack unrelated restaurant or website work", () => {
