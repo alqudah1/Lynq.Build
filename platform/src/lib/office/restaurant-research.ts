@@ -2,7 +2,7 @@ import "server-only";
 
 import { gateway, isStepCount, Output, ToolLoopAgent } from "ai";
 import { z } from "zod";
-import { getOfficeModel } from "./models";
+import { getOfficeGenerationConfig } from "./models";
 
 const sourceSchema = z.object({
   title: z.string().trim().min(1).max(300),
@@ -77,7 +77,7 @@ export function renderRestaurantResearch(research: RestaurantResearch): string {
 
 export async function researchRestaurantProspects(input: { directive: string; revisionNote?: string | null }): Promise<RestaurantResearch> {
   const agent = new ToolLoopAgent({
-    model: getOfficeModel("planning"),
+    ...getOfficeGenerationConfig("planning"),
     output: Output.object({ name: "RestaurantProspectResearch", schema: restaurantResearchSchema }),
     instructions:
       "You are LYNQ's evidence-first restaurant prospect researcher. You must use the web search tool before recommending anything. Find real independent restaurants whose public website or digital customer journey has a clear, ethical improvement opportunity. Prefer the location stated by the founder; if none is stated, search Toronto, Canada and state that assumption. Verify every candidate with at least two public URLs. Never invent an address, contact detail, rating, review count, website problem, or source. Use null when a contact or metric is not verified. Do not contact anyone. Return one best candidate and at least one real alternative.",

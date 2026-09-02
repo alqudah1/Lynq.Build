@@ -18,7 +18,7 @@ import { listTasks, resolveTaskById, transitionTaskStatus } from "@/lib/projects
 import { executeEngineeringDelivery, inspectEngineeringDelivery, type EngineeringDeliveryResult } from "./engineering";
 import { getDirectiveDomains } from "./directives";
 import { parseOfficeTaskMetadata } from "./task-metadata";
-import { getOfficeModel } from "./models";
+import { getOfficeGenerationConfig } from "./models";
 import { getAgentOfficeIdentity } from "./view";
 import { notifyJarvisApprovalNeeded } from "@/lib/email/jarvis-notifier";
 import { renderRestaurantResearch, researchRestaurantProspects, restaurantResearchMarker } from "./restaurant-research";
@@ -102,7 +102,7 @@ async function makeTextArtifact(db: Db, input: { organizationId: string; executi
   if (!agent) throw new Error("assigned employee is unavailable");
   const identity = getAgentOfficeIdentity(agent);
   const result = await generateText({
-    model: getOfficeModel(input.modelRole),
+    ...getOfficeGenerationConfig(input.modelRole),
     system: `You are the ${identity.title} at LYNQ. Produce the actual project deliverable. Be concrete, testable, and decision-oriented. Use prior project artifacts as shared memory. State missing evidence honestly. Do not claim external actions occurred unless context proves them. Return polished Markdown only.`,
     prompt: JSON.stringify({ goal: input.goal, successCriteria: input.successCriteria, sharedProjectContext: input.projectContext, requestedSections: ["Executive summary", "Scope and decisions", "Acceptance criteria", "Deliverable", "Dependencies and risks", "Handoff"] }),
   });
@@ -309,7 +309,7 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
       const inspected = await inspectEngineeringDelivery(delivery);
       if (!inspected.previewUrl) throw new Error("QA is waiting for the Vercel preview deployment");
       const review = await generateText({
-        model: getOfficeModel("review"),
+        ...getOfficeGenerationConfig("review"),
         system: "You are LYNQ's independent Quality Assurance Lead. Review the supplied implementation evidence against the objective and acceptance criteria. Be concise and factual. Identify defects or missing evidence; never claim checks passed unless the evidence says so. Return polished Markdown with Verdict, Acceptance criteria, Risks, and Founder recommendation.",
         prompt: JSON.stringify({ objective: projectRow.objective ?? metadata.goal, acceptanceCriteria: metadata.successCriteria, implementation: delivery.agentSummary, automatedChecks: inspected.checks, previewUrl: inspected.previewUrl, pullRequestUrl: delivery.pullRequestUrl }),
       });

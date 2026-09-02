@@ -2,7 +2,7 @@ import "server-only";
 
 import { generateText, Output } from "ai";
 import { z } from "zod";
-import { getOfficeModel } from "./models";
+import { getOfficeGenerationConfig } from "./models";
 import type { RestaurantCandidate } from "./restaurant-research";
 
 const outreachSchema = z.object({
@@ -32,7 +32,7 @@ export function parseRestaurantOutreach(content: string | null): { messageId: st
 export async function draftRestaurantOutreach(input: { candidate: RestaurantCandidate; previewUrl: string; founderDirective: string }): Promise<{ subject: string; body: string }> {
   if (!input.candidate.email) throw new Error("Outreach is waiting for a verified public business email for the approved restaurant");
   const result = await generateText({
-    model: getOfficeModel("review"),
+    ...getOfficeGenerationConfig("review"),
     output: Output.object({ name: "RestaurantOutreachDraft", schema: outreachSchema }),
     system:
       "You write one concise, honest cold email from LYNQ to an independent restaurant. Mention that LYNQ prepared an unsolicited concept preview, not an official site. Include the exact preview URL. Explain one specific observed customer-journey problem and the practical benefit of the demo. Do not imply a relationship, promise results, use fake urgency, mention private data, or say the recipient opted in. End with a low-pressure question. Plain text only.",

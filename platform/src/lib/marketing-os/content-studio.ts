@@ -7,7 +7,7 @@ import { marketingBrandProfiles, marketingCampaigns, marketingContentItems, mark
 import { requireExecutionVisibility } from "@/lib/agent-runtime/authz";
 import { requireTenantScopedResource } from "@/lib/authz/helpers";
 import { recordAuditEvent } from "@/lib/audit";
-import { getOfficeModel } from "@/lib/office/models";
+import { getOfficeGenerationConfig } from "@/lib/office/models";
 import { resolveMarketingAuthContext, requireMarketingManageContentAuthority, requireMarketingViewAuthority } from "./authz";
 import { createContentItem } from "./content";
 import { createContentStudioPackageTask, resolveContentDraftAssistantAgent } from "./agents";
@@ -310,7 +310,7 @@ const defaultConceptGenerator: ConceptGenerator = async ({ brand, goal, channel,
     kind: "concept",
     generate: async () => {
     const result = await generateText({
-      model: getOfficeModel("planning"),
+      ...getOfficeGenerationConfig("planning"),
       output: contentStudioConceptOutput,
       system: "You are LYNQ Office's Content Director. Produce exactly three strategically distinct, practical short-form content concepts. Follow the supplied brand profile literally. Never invent performance, product availability, customer proof or capabilities. Return structured data only.",
       prompt: JSON.stringify({ brand, goal, channel, creativeReferences: serializeCreativeReferences(creativeReferences), verifiedPastPerformance: performanceEvidence, requirements: ["Each concept must be producible today", "Treat references as structural inspiration, never as brand truth", "Never transfer a competitor's claims, credentials, characters, protected assets, customer proof or product capabilities", "Prefer product or process proof over generic advice", "Make the three angles meaningfully different", "Use verified past performance only when supplied; never invent or extrapolate results", ...(brand.brandKey === "codeitlearn" ? ["When the goal mentions a game or project, the first concept must lead with a real playable result and never substitute the homepage, lesson map or sign-in screen"] : [])] }),
@@ -339,7 +339,7 @@ const defaultPackageGenerator: PackageGenerator = async ({ brand, goal, channel,
   generate: async () => {
   if (contentKind === "short_video") {
     const result = await generateText({
-      model: getOfficeModel("planning"),
+      ...getOfficeGenerationConfig("planning"),
       output: Output.object({ name: "ContentStudioVideoPackage", schema: contentStudioVideoPackageSchema }),
       system,
       prompt,
@@ -348,7 +348,7 @@ const defaultPackageGenerator: PackageGenerator = async ({ brand, goal, channel,
   }
   if (contentKind === "carousel_post") {
     const result = await generateText({
-      model: getOfficeModel("planning"),
+      ...getOfficeGenerationConfig("planning"),
       output: Output.object({ name: "ContentStudioCarouselPackage", schema: contentStudioCarouselPostPackageSchema }),
       system,
       prompt,
@@ -356,7 +356,7 @@ const defaultPackageGenerator: PackageGenerator = async ({ brand, goal, channel,
     return enforceContentStudioProofQuality({ brand, goal, pkg: contentStudioPackageSchema.parse(result.output) });
   }
   const result = await generateText({
-    model: getOfficeModel("planning"),
+    ...getOfficeGenerationConfig("planning"),
     output: Output.object({ name: "ContentStudioSingleImagePackage", schema: contentStudioSingleImagePostPackageSchema }),
     system,
     prompt,

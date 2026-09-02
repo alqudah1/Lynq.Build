@@ -5,7 +5,7 @@ import { z } from "zod";
 import type { Agent } from "@/lib/agents/agents";
 import type { KnowledgeDomain } from "@/lib/brain/knowledge-items";
 import { getAgentOfficeIdentity } from "./view";
-import { getOfficeModel } from "./models";
+import { getOfficeGenerationConfig } from "./models";
 import { officeDeliveryStageSchema } from "./task-metadata";
 import { OFFICE_ENGINEERING_AGENT_NAME, OFFICE_PRODUCT_AGENT_NAME, OFFICE_QA_AGENT_NAME } from "./team";
 
@@ -342,7 +342,7 @@ export async function planOfficeDirective(input: {
 
   try {
     const result = await generateText({
-      model: getOfficeModel("planning"),
+      ...getOfficeGenerationConfig("planning"),
       output: Output.object({ name: "OfficeDirectivePlan", schema: officePlanSchema }),
       system:
         "You are the LYNQ Executive Assistant. Convert a founder directive into a concise, executable company project. Select only agents from the supplied roster and copy their agentId exactly. Set sequentialHandoffs true whenever one employee must receive another's output; include explicit handoffs. For objectives that require creating or changing software, use executionMode delivery and ensure Product Delivery Lead (stage product), Software Engineering Lead (stage engineering), then Quality Assurance Lead (stage qa) appear in that order, after any advisory handoffs. For advice-only work, use executionMode advisory and stage advisory. Do not claim work is complete, invent employees, schedule spending, merge code, or change production. Keep the founder-facing reply direct and confident.",

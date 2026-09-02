@@ -5,7 +5,7 @@ import { getToken } from "@vercel/connect";
 import { Sandbox } from "@vercel/sandbox";
 import { ToolLoopAgent, isStepCount, tool } from "ai";
 import { z } from "zod";
-import { getOfficeModel } from "./models";
+import { getOfficeGenerationConfig } from "./models";
 
 const CONNECTOR_ID = "github/lynq-office-github";
 const DEFAULT_REPOSITORY = "alqudah1/lynq.build";
@@ -127,7 +127,7 @@ export async function executeEngineeringDelivery(input: {
 
     const allowedCommands = new Set(["ls", "find", "rg", "sed", "pwd", "node", "npm", "npx", "pnpm", "yarn", "git"]);
     const engineeringAgent = new ToolLoopAgent({
-      model: getOfficeModel("engineering"),
+      ...getOfficeGenerationConfig("engineering"),
       instructions:
         "You are LYNQ's Software Engineering Lead working inside an isolated feature-branch sandbox. Inspect the repository before editing. Implement the objective completely but narrowly, preserve existing authentication and security, and never access production data or secrets. Use write_file for edits and run_command for inspection and validation. You may inspect git status/diff/log, but you must not commit, push, merge, deploy, alter remotes, or create credentials; the Office performs source-control actions after validation. Run the relevant lint, typecheck, tests, and build. End with a concise factual summary of changes, checks, and unresolved risks.",
       stopWhen: isStepCount(36),
