@@ -7,8 +7,8 @@ describe("Office model routing", () => {
   });
 
   it("uses a cross-provider fallback chain for the default model", () => {
-    expect(getOfficeGenerationConfig("planning")).toEqual({
-      model: "openai/gpt-5.4-mini",
+    expect(getOfficeGenerationConfig("planning")).toMatchObject({
+      model: { modelId: "openai/gpt-5.4-mini", provider: "gateway" },
       providerOptions: {
         gateway: {
           models: ["openai/gpt-5-nano", "alibaba/qwen3.5-flash", "google/gemini-3-flash"],
@@ -23,7 +23,7 @@ describe("Office model routing", () => {
     vi.stubEnv("OFFICE_REVIEW_MODEL_FALLBACKS", "google/gemini-3-flash, openai/gpt-5-nano, alibaba/qwen3.5-flash");
 
     expect(getOfficeGenerationConfig("review")).toMatchObject({
-      model: "google/gemini-3-flash",
+      model: { modelId: "google/gemini-3-flash", provider: "gateway" },
       providerOptions: { gateway: { models: ["openai/gpt-5-nano", "alibaba/qwen3.5-flash"] } },
     });
   });

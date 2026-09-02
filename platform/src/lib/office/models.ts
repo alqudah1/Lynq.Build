@@ -1,5 +1,7 @@
 import "server-only";
 
+import { gateway } from "ai";
+
 export type OfficeModelRole = "planning" | "engineering" | "review";
 
 const DEFAULT_MODEL = "openai/gpt-5.4-mini";
@@ -34,7 +36,7 @@ export function getOfficeModel(role: OfficeModelRole): string {
  * fallbacks deliberately span providers and favor inexpensive models.
  */
 export function getOfficeGenerationConfig(role: OfficeModelRole): {
-  model: string;
+  model: ReturnType<typeof gateway>;
   providerOptions: { gateway: { models: string[]; tags: string[] } };
 } {
   const model = getOfficeModel(role);
@@ -47,7 +49,9 @@ export function getOfficeGenerationConfig(role: OfficeModelRole): {
     .map((value) => validateModel(value, fallbackEnvName))
     .filter((value) => value !== model))];
   return {
-    model,
+    // The explicit Gateway model wrapper is required for Gateway routing
+    // options such as cross-model fallbacks to be applied by the AI SDK.
+    model: gateway(model),
     providerOptions: {
       gateway: {
         models,
