@@ -24,7 +24,7 @@ import { notifyJarvisApprovalNeeded } from "@/lib/email/jarvis-notifier";
 import { renderRestaurantResearch, researchRestaurantProspects, restaurantResearchMarker } from "./restaurant-research";
 import { parseRestaurantResearch } from "./restaurant-research";
 import { draftRestaurantOutreach, parseRestaurantOutreach, restaurantOutreachMarker } from "./restaurant-outreach";
-import { listConnectionsForUser } from "@/lib/communications-os/connections";
+import { ensureEnvironmentManagedResendConnection, listConnectionsForUser } from "@/lib/communications-os/connections";
 import { findOrCreateConversation } from "@/lib/communications-os/conversations";
 import { attachMessageToExistingApproval, createDraftMessage, queueMessageAfterRecordedApproval } from "@/lib/communications-os/messages";
 
@@ -239,8 +239,13 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
       if (!delivery) throw new Error("Outreach is waiting for the verified Engineering demo");
       const inspected = await inspectEngineeringDelivery(delivery);
       if (!inspected.previewUrl) throw new Error("Outreach is waiting for the verified Vercel preview");
-      const connections = await listConnectionsForUser(db, { organizationId: input.organizationId, actorUserId: execution.ownerUserId });
-      const connection = connections.find((item) => item.provider === "resend" && item.integrationType === "email" && item.status === "connected");
+      let connections = await listConnectionsForUser(db, { organizationId: input.organizationId, actorUserId: execution.ownerUserId });
+      let connection = connections.find((item) => item.provider === "resend" && item.integrationType === "email" && item.status === "connected");
+      if (!connection) {
+        await ensureEnvironmentManagedResendConnection(db, { organizationId: input.organizationId, actorUserId: execution.ownerUserId });
+        connections = await listConnectionsForUser(db, { organizationId: input.organizationId, actorUserId: execution.ownerUserId });
+        connection = connections.find((item) => item.provider === "resend" && item.integrationType === "email" && item.status === "connected");
+      }
       if (!connection) throw new Error("Outreach is ready, but a verified Resend email connection is not connected in Communications");
       const conversation = await findOrCreateConversation(db, {
         organizationId: input.organizationId,
@@ -256,6 +261,7 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
         conversationId: conversation.id,
         channel: "email",
         integrationConnectionId: connection.id,
+        senderReference: process.env.LYNQ_OUTREACH_FROM_EMAIL ?? process.env.RESEND_FROM_ADDRESS ?? "Mustafa from LYNQ <mustafa@lynq.build>",
         recipientReference: research.recommendation.email,
         subject: draft.subject,
         bodyText: draft.body,

@@ -100,8 +100,83 @@ export async function resolveActiveCredentialSecret(db: Db, input: { organizatio
     .select({ ciphertext: integrationCredentials.ciphertext, iv: integrationCredentials.iv, authTag: integrationCredentials.authTag })
     .from(integrationCredentials)
     .where(and(eq(integrationCredentials.connectionId, input.connectionId), eq(integrationCredentials.organizationId, input.organizationId), isNull(integrationCredentials.revokedAt)));
-  if (!row) return null;
+  if (!row) {
+    const [connection] = await db
+      .select({ provider: integrationConnections.provider })
+      .from(integrationConnections)
+      .where(and(eq(integrationConnections.id, input.connectionId), eq(integrationConnections.organizationId, input.organizationId)));
+    if (connection?.provider === "resend") return process.env.RESEND_API_KEY?.trim() || null;
+    return null;
+  }
   return decryptCredentialSecret(process.env.INTEGRATION_CREDENTIAL_ENCRYPTION_KEY, row);
+}
+
+/**
+ * Makes the production Resend secret available to Communications without
+ * copying it into the application database. The connection row is only the
+ * tenant-scoped routing/audit record; the credential remains a Vercel secret.
+ */
+export async function ensureEnvironmentManagedResendConnection(
+  db: Db,
+  input: { organizationId: string; actorUserId: string }
+): Promise<IntegrationConnection | null> {
+  if (!process.env.RESEND_API_KEY?.trim()) return null;
+  const ctx = await resolveCommunicationAuthContext(db, { organizationId: input.organizationId, actorUserId: input.actorUserId });
+  await requireCommunicationsManageConnectionsAuthority(db, ctx, "integration_connection", "environment-resend");
+
+  const [existing] = await db
+    .select()
+    .from(integrationConnections)
+    .where(
+      and(
+        eq(integrationConnections.organizationId, input.organizationId),
+        eq(integrationConnections.provider, "resend"),
+        eq(integrationConnections.integrationType, "email"),
+        isNull(integrationConnections.disconnectedAt)
+      )
+    );
+  if (existing?.status === "connected") return existing as IntegrationConnection;
+
+  if (existing) {
+    const [updated] = await db
+      .update(integrationConnections)
+      .set({
+        status: "connected",
+        externalAccountId: "env:RESEND_API_KEY",
+        scopesMetadata: { credentialSource: "vercel_environment", sendingDomain: "lynq.build" },
+        lastVerifiedAt: new Date(),
+        revision: existing.revision + 1,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(integrationConnections.id, existing.id), eq(integrationConnections.revision, existing.revision)))
+      .returning();
+    if (!updated) throw new StaleCommunicationUpdateError("integration connection");
+    return updated as IntegrationConnection;
+  }
+
+  const [created] = await db
+    .insert(integrationConnections)
+    .values({
+      organizationId: input.organizationId,
+      provider: "resend",
+      integrationType: "email",
+      displayName: "LYNQ production email",
+      status: "connected",
+      externalAccountId: "env:RESEND_API_KEY",
+      scopesMetadata: { credentialSource: "vercel_environment", sendingDomain: "lynq.build" },
+      connectedByUserId: input.actorUserId,
+      lastVerifiedAt: new Date(),
+    })
+    .returning();
+  await recordAuditEvent(db, {
+    eventType: "integration_connection_verified",
+    actorUserId: input.actorUserId,
+    organizationId: input.organizationId,
+    targetType: "integration_connection",
+    targetId: created.id,
+    metadata: { provider: "resend", credentialSource: "vercel_environment" },
+  });
+  return created as IntegrationConnection;
 }
 
 /** Calls the real provider adapter's `verifyConnection` — for a development provider this always succeeds (no real account exists to fail against); for Resend it makes a real, bounded API call. */
