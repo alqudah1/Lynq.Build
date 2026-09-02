@@ -19,9 +19,24 @@ export type EngineeringDeliveryResult = {
   pullRequestNumber: number;
   pullRequestUrl: string;
   previewUrl: string | null;
+  previewPath?: string | null;
   validationSummary: string;
   agentSummary: string;
 };
+
+const RESTAURANT_RESEARCH_MARKER = "<!-- LYNQ_RESTAURANT_RESEARCH ";
+
+export function restaurantDemoPath(projectKey: string): string {
+  const slug = projectKey.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+  if (!slug) throw new Error("Restaurant demo project key cannot produce an empty route");
+  return `/demos/${slug}`;
+}
+
+export function withPreviewPath(previewUrl: string | null, previewPath?: string | null): string | null {
+  if (!previewUrl) return null;
+  if (!previewPath) return previewUrl;
+  return new URL(previewPath, previewUrl).toString().replace(/\/$/, "");
+}
 
 function repositoryConfig() {
   const repository = process.env.OFFICE_GITHUB_REPOSITORY || DEFAULT_REPOSITORY;
@@ -105,6 +120,8 @@ export async function executeEngineeringDelivery(input: {
   const token = await githubToken();
   const repoName = repository.split("/")[1];
   const branch = `office/${input.projectKey.toLowerCase()}-${input.executionId.slice(0, 8)}`;
+  const isRestaurantDemo = input.sharedContext.includes(RESTAURANT_RESEARCH_MARKER);
+  const previewPath = isRestaurantDemo ? restaurantDemoPath(input.projectKey) : null;
   const sandbox = await Sandbox.create({
     source: {
       type: "git",
@@ -129,7 +146,7 @@ export async function executeEngineeringDelivery(input: {
     const engineeringAgent = new ToolLoopAgent({
       ...getOfficeGenerationConfig("engineering"),
       instructions:
-        "You are LYNQ's Software Engineering Lead working inside an isolated feature-branch sandbox. Inspect the repository before editing. Implement the objective completely but narrowly, preserve existing authentication and security, and never access production data or secrets. Use write_file for edits and run_command for inspection and validation. You may inspect git status/diff/log, but you must not commit, push, merge, deploy, alter remotes, or create credentials; the Office performs source-control actions after validation. Run the relevant lint, typecheck, tests, and build. End with a concise factual summary of changes, checks, and unresolved risks.",
+        `You are LYNQ's Software Engineering Lead working inside an isolated feature-branch sandbox. Inspect the repository before editing. Implement the objective completely but narrowly, preserve existing authentication and security, and never access production data or secrets. Use write_file for edits and run_command for inspection and validation. You may inspect git status/diff/log, but you must not commit, push, merge, deploy, alter remotes, or create credentials; the Office performs source-control actions after validation. Run the relevant lint, typecheck, tests, and build. End with a concise factual summary of changes, checks, and unresolved risks.${isRestaurantDemo ? ` This is a custom restaurant demo, not an Office feature or generic template. Build the public route ${previewPath} inside the platform Next.js application. Base its information architecture, copy direction, and conversion flow on the approved restaurant research in sharedProjectContext. Make it visually distinctive, responsive, accessible, and convincingly functional: navigation and calls to action must work, and any form must be an honest non-sending demo unless a safe existing backend is explicitly available. Do not invent awards, reviews, prices, menu items, opening hours, contact details, or customer claims. Do not modify unrelated Office screens. Reuse the repository's proven primitives where useful, but create a tailored design rather than cloning an existing demo.` : ""}`,
       stopWhen: isStepCount(36),
       tools: {
         read_file: tool({
@@ -172,6 +189,13 @@ export async function executeEngineeringDelivery(input: {
         sharedProjectContext: input.sharedContext.slice(0, 40_000),
         repository,
         baseBranch,
+        deliveryProfile: isRestaurantDemo
+          ? {
+              kind: "custom_restaurant_demo",
+              requiredPublicRoute: previewPath,
+              qualityBar: "A tailored, production-quality prospect demo whose visible facts are grounded in the approved research.",
+            }
+          : { kind: "product_feature" },
       }),
     });
 
@@ -204,7 +228,7 @@ export async function executeEngineeringDelivery(input: {
         body: `## Founder objective\n\n${input.objective}\n\n## Engineering report\n\n${result.text.slice(0, 20_000)}\n\n---\nCreated by LYNQ Office. This pull request does not merge or deploy production automatically.`,
       }),
     });
-    const previewUrl = await findPreviewUrl(token, repository, commitSha);
+    const previewUrl = withPreviewPath(await findPreviewUrl(token, repository, commitSha), previewPath);
 
     return {
       repository,
@@ -213,6 +237,7 @@ export async function executeEngineeringDelivery(input: {
       pullRequestNumber: pullRequest.number,
       pullRequestUrl: pullRequest.html_url,
       previewUrl,
+      previewPath,
       validationSummary: result.text.slice(0, 20_000),
       agentSummary: result.text.slice(0, 5_000),
     };
@@ -221,7 +246,7 @@ export async function executeEngineeringDelivery(input: {
   }
 }
 
-export async function inspectEngineeringDelivery(input: { repository: string; commitSha: string; pullRequestUrl: string }): Promise<{ previewUrl: string | null; checks: string }> {
+export async function inspectEngineeringDelivery(input: { repository: string; commitSha: string; pullRequestUrl: string; previewPath?: string | null }): Promise<{ previewUrl: string | null; checks: string }> {
   const { repository } = await verifyOfficeRepositoryConnection();
   if (repository !== input.repository) throw new Error("Engineering delivery repository is outside the approved scope");
   const token = await githubToken();
@@ -229,7 +254,7 @@ export async function inspectEngineeringDelivery(input: { repository: string; co
     githubFetch<{ state: string; statuses: Array<{ context: string; state: string; description: string | null }> }>(token, `/repos/${repository}/commits/${input.commitSha}/status`),
     githubFetch<{ check_runs: Array<{ name: string; status: string; conclusion: string | null; details_url: string | null }> }>(token, `/repos/${repository}/commits/${input.commitSha}/check-runs`),
   ]);
-  const previewUrl = await findPreviewUrl(token, repository, input.commitSha);
+  const previewUrl = withPreviewPath(await findPreviewUrl(token, repository, input.commitSha), input.previewPath);
   const lines = [
     `Combined status: ${status.state}`,
     ...status.statuses.map((item) => `${item.context}: ${item.state}${item.description ? ` — ${item.description}` : ""}`),
