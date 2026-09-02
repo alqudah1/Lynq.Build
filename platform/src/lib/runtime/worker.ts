@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import type { NeonQueryFunction } from "@neondatabase/serverless";
-import { claimJobs, startJob, completeJob, reportJobFailure, type RuntimeJob } from "./queue";
+import { claimJobs, startJob, heartbeatJob, completeJob, reportJobFailure, type RuntimeJob } from "./queue";
 import { RUNTIME_CONFIG } from "./config";
 import { RUNTIME_JOB_TYPES, type JobFailureClass } from "./validation";
 import { continueKnowledgeAnalystExecution, NoAccessibleDomainsError } from "@/lib/agents/knowledge-analyst";
@@ -126,6 +126,20 @@ function requireWorkflowExecutionId(job: RuntimeJob): { organizationId: string; 
 export async function processClaimedJob(db: Db, rawSql: RawSql, job: RuntimeJob, leaseOwner: string): Promise<RuntimeJob> {
   await startJob(db, { jobId: job.id, leaseOwner });
 
+  let heartbeatInFlight: Promise<void> | null = null;
+  const heartbeatTimer = setInterval(() => {
+    if (heartbeatInFlight) return;
+    heartbeatInFlight = heartbeatJob(db, { jobId: job.id, leaseOwner })
+      .then(() => undefined)
+      .catch((heartbeatError) => {
+        console.error("[runtime] job heartbeat failed:", heartbeatError instanceof Error ? heartbeatError.message : "unknown error");
+      })
+      .finally(() => {
+        heartbeatInFlight = null;
+      });
+  }, RUNTIME_CONFIG.heartbeatIntervalSeconds * 1000);
+  heartbeatTimer.unref();
+
   try {
     let resultRef: unknown;
     switch (job.jobType) {
@@ -185,8 +199,12 @@ export async function processClaimedJob(db: Db, rawSql: RawSql, job: RuntimeJob,
       }
     }
 
+    clearInterval(heartbeatTimer);
+    if (heartbeatInFlight) await heartbeatInFlight;
     return await completeJob(db, { jobId: job.id, leaseOwner, resultRef });
   } catch (err) {
+    clearInterval(heartbeatTimer);
+    if (heartbeatInFlight) await heartbeatInFlight;
     const { failureClass, errorCode, requiresHumanReview } = classifyExecutionError(err);
     const errorMessage = err instanceof Error ? err.message : String(err);
     const outcome = await reportJobFailure(db, { jobId: job.id, leaseOwner, failureClass, errorCode, errorMessage, requiresHumanReview });
