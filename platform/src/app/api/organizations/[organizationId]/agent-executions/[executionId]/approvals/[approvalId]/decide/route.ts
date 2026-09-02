@@ -6,6 +6,8 @@ import { getAuthenticatedUser } from "@/lib/http/auth";
 import { jsonSuccess, handleRouteError } from "@/lib/http/responses";
 import { parseJsonBody, parseUuidParam } from "@/lib/http/validation";
 import { approveRequest, rejectRequest, requestRevision } from "@/lib/agent-runtime/approvals";
+import { enqueueJob } from "@/lib/runtime/queue";
+import { notifyApprovalDecided } from "@/lib/workflows/scheduling";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +39,17 @@ export async function POST(request: Request, { params }: RouteParams) {
         : body.decision === "rejected"
           ? await rejectRequest(db, { organizationId, approvalId, decisionNote: body.decisionNote ?? null, severe: body.severe, actorUserId: user.userId })
           : await requestRevision(db, { organizationId, approvalId, decisionNote: body.decisionNote ?? null, actorUserId: user.userId });
+
+    await notifyApprovalDecided(db, { organizationId, approvalRequestId: approvalId });
+    if (body.decision !== "rejected" || !body.severe) {
+      await enqueueJob(db, {
+        organizationId,
+        jobType: "execution_resume",
+        executionId: result.executionId,
+        idempotencyKey: `approval-resume:${result.id}`,
+        priority: 100,
+      });
+    }
 
     return jsonSuccess(result);
   } catch (err) {

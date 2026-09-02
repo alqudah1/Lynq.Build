@@ -1,7 +1,7 @@
 import "server-only";
 import { and, eq, desc } from "drizzle-orm";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
-import { communicationMessages, communicationApprovalLinks } from "@/db/schema";
+import { agentApprovalRequests, communicationMessages, communicationApprovalLinks } from "@/db/schema";
 import { TenantResourceNotFoundError } from "@/lib/authz/errors";
 import { recordAuditEvent } from "@/lib/audit";
 import { approveRequest, rejectRequest } from "@/lib/agent-runtime/approvals";
@@ -201,6 +201,34 @@ export async function submitMessageForApproval(db: Db, input: { organizationId: 
 
   const updated = await transitionMessageStatus(db, { organizationId: input.organizationId, messageId: input.messageId, fromStatus: message.status, toStatus: "pending_approval", expectedRevision: message.revision, extraSet: { approvalRequestId: approval.id } });
   return updated;
+}
+
+/** Attaches an agent-authored message to an approval already opened by a coordinating Jarvis execution. This preserves Communications OS's message lifecycle while avoiding a duplicate founder decision for the exact same draft. */
+export async function attachMessageToExistingApproval(db: Db, input: { organizationId: string; messageId: string; approvalRequestId: string; actorUserId: string }): Promise<CommunicationMessage> {
+  const message = await getMessageForUser(db, { organizationId: input.organizationId, messageId: input.messageId, actorUserId: input.actorUserId });
+  if (!message.createdByAgentId) throw new AgentCannotApproveOwnMessageError();
+  const [approval] = await db.select().from(agentApprovalRequests).where(and(eq(agentApprovalRequests.organizationId, input.organizationId), eq(agentApprovalRequests.id, input.approvalRequestId)));
+  if (!approval || approval.status !== "pending") throw new MessageNotApprovedError();
+  await db.insert(communicationApprovalLinks).values({ organizationId: input.organizationId, approvalRequestId: approval.id, linkedEntityType: "message", linkedEntityId: message.id, purpose: "send_communication_message", createdByUserId: input.actorUserId });
+  return transitionMessageStatus(db, { organizationId: input.organizationId, messageId: message.id, fromStatus: message.status, toStatus: "pending_approval", expectedRevision: message.revision, extraSet: { approvalRequestId: approval.id } });
+}
+
+/** Applies a decision already recorded on the message's linked Runtime approval, then queues the one approved provider send. It never makes or changes the human decision itself. */
+export async function queueMessageAfterRecordedApproval(db: Db, input: { organizationId: string; messageId: string; actorUserId: string }): Promise<CommunicationMessage> {
+  const message = await resolveMessageById(db, input.organizationId, input.messageId);
+  const [approval] = await db
+    .select({ status: agentApprovalRequests.status })
+    .from(communicationApprovalLinks)
+    .innerJoin(agentApprovalRequests, eq(agentApprovalRequests.id, communicationApprovalLinks.approvalRequestId))
+    .where(and(eq(communicationApprovalLinks.organizationId, input.organizationId), eq(communicationApprovalLinks.linkedEntityType, "message"), eq(communicationApprovalLinks.linkedEntityId, input.messageId)))
+    .orderBy(desc(communicationApprovalLinks.createdAt))
+    .limit(1);
+  if (approval?.status !== "approved") throw new MessageNotApprovedError();
+  const approved = message.status === "pending_approval"
+    ? await transitionMessageStatus(db, { organizationId: input.organizationId, messageId: message.id, fromStatus: message.status, toStatus: "approved", expectedRevision: message.revision })
+    : message;
+  if (approved.status !== "approved") throw new MessageNotApprovedError();
+  return queueMessageForSend(db, { organizationId: input.organizationId, messageId: approved.id, actorUserId: input.actorUserId });
 }
 
 /**

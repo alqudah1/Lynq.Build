@@ -15,8 +15,9 @@ import { createWorkflowEdge, deleteWorkflowEdge } from "@/lib/workflows/edges";
 import { startWorkflowExecution, pauseWorkflowExecution, resumeWorkflowExecution, cancelWorkflowExecution, retryWorkflowExecution } from "@/lib/workflows/executions";
 import { completeWorkflowHumanTask } from "@/lib/workflows/human-tasks";
 import { seedStarterTemplates } from "@/lib/workflows/templates";
-import { approveRequest, rejectRequest } from "@/lib/agent-runtime/approvals";
+import { approveRequest, rejectRequest, requestRevision } from "@/lib/agent-runtime/approvals";
 import { notifyApprovalDecided } from "@/lib/workflows/scheduling";
+import { enqueueJob } from "@/lib/runtime/queue";
 import { workflowKeySchema, workflowNameSchema, workflowDefinitionStatusSchema, nodeKeySchema, workflowNodeTypeSchema } from "@/lib/workflows/validation";
 import { toActionResult } from "./errors";
 import type { ActionResult } from "./types";
@@ -345,8 +346,23 @@ export async function completeHumanTaskAction(organizationSlug: string, taskId: 
 export async function approveApprovalAction(organizationSlug: string, approvalId: string): Promise<ActionResult> {
   const { db, user, organization } = await context(organizationSlug, `/app/${organizationSlug}/my-work`);
   try {
-    await approveRequest(db, { organizationId: organization.id, approvalId, actorUserId: user.userId });
+    const approval = await approveRequest(db, { organizationId: organization.id, approvalId, actorUserId: user.userId });
     await notifyApprovalDecided(db, { organizationId: organization.id, approvalRequestId: approvalId });
+    await enqueueJob(db, { organizationId: organization.id, jobType: "execution_resume", executionId: approval.executionId, idempotencyKey: `my-work-approval-resume:${approval.id}`, priority: 100 });
+  } catch (err) {
+    return toActionResult(err);
+  }
+  revalidatePath(`/app/${organizationSlug}/my-work`);
+  return { ok: true };
+}
+
+export async function requestApprovalRevisionAction(organizationSlug: string, approvalId: string, formData: FormData): Promise<ActionResult> {
+  const { db, user, organization } = await context(organizationSlug, `/app/${organizationSlug}/my-work`);
+  const decisionNote = (formData.get("decisionNote") as string) || undefined;
+  try {
+    const approval = await requestRevision(db, { organizationId: organization.id, approvalId, decisionNote, actorUserId: user.userId });
+    await notifyApprovalDecided(db, { organizationId: organization.id, approvalRequestId: approvalId });
+    await enqueueJob(db, { organizationId: organization.id, jobType: "execution_resume", executionId: approval.executionId, idempotencyKey: `my-work-revision-resume:${approval.id}`, priority: 100 });
   } catch (err) {
     return toActionResult(err);
   }

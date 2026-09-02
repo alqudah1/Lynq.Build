@@ -21,6 +21,12 @@ import { parseOfficeTaskMetadata } from "./task-metadata";
 import { getOfficeModel } from "./models";
 import { getAgentOfficeIdentity } from "./view";
 import { notifyJarvisApprovalNeeded } from "@/lib/email/jarvis-notifier";
+import { renderRestaurantResearch, researchRestaurantProspects, restaurantResearchMarker } from "./restaurant-research";
+import { parseRestaurantResearch } from "./restaurant-research";
+import { draftRestaurantOutreach, parseRestaurantOutreach, restaurantOutreachMarker } from "./restaurant-outreach";
+import { listConnectionsForUser } from "@/lib/communications-os/connections";
+import { findOrCreateConversation } from "@/lib/communications-os/conversations";
+import { attachMessageToExistingApproval, createDraftMessage, queueMessageAfterRecordedApproval } from "@/lib/communications-os/messages";
 
 type Db = NeonHttpDatabase<Record<string, unknown>>;
 
@@ -154,6 +160,37 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
 
   const approvals = await db.select().from(agentApprovalRequests).where(and(eq(agentApprovalRequests.organizationId, input.organizationId), eq(agentApprovalRequests.executionId, execution.id)));
   const latestApproval = approvals.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+  if (metadata.stage === "research" && latestApproval?.status === "approved") {
+    const plan = await getLatestPlan(db, execution.id);
+    if (!plan) throw new Error("office execution has no durable plan");
+    const statuses = new Map((await getPlanSteps(db, plan.id)).map((step) => [step.stepNumber, step.status]));
+    if (!completed(4, statuses)) await completePlanStep(db, { organizationId: input.organizationId, executionId: execution.id, planId: plan.id, stepNumber: 4, actorAgentId: agent.id });
+    await completeTaskAndAdvance(db, { organizationId: input.organizationId, projectId: link.projectId, taskId: link.taskId, actorUserId: execution.ownerUserId });
+    await advanceIfAt(db, input.organizationId, execution.id, agent.id, "executing", "verifying");
+    execution = await resolveExecutionById(db, input.organizationId, execution.id);
+    return execution.status === "verifying" ? completeExecution(db, { organizationId: input.organizationId, executionId: execution.id, actorAgentId: agent.id }) : execution;
+  }
+  if (metadata.stage === "research" && latestApproval?.status === "pending") return execution;
+  if (metadata.stage === "outreach" && latestApproval?.status === "approved") {
+    const artifact = (await listArtifactsForExecution(db, input.organizationId, execution.id)).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+    const outreach = parseRestaurantOutreach(artifact?.content ?? null);
+    if (!outreach) throw new Error("approved outreach message evidence is missing");
+    await queueMessageAfterRecordedApproval(db, { organizationId: input.organizationId, messageId: outreach.messageId, actorUserId: execution.ownerUserId });
+    const plan = await getLatestPlan(db, execution.id);
+    if (!plan) throw new Error("office execution has no durable plan");
+    const statuses = new Map((await getPlanSteps(db, plan.id)).map((step) => [step.stepNumber, step.status]));
+    if (!completed(4, statuses)) await completePlanStep(db, { organizationId: input.organizationId, executionId: execution.id, planId: plan.id, stepNumber: 4, actorAgentId: agent.id });
+    await completeTaskAndAdvance(db, { organizationId: input.organizationId, projectId: link.projectId, taskId: link.taskId, actorUserId: execution.ownerUserId });
+    const project = await resolveProjectById(db, input.organizationId, link.projectId);
+    const tasks = await listTasks(db, { organizationId: input.organizationId, projectId: link.projectId, actorUserId: execution.ownerUserId });
+    if (project.status === "active" && tasks.every((item) => item.status === "completed")) {
+      await transitionProjectStatus(db, { organizationId: input.organizationId, projectId: project.id, toStatus: "completed", expectedRevision: project.revision, actorUserId: execution.ownerUserId });
+    }
+    await advanceIfAt(db, input.organizationId, execution.id, agent.id, "executing", "verifying");
+    execution = await resolveExecutionById(db, input.organizationId, execution.id);
+    return execution.status === "verifying" ? completeExecution(db, { organizationId: input.organizationId, executionId: execution.id, actorAgentId: agent.id }) : execution;
+  }
+  if (metadata.stage === "outreach" && latestApproval?.status === "pending") return execution;
   if (metadata.stage === "qa" && latestApproval?.status === "approved") {
     const plan = await getLatestPlan(db, execution.id);
     if (!plan) throw new Error("office execution has no durable plan");
@@ -180,8 +217,61 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
 
   let artifact = (await listArtifactsForExecution(db, input.organizationId, execution.id)).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
   const context = await projectContext(db, input.organizationId, link.projectId);
-  if (!artifact || latestApproval?.status === "revision_requested") {
-    if (metadata.stage === "engineering") {
+  if (!artifact || latestApproval?.status === "revision_requested" || latestApproval?.status === "rejected") {
+    if (metadata.stage === "research") {
+      const research = await researchRestaurantProspects({
+        directive: projectRow.objective ?? metadata.goal,
+        revisionNote: latestApproval?.decisionNote,
+      });
+      artifact = await createArtifact(db, {
+        organizationId: input.organizationId,
+        executionId: execution.id,
+        artifactType: "report",
+        title: `Restaurant recommendation — ${projectRow.projectKey}`,
+        content: `${restaurantResearchMarker(research)}\n\n${renderRestaurantResearch(research)}`.slice(0, 20_000),
+        actorAgentId: agent.id,
+      });
+    } else if (metadata.stage === "outreach") {
+      const research = parseRestaurantResearch(context);
+      if (!research) throw new Error("Outreach is waiting for the founder-approved restaurant research");
+      if (!research.recommendation.email) throw new Error("Outreach is waiting for a verified public business email for the approved restaurant");
+      const delivery = await latestEngineeringResult(db, input.organizationId, link.projectId);
+      if (!delivery) throw new Error("Outreach is waiting for the verified Engineering demo");
+      const inspected = await inspectEngineeringDelivery(delivery);
+      if (!inspected.previewUrl) throw new Error("Outreach is waiting for the verified Vercel preview");
+      const connections = await listConnectionsForUser(db, { organizationId: input.organizationId, actorUserId: execution.ownerUserId });
+      const connection = connections.find((item) => item.provider === "resend" && item.integrationType === "email" && item.status === "connected");
+      if (!connection) throw new Error("Outreach is ready, but a verified Resend email connection is not connected in Communications");
+      const conversation = await findOrCreateConversation(db, {
+        organizationId: input.organizationId,
+        channel: "email",
+        integrationConnectionId: connection.id,
+        externalThreadId: `jarvis-restaurant:${link.projectId}`,
+        assignedUserId: execution.ownerUserId,
+        actorUserId: execution.ownerUserId,
+      });
+      const draft = await draftRestaurantOutreach({ candidate: research.recommendation, previewUrl: inspected.previewUrl, founderDirective: projectRow.objective ?? metadata.goal });
+      const message = await createDraftMessage(db, {
+        organizationId: input.organizationId,
+        conversationId: conversation.id,
+        channel: "email",
+        integrationConnectionId: connection.id,
+        recipientReference: research.recommendation.email,
+        subject: draft.subject,
+        bodyText: draft.body,
+        idempotencyKey: `jarvis-restaurant-outreach:${link.projectId}:${latestApproval?.id ?? "initial"}`,
+        createdByAgentId: agent.id,
+        actorUserId: execution.ownerUserId,
+      });
+      artifact = await createArtifact(db, {
+        organizationId: input.organizationId,
+        executionId: execution.id,
+        artifactType: "draft_text",
+        title: `Outreach approval — ${research.recommendation.name}`,
+        content: `${restaurantOutreachMarker({ messageId: message.id, recipient: research.recommendation.email, previewUrl: inspected.previewUrl })}\n\n# Outreach draft\n\n- Restaurant: ${research.recommendation.name}\n- Recipient: ${research.recommendation.email}\n- Preview: ${inspected.previewUrl}\n- Provider: Resend (not sent yet)\n\n## Subject\n\n${draft.subject}\n\n## Message\n\n${draft.body}\n\n## Decision\n\nApprove to queue exactly this one email. Request changes to rewrite it. Stop to cancel the outreach.`.slice(0, 20_000),
+        actorAgentId: agent.id,
+      });
+    } else if (metadata.stage === "engineering") {
       const objective = projectRow.objective ?? metadata.goal;
       const delivery = await executeEngineeringDelivery({ executionId: execution.id, projectKey: projectRow.projectKey, projectName: projectRow.name, objective, acceptanceCriteria: metadata.successCriteria, sharedContext: context });
       artifact = await createArtifact(db, {
@@ -222,7 +312,7 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
         executionId: execution.id,
         artifactType: "report",
         title: `Founder review — ${projectRow.projectKey}`,
-        content: `# Founder review\n\n${review.text.trim()}\n\n## What was built\n\n${delivery.agentSummary}\n\n## Review links\n\n- Preview: ${inspected.previewUrl}\n- Pull request: ${delivery.pullRequestUrl}\n- Commit: \`${delivery.commitSha}\`\n\n## Automated checks\n\n\`\`\`text\n${inspected.checks}\n\`\`\`\n\n## Decision\n\nApprove to mark this Office project complete, or request changes to send it through another isolated Engineering revision.`,
+        content: `# Founder review\n\n${review.text.trim()}\n\n## What was built\n\n${delivery.agentSummary}\n\n## Review links\n\n- Preview: ${inspected.previewUrl}\n- Pull request: ${delivery.pullRequestUrl}\n- Commit: \`${delivery.commitSha}\`\n\n## Automated checks\n\n\`\`\`text\n${inspected.checks}\n\`\`\`\n\n## Decision\n\nApprove the verified preview to continue the planned handoff, or request changes to send it through another isolated Engineering revision.`,
         actorAgentId: agent.id,
       });
     } else {
@@ -237,9 +327,28 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
   const existingLinks = await listArtifactLinks(db, { organizationId: input.organizationId, projectId: link.projectId, linkedEntityType: "task", linkedEntityId: link.taskId, actorUserId: execution.ownerUserId });
   if (!existingLinks.some((item) => item.artifactId === artifact!.id)) await linkArtifactToEntity(db, { organizationId: input.organizationId, projectId: link.projectId, artifactId: artifact.id, linkedEntityType: "task", linkedEntityId: link.taskId, actorUserId: execution.ownerUserId });
 
+  if (metadata.stage === "research") {
+    const approvalSummary = `Review Jarvis's cited restaurant recommendation for ${projectRow.name}. Approve to begin the demo brief and build; request changes to research another restaurant. No outreach has been sent.`;
+    const approval = await requestApproval(db, { organizationId: input.organizationId, executionId: execution.id, requestedAction: "restaurant_prospect_selection", summary: approvalSummary, riskLevel: "medium", artifactId: artifact.id, proposedActionRef: { projectId: link.projectId, taskId: link.taskId }, actorAgentId: agent.id });
+    await linkApprovalToEntity(db, { organizationId: input.organizationId, projectId: link.projectId, approvalRequestId: approval.request.id, linkedEntityType: "task", linkedEntityId: link.taskId, actorUserId: execution.ownerUserId });
+    await notifyJarvisApprovalNeeded(db, { organizationId: input.organizationId, ownerUserId: execution.ownerUserId, projectName: projectRow.name, summary: approvalSummary });
+    return approval.execution;
+  }
+
+  if (metadata.stage === "outreach") {
+    const outreach = parseRestaurantOutreach(artifact.content);
+    if (!outreach) throw new Error("outreach message evidence is missing");
+    const approvalSummary = `Review the exact restaurant email and preview link for ${projectRow.name}. Approving queues one Resend email; requesting changes rewrites it. Nothing has been sent yet.`;
+    const approval = await requestApproval(db, { organizationId: input.organizationId, executionId: execution.id, requestedAction: "send_restaurant_outreach", summary: approvalSummary, riskLevel: "high", artifactId: artifact.id, proposedActionRef: { projectId: link.projectId, taskId: link.taskId, messageId: outreach.messageId }, actorAgentId: agent.id });
+    await attachMessageToExistingApproval(db, { organizationId: input.organizationId, messageId: outreach.messageId, approvalRequestId: approval.request.id, actorUserId: execution.ownerUserId });
+    await linkApprovalToEntity(db, { organizationId: input.organizationId, projectId: link.projectId, approvalRequestId: approval.request.id, linkedEntityType: "task", linkedEntityId: link.taskId, actorUserId: execution.ownerUserId });
+    await notifyJarvisApprovalNeeded(db, { organizationId: input.organizationId, ownerUserId: execution.ownerUserId, projectName: projectRow.name, summary: approvalSummary });
+    return approval.execution;
+  }
+
   if (metadata.stage === "qa") {
-    const approvalSummary = `Review the preview and pull request for ${projectRow.name}. Approving marks the Office project complete; requesting changes starts another isolated Engineering revision.`;
-    const approval = await requestApproval(db, { organizationId: input.organizationId, executionId: execution.id, requestedAction: "office_project_completion", summary: approvalSummary, riskLevel: "high", artifactId: artifact.id, proposedActionRef: { projectId: link.projectId, taskId: link.taskId }, actorAgentId: agent.id });
+    const approvalSummary = `Review the preview and pull request for ${projectRow.name}. Approving accepts this demo and continues any remaining planned handoff; requesting changes starts another isolated Engineering revision.`;
+    const approval = await requestApproval(db, { organizationId: input.organizationId, executionId: execution.id, requestedAction: "office_demo_approval", summary: approvalSummary, riskLevel: "high", artifactId: artifact.id, proposedActionRef: { projectId: link.projectId, taskId: link.taskId }, actorAgentId: agent.id });
     await linkApprovalToEntity(db, { organizationId: input.organizationId, projectId: link.projectId, approvalRequestId: approval.request.id, linkedEntityType: "task", linkedEntityId: link.taskId, actorUserId: execution.ownerUserId });
     await notifyJarvisApprovalNeeded(db, { organizationId: input.organizationId, ownerUserId: execution.ownerUserId, projectName: projectRow.name, summary: approvalSummary });
     return approval.execution;

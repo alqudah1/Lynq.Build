@@ -11,7 +11,7 @@ import { TenantResourceNotFoundError } from "@/lib/authz/errors";
 import { Breadcrumbs } from "@/components/dashboard/Breadcrumbs";
 import { HumanTaskCard } from "@/components/dashboard/workflows/HumanTaskCard";
 import { PendingApprovalCard } from "@/components/dashboard/workflows/PendingApprovalCard";
-import { completeHumanTaskAction, approveApprovalAction, rejectApprovalAction } from "@/lib/dashboard/actions/workflows";
+import { completeHumanTaskAction, approveApprovalAction, rejectApprovalAction, requestApprovalRevisionAction } from "@/lib/dashboard/actions/workflows";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { AddMyWorkForm } from "@/components/dashboard/my-work/AddMyWorkForm";
@@ -103,8 +103,10 @@ export default async function MyWorkPage({ params }: { params: Promise<{ organiz
               <PendingApprovalCard
                 key={approval.id}
                 approval={{ id: approval.id, requestedAction: approval.requestedAction, summary: approval.summary, riskLevel: approval.riskLevel, expiresAt: approval.expiresAt }}
+                reviewHref={`/app/${organizationSlug}/agent-executions/${approval.executionId}#deliverables`}
                 approveAction={approveApprovalAction.bind(null, organizationSlug, approval.id)}
                 rejectAction={rejectApprovalAction.bind(null, organizationSlug, approval.id)}
+                revisionAction={requestApprovalRevisionAction.bind(null, organizationSlug, approval.id)}
               />
             ))}
           </ul>

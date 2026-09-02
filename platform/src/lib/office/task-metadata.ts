@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const officeDeliveryStageSchema = z.enum(["product", "engineering", "qa", "advisory"]);
+export const officeDeliveryStageSchema = z.enum(["research", "product", "engineering", "qa", "outreach", "advisory"]);
 export type OfficeDeliveryStage = z.infer<typeof officeDeliveryStageSchema>;
 
 const metadataSchema = z.object({

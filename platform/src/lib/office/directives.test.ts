@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deriveDirectiveProjectName } from "./directives";
+import { deriveDirectiveProjectName, isRestaurantProspectingDirective } from "./directives";
 
 describe("deriveDirectiveProjectName", () => {
   it("uses the signed client name instead of a later handoff phrase", () => {
@@ -15,3 +15,13 @@ describe("deriveDirectiveProjectName", () => {
   });
 });
 
+describe("isRestaurantProspectingDirective", () => {
+  it("recognizes the evidence-gated restaurant demo workflow", () => {
+    expect(isRestaurantProspectingDirective("Find a restaurant, choose it, build a website demo, then outreach")).toBe(true);
+  });
+
+  it("does not hijack unrelated restaurant or website work", () => {
+    expect(isRestaurantProspectingDirective("Book me a restaurant table")).toBe(false);
+    expect(isRestaurantProspectingDirective("Build the LYNQ website")).toBe(false);
+  });
+});

@@ -131,6 +131,80 @@ function needsSoftwareDelivery(instruction: string): boolean {
   return /\b(build|create|develop|implement|code|application|app|website|platform|software|mvp|redesign|digital(?:ly)? transform)\b/i.test(instruction);
 }
 
+export function isRestaurantProspectingDirective(instruction: string): boolean {
+  return /\brestaurant\b/i.test(instruction) && /\b(find|research|choose|select|prospect|outreach)\b/i.test(instruction) && /\b(build|create|demo|website|redesign)\b/i.test(instruction);
+}
+
+function restaurantProspectingPlan(instruction: string, agents: Agent[]): OfficeDirectivePlan | null {
+  const byTitle = new Map(agents.map((agent) => [getAgentOfficeIdentity(agent).title, agent]));
+  const researchAgent = byTitle.get("Growth & Analytics Lead") ?? byTitle.get("Sales Director");
+  const productAgent = agents.find((agent) => agent.name === OFFICE_PRODUCT_AGENT_NAME);
+  const engineeringAgent = agents.find((agent) => agent.name === OFFICE_ENGINEERING_AGENT_NAME);
+  const qaAgent = agents.find((agent) => agent.name === OFFICE_QA_AGENT_NAME);
+  if (!researchAgent || !productAgent || !engineeringAgent || !qaAgent) return null;
+
+  const assignments: Array<{ agent: Agent; stage: "research" | "product" | "engineering" | "qa" | "outreach"; title: string; goal: string; successCriteria: string; handoff: string }> = [
+    {
+      agent: researchAgent,
+      stage: "research" as const,
+      title: "Research real restaurant prospects and recommend one with public evidence",
+      goal: `Find real restaurant prospects for this founder directive, compare them using current public evidence, and recommend exactly one before any build or outreach begins: ${instruction}`,
+      successCriteria: "One recommended restaurant and at least one alternative are documented with verifiable URLs, observed website problems, public contact details only when verified, and a founder approval request.",
+      handoff: "After founder approval, hand the selected restaurant and cited evidence to Product Delivery.",
+    },
+    {
+      agent: productAgent,
+      stage: "product" as const,
+      title: "Turn the approved restaurant opportunity into a bounded demo brief",
+      goal: `Use only the founder-approved restaurant research to define a truthful website demo for: ${instruction}`,
+      successCriteria: "A bounded demo brief identifies the user journey, page scope, conversion goal, content assumptions, asset restrictions, and testable acceptance criteria without pretending to represent the restaurant.",
+      handoff: "Hand the approved evidence and demo brief to Engineering.",
+    },
+    {
+      agent: engineeringAgent,
+      stage: "engineering" as const,
+      title: "Build the approved restaurant demo in an isolated branch",
+      goal: `Build the bounded restaurant website demo defined by Product for: ${instruction}`,
+      successCriteria: "A reviewable feature-branch pull request and Vercel preview exist, with validation evidence and a visible demo disclaimer.",
+      handoff: "Hand the pull request, preview, checks, and source evidence to Quality Assurance.",
+    },
+    {
+      agent: qaAgent,
+      stage: "qa" as const,
+      title: "Verify the demo and return it for founder approval",
+      goal: `Verify the restaurant demo against the approved research and product brief for: ${instruction}`,
+      successCriteria: "The founder receives the working preview, validation results, known limitations, and an approval gate before any outreach is prepared or sent.",
+      handoff: "Return the verified demo to the founder. Outreach remains blocked until a separately approved communication is ready.",
+    },
+  ];
+  if (/\b(outreach|contact|email|send)\b/i.test(instruction)) {
+    const outreachAgent = byTitle.get("CRM Manager") ?? byTitle.get("Sales Director") ?? byTitle.get("Executive Assistant");
+    if (outreachAgent) {
+      assignments.push({
+        agent: outreachAgent,
+        stage: "outreach",
+        title: "Prepare the evidence-backed outreach and wait for founder approval",
+        goal: `Use the approved prospect and verified demo preview to prepare one truthful first-contact email for: ${instruction}`,
+        successCriteria: "One message is addressed only to a verified public business email, references the real preview, makes no false claims, and is blocked by a founder approval before provider dispatch.",
+        handoff: "After founder approval, queue exactly one provider message and report its real delivery state.",
+      });
+      assignments[assignments.length - 2].handoff = "After founder approval of the verified demo, hand the selected prospect, preview, and limitations to CRM for a separately approved outreach message.";
+    }
+  }
+
+  return {
+    executionMode: "delivery",
+    sequentialHandoffs: true,
+    projectName: deriveDirectiveProjectName(instruction),
+    objective: instruction,
+    assistantReply: assignments.some((assignment) => assignment.stage === "outreach")
+      ? "I started the restaurant outreach pipeline. Jarvis will research real prospects with public sources, ask you to approve one, build and verify the demo, then show you the exact outreach message before one provider send is queued."
+      : "I started the restaurant demo pipeline. Jarvis will research real prospects with public sources and ask you to approve one before Product or Engineering begins. The finished preview returns to you again before any outreach.",
+    plannedByAI: false,
+    assignments: assignments.map(({ agent, ...assignment }) => ({ ...assignment, agentId: agent.id })),
+  };
+}
+
 function shouldRunCompanyHandoff(agents: Agent[], preferredAgentId?: string | null): boolean {
   if (!preferredAgentId) return true;
   const preferred = agents.find((agent) => agent.id === preferredAgentId);
@@ -249,6 +323,9 @@ export async function planOfficeDirective(input: {
   if (eligibleAgents.length === 0) throw new Error("No eligible agents are available");
 
   const fallback = fallbackPlan(input.instruction, eligibleAgents, input.preferredAgentId);
+  if (!input.preferredAgentId && isRestaurantProspectingDirective(input.instruction)) {
+    return restaurantProspectingPlan(input.instruction, eligibleAgents) ?? fallback;
+  }
   if (shouldRunCompanyHandoff(eligibleAgents, input.preferredAgentId)) {
     return companyHandoffPlan(input.instruction, eligibleAgents);
   }

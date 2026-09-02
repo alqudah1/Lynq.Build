@@ -19,4 +19,9 @@ describe("Office task metadata", () => {
     expect(parseOfficeTaskMetadata("Write a report about the project.")).toBeNull();
     expect(parseOfficeTaskMetadata("<!-- LYNQ_OFFICE_TASK {not-json} -->")).toBeNull();
   });
+
+  it("accepts the restaurant research stage", () => {
+    expect(parseOfficeTaskMetadata(formatOfficeTaskDescription({ ...metadata, stage: "research" }))).toMatchObject({ stage: "research" });
+    expect(parseOfficeTaskMetadata(formatOfficeTaskDescription({ ...metadata, stage: "outreach" }))).toMatchObject({ stage: "outreach" });
+  });
 });
