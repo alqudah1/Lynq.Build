@@ -107,6 +107,45 @@ describe("assessCommandRisk — realistic founder phrasings that must clear", ()
   });
 });
 
+describe("assessCommandRisk — a recipient can be a name, not just a role noun", () => {
+  /**
+   * Found by review: the category patterns wanted a role noun, and the
+   * external-effect backstop deliberately omits `call`/`text`/`message`
+   * because they are usually nouns here. So every one of these reached a
+   * person with no approval at all.
+   */
+  it.each([
+    "Draft a summary of the Q3 numbers and text it to Marco at Acme",
+    "Write up the pricing brief and call Marco to walk him through it",
+    "Prepare the onboarding doc and message Priya the link",
+    "Summarize the churn analysis and share it with Marco",
+    "Draft the note and send it to Priya",
+    "Research the market and ping Marco about it",
+  ])("gates %s", (instruction) => {
+    const result = assessCommandRisk(instruction);
+    expect(result.requiresApproval).toBe(true);
+    expect(result.gatedCategories).toContain("customer_outreach");
+  });
+
+  /**
+   * ...and the name rule is case-SENSITIVE for a reason: under the `/i` flag
+   * that the other patterns use, `[A-Z][a-z]+` matched any lowercase word, so
+   * "the call notes" and "text message providers" gated as customer contact.
+   */
+  it.each([
+    "Summarize the call notes from yesterday's team meeting",
+    "Research text message providers for the restaurant",
+    "Review the message templates we already have",
+  ])("does not gate the noun form: %s", (instruction) => {
+    expect(assessCommandRisk(instruction).requiresApproval).toBe(false);
+  });
+
+  it("reports each category once even when two rules match it", () => {
+    const result = assessCommandRisk("Email the client and text Marco the link");
+    expect(result.gatedCategories.filter((c) => c === "customer_outreach")).toHaveLength(1);
+  });
+});
+
 describe("assessCommandRisk — gated categories", () => {
   const cases: Array<[string, string]> = [
     ["Email the restaurant owner our proposal", "customer_outreach"],

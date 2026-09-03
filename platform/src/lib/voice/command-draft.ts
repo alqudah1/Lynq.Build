@@ -52,7 +52,12 @@ export interface CommandDraft {
   confirmationStatus: ConfirmationStatus;
   /** What Jarvis will read back on the call, and what the Office shows as "what Jarvis understood". */
   readback: string;
-  /** True when a required field is missing — Jarvis must ask before it may accept a confirmation. */
+  /**
+   * Whether the draft has enough to read back at all. Advisory only: the
+   * schema already refuses an outcome shorter than the minimum, so this is
+   * never the thing that stops a confirmation — the risk gate and the dispatch
+   * claim are.
+   */
   readyToConfirm: boolean;
 }
 

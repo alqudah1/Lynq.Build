@@ -23,13 +23,19 @@ export const REDACTION_PLACEHOLDERS = {
   secret: "[redacted-secret]",
   card: "[redacted-card-number]",
   government_id: "[redacted-government-id]",
-  passcode: "[redacted-passcode]",
   email: "[redacted-email]",
   phone: "[redacted-phone]",
   number: "[redacted-number]",
 } as const;
 
 export type RedactionPlaceholder = keyof typeof REDACTION_PLACEHOLDERS;
+
+/**
+ * A spoken verification passcode is caught by the six-or-more-digit rule and
+ * comes out as `[redacted-number]`. There is deliberately no distinct
+ * `passcode` placeholder: emitting one would tell a reader of the transcript
+ * that the redacted run WAS a passcode, which is more than they need to know.
+ */
 
 /**
  * Speech-to-text writes numbers as words at least as often as digits, so a
@@ -147,7 +153,7 @@ export function redactSensitiveText(value: string): RedactionResult {
     });
   }
 
-  const order: RedactionPlaceholder[] = ["secret", "card", "government_id", "passcode", "email", "phone", "number"];
+  const order: RedactionPlaceholder[] = ["secret", "card", "government_id", "email", "phone", "number"];
   return { text: text.trim(), redactedKinds: order.filter((kind) => applied.has(kind)) };
 }
 

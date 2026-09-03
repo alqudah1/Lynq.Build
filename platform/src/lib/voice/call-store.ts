@@ -658,7 +658,8 @@ export async function upsertCommandDraft(
       .returning();
   } catch (err) {
     if (!isPostgresUniqueViolation(err)) throw err;
-    // A concurrent capture won the race. Its row is authoritative — return it
+    // A concurrent capture won the race, on either the idempotency key or the
+    // one-open-draft-per-call index. Its row is authoritative — return it
     // rather than failing the call over a duplicate the founder never saw.
     const current = await findOpenCommandForSession(db, { organizationId: input.organizationId, callSessionId: input.callSessionId });
     if (current) return current;
@@ -796,6 +797,46 @@ export function isDispatchInFlight(command: JarvisPhoneCommand, staleAfterMs: nu
 }
 
 /**
+ * Drops the claim on an event whose handler failed, so the provider's own
+ * retry can run it again.
+ *
+ * Only ever used for handlers that are safe to repeat. A side-effecting event
+ * keeps its claim instead — see the webhook route, which decides.
+ */
+export async function releaseWebhookEventClaim(
+  db: Db,
+  input: { externalEventId: string; provider?: string }
+): Promise<void> {
+  await db
+    .delete(jarvisVoiceWebhookEvents)
+    .where(
+      and(
+        eq(jarvisVoiceWebhookEvents.provider, input.provider ?? "vapi"),
+        eq(jarvisVoiceWebhookEvents.externalEventId, input.externalEventId)
+      )
+    );
+}
+
+/**
+ * Records the project a dispatch just created, immediately.
+ *
+ * Deliberately NOT revision-guarded and deliberately not a state change: its
+ * only job is to make the fact "a project now exists for this command"
+ * durable before the long handoff that follows. A guard here would be actively
+ * harmful — losing this write is exactly the case that lets a later retry
+ * duplicate live work.
+ */
+export async function recordDispatchProject(
+  db: Db,
+  input: { organizationId: string; commandId: string; projectId: string }
+): Promise<void> {
+  await db
+    .update(jarvisPhoneCommands)
+    .set({ projectId: input.projectId, updatedAt: new Date() })
+    .where(and(eq(jarvisPhoneCommands.id, input.commandId), eq(jarvisPhoneCommands.organizationId, input.organizationId)));
+}
+
+/**
  * Moves a claimed command to its next honest state, guarded by the revision
  * it was read at. A second delivery of the same confirmation loses the guard
  * and returns null, so the caller reports the existing outcome instead of
@@ -814,7 +855,6 @@ export async function transitionCommand(
     failureMessage?: string | null;
     approvalDecidedByUserId?: string | null;
     approvalDecisionNote?: string | null;
-    incrementDispatchAttempts?: boolean;
   }
 ): Promise<JarvisPhoneCommand | null> {
   const confirming = input.confirmationStatus === "confirmed";
@@ -831,7 +871,6 @@ export async function transitionCommand(
       ...(input.approvalDecidedByUserId !== undefined ? { approvalDecidedByUserId: input.approvalDecidedByUserId } : {}),
       ...(decided ? { approvalDecidedAt: new Date() } : {}),
       ...(input.approvalDecisionNote !== undefined ? { approvalDecisionNote: input.approvalDecisionNote } : {}),
-      ...(input.incrementDispatchAttempts ? { dispatchAttempts: sql`${jarvisPhoneCommands.dispatchAttempts} + 1` } : {}),
       revision: input.expectedRevision + 1,
       updatedAt: new Date(),
     })

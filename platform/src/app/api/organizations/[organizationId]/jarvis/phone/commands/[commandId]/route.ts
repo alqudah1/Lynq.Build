@@ -30,6 +30,22 @@ const bodySchema = z
 type RouteParams = { params: Promise<{ organizationId: string; commandId: string }> };
 
 /**
+ * Says what actually happened. "Nothing was started" is only true when no
+ * project exists — a partially created directive has a live project and
+ * possibly running agents, and telling the founder otherwise (while the screen
+ * 40 lines away says the opposite) is the failure this lane keeps having to
+ * fix.
+ */
+function describeDispatchFailure(failureCode: string, projectId: string | null, remainingAttempts: number): string {
+  const reason = failureCode.replace(/_/g, " ");
+  if (projectId) {
+    return `The project was created but Jarvis could not finish briefing the team (${reason}). Some of the work may already be running — open the project rather than trying again.`;
+  }
+  const remaining = Math.max(0, remainingAttempts);
+  return `It failed (${reason}). Nothing was started.${remaining > 0 ? ` You can try ${remaining} more time${remaining === 1 ? "" : "s"}.` : " This one has been tried as many times as it can be."}`;
+}
+
+/**
  * The human decision on a gated phone command — the one place a spoken
  * instruction for outreach, payment, a third-party call, a production change,
  * a deletion, a contract, or credential access can ever become real work.
@@ -98,8 +114,8 @@ export async function POST(request: Request, { params }: RouteParams) {
         const remaining = Math.max(0, MAX_DISPATCH_ATTEMPTS - outcome.command.dispatchAttempts);
         return jsonSuccess({
           decision: "retry",
-          command: { id: outcome.command.id, dispatchState: outcome.command.dispatchState, projectId: null },
-          message: `It failed again (${outcome.failureCode.replace(/_/g, " ")}). Nothing was started.${remaining > 0 ? ` You can try ${remaining} more time${remaining === 1 ? "" : "s"}.` : " This one has been retried as many times as it can be."}`,
+          command: { id: outcome.command.id, dispatchState: outcome.command.dispatchState, projectId: outcome.command.projectId },
+          message: describeDispatchFailure(outcome.failureCode, outcome.command.projectId, remaining),
         });
       }
 
@@ -187,12 +203,12 @@ export async function POST(request: Request, { params }: RouteParams) {
     }
 
     if (outcome.status === "failed") {
-      // A real failure is reported as one. The command stays visible with its
-      // reason so the founder can retry rather than wonder.
+      // A real failure is reported as one — but "nothing was started" is only
+      // true when no project exists. A partial creation has live records.
       return jsonSuccess({
         decision: "approved",
-        command: { id: outcome.command.id, dispatchState: outcome.command.dispatchState, projectId: null },
-        message: `Approved, but the project could not be opened (${outcome.failureCode}). Nothing was started. You can try again from here.`,
+        command: { id: outcome.command.id, dispatchState: outcome.command.dispatchState, projectId: outcome.command.projectId },
+        message: `Approved. ${describeDispatchFailure(outcome.failureCode, outcome.command.projectId, MAX_DISPATCH_ATTEMPTS - outcome.command.dispatchAttempts)}`,
       });
     }
 

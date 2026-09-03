@@ -6,7 +6,7 @@ import { createDbClient } from "@/db/client";
 import { resolveJarvisPhoneCommandConfig } from "@/lib/voice/phone-config";
 import { normalizeVapiEvent, type VapiServerMessageEnvelope } from "@/lib/voice/vapi-events";
 import { handleInboundConversationEvent } from "@/lib/voice/inbound-conversation";
-import { claimWebhookEvent, PhoneCommandActorUnavailableError, recordWebhookEventOutcome } from "@/lib/voice/call-store";
+import { claimWebhookEvent, PhoneCommandActorUnavailableError, recordWebhookEventOutcome, releaseWebhookEventClaim } from "@/lib/voice/call-store";
 import { redactLogFields } from "@/lib/voice/redaction";
 
 export const dynamic = "force-dynamic";
@@ -151,16 +151,27 @@ export async function POST(request: Request) {
     const failureCode = error instanceof PhoneCommandActorUnavailableError ? error.reason : "handler_error";
     console.error("[jarvis-phone]", JSON.stringify(redactLogFields({ event: "handler-failed", eventType: event.rawType, failureCode })));
 
-    // The claim row is marked failed so the failure is visible in the event
-    // store rather than silently swallowed. The claim is deliberately NOT
-    // released: releasing it would let an automatic provider retry re-run a
-    // handler that may already have partially completed.
-    await recordWebhookEventOutcome(db, {
-      externalEventId: event.idempotencyKey,
-      organizationId: configResolution.config.organizationId,
-      processingStatus: "failed",
-      failureCode,
-    }).catch(() => undefined);
+    // A side-effecting handler keeps its claim: releasing it would let an
+    // automatic provider retry re-run something that may already have
+    // partially completed.
+    //
+    // The idempotent ones do NOT. `transcript`, `status_update` and
+    // `call_ended` are plain state updates guarded by revision or by their own
+    // uniqueness, so re-running them is safe — and keeping the claim on a
+    // failed `call_ended` was worse than a duplicate: the session stayed
+    // `active` and an unconfirmed draft stayed `awaiting_confirmation`
+    // forever, both of which the screen shows as live.
+    const retryable = event.kind === "transcript" || event.kind === "status_update" || event.kind === "call_ended";
+    if (retryable) {
+      await releaseWebhookEventClaim(db, { externalEventId: event.idempotencyKey }).catch(() => undefined);
+    } else {
+      await recordWebhookEventOutcome(db, {
+        externalEventId: event.idempotencyKey,
+        organizationId: configResolution.config.organizationId,
+        processingStatus: "failed",
+        failureCode,
+      }).catch(() => undefined);
+    }
 
     if (event.kind === "tool_call") {
       // Honest failure to the caller: no invented success, no silent hang.

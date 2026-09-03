@@ -86,6 +86,19 @@ export interface CreateDirectiveProjectInput {
    * directive entered the Office. Never changes what is created.
    */
   source?: "command_center" | "founder_phone_call";
+  /**
+   * Called the moment the project row exists, before any task or agent
+   * execution is created.
+   *
+   * This exists because a *killed* process throws nothing:
+   * `DirectivePartiallyCreatedError` only covers a failure this function can
+   * catch, and a serverless timeout mid-handoff leaves a live project with
+   * running agents while the caller has recorded nothing at all. A caller that
+   * later retries would then build a second copy of it. Learning the id at
+   * creation time — rather than only in the success or failure path — is what
+   * lets a caller refuse that retry.
+   */
+  onProjectCreated?: (project: { id: string; name: string }) => Promise<void>;
 }
 
 export interface CreateDirectiveProjectResult {
@@ -139,6 +152,10 @@ export async function createDirectiveProject(db: Db, input: CreateDirectiveProje
     priority: "high",
     actorUserId: input.actorUserId,
   });
+  // Recorded before anything else is created, and deliberately not inside the
+  // try below: if this itself fails there is nothing durable to protect yet.
+  if (input.onProjectCreated) await input.onProjectCreated({ id: project.id, name: project.name });
+
   // Everything from here on can leave real, live records behind if it throws,
   // so every failure past this point is reported as a PARTIAL creation rather
   // than a clean one — see `DirectivePartiallyCreatedError`.

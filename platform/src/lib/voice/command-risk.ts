@@ -71,6 +71,23 @@ const CATEGORY_RULES: Array<{ category: GatedCategory; level: CommandRiskLevel; 
       /\b(?:cold[-\s]?(?:call|email)|outreach(?!\s+(?:tool|tools|tooling|software|platforms?|providers?|vendors?|stack|strategy|strategies|numbers?|metrics?|rates?|performance|results?|data|reports?|reporting|budget|costs?|options?|approach|process|playbooks?|templates?|copy|examples?|benchmarks?))|reach\s+out|email\s+(?:\w+\s+){0,3}(?:client|customer|prospect|lead|restaurant|owner|them|him|her)|(?:send|forward|deliver|share)\s+(?:\w+\s+){0,3}(?:email|message|dm|text|sms|proposal|pitch|invoice|newsletter|quote|note|summary|deck|link)|(?:send|forward|get|pass)\s+(?:\w+\s+){0,3}(?:to|over\s+to|out\s+to|across\s+to)\s+(?:the\s+|a\s+|an\s+)?(?:client|customer|prospect|lead|restaurant|owner|supplier|vendor|partner|them|him|her)|(?:send|forward)\s+(?:it|them|those|these)\s+(?:out|over|off)|follow[-\s]?up\s+with|contact\s+(?:\w+\s+){0,2}(?:client|customer|prospect|lead|restaurant|owner)|sign(?:ed)?\s+(?:\w+\s+){0,3}up\b|blast|campaign\s+send|mail\s?merge)\b/i,
   },
   {
+    // Case-SENSITIVE, and the only rule that is. A recipient is often a name
+    // rather than a role noun, and the external-effect backstop deliberately
+    // omits `call`/`text`/`message` because they are usually nouns here — so
+    // without this, "draft a summary and text it to Marco at Acme" cleared
+    // completely: a customer contacted with no approval.
+    //
+    // Capitalization is the only signal available that distinguishes a person
+    // from a noun, which is why this cannot live in the `/i` pattern above —
+    // there, `[A-Z][a-z]+` matched "call notes". A capitalized name after a
+    // contact verb gates: the cost is one approval click when the person is a
+    // colleague, against silently messaging a client.
+    category: "customer_outreach",
+    level: "high",
+    pattern:
+      /\b(?:(?:call|text|message|ping|dm|email|phone|ring)\s+[A-Z][a-z]+|(?:text|send|forward|share|pass|give)\s+(?:\w+\s+){0,3}(?:to|with)\s+[A-Z][a-z]+)/,
+  },
+  {
     category: "payment_or_spend",
     level: "critical",
     pattern:
@@ -208,7 +225,7 @@ export function assessCommandRisk(text: string): CommandRiskAssessment {
   let level: CommandRiskLevel = "low";
   for (const rule of CATEGORY_RULES) {
     if (rule.pattern.test(subject)) {
-      gatedCategories.push(rule.category);
+      if (!gatedCategories.includes(rule.category)) gatedCategories.push(rule.category);
       level = maxLevel(level, rule.level);
     }
   }

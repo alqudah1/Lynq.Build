@@ -320,9 +320,9 @@ describe("the dispatch claim is what prevents duplicate real work", () => {
         fromStates: ["awaiting_confirmation", "awaiting_approval", "failed"],
       })
     );
-    // The claim already counted the attempt; the outcome transition must not
-    // count it a second time.
-    expect(transitionCommand.mock.calls[0][1]).not.toMatchObject({ incrementDispatchAttempts: true });
+    // The claim owns the attempt counter; the outcome transition must not
+    // carry one at all.
+    expect(Object.keys(transitionCommand.mock.calls[0][1])).not.toContain("incrementDispatchAttempts");
   });
 });
 

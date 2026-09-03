@@ -5,7 +5,7 @@ import { recordAuditEvent } from "@/lib/audit";
 import { createDirectiveProject, DirectivePartiallyCreatedError } from "@/lib/office/directive-intake";
 import { toDirectiveInstruction } from "./command-draft";
 import { redactLogFields } from "./redaction";
-import { claimDispatchAttempt, isDispatchInFlight, resolveCommandById, transitionCommand, type JarvisPhoneCommand } from "./call-store";
+import { claimDispatchAttempt, isDispatchInFlight, recordDispatchProject, resolveCommandById, transitionCommand, type JarvisPhoneCommand } from "./call-store";
 import { CommandNotRetryableError } from "./errors";
 
 type Db = NeonHttpDatabase<Record<string, unknown>>;
@@ -179,10 +179,26 @@ export async function retryFailedDispatch(
   // Re-running would create a second copy of live work, which is worse than
   // the incomplete handoff the founder is looking at.
   if (command.projectId) throw new CommandNotRetryableError("partially_created");
-  // The cap is also enforced atomically inside the dispatch claim; this is the
-  // early, friendly refusal so the caller gets a real 409 instead of a
-  // confusing "already dispatched".
-  if (command.dispatchAttempts >= MAX_DISPATCH_ATTEMPTS) throw new CommandNotRetryableError("attempts_exhausted");
+  if (command.dispatchAttempts >= MAX_DISPATCH_ATTEMPTS) {
+    // A stalled command at the cap could otherwise never reach a terminal
+    // state: the claim refuses it on the cap, and nothing else transitions it,
+    // so it sat in `dispatching` forever reading as "stopped part-way". Record
+    // the honest outcome before refusing, so at least the row stops lying.
+    if (staleLease) {
+      await transitionCommand(db, {
+        organizationId: input.organizationId,
+        commandId: command.id,
+        expectedRevision: command.revision,
+        dispatchState: "failed",
+        failureCode: "attempts_exhausted",
+        failureMessage: "The dispatch stopped part-way and has been tried as many times as it can be.",
+      });
+    }
+    // The cap is also enforced atomically inside the dispatch claim; this is
+    // the early, friendly refusal so the caller gets a real 409 instead of a
+    // confusing "already dispatched".
+    throw new CommandNotRetryableError("attempts_exhausted");
+  }
 
   return runDirectiveDispatch(db, {
     organizationId: input.organizationId,
@@ -255,6 +271,13 @@ export async function runDirectiveDispatch(
       workspaceId: input.workspaceId,
       actorUserId: input.founderUserId,
       source: "founder_phone_call",
+      // Written immediately, so that a process killed later in the handoff
+      // leaves behind a command that KNOWS a project exists. Without this a
+      // timeout mid-dispatch is indistinguishable from "nothing happened",
+      // and the stale-lease retry would build a second copy of live work.
+      onProjectCreated: async (project) => {
+        await recordDispatchProject(db, { organizationId: input.organizationId, commandId: command.id, projectId: project.id });
+      },
     });
 
     const dispatched = await transitionCommand(db, {
@@ -272,15 +295,23 @@ export async function runDirectiveDispatch(
 
     if (!dispatched) {
       // The project genuinely exists but the command row moved on underneath
-      // us. Say so plainly rather than reporting a clean success or a
-      // failure — both would be untrue.
+      // us — a stale-lease takeover bumped the revision while this dispatch
+      // was still running. Say so plainly rather than reporting a clean
+      // success or a failure; both would be untrue.
       console.warn(
         "[jarvis-phone]",
         JSON.stringify(redactLogFields({ event: "dispatch-transition-lost", commandId: command.id, projectId: result.project.id }))
       );
-      return { status: "already_dispatched", command, spoken: describeExistingState(command) };
+      // Re-read for the same reason the lost-claim branch above does: the
+      // caller's row is stale by definition here.
+      const current = await resolveCommandById(db, { organizationId: input.organizationId, commandId: command.id }).catch(() => command);
+      return { status: "already_dispatched", command: current, spoken: describeExistingState(current) };
     }
 
+    // Deliberately best-effort and AFTER the row is authoritative: an audit
+    // write that throws here would otherwise fall into the catch below, fail
+    // its own guarded transition, and report a real, completed dispatch to the
+    // founder as a failure.
     await recordAuditEvent(db, {
       eventType: "jarvis_phone_command_dispatched",
       organizationId: input.organizationId,
@@ -288,6 +319,9 @@ export async function runDirectiveDispatch(
       targetType: "jarvis_phone_command",
       targetId: dispatched.id,
       metadata: { projectId: result.project.id, assignments: result.assignments.length, riskLevel: dispatched.riskLevel },
+    }).catch((error) => {
+      console.error("[jarvis-phone]", JSON.stringify(redactLogFields({ event: "dispatch-audit-failed", commandId: dispatched.id })));
+      void error;
     });
 
     return {

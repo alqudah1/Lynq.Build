@@ -195,6 +195,16 @@ act on the same command at once. Four independent layers make that safe:
 
 ### Partial creation
 
+The project id is recorded **the moment the project row exists**, before any
+task or agent execution. This is not tidiness: `DirectivePartiallyCreatedError`
+only fires when the intake *throws*, and a serverless timeout throws nothing.
+Without the early write, a killed dispatch left a live project with running
+agents next to a command recording `projectId: null` — which the stale-lease
+retry read as "nothing happened" and duplicated. A residual window remains
+between the project row committing and that one-statement update committing;
+it is sub-second, against minutes for the handoff it replaced.
+
+
 `createDirectiveProject` is a long sequence of independent writes over the Neon
 HTTP driver, with no transaction spanning them. A failure after the project row
 exists leaves a live project — possibly with agents already launched — so the
@@ -273,11 +283,11 @@ route enforces, including the viewer's own authority: any organization member
 may read this screen, but only an owner or admin may approve, decline, or
 retry, and a member sees the reason rather than a button that 403s.
 
-Retry cannot manufacture consent: a command only ever reaches `failed` from a
-dispatch that was **already** cleared to run — low risk and confirmed on the
+Retry cannot manufacture consent: a command only ever reaches `failed` or
+`dispatching` from a dispatch that was **already** cleared to run — low risk and confirmed on the
 call, or gated and since approved by a human. A command still sitting in
-`awaiting_approval` has never been dispatched, so there is nothing to retry,
-and the endpoint refuses any state but `failed`. A successful retry clears the
+`awaiting_approval` has never been dispatched, so there is nothing to retry.
+The endpoint accepts only `failed`, or `dispatching` past its lease. A successful retry clears the
 stored failure reason rather than leaving a stale one behind.
 
 A call that ends with an unconfirmed draft expires that draft visibly, so

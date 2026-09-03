@@ -370,7 +370,10 @@ describe("verification state", () => {
 });
 
 describe("dispatch attempts", () => {
-  it("counts each attempt atomically so the retry budget cannot be exceeded", async () => {
+  // Attempts are counted ONLY by `claimDispatchAttempt`; the outcome
+  // transition never touches the counter. Covered properly by "the dispatch
+  // claim" tests below.
+  it("does not let an outcome transition move the attempt counter", async () => {
     const userId = await makeUser();
     const organizationId = await makeOrg(userId);
     const session = await openSession(organizationId, userId);
@@ -388,9 +391,8 @@ describe("dispatch attempts", () => {
         expectedRevision: command.revision,
         dispatchState: "failed",
         failureCode: "model_rate_limited",
-        incrementDispatchAttempts: true,
       });
-      expect(next?.dispatchAttempts).toBe(attempt);
+      expect(next?.dispatchAttempts).toBe(0);
       command = next!;
     }
   });
@@ -413,7 +415,6 @@ describe("dispatch attempts", () => {
       dispatchState: "failed",
       failureCode: "model_rate_limited",
       failureMessage: "429",
-      incrementDispatchAttempts: true,
     });
     const succeeded = await transitionCommand(db, {
       organizationId,
@@ -422,12 +423,10 @@ describe("dispatch attempts", () => {
       dispatchState: "directive_created",
       failureCode: null,
       failureMessage: null,
-      incrementDispatchAttempts: true,
     });
 
     expect(succeeded?.failureCode).toBeNull();
     expect(succeeded?.failureMessage).toBeNull();
-    expect(succeeded?.dispatchAttempts).toBe(2);
   });
 });
 

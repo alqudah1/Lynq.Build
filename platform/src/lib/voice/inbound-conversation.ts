@@ -547,7 +547,10 @@ function describeSettledCommand(dispatchState: string): string {
       // agents are being launched is the exact inverse of this file's rule.
       return "I'm opening that one right now — give it a moment and it'll show up on the Jarvis screen.";
     case "failed":
-      return "That one failed to open earlier, and nothing was started. The reason is saved on the Jarvis screen.";
+      // No "and nothing was started": a partially created directive reaches
+      // this state with a live project, and this is spoken without access to
+      // that detail. The Jarvis screen distinguishes the two accurately.
+      return "That one didn't finish opening earlier. The reason is saved on the Jarvis screen.";
     default:
       return "I already have that one recorded. Nothing new has started.";
   }

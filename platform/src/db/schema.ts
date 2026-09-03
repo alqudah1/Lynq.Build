@@ -5781,6 +5781,14 @@ export const jarvisPhoneCommands = pgTable("jarvis_phone_commands", {
     foreignColumns: [jarvisCallSessions.id, jarvisCallSessions.organizationId],
   }).onDelete("cascade"),
   unique("jarvis_phone_commands_idempotency_unique").on(t.organizationId, t.idempotencyKey),
+  // At most ONE draft per call may be awaiting confirmation. Without this,
+  // two concurrent `capture_command` events with different content both saw
+  // no open row, derived different idempotency keys, and both inserted — and
+  // only the newest was ever read or expired, leaving the other stuck on an
+  // ended call forever.
+  uniqueIndex("jarvis_phone_commands_one_open_per_call")
+    .on(t.callSessionId)
+    .where(sql`${t.dispatchState} = 'awaiting_confirmation'`),
   index("jarvis_phone_commands_session_idx").on(t.callSessionId),
   index("jarvis_phone_commands_org_state_idx").on(t.organizationId, t.dispatchState),
 ]);
