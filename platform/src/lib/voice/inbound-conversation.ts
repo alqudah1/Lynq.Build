@@ -5,8 +5,10 @@ import { PostgresRateLimiter } from "@/lib/rate-limit/postgres";
 import {
   callBudgetKey,
   callChargeKey,
+  callRefusedKey,
   founderLineBudgetIdentity,
   ONE_CHARGE_PER_CALL,
+  ONE_MARKER_PER_CALL,
   INBOUND_CALL_RATE_LIMIT,
   refusedBudgetKey,
   refusedCallBudgetIdentity,
@@ -17,7 +19,7 @@ import {
 import { recordAuditEvent } from "@/lib/audit";
 import { buildCommandDraft, commandDraftInputSchema } from "./command-draft";
 import { dispatchConfirmedCommand } from "./command-dispatch";
-import { ABANDONED_DRAFT_MS } from "./call-lifetime";
+import { MAX_CALL_AGE_MS } from "./call-lifetime";
 import { callerNumberMatchesFounder, MAX_VERIFICATION_ATTEMPTS, PASSCODE_DIGITS, passcodeDigitsWord, verifyFounderPasscode } from "./founder-verification";
 import type { JarvisPhoneCommandConfig } from "./phone-config";
 import { redactLogFields } from "./redaction";
@@ -285,52 +287,55 @@ export async function handleInboundConversationEvent(db: Db, input: HandleInboun
   // rotation can escape because it is not keyed on anything the caller
   // controls. An attacker filling the second one cannot touch the first.
   //
-  // Charged once per CALL, and only the delivery that pays ever consults a
-  // budget.
+  // Charged once per CALL, decided by one atomic increment, and recorded so
+  // every other delivery of that call reads the decision instead of guessing
+  // at it.
   //
-  // Three versions of this were wrong and each is worth recording. Gating on
-  // the event KIND let another delivery create the session first, after which
-  // the budget was never entered again. Deciding from a `checkLimit` made it
-  // two statements with no transaction, so forty simultaneous calls all read
-  // the same count and all passed against a cap of twenty. And letting a
-  // NON-paying delivery consult a budget of its own broke the cap a third way:
-  // which budget a delivery picks depends on whether that delivery carried the
-  // caller's number, and not every delivery does — so one call could pay into
-  // the wrong-number bucket and then be admitted against the founder-line
-  // bucket it had never incremented, free, for ever.
+  // Four versions of this were wrong, and the through-line is that each tried
+  // to re-derive a decision that had already been made:
   //
-  // A non-paying delivery now consults nothing. Whether the call it belongs to
-  // was admitted is already recorded, in the only place that cannot disagree
-  // with itself: whether a session row exists. So the paying delivery decides
-  // with one atomic increment, and every other delivery of that call reads the
-  // answer rather than re-deriving it.
-  let opened = existing;
-  if (!opened) {
+  //  - gating on the event KIND let another delivery create the session first,
+  //    after which the budget was never entered again and the call was free;
+  //  - deciding from a `checkLimit` made it two statements with no transaction,
+  //    so forty simultaneous calls all read the same count and all passed;
+  //  - letting a non-paying delivery consult a budget of its OWN broke it
+  //    again, because which bucket a delivery picks depends on whether that
+  //    delivery carried the caller's number — so a call could pay into the
+  //    wrong-number bucket and then be admitted against a founder-line bucket
+  //    it had never incremented;
+  //  - and reading the session instead answered the wrong question. "No session
+  //    row yet" means either "the payer was refused" or "the payer was admitted
+  //    and its insert has not landed", and treating both as a refusal told a
+  //    founder whose assistant-request was merely retried that the line was
+  //    busy — permanently, since that event keeps its claim and every retry
+  //    repeats the answer.
+  //
+  // The decision is therefore RECORDED where it is made. The paying delivery
+  // increments the real budget and, if refused, claims a refusal marker for the
+  // call. Every other delivery reads that marker. No marker means the call was
+  // admitted, or is still being decided, and both of those are admitted — the
+  // safe direction, and bounded by the provider's delivery concurrency.
+  if (!existing) {
     const limiter = new PostgresRateLimiter(db);
     const budget = callerNumberMatched
       ? { key: callBudgetKey(founderLineBudgetIdentity(config)), config: INBOUND_CALL_RATE_LIMIT }
       : { key: refusedBudgetKey(refusedCallBudgetIdentity(config)), config: REFUSED_CALL_RATE_LIMIT };
+    const callKeys = {
+      verificationSecret: config.verificationSecret,
+      organizationId: config.organizationId,
+      providerCallId: event.providerCallId,
+    };
 
     let admitted = false;
     try {
-      const chargeKey = callChargeKey({
-        verificationSecret: config.verificationSecret,
-        organizationId: config.organizationId,
-        providerCallId: event.providerCallId,
-      });
-      if ((await limiter.recordAttempt(chargeKey, ONE_CHARGE_PER_CALL)).allowed) {
+      if ((await limiter.recordAttempt(callChargeKey(callKeys), ONE_CHARGE_PER_CALL)).allowed) {
         // This delivery pays. The increment's own answer is the decision — one
         // upsert, and nothing can race it.
         admitted = (await limiter.recordAttempt(budget.key, budget.config)).allowed;
+        if (!admitted) await limiter.recordAttempt(callRefusedKey(callKeys), ONE_MARKER_PER_CALL);
       } else {
-        // Another delivery of this call already paid. It either opened a
-        // session or was refused, and re-reading says which — including in the
-        // narrow window where its insert has not landed yet.
-        const settled = await findCallSessionByProviderCallId(db, "vapi", event.providerCallId);
-        if (settled && settled.organizationId === config.organizationId) {
-          opened = settled;
-          admitted = true;
-        }
+        // Another delivery of this call already paid. Read what it decided.
+        admitted = (await limiter.checkLimit(callRefusedKey(callKeys), ONE_MARKER_PER_CALL)).allowed;
       }
     } catch {
       // Fails closed, like every other rate limit in this lane.
@@ -347,7 +352,7 @@ export async function handleInboundConversationEvent(db: Db, input: HandleInboun
         spoken: callerNumberMatched ? FOUNDER_LINE_BUSY_SPOKEN : REFUSAL_SPOKEN,
         // The closed assistant: one sentence, no tools, twenty seconds. No
         // session row is written, so a flood costs the attacker a phone bill
-        // and this deployment two rate-limit writes.
+        // and this deployment a handful of rate-limit writes.
         payload: buildRefusalAssistantConfig(callerNumberMatched ? FOUNDER_LINE_BUSY_SPOKEN : REFUSAL_SPOKEN),
         processingStatus: "ignored",
         failureCode: callerNumberMatched ? "call_rate_limited" : "refused_call_rate_limited",
@@ -356,7 +361,7 @@ export async function handleInboundConversationEvent(db: Db, input: HandleInboun
   }
 
   let session =
-    opened ??
+    existing ??
     (await ensureCallSession(db, {
       organizationId: actor.organizationId,
       founderUserId: actor.founderUserId,
@@ -461,13 +466,17 @@ export async function handleInboundConversationEvent(db: Db, input: HandleInboun
   // permanent.
   //
   // The clock is `startedAt`, which nothing can move, and deliberately NOT
-  // `lastEventAt`. A tool call is one of the events that advances
+  // `lastEventAt`. A tool call is one of the deliveries that advances
   // `lastEventAt`, so a guard reading that clock would be reset by the very
   // deliveries it exists to refuse: a stream of replayed or forged tool calls
-  // at under-twenty-minute intervals would be honoured for ever. A call cannot
-  // outlive the assistant's own ceiling, so age since it began is the honest
-  // measure of whether it is over.
-  const callIsOver = session.status !== "active" || nowMs - session.startedAt.getTime() > ABANDONED_DRAFT_MS;
+  // at under-twenty-minute intervals would be honoured for ever.
+  //
+  // And the bound is `MAX_CALL_AGE_MS`, not the silence window. On a deployment
+  // with a statically assigned assistant the call's real ceiling lives in the
+  // provider's dashboard rather than in this file, so a twenty-minute cap here
+  // would tell a founder twenty-one minutes into a working call — having just
+  // heard the read-back — that the call had already ended.
+  const callIsOver = session.status !== "active" || nowMs - session.startedAt.getTime() > MAX_CALL_AGE_MS;
   if (callIsOver && event.kind === "tool_call") {
     return {
       spoken: "That call has already ended. Please call back if you still need this.",
@@ -642,7 +651,9 @@ async function handleTranscript(
     // number is not worth a second statement on every unverified turn.
     if (already >= MAX_UNVERIFIED_TRANSCRIPT_TURNS) {
       logPhoneEvent({ event: "unverified-transcript-capped", sessionId: input.session.id, turns: already });
-      await touchCallSession(db, { sessionId: input.session.id, organizationId: input.session.organizationId });
+      if (input.session.callerNumberMatched) {
+        await touchCallSession(db, { sessionId: input.session.id, organizationId: input.session.organizationId });
+      }
       return { spoken: "", processingStatus: "ignored", failureCode: "unverified_transcript_capped", sessionId: input.session.id };
     }
   }
@@ -658,7 +669,15 @@ async function handleTranscript(
   // redelivery. So the founder's transcript showed the line twice. Making the
   // insert the last thing this function does means a released claim can only
   // ever mean nothing was written.
-  await touchCallSession(db, { sessionId: input.session.id, organizationId: input.session.organizationId });
+  // Only an ESTABLISHED call is marked alive. A session whose caller number was
+  // never established is one this lane will not work with, and keeping its
+  // clock moving served nothing but to stop the session reaper firing — so the
+  // screen said "On the call" and re-polled every five seconds for ever, which
+  // is the exact symptom moving the tool-call touch was meant to end. The turn
+  // is still recorded, under the same cap; only the liveness claim is withheld.
+  if (input.session.callerNumberMatched) {
+    await touchCallSession(db, { sessionId: input.session.id, organizationId: input.session.organizationId });
+  }
   await appendTranscriptTurn(db, {
     sessionId: input.session.id,
     organizationId: input.session.organizationId,

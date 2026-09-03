@@ -139,7 +139,7 @@ Details that matter:
   call keeps running and verification still works, but nothing further is
   stored. Both budgets are charged **once per call**, by exactly one
   delivery, and the admission answer is that delivery's own atomic increment.
-  Getting this right took four attempts, and each failure is worth recording
+  Getting this right took five attempts, and each failure is worth recording
   because each looked reasonable:
 
   - charging on a particular event KIND meant any other inbound-typed delivery
@@ -155,12 +155,20 @@ Details that matter:
     call could pay into the wrong-number bucket and then be admitted against a
     founder-line bucket it had never incremented.
 
-  What "no session yet" cannot answer — is this a new call, or the third
-  delivery of one already paid for? — is settled by claiming a one-per-call key,
-  the same atomic primitive. And whether the call was admitted is already
-  recorded in the only place that cannot disagree with itself: whether a session
-  row exists. So one delivery decides with one increment, and every other
-  delivery of that call reads the answer rather than re-deriving it.
+  - and reading the session row instead answered the wrong question, because
+    "no session yet" means either "the payer was refused" or "the payer was
+    admitted and its insert has not landed" — so a founder whose
+    assistant-request was merely retried was told the line was busy,
+    permanently, since that event keeps its idempotency claim and every retry
+    repeats the answer.
+
+  The through-line is that each version tried to re-derive a decision that had
+  already been made. So the decision is now RECORDED where it is made: the
+  paying delivery increments the real budget and, if refused, claims a refusal
+  marker for that call. Every other delivery reads the marker. No marker means
+  the call was admitted — or is still being decided, and both of those are
+  admitted, which is the safe direction and bounded by the provider's delivery
+  concurrency.
 - **The founder-line budgets are refunded the moment a caller verifies**, and
   all three are visible and clearable from the Jarvis screen — the refused-call
   budget included, because a founder call the provider sent no number for lands
@@ -357,12 +365,17 @@ act on the same command at once. Four independent layers make that safe:
    `failure_code = call_end_not_received`, which says what actually happened:
    not that the call failed, but that nobody reported it ending. The guard
    against a tool call arriving after a call has ended no longer waits for
-   that — it refuses a tool call on a session OLDER than `ABANDONED_DRAFT_MS`,
-   so a reordered, replayed or forged delivery cannot open a project after a
-   call is over even if nobody has loaded the screen. Age since the call began,
+   that — it refuses a tool call on a session OLDER than `MAX_CALL_AGE_MS`, so a
+   reordered, replayed or forged delivery cannot open a project after a call is
+   over even if nobody has loaded the screen. Age since the call began,
    deliberately, and not time since its last event: a tool call is one of the
    deliveries that marks a call alive, so a guard reading that clock would be
-   reset by the very deliveries it exists to refuse.
+   reset by the very deliveries it exists to refuse. And a separate, generous
+   bound rather than the silence window, because on a deployment with a
+   statically assigned assistant the call's real ceiling lives in the provider's
+   dashboard rather than in this code — a twenty-minute cap here would tell a
+   founder twenty-one minutes into a working call, having just heard the
+   read-back, that the call had already ended.
 
    Removing the wedge as a class is also what lets the webhook go on
    acknowledging an ambiguous event exactly as it did before phone control

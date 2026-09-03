@@ -146,10 +146,36 @@ export const ONE_CHARGE_PER_CALL: RateLimitConfig = { limit: 1, windowSeconds: 3
 
 /** Where a single call's charge is claimed. Hashed like every other key here — the table keeps no provider identifiers. */
 export function callChargeKey(input: { verificationSecret: string; organizationId: string; providerCallId: string }): string {
-  const digest = createHmac("sha256", input.verificationSecret)
-    .update(`jarvis-phone-call-seen:${input.organizationId}:${input.providerCallId}`)
+  return `jarvis-phone:call-seen:${callDigest(input)}`;
+}
+
+/**
+ * Where a REFUSED call is recorded, so its later deliveries can be refused too.
+ *
+ * Needed because "no session row yet" has two causes that must not be treated
+ * alike: the paying delivery was refused, or the paying delivery was admitted
+ * and its insert has not landed. Reading the session answers only the second
+ * question, and answering the first with it turned a redelivery of an admitted
+ * call into a fabricated "I've had more calls on this line than usual" — on a
+ * call the budget had allowed, permanently, because an assistant-request keeps
+ * its claim and every retry repeats the same answer.
+ *
+ * So the refusal is recorded where it happened. A later delivery that finds no
+ * marker treats the call as admitted, which is the safe direction: at worst one
+ * call slips past while the paying delivery is still deciding, bounded by the
+ * provider's delivery concurrency.
+ */
+export function callRefusedKey(input: { verificationSecret: string; organizationId: string; providerCallId: string }): string {
+  return `jarvis-phone:call-refused:${callDigest(input)}`;
+}
+
+/** One marker per call, claimed at most once, expiring on its own. */
+export const ONE_MARKER_PER_CALL: RateLimitConfig = { limit: 1, windowSeconds: 3600 };
+
+function callDigest(input: { verificationSecret: string; organizationId: string; providerCallId: string }): string {
+  return createHmac("sha256", input.verificationSecret)
+    .update(`jarvis-phone-call:${input.organizationId}:${input.providerCallId}`)
     .digest("hex");
-  return `jarvis-phone:call-seen:${digest}`;
 }
 
 export const verifyBudgetKey = (identity: string) => `jarvis-phone:verify:${identity}`;
