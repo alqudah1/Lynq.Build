@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { approvalMatchesDelivery, isSameRestaurantIdentity } from "./approvals";
+import { approvalMatchesBrandPack, approvalMatchesDelivery, isSameRestaurantIdentity } from "./approvals";
 
 const restaurant = {
   name: "Sumac & Stone",
@@ -27,5 +27,20 @@ describe("founder approval identity locks", () => {
     expect(approvalMatchesDelivery({ commitSha: "abc123" }, "abc123")).toBe(true);
     expect(approvalMatchesDelivery({ commitSha: "old456" }, "abc123")).toBe(false);
     expect(approvalMatchesDelivery({}, "abc123")).toBe(false);
+  });
+});
+
+describe("evidence version locks", () => {
+  it("binds a prospect approval to the exact evidence version reviewed", () => {
+    expect(approvalMatchesBrandPack({ brandPackFingerprint: "abc123" }, "abc123")).toBe(true);
+    expect(approvalMatchesBrandPack({ brandPackFingerprint: "older0" }, "abc123")).toBe(false);
+  });
+
+  it("treats an approval with no recorded evidence version as covering nothing", () => {
+    expect(approvalMatchesBrandPack({}, "abc123")).toBe(false);
+    expect(approvalMatchesBrandPack({ brandPackFingerprint: null }, "abc123")).toBe(false);
+    expect(approvalMatchesBrandPack(null, "abc123")).toBe(false);
+    expect(approvalMatchesBrandPack("abc123", "abc123")).toBe(false);
+    expect(approvalMatchesBrandPack([{ brandPackFingerprint: "abc123" }], "abc123")).toBe(false);
   });
 });

@@ -47,3 +47,16 @@ export function approvalMatchesDelivery(proposedActionRef: unknown, commitSha: s
   const approvedCommit = (proposedActionRef as Record<string, unknown>).commitSha;
   return typeof approvedCommit === "string" && approvedCommit === commitSha;
 }
+
+/**
+ * A prospect approval covers one exact set of evidence. The fingerprint is
+ * recorded on the approval when it is requested, so evidence gathered or
+ * edited afterwards produces a different version that this approval
+ * provably does not cover — no comparison of contents, and nothing for a
+ * later stage to forget to check.
+ */
+export function approvalMatchesBrandPack(proposedActionRef: unknown, fingerprint: string): boolean {
+  if (!proposedActionRef || typeof proposedActionRef !== "object" || Array.isArray(proposedActionRef)) return false;
+  const approved = (proposedActionRef as Record<string, unknown>).brandPackFingerprint;
+  return typeof approved === "string" && approved === fingerprint;
+}

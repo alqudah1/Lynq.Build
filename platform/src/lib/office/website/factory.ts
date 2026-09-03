@@ -10,7 +10,8 @@ import {
   type DesignDirection,
   type DesignProposal,
 } from "./design";
-import { buildSiteEvidence, MissingResearchError, renderEvidenceTable, type BrandPack, type SiteEvidence } from "./evidence";
+import type { BrandPack } from "./brand-pack";
+import { buildSiteEvidence, MissingResearchError, renderEvidenceTable, type SiteEvidence } from "./evidence";
 import { emitSiteFiles, routeSourceDir } from "./emit";
 import { assembleSiteSpec, websiteContentSchema, type SiteSpec, type WebsiteContent } from "./spec";
 import { renderViolations, validateGeneratedSite, type EmittedFile, type ValidationReport, type WebsiteViolation } from "./validation";

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { generateText } from "ai";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { agentApprovalRequests, agentArtifacts, projectApprovalLinks, projectArtifactLinks, projectExecutionLinks, projects } from "@/db/schema";
@@ -15,8 +15,11 @@ import { getUnresolvedBlockingTaskIds } from "@/lib/projects/dependencies";
 import { launchAgentForTask, listArtifactLinks, linkApprovalToEntity, linkArtifactToEntity } from "@/lib/projects/links";
 import { resolveProjectById, transitionProjectStatus } from "@/lib/projects/projects";
 import { listTasks, resolveTaskById, transitionTaskStatus } from "@/lib/projects/tasks";
-import { executeEngineeringDelivery, inspectEngineeringDelivery, type EngineeringDeliveryResult } from "./engineering";
-import { approvalMatchesDelivery, DEMO_APPROVAL_ACTION, isSameRestaurantIdentity, RESTAURANT_OUTREACH_APPROVAL_ACTION, RESTAURANT_PROSPECT_APPROVAL_ACTION } from "./approvals";
+import { demoIsBuilt, executeEngineeringDelivery, inspectEngineeringDelivery, missingDemoParts, type EngineeringDeliveryResult } from "./engineering";
+import { approvalMatchesBrandPack, approvalMatchesDelivery, DEMO_APPROVAL_ACTION, isSameRestaurantIdentity, RESTAURANT_OUTREACH_APPROVAL_ACTION, RESTAURANT_PROSPECT_APPROVAL_ACTION } from "./approvals";
+import { collectRestaurantBrandPack } from "./restaurant-brand-collection";
+import { brandPackMarker, fingerprintBrandPack, parseBrandPack } from "./website/brand-pack";
+import { approvalSummaryLine, renderProspectApproval } from "./website/founder-review";
 import { getDirectiveDomains } from "./directives";
 import { parseOfficeTaskMetadata } from "./task-metadata";
 import { getOfficeGenerationConfig } from "./models";
@@ -108,6 +111,51 @@ async function founderApprovedThisRestaurant(db: Db, organizationId: string, pro
   });
 }
 
+/**
+ * The evidence version this project's prospect approval covers, or null
+ * when the founder has not approved any. Engineering passes it to the
+ * factory, which refuses to build from anything else.
+ */
+type EvidenceApproval =
+  | { status: "approved"; fingerprint: string }
+  | { status: "changed"; fingerprint: null }
+  | { status: "missing"; fingerprint: null };
+
+async function approvedBrandPackFingerprint(db: Db, organizationId: string, projectId: string, candidate: RestaurantCandidate, sharedContext: string): Promise<EvidenceApproval> {
+  const pack = parseBrandPack(sharedContext);
+  const approvals = await approvedActionEvidence(db, organizationId, projectId, RESTAURANT_PROSPECT_APPROVAL_ACTION);
+  const forThisRestaurant = approvals.filter(({ content }) => {
+    const approved = parseRestaurantResearch(content)?.recommendation;
+    return approved ? isSameRestaurantIdentity(approved, candidate) : false;
+  });
+  if (!pack) return { status: "missing", fingerprint: null };
+  const fingerprint = fingerprintBrandPack(pack);
+  // The approval has to cover the evidence that is on the project right
+  // now, not merely some evidence for the same restaurant.
+  if (forThisRestaurant.some(({ proposedActionRef }) => approvalMatchesBrandPack(proposedActionRef, fingerprint))) {
+    return { status: "approved", fingerprint };
+  }
+  // "Changed" is only honest when the founder approved *some* evidence
+  // version for this restaurant and it is not the one on the project now.
+  // An approval that recorded no version at all covers no evidence, and
+  // saying otherwise would tell the founder something untrue.
+  const approvedAnyVersion = forThisRestaurant.some(({ proposedActionRef }) => {
+    const reference = proposedActionRef && typeof proposedActionRef === "object" && !Array.isArray(proposedActionRef)
+      ? (proposedActionRef as Record<string, unknown>).brandPackFingerprint
+      : null;
+    return typeof reference === "string" && reference.length > 0;
+  });
+  return { status: approvedAnyVersion ? "changed" : "missing", fingerprint: null };
+}
+
+/** The plain-language reason a prospect build is not allowed to start. */
+function evidenceApprovalProblem(approval: EvidenceApproval, restaurantName: string): string | null {
+  if (approval.status === "approved") return null;
+  return approval.status === "changed"
+    ? `The evidence on this project has changed since you approved it, so Jarvis stopped rather than building ${restaurantName}'s site from something you have not seen. Approve the new evidence to continue.`
+    : `This prospect has no approved evidence version recorded, so there is nothing Jarvis is allowed to build ${restaurantName}'s site from. Ask Jarvis to gather the evidence again and approve it.`;
+}
+
 async function founderApprovedThisDelivery(db: Db, organizationId: string, projectId: string, commitSha: string): Promise<boolean> {
   const approvals = await approvedActionEvidence(db, organizationId, projectId, DEMO_APPROVAL_ACTION);
   return approvals.some(({ proposedActionRef }) => approvalMatchesDelivery(proposedActionRef, commitSha));
@@ -115,10 +163,15 @@ async function founderApprovedThisDelivery(db: Db, organizationId: string, proje
 
 function renderWebsiteArtifact(delivery: EngineeringDeliveryResult, projectName: string): string {
   const website = delivery.website!;
+  const built = demoIsBuilt(delivery);
   return [
     `# Concept website — ${projectName}`,
     "",
-    `- Preview: ${delivery.previewUrl ?? "Pending the Vercel preview deployment"}`,
+    built
+      ? "**Status: built.** The route, the commit and the preview all exist and were checked."
+      : `**Status: not finished.** The work is committed, but ${missingDemoParts(delivery).join(" and ")} ${missingDemoParts(delivery).length === 1 ? "is" : "are"} still missing, so this is not yet a demo anyone can look at.`,
+    "",
+    `- Preview: ${delivery.previewUrl ?? previewExplanation(delivery)}`,
     `- Route: \`${delivery.previewPath ?? "unknown"}\``,
     `- Pages: ${website.pages.map((page) => `\`${page}\``).join(", ")}`,
     `- Pull request: ${delivery.pullRequestUrl}`,
@@ -149,6 +202,12 @@ function renderWebsiteArtifact(delivery: EngineeringDeliveryResult, projectName:
     "",
     website.files.map((file) => `- \`${file}\``).join("\n"),
   ].join("\n");
+}
+
+function previewExplanation(delivery: EngineeringDeliveryResult): string {
+  return delivery.previewStatus === "unavailable"
+    ? "No preview could be read from GitHub while Jarvis was waiting; the deployment may have failed."
+    : "The preview deployment had not appeared yet when Jarvis last looked.";
 }
 
 /**
@@ -201,6 +260,21 @@ async function recordEngineeringDelivery(db: Db, input: {
   return artifact;
 }
 
+const ARTIFACT_LIMIT = 20_000;
+
+/**
+ * Artifact content is capped, and the embedded markers are what later
+ * stages parse. Keeping the marker whole and trimming the prose instead
+ * means a long report degrades into a shorter report rather than into
+ * evidence the pipeline can no longer read.
+ */
+function withMarker(marker: string, body: string): string {
+  if (marker.length + 2 >= ARTIFACT_LIMIT) {
+    throw new Error("The recorded evidence is too large to store on one project artifact");
+  }
+  return `${marker}\n\n${body}`.slice(0, ARTIFACT_LIMIT);
+}
+
 async function projectContext(db: Db, organizationId: string, projectId: string): Promise<string> {
   const [projectRows, artifactRows] = await Promise.all([
     db
@@ -208,10 +282,15 @@ async function projectContext(db: Db, organizationId: string, projectId: string)
       .from(projects)
       .where(and(eq(projects.organizationId, organizationId), eq(projects.id, projectId))),
     db
-      .select({ title: agentArtifacts.title, content: agentArtifacts.content, artifactType: agentArtifacts.artifactType })
+      .select({ title: agentArtifacts.title, content: agentArtifacts.content, artifactType: agentArtifacts.artifactType, createdAt: agentArtifacts.createdAt })
       .from(projectArtifactLinks)
       .innerJoin(agentArtifacts, eq(agentArtifacts.id, projectArtifactLinks.artifactId))
-      .where(and(eq(projectArtifactLinks.organizationId, organizationId), eq(projectArtifactLinks.projectId, projectId))),
+      .where(and(eq(projectArtifactLinks.organizationId, organizationId), eq(projectArtifactLinks.projectId, projectId)))
+      // Oldest first, so the *last* embedded marker in the shared context
+      // is the most recent one. Every parser here reads the last marker,
+      // and unordered rows would make "the current evidence" a coin toss
+      // once a revision has produced a second one.
+      .orderBy(asc(agentArtifacts.createdAt)),
   ]);
   const project = projectRows[0];
   const projectBrief = project
@@ -361,12 +440,35 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
         directive: projectRow.objective ?? metadata.goal,
         revisionNote: latestApproval?.decisionNote,
       });
+      // Evidence is gathered in the same stage that chose the prospect, so
+      // the founder approves the restaurant and the material it would be
+      // built from in one decision rather than two disconnected ones.
+      const collection = await collectRestaurantBrandPack({ candidate: research.recommendation });
+      const evidenceArtifact = await createArtifact(db, {
+        organizationId: input.organizationId,
+        executionId: execution.id,
+        artifactType: "report",
+        title: `Brand evidence — ${projectRow.projectKey}`,
+        // The pack is its own artifact so neither payload can push the
+        // other past the artifact size limit and be silently truncated.
+        content: withMarker(brandPackMarker(collection.pack), `# Approved brand evidence — ${research.recommendation.name}\n\nEvidence version \`${fingerprintBrandPack(collection.pack)}\`, collected ${collection.pack.collectedAt}. This is the machine-readable record the website factory builds from; the founder-facing review is on the approval above.`),
+        actorAgentId: agent.id,
+      });
+      await linkArtifactToEntity(db, { organizationId: input.organizationId, projectId: link.projectId, artifactId: evidenceArtifact.id, linkedEntityType: "task", linkedEntityId: link.taskId, actorUserId: execution.ownerUserId });
       artifact = await createArtifact(db, {
         organizationId: input.organizationId,
         executionId: execution.id,
         artifactType: "report",
         title: `Restaurant recommendation — ${projectRow.projectKey}`,
-        content: `${restaurantResearchMarker(research)}\n\n${renderRestaurantResearch(research)}`.slice(0, 20_000),
+        content: withMarker(
+          restaurantResearchMarker(research),
+          `${renderProspectApproval({
+            restaurantName: research.recommendation.name,
+            pack: collection.pack,
+            collectionFailure: collection.failure,
+            researchUncertainty: research.uncertainty,
+          })}\n\n---\n\n${renderRestaurantResearch(research)}`,
+        ),
         actorAgentId: agent.id,
       });
     } else if (metadata.stage === "outreach") {
@@ -381,7 +483,7 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
         throw new Error("Outreach is waiting for the founder to approve the built demo");
       }
       const inspected = await inspectEngineeringDelivery(delivery);
-      if (!inspected.previewUrl) throw new Error("Outreach is waiting for the verified Vercel preview");
+      if (!inspected.previewUrl) throw new Error("Outreach is waiting for a working preview link. Nothing is sent while the demo the email would point at cannot be opened.");
       let connections = await listConnectionsForUser(db, { organizationId: input.organizationId, actorUserId: execution.ownerUserId });
       let connection = connections.find((item) => item.provider === "resend" && item.integrationType === "email" && item.status === "connected");
       if (!connection) {
@@ -428,7 +530,24 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
       if (prospect && !(await founderApprovedThisRestaurant(db, input.organizationId, link.projectId, prospect.recommendation))) {
         throw new Error(`Engineering is waiting for the founder to approve the restaurant (${prospect.recommendation.name}) before any website is built`);
       }
-      const delivery = await executeEngineeringDelivery({ executionId: execution.id, projectKey: projectRow.projectKey, projectName: projectRow.name, objective, acceptanceCriteria: metadata.successCriteria, sharedContext: context });
+      const evidenceApproval = prospect
+        ? await approvedBrandPackFingerprint(db, input.organizationId, link.projectId, prospect.recommendation, context)
+        : null;
+      if (prospect && evidenceApproval) {
+        const problem = evidenceApprovalProblem(evidenceApproval, prospect.recommendation.name);
+        if (problem) throw new Error(problem);
+      }
+      const delivery = await executeEngineeringDelivery({
+        executionId: execution.id,
+        organizationId: input.organizationId,
+        projectId: link.projectId,
+        projectKey: projectRow.projectKey,
+        projectName: projectRow.name,
+        objective,
+        acceptanceCriteria: metadata.successCriteria,
+        sharedContext: context,
+        approvedBrandPackFingerprint: evidenceApproval?.fingerprint ?? null,
+      });
       artifact = await recordEngineeringDelivery(db, {
         organizationId: input.organizationId,
         executionId: execution.id,
@@ -451,7 +570,24 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
         if (revisionProspect && !(await founderApprovedThisRestaurant(db, input.organizationId, link.projectId, revisionProspect.recommendation))) {
           throw new Error(`A revision is waiting for the founder to approve the restaurant (${revisionProspect.recommendation.name}) before any website is rebuilt`);
         }
-        delivery = await executeEngineeringDelivery({ executionId: execution.id, projectKey: projectRow.projectKey, projectName: projectRow.name, objective, acceptanceCriteria: metadata.successCriteria, sharedContext: context });
+        const revisionEvidence = revisionProspect
+          ? await approvedBrandPackFingerprint(db, input.organizationId, link.projectId, revisionProspect.recommendation, context)
+          : null;
+        if (revisionProspect && revisionEvidence) {
+          const problem = evidenceApprovalProblem(revisionEvidence, revisionProspect.recommendation.name);
+          if (problem) throw new Error(problem);
+        }
+        delivery = await executeEngineeringDelivery({
+          executionId: execution.id,
+          organizationId: input.organizationId,
+          projectId: link.projectId,
+          projectKey: projectRow.projectKey,
+          projectName: projectRow.name,
+          objective,
+          acceptanceCriteria: metadata.successCriteria,
+          sharedContext: context,
+          approvedBrandPackFingerprint: revisionEvidence?.fingerprint ?? null,
+        });
         const revisionArtifact = await recordEngineeringDelivery(db, {
           organizationId: input.organizationId,
           executionId: execution.id,
@@ -468,7 +604,7 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
       }
       if (!delivery) throw new Error("QA is waiting for an Engineering pull request");
       const inspected = await inspectEngineeringDelivery(delivery);
-      if (!inspected.previewUrl) throw new Error("QA is waiting for the Vercel preview deployment");
+      if (!inspected.previewUrl) throw new Error("Quality Assurance is waiting for the preview link. The branch and commit exist, but no preview deployment has appeared yet, so there is nothing for you to open and approve.");
       const review = await generateText({
         ...getOfficeGenerationConfig("review"),
         system: "You are LYNQ's independent Quality Assurance Lead. Review the supplied implementation evidence against the objective and acceptance criteria. Be concise and factual. Identify defects or missing evidence; never claim checks passed unless the evidence says so. Return polished Markdown with Verdict, Acceptance criteria, Risks, and Founder recommendation.",
@@ -495,8 +631,13 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
   if (!existingLinks.some((item) => item.artifactId === artifact!.id)) await linkArtifactToEntity(db, { organizationId: input.organizationId, projectId: link.projectId, artifactId: artifact.id, linkedEntityType: "task", linkedEntityId: link.taskId, actorUserId: execution.ownerUserId });
 
   if (metadata.stage === "research") {
-    const approvalSummary = `Review Jarvis's cited restaurant recommendation for ${projectRow.name}. Approve to begin the demo brief and build; request changes to research another restaurant. No outreach has been sent.`;
-    const approval = await requestApproval(db, { organizationId: input.organizationId, executionId: execution.id, requestedAction: RESTAURANT_PROSPECT_APPROVAL_ACTION, summary: approvalSummary, riskLevel: "medium", artifactId: artifact.id, proposedActionRef: { projectId: link.projectId, taskId: link.taskId }, actorAgentId: agent.id });
+    // The approval names the exact evidence version it covers. Gathering
+    // evidence again produces a different version, which this approval
+    // then provably does not cover.
+    const approvedPack = parseBrandPack(await projectContext(db, input.organizationId, link.projectId));
+    const fingerprint = approvedPack ? fingerprintBrandPack(approvedPack) : null;
+    const approvalSummary = `Review Jarvis's cited restaurant recommendation for ${projectRow.name}${approvedPack ? ` — ${approvalSummaryLine(approvedPack)}` : " — no public evidence could be gathered"}. Approving accepts this restaurant and this exact evidence; requesting changes researches another restaurant. No outreach has been sent.`;
+    const approval = await requestApproval(db, { organizationId: input.organizationId, executionId: execution.id, requestedAction: RESTAURANT_PROSPECT_APPROVAL_ACTION, summary: approvalSummary.slice(0, 1000), riskLevel: "medium", artifactId: artifact.id, proposedActionRef: { projectId: link.projectId, taskId: link.taskId, brandPackFingerprint: fingerprint }, actorAgentId: agent.id });
     await linkApprovalToEntity(db, { organizationId: input.organizationId, projectId: link.projectId, approvalRequestId: approval.request.id, linkedEntityType: "task", linkedEntityId: link.taskId, actorUserId: execution.ownerUserId });
     await notifyJarvisApprovalNeeded(db, { organizationId: input.organizationId, ownerUserId: execution.ownerUserId, projectId: link.projectId, projectName: projectRow.name, summary: approvalSummary });
     return approval.execution;

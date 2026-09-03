@@ -11,7 +11,7 @@ import { getProjectForUser } from "@/lib/projects/projects";
 import { listTasks } from "@/lib/projects/tasks";
 import { listApprovalLinks, listExecutionLinksForProject } from "@/lib/projects/links";
 import { parseOfficeTaskMetadata } from "@/lib/office/task-metadata";
-import { extractEngineeringLinks, extractFounderDirective } from "@/lib/office/jarvis-presentation";
+import { explainJarvisFailure, extractEngineeringLinks, extractFounderDirective, summarizeDemoDelivery } from "@/lib/office/jarvis-presentation";
 import { listAgents } from "@/lib/agents/agents";
 import { getAgentOfficeIdentity } from "@/lib/office/view";
 
@@ -73,7 +73,11 @@ export async function GET(_request: Request, { params }: RouteParams) {
       const artifact = artifactByTask.get(task.id) ?? null;
       const runtimeJob = execution ? runtimeJobByExecution.get(execution.executionId) ?? null : null;
       const runtimeStopped = runtimeJob ? ["failed", "dead_lettered", "cancelled"].includes(runtimeJob.status) : false;
-      const engineeringLinks = extractEngineeringLinks(artifact?.content ?? null);
+      // The structured delivery record is authoritative; the markdown
+      // fallback only covers artifacts written before it existed.
+      const demo = summarizeDemoDelivery(artifact?.content ?? null);
+      const engineeringLinks = demo.commitSha ? { pullRequestUrl: demo.pullRequestUrl, previewUrl: demo.previewUrl } : extractEngineeringLinks(artifact?.content ?? null);
+      const rawFailure = runtimeJob?.lastErrorMessage ?? waitReasonByExecution.get(execution?.executionId ?? "") ?? null;
       const state =
         approval?.status === "pending"
           ? "needs_approval"
@@ -100,9 +104,11 @@ export async function GET(_request: Request, { params }: RouteParams) {
         execution: execution ? {
           id: execution.executionId,
           status: execution.executionStatus,
-          waitReason: runtimeJob?.lastErrorMessage ?? waitReasonByExecution.get(execution.executionId) ?? null,
+          waitReason: rawFailure,
           runtimeStatus: runtimeJob?.status ?? null,
         } : null,
+        failure: explainJarvisFailure(rawFailure),
+        demo: demo.commitSha ? demo : null,
         approval: approval ? { id: approval.approvalRequestId, status: approval.status } : null,
         deliverable: artifact ? { id: artifact.artifactId, title: artifact.title } : null,
         pullRequestUrl: engineeringLinks.pullRequestUrl,

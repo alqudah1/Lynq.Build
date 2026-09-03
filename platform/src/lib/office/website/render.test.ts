@@ -4,7 +4,8 @@ import { describe, expect, it } from "vitest";
 import { DemoSitePage } from "@/components/demos/DemoSite";
 import { brandPack, candidate, content, designProposal } from "../../../../test/support/website-fixtures";
 import { resolveDesignDirection } from "./design";
-import { buildSiteEvidence, EMPTY_BRAND_PACK, type BrandPack } from "./evidence";
+import type { BrandPack } from "./brand-pack";
+import { buildSiteEvidence } from "./evidence";
 import { assembleSiteSpec, type SiteSpec } from "./spec";
 import { renderSpecPage } from "./render";
 
@@ -19,7 +20,7 @@ import { renderSpecPage } from "./render";
  * exactly where it belongs.
  */
 
-function specFor(pack: BrandPack, countryCode: "CA" | "JO" = "CA"): SiteSpec {
+function specFor(pack: BrandPack | null, countryCode: "CA" | "JO" = "CA"): SiteSpec {
   return assembleSiteSpec({
     projectKey: "SUMAC",
     route: "/demos/sumac",
@@ -64,8 +65,8 @@ function semantics(html: string) {
 
 const cases: Array<[string, SiteSpec]> = [
   ["a full site with menu, services and photography", specFor(brandPack)],
-  ["a site with no approved photography", specFor({ ...brandPack, assets: [] })],
-  ["a site with no approved brand material at all", specFor(EMPTY_BRAND_PACK)],
+  ["a site with no approved photography", specFor({ ...brandPack, images: [] })],
+  ["a site with no approved brand material at all", specFor(null)],
   ["an Arabic, right-to-left site", specFor(brandPack, "JO")],
 ];
 

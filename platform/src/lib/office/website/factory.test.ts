@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { brandPack, candidate, content, designProposal } from "../../../../test/support/website-fixtures";
-import { EMPTY_BRAND_PACK, MissingResearchError } from "./evidence";
+import { MissingResearchError } from "./evidence";
 import {
   generateRestaurantWebsite,
   WebsiteGenerationError,
@@ -74,7 +74,7 @@ describe("restaurant website factory", () => {
     const result = await generateRestaurantWebsite({
       ...PROJECT,
       candidate,
-      brandPack: { ...brandPack, assets: [] },
+      brandPack: { ...brandPack, images: [] },
       generator: generator({ design: designProposal, content }),
     });
 
@@ -88,7 +88,7 @@ describe("restaurant website factory", () => {
     const result = await generateRestaurantWebsite({
       ...PROJECT,
       candidate,
-      brandPack: EMPTY_BRAND_PACK,
+      brandPack: null,
       generator: generator({ design: designProposal, content }),
     });
 
