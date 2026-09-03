@@ -1,14 +1,24 @@
-import type { BrandPack } from "@/lib/office/website/evidence";
+import {
+  normalizeBrandPack,
+  type BrandPack,
+  type CollectedBrandPack,
+} from "@/lib/office/website/brand-pack";
 import type { WebsiteContent } from "@/lib/office/website/spec";
 import type { DesignProposal } from "@/lib/office/website/design";
 
 /**
- * A founder-approved restaurant prospect and the copy a well-behaved model
- * would return for it. The copy deliberately contains no digits, no
- * superlatives and no service words the brand pack does not support, so a
- * test that fails on those rules is reporting a real regression rather
- * than a sloppy fixture.
+ * A founder-approved restaurant prospect, the evidence a collector gathered
+ * for it, and the copy a well-behaved model would return.
+ *
+ * The copy deliberately contains no digits, no superlatives and no service
+ * words the brand pack does not support, so a test that fails on those
+ * rules is reporting a real regression rather than a sloppy fixture. The
+ * evidence is run through the real normaliser at a fixed clock, so the
+ * pack — and therefore its fingerprint — is identical on every run.
  */
+
+export const COLLECTED_AT = new Date("2026-08-20T00:00:00.000Z");
+const RETRIEVED = "2026-08-18";
 
 export const candidate = {
   name: "Sumac & Stone",
@@ -31,16 +41,34 @@ export const candidate = {
   ],
 };
 
-export const brandPack: BrandPack = {
-  brandSignals: ["a neighbourhood kitchen", "charcoal grill", "family recipes"],
-  assets: [
+export const restaurantIdentity = {
+  name: candidate.name,
+  address: candidate.address,
+  city: candidate.city,
+  countryCode: candidate.countryCode,
+};
+
+function official(note: string | null = null) {
+  return { sourceUrl: "https://sumacandstone.example.ca", sourceType: "official_website" as const, retrievedAt: RETRIEVED, confidence: "verified" as const, note };
+}
+
+function listing(note: string | null = null) {
+  return { sourceUrl: "https://listings.example.ca/sumac-and-stone", sourceType: "public_listing" as const, retrievedAt: RETRIEVED, confidence: "verified" as const, note };
+}
+
+export const collectedBrandPack: CollectedBrandPack = {
+  facts: [
+    { key: "contact.phone", label: "Phone", value: "+1 416 555 0142", provenance: official("Printed in the site footer") },
+    { key: "contact.email", label: "Email", value: "hello@sumacandstone.example.ca", provenance: official(null) },
+  ],
+  images: [
     {
       id: "dining-room",
       url: "https://cdn.example.ca/sumac/dining-room.jpg",
       alt: "The dining room at Sumac and Stone, with timber tables under warm pendant lights",
       kind: "photo",
       credit: "Photograph published on the restaurant's own site",
-      sourceUrl: "https://sumacandstone.example.ca",
+      provenance: official("Hero image on the home page"),
     },
     {
       id: "grill",
@@ -48,7 +76,7 @@ export const brandPack: BrandPack = {
       alt: "A cook turning skewers over the charcoal grill",
       kind: "photo",
       credit: null,
-      sourceUrl: "https://sumacandstone.example.ca",
+      provenance: official(null),
     },
     {
       id: "counter",
@@ -56,36 +84,56 @@ export const brandPack: BrandPack = {
       alt: "The front counter with a display of mezze",
       kind: "photo",
       credit: null,
-      sourceUrl: "https://sumacandstone.example.ca",
+      provenance: official(null),
     },
   ],
   menu: [
     {
       name: "Mezze",
       description: "Small plates shared across the table.",
-      sourceUrl: "https://sumacandstone.example.ca",
       items: [
         { name: "Muhammara", description: "Roasted pepper and walnut", price: null },
         { name: "Labneh", description: null, price: null },
       ],
+      provenance: official("Menu page"),
     },
     {
       name: "From the grill",
       description: null,
-      sourceUrl: "https://sumacandstone.example.ca",
       items: [{ name: "Lamb skewers", description: null, price: null }],
+      provenance: official("Menu page"),
     },
   ],
   services: [
-    { capability: "dine-in", label: "Dining room", detail: "Open to walk-in guests.", sourceUrl: "https://sumacandstone.example.ca" },
-    { capability: "reservation", label: "Table reservations", detail: "Tables can be held by phone.", sourceUrl: "https://listings.example.ca/sumac-and-stone" },
+    { capability: "dine-in", label: "Dining room", detail: "Open to walk-in guests.", provenance: official(null) },
+    { capability: "reservation", label: "Table reservations", detail: "Tables can be held by phone.", provenance: listing("Listing states reservations are taken by phone") },
   ],
   hours: [
-    { day: "Tuesday to Thursday", hours: "Evening service" },
-    { day: "Friday and Saturday", hours: "Lunch and evening service" },
+    { day: "Tuesday to Thursday", hours: "Evening service", provenance: official(null) },
+    { day: "Friday and Saturday", hours: "Lunch and evening service", provenance: official(null) },
   ],
-  sourceUrl: "https://sumacandstone.example.ca",
+  socials: [
+    { platform: "Instagram", url: "https://instagram.com/sumacandstone", provenance: official("Linked from the site header") },
+  ],
+  brandSignals: [
+    { phrase: "a neighbourhood kitchen", provenance: official(null) },
+    { phrase: "charcoal grill", provenance: official(null) },
+    { phrase: "family recipes", provenance: official(null) },
+  ],
+  uncertain: [],
 };
+
+export function packFrom(collected: CollectedBrandPack, now: Date = COLLECTED_AT): BrandPack {
+  return normalizeBrandPack({
+    collected,
+    restaurant: restaurantIdentity,
+    officialWebsite: candidate.website,
+    researchSources: candidate.sources.map((source) => source.url),
+    now,
+  });
+}
+
+export const brandPack: BrandPack = packFrom(collectedBrandPack);
 
 export const designProposal: DesignProposal = {
   name: "Charcoal counter",

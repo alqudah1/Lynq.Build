@@ -1,5 +1,6 @@
 import "server-only";
 
+import { createHash } from "node:crypto";
 import path from "node:path";
 import { getToken } from "@vercel/connect";
 import { Sandbox } from "@vercel/sandbox";
@@ -7,7 +8,7 @@ import { ToolLoopAgent, isStepCount, tool } from "ai";
 import { z } from "zod";
 import { getOfficeGenerationConfig } from "./models";
 import { parseRestaurantResearch } from "./restaurant-research";
-import { brandPackParseFailed, parseBrandPack } from "./website/evidence";
+import { brandPackParseFailed, fingerprintBrandPack, parseBrandPack } from "./website/brand-pack";
 import { generateRestaurantWebsite, type GeneratedWebsite, type WebsiteDraftGenerator } from "./website/factory";
 import { renderViolations } from "./website/validation";
 
@@ -15,6 +16,9 @@ const CONNECTOR_ID = "github/lynq-office-github";
 const DEFAULT_REPOSITORY = "alqudah1/lynq.build";
 const DEFAULT_BASE_BRANCH = "main";
 const MAX_TOOL_OUTPUT = 16_000;
+
+/** A demo is only "built" when its route, its commit and its preview all exist. */
+export type PreviewStatus = "ready" | "pending" | "unavailable";
 
 export type RestaurantWebsiteDelivery = {
   designName: string;
@@ -36,6 +40,9 @@ export type EngineeringDeliveryResult = {
   pullRequestUrl: string;
   previewUrl: string | null;
   previewPath?: string | null;
+  /** Whether a preview deployment was actually found before this delivery returned. */
+  previewStatus: PreviewStatus;
+  previewCheckedAt: string;
   validationSummary: string;
   agentSummary: string;
   /** Present only for founder-approved restaurant demos built by the website factory. */
@@ -49,12 +56,41 @@ export class RestaurantResearchUnavailableError extends Error {
   }
 }
 
+/** The evidence about to be used is not the evidence the founder approved. */
+export class BrandPackApprovalMismatchError extends Error {
+  readonly approvedFingerprint: string | null;
+  readonly currentFingerprint: string | null;
+  constructor(message: string, approvedFingerprint: string | null, currentFingerprint: string | null) {
+    super(message);
+    this.name = "BrandPackApprovalMismatchError";
+    this.approvedFingerprint = approvedFingerprint;
+    this.currentFingerprint = currentFingerprint;
+  }
+}
+
 const RESTAURANT_RESEARCH_MARKER = "<!-- LYNQ_RESTAURANT_RESEARCH ";
 
-export function restaurantDemoPath(projectKey: string): string {
-  const slug = projectKey.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
-  if (!slug) throw new Error("Restaurant demo project key cannot produce an empty route");
-  return `/demos/${slug}`;
+/**
+ * A demo route is identified by the organization and project it belongs
+ * to, not by a project key alone. Project keys are unique inside a
+ * workspace and nowhere else, so a global `/demos/{projectKey}` namespace
+ * meant two tenants could claim the same route and one would silently
+ * overwrite the other's live preview. The readable prefix is kept because
+ * founders recognise it; the suffix is what makes the route unique.
+ */
+export function restaurantDemoPath(input: { organizationId: string; projectId: string; projectKey: string }): string {
+  if (!input.organizationId.trim() || !input.projectId.trim()) {
+    throw new Error("A demo route needs both the organization and the project it belongs to");
+  }
+  const slug = input.projectKey
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 24)
+    .replace(/-$/, "");
+  const scope = createHash("sha256").update(`${input.organizationId}:${input.projectId}`).digest("hex").slice(0, 12);
+  return `/demos/${slug ? `${slug}-${scope}` : scope}`;
 }
 
 export function withPreviewPath(previewUrl: string | null, previewPath?: string | null): string | null {
@@ -133,6 +169,43 @@ async function findPreviewUrl(token: string, repository: string, sha: string): P
   return urls.find((url) => /\.vercel\.app(?:\/|$)/i.test(url)) ?? null;
 }
 
+export type Sleep = (ms: number) => Promise<void>;
+
+const realSleep: Sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Wait for the preview deployment to exist rather than reporting whatever
+ * GitHub happened to know a second after the branch was pushed. A demo
+ * without a preview is not a demo the founder can look at, so the result
+ * says plainly whether one was found, and the caller reports that instead
+ * of implying a link that does not resolve.
+ */
+export async function awaitPreviewUrl(input: {
+  token: string;
+  repository: string;
+  commitSha: string;
+  attempts?: number;
+  delayMs?: number;
+  sleep?: Sleep;
+}): Promise<{ previewUrl: string | null; status: PreviewStatus }> {
+  const attempts = Math.max(1, Math.min(input.attempts ?? 10, 30));
+  const delayMs = Math.max(0, input.delayMs ?? 15_000);
+  const sleep = input.sleep ?? realSleep;
+  let sawFailure = false;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const found = await findPreviewUrl(input.token, input.repository, input.commitSha);
+      if (found) return { previewUrl: found, status: "ready" };
+    } catch {
+      // A transient GitHub error is not evidence that no preview exists;
+      // it is only evidence that this attempt could not tell.
+      sawFailure = true;
+    }
+    if (attempt < attempts) await sleep(delayMs);
+  }
+  return { previewUrl: null, status: sawFailure ? "unavailable" : "pending" };
+}
+
 /**
  * Commit, push and open the pull request. Source control is deliberately
  * the Office's job and never the agent's: whichever path produced the
@@ -151,6 +224,7 @@ async function publishBranch(input: {
   report: string;
   summary: string;
   website?: RestaurantWebsiteDelivery;
+  previewWait?: { attempts?: number; delayMs?: number; sleep?: Sleep };
 }): Promise<EngineeringDeliveryResult> {
   const { sandbox, root, token, repository, branch } = input;
   const status = await sandbox.runCommand({ cmd: "git", args: ["status", "--porcelain"], cwd: root });
@@ -182,7 +256,7 @@ async function publishBranch(input: {
       body: `## Founder objective\n\n${input.objective}\n\n## Engineering report\n\n${input.report.slice(0, 20_000)}\n\n---\nCreated by LYNQ Office. This pull request does not merge or deploy production automatically.`,
     }),
   });
-  const previewUrl = withPreviewPath(await findPreviewUrl(token, repository, commitSha), input.previewPath);
+  const preview = await awaitPreviewUrl({ token, repository, commitSha, ...input.previewWait });
 
   return {
     repository,
@@ -190,12 +264,32 @@ async function publishBranch(input: {
     commitSha,
     pullRequestNumber: pullRequest.number,
     pullRequestUrl: pullRequest.html_url,
-    previewUrl,
+    previewUrl: withPreviewPath(preview.previewUrl, input.previewPath),
     previewPath: input.previewPath,
+    previewStatus: preview.status,
+    previewCheckedAt: new Date().toISOString(),
     validationSummary: input.report.slice(0, 20_000),
     agentSummary: input.summary.slice(0, 5_000),
     ...(input.website ? { website: input.website } : {}),
   };
+}
+
+/**
+ * The single definition of "built" used by the Office artifact, by Jarvis
+ * and by the QA gate. A commit with no reachable preview is honest work in
+ * progress; calling it a finished demo would not be.
+ */
+export function demoIsBuilt(delivery: Pick<EngineeringDeliveryResult, "previewPath" | "commitSha" | "previewUrl" | "previewStatus">): boolean {
+  return Boolean(delivery.previewPath) && Boolean(delivery.commitSha) && Boolean(delivery.previewUrl) && delivery.previewStatus === "ready";
+}
+
+/** What is missing, in the founder's words, when a demo is not built. */
+export function missingDemoParts(delivery: Pick<EngineeringDeliveryResult, "previewPath" | "commitSha" | "previewUrl" | "previewStatus">): string[] {
+  const missing: string[] = [];
+  if (!delivery.previewPath) missing.push("the public demo route");
+  if (!delivery.commitSha) missing.push("a commit on the feature branch");
+  if (!delivery.previewUrl || delivery.previewStatus !== "ready") missing.push("a working preview link");
+  return missing;
 }
 
 /**
@@ -209,6 +303,8 @@ export async function buildApprovedRestaurantWebsite(input: {
   route: string;
   objective: string;
   sharedContext: string;
+  /** The evidence version the founder approved; the build refuses anything else. */
+  approvedBrandPackFingerprint: string | null;
   /** Test seam. Production always uses the Office model configured for planning. */
   generator?: WebsiteDraftGenerator;
 }): Promise<GeneratedWebsite> {
@@ -224,11 +320,33 @@ export async function buildApprovedRestaurantWebsite(input: {
   if (brandPackParseFailed(input.sharedContext)) {
     throw new RestaurantResearchUnavailableError("The approved brand pack on this project is malformed, so no asset, menu or service from it can be used");
   }
+  // The build uses the exact evidence the founder saw, or it does not run.
+  // Recomputing the fingerprint here — rather than trusting a flag set
+  // upstream — is what makes "changing the evidence needs a new approval"
+  // a property of the system instead of a convention.
+  const brandPack = parseBrandPack(input.sharedContext);
+  const currentFingerprint = brandPack ? fingerprintBrandPack(brandPack) : null;
+  if (!input.approvedBrandPackFingerprint) {
+    throw new BrandPackApprovalMismatchError(
+      "This prospect has no approved evidence version recorded, so there is nothing to build from. Ask Jarvis to gather the evidence again and approve it.",
+      null,
+      currentFingerprint,
+    );
+  }
+  if (currentFingerprint !== input.approvedBrandPackFingerprint) {
+    throw new BrandPackApprovalMismatchError(
+      currentFingerprint
+        ? "The evidence on this project has changed since you approved it, so Jarvis stopped rather than building from something you have not seen. Approve the new evidence to continue."
+        : "The approved evidence is no longer on this project, so Jarvis has nothing it is allowed to build from.",
+      input.approvedBrandPackFingerprint,
+      currentFingerprint,
+    );
+  }
   return generateRestaurantWebsite({
     projectKey: input.projectKey,
     route: input.route,
     candidate: research.recommendation,
-    brandPack: parseBrandPack(input.sharedContext),
+    brandPack,
     objective: input.objective,
     researchUncertainty: research.uncertainty,
     generator: input.generator,
@@ -313,11 +431,16 @@ async function writeGeneratedWebsite(sandbox: Sandbox, root: string, website: Ge
 
 export async function executeEngineeringDelivery(input: {
   executionId: string;
+  organizationId: string;
+  projectId: string;
   projectKey: string;
   projectName: string;
   objective: string;
   acceptanceCriteria: string;
   sharedContext: string;
+  /** The evidence version the founder approved. Required for a prospect demo. */
+  approvedBrandPackFingerprint?: string | null;
+  previewWait?: { attempts?: number; delayMs?: number; sleep?: Sleep };
 }): Promise<EngineeringDeliveryResult> {
   const { repository, baseBranch } = await verifyOfficeRepositoryConnection();
   const token = await githubToken();
@@ -326,13 +449,16 @@ export async function executeEngineeringDelivery(input: {
   // A project whose shared context carries founder-approved restaurant
   // research is a prospect demo, and takes the deterministic factory path
   // below rather than the free-form engineering agent.
-  const previewPath = input.sharedContext.includes(RESTAURANT_RESEARCH_MARKER) ? restaurantDemoPath(input.projectKey) : null;
+  const previewPath = input.sharedContext.includes(RESTAURANT_RESEARCH_MARKER)
+    ? restaurantDemoPath({ organizationId: input.organizationId, projectId: input.projectId, projectKey: input.projectKey })
+    : null;
   const website = previewPath
     ? await buildApprovedRestaurantWebsite({
         projectKey: input.projectKey,
         route: previewPath,
         objective: input.objective,
         sharedContext: input.sharedContext,
+        approvedBrandPackFingerprint: input.approvedBrandPackFingerprint ?? null,
       })
     : null;
   const sandbox = await Sandbox.create({
@@ -371,6 +497,7 @@ export async function executeEngineeringDelivery(input: {
         objective: input.objective,
         previewPath,
         report: websiteReport,
+        previewWait: input.previewWait,
         summary: `Generated a ${website.design.layout} concept website for ${website.spec.businessName} across ${website.spec.pages.length} page(s) and proved it against ${website.report.checkedPages.length} rendered page(s) with no outstanding violations.`,
         website: {
           designName: website.design.name,
@@ -453,6 +580,7 @@ export async function executeEngineeringDelivery(input: {
       previewPath,
       report: result.text,
       summary: result.text.slice(0, 5_000),
+      previewWait: input.previewWait,
     });
   } finally {
     await sandbox.stop().catch(() => undefined);
