@@ -190,15 +190,32 @@ describe("Vapi webhook — a transient event-store failure", () => {
     expect(await response.json()).toEqual({ received: true });
   });
 
-  it("asks the provider to retry an event that might belong to an inbound call", async () => {
+  it("asks the provider to retry an event that demonstrably belongs to an inbound call", async () => {
     configurePhoneControl();
     vi.spyOn(console, "error").mockImplementation(() => undefined);
 
-    // No `call.type` — ambiguous. Losing this one wedges a draft; retrying an
-    // outbound one costs a duplicated log line.
-    const response = await POST(authed({ message: { type: "end-of-call-report", call: { id: "call-1" }, endedReason: "customer-ended-call" } }));
+    const response = await POST(
+      authed({ message: { type: "end-of-call-report", call: { id: "call-1", type: "inboundPhoneCall" }, endedReason: "customer-ended-call" } })
+    );
 
     expect(response.status).toBe(503);
+  });
+
+  it("acknowledges an ambiguous event rather than answering 5xx on the shared endpoint", async () => {
+    configurePhoneControl();
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    // No `call.type`. The tempting rule is "retry unless demonstrably
+    // outbound", but the notification lane produces exactly these event types,
+    // so a database blip would answer 5xx to a lane this branch does not touch
+    // — and sustained 5xx is how a provider decides to disable a webhook. The
+    // reason that trade once looked necessary, an inbound call-ended event
+    // getting lost and wedging a draft, is handled by `reapAbandonedDraft`
+    // instead.
+    const response = await POST(authed({ message: { type: "end-of-call-report", call: { id: "call-1" }, endedReason: "customer-ended-call" } }));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ received: true });
   });
 });
 

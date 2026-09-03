@@ -626,6 +626,9 @@ export type AuditEventType =
   | "jarvis_phone_command_dispatched"
   | "jarvis_phone_command_dispatch_failed"
   | "jarvis_phone_command_retried"
+  // A draft the founder never confirmed, expired because the call it belonged
+  // to is over. Recorded with no actor: nobody asked for it.
+  | "jarvis_phone_command_expired"
   | "jarvis_phone_command_decided";
 
 export interface RecordAuditEventInput {

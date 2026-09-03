@@ -9,7 +9,14 @@ import { ensureCallSession, upsertCommandDraft } from "@/lib/voice/call-store";
 import { buildCommandDraft } from "@/lib/voice/command-draft";
 import { PASSCODE_DIGITS } from "@/lib/voice/founder-verification";
 import { PostgresRateLimiter } from "@/lib/rate-limit/postgres";
-import { callBudgetKey, founderLineBudgetIdentity, INBOUND_CALL_RATE_LIMIT } from "@/lib/voice/verification-budget";
+import {
+  callBudgetKey,
+  founderLineBudgetIdentity,
+  INBOUND_CALL_RATE_LIMIT,
+  refusedBudgetKey,
+  refusedCallBudgetIdentity,
+  REFUSED_CALL_RATE_LIMIT,
+} from "@/lib/voice/verification-budget";
 
 /**
  * The HTTP boundary of the phone lane.
@@ -305,6 +312,41 @@ describe("GET /jarvis/phone/passcode — the second factor", () => {
     // An unmapped code reads as the honest generic rather than as jargon.
     expect(describeDispatchFailure("some_future_code")).toBe("an unexpected problem");
     expect(describeDispatchFailure(null)).toBe("an unexpected problem");
+  });
+
+  it("reports another tenant's flood of wrong numbers as what it is, not as the founder's lockout", async () => {
+    /**
+     * Round fifteen. Folding the tenant-wide refused-call budget into `locked`
+     * made the screen announce that Jarvis was turning down the FOUNDER'S calls
+     * after twenty wrong numbers reached the tenant — when their own budgets
+     * were untouched and their next call would have worked.
+     */
+    const founder = await makeUser();
+    const organizationId = await makeOrg(founder);
+    vi.stubEnv("JARVIS_PHONE_COMMANDS_ENABLED", "true");
+    vi.stubEnv("JARVIS_PHONE_ORGANIZATION_ID", organizationId);
+    vi.stubEnv("JARVIS_PHONE_FOUNDER_USER_ID", founder);
+    vi.stubEnv("JARVIS_PHONE_VERIFICATION_SECRET", "a-verification-secret-that-is-long-enough-01234");
+    vi.stubEnv("JARVIS_FOUNDER_PHONE_E164", "+14165551234");
+    await authenticateAs(founder);
+
+    const refusedIdentity = refusedCallBudgetIdentity({
+      verificationSecret: "a-verification-secret-that-is-long-enough-01234",
+      organizationId,
+    });
+    const limiter = new PostgresRateLimiter(db);
+    for (let attempt = 0; attempt <= REFUSED_CALL_RATE_LIMIT.limit; attempt += 1) {
+      await limiter.recordAttempt(refusedBudgetKey(refusedIdentity), REFUSED_CALL_RATE_LIMIT);
+    }
+
+    const state = (await (await GET_PASSCODE(new Request("https://app.lynq.build/x"), phoneParams(organizationId))).json()) as {
+      data: { lockout: { locked: boolean; refusedCallsSpent: boolean; callsRemaining: number } | null };
+    };
+
+    expect(state.data.lockout?.refusedCallsSpent).toBe(true);
+    // The founder's own budget is untouched, so they are not locked out.
+    expect(state.data.lockout?.locked).toBe(false);
+    expect(state.data.lockout?.callsRemaining).toBe(INBOUND_CALL_RATE_LIMIT.limit);
   });
 
   it("will not let an admin who is not the founder clear the founder's lockout", async () => {

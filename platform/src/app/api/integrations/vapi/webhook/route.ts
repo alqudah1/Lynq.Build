@@ -4,7 +4,7 @@ import { timingSafeEqualStrings } from "@/lib/communications-os/secrets";
 import { loadEnv } from "@/lib/env";
 import { createDbClient } from "@/db/client";
 import { resolveJarvisPhoneCommandConfig, type JarvisPhoneCommandConfig } from "@/lib/voice/phone-config";
-import { normalizeVapiEvent, type NormalizedVapiEvent, type VapiServerMessageEnvelope } from "@/lib/voice/vapi-events";
+import { isInboundCallEvent, normalizeVapiEvent, type NormalizedVapiEvent, type VapiServerMessageEnvelope } from "@/lib/voice/vapi-events";
 import { handleInboundConversationEvent } from "@/lib/voice/inbound-conversation";
 import {
   claimWebhookEvent,
@@ -236,22 +236,26 @@ export async function POST(request: Request) {
     // then give up, on an event whose only purpose here is the log line
     // already written above.
     //
-    // Everything else gets an honest 503 so the provider retries, and the test
-    // is deliberately "demonstrably OUTBOUND" rather than "not demonstrably
-    // inbound". `isInboundCallEvent` falls back to the event KIND when
-    // `call.type` is absent, and that fallback covers only `assistant_request`
-    // and `tool_call` — so a `transcript`, `status-update` or
-    // `end-of-call-report` belonging to a real inbound command call, delivered
-    // without `call.type`, would classify as not-inbound and be acknowledged
-    // rather than retried. Dropping the end of an inbound call is not a
-    // cosmetic loss: `finalizeCall` never runs, so the session stays `active`
-    // and an unconfirmed draft stays in `awaiting_confirmation` with no exit
-    // anywhere in the system. An unnecessary retry of an outbound notification
-    // event costs nothing but a duplicated log line, because its log line is
-    // written before any of this.
-    const demonstrablyOutbound = typeof event.callType === "string" && /^outbound/i.test(event.callType);
+    // Only an event that demonstrably belongs to an INBOUND command call gets a
+    // 503 and a retry. Everything else is acknowledged, which is what this
+    // endpoint did for every event before phone control existed.
+    //
+    // The tempting alternative — retry unless demonstrably OUTBOUND — was tried
+    // and is worse. `isInboundCallEvent` falls back to the event kind when
+    // `call.type` is absent, so an ambiguous `status-update` or
+    // `end-of-call-report` would be retried, and those are exactly the events
+    // the pre-existing outbound notification lane produces: a database blip
+    // would answer 5xx to a lane this branch is not supposed to touch, and
+    // sustained 5xx is how a provider decides to disable a webhook.
+    //
+    // What made that trade look necessary was the fear of losing an inbound
+    // `call_ended` and wedging an unconfirmed draft forever. That is no longer
+    // load-bearing on one delivery: `reapAbandonedDraft` expires such a draft on
+    // the read path. A state whose only exit depends on a single event arriving
+    // is a state that eventually wedges, so it was fixed where it lived rather
+    // than defended here.
     console.error("[jarvis-phone]", JSON.stringify({ event: "event-store-unavailable", eventType: event.rawType }));
-    if (demonstrablyOutbound) return Response.json({ received: true });
+    if (!isInboundCallEvent(event)) return Response.json({ received: true });
     return Response.json({ error: { code: "unavailable", message: "Temporarily unavailable" } }, { status: 503 });
   }
 

@@ -9,7 +9,7 @@ import { listPhoneCallsForUser } from "@/lib/voice/call-store";
 import { requireOrganizationMembership } from "@/lib/authz/helpers";
 import { getJarvisPhoneCommandReadiness, resolveJarvisPhoneCommandConfig } from "@/lib/voice/phone-config";
 import { GATED_CATEGORY_LABELS, type GatedCategory } from "@/lib/voice/command-risk";
-import { DISPATCH_LEASE_MS, MAX_DISPATCH_ATTEMPTS, reapStalledDispatch } from "@/lib/voice/command-dispatch";
+import { DISPATCH_LEASE_MS, MAX_DISPATCH_ATTEMPTS, reapAbandonedDraft, reapStalledDispatch } from "@/lib/voice/command-dispatch";
 import { isDispatchInFlight } from "@/lib/voice/call-store";
 
 export const dynamic = "force-dynamic";
@@ -58,11 +58,21 @@ export async function GET(_request: Request, { params }: RouteParams) {
         ...call,
         commands: await Promise.all(
           call.commands.map(async (command) => {
+            // No actor on either reap: nobody asked for them. They are repairs
+            // that happened to be noticed while rendering, and attributing one
+            // to whoever opened the screen put a member's name on a failure
+            // they could not have caused.
+            //
+            // A draft waiting for a confirmation that can no longer come is
+            // expired here for the same reason a stalled dispatch is: its only
+            // other writer is one provider delivery, and a state whose exit
+            // depends on a single event arriving is a state that eventually
+            // wedges. See `reapAbandonedDraft`.
+            if (command.dispatchState === "awaiting_confirmation") {
+              const expired = await reapAbandonedDraft(db, { organizationId, command, session: call.session });
+              return expired ? { ...command, ...expired } : command;
+            }
             if (command.dispatchState !== "dispatching" || isDispatchInFlight(command, DISPATCH_LEASE_MS)) return command;
-            // No actor: nobody asked for this. It is a repair that happened to
-            // be noticed while rendering, and attributing it to whoever opened
-            // the screen put a member's name on a dispatch failure they could
-            // not have caused.
             const reaped = await reapStalledDispatch(db, { organizationId, command });
             return reaped ? { ...command, ...reaped } : command;
           })

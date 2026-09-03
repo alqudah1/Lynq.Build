@@ -101,17 +101,17 @@ const REFUSAL_SPOKEN =
 const NEEDS_VERIFICATION_SPOKEN = `Before we start, please read me the ${PASSCODE_DIGITS}-digit code on the Jarvis screen in LYNQ Office.`;
 
 /**
- * What the FOUNDER hears when the founder-line budget is spent — never the
- * wrong-number refusal, which would tell them their own registered line is not
- * their registered line.
- */
-/**
  * What a caller hears when the provider never told us what number they are
  * calling from. Not an accusation — it says what is missing and what fixes it.
  */
 const UNIDENTIFIED_CALLER_SPOKEN =
   "I can't take instructions on this call — I wasn't told what number you're calling from. Please call back with your number showing. Goodbye.";
 
+/**
+ * What the FOUNDER hears when the founder-line budget is spent — never the
+ * wrong-number refusal, which would tell them their own registered line is not
+ * their registered line.
+ */
 const FOUNDER_LINE_BUSY_SPOKEN =
   "I've had more calls on this line than usual in the last hour, so I've paused new ones for a little while. Nothing is wrong with your account. Open the Jarvis screen in LYNQ Office and you can let yourself back in straight away.";
 
@@ -299,27 +299,38 @@ export async function handleInboundConversationEvent(db: Db, input: HandleInboun
   // rotation can escape because it is not keyed on anything the caller
   // controls. An attacker filling the second one cannot touch the first.
   //
-  // Charged on the events that can START a call — an assistant request, or a
-  // tool call when a statically-assigned assistant means no assistant request
-  // ever arrives. A transcript or status update belonging to a call that has no
-  // session is not a new call, and counting those meant a call already turned
-  // away kept spending the budget for the rest of its deliveries.
-  const opensACall = event.kind === "assistant_request" || event.kind === "tool_call";
-  if (!existing && opensACall) {
+  // Charged when a session is about to EXIST, not when a particular event kind
+  // arrives. Gating on the kind — the previous version — meant any other
+  // inbound-typed delivery that happened to land first created the session
+  // unconditionally, after which `existing` was set and the budget was never
+  // entered again: a whole call, and every redial, for nothing. A statically
+  // assigned assistant produces exactly that shape, and so does ordinary
+  // delivery reordering.
+  //
+  // Checked before it is charged, so a call already over the cap costs nothing
+  // further however many deliveries it has. Only a call being let through pays,
+  // and the delivery that pays is the one that creates the session, so an
+  // admitted call is charged once.
+  if (!existing) {
     const limiter = new PostgresRateLimiter(db);
     const budget = callerNumberMatched
       ? { key: callBudgetKey(founderLineBudgetIdentity(config)), config: INBOUND_CALL_RATE_LIMIT }
       : { key: refusedBudgetKey(refusedCallBudgetIdentity(config)), config: REFUSED_CALL_RATE_LIMIT };
 
+    // A REPLAY spends nothing and is judged one unit more generously, because
+    // it is by definition a call this deployment already admitted once — its
+    // own first delivery paid for it. Without the slack, `checkLimit` (which
+    // refuses at the count `recordAttempt` admits) turned away every retry of
+    // the last permitted call of the hour, permanently, for a call the budget
+    // had actually allowed. Without the check at all — suppressing the whole
+    // block, the version before that — a redelivery whose first delivery died
+    // before creating a session got a full, uncapped call for free.
+    const allowance = input.replay ? { ...budget.config, limit: budget.config.limit + 1 } : budget.config;
+
     let withinBudget = false;
     try {
-      // A REPLAY reads the budget without spending it. Suppressing the whole
-      // block instead — the first version of this — skipped the DECISION as
-      // well as the charge, so a redelivery of an event whose first delivery
-      // died before creating a session got a full, uncapped call for free.
-      withinBudget = input.replay
-        ? (await limiter.checkLimit(budget.key, budget.config)).allowed
-        : (await limiter.recordAttempt(budget.key, budget.config)).allowed;
+      withinBudget = (await limiter.checkLimit(budget.key, allowance)).allowed;
+      if (withinBudget && !input.replay) await limiter.recordAttempt(budget.key, budget.config);
     } catch {
       // Fails closed, like every other rate limit in this lane.
       withinBudget = false;
@@ -335,7 +346,7 @@ export async function handleInboundConversationEvent(db: Db, input: HandleInboun
         spoken: callerNumberMatched ? FOUNDER_LINE_BUSY_SPOKEN : REFUSAL_SPOKEN,
         // The closed assistant: one sentence, no tools, twenty seconds. No
         // session row is written, so a flood costs the attacker a phone bill
-        // and costs this deployment one rate-limit update.
+        // and costs this deployment one rate-limit read.
         payload: buildRefusalAssistantConfig(callerNumberMatched ? FOUNDER_LINE_BUSY_SPOKEN : REFUSAL_SPOKEN),
         processingStatus: "ignored",
         failureCode: callerNumberMatched ? "call_rate_limited" : "refused_call_rate_limited",
@@ -418,7 +429,20 @@ export async function handleInboundConversationEvent(db: Db, input: HandleInboun
       // that recorded their number, in the same instant. Re-read rather than
       // answer from a copy known to be out of date.
       const current = await findCallSessionByProviderCallId(db, "vapi", event.providerCallId).catch(() => null);
-      if (current && current.organizationId === config.organizationId) session = current;
+      if (current && current.organizationId === config.organizationId) {
+        session = current;
+        // And the refusal check runs again on what came back. The
+        // refused-session short-circuit above ran against the OLD snapshot, so
+        // a concurrent delivery carrying a different number can have refused
+        // this call in between — and `markCallSessionRefused` does not clear
+        // `callerNumberMatched`, so the fresh row can read
+        // `refused + matched`. Falling through on that answered an
+        // assistant-request with the full working assistant on a session
+        // recorded as refused.
+        if (session.status === "refused") {
+          return { spoken: REFUSAL_SPOKEN, processingStatus: "ignored", failureCode: "session_refused", sessionId: session.id };
+        }
+      }
     }
   }
 

@@ -327,6 +327,87 @@ export async function reapStalledDispatch(
 }
 
 /**
+ * How long after a call's last event an unconfirmed draft is treated as
+ * abandoned.
+ *
+ * Comfortably longer than the assistant's own ten-minute ceiling, so a draft is
+ * never expired out from under a call that is still running.
+ */
+export const ABANDONED_DRAFT_MS = 20 * 60 * 1000;
+
+/**
+ * Expires a draft that is waiting for a confirmation that can no longer come.
+ *
+ * `finalizeCall` is the normal writer for this, and it runs on the provider's
+ * end-of-call delivery. That makes one delivery load-bearing for a state with
+ * no other exit: tool calls are refused once the session is inactive, the
+ * decision route requires `awaiting_approval`, retry requires `failed`, and the
+ * dispatch reaper only looks at `dispatching`. Lose that one event — a database
+ * blip during the outage window, a provider that gives up retrying, a payload
+ * the classifier could not place — and the founder is left looking at "Waiting
+ * for you to confirm on the call" on a call that ended, permanently, with no
+ * button.
+ *
+ * So the wedge is removed as a CLASS rather than by making that one delivery
+ * more reliable. A draft whose call is no longer active, or whose call has been
+ * silent for longer than any call can last, is expired here on the read path —
+ * the same shape, and the same reasoning, as `reapStalledDispatch`.
+ *
+ * Idempotent, revision-guarded, and safe to lose: losing the guard to a
+ * concurrent writer just means someone else got there first.
+ */
+export async function reapAbandonedDraft(
+  db: Db,
+  input: {
+    organizationId: string;
+    command: JarvisPhoneCommand;
+    session: { status: string; lastEventAt: Date };
+    nowMs?: number;
+  }
+): Promise<JarvisPhoneCommand | null> {
+  const { command, session } = input;
+  if (command.dispatchState !== "awaiting_confirmation") return null;
+
+  const now = input.nowMs ?? Date.now();
+  const silentFor = now - session.lastEventAt.getTime();
+  // A live call is never touched. Either the call is over, or it has been quiet
+  // for longer than a call can run.
+  if (session.status === "active" && silentFor < ABANDONED_DRAFT_MS) return null;
+
+  let expired: JarvisPhoneCommand | null = null;
+  try {
+    expired = await transitionCommand(db, {
+      organizationId: input.organizationId,
+      commandId: command.id,
+      expectedRevision: command.revision,
+      confirmationStatus: "expired",
+      dispatchState: "cancelled",
+      failureCode: "call_ended_before_confirmation",
+    });
+  } catch {
+    return null;
+  }
+  if (!expired) return null;
+
+  // Best-effort: this runs on a read path, and a failed audit write must not
+  // turn viewing the screen into an error.
+  await recordAuditEvent(db, {
+    eventType: "jarvis_phone_command_expired",
+    organizationId: input.organizationId,
+    // Nobody asked for this. It is the truth catching up with a call that ended
+    // without saying so.
+    actorUserId: null,
+    targetType: "jarvis_phone_command",
+    targetId: command.id,
+    metadata: { reason: session.status === "active" ? "call_silent" : "call_not_active", observedOnRead: true },
+  }).catch(() => {
+    console.error("[jarvis-phone]", JSON.stringify(redactLogFields({ event: "expire-audit-failed", commandId: command.id })));
+  });
+
+  return expired;
+}
+
+/**
  * Creates the directive for a command that is cleared to run — either
  * low-risk and confirmed on the call, gated and since approved by a human, or
  * a human-initiated retry of a dispatch that failed.

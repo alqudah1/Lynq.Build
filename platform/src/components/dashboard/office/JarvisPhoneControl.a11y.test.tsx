@@ -78,7 +78,7 @@ function stubFetch(state: unknown, extra?: Record<string, unknown>, passcodeData
     if (String(url).endsWith("/passcode")) {
       if (init?.method === "POST") {
         return new Response(
-          JSON.stringify({ data: { cleared: true, reason: null, lockout: { locked: false, resetAt: null, callsRemaining: 6, attemptsRemaining: 12, refusedCallsRemaining: 20 } } }),
+          JSON.stringify({ data: { cleared: true, reason: null, lockout: { locked: false, refusedCallsSpent: false, resetAt: null, callsRemaining: 6, attemptsRemaining: 12, refusedCallsRemaining: 20 } } }),
           { status: 200 }
         );
       }
@@ -178,12 +178,40 @@ describe("JarvisPhoneControl accessibility", () => {
    * a call they had not made, with nothing on the screen and no way out short
    * of waiting or a redeploy.
    */
+  /**
+   * Round fifteen. Folding the tenant-wide refused-call budget into `locked`
+   * made the screen announce "Jarvis is turning down calls from your number"
+   * after twenty wrong numbers reached the tenant — when the founder's own
+   * calls were working perfectly — and invited them to clear a cost control
+   * that is not theirs without saying that is what the button would do.
+   */
+  it("does not blame the founder for calls other people made", async () => {
+    stubFetch({ ...readyState, calls: [] }, undefined, {
+      available: true,
+      passcode: "41729638",
+      expiresInMs: 300000,
+      lockout: { locked: false, refusedCallsSpent: true, resetAt: "2026-09-01T16:30:00.000Z", callsRemaining: 6, attemptsRemaining: 12, refusedCallsRemaining: 0 },
+    });
+
+    const { container } = render(<JarvisPhoneControl organizationId="organization-1" organizationSlug="lynq" />);
+    fireEvent.click(await screen.findByRole("button", { name: /show my code/i }));
+
+    await screen.findByText(/a lot of calls from other numbers/i);
+    expect(screen.queryByText(/turning down calls from your number/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/your own calls still work normally/i)).toBeInTheDocument();
+    // And the button says what clearing would actually do, rather than
+    // implying the founder is the one being kept out.
+    expect(screen.queryByRole("button", { name: /let me call in again/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /clear it anyway/i })).toBeInTheDocument();
+    expect(await axe(container)).toHaveNoViolations();
+  });
+
   it("explains a lockout in the founder's own terms and offers a way out of it", async () => {
     stubFetch({ ...readyState, calls: [] }, undefined, {
       available: true,
       passcode: "41729638",
       expiresInMs: 300000,
-      lockout: { locked: true, resetAt: "2026-09-01T16:30:00.000Z", callsRemaining: 0, attemptsRemaining: 0, refusedCallsRemaining: 0 },
+      lockout: { locked: true, refusedCallsSpent: false, resetAt: "2026-09-01T16:30:00.000Z", callsRemaining: 0, attemptsRemaining: 0, refusedCallsRemaining: 20 },
     });
 
     const { container } = render(<JarvisPhoneControl organizationId="organization-1" organizationSlug="lynq" />);

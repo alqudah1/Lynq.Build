@@ -129,12 +129,30 @@ export const verifyBudgetKey = (identity: string) => `jarvis-phone:verify:${iden
 export const callBudgetKey = (identity: string) => `jarvis-phone:call:${identity}`;
 
 export interface VerificationBudgetState {
-  /** True when ANY of the three budgets is spent, i.e. some call or code would be turned away. */
+  /**
+   * True when one of the FOUNDER'S OWN budgets is spent — their calls, or their
+   * code attempts.
+   *
+   * Deliberately not "any of the three". The refused-call budget is tenant-wide
+   * and is spent by calls from OTHER numbers, so folding it in here made the
+   * screen announce "Jarvis is turning down calls from your number" after
+   * twenty wrong numbers reached the tenant, when the founder's own calls were
+   * working perfectly — and invited them to clear a cost control that is not
+   * theirs, without saying that is what the button would do.
+   */
   locked: boolean;
   /** When the last of the spent budgets frees itself, if any is spent. */
   resetAt: string | null;
   callsRemaining: number;
   attemptsRemaining: number;
+  /**
+   * True when the tenant-wide budget for calls from other numbers is spent.
+   *
+   * Reported separately from `locked` because it means something different and
+   * has a different remedy — the founder's own calls still work, unless their
+   * phone does not send its number, in which case they land in this bucket too.
+   */
+  refusedCallsSpent: boolean;
   /**
    * How many more calls from OTHER numbers may be recorded this hour.
    *
@@ -168,9 +186,11 @@ export async function readVerificationBudget(
     limiter.checkLimit(refusedBudgetKey(refusedIdentity), REFUSED_CALL_RATE_LIMIT),
   ]);
 
-  const spent = [calls, attempts, refused].filter((result) => !result.allowed);
+  const own = [calls, attempts].filter((result) => !result.allowed);
+  const spent = [...own, ...(refused.allowed ? [] : [refused])];
   return {
-    locked: spent.length > 0,
+    locked: own.length > 0,
+    refusedCallsSpent: !refused.allowed,
     // The latest of whichever are spent, so the screen never promises it will
     // clear before it actually does.
     resetAt: spent.length > 0 ? new Date(Math.max(...spent.map((result) => result.resetAt.getTime()))).toISOString() : null,

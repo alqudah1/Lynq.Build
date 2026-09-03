@@ -20,7 +20,16 @@ import {
   resolveCommandById,
   upsertCommandDraft,
 } from "./call-store";
-import { dispatchConfirmedCommand, DISPATCH_LEASE_MS, MAX_DISPATCH_ATTEMPTS, reapStalledDispatch, retryFailedDispatch, runDirectiveDispatch } from "./command-dispatch";
+import {
+  ABANDONED_DRAFT_MS,
+  dispatchConfirmedCommand,
+  DISPATCH_LEASE_MS,
+  MAX_DISPATCH_ATTEMPTS,
+  reapAbandonedDraft,
+  reapStalledDispatch,
+  retryFailedDispatch,
+  runDirectiveDispatch,
+} from "./command-dispatch";
 import { createDirectiveProject, DirectivePartiallyCreatedError } from "@/lib/office/directive-intake";
 import { CommandNotRetryableError } from "./errors";
 
@@ -672,5 +681,90 @@ describe("reaping a stalled dispatch names no actor it cannot name", () => {
       );
     expect(row.actorUserId).toBe(userId);
     expect((row.metadata as { observedOnRead?: boolean }).observedOnRead).toBe(false);
+  });
+});
+
+describe("a draft nobody can confirm any more", () => {
+  /**
+   * `awaiting_confirmation` has exactly one normal writer — `finalizeCall`, on
+   * the provider's end-of-call delivery — and no other exit anywhere: tool
+   * calls are refused once the session is inactive, the decision route requires
+   * `awaiting_approval`, retry requires `failed`, and the dispatch reaper only
+   * looks at `dispatching`. A state whose only exit depends on one event
+   * arriving is a state that eventually wedges, and the founder is then left
+   * looking at "Waiting for you to confirm on the call" on a call that ended,
+   * permanently, with no button.
+   */
+  it("expires when the call it belongs to is over", async () => {
+    const { userId, organizationId } = await makeFounder();
+    const { session, command } = await openCommand(organizationId, userId);
+    expect(command.dispatchState).toBe("awaiting_confirmation");
+
+    const expired = await reapAbandonedDraft(db, {
+      organizationId,
+      command,
+      session: { status: "completed", lastEventAt: new Date() },
+    });
+
+    expect(expired?.dispatchState).toBe("cancelled");
+    expect(expired?.confirmationStatus).toBe("expired");
+    expect(expired?.failureCode).toBe("call_ended_before_confirmation");
+
+    const [audited] = await db
+      .select({ actorUserId: auditLogs.actorUserId })
+      .from(auditLogs)
+      .where(
+        and(
+          eq(auditLogs.organizationId, organizationId),
+          eq(auditLogs.eventType, "jarvis_phone_command_expired"),
+          eq(auditLogs.targetId, command.id)
+        )
+      );
+    // Nobody asked for it, so nobody is named as its actor.
+    expect(audited.actorUserId).toBeNull();
+    void session;
+  });
+
+  it("expires when the call went silent for longer than a call can last", async () => {
+    const { userId, organizationId } = await makeFounder();
+    const { command } = await openCommand(organizationId, userId);
+
+    const expired = await reapAbandonedDraft(db, {
+      organizationId,
+      command,
+      session: { status: "active", lastEventAt: new Date(Date.now() - ABANDONED_DRAFT_MS - 1000) },
+    });
+
+    expect(expired?.dispatchState).toBe("cancelled");
+  });
+
+  it("never touches a draft on a call that is still running", async () => {
+    const { userId, organizationId } = await makeFounder();
+    const { command } = await openCommand(organizationId, userId);
+
+    expect(
+      await reapAbandonedDraft(db, { organizationId, command, session: { status: "active", lastEventAt: new Date() } })
+    ).toBeNull();
+
+    const stored = await resolveCommandById(db, { organizationId, commandId: command.id });
+    expect(stored.dispatchState).toBe("awaiting_confirmation");
+  });
+
+  it("does nothing to a command that has already moved on", async () => {
+    const { userId, organizationId } = await makeFounder();
+    const { command } = await openCommand(organizationId, userId);
+    const outcome = await dispatchConfirmedCommand(db, { organizationId, founderUserId: userId, command });
+    if (outcome.status !== "directive_created") throw new Error("expected a directive");
+
+    expect(
+      await reapAbandonedDraft(db, {
+        organizationId,
+        command: outcome.command,
+        session: { status: "completed", lastEventAt: new Date() },
+      })
+    ).toBeNull();
+
+    const stored = await resolveCommandById(db, { organizationId, commandId: command.id });
+    expect(stored.dispatchState).toBe("directive_created");
   });
 });

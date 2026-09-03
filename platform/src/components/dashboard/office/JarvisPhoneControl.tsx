@@ -90,7 +90,15 @@ type PhoneState = {
  * heard "there have been too many code attempts from this number" on a call
  * they had not made, and had nothing to do about it.
  */
-type LockoutState = { locked: boolean; resetAt: string | null; callsRemaining: number; attemptsRemaining: number; refusedCallsRemaining: number };
+type LockoutState = {
+  locked: boolean;
+  /** Tenant-wide, filled by calls from OTHER numbers. Never the founder's own doing, and it does not stop their calls. */
+  refusedCallsSpent: boolean;
+  resetAt: string | null;
+  callsRemaining: number;
+  attemptsRemaining: number;
+  refusedCallsRemaining: number;
+};
 
 type PasscodeState = {
   available: boolean;
@@ -340,22 +348,46 @@ export function JarvisPhoneControl({ organizationId, organizationSlug }: { organ
             explain it. Clearing grants no access: the code, the three-try cap
             and the number check all still apply afterwards.
           */}
-          {passcode?.lockout?.locked ? (
+          {passcode?.lockout?.locked || passcode?.lockout?.refusedCallsSpent ? (
             <div className="mt-5 rounded-sm border border-amber-300/40 bg-amber-300/10 px-3 py-3">
-              <p className="text-sm font-medium text-amber-100">Jarvis is turning down calls from your number right now</p>
-              <p className="mt-1 text-sm leading-6 text-amber-100/80">
-                Too many calls or wrong codes came from a line claiming to be yours. That can happen if someone else is calling in pretending
-                to be you — a phone number is easy to fake. It clears on its own
-                {passcode.lockout.resetAt ? ` at ${formatTime(passcode.lockout.resetAt)}` : " shortly"}, or you can clear it now and try
-                again. Clearing it does not let anyone in: your code is still required.
-              </p>
+              {/*
+                Two different situations, and they must not borrow each other's
+                words. `locked` is the founder's OWN budget — their calls, their
+                code attempts. `refusedCallsSpent` is a tenant-wide budget that
+                calls from other numbers fill, which the founder never spends
+                and which does not stop their calls at all, unless their phone
+                is not sending its number. Reporting the second as the first
+                announced that Jarvis was turning down the founder's calls when
+                it was doing nothing of the kind.
+              */}
+              {passcode.lockout.locked ? (
+                <>
+                  <p className="text-sm font-medium text-amber-100">Jarvis is turning down calls from your number right now</p>
+                  <p className="mt-1 text-sm leading-6 text-amber-100/80">
+                    Too many calls or wrong codes came from a line claiming to be yours. That can happen if someone else is calling in
+                    pretending to be you — a phone number is easy to fake. It clears on its own
+                    {passcode.lockout.resetAt ? ` at ${formatTime(passcode.lockout.resetAt)}` : " shortly"}, or you can clear it now and try
+                    again. Clearing it does not let anyone in: your code is still required.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-medium text-amber-100">A lot of calls from other numbers have come in this hour</p>
+                  <p className="mt-1 text-sm leading-6 text-amber-100/80">
+                    Your own calls still work normally. Jarvis has stopped recording the wrong-number ones for now, which also means a call is
+                    turned away if your phone doesn&apos;t send your number with it. It clears on its own
+                    {passcode.lockout.resetAt ? ` at ${formatTime(passcode.lockout.resetAt)}` : " shortly"}. You can clear it now if you need
+                    to call in from a line that withholds its number — that will also start recording the other calls again.
+                  </p>
+                </>
+              )}
               <button
                 type="button"
                 onClick={() => void clearLockout()}
                 disabled={clearingLockout}
                 className="office-dispatch-button mt-3"
               >
-                {clearingLockout ? "Clearing…" : "Let me call in again"}
+                {clearingLockout ? "Clearing…" : passcode.lockout.locked ? "Let me call in again" : "Clear it anyway"}
               </button>
               {lockoutError ? (
                 <p role="alert" className="mt-2 text-sm text-danger">

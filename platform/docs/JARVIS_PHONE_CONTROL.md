@@ -149,8 +149,14 @@ Details that matter:
   all three are visible and clearable from the Jarvis screen — the refused-call
   budget included, because a founder call the provider sent no number for lands
   in that one, and leaving it out of the lockout state and the clear was the
-  same invisible wall moved to a different bucket. This matters more than it
-  looks: the keys are derived from the number a caller *asserts*, so anyone who
+  same invisible wall moved to a different bucket. The screen reports the two as
+  different things, because they are: "Jarvis is turning down calls from your
+  number" is the founder's own budget, while a filled refused-call budget is
+  other people's calls, does not stop the founder's, and says so — folding it
+  into one "locked" flag made the screen blame the founder for a flood they had
+  no part in, and offer to clear a cost control that was not theirs.
+
+  This matters more than it looks: the keys are derived from the number a caller *asserts*, so anyone who
   can spoof the founder's line can spend both and hold them at zero — and the
   founder, calling from the real phone, is then refused before their correct
   code is ever checked. A rate limit an attacker can hold down is a
@@ -307,6 +313,19 @@ act on the same command at once. Four independent layers make that safe:
 3. **Revision guards.** Every state transition is guarded by the revision the
    row was read at. A second confirmation finds the row moved on and reports the
    *existing* outcome instead of acting again.
+   A draft waiting for a confirmation is reaped on the same principle. Its only
+   normal writer is `finalizeCall`, on the provider's end-of-call delivery — and
+   a state whose only exit depends on one event arriving is a state that
+   eventually wedges: lose that delivery to a database blip, a provider that
+   stops retrying, or a payload the classifier could not place, and the founder
+   is looking at "Waiting for you to confirm on the call" on a call that ended,
+   permanently, with no button. `reapAbandonedDraft` expires a draft whose call
+   is no longer active, or has been silent for longer than any call can last, on
+   the read path. Removing the wedge as a class is also what lets the webhook go
+   on acknowledging an ambiguous event exactly as it did before phone control
+   existed, rather than answering 5xx on an endpoint the outbound notification
+   lane shares.
+
 4. **A dispatch claim taken BEFORE anything is created**, which also moves the
    row into `dispatching`. The three layers above all protect the command
    *row*; none of them stop two concurrent callers from
