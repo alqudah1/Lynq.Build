@@ -157,32 +157,53 @@ export async function POST(request: Request, { params }: RouteParams) {
       });
     }
 
-    const outcome = await runDirectiveDispatch(db, {
+    // The approval is recorded on the row BEFORE any work is created, and this
+    // write is what decides once: the revision guard means a double-submit or
+    // a second admin gets `null` here and is refused, so the dispatch claim
+    // below is a second line of defence rather than the only one.
+    //
+    // Ordering matters for more than concurrency. The identity of the approver
+    // used to be written only by the transition at the END of a dispatch, and
+    // the audit event only after it returned — so a process killed mid-handoff
+    // (a serverless timeout, a deploy) left a command that had been approved by
+    // a human, with work possibly already running, and no record anywhere of
+    // who approved it. `dispatchConfirmedCommand` already records the
+    // confirmation before acting for exactly this reason.
+    const approved = await transitionCommand(db, {
       organizationId,
-      // The approver becomes the project's actor: they are the human who
-      // authorized this work, and every downstream authorization check should
-      // resolve against them rather than against a call that has since ended.
-      founderUserId: user.userId,
-      command,
-      workspaceId: null,
+      commandId,
+      expectedRevision: command.revision,
+      // Unchanged: this write exists to durably record the decision, not to
+      // move the command. `runDirectiveDispatch` claims from here.
+      dispatchState: "awaiting_approval",
       approvalDecidedByUserId: user.userId,
       approvalDecisionNote: body.decisionNote ?? null,
     });
+    if (!approved) throw new CommandAlreadyDecidedError();
 
-    // Only record an approval that actually decided something. A request that
-    // lost the dispatch claim to a concurrent approver changed nothing, and
-    // logging it as an approval would show two approvers for a command whose
-    // row records one.
     await recordAuditEvent(db, {
       eventType: "jarvis_phone_command_decided",
       organizationId,
       actorUserId: user.userId,
       targetType: "jarvis_phone_command",
       targetId: commandId,
-      metadata:
-        outcome.status === "already_dispatched"
-          ? { decision: "approved_no_op", outcome: outcome.status, riskLevel: command.riskLevel }
-          : { decision: "approved", outcome: outcome.status, riskLevel: command.riskLevel },
+      metadata: { decision: "approved", riskLevel: approved.riskLevel },
+    });
+
+    // What the dispatch then did is audited by the dispatcher itself, as
+    // `jarvis_phone_command_dispatched` or `..._dispatch_failed`, so the
+    // decision and its outcome are two honest records rather than one that
+    // can only be written if both succeed.
+    const outcome = await runDirectiveDispatch(db, {
+      organizationId,
+      // The approver becomes the project's actor: they are the human who
+      // authorized this work, and every downstream authorization check should
+      // resolve against them rather than against a call that has since ended.
+      founderUserId: user.userId,
+      command: approved,
+      workspaceId: null,
+      approvalDecidedByUserId: user.userId,
+      approvalDecisionNote: body.decisionNote ?? null,
     });
 
     if (outcome.status === "directive_created") {

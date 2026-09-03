@@ -212,7 +212,13 @@ describe("capture and confirmation, once verified", () => {
   });
 
   it("captures a command and speaks the read-back", async () => {
-    upsertCommandDraft.mockResolvedValue({ id: "command-1", riskLevel: "low", requiresApproval: false, overrideAttempted: false });
+    upsertCommandDraft.mockImplementation(async (_db: unknown, { draft }: { draft: { readback: string } }) => ({
+      id: "command-1",
+      riskLevel: "low",
+      requiresApproval: false,
+      overrideAttempted: false,
+      readbackText: draft.readback,
+    }));
 
     const result = await handleInboundConversationEvent(db, {
       config: CONFIG,
@@ -223,6 +229,37 @@ describe("capture and confirmation, once verified", () => {
     expect(upsertCommandDraft).toHaveBeenCalledTimes(1);
     expect(result.spoken).toMatch(/here's what i understood/i);
     expect(result.spoken.trim()).toMatch(/did i get that right\?$/i);
+  });
+
+  /**
+   * Found by review round six. `upsertCommandDraft` can legitimately return a
+   * DIFFERENT row than the one it was asked to write: two captures arriving
+   * concurrently with different content both find no open draft, and the loser
+   * — refused by the one-open-draft-per-call index — recovers by returning the
+   * winner's row.
+   *
+   * Speaking the locally-built draft there meant the founder heard THIS
+   * command, said yes, and the confirmation dispatched the OTHER one. On a call
+   * whose entire safety story is "you confirm what I read back to you", the
+   * read-back must come from the row that will actually be dispatched.
+   */
+  it("reads back what was stored, not what it just built, when another capture won the race", async () => {
+    upsertCommandDraft.mockResolvedValue({
+      id: "command-1",
+      riskLevel: "low",
+      requiresApproval: false,
+      overrideAttempted: false,
+      readbackText: "Here's what I understood. You want me to audit the supplier list. Did I get that right?",
+    });
+
+    const result = await handleInboundConversationEvent(db, {
+      config: CONFIG,
+      event: toolEvent("capture_command", { requestedOutcome: "Research three Brampton restaurants" }),
+      nowMs: NOW,
+    });
+
+    expect(result.spoken).toContain("audit the supplier list");
+    expect(result.spoken).not.toContain("Brampton");
   });
 
   it("asks again rather than storing a command with no outcome", async () => {

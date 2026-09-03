@@ -311,13 +311,29 @@ export async function touchCallSession(db: Db, input: { sessionId: string; organ
 }
 
 /**
- * Records one verification attempt. `attempts` is incremented in SQL rather
- * than read-modify-written, so two concurrent attempts can never both see the
- * same prior count and jointly exceed the cap.
+ * Records one verification attempt.
+ *
+ * `attempts` is incremented in SQL rather than read-modify-written, AND the
+ * WHERE clause carries the cap and the current state, so the guard does not
+ * depend on the caller's snapshot. Two things were wrong without that:
+ *
+ *  - The cap was enforced only in `verifyFounderPasscode`, against a count read
+ *    earlier in the request. Concurrent `verify_founder` deliveries all read
+ *    the same prior count and all got a full comparison; the increment was
+ *    atomic, but nothing stopped the attempts themselves.
+ *  - `verificationState` and `verifiedAt` were written with no precondition at
+ *    all, so a failing attempt landing after a successful one set the session
+ *    back to `unverified` and nulled `verifiedAt`, revoking a completed
+ *    verification. It was the only write on a security-relevant column in this
+ *    file with no guard, while its sibling counter had deliberately been made
+ *    atomic.
+ *
+ * Returns null when the guard refuses the write, which the caller treats as an
+ * attempt that did not happen.
  */
 export async function recordVerificationAttempt(
   db: Db,
-  input: { sessionId: string; organizationId: string; verified: boolean; exhausted: boolean }
+  input: { sessionId: string; organizationId: string; verified: boolean; exhausted: boolean; maxAttempts: number }
 ): Promise<JarvisCallSession | null> {
   const [row] = await db
     .update(jarvisCallSessions)
@@ -329,7 +345,16 @@ export async function recordVerificationAttempt(
       lastEventAt: new Date(),
       updatedAt: new Date(),
     })
-    .where(and(eq(jarvisCallSessions.id, input.sessionId), eq(jarvisCallSessions.organizationId, input.organizationId)))
+    .where(
+      and(
+        eq(jarvisCallSessions.id, input.sessionId),
+        eq(jarvisCallSessions.organizationId, input.organizationId),
+        // A verified session is never walked back, and one that has spent its
+        // attempts never gets another.
+        eq(jarvisCallSessions.verificationState, "unverified"),
+        lt(jarvisCallSessions.verificationAttempts, input.maxAttempts)
+      )
+    )
     .returning();
 
   if (row) {

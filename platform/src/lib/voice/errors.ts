@@ -62,3 +62,24 @@ export class DirectiveHandoffIncompleteError extends DomainRuleViolationError {
     this.name = "DirectiveHandoffIncompleteError";
   }
 }
+
+/**
+ * Too many passcode issuances in a window.
+ *
+ * The code is time-derived, so repeating the request leaks nothing extra —
+ * but every issuance writes an audit row, and an automated client could drown
+ * the very trail that route exists to produce. Every other
+ * credential-adjacent endpoint in this codebase is rate limited; this one was
+ * not.
+ *
+ * Fails CLOSED, matching `enforceRateLimit`: an unreachable rate-limit backend
+ * refuses the issuance rather than waving it through.
+ */
+export class PasscodeRateLimitedError extends Error {
+  readonly httpStatus = 429;
+  readonly code = "rate_limited";
+  constructor() {
+    super("Too many code requests. Wait a moment and try again.");
+    this.name = "PasscodeRateLimitedError";
+  }
+}

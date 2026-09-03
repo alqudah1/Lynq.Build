@@ -76,6 +76,8 @@ type PhoneState = {
   readiness: { enabled: boolean; ready: boolean; completedChecks: number; totalChecks: number; missing: string[] };
   /** Whether this viewer may approve, decline, or retry. Any member can read the screen; only an owner/admin can act. */
   canDecide: boolean;
+  /** Whether this viewer is the configured founder, whose second factor the passcode is. Server-computed: the panel must never offer a code that would be refused. */
+  canSeePasscode: boolean;
   calls: PhoneCall[];
   refreshAfterMs: number | null;
 };
@@ -108,12 +110,43 @@ function formatTime(value: string): string {
   return Number.isNaN(date.getTime()) ? "" : date.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
+/**
+ * The retry cap, mirrored for display only. The server is the authority on
+ * whether a retry is allowed (`retryable`); this exists so the screen can tell
+ * "tried as many times as it can be" apart from "not settled yet" instead of
+ * asserting the first about a command tried once.
+ */
+const MAX_DISPATCH_ATTEMPTS_UI = 5;
+
+/**
+ * Failure codes are written for a log, not for a founder. Rendering them raw
+ * produced "(model rate limited)", "(no agents available)" and "(unknown
+ * error)" on a screen whose whole point is that a non-technical reader can act
+ * on what it says.
+ */
+const FAILURE_LABELS: Record<string, string> = {
+  model_rate_limited: "Jarvis's planner was busy",
+  provider_unreachable: "Jarvis could not reach the planner",
+  no_agents_available: "there was no one on the team free to take it",
+  authorization_failed: "Jarvis was not allowed to open it",
+  resource_not_found: "something it needed was missing",
+  attempts_exhausted: "it has been tried as many times as it can be",
+  partially_created: "the handoff stopped part-way",
+  stalled: "it stopped part-way",
+  unknown_error: "an unexpected problem",
+};
+
+function describeFailureCode(code: string): string {
+  return FAILURE_LABELS[code] ?? "an unexpected problem";
+}
+
 export function JarvisPhoneControl({ organizationId, organizationSlug }: { organizationId: string; organizationSlug: string }) {
   const [state, setState] = useState<PhoneState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
   const [passcode, setPasscode] = useState<PasscodeState | null>(null);
   const [showPasscode, setShowPasscode] = useState(false);
+  const [passcodeLoading, setPasscodeLoading] = useState(false);
   const [pendingCommandId, setPendingCommandId] = useState<string | null>(null);
   const [decisionMessage, setDecisionMessage] = useState<string | null>(null);
   const [decisionError, setDecisionError] = useState<string | null>(null);
@@ -147,6 +180,12 @@ export function JarvisPhoneControl({ organizationId, organizationSlug }: { organ
   }, [load, state]);
 
   const revealPasscode = useCallback(async () => {
+    // `loading` before `showPasscode`, so the panel never renders its error
+    // branch while the request is still in flight. Setting showPasscode first
+    // meant that, with no code yet, the JSX fell through to a role="alert"
+    // reading "The code is not available right now" — announced immediately to
+    // a screen reader and then silently replaced by the code.
+    setPasscodeLoading(true);
     setShowPasscode(true);
     try {
       const response = await fetch(`/api/organizations/${organizationId}/jarvis/phone/passcode`, { cache: "no-store" });
@@ -155,6 +194,8 @@ export function JarvisPhoneControl({ organizationId, organizationSlug }: { organ
       setPasscode(payload.data);
     } catch (codeError) {
       setPasscode({ available: false, passcode: null, expiresInMs: null, reason: codeError instanceof Error ? codeError.message : "unavailable" });
+    } finally {
+      setPasscodeLoading(false);
     }
   }, [organizationId]);
 
@@ -235,27 +276,42 @@ export function JarvisPhoneControl({ organizationId, organizationSlug }: { organ
         </div>
       ) : null}
 
-      {state?.readiness.enabled ? (
+      {/*
+        Gated on `canDecide`, not only on readiness. The passcode route requires
+        owner or admin, so a member was shown the panel and a button that always
+        returned 403 — and the catch below turned that into "Phone control may
+        not be fully set up", telling them the deployment was broken when the
+        truth was that they lack the role.
+      */}
+      {state?.readiness.enabled && state.canSeePasscode ? (
         <div className="office-panel">
           <h3 className="font-serif text-xl font-light text-foreground">Your verification code</h3>
           <p className="mt-2 text-sm leading-6 text-muted">
             When you call Jarvis, he will ask for this six-digit code before he takes any instruction. Your phone number alone is not enough
             to prove it is you.
           </p>
+          {/* Always in the DOM, so the announcement is reliable rather than
+              racing the node that carries it into existence. */}
+          <p className="sr-only" aria-live="polite">
+            {passcodeLoading ? "Getting your code" : passcode?.available && passcode.passcode ? "Your code is showing" : ""}
+          </p>
           {!showPasscode ? (
             <button type="button" onClick={() => void revealPasscode()} className="office-dispatch-button mt-4">
               Show my code
             </button>
+          ) : passcodeLoading ? (
+            <p className="mt-4 text-sm text-muted">Getting your code…</p>
           ) : passcode?.available && passcode.passcode ? (
             <div className="mt-4">
-              <p className="font-mono text-4xl tracking-[0.35em] text-foreground" aria-live="polite">
-                {passcode.passcode}
-              </p>
+              <p className="font-mono text-4xl tracking-[0.35em] text-foreground">{passcode.passcode}</p>
               <p className="mt-2 text-xs text-subtle">This code changes every few minutes. Read the one showing when Jarvis asks.</p>
             </div>
           ) : (
             <p role="alert" className="mt-4 text-sm text-danger">
-              The code is not available right now. Phone control may not be fully set up.
+              {/* The server's own words. Swallowing them into one generic
+                  sentence hid the difference between "you cannot do this" and
+                  "this is not set up". */}
+              {passcode?.reason ?? "The code is not available right now."}
             </p>
           )}
         </div>
@@ -437,13 +493,36 @@ export function JarvisPhoneControl({ organizationId, organizationSlug }: { organ
                   <p className="mt-1 text-sm text-muted" role="status">
                     Starting now. Jarvis is opening the project and briefing the team — this page updates on its own.
                   </p>
+                ) : command.dispatchState === "dispatching" && command.projectId ? (
+                  <>
+                    {/*
+                      Past its lease AND a project exists. The single branch
+                      that used to cover all stalled dispatches said "Nothing
+                      was recorded as started" here — about a live project with
+                      a briefed team — and then, because a partially-created
+                      command is not retryable, told the founder it had "been
+                      tried as many times as it can be" when it had been tried
+                      once, and to call Jarvis again, which would have created a
+                      second copy of the work.
+                    */}
+                    <p role="alert" className="mt-1 text-sm text-danger">
+                      Partly. Jarvis opened {command.projectName ?? "the project"} and then stopped before finishing the handoff. Some of the
+                      work may already be running.
+                    </p>
+                    <p className="mt-2 text-sm text-muted">
+                      Starting it again would create a second copy, so open the project and carry on from there.{" "}
+                      <Link href={`/app/${organizationSlug}/jarvis/${command.projectId}`} className="text-accent-foreground hover:text-foreground">
+                        Open it →
+                      </Link>
+                    </p>
+                  </>
                 ) : command.dispatchState === "dispatching" ? (
                   <>
-                    {/* Past its lease: the dispatch stopped without recording
-                        an outcome, so promising it is still working would be
+                    {/* Past its lease, and no project was recorded before it
+                        stopped, so promising it is still working would be
                         false. */}
                     <p role="alert" className="mt-1 text-sm text-danger">
-                      Jarvis started opening this and then stopped without finishing. Nothing was recorded as started.
+                      Jarvis started opening this and then stopped without finishing. No project was recorded before it stopped.
                     </p>
                     {command.retryable ? (
                       <button
@@ -456,9 +535,11 @@ export function JarvisPhoneControl({ organizationId, organizationSlug }: { organ
                       </button>
                     ) : (
                       <p className="mt-2 text-sm text-muted">
-                        {state?.canDecide
-                          ? "This one has been tried as many times as it can be. Call Jarvis again if you still want it."
-                          : "Only an organization owner or admin can try this again."}
+                        {!state?.canDecide
+                          ? "Only an organization owner or admin can try this again."
+                          : command.dispatchAttempts >= MAX_DISPATCH_ATTEMPTS_UI
+                            ? "This one has been tried as many times as it can be. Call Jarvis again if you still want it."
+                            : "Jarvis is still settling this one. Refresh in a moment."}
                       </p>
                     )}
                   </>
@@ -468,7 +549,7 @@ export function JarvisPhoneControl({ organizationId, organizationSlug }: { organ
                         "nothing was started" here would be false. */}
                     <p role="alert" className="mt-1 text-sm text-danger">
                       Partly. Jarvis opened {command.projectName ?? "the project"} but could not finish the handoff
-                      {command.failureCode ? ` (${command.failureCode.replace(/_/g, " ")})` : ""}. Some of the work may already be running.
+                      {command.failureCode ? ` (${describeFailureCode(command.failureCode)})` : ""}. Some of the work may already be running.
                     </p>
                     <p className="mt-2 text-sm text-muted">
                       Retrying would start it a second time, so open the project and carry on from there.{" "}
@@ -480,7 +561,7 @@ export function JarvisPhoneControl({ organizationId, organizationSlug }: { organ
                 ) : command.dispatchState === "failed" ? (
                   <>
                     <p role="alert" className="mt-1 text-sm text-danger">
-                      No. Jarvis could not open the project{command.failureCode ? ` (${command.failureCode.replace(/_/g, " ")})` : ""}. Nothing was
+                      No. Jarvis could not open the project{command.failureCode ? ` (${describeFailureCode(command.failureCode)})` : ""}. Nothing was
                       started, and nothing was sent.
                     </p>
                     {command.retryable ? (

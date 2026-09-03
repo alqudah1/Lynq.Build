@@ -7,9 +7,9 @@ import { handleRouteError, jsonSuccess } from "@/lib/http/responses";
 import { parseUuidParam } from "@/lib/http/validation";
 import { listPhoneCallsForUser } from "@/lib/voice/call-store";
 import { requireOrganizationMembership } from "@/lib/authz/helpers";
-import { getJarvisPhoneCommandReadiness } from "@/lib/voice/phone-config";
+import { getJarvisPhoneCommandReadiness, resolveJarvisPhoneCommandConfig } from "@/lib/voice/phone-config";
 import { GATED_CATEGORY_LABELS, type GatedCategory } from "@/lib/voice/command-risk";
-import { DISPATCH_LEASE_MS, MAX_DISPATCH_ATTEMPTS } from "@/lib/voice/command-dispatch";
+import { DISPATCH_LEASE_MS, MAX_DISPATCH_ATTEMPTS, reapStalledDispatch } from "@/lib/voice/command-dispatch";
 import { isDispatchInFlight } from "@/lib/voice/call-store";
 
 export const dynamic = "force-dynamic";
@@ -33,8 +33,12 @@ export async function GET(_request: Request, { params }: RouteParams) {
     const db = createDbClient(env);
     const user = await getAuthenticatedUser(db);
 
-    const calls = await listPhoneCallsForUser(db, { organizationId, actorUserId: user.userId, limit: 10 });
-    const readiness = getJarvisPhoneCommandReadiness();
+    const loaded = await listPhoneCallsForUser(db, { organizationId, actorUserId: user.userId, limit: 10 });
+    // Readiness is scoped to THIS organization, not to the deployment: phone
+    // control is configured for exactly one organization, and every other
+    // tenant used to be shown the whole surface for a capability it does not
+    // have.
+    const readiness = getJarvisPhoneCommandReadiness(organizationId);
 
     // Any member may READ this screen, but only an owner/admin may approve,
     // decline, or retry — the same floor the decision route enforces. The UI
@@ -42,9 +46,38 @@ export async function GET(_request: Request, { params }: RouteParams) {
     const membership = await requireOrganizationMembership(db, organizationId, user.userId);
     const canDecide = membership.role === "owner" || membership.role === "admin";
 
+    // Reap any dispatch whose lease has expired before rendering. `dispatching`
+    // means "a process is working on this right now", and a serverless process
+    // killed mid-handoff throws nothing and writes nothing — so without this
+    // the row keeps that meaning forever and no entry point can move it. The
+    // write is idempotent, revision-guarded, and only ever fires on a row whose
+    // lease has already expired; losing the guard to a concurrent writer just
+    // means someone else got there first.
+    const calls = await Promise.all(
+      loaded.map(async (call) => ({
+        ...call,
+        commands: await Promise.all(
+          call.commands.map(async (command) => {
+            if (command.dispatchState !== "dispatching" || isDispatchInFlight(command, DISPATCH_LEASE_MS)) return command;
+            const reaped = await reapStalledDispatch(db, { organizationId, command, actorUserId: user.userId });
+            return reaped ? { ...command, ...reaped } : command;
+          })
+        ),
+      }))
+    );
+
+    // The passcode is the FOUNDER's second factor and is scoped by time, not by
+    // user, so only the configured founder account may see it. The screen needs
+    // to know: a panel offering "Show my code" to someone who will be refused is
+    // the same defect as a button that is refused on click.
+    const phoneConfig = resolveJarvisPhoneCommandConfig();
+    const canSeePasscode =
+      phoneConfig.ok && phoneConfig.config.organizationId === organizationId && phoneConfig.config.founderUserId === user.userId;
+
     return jsonSuccess({
       readiness,
       canDecide,
+      canSeePasscode,
       calls: calls.map((call) => ({
         session: {
           id: call.session.id,

@@ -349,9 +349,9 @@ describe("verification state", () => {
     const organizationId = await makeOrg(userId);
     const session = await openSession(organizationId, userId);
 
-    await recordVerificationAttempt(db, { sessionId: session.id, organizationId, verified: false, exhausted: false });
-    await recordVerificationAttempt(db, { sessionId: session.id, organizationId, verified: false, exhausted: false });
-    const final = await recordVerificationAttempt(db, { sessionId: session.id, organizationId, verified: false, exhausted: true });
+    await recordVerificationAttempt(db, { sessionId: session.id, organizationId, verified: false, exhausted: false, maxAttempts: 3 });
+    await recordVerificationAttempt(db, { sessionId: session.id, organizationId, verified: false, exhausted: false, maxAttempts: 3 });
+    const final = await recordVerificationAttempt(db, { sessionId: session.id, organizationId, verified: false, exhausted: true, maxAttempts: 3 });
 
     expect(final?.verificationAttempts).toBe(3);
     expect(final?.verificationState).toBe("failed");
@@ -363,7 +363,7 @@ describe("verification state", () => {
     const organizationId = await makeOrg(userId);
     const session = await openSession(organizationId, userId);
 
-    const verified = await recordVerificationAttempt(db, { sessionId: session.id, organizationId, verified: true, exhausted: false });
+    const verified = await recordVerificationAttempt(db, { sessionId: session.id, organizationId, verified: true, exhausted: false, maxAttempts: 3 });
     expect(verified?.verificationState).toBe("verified");
     expect(verified?.verifiedAt).toBeInstanceOf(Date);
   });

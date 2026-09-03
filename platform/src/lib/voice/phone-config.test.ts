@@ -68,12 +68,12 @@ describe("resolveJarvisPhoneCommandConfig", () => {
 
 describe("getJarvisPhoneCommandReadiness", () => {
   it("reports every check complete for a valid configuration", () => {
-    const readiness = getJarvisPhoneCommandReadiness(COMPLETE);
+    const readiness = getJarvisPhoneCommandReadiness(null, COMPLETE);
     expect(readiness).toMatchObject({ enabled: true, ready: true, completedChecks: 5, totalChecks: 5, missing: [] });
   });
 
   it("reports what is missing in founder-readable language, never a value", () => {
-    const readiness = getJarvisPhoneCommandReadiness({});
+    const readiness = getJarvisPhoneCommandReadiness(null, {});
     expect(readiness.ready).toBe(false);
     expect(readiness.enabled).toBe(false);
     expect(readiness.missing).toContain("Phone commands enabled");

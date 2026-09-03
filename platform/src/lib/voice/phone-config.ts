@@ -108,11 +108,27 @@ export interface JarvisPhoneCommandReadiness {
   missing: string[];
 }
 
+/**
+ * @param organizationId When given, readiness is reported for THAT organization
+ *   rather than for the deployment. Phone control is configured for exactly one
+ *   organization (`JARVIS_PHONE_ORGANIZATION_ID`), but this function read only
+ *   `process.env` and so reported `enabled: true` to every tenant — every other
+ *   organization's owner was shown the verification-code panel and told "when
+ *   you call Jarvis, he will ask for this six-digit code", for a capability
+ *   their organization does not have. The passcode route already scopes
+ *   correctly; this is the read that did not.
+ */
 export function getJarvisPhoneCommandReadiness(
+  organizationId?: string | null,
   environment: PhoneEnvironment = process.env as PhoneEnvironment
 ): JarvisPhoneCommandReadiness {
+  const configuredOrganizationId = environment.JARVIS_PHONE_ORGANIZATION_ID?.trim();
+  const scopedToThisOrganization = !organizationId || (Boolean(configuredOrganizationId) && configuredOrganizationId === organizationId);
   const checks = [
-    { label: "Phone commands enabled", complete: phoneCommandsFlagEnabled(environment.JARVIS_PHONE_COMMANDS_ENABLED) },
+    {
+      label: "Phone commands enabled",
+      complete: phoneCommandsFlagEnabled(environment.JARVIS_PHONE_COMMANDS_ENABLED) && scopedToThisOrganization,
+    },
     { label: "Command organization", complete: z.string().uuid().safeParse(environment.JARVIS_PHONE_ORGANIZATION_ID?.trim()).success },
     { label: "Founder account", complete: z.string().uuid().safeParse(environment.JARVIS_PHONE_FOUNDER_USER_ID?.trim()).success },
     { label: "Founder verification secret", complete: (environment.JARVIS_PHONE_VERIFICATION_SECRET?.trim().length ?? 0) >= 32 },

@@ -152,14 +152,23 @@ export async function createDirectiveProject(db: Db, input: CreateDirectiveProje
     priority: "high",
     actorUserId: input.actorUserId,
   });
-  // Recorded before anything else is created, and deliberately not inside the
-  // try below: if this itself fails there is nothing durable to protect yet.
-  if (input.onProjectCreated) await input.onProjectCreated({ id: project.id, name: project.name });
-
   // Everything from here on can leave real, live records behind if it throws,
   // so every failure past this point is reported as a PARTIAL creation rather
   // than a clean one — see `DirectivePartiallyCreatedError`.
+  //
+  // The callback is INSIDE this try. It used to sit just above it, under a
+  // comment claiming there was "nothing durable to protect yet" — which was
+  // false: `createProject` has already committed a live project row by the
+  // time the callback runs, and recording that row is the whole reason the
+  // callback exists. So a transient failure in the callback itself (one HTTP
+  // round trip to Neon: a reset, a 502, a statement timeout) escaped as a raw
+  // error, the caller's `instanceof DirectivePartiallyCreatedError` check
+  // missed it, and the command was written back as `failed` with a null
+  // project id. The screen then said "Nothing was started, and nothing was
+  // sent" about a live project with a briefed team, and offered a Try again
+  // button that would have created a second one.
   try {
+    if (input.onProjectCreated) await input.onProjectCreated({ id: project.id, name: project.name });
     return await completeDirectiveProject(db, { input, plan, project, agents });
   } catch (error) {
     if (error instanceof DirectivePartiallyCreatedError) throw error;

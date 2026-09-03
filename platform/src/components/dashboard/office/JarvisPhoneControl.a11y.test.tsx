@@ -87,7 +87,7 @@ function stubFetch(state: unknown, extra?: Record<string, unknown>) {
   return fetchMock;
 }
 
-const readyState = { readiness: { enabled: true, ready: true, completedChecks: 5, totalChecks: 5, missing: [] }, canDecide: true, refreshAfterMs: null };
+const readyState = { readiness: { enabled: true, ready: true, completedChecks: 5, totalChecks: 5, missing: [] }, canDecide: true, canSeePasscode: true, refreshAfterMs: null };
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -151,7 +151,10 @@ describe("JarvisPhoneControl accessibility", () => {
     fireEvent.click(reveal);
 
     await waitFor(() => expect(screen.getByText("417296")).toBeInTheDocument());
-    expect(screen.getByText("417296")).toHaveAttribute("aria-live", "polite");
+    // The live region is a node that is ALWAYS mounted, not the code element
+    // itself. A polite region that comes into existence at the same moment as
+    // its content is unreliable — the announcement races the node carrying it.
+    expect(screen.getByText(/your code is showing/i)).toHaveAttribute("aria-live", "polite");
     expect(await axe(container)).toHaveNoViolations();
   });
 
@@ -159,6 +162,7 @@ describe("JarvisPhoneControl accessibility", () => {
     stubFetch({
       readiness: { enabled: false, ready: false, completedChecks: 1, totalChecks: 5, missing: ["Phone commands enabled", "Founder verification secret"] },
       canDecide: true,
+      canSeePasscode: true,
       calls: [],
       refreshAfterMs: null,
     });
@@ -232,7 +236,10 @@ describe("JarvisPhoneControl accessibility", () => {
 
     // The failure is stated plainly before any retry is offered.
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent(/could not open the project/i));
-    expect(screen.getByRole("alert")).toHaveTextContent(/model rate limited/i);
+    // Founder-facing language, not the log's vocabulary. "(model rate limited)"
+    // is not something a non-technical reader can act on.
+    expect(screen.getByRole("alert")).toHaveTextContent(/planner was busy/i);
+    expect(screen.getByRole("alert")).not.toHaveTextContent(/model rate limited/i);
 
     const retry = screen.getByRole("button", { name: /try again/i });
     fireEvent.click(retry);
@@ -276,7 +283,7 @@ describe("JarvisPhoneControl accessibility", () => {
 
   it("shows a member the decision is not theirs to make, rather than a button that would be refused", async () => {
     // Any org member may READ this screen; only an owner/admin may decide.
-    stubFetch({ ...readyState, canDecide: false, calls: [gatedCall] });
+    stubFetch({ ...readyState, canDecide: false, canSeePasscode: false, calls: [gatedCall] });
 
     const { container } = render(<JarvisPhoneControl organizationId="organization-1" organizationSlug="lynq" />);
 
@@ -386,5 +393,121 @@ describe("JarvisPhoneControl accessibility", () => {
       )
     );
     expect(await axe(container)).toHaveNoViolations();
+  });
+});
+
+describe("JarvisPhoneControl — what it says about a dispatch that stopped part-way", () => {
+  /**
+   * Found by review round six. One branch covered every stalled dispatch, and
+   * it asserted "Nothing was recorded as started" — including for the most
+   * likely kill window of all: a process that dies AFTER the project row
+   * exists (`projectId` is written the instant it does, precisely so this case
+   * is recoverable) but before the agents are launched.
+   *
+   * The founder was told nothing had started about a live project with a
+   * briefed team, then told the command had "been tried as many times as it
+   * can be" when it had been tried once, and then told to call Jarvis again —
+   * which would have produced a second copy of the running work. Three false
+   * statements and one dangerous instruction, on the screen whose entire job
+   * is to say honestly whether work started.
+   */
+  it("does not claim nothing started when a project already exists", async () => {
+    const stalledWithProject = {
+      ...gatedCall,
+      session: { ...gatedCall.session, id: "session-20" },
+      commands: [
+        {
+          ...gatedCall.commands[0],
+          id: "command-20",
+          requiresApproval: false,
+          gatedReasons: [],
+          riskReasons: [],
+          dispatchState: "dispatching",
+          inFlight: false,
+          retryable: false,
+          dispatchAttempts: 1,
+          projectId: "project-20",
+          projectName: "Brampton restaurant research",
+        },
+      ],
+    };
+    stubFetch({ ...readyState, calls: [stalledWithProject] });
+
+    const { container } = render(<JarvisPhoneControl organizationId="organization-1" organizationSlug="lynq" />);
+
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent(/stopped before finishing the handoff/i));
+    expect(screen.getByRole("alert")).toHaveTextContent(/Brampton restaurant research/i);
+    expect(screen.queryByText(/nothing was recorded as started/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/tried as many times as it can be/i)).not.toBeInTheDocument();
+    // Starting it again would create a second copy, so the way out is the
+    // project itself, not a retry.
+    expect(screen.queryByRole("button", { name: /try again/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /open it/i })).toHaveAttribute("href", "/app/lynq/jarvis/project-20");
+    expect(await axe(container)).toHaveNoViolations();
+  });
+
+  it("does not tell a founder a command was tried five times when it was tried once", async () => {
+    const stalledNotRetryable = {
+      ...gatedCall,
+      session: { ...gatedCall.session, id: "session-21" },
+      commands: [
+        {
+          ...gatedCall.commands[0],
+          id: "command-21",
+          requiresApproval: false,
+          gatedReasons: [],
+          riskReasons: [],
+          dispatchState: "dispatching",
+          inFlight: false,
+          retryable: false,
+          dispatchAttempts: 1,
+          projectId: null,
+        },
+      ],
+    };
+    stubFetch({ ...readyState, calls: [stalledNotRetryable] });
+
+    render(<JarvisPhoneControl organizationId="organization-1" organizationSlug="lynq" />);
+
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent(/stopped without finishing/i));
+    expect(screen.queryByText(/tried as many times as it can be/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/still settling this one/i)).toBeInTheDocument();
+  });
+});
+
+describe("JarvisPhoneControl — the verification code panel", () => {
+  /**
+   * The panel used to gate only on readiness, so anyone who could read the
+   * screen was shown "Show my code" — and the request was refused, with the
+   * refusal swallowed into "Phone control may not be fully set up", telling
+   * them the deployment was broken when the truth was that the code is not
+   * theirs.
+   */
+  it("is not offered to someone whose request would be refused", async () => {
+    stubFetch({ ...readyState, canSeePasscode: false, calls: [] });
+
+    render(<JarvisPhoneControl organizationId="organization-1" organizationSlug="lynq" />);
+
+    await waitFor(() => expect(screen.getByRole("heading", { name: /phone control/i })).toBeInTheDocument());
+    expect(screen.queryByRole("button", { name: /show my code/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/may not be fully set up/i)).not.toBeInTheDocument();
+  });
+
+  it("says what actually went wrong instead of blaming the deployment", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/passcode")) {
+        return new Response(JSON.stringify({ error: { message: "This code belongs to the founder's account." } }), { status: 403 });
+      }
+      return new Response(JSON.stringify({ data: { ...readyState, calls: [] } }), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<JarvisPhoneControl organizationId="organization-1" organizationSlug="lynq" />);
+
+    fireEvent.click(await screen.findByRole("button", { name: /show my code/i }));
+
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent(/belongs to the founder's account/i));
+    expect(screen.queryByText(/may not be fully set up/i)).not.toBeInTheDocument();
   });
 });

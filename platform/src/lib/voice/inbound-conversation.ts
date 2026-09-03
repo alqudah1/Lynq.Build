@@ -399,14 +399,33 @@ async function handleVerify(
   });
 
   if (outcome.verified) {
-    await recordVerificationAttempt(db, { sessionId: session.id, organizationId: session.organizationId, verified: true, exhausted: false });
+    const verified = await recordVerificationAttempt(db, {
+      sessionId: session.id,
+      organizationId: session.organizationId,
+      verified: true,
+      exhausted: false,
+      maxAttempts: MAX_VERIFICATION_ATTEMPTS,
+    });
+    if (!verified) {
+      // The guarded write refused: this session was already verified by a
+      // concurrent delivery, or had already spent its attempts. Either way this
+      // attempt changed nothing and must not be reported as the one that
+      // succeeded.
+      return { spoken: "You're already verified. What would you like me to work on?", processingStatus: "processed", sessionId: session.id };
+    }
     logPhoneEvent({ event: "founder-verified", sessionId: session.id });
     return { spoken: "Thanks, you're verified. What would you like me to work on?", processingStatus: "processed", sessionId: session.id };
   }
 
   const attemptsAfter = session.verificationAttempts + 1;
   const exhausted = outcome.reason === "attempts_exhausted" || attemptsAfter >= MAX_VERIFICATION_ATTEMPTS;
-  await recordVerificationAttempt(db, { sessionId: session.id, organizationId: session.organizationId, verified: false, exhausted });
+  await recordVerificationAttempt(db, {
+    sessionId: session.id,
+    organizationId: session.organizationId,
+    verified: false,
+    exhausted,
+    maxAttempts: MAX_VERIFICATION_ATTEMPTS,
+  });
 
   if (exhausted) {
     await recordAuditEvent(db, {
@@ -473,7 +492,23 @@ async function handleCapture(db: Db, input: { session: JarvisCallSession; args: 
     overrideAttempted: command.overrideAttempted,
   });
 
-  return { spoken: draft.readback, processingStatus: "processed", sessionId: input.session.id };
+  // Read back what was STORED, not what this handler built.
+  //
+  // `upsertCommandDraft` can legitimately return a different row than the one
+  // it was asked to write: if two captures arrive concurrently with different
+  // content, the loser's insert violates the one-open-draft-per-call index and
+  // it recovers by returning the winner's row. Speaking `draft.readback` there
+  // meant the founder heard THIS draft, said yes, and `handleConfirm` then
+  // dispatched the other one — an instruction/execution mismatch on a call
+  // whose entire safety story is "you confirm what I read back to you".
+  //
+  // The stored row is authoritative by definition: it is what the confirmation
+  // will find and dispatch.
+  const substituted = command.readbackText !== draft.readback;
+  if (substituted) {
+    logPhoneEvent({ event: "command-capture-substituted", sessionId: input.session.id, commandId: command.id });
+  }
+  return { spoken: command.readbackText, processingStatus: "processed", sessionId: input.session.id };
 }
 
 async function handleConfirm(

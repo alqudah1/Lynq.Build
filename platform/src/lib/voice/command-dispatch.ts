@@ -174,26 +174,24 @@ export async function retryFailedDispatch(
   // failure the lease was added to prevent.
   const staleLease = command.dispatchState === "dispatching";
   if (!staleLease && command.dispatchState !== "failed") throw new CommandNotRetryableError("not_failed");
+  // A stalled row is moved out of `dispatching` BEFORE any refusal below, so
+  // every exit from here leaves it in a terminal state. Previously the
+  // `projectId` and attempt-cap refusals came first and threw without writing,
+  // which meant the most likely kill window of all — a process dying after the
+  // project row exists but before the agents are launched — left the command
+  // wedged in `dispatching` forever with no path out: retry threw, approve and
+  // decline require `awaiting_approval`, and the call-side handlers only look
+  // for `awaiting_confirmation`.
+  // The reap bumps the revision, so the retry below must proceed from the row
+  // it produced — running the claim against the pre-reap revision would lose
+  // its own guard and report "already dispatched".
+  const current = (staleLease ? await reapStalledDispatch(db, { organizationId: input.organizationId, command, actorUserId: input.actorUserId }) : null) ?? command;
   // A failed dispatch that already produced a project is NOT retryable: the
   // project exists, its tasks exist, and its agents may already be running.
   // Re-running would create a second copy of live work, which is worse than
   // the incomplete handoff the founder is looking at.
-  if (command.projectId) throw new CommandNotRetryableError("partially_created");
-  if (command.dispatchAttempts >= MAX_DISPATCH_ATTEMPTS) {
-    // A stalled command at the cap could otherwise never reach a terminal
-    // state: the claim refuses it on the cap, and nothing else transitions it,
-    // so it sat in `dispatching` forever reading as "stopped part-way". Record
-    // the honest outcome before refusing, so at least the row stops lying.
-    if (staleLease) {
-      await transitionCommand(db, {
-        organizationId: input.organizationId,
-        commandId: command.id,
-        expectedRevision: command.revision,
-        dispatchState: "failed",
-        failureCode: "attempts_exhausted",
-        failureMessage: "The dispatch stopped part-way and has been tried as many times as it can be.",
-      });
-    }
+  if (current.projectId) throw new CommandNotRetryableError("partially_created");
+  if (current.dispatchAttempts >= MAX_DISPATCH_ATTEMPTS) {
     // The cap is also enforced atomically inside the dispatch claim; this is
     // the early, friendly refusal so the caller gets a real 409 instead of a
     // confusing "already dispatched".
@@ -205,9 +203,81 @@ export async function retryFailedDispatch(
     // The person who pressed retry is the actor, so every downstream
     // authorization check resolves against a real, current session.
     founderUserId: input.actorUserId,
-    command,
+    command: current,
     workspaceId: input.workspaceId ?? null,
   });
+}
+
+/**
+ * Moves a command whose dispatch lease has expired out of `dispatching` and
+ * into an honest terminal state.
+ *
+ * `dispatching` means "a process is working on this right now". A serverless
+ * process that is killed mid-handoff throws nothing and writes nothing, so
+ * without a reaper the row keeps that meaning forever: the screen reads
+ * "Jarvis started opening this and then stopped without finishing", no button
+ * is offered, and no entry point can move it — retry refused before writing,
+ * approve and decline require `awaiting_approval`, and the call-side handlers
+ * only look for `awaiting_confirmation`.
+ *
+ * Idempotent, revision-guarded, and safe to call from a read path: it only
+ * ever fires on a row whose lease has already expired, and losing the guard
+ * to a concurrent writer simply means someone else got there first.
+ *
+ * Returns the updated row, or null when there was nothing to do or the guard
+ * was lost.
+ */
+export async function reapStalledDispatch(
+  db: Db,
+  input: { organizationId: string; command: JarvisPhoneCommand; actorUserId: string; nowMs?: number }
+): Promise<JarvisPhoneCommand | null> {
+  const { command } = input;
+  if (command.dispatchState !== "dispatching") return null;
+  if (isDispatchInFlight(command, DISPATCH_LEASE_MS, input.nowMs)) return null;
+
+  // `projectId` is written the instant the project row exists, so a set value
+  // means real work was created and a null value means the handoff stopped
+  // before it was recorded. The message says exactly that much and no more —
+  // claiming "nothing was started" would be a guess.
+  const partial = Boolean(command.projectId);
+  const failureCode = partial
+    ? "partially_created"
+    : command.dispatchAttempts >= MAX_DISPATCH_ATTEMPTS
+      ? "attempts_exhausted"
+      : "stalled";
+
+  let reaped: JarvisPhoneCommand | null = null;
+  try {
+    reaped = await transitionCommand(db, {
+      organizationId: input.organizationId,
+      commandId: command.id,
+      expectedRevision: command.revision,
+      dispatchState: "failed",
+      failureCode,
+      failureMessage: partial
+        ? "The handoff stopped part-way. The project was created; the rest of the setup may not have finished."
+        : "The handoff stopped part-way. No project was recorded before it stopped.",
+    });
+  } catch {
+    return null;
+  }
+  if (!reaped) return null;
+
+  // A durable state change never happens unrecorded, even one nobody asked
+  // for. Best-effort: the reaper runs on a read path, and a failed audit write
+  // must not turn viewing the screen into an error.
+  await recordAuditEvent(db, {
+    eventType: "jarvis_phone_command_dispatch_failed",
+    organizationId: input.organizationId,
+    actorUserId: input.actorUserId,
+    targetType: "jarvis_phone_command",
+    targetId: command.id,
+    metadata: { failureCode, attempts: reaped.dispatchAttempts, partiallyCreated: partial, reapedStaleLease: true },
+  }).catch(() => {
+    console.error("[jarvis-phone]", JSON.stringify(redactLogFields({ event: "reap-audit-failed", commandId: command.id })));
+  });
+
+  return reaped;
 }
 
 /**
@@ -361,6 +431,13 @@ export async function runDirectiveDispatch(
       ...(input.approvalDecisionNote !== undefined ? { approvalDecisionNote: input.approvalDecisionNote } : {}),
     });
 
+    // Best-effort, for the same reason the success path is — and doubly so
+    // here. A dispatch failure is very often CAUSED by database or provider
+    // trouble, which is exactly the condition under which the audit insert
+    // also fails. Unguarded, that turned an honestly-recorded failure into a
+    // thrown error: on the call path the founder heard nothing at all instead
+    // of "I couldn't open the project just now", and on the decision route it
+    // became a 500 rather than the real reason.
     await recordAuditEvent(db, {
       eventType: "jarvis_phone_command_dispatch_failed",
       organizationId: input.organizationId,
@@ -368,6 +445,8 @@ export async function runDirectiveDispatch(
       targetType: "jarvis_phone_command",
       targetId: command.id,
       metadata: { failureCode, attempts: failed?.dispatchAttempts ?? command.dispatchAttempts, partiallyCreated: Boolean(partial) },
+    }).catch(() => {
+      console.error("[jarvis-phone]", JSON.stringify(redactLogFields({ event: "dispatch-failure-audit-failed", commandId: command.id })));
     });
 
     return {
