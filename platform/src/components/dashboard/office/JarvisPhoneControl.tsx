@@ -87,6 +87,7 @@ type PasscodeState = { available: boolean; passcode: string | null; expiresInMs:
 const DISPATCH_LABEL: Record<string, string> = {
   awaiting_confirmation: "Waiting for you to confirm on the call",
   awaiting_approval: "Needs your approval",
+  awaiting_start: "Waiting for you to start it",
   dispatching: "Opening the project now",
   dispatching_stalled: "Stopped part-way",
   declined: "You declined it",
@@ -98,6 +99,7 @@ const DISPATCH_LABEL: Record<string, string> = {
 const DISPATCH_STYLE: Record<string, string> = {
   awaiting_confirmation: "border-white/10 bg-white/[0.02] text-muted",
   awaiting_approval: "border-amber-300/40 bg-amber-300/10 text-amber-100",
+  awaiting_start: "border-white/10 bg-white/[0.02] text-muted",
   dispatching: "border-blue-400/30 bg-blue-400/10 text-blue-200",
   declined: "border-white/10 bg-white/[0.02] text-subtle",
   directive_created: "border-emerald-300/30 bg-emerald-300/10 text-emerald-100",
@@ -386,15 +388,28 @@ export function JarvisPhoneControl({ organizationId, organizationSlug }: { organ
                 <h4 id={`command-${command.id}`} className="font-serif text-lg font-light text-foreground">
                   What Jarvis understood
                 </h4>
+                {/*
+                  Two commands can share `awaiting_approval` and mean different
+                  things: one the gate stopped, and one it cleared that is
+                  waiting only because nothing said on a call starts on its own.
+                  Badging both "Needs your approval" would make the amber label
+                  meaningless, which is how a founder learns to approve without
+                  reading.
+                */}
                 <span
                   className={`rounded-full border px-2 py-1 text-[0.6rem] uppercase tracking-[0.12em] ${
-                    (command.dispatchState === "dispatching" && !command.inFlight ? DISPATCH_STYLE.failed : DISPATCH_STYLE[command.dispatchState]) ??
-                    "border-border text-muted"
+                    (command.dispatchState === "dispatching" && !command.inFlight
+                      ? DISPATCH_STYLE.failed
+                      : command.dispatchState === "awaiting_approval" && !command.requiresApproval
+                        ? DISPATCH_STYLE.awaiting_start
+                        : DISPATCH_STYLE[command.dispatchState]) ?? "border-border text-muted"
                   }`}
                 >
                   {command.dispatchState === "dispatching" && !command.inFlight
                     ? DISPATCH_LABEL.dispatching_stalled
-                    : DISPATCH_LABEL[command.dispatchState] ?? command.dispatchState}
+                    : command.dispatchState === "awaiting_approval" && !command.requiresApproval
+                      ? DISPATCH_LABEL.awaiting_start
+                      : DISPATCH_LABEL[command.dispatchState] ?? command.dispatchState}
                 </span>
               </div>
 
@@ -440,17 +455,48 @@ export function JarvisPhoneControl({ organizationId, organizationSlug }: { organ
                 </p>
               ) : null}
 
-              {command.requiresApproval ? (
-                <div className="mt-5 rounded-sm border border-amber-300/40 bg-amber-300/10 p-4">
-                  <h5 className="text-sm font-medium text-amber-100">What needs your approval</h5>
-                  <ul className="mt-2 list-disc pl-5 text-sm text-amber-100/90">
-                    {(command.gatedReasons.length > 0 ? command.gatedReasons : command.riskReasons).map((reason) => (
-                      <li key={reason}>{reason}</li>
-                    ))}
-                  </ul>
+              {/*
+                The decision block renders for ANY command waiting on a
+                decision, not only a gated one.
+                
+                It used to be inside `requiresApproval`, which was correct when
+                a low-risk command dispatched itself. It no longer does:
+                auto-dispatch is off by default, so an ungated command lands
+                here too — and with the block hidden it sat on screen badged
+                "Needs your approval" with no button that could approve it.
+
+                The two cases are styled and worded apart on purpose. If work
+                the gate cleared arrives looking exactly like work the gate
+                stopped, the amber panel stops meaning anything and the founder
+                learns to press Approve without reading it, which is the whole
+                failure this lane is trying to avoid.
+              */}
+              {command.dispatchState === "awaiting_approval" || (command.requiresApproval && command.decidedAt) ? (
+                <div
+                  className={`mt-5 rounded-sm border p-4 ${
+                    command.requiresApproval ? "border-amber-300/40 bg-amber-300/10" : "border-white/10 bg-white/[0.02]"
+                  }`}
+                >
+                  <h5 className={`text-sm font-medium ${command.requiresApproval ? "text-amber-100" : "text-foreground"}`}>
+                    {command.requiresApproval ? "What needs your approval" : "Ready when you are"}
+                  </h5>
+                  {command.requiresApproval ? (
+                    <ul className="mt-2 list-disc pl-5 text-sm text-amber-100/90">
+                      {(command.gatedReasons.length > 0 ? command.gatedReasons : command.riskReasons).map((reason) => (
+                        <li key={reason}>{reason}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-2 text-sm leading-6 text-muted">
+                      This reads as ordinary internal work — Jarvis found nothing here that reaches a customer, spends money, or changes
+                      anything live. Nothing said on a call starts on its own, so it is waiting for you to start it.
+                    </p>
+                  )}
                   {command.dispatchState === "awaiting_approval" ? (
                     <>
-                      <p className="mt-3 text-sm text-amber-100/90">Nothing has started. Nothing will until you decide here.</p>
+                      <p className={`mt-3 text-sm ${command.requiresApproval ? "text-amber-100/90" : "text-muted"}`}>
+                        Nothing has started. Nothing will until you decide here.
+                      </p>
                       {state?.canDecide ? (
                         <div className="mt-4 flex flex-wrap gap-2">
                           <button
@@ -459,7 +505,11 @@ export function JarvisPhoneControl({ organizationId, organizationSlug }: { organ
                             disabled={pendingCommandId === command.id}
                             className="office-dispatch-button"
                           >
-                            {pendingCommandId === command.id ? "Working…" : "Approve and start the work"}
+                            {pendingCommandId === command.id
+                              ? "Working…"
+                              : command.requiresApproval
+                                ? "Approve and start the work"
+                                : "Start the work"}
                           </button>
                           <button
                             type="button"
@@ -467,11 +517,13 @@ export function JarvisPhoneControl({ organizationId, organizationSlug }: { organ
                             disabled={pendingCommandId === command.id}
                             className="office-starter"
                           >
-                            Decline
+                            {command.requiresApproval ? "Decline" : "Not now"}
                           </button>
                         </div>
                       ) : (
-                        <p className="mt-3 text-sm text-amber-100/90">Only an organization owner or admin can decide this one.</p>
+                        <p className={`mt-3 text-sm ${command.requiresApproval ? "text-amber-100/90" : "text-muted"}`}>
+                          Only an organization owner or admin can decide this one.
+                        </p>
                       )}
                     </>
                   ) : command.decidedAt ? (

@@ -442,8 +442,13 @@ Reused unchanged:
 5. Give a wrong code twice and the right code third. Confirm the attempt
    counter behaves and verification succeeds.
 6. Ask for internal work ("research three restaurants in Brampton and compare
-   their websites"). Confirm the read-back is accurate, say yes, and confirm a
-   real project opens and appears on the Jarvis screen.
+   their websites"). Confirm the read-back is accurate and say yes. With
+   `JARVIS_PHONE_AUTO_DISPATCH_ENABLED` off — the default — Jarvis should say
+   it reads as ordinary internal work and is waiting for you to start it, and
+   the Jarvis screen should show it badged **Waiting for you to start it**,
+   in neutral rather than amber, with a **Start the work** button. Press it and
+   confirm a real project opens. (With the flag on, the project should open
+   from the call itself and the screen should show **Work started**.)
 7. Ask for gated work ("email the owner our proposal"). Confirm Jarvis says it
    cannot start it from a call, confirm **no** project is created, and confirm
    the approval appears in the Jarvis Command Center.

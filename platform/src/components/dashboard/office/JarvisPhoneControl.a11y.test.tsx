@@ -511,3 +511,86 @@ describe("JarvisPhoneControl — the verification code panel", () => {
     expect(screen.queryByText(/may not be fully set up/i)).not.toBeInTheDocument();
   });
 });
+
+describe("JarvisPhoneControl — the path every command now takes", () => {
+  /**
+   * `JARVIS_PHONE_AUTO_DISPATCH_ENABLED` is off by default, so a command the
+   * risk gate CLEARED still lands in `awaiting_approval`. The decision block
+   * used to render only inside `requiresApproval`, so one of those sat on
+   * screen badged "Needs your approval" with no button that could approve it —
+   * a dead end on what is now the ordinary path.
+   */
+  const clearedAwaitingStart = {
+    ...gatedCall,
+    session: { ...gatedCall.session, id: "session-30" },
+    commands: [
+      {
+        ...gatedCall.commands[0],
+        id: "command-30",
+        requestedOutcome: "Research three Brampton restaurants and compare their websites",
+        requiresApproval: false,
+        gatedReasons: [],
+        riskReasons: [],
+        riskLevel: "low",
+        dispatchState: "awaiting_approval",
+        retryable: false,
+        inFlight: false,
+      },
+    ],
+  };
+
+  it("offers a real way to start work the gate cleared", async () => {
+    const fetchMock = stubFetch({ ...readyState, calls: [clearedAwaitingStart] }, { data: { message: "Approved. I opened the project." } });
+
+    const { container } = render(<JarvisPhoneControl organizationId="organization-1" organizationSlug="lynq" />);
+
+    const start = await screen.findByRole("button", { name: /start the work/i });
+    fireEvent.click(start);
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/organizations/organization-1/jarvis/phone/commands/command-30",
+        expect.objectContaining({ method: "POST", body: JSON.stringify({ decision: "approve" }) })
+      )
+    );
+    expect(await axe(container)).toHaveNoViolations();
+  });
+
+  /**
+   * The two waiting states must not look alike. If work the gate cleared
+   * arrives badged and coloured exactly like work the gate stopped, the amber
+   * panel stops carrying information and the founder learns to press the button
+   * without reading it — which is the failure this whole lane exists to avoid.
+   */
+  it("does not dress up cleared work as something that needed approval", async () => {
+    stubFetch({ ...readyState, calls: [clearedAwaitingStart] });
+
+    render(<JarvisPhoneControl organizationId="organization-1" organizationSlug="lynq" />);
+
+    await waitFor(() => expect(screen.getAllByText(/waiting for you to start it/i).length).toBeGreaterThan(0));
+    expect(screen.queryByText(/needs your approval/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/what needs your approval/i)).not.toBeInTheDocument();
+    // ...and says plainly why it is waiting, rather than implying a risk finding.
+    expect(screen.getByText(/nothing said on a call starts on its own/i)).toBeInTheDocument();
+    expect(screen.getByText(/ready when you are/i)).toBeInTheDocument();
+  });
+
+  it("still reads as an approval when the gate actually stopped something", async () => {
+    stubFetch({ ...readyState, calls: [gatedCall] });
+
+    render(<JarvisPhoneControl organizationId="organization-1" organizationSlug="lynq" />);
+
+    await waitFor(() => expect(screen.getByText(/what needs your approval/i)).toBeInTheDocument());
+    expect(screen.getByRole("button", { name: /approve and start the work/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^start the work$/i })).not.toBeInTheDocument();
+  });
+
+  it("tells a member they may not start it, rather than showing a dead button", async () => {
+    stubFetch({ ...readyState, canDecide: false, canSeePasscode: false, calls: [clearedAwaitingStart] });
+
+    render(<JarvisPhoneControl organizationId="organization-1" organizationSlug="lynq" />);
+
+    await waitFor(() => expect(screen.getByText(/only an organization owner or admin can decide this one/i)).toBeInTheDocument());
+    expect(screen.queryByRole("button", { name: /start the work/i })).not.toBeInTheDocument();
+  });
+});
