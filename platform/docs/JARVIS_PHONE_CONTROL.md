@@ -729,6 +729,13 @@ Reused unchanged:
   lowering it would cut real calls short. The call ceiling is what caps the
   telephony and model spend; watch it on the first bill.
 
+- **A refused caller's speech is recorded, and that is deliberate.** A call
+  from a number this lane will not work with is turned away in one sentence,
+  but everything said on it is still written to the transcript — redacted like
+  any other turn, capped like any other unverified call, and able to capture,
+  confirm or dispatch nothing. The one call most worth having a record of is
+  the one that was refused.
+
 - **Nothing here has been exercised against the real Vapi.** Every behaviour
   above is proved by unit, integration, accessibility and concurrency tests
   against a real Postgres, and the risk gate, redaction, the idempotency replay

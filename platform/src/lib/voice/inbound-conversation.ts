@@ -375,7 +375,19 @@ export async function handleInboundConversationEvent(db: Db, input: HandleInboun
 
   // A refused session stays refused for the life of the call. No event on it
   // can capture, confirm, or dispatch anything.
+  //
+  // It can still be RECORDED, though, and that is the whole point of keeping a
+  // transcript for a call this lane turned away. The mismatch branch below
+  // records the delivery that causes a refusal; this one records everything the
+  // caller says afterwards, which in a real call is nearly all of it — the
+  // refusal happens on the first delivery, and every sentence they speak
+  // arrives after it. Without this the one call most worth having a transcript
+  // of kept only its first line. Same redaction, same cap, and a refused
+  // session can still capture, confirm or dispatch nothing.
   if (session.status === "refused") {
+    if (event.kind === "transcript") {
+      await handleTranscript(db, { session, event }).catch(() => undefined);
+    }
     return { spoken: REFUSAL_SPOKEN, processingStatus: "ignored", failureCode: "session_refused", sessionId: session.id };
   }
 
