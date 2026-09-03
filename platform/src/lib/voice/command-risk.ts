@@ -61,18 +61,20 @@ const CATEGORY_RULES: Array<{ category: GatedCategory; level: CommandRiskLevel; 
       // real speech puts words in between: "send the customer email", "forward
       // it over to the owner tonight", "get the quote across to Marco".
       //
-      // "outreach" is matched only as an ACTION ("start outreach", "outreach to
-      // the owner"), never as a bare noun. LYNQ researches outreach tooling
-      // constantly — "compare Instantly and Gojiberry for outreach tooling" is
-      // internal research, and gating it as customer contact would be both
-      // wrong and, worse, wrongly EXPLAINED to the founder.
-      /\b(?:cold[-\s]?(?:call|email)|(?:do|doing|run|running|start|starting|begin|launch|launching|kick\s?off|send)\s+(?:\w+\s+){0,2}outreach|outreach\s+(?:to|the)\b|reach\s+out|email\s+(?:\w+\s+){0,3}(?:client|customer|prospect|lead|restaurant|owner|them|him|her)|(?:send|forward|deliver|share)\s+(?:\w+\s+){0,3}(?:email|message|dm|text|sms|proposal|pitch|invoice|newsletter|quote|note|summary|deck|link)|(?:send|forward|get|pass)\s+(?:\w+\s+){0,3}(?:to|over\s+to|out\s+to|across\s+to)\s+(?:the\s+|a\s+|an\s+)?(?:client|customer|prospect|lead|restaurant|owner|supplier|vendor|partner|them|him|her)|(?:send|forward)\s+(?:it|them|those|these)\s+(?:out|over|off)|follow[-\s]?up\s+with|contact\s+(?:\w+\s+){0,2}(?:client|customer|prospect|lead|restaurant|owner)|sign(?:ed)?\s+(?:\w+\s+){0,3}up\b|blast|campaign\s+send|mail\s?merge)\b/i,
+      // "outreach" gates by DEFAULT, with a narrow exclusion list for the
+      // research-noun collocations LYNQ actually uses ("outreach tooling",
+      // "outreach numbers"). An earlier version had this polarity backwards —
+      // it gated only an allowlist of action verbs, which let "prepare
+      // outreach for the restaurant owners" clear completely. Default-gate
+      // with named exceptions is the only safe direction here: a missing
+      // exception costs an approval click, a missing verb costs a gate.
+      /\b(?:cold[-\s]?(?:call|email)|outreach(?!\s+(?:tool|tools|tooling|software|platforms?|providers?|vendors?|stack|strategy|strategies|numbers?|metrics?|rates?|performance|results?|data|reports?|reporting|budget|costs?|options?|approach|process|playbooks?|templates?|copy|examples?|benchmarks?))|reach\s+out|email\s+(?:\w+\s+){0,3}(?:client|customer|prospect|lead|restaurant|owner|them|him|her)|(?:send|forward|deliver|share)\s+(?:\w+\s+){0,3}(?:email|message|dm|text|sms|proposal|pitch|invoice|newsletter|quote|note|summary|deck|link)|(?:send|forward|get|pass)\s+(?:\w+\s+){0,3}(?:to|over\s+to|out\s+to|across\s+to)\s+(?:the\s+|a\s+|an\s+)?(?:client|customer|prospect|lead|restaurant|owner|supplier|vendor|partner|them|him|her)|(?:send|forward)\s+(?:it|them|those|these)\s+(?:out|over|off)|follow[-\s]?up\s+with|contact\s+(?:\w+\s+){0,2}(?:client|customer|prospect|lead|restaurant|owner)|sign(?:ed)?\s+(?:\w+\s+){0,3}up\b|blast|campaign\s+send|mail\s?merge)\b/i,
   },
   {
     category: "payment_or_spend",
     level: "critical",
     pattern:
-      /\b(?:pay|pays|paid|paying|payments?|purchase|buy|subscribe|upgrade\s+the\s+plan|refunds?|invoice\s+them|charges?|wire|transfer\s+(?:funds|money)|top\s?up|billing|credit\s?card|budget\s+increase|spend|settle\s+(?:the\s+|up\b)|release\s+(?:\w+\s+){0,2}(?:payments?|funds|invoices?)|reimburse|payout)\b/i,
+      /\b(?:pay|pays|paid|paying|payments?|purchase\s+(?:the|a|an|it|them)\b|buy\s+(?:the|a|an|it|them)\b|subscribe|upgrade\s+the\s+plan|refunds?|invoice\s+them|charges?|wire|transfer\s+(?:funds|money)|top\s?up|billing|credit\s?card|budget\s+increase|spend|settle\s+(?:the\s+|up\b)|release\s+(?:\w+\s+){0,2}(?:payments?|funds|invoices?)|reimburse|payout)\b/i,
   },
   {
     category: "third_party_call",
@@ -82,8 +84,12 @@ const CATEGORY_RULES: Array<{ category: GatedCategory; level: CommandRiskLevel; 
   {
     category: "production_change",
     level: "critical",
+    // `production` is required to be in a deployment context, never bare:
+    // "review the content production process" and "analyze our production
+    // capacity for the kitchen" are ordinary agency work, and gating them as
+    // a live-site change was both wrong and confusingly explained.
     pattern:
-      /\b(?:deploy(?:s|ed|ing)?|promote|ship\s+(?:\w+\s+){0,4}(?:to\s+)?(?:prod|production|live|the\s+live\s+site)|release\s+(?:\w+\s+){0,3}(?:to\s+)?(?:prod|production|live)|go\s+live|live\s+site|push\s+(?:\w+\s+){0,3}to\s+(?:main|master|production)|merge\s+(?:to|into)\s+(?:main|master)|production|prod\b|rollbacks?|roll\s+back|change\s+the\s+(?:alias|domain|dns)|point\s+the\s+domain)\b/i,
+      /\b(?:deploy(?:s|ed|ing)?|promote|ship\s+(?:\w+\s+){0,4}(?:to\s+)?(?:prod|production|live|the\s+live\s+site)|release\s+(?:\w+\s+){0,3}(?:to\s+)?(?:prod|production|live)|go\s+live|live\s+site|push\s+(?:\w+\s+){0,3}to\s+(?:main|master|production)|merge\s+(?:to|into)\s+(?:main|master)|(?:to|on|in|into)\s+production\b|production\s+(?:deploy|release|server|environment|branch|build|site)|prod\b|rollbacks?|roll\s+back|change\s+the\s+(?:alias|domain|dns)|point\s+the\s+domain)\b/i,
   },
   {
     category: "destructive_change",
@@ -94,7 +100,11 @@ const CATEGORY_RULES: Array<{ category: GatedCategory; level: CommandRiskLevel; 
   {
     category: "contract_or_legal",
     level: "critical",
-    pattern: /\b(?:signs?|signed|signing|contracts?|agreements?|terms\s+of\s+service|nda|msa|statement\s+of\s+work|sow\b|legally|binding|commit\s+us\s+to|counter[-\s]?sign|retainer)\b/i,
+    // `sign` must have a contract-shaped object. Bare `sign` matched "sign-up
+    // funnel drop-off" and "sign off on the design review" — both routine, and
+    // both then labelled "Signing or committing to an agreement".
+    pattern:
+      /\b(?:sign(?:s|ed|ing)?\s+(?:\w+\s+){0,3}(?:contracts?|agreements?|nda|msa|sow\b|retainer|deal|papers|offer|terms)|contracts?|agreements?|nda\b|msa\b|statement\s+of\s+work|sow\b|legally\s+binding|commit\s+us\s+to|counter[-\s]?sign|retainer)\b/i,
   },
   {
     category: "credential_access",
@@ -110,7 +120,7 @@ const CATEGORY_RULES: Array<{ category: GatedCategory; level: CommandRiskLevel; 
   {
     category: "personnel",
     level: "high",
-    pattern: /\b(?:hire|fire|terminate\s+(?:the\s+)?employee|lay\s+off|raise\s+(?:their|his|her)\s+(?:salary|pay)|offer\s+letter|compensation)\b/i,
+    pattern: /\b(?:hire|fire|terminate\s+(?:the\s+)?employee|lay\s+off|raise\s+(?:their|his|her)\s+(?:salary|pay)|offer\s+letter|(?:change|raise|set|approve|adjust)\s+(?:\w+\s+){0,2}compensation)\b/i,
   },
 ];
 
@@ -137,9 +147,18 @@ const OVERRIDE_ATTEMPT_PATTERN =
  * cannot be undone? If it does, the command is gated however much planning
  * language surrounds it — including when no specific category matched and the
  * honest answer is only "this does not look purely internal".
+ *
+ * Words that are far more often NOUNS in this domain are deliberately absent —
+ * `call`, `post`, `text`, `message`, `release`, `remove`, `drop`, `sign`. Their
+ * genuine verb forms are already covered by the categories above ("call the
+ * client", "post to LinkedIn", "release the payments", "remove the records"),
+ * while including them here gated "summarize the call notes", "the post mortem
+ * document", "the release notes" and "research text message providers". A
+ * backstop that fires on ordinary nouns does not make the system safer; it
+ * teaches the founder to approve without reading.
  */
 const EXTERNAL_EFFECT_PATTERN =
-  /\b(?:send|sends|sending|sent|forward|forwards|forwarding|forwarded|deliver|delivers|delivered|email|emails|emailed|emailing|call|calls|calling|text|texts|texting|message|messages|messaging|dm|publish|publishes|publishing|post|posts|posting|pay|pays|paying|paid|purchase|buy|charge|charges|refund|transfer|deploy|deploys|deploying|deployed|release|releases|releasing|ship|ships|shipping|delete|deletes|deleting|remove|removes|removing|drop|wipe|purge|erase|sign|signs|signing|signed|rotate|rotates|rotating|revoke|revokes|hire|fire|terminate|cancel|cancels|settle|reimburse)\b/i;
+  /\b(?:send|sends|sending|sent|forward|forwards|forwarding|forwarded|deliver|delivers|delivered|email|emails|emailed|emailing|dm|publish|publishes|publishing|pay|pays|paying|paid|charge|charges|refund|transfer|deploy|deploys|deploying|deployed|wipe|purge|erase|rotate|rotates|rotating|revoke|revokes|hire|fire|terminate|settle|reimburse)\b/i;
 
 /**
  * Work that is genuinely internal, reversible, and produces a document rather
@@ -216,11 +235,15 @@ export function assessCommandRisk(text: string): CommandRiskAssessment {
     // founder either approve immediately or rephrase, and makes an
     // over-cautious gate visible instead of mysterious.
     if (externalEffect) {
+      // Named, but deliberately NOT escalated past `medium`: this branch is
+      // "an effect word appeared and no category recognized the shape", which
+      // is a statement about Jarvis's certainty, not about severity. Claiming
+      // `high` here would make an over-cautious gate sound authoritative.
       return {
-        level: "high",
+        level: "medium",
         requiresApproval: true,
         gatedCategories: [],
-        reasons: [`This would "${externalEffect.toLowerCase()}" something, which Jarvis will not do from a phone call without your approval`],
+        reasons: [`Jarvis saw "${externalEffect.toLowerCase()}" and could not tell whether this reaches outside LYNQ, so it stopped for your decision`],
         overrideAttempted: false,
       };
     }

@@ -72,6 +72,8 @@ type PhoneCall = {
 
 type PhoneState = {
   readiness: { enabled: boolean; ready: boolean; completedChecks: number; totalChecks: number; missing: string[] };
+  /** Whether this viewer may approve, decline, or retry. Any member can read the screen; only an owner/admin can act. */
+  canDecide: boolean;
   calls: PhoneCall[];
   refreshAfterMs: number | null;
 };
@@ -381,24 +383,28 @@ export function JarvisPhoneControl({ organizationId, organizationSlug }: { organ
                   {command.dispatchState === "awaiting_approval" ? (
                     <>
                       <p className="mt-3 text-sm text-amber-100/90">Nothing has started. Nothing will until you decide here.</p>
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          onClick={() => void decide(command.id, "approve")}
-                          disabled={pendingCommandId === command.id}
-                          className="office-dispatch-button"
-                        >
-                          {pendingCommandId === command.id ? "Working…" : "Approve and start the work"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void decide(command.id, "decline")}
-                          disabled={pendingCommandId === command.id}
-                          className="office-starter"
-                        >
-                          Decline
-                        </button>
-                      </div>
+                      {state?.canDecide ? (
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => void decide(command.id, "approve")}
+                            disabled={pendingCommandId === command.id}
+                            className="office-dispatch-button"
+                          >
+                            {pendingCommandId === command.id ? "Working…" : "Approve and start the work"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void decide(command.id, "decline")}
+                            disabled={pendingCommandId === command.id}
+                            className="office-starter"
+                          >
+                            Decline
+                          </button>
+                        </div>
+                      ) : (
+                        <p className="mt-3 text-sm text-amber-100/90">Only an organization owner or admin can decide this one.</p>
+                      )}
                     </>
                   ) : command.decidedAt ? (
                     <p className="mt-3 text-sm text-amber-100/90">Decided on {formatTime(command.decidedAt)}.</p>
@@ -415,6 +421,21 @@ export function JarvisPhoneControl({ organizationId, organizationSlug }: { organ
                       Watch it live →
                     </Link>
                   </p>
+                ) : command.dispatchState === "failed" && command.projectId ? (
+                  <>
+                    {/* A project exists despite the failure, so claiming
+                        "nothing was started" here would be false. */}
+                    <p role="alert" className="mt-1 text-sm text-danger">
+                      Partly. Jarvis opened {command.projectName ?? "the project"} but could not finish the handoff
+                      {command.failureCode ? ` (${command.failureCode.replace(/_/g, " ")})` : ""}. Some of the work may already be running.
+                    </p>
+                    <p className="mt-2 text-sm text-muted">
+                      Retrying would start it a second time, so open the project and carry on from there.{" "}
+                      <Link href={`/app/${organizationSlug}/jarvis/${command.projectId}`} className="text-accent-foreground hover:text-foreground">
+                        Open it →
+                      </Link>
+                    </p>
+                  </>
                 ) : command.dispatchState === "failed" ? (
                   <>
                     <p role="alert" className="mt-1 text-sm text-danger">
@@ -432,7 +453,9 @@ export function JarvisPhoneControl({ organizationId, organizationSlug }: { organ
                       </button>
                     ) : (
                       <p className="mt-2 text-sm text-muted">
-                        This one has been tried as many times as it can be. Call Jarvis again if you still want it.
+                        {state?.canDecide
+                          ? "This one has been tried as many times as it can be. Call Jarvis again if you still want it."
+                          : "Only an organization owner or admin can try this again."}
                       </p>
                     )}
                   </>

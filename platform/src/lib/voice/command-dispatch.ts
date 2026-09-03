@@ -2,10 +2,10 @@ import "server-only";
 
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { recordAuditEvent } from "@/lib/audit";
-import { createDirectiveProject } from "@/lib/office/directive-intake";
+import { createDirectiveProject, DirectivePartiallyCreatedError } from "@/lib/office/directive-intake";
 import { toDirectiveInstruction } from "./command-draft";
 import { redactLogFields } from "./redaction";
-import { transitionCommand, type JarvisPhoneCommand } from "./call-store";
+import { claimDispatchAttempt, transitionCommand, type JarvisPhoneCommand } from "./call-store";
 import { CommandNotRetryableError } from "./errors";
 
 type Db = NeonHttpDatabase<Record<string, unknown>>;
@@ -157,6 +157,14 @@ export async function retryFailedDispatch(
 ): Promise<DispatchOutcome> {
   const { command } = input;
   if (command.dispatchState !== "failed") throw new CommandNotRetryableError("not_failed");
+  // A failed dispatch that already produced a project is NOT retryable: the
+  // project exists, its tasks exist, and its agents may already be running.
+  // Re-running would create a second copy of live work, which is worse than
+  // the incomplete handoff the founder is looking at.
+  if (command.projectId) throw new CommandNotRetryableError("partially_created");
+  // The cap is also enforced atomically inside the dispatch claim; this is the
+  // early, friendly refusal so the caller gets a real 409 instead of a
+  // confusing "already dispatched".
   if (command.dispatchAttempts >= MAX_DISPATCH_ATTEMPTS) throw new CommandNotRetryableError("attempts_exhausted");
 
   return runDirectiveDispatch(db, {
@@ -187,7 +195,21 @@ export async function runDirectiveDispatch(
     approvalDecisionNote?: string | null;
   }
 ): Promise<DispatchOutcome> {
-  const { command } = input;
+  // Claim the right to dispatch BEFORE creating anything. Two concurrent
+  // callers — two confirmations, two admins, one double-click — would
+  // otherwise both pass their checks and both create a real project with real
+  // running agents. Exactly one can win this claim; the loser must not
+  // dispatch, and reports the existing state instead.
+  const command = await claimDispatchAttempt(db, {
+    organizationId: input.organizationId,
+    commandId: input.command.id,
+    expectedRevision: input.command.revision,
+    maxAttempts: MAX_DISPATCH_ATTEMPTS,
+  });
+  if (!command) {
+    return { status: "already_dispatched", command: input.command, spoken: describeExistingState(input.command) };
+  }
+
   // `toDirectiveInstruction` reads only the founder-authored fields; the risk
   // decision has already been made and is not re-derived here.
   const instruction = toDirectiveInstruction({
@@ -216,7 +238,6 @@ export async function runDirectiveDispatch(
       projectId: result.project.id,
       failureCode: null,
       failureMessage: null,
-      incrementDispatchAttempts: true,
       ...(input.approvalDecidedByUserId !== undefined ? { approvalDecidedByUserId: input.approvalDecidedByUserId } : {}),
       ...(input.approvalDecisionNote !== undefined ? { approvalDecisionNote: input.approvalDecisionNote } : {}),
     });
@@ -253,7 +274,14 @@ export async function runDirectiveDispatch(
   } catch (error) {
     const failureCode = classifyDispatchFailure(error);
     const message = error instanceof Error ? error.message : "unknown error";
-    console.error("[jarvis-phone]", JSON.stringify(redactLogFields({ event: "dispatch-failed", commandId: command.id, failureCode })));
+    // A partial creation means a real project — possibly with agents already
+    // running — exists despite the failure. Recording its id is what stops a
+    // later retry from creating a second copy of live work.
+    const partial = error instanceof DirectivePartiallyCreatedError ? error : null;
+    console.error(
+      "[jarvis-phone]",
+      JSON.stringify(redactLogFields({ event: "dispatch-failed", commandId: command.id, failureCode, partiallyCreated: Boolean(partial) }))
+    );
 
     const failed = await transitionCommand(db, {
       organizationId: input.organizationId,
@@ -263,7 +291,12 @@ export async function runDirectiveDispatch(
       dispatchState: "failed",
       failureCode,
       failureMessage: message.slice(0, 500),
-      incrementDispatchAttempts: true,
+      ...(partial ? { projectId: partial.projectId } : {}),
+      // The approver's identity must survive a failed dispatch. Without this,
+      // an approved-then-failed critical command would show on screen with no
+      // record of who approved it, next to a live retry button.
+      ...(input.approvalDecidedByUserId !== undefined ? { approvalDecidedByUserId: input.approvalDecidedByUserId } : {}),
+      ...(input.approvalDecisionNote !== undefined ? { approvalDecisionNote: input.approvalDecisionNote } : {}),
     });
 
     await recordAuditEvent(db, {
@@ -272,15 +305,16 @@ export async function runDirectiveDispatch(
       actorUserId: input.founderUserId,
       targetType: "jarvis_phone_command",
       targetId: command.id,
-      metadata: { failureCode, attempts: (failed?.dispatchAttempts ?? command.dispatchAttempts) + 0 },
+      metadata: { failureCode, attempts: failed?.dispatchAttempts ?? command.dispatchAttempts, partiallyCreated: Boolean(partial) },
     });
 
     return {
       status: "failed",
       command: failed ?? command,
       failureCode,
-      spoken:
-        "I couldn't open the project just now, and I'm not going to pretend otherwise. I've saved exactly what you asked for on the Jarvis screen with the reason it failed, so you can retry it there.",
+      spoken: partial
+        ? `I started opening the project but couldn't finish the handoff, and I'm not going to pretend otherwise. Some of it may already be running — it's on the Jarvis screen under ${partial.projectName}.`
+        : "I couldn't open the project just now, and I'm not going to pretend otherwise. I've saved exactly what you asked for on the Jarvis screen with the reason it failed, so you can retry it there.",
     };
   }
 }

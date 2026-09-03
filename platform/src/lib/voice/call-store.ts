@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createHash } from "node:crypto";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, lt, sql } from "drizzle-orm";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import {
   jarvisCallSessions,
@@ -715,7 +715,49 @@ export async function resolveCommandById(db: Db, input: { organizationId: string
 }
 
 /**
- * Moves a confirmed draft to its next honest state, guarded by the revision
+ * Claims the exclusive right to dispatch this command, BEFORE any project is
+ * created.
+ *
+ * This exists because "check the attempt count, then dispatch, then record the
+ * attempt" is a time-of-check/time-of-use race with real-world consequences.
+ * Two concurrent confirmations — or two admins pressing Try again, or one
+ * admin double-clicking — would both read the same `dispatchAttempts` and
+ * `revision`, both pass the cap check, and both call `createDirectiveProject`.
+ * Two real projects, two task sets, two launched agent executions; only one of
+ * them ever gets linked to the command, and for an approved gated command the
+ * external effect runs twice off a single approval.
+ *
+ * So the claim IS the guard: a single UPDATE that increments the attempt and
+ * bumps the revision, conditional on both the revision the caller read AND the
+ * attempt cap. Exactly one concurrent caller can win it. The loser gets null
+ * and must not dispatch.
+ *
+ * The state is deliberately left alone — a claimed command has not succeeded
+ * yet, and saying otherwise in the row would be the same lie in a different
+ * place. The caller transitions it to its real outcome afterwards, using the
+ * revision this returns.
+ */
+export async function claimDispatchAttempt(
+  db: Db,
+  input: { organizationId: string; commandId: string; expectedRevision: number; maxAttempts: number }
+): Promise<JarvisPhoneCommand | null> {
+  const [row] = await db
+    .update(jarvisPhoneCommands)
+    .set({ dispatchAttempts: sql`${jarvisPhoneCommands.dispatchAttempts} + 1`, revision: input.expectedRevision + 1, updatedAt: new Date() })
+    .where(
+      and(
+        eq(jarvisPhoneCommands.id, input.commandId),
+        eq(jarvisPhoneCommands.organizationId, input.organizationId),
+        eq(jarvisPhoneCommands.revision, input.expectedRevision),
+        lt(jarvisPhoneCommands.dispatchAttempts, input.maxAttempts)
+      )
+    )
+    .returning();
+  return row ? toCommand(row) : null;
+}
+
+/**
+ * Moves a claimed command to its next honest state, guarded by the revision
  * it was read at. A second delivery of the same confirmation loses the guard
  * and returns null, so the caller reports the existing outcome instead of
  * creating a second project.

@@ -15,13 +15,21 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const createDirectiveProject = vi.fn();
 const transitionCommand = vi.fn();
+const claimDispatchAttempt = vi.fn();
 const recordAuditEvent = vi.fn();
 
-vi.mock("@/lib/office/directive-intake", () => ({ createDirectiveProject }));
-vi.mock("@/lib/audit", () => ({ recordAuditEvent }));
-vi.mock("./call-store", () => ({ transitionCommand }));
+class DirectivePartiallyCreatedError extends Error {
+  constructor(public readonly projectId: string, public readonly projectName: string, public readonly cause: unknown) {
+    super("partial");
+    this.name = "DirectivePartiallyCreatedError";
+  }
+}
 
-const { dispatchConfirmedCommand, retryFailedDispatch, MAX_DISPATCH_ATTEMPTS } = await import("./command-dispatch");
+vi.mock("@/lib/office/directive-intake", () => ({ createDirectiveProject, DirectivePartiallyCreatedError }));
+vi.mock("@/lib/audit", () => ({ recordAuditEvent }));
+vi.mock("./call-store", () => ({ transitionCommand, claimDispatchAttempt }));
+
+const { dispatchConfirmedCommand, retryFailedDispatch, runDirectiveDispatch, MAX_DISPATCH_ATTEMPTS } = await import("./command-dispatch");
 const { CommandNotRetryableError } = await import("./errors");
 type Command = Parameters<typeof dispatchConfirmedCommand>[1]["command"];
 
@@ -66,8 +74,14 @@ const baseInput = { organizationId: "org-1", founderUserId: "user-1", workspaceI
 beforeEach(() => {
   createDirectiveProject.mockReset();
   transitionCommand.mockReset();
+  claimDispatchAttempt.mockReset();
   recordAuditEvent.mockReset();
   recordAuditEvent.mockResolvedValue(undefined);
+  // By default the claim succeeds and returns the row with its revision bumped
+  // and the attempt counted — exactly what the real guarded UPDATE does.
+  claimDispatchAttempt.mockImplementation(async (_db: unknown, args: { expectedRevision: number }) =>
+    makeCommand({ revision: args.expectedRevision + 1, dispatchAttempts: 1 })
+  );
 });
 
 describe("low-risk commands", () => {
@@ -219,7 +233,9 @@ describe("retrying a failed dispatch", () => {
 
     await retryFailedDispatch(db, { ...retryInput, command });
 
-    expect(transitionCommand.mock.calls[0][1]).toMatchObject({ failureCode: null, failureMessage: null, incrementDispatchAttempts: true });
+    // The attempt is counted by the claim, not by the outcome transition.
+    expect(transitionCommand.mock.calls[0][1]).toMatchObject({ failureCode: null, failureMessage: null });
+    expect(claimDispatchAttempt).toHaveBeenCalledTimes(1);
   });
 
   it("refuses to retry a command that is still awaiting approval — retry can never manufacture consent", async () => {
@@ -254,5 +270,90 @@ describe("retrying a failed dispatch", () => {
     expect(outcome.status).toBe("failed");
     if (outcome.status !== "failed") throw new Error("expected failure");
     expect(outcome.failureCode).toBe("model_rate_limited");
+  });
+});
+
+describe("the dispatch claim is what prevents duplicate real work", () => {
+  const retryInput = { organizationId: "org-1", actorUserId: "approver-1", workspaceId: null };
+
+  it("does not create a project when the claim is lost to a concurrent caller", async () => {
+    // Two admins press Try again at once. Exactly one may dispatch; the loser
+    // must not call createDirectiveProject at all — a second project would
+    // mean a second set of real, running agent executions.
+    claimDispatchAttempt.mockResolvedValue(null);
+
+    const outcome = await retryFailedDispatch(db, { ...retryInput, command: makeCommand({ dispatchState: "failed", dispatchAttempts: 1 }) });
+
+    expect(outcome.status).toBe("already_dispatched");
+    expect(createDirectiveProject).not.toHaveBeenCalled();
+    expect(transitionCommand).not.toHaveBeenCalled();
+  });
+
+  it("claims before creating anything, using the revision it read", async () => {
+    createDirectiveProject.mockResolvedValue({
+      assistantReply: "ok",
+      plannedByAI: false,
+      executionMode: "advisory",
+      project: { id: "project-1", name: "P", projectKey: "P01", status: "active", workspaceId: null },
+      assignments: [],
+      launchedCount: 0,
+    });
+    transitionCommand.mockResolvedValue(makeCommand({ dispatchState: "directive_created", revision: 3 }));
+
+    await dispatchConfirmedCommand(db, { ...baseInput, command: makeCommand({ revision: 7 }) });
+
+    expect(claimDispatchAttempt).toHaveBeenCalledWith(db, expect.objectContaining({ expectedRevision: 7, maxAttempts: MAX_DISPATCH_ATTEMPTS }));
+    // The claim already counted the attempt; the outcome transition must not
+    // count it a second time.
+    expect(transitionCommand.mock.calls[0][1]).not.toMatchObject({ incrementDispatchAttempts: true });
+  });
+});
+
+describe("a partially created directive is never duplicated", () => {
+  const retryInput = { organizationId: "org-1", actorUserId: "approver-1", workspaceId: null };
+
+  it("records the project that already exists when the handoff fails midway", async () => {
+    createDirectiveProject.mockRejectedValue(new DirectivePartiallyCreatedError("project-9", "Brampton Restaurants", new Error("fetch failed")));
+    transitionCommand.mockResolvedValue(makeCommand({ dispatchState: "failed", projectId: "project-9", revision: 3 }));
+
+    const outcome = await dispatchConfirmedCommand(db, { ...baseInput, command: makeCommand() });
+
+    expect(outcome.status).toBe("failed");
+    expect(transitionCommand.mock.calls.at(-1)?.[1]).toMatchObject({ dispatchState: "failed", projectId: "project-9" });
+    // It must not claim nothing was started — agents may already be running.
+    expect(outcome.spoken).not.toMatch(/nothing/i);
+    expect(outcome.spoken).toContain("Brampton Restaurants");
+  });
+
+  it("refuses to retry a failure that already produced a project", async () => {
+    const command = makeCommand({ dispatchState: "failed", projectId: "project-9", dispatchAttempts: 1 });
+
+    await expect(retryFailedDispatch(db, { ...retryInput, command })).rejects.toThrow(CommandNotRetryableError);
+    expect(claimDispatchAttempt).not.toHaveBeenCalled();
+    expect(createDirectiveProject).not.toHaveBeenCalled();
+  });
+});
+
+describe("the approver's identity survives a failed dispatch", () => {
+  it("keeps who approved a gated command even when the dispatch fails", async () => {
+    createDirectiveProject.mockRejectedValue(new Error("Provider returned 429 Too Many Requests"));
+    transitionCommand.mockResolvedValue(makeCommand({ dispatchState: "failed", revision: 3 }));
+
+    await runDirectiveDispatch(db, {
+      organizationId: "org-1",
+      founderUserId: "approver-1",
+      command: makeCommand({ dispatchState: "awaiting_approval", requiresApproval: true }),
+      workspaceId: null,
+      approvalDecidedByUserId: "approver-1",
+      approvalDecisionNote: "fine by me",
+    });
+
+    // Otherwise a critical command shows on screen with no record of who
+    // approved it, next to a live retry button.
+    expect(transitionCommand.mock.calls.at(-1)?.[1]).toMatchObject({
+      dispatchState: "failed",
+      approvalDecidedByUserId: "approver-1",
+      approvalDecisionNote: "fine by me",
+    });
   });
 });

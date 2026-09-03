@@ -6,6 +6,7 @@ import { getAuthenticatedUser } from "@/lib/http/auth";
 import { handleRouteError, jsonSuccess } from "@/lib/http/responses";
 import { parseUuidParam } from "@/lib/http/validation";
 import { listPhoneCallsForUser } from "@/lib/voice/call-store";
+import { requireOrganizationMembership } from "@/lib/authz/helpers";
 import { getJarvisPhoneCommandReadiness } from "@/lib/voice/phone-config";
 import { GATED_CATEGORY_LABELS, type GatedCategory } from "@/lib/voice/command-risk";
 import { MAX_DISPATCH_ATTEMPTS } from "@/lib/voice/command-dispatch";
@@ -34,8 +35,15 @@ export async function GET(_request: Request, { params }: RouteParams) {
     const calls = await listPhoneCallsForUser(db, { organizationId, actorUserId: user.userId, limit: 10 });
     const readiness = getJarvisPhoneCommandReadiness();
 
+    // Any member may READ this screen, but only an owner/admin may approve,
+    // decline, or retry — the same floor the decision route enforces. The UI
+    // needs to know, or it renders buttons that are refused on click.
+    const membership = await requireOrganizationMembership(db, organizationId, user.userId);
+    const canDecide = membership.role === "owner" || membership.role === "admin";
+
     return jsonSuccess({
       readiness,
+      canDecide,
       calls: calls.map((call) => ({
         session: {
           id: call.session.id,
@@ -80,7 +88,15 @@ export async function GET(_request: Request, { params }: RouteParams) {
           dispatchAttempts: command.dispatchAttempts,
           // Whether the UI may offer a retry at all — computed here so the
           // button can never appear for something that would be refused.
-          retryable: command.dispatchState === "failed" && command.dispatchAttempts < MAX_DISPATCH_ATTEMPTS,
+          // Mirrors every condition the decision route enforces, including the
+          // viewer's authority — a button must never appear for something that
+          // would be refused. A partially-created project is deliberately NOT
+          // retryable: the work already exists.
+          retryable:
+            canDecide &&
+            command.dispatchState === "failed" &&
+            command.projectId === null &&
+            command.dispatchAttempts < MAX_DISPATCH_ATTEMPTS,
           decidedAt: command.approvalDecidedAt?.toISOString() ?? null,
           decisionNote: command.approvalDecisionNote,
           createdAt: command.createdAt.toISOString(),

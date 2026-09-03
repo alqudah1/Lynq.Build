@@ -32,11 +32,13 @@ export class CommandAlreadyDecidedError extends DomainRuleViolationError {
 /** Retry was asked for on a command that is not in `failed`, or that has already used its attempts. */
 export class CommandNotRetryableError extends DomainRuleViolationError {
   readonly reason = "command_not_retryable";
-  constructor(cause: "not_failed" | "attempts_exhausted") {
+  constructor(cause: "not_failed" | "attempts_exhausted" | "partially_created") {
     super(
       cause === "not_failed"
         ? "Only a command that failed to start can be retried."
-        : "This command has been retried as many times as it can be. Give Jarvis the instruction again if you still want it."
+        : cause === "partially_created"
+          ? "This one already opened a project before it failed, so retrying would start the work twice. Open the project and carry on from there."
+          : "This command has been retried as many times as it can be. Give Jarvis the instruction again if you still want it."
     );
     this.name = "CommandNotRetryableError";
   }

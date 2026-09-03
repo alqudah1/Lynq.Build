@@ -164,6 +164,28 @@ layers make that safe:
 3. **Revision guards.** Every state transition is guarded by the revision the
    row was read at. A second confirmation finds the row moved on and reports the
    *existing* outcome instead of acting again.
+4. **A dispatch claim taken BEFORE anything is created.** The three layers above
+   all protect the command *row*; none of them stop two concurrent callers from
+   each calling `createDirectiveProject` first and colliding afterwards — which
+   would mean two real projects with two sets of running agents, and for an
+   approved gated command, the external effect happening twice off one approval.
+   So `claimDispatchAttempt` is a single guarded UPDATE that increments the
+   attempt and bumps the revision, conditional on both the revision the caller
+   read and the attempt cap. Exactly one concurrent caller wins it; the loser
+   never dispatches.
+
+### Partial creation
+
+`createDirectiveProject` is a long sequence of independent writes over the Neon
+HTTP driver, with no transaction spanning them. A failure after the project row
+exists leaves a live project — possibly with agents already launched — so the
+intake raises `DirectivePartiallyCreatedError` carrying the project id, the
+command records it, and the screen says "Partly… some of the work may already
+be running" with a link, never "nothing was started".
+
+Such a command is deliberately **not** retryable: re-running would create a
+second copy of live work, which is worse than the incomplete handoff the
+founder is looking at.
 
 ---
 
@@ -222,8 +244,14 @@ So retry is a **Try again** control on the Jarvis screen, backed by
 `POST .../commands/{id}` with `decision: "retry"`. It requires the same
 validated session and owner/admin membership as an approval, is audited as
 `jarvis_phone_command_retried`, and is capped at five dispatch attempts per
-command (counted atomically in SQL). After that the UI stops offering it and
-says so, rather than showing a button that would be refused.
+command — enforced inside the dispatch claim, so the cap bounds actual
+dispatches and not merely recorded attempts. After that the UI stops offering
+it and says so, rather than showing a button that would be refused.
+
+The `retryable` flag the API returns mirrors *every* condition the decision
+route enforces, including the viewer's own authority: any organization member
+may read this screen, but only an owner or admin may approve, decline, or
+retry, and a member sees the reason rather than a button that 403s.
 
 Retry cannot manufacture consent: a command only ever reaches `failed` from a
 dispatch that was **already** cleared to run — low risk and confirmed on the

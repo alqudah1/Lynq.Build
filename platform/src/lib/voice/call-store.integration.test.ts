@@ -26,6 +26,7 @@ import {
   recordVerificationAttempt,
   resolveCommandById,
   resolvePhoneCommandActor,
+  claimDispatchAttempt,
   transitionCommand,
   upsertCommandDraft,
 } from "./call-store";
@@ -426,6 +427,70 @@ describe("dispatch attempts", () => {
     expect(succeeded?.failureCode).toBeNull();
     expect(succeeded?.failureMessage).toBeNull();
     expect(succeeded?.dispatchAttempts).toBe(2);
+  });
+});
+
+describe("the dispatch claim", () => {
+  it("lets exactly one of two concurrent claimers through", async () => {
+    // This is the guard that stops two admins pressing Try again from each
+    // creating a real project with real running agents.
+    const userId = await makeUser();
+    const organizationId = await makeOrg(userId);
+    const session = await openSession(organizationId, userId);
+    const command = await upsertCommandDraft(db, {
+      organizationId,
+      callSessionId: session.id,
+      founderUserId: userId,
+      draft: buildCommandDraft({ requestedOutcome: "Research the market" }),
+    });
+
+    const [first, second] = await Promise.all([
+      claimDispatchAttempt(db, { organizationId, commandId: command.id, expectedRevision: command.revision, maxAttempts: 5 }),
+      claimDispatchAttempt(db, { organizationId, commandId: command.id, expectedRevision: command.revision, maxAttempts: 5 }),
+    ]);
+
+    const winners = [first, second].filter(Boolean);
+    expect(winners).toHaveLength(1);
+    expect(winners[0]!.dispatchAttempts).toBe(1);
+    expect(winners[0]!.revision).toBe(command.revision + 1);
+  });
+
+  it("refuses the claim once the attempt cap is reached, so the cap cannot be exceeded", async () => {
+    const userId = await makeUser();
+    const organizationId = await makeOrg(userId);
+    const session = await openSession(organizationId, userId);
+    let command = await upsertCommandDraft(db, {
+      organizationId,
+      callSessionId: session.id,
+      founderUserId: userId,
+      draft: buildCommandDraft({ requestedOutcome: "Research the market" }),
+    });
+
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      const claimed = await claimDispatchAttempt(db, { organizationId, commandId: command.id, expectedRevision: command.revision, maxAttempts: 3 });
+      expect(claimed?.dispatchAttempts).toBe(attempt);
+      command = claimed!;
+    }
+
+    const refused = await claimDispatchAttempt(db, { organizationId, commandId: command.id, expectedRevision: command.revision, maxAttempts: 3 });
+    expect(refused).toBeNull();
+  });
+
+  it("refuses a claim made against a stale revision", async () => {
+    const userId = await makeUser();
+    const organizationId = await makeOrg(userId);
+    const session = await openSession(organizationId, userId);
+    const command = await upsertCommandDraft(db, {
+      organizationId,
+      callSessionId: session.id,
+      founderUserId: userId,
+      draft: buildCommandDraft({ requestedOutcome: "Research the market" }),
+    });
+
+    await claimDispatchAttempt(db, { organizationId, commandId: command.id, expectedRevision: command.revision, maxAttempts: 5 });
+    const stale = await claimDispatchAttempt(db, { organizationId, commandId: command.id, expectedRevision: command.revision, maxAttempts: 5 });
+
+    expect(stale).toBeNull();
   });
 });
 

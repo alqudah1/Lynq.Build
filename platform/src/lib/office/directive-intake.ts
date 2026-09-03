@@ -37,6 +37,32 @@ type Db = NeonHttpDatabase<Record<string, unknown>>;
  * function returns `launchedCount` and each caller schedules its own drain.
  */
 
+/**
+ * Thrown when a directive was PARTIALLY created: the project row exists (and
+ * possibly tasks, and possibly already-launched agent executions) but a later
+ * step failed.
+ *
+ * This matters because `createDirectiveProject` is a long sequence of
+ * independent writes over the Neon HTTP driver, which has no transaction
+ * spanning them. Without this, a failure after `createProject` would leave a
+ * live project with running agents while the caller recorded "nothing was
+ * started" — and a retry would then create a SECOND project with a second copy
+ * of the same running work.
+ *
+ * Carrying the id lets the caller record what actually exists and refuse to
+ * duplicate it.
+ */
+export class DirectivePartiallyCreatedError extends Error {
+  constructor(
+    public readonly projectId: string,
+    public readonly projectName: string,
+    public readonly cause: unknown
+  ) {
+    super(`The directive project was created but its handoff did not complete: ${cause instanceof Error ? cause.message : "unknown error"}`);
+    this.name = "DirectivePartiallyCreatedError";
+  }
+}
+
 export interface DirectiveDispatchAssignment {
   agentId: string;
   agentName: string;
@@ -112,6 +138,27 @@ export async function createDirectiveProject(db: Db, input: CreateDirectiveProje
     priority: "high",
     actorUserId: input.actorUserId,
   });
+  // Everything from here on can leave real, live records behind if it throws,
+  // so every failure past this point is reported as a PARTIAL creation rather
+  // than a clean one — see `DirectivePartiallyCreatedError`.
+  try {
+    return await completeDirectiveProject(db, { input, plan, project, agents });
+  } catch (error) {
+    if (error instanceof DirectivePartiallyCreatedError) throw error;
+    throw new DirectivePartiallyCreatedError(project.id, project.name, error);
+  }
+}
+
+async function completeDirectiveProject(
+  db: Db,
+  args: {
+    input: CreateDirectiveProjectInput;
+    plan: Awaited<ReturnType<typeof planOfficeDirective>>;
+    project: Awaited<ReturnType<typeof createProject>>;
+    agents: Awaited<ReturnType<typeof listAgents>>;
+  }
+): Promise<CreateDirectiveProjectResult> {
+  const { input, plan, project, agents } = args;
   const planningProject = await transitionProjectStatus(db, {
     organizationId: input.organizationId,
     projectId: project.id,

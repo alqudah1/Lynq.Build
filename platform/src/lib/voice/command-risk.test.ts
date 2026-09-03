@@ -41,17 +41,69 @@ describe("assessCommandRisk — realistic founder phrasings that must clear", ()
     expect(result.level).toBe("low");
   });
 
-  it("treats 'outreach' as a research topic, not an outreach action", () => {
+  it("treats named outreach research collocations as topics, not actions", () => {
     // LYNQ researches outreach tooling constantly. Gating this would be wrong,
     // and labelling it "Contacting a customer or prospect" would be worse.
     expect(assessCommandRisk("Compare Instantly and Gojiberry for outreach tooling").requiresApproval).toBe(false);
     expect(assessCommandRisk("Summarize how our outreach numbers moved last month").requiresApproval).toBe(false);
   });
 
-  it("still gates outreach used as an action", () => {
-    expect(assessCommandRisk("Start outreach to the restaurants this week").requiresApproval).toBe(true);
-    expect(assessCommandRisk("Run the outreach campaign now").requiresApproval).toBe(true);
-    expect(assessCommandRisk("Outreach to the owner today").requiresApproval).toBe(true);
+  /**
+   * The exclusion list is narrow ON PURPOSE. An earlier version had the
+   * polarity backwards — it gated only an allowlist of action verbs, which let
+   * every phrasing outside that list clear completely. These are the strings
+   * that hole opened.
+   */
+  it.each([
+    "Start outreach to the restaurants this week",
+    "Run the outreach campaign now",
+    "Outreach to the owner today",
+    "Prepare outreach for the restaurant owners on the list",
+    "Draft the cold outreach and start it Monday",
+    "Plan our outreach for next week's restaurant list",
+    "Resume outreach on the Toronto list",
+    "Set up outreach for the new restaurant list",
+  ])("gates outreach as an action: %s", (instruction) => {
+    expect(assessCommandRisk(instruction).requiresApproval).toBe(true);
+  });
+
+  /**
+   * Words that are usually nouns in agency work must not gate. Each of these
+   * was a real false positive: the backstop or a category matched a noun and
+   * then explained the gate with a reason that reads as a bug.
+   */
+  it.each([
+    "Summarize the call notes from yesterday's team meeting",
+    "Review the post mortem document for the outage",
+    "Draft the release notes for the internal wiki",
+    "Research text message providers for the restaurant",
+    "Prepare a plan to remove blockers from the roadmap",
+    "Review the content production process",
+    "Analyze our production capacity for the kitchen",
+    "Sign off on the design review",
+    "Summarize the terms of service of our competitors",
+    "Draft a summary of the sign-up funnel drop-off",
+    "Draft a plan to reduce food purchase costs",
+    "Research a compensation benchmark for the industry",
+  ])("does not gate an ordinary noun: %s", (instruction) => {
+    expect(assessCommandRisk(instruction).requiresApproval).toBe(false);
+  });
+
+  /** ...and narrowing those patterns must not have dropped their verb forms. */
+  it.each([
+    "Call the client and tell them we are ready",
+    "Publish the case study to LinkedIn",
+    "Push the fix to main and go live",
+    "Rotate the AWS credentials tonight",
+    "Remove the duplicate customer records permanently",
+    "Ship the new pricing page to the live site tonight",
+    "Sign the contract with the supplier",
+    "Sign the NDA with the supplier",
+    "Buy the domain for the new client",
+    "Purchase the Vapi credits",
+    "Deploy it to prod",
+  ])("still gates the verb form: %s", (instruction) => {
+    expect(assessCommandRisk(instruction).requiresApproval).toBe(true);
   });
 });
 
@@ -133,14 +185,17 @@ describe("assessCommandRisk — fail closed", () => {
   it("names the word that stopped it, so an over-cautious gate is visible rather than mysterious", () => {
     const result = assessCommandRisk("Write up the summary and forward it to the team lead");
     expect(result.requiresApproval).toBe(true);
-    expect(result.level).toBe("high");
     // The founder can see exactly what to rephrase, or just approve it.
     expect(result.reasons[0]).toMatch(/forward/i);
   });
 
-  it("distinguishes an outward effect it could not categorize from an instruction it could not read at all", () => {
-    expect(assessCommandRisk("Write up the summary and ship it").level).toBe("high");
-    expect(assessCommandRisk("Handle the thing we talked about").level).toBe("medium");
+  it("does not inflate an uncertain gate into a confident one", () => {
+    // This branch means "an effect word appeared and no category recognized
+    // the shape" — a statement about certainty, not severity. Claiming `high`
+    // would make an over-cautious gate sound authoritative.
+    const result = assessCommandRisk("Write up the summary and forward it somewhere");
+    expect(result.level).toBe("medium");
+    expect(result.reasons[0]).toMatch(/could not tell/i);
   });
 
   it("gates empty input rather than treating it as harmless", () => {

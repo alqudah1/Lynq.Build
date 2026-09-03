@@ -86,7 +86,7 @@ function stubFetch(state: unknown, extra?: Record<string, unknown>) {
   return fetchMock;
 }
 
-const readyState = { readiness: { enabled: true, ready: true, completedChecks: 5, totalChecks: 5, missing: [] }, refreshAfterMs: null };
+const readyState = { readiness: { enabled: true, ready: true, completedChecks: 5, totalChecks: 5, missing: [] }, canDecide: true, refreshAfterMs: null };
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -157,6 +157,7 @@ describe("JarvisPhoneControl accessibility", () => {
   it("says plainly when phone control is off, and offers no controls that would imply otherwise", async () => {
     stubFetch({
       readiness: { enabled: false, ready: false, completedChecks: 1, totalChecks: 5, missing: ["Phone commands enabled", "Founder verification secret"] },
+      canDecide: true,
       calls: [],
       refreshAfterMs: null,
     });
@@ -269,6 +270,54 @@ describe("JarvisPhoneControl accessibility", () => {
 
     await waitFor(() => expect(screen.getByText(/tried as many times as it can be/i)).toBeInTheDocument());
     expect(screen.queryByRole("button", { name: /try again/i })).not.toBeInTheDocument();
+    expect(await axe(container)).toHaveNoViolations();
+  });
+
+  it("shows a member the decision is not theirs to make, rather than a button that would be refused", async () => {
+    // Any org member may READ this screen; only an owner/admin may decide.
+    stubFetch({ ...readyState, canDecide: false, calls: [gatedCall] });
+
+    const { container } = render(<JarvisPhoneControl organizationId="organization-1" organizationSlug="lynq" />);
+
+    await waitFor(() => expect(screen.getByRole("heading", { name: /what needs your approval/i })).toBeInTheDocument());
+    expect(screen.queryByRole("button", { name: /approve and start the work/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^decline$/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/only an organization owner or admin can decide/i)).toBeInTheDocument();
+    expect(await axe(container)).toHaveNoViolations();
+  });
+
+  it("does not offer a retry on a failure that already opened a project, and links to it instead", async () => {
+    // Retrying would create a second project with a second copy of work that
+    // may already be running, so the honest answer is a link, not a button.
+    const partialCall = {
+      ...gatedCall,
+      session: { ...gatedCall.session, id: "session-6" },
+      commands: [
+        {
+          ...gatedCall.commands[0],
+          id: "command-5",
+          requiresApproval: false,
+          gatedReasons: [],
+          riskReasons: [],
+          dispatchState: "failed",
+          failureCode: "provider_unreachable",
+          projectId: "project-9",
+          projectName: "Brampton Restaurants",
+          dispatchAttempts: 1,
+          retryable: false,
+        },
+      ],
+    };
+    stubFetch({ ...readyState, calls: [partialCall] });
+
+    const { container } = render(<JarvisPhoneControl organizationId="organization-1" organizationSlug="lynq" />);
+
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent(/could not finish the handoff/i));
+    expect(screen.getByRole("alert")).toHaveTextContent(/some of the work may already be running/i);
+    // The claim "nothing was started" would be false here.
+    expect(screen.queryByText(/nothing was started/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /try again/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /open it/i })).toHaveAttribute("href", "/app/lynq/jarvis/project-9");
     expect(await axe(container)).toHaveNoViolations();
   });
 });
