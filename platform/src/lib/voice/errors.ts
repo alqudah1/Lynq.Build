@@ -30,9 +30,18 @@ export class CommandAlreadyDecidedError extends DomainRuleViolationError {
 }
 
 /** Retry was asked for on a command that is not in `failed`, or that has already used its attempts. */
+export type CommandRetryBlockedBy = "not_failed" | "attempts_exhausted" | "partially_created" | "in_flight";
+
 export class CommandNotRetryableError extends DomainRuleViolationError {
   readonly reason = "command_not_retryable";
-  constructor(cause: "not_failed" | "attempts_exhausted" | "partially_created" | "in_flight") {
+  /**
+   * Why the retry was refused, as a value rather than a sentence. Deliberately
+   * NOT named `cause`: that shadows `Error.cause`, which a previous version of
+   * this file did and which made the reason unreadable through the standard
+   * property.
+   */
+  readonly retryBlockedBy: CommandRetryBlockedBy;
+  constructor(cause: CommandRetryBlockedBy) {
     super(
       cause === "in_flight"
         ? "Jarvis is opening this one right now. Give it a moment and reload."
@@ -43,6 +52,7 @@ export class CommandNotRetryableError extends DomainRuleViolationError {
           : "This command has been retried as many times as it can be. Give Jarvis the instruction again if you still want it."
     );
     this.name = "CommandNotRetryableError";
+    this.retryBlockedBy = cause;
   }
 }
 

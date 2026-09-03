@@ -646,3 +646,103 @@ describe("a stalled dispatch is recoverable end to end", () => {
     expect(finished!.dispatchAttempts).toBe(2);
   });
 });
+
+describe("verification state — the guards live in the WHERE clause, not the caller's snapshot", () => {
+  /**
+   * Found by review round six. `recordVerificationAttempt` incremented its
+   * counter atomically — deliberately, and with a comment saying so — but
+   * wrote `verificationState` and `verifiedAt` with no precondition at all,
+   * and the cap was enforced only in `verifyFounderPasscode` against a count
+   * read earlier in the request.
+   */
+  it("does not let a late failing attempt revoke a completed verification", async () => {
+    const founderId = await makeUser();
+    const organizationId = await makeOrg(founderId);
+    const session = await ensureCallSession(db, {
+      organizationId,
+      founderUserId: founderId,
+      providerCallId: `call-${crypto.randomUUID()}`,
+      direction: "inbound",
+      purpose: "founder_command",
+      callerNumber: "+14165551234",
+      callerNumberMatched: true,
+    });
+
+    const verified = await recordVerificationAttempt(db, {
+      sessionId: session.id,
+      organizationId,
+      verified: true,
+      exhausted: false,
+      maxAttempts: 3,
+    });
+    expect(verified?.verificationState).toBe("verified");
+    expect(verified?.verifiedAt).toBeTruthy();
+
+    // A wrong code delivered late — reordered by the provider, or a retry of an
+    // earlier attempt. Unguarded, this set the session back to `unverified` and
+    // nulled `verifiedAt`, undoing an authentication that had already happened.
+    const late = await recordVerificationAttempt(db, {
+      sessionId: session.id,
+      organizationId,
+      verified: false,
+      exhausted: false,
+      maxAttempts: 3,
+    });
+    expect(late).toBeNull();
+
+    const [current] = await db.select().from(jarvisCallSessions).where(eq(jarvisCallSessions.id, session.id));
+    expect(current.verificationState).toBe("verified");
+    expect(current.verifiedAt).toBeTruthy();
+  });
+
+  it("refuses an attempt past the cap in SQL, not only in the caller", async () => {
+    const founderId = await makeUser();
+    const organizationId = await makeOrg(founderId);
+    const session = await ensureCallSession(db, {
+      organizationId,
+      founderUserId: founderId,
+      providerCallId: `call-${crypto.randomUUID()}`,
+      direction: "inbound",
+      purpose: "founder_command",
+      callerNumber: "+14165551234",
+      callerNumberMatched: true,
+    });
+
+    const attempt = () =>
+      recordVerificationAttempt(db, { sessionId: session.id, organizationId, verified: false, exhausted: false, maxAttempts: 3 });
+
+    expect(await attempt()).not.toBeNull();
+    expect(await attempt()).not.toBeNull();
+    expect(await attempt()).not.toBeNull();
+    // Four callers all holding the same snapshot of `verificationAttempts: 0`
+    // used to each get a full comparison. The guard is now in the statement.
+    expect(await attempt()).toBeNull();
+
+    const [current] = await db.select().from(jarvisCallSessions).where(eq(jarvisCallSessions.id, session.id));
+    expect(current.verificationAttempts).toBe(3);
+  });
+
+  it("holds the cap under concurrent attempts that all read the same prior count", async () => {
+    const founderId = await makeUser();
+    const organizationId = await makeOrg(founderId);
+    const session = await ensureCallSession(db, {
+      organizationId,
+      founderUserId: founderId,
+      providerCallId: `call-${crypto.randomUUID()}`,
+      direction: "inbound",
+      purpose: "founder_command",
+      callerNumber: "+14165551234",
+      callerNumberMatched: true,
+    });
+
+    const results = await Promise.all(
+      Array.from({ length: 8 }, () =>
+        recordVerificationAttempt(db, { sessionId: session.id, organizationId, verified: false, exhausted: false, maxAttempts: 3 })
+      )
+    );
+
+    expect(results.filter(Boolean)).toHaveLength(3);
+    const [current] = await db.select().from(jarvisCallSessions).where(eq(jarvisCallSessions.id, session.id));
+    expect(current.verificationAttempts).toBe(3);
+  });
+});

@@ -20,7 +20,7 @@ import {
   upsertCommandDraft,
 } from "./call-store";
 import { dispatchConfirmedCommand, retryFailedDispatch, runDirectiveDispatch } from "./command-dispatch";
-import { createDirectiveProject } from "@/lib/office/directive-intake";
+import { createDirectiveProject, DirectivePartiallyCreatedError } from "@/lib/office/directive-intake";
 import { CommandNotRetryableError } from "./errors";
 
 /**
@@ -461,5 +461,61 @@ describe("only one draft per call can be awaiting confirmation", () => {
         idempotencyKey: `distinct-${crypto.randomUUID()}`,
       })
     ).rejects.toThrow();
+  });
+});
+
+describe("createDirectiveProject — a failure in the project-created callback", () => {
+  /**
+   * Found by review round six. `onProjectCreated` sat OUTSIDE the try that
+   * converts a post-`createProject` failure into `DirectivePartiallyCreatedError`,
+   * under a comment claiming there was "nothing durable to protect yet".
+   *
+   * That was false: `createProject` has already committed a live project row
+   * by the time the callback runs, and recording that row is the entire reason
+   * the callback exists. So one transient Neon round trip failing there — a
+   * reset, a 502, a statement timeout — escaped as a raw error, the dispatcher's
+   * `instanceof DirectivePartiallyCreatedError` check missed it, and the
+   * command was written back as `failed` with a null project id. The screen
+   * then said "Nothing was started, and nothing was sent" about a live project,
+   * and offered a Try again button that would have created a second one.
+   *
+   * The callback is now inside the try, so the same failure reports the truth:
+   * a partial creation, carrying the id of the project that really exists.
+   */
+  it("reports a partial creation carrying the real project id, not a raw error", async () => {
+    const { userId, organizationId } = await makeFounder();
+
+    let observedProjectId: string | null = null;
+    const failure = await createDirectiveProject(db, {
+      organizationId,
+      instruction: "Research three Brampton restaurants and compare their websites.",
+      workspaceId: null,
+      actorUserId: userId,
+      source: "founder_phone_call",
+      onProjectCreated: async (project) => {
+        observedProjectId = project.id;
+        throw new Error("neon: connection reset");
+      },
+    }).then(
+      () => null,
+      (error: unknown) => error
+    );
+
+    expect(failure).toBeInstanceOf(DirectivePartiallyCreatedError);
+    const partial = failure as InstanceType<typeof DirectivePartiallyCreatedError>;
+    // The id is what stops a later retry building a second copy of live work.
+    expect(partial.projectId).toBe(observedProjectId);
+    expect(partial.projectId).toBeTruthy();
+    // The underlying error is preserved for classification rather than being
+    // replaced by the wrapper's own name.
+    expect((partial.reason as Error)?.message).toMatch(/connection reset/i);
+
+    // And the project really is there, which is exactly why "nothing was
+    // started" would have been a lie.
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(projects)
+      .where(and(eq(projects.organizationId, organizationId), eq(projects.id, partial.projectId)));
+    expect(Number(count)).toBe(1);
   });
 });

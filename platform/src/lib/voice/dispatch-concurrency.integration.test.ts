@@ -187,3 +187,95 @@ describe("concurrent dispatch never produces two projects", () => {
     expect(stored.dispatchAttempts).toBeLessThanOrEqual(5);
   });
 });
+
+describe("a dispatch that was killed mid-handoff", () => {
+  /**
+   * The kill window this suite exists for, found by review round six.
+   *
+   * A serverless process killed between `createProject` and the end of the
+   * handoff throws nothing and writes nothing. Every guard in this lane keyed
+   * off an exception, so the row simply stayed in `dispatching` — which means
+   * "a process is working on this right now" — forever. Nothing could move it:
+   * `retryFailedDispatch` threw on `projectId` before writing anything,
+   * approve and decline require `awaiting_approval`, and the call-side
+   * handlers only look for `awaiting_confirmation`.
+   *
+   * These tests simulate the kill by putting the row into exactly the state a
+   * killed process leaves behind, then assert the row can always be driven to
+   * a terminal state and never into a second project.
+   */
+  async function simulateKilledDispatch(commandId: string, organizationId: string, projectId: string | null) {
+    await db
+      .update(jarvisPhoneCommands)
+      .set({
+        dispatchState: "dispatching",
+        // Well past DISPATCH_LEASE_MS: nothing is running any more.
+        dispatchStartedAt: new Date(Date.now() - 60 * 60 * 1000),
+        dispatchAttempts: 1,
+        projectId,
+        revision: sql`${jarvisPhoneCommands.revision} + 1`,
+      })
+      .where(eq(jarvisPhoneCommands.id, commandId));
+    const reread = await resolveCommandById(db, { organizationId, commandId });
+    return reread;
+  }
+
+  it("reaps a stalled dispatch that left a project behind, instead of wedging it forever", async () => {
+    const { userId, organizationId } = await makeFounder();
+    const command = await openCommand(organizationId, userId, "Research three Brampton restaurants");
+    const dispatched = await dispatchConfirmedCommand(db, { organizationId, founderUserId: userId, command });
+    expect(dispatched.status).toBe("directive_created");
+    const projectId = dispatched.status === "directive_created" ? dispatched.projectId : null;
+    expect(projectId).toBeTruthy();
+    const projectsBefore = await countProjects(organizationId);
+
+    const stalled = await simulateKilledDispatch(command.id, organizationId, projectId);
+
+    // Retry refuses — correctly, the work exists — but it must LEAVE the row
+    // terminal on its way out, not throw before writing.
+    await expect(retryFailedDispatch(db, { organizationId, actorUserId: userId, command: stalled })).rejects.toMatchObject({
+      retryBlockedBy: "partially_created",
+    });
+
+    const settled = await resolveCommandById(db, { organizationId, commandId: command.id });
+    expect(settled.dispatchState).toBe("failed");
+    expect(settled.failureCode).toBe("partially_created");
+    expect(settled.projectId).toBe(projectId);
+    // The refusal is what protects the live work: no second project.
+    expect(await countProjects(organizationId)).toBe(projectsBefore);
+  });
+
+  it("lets a stalled dispatch that created nothing be retried into a real project", async () => {
+    const { userId, organizationId } = await makeFounder();
+    const command = await openCommand(organizationId, userId, "Summarize the pipeline for me");
+    const stalled = await simulateKilledDispatch(command.id, organizationId, null);
+
+    const outcome = await retryFailedDispatch(db, { organizationId, actorUserId: userId, command: stalled });
+
+    expect(outcome.status).toBe("directive_created");
+    expect(await countProjects(organizationId)).toBe(1);
+    const settled = await resolveCommandById(db, { organizationId, commandId: command.id });
+    expect(settled.dispatchState).toBe("directive_created");
+  });
+
+  it("never produces a second project when many callers retry a stalled dispatch at once", async () => {
+    const { userId, organizationId } = await makeFounder();
+    const command = await openCommand(organizationId, userId, "Compare our competitors' pricing pages");
+    await simulateKilledDispatch(command.id, organizationId, null);
+
+    // Staggered: each caller re-reads first, so everyone after the winner holds
+    // the winner's bumped revision — the interleaving that has defeated a fix
+    // in this file before.
+    const results = await Promise.allSettled(
+      Array.from({ length: 6 }, async (_unused, index) => {
+        await new Promise((resolve) => setTimeout(resolve, index * 12));
+        const current = await resolveCommandById(db, { organizationId, commandId: command.id });
+        return retryFailedDispatch(db, { organizationId, actorUserId: userId, command: current });
+      })
+    );
+
+    const created = results.filter((r) => r.status === "fulfilled" && r.value.status === "directive_created");
+    expect(created).toHaveLength(1);
+    expect(await countProjects(organizationId)).toBe(1);
+  });
+});
