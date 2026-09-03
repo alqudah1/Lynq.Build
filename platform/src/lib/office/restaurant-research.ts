@@ -77,7 +77,7 @@ export function renderRestaurantResearch(research: RestaurantResearch): string {
 }
 
 export async function researchRestaurantProspects(input: { directive: string; revisionNote?: string | null }): Promise<RestaurantResearch> {
-  const searchTools: ToolSet = isDirectGoogleModelConfigured()
+  const searchTools = (isDirectGoogleModelConfigured()
     ? { google_search: google.tools.googleSearch({}) }
     : {
         perplexity_search: gateway.tools.perplexitySearch({
@@ -87,7 +87,7 @@ export async function researchRestaurantProspects(input: { directive: string; re
           searchLanguageFilter: ["en"],
           country: "CA",
         }),
-      };
+      }) as unknown as ToolSet;
   const agent = new ToolLoopAgent({
     ...getOfficeGenerationConfig("planning"),
     output: Output.object({ name: "RestaurantProspectResearch", schema: restaurantResearchSchema }),

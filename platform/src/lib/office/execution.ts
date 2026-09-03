@@ -3,7 +3,7 @@ import "server-only";
 import { and, eq } from "drizzle-orm";
 import { generateText } from "ai";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
-import { agentApprovalRequests, agentArtifacts, projectArtifactLinks, projectExecutionLinks, projects } from "@/db/schema";
+import { agentApprovalRequests, agentArtifacts, projectApprovalLinks, projectArtifactLinks, projectExecutionLinks, projects } from "@/db/schema";
 import { resolveAgentById } from "@/lib/agents/agents";
 import { createArtifact, listArtifactsForExecution } from "@/lib/agent-runtime/artifacts";
 import { requestApproval } from "@/lib/agent-runtime/approvals";
@@ -16,13 +16,14 @@ import { launchAgentForTask, listArtifactLinks, linkApprovalToEntity, linkArtifa
 import { resolveProjectById, transitionProjectStatus } from "@/lib/projects/projects";
 import { listTasks, resolveTaskById, transitionTaskStatus } from "@/lib/projects/tasks";
 import { executeEngineeringDelivery, inspectEngineeringDelivery, type EngineeringDeliveryResult } from "./engineering";
+import { approvalMatchesDelivery, DEMO_APPROVAL_ACTION, isSameRestaurantIdentity, RESTAURANT_OUTREACH_APPROVAL_ACTION, RESTAURANT_PROSPECT_APPROVAL_ACTION } from "./approvals";
 import { getDirectiveDomains } from "./directives";
 import { parseOfficeTaskMetadata } from "./task-metadata";
 import { getOfficeGenerationConfig } from "./models";
 import { getAgentOfficeIdentity } from "./view";
 import { notifyJarvisApprovalNeeded } from "@/lib/email/jarvis-notifier";
 import { renderRestaurantResearch, researchRestaurantProspects, restaurantResearchMarker } from "./restaurant-research";
-import { parseRestaurantResearch } from "./restaurant-research";
+import { parseRestaurantResearch, type RestaurantCandidate } from "./restaurant-research";
 import { draftRestaurantOutreach, parseRestaurantOutreach, restaurantOutreachMarker } from "./restaurant-outreach";
 import { ensureEnvironmentManagedResendConnection, listConnectionsForUser } from "@/lib/communications-os/connections";
 import { findOrCreateConversation } from "@/lib/communications-os/conversations";
@@ -61,6 +62,143 @@ function parseEngineeringResult(content: string | null): EngineeringDeliveryResu
   } catch {
     return null;
   }
+}
+
+/**
+ * The founder approves the restaurant before anything is built for it.
+ * Engineering therefore refuses to run for a prospect demo until an
+ * approved `restaurant_prospect_selection` is recorded against the
+ * project — the research artifact being present is not consent, and the
+ * approval lives on the research execution rather than this one, so it has
+ * to be looked up project-wide.
+ */
+type ApprovedActionEvidence = { content: string | null; proposedActionRef: unknown };
+
+async function approvedActionEvidence(db: Db, organizationId: string, projectId: string, requestedAction: string): Promise<ApprovedActionEvidence[]> {
+  const rows = await db
+    .select({ content: agentArtifacts.content, proposedActionRef: agentApprovalRequests.proposedActionRef })
+    .from(projectApprovalLinks)
+    .innerJoin(
+      agentApprovalRequests,
+      and(eq(agentApprovalRequests.id, projectApprovalLinks.approvalRequestId), eq(agentApprovalRequests.organizationId, projectApprovalLinks.organizationId)),
+    )
+    .leftJoin(agentArtifacts, eq(agentArtifacts.id, agentApprovalRequests.artifactId))
+    .where(
+      and(
+        eq(projectApprovalLinks.organizationId, organizationId),
+        eq(projectApprovalLinks.projectId, projectId),
+        eq(agentApprovalRequests.requestedAction, requestedAction),
+        eq(agentApprovalRequests.status, "approved"),
+      ),
+    );
+  return rows;
+}
+
+/**
+ * An approval is for one named restaurant, not for restaurants in general.
+ * Re-researching after an approval produces a different recommendation, so
+ * the gate compares the restaurant about to be built against the ones the
+ * founder actually approved on this project.
+ */
+async function founderApprovedThisRestaurant(db: Db, organizationId: string, projectId: string, candidate: RestaurantCandidate): Promise<boolean> {
+  const approvals = await approvedActionEvidence(db, organizationId, projectId, RESTAURANT_PROSPECT_APPROVAL_ACTION);
+  return approvals.some(({ content }) => {
+    const approved = parseRestaurantResearch(content)?.recommendation;
+    return approved ? isSameRestaurantIdentity(approved, candidate) : false;
+  });
+}
+
+async function founderApprovedThisDelivery(db: Db, organizationId: string, projectId: string, commitSha: string): Promise<boolean> {
+  const approvals = await approvedActionEvidence(db, organizationId, projectId, DEMO_APPROVAL_ACTION);
+  return approvals.some(({ proposedActionRef }) => approvalMatchesDelivery(proposedActionRef, commitSha));
+}
+
+function renderWebsiteArtifact(delivery: EngineeringDeliveryResult, projectName: string): string {
+  const website = delivery.website!;
+  return [
+    `# Concept website — ${projectName}`,
+    "",
+    `- Preview: ${delivery.previewUrl ?? "Pending the Vercel preview deployment"}`,
+    `- Route: \`${delivery.previewPath ?? "unknown"}\``,
+    `- Pages: ${website.pages.map((page) => `\`${page}\``).join(", ")}`,
+    `- Pull request: ${delivery.pullRequestUrl}`,
+    `- Commit: \`${delivery.commitSha}\``,
+    `- Generation attempts: ${website.attempts}`,
+    "",
+    website.designRationale,
+    "",
+    "## Quality assurance",
+    "",
+    "Deterministic checks ran before the branch was pushed: the preview route exists as source, every page renders,",
+    "every navigation target resolves, no placeholder copy survives, every visible fact resolves to approved evidence,",
+    "and no service is offered that the evidence does not establish.",
+    "",
+    "```text",
+    website.qaSummary,
+    "```",
+    "",
+    "## Evidence behind every visible fact",
+    "",
+    website.evidenceTable,
+    "",
+    "## Remaining uncertainty",
+    "",
+    website.uncertainties.length > 0 ? website.uncertainties.map((item) => `- ${item}`).join("\n") : "- None beyond the research's own caveats.",
+    "",
+    "## Generated files",
+    "",
+    website.files.map((file) => `- \`${file}\``).join("\n"),
+  ].join("\n");
+}
+
+/**
+ * One delivery produces two records: the engineering result the rest of
+ * the workflow parses, and — for a prospect demo — a founder-readable
+ * account of the design, its evidence and what is still unverified.
+ */
+async function recordEngineeringDelivery(db: Db, input: {
+  organizationId: string;
+  executionId: string;
+  projectId: string;
+  taskId: string;
+  agentId: string;
+  actorUserId: string;
+  projectKey: string;
+  projectName: string;
+  delivery: EngineeringDeliveryResult;
+  title: string;
+}) {
+  const { delivery } = input;
+  const artifact = await createArtifact(db, {
+    organizationId: input.organizationId,
+    executionId: input.executionId,
+    artifactType: "report",
+    // The website report is written as its own artifact; keeping it out of
+    // the embedded marker keeps the machine-readable payload small enough
+    // to survive the artifact size limit intact.
+    content: `${engineeringMarker({ ...delivery, website: undefined })}\n\n# ${input.title}\n\n- Pull request: ${delivery.pullRequestUrl}\n- Branch: \`${delivery.branch}\`\n- Commit: \`${delivery.commitSha}\`\n- Preview: ${delivery.previewUrl ?? "Pending Vercel check"}\n\n## Validation and implementation report\n\n${delivery.validationSummary}`.slice(0, 20_000),
+    title: `${input.title} — ${input.projectKey}`,
+    actorAgentId: input.agentId,
+  });
+  if (delivery.website) {
+    const websiteArtifact = await createArtifact(db, {
+      organizationId: input.organizationId,
+      executionId: input.executionId,
+      artifactType: "report",
+      title: `Concept website — ${input.projectKey}`,
+      content: renderWebsiteArtifact(delivery, input.projectName).slice(0, 20_000),
+      actorAgentId: input.agentId,
+    });
+    await linkArtifactToEntity(db, {
+      organizationId: input.organizationId,
+      projectId: input.projectId,
+      artifactId: websiteArtifact.id,
+      linkedEntityType: "task",
+      linkedEntityId: input.taskId,
+      actorUserId: input.actorUserId,
+    });
+  }
+  return artifact;
 }
 
 async function projectContext(db: Db, organizationId: string, projectId: string): Promise<string> {
@@ -237,6 +375,11 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
       if (!research.recommendation.email) throw new Error("Outreach is waiting for a verified public business email for the approved restaurant");
       const delivery = await latestEngineeringResult(db, input.organizationId, link.projectId);
       if (!delivery) throw new Error("Outreach is waiting for the verified Engineering demo");
+      // Founder approval gate two: the founder must have accepted the built
+      // demo before a single word of outreach is drafted for it.
+      if (!(await founderApprovedThisDelivery(db, input.organizationId, link.projectId, delivery.commitSha))) {
+        throw new Error("Outreach is waiting for the founder to approve the built demo");
+      }
       const inspected = await inspectEngineeringDelivery(delivery);
       if (!inspected.previewUrl) throw new Error("Outreach is waiting for the verified Vercel preview");
       let connections = await listConnectionsForUser(db, { organizationId: input.organizationId, actorUserId: execution.ownerUserId });
@@ -279,14 +422,24 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
       });
     } else if (metadata.stage === "engineering") {
       const objective = projectRow.objective ?? metadata.goal;
+      // Founder approval gate one: a prospect's website is never built
+      // before the founder has approved that prospect.
+      const prospect = parseRestaurantResearch(context);
+      if (prospect && !(await founderApprovedThisRestaurant(db, input.organizationId, link.projectId, prospect.recommendation))) {
+        throw new Error(`Engineering is waiting for the founder to approve the restaurant (${prospect.recommendation.name}) before any website is built`);
+      }
       const delivery = await executeEngineeringDelivery({ executionId: execution.id, projectKey: projectRow.projectKey, projectName: projectRow.name, objective, acceptanceCriteria: metadata.successCriteria, sharedContext: context });
-      artifact = await createArtifact(db, {
+      artifact = await recordEngineeringDelivery(db, {
         organizationId: input.organizationId,
         executionId: execution.id,
-        artifactType: "report",
-        title: `Engineering delivery — ${projectRow.projectKey}`,
-        content: `${engineeringMarker(delivery)}\n\n# Engineering delivery\n\n- Pull request: ${delivery.pullRequestUrl}\n- Branch: \`${delivery.branch}\`\n- Commit: \`${delivery.commitSha}\`\n- Preview: ${delivery.previewUrl ?? "Pending Vercel check"}\n\n## Validation and implementation report\n\n${delivery.validationSummary}`.slice(0, 20_000),
-        actorAgentId: agent.id,
+        projectId: link.projectId,
+        taskId: link.taskId,
+        agentId: agent.id,
+        actorUserId: execution.ownerUserId,
+        projectKey: projectRow.projectKey,
+        projectName: projectRow.name,
+        delivery,
+        title: "Engineering delivery",
       });
     } else if (metadata.stage === "qa") {
       let delivery = latestApproval?.status === "revision_requested"
@@ -294,14 +447,22 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
         : await latestEngineeringResult(db, input.organizationId, link.projectId);
       if (!delivery && latestApproval?.status === "revision_requested") {
         const objective = `${projectRow.objective ?? metadata.goal}\n\nFounder requested these changes: ${latestApproval.decisionNote || "Revise the implementation based on the founder review."}`;
+        const revisionProspect = parseRestaurantResearch(context);
+        if (revisionProspect && !(await founderApprovedThisRestaurant(db, input.organizationId, link.projectId, revisionProspect.recommendation))) {
+          throw new Error(`A revision is waiting for the founder to approve the restaurant (${revisionProspect.recommendation.name}) before any website is rebuilt`);
+        }
         delivery = await executeEngineeringDelivery({ executionId: execution.id, projectKey: projectRow.projectKey, projectName: projectRow.name, objective, acceptanceCriteria: metadata.successCriteria, sharedContext: context });
-        const revisionArtifact = await createArtifact(db, {
+        const revisionArtifact = await recordEngineeringDelivery(db, {
           organizationId: input.organizationId,
           executionId: execution.id,
-          artifactType: "report",
-          title: `Revised engineering delivery — ${projectRow.projectKey}`,
-          content: `${engineeringMarker(delivery)}\n\n# Revised engineering delivery\n\n- Pull request: ${delivery.pullRequestUrl}\n- Branch: \`${delivery.branch}\`\n- Commit: \`${delivery.commitSha}\`\n- Preview: ${delivery.previewUrl ?? "Pending Vercel check"}\n\n## Validation and implementation report\n\n${delivery.validationSummary}`.slice(0, 20_000),
-          actorAgentId: agent.id,
+          projectId: link.projectId,
+          taskId: link.taskId,
+          agentId: agent.id,
+          actorUserId: execution.ownerUserId,
+          projectKey: projectRow.projectKey,
+          projectName: projectRow.name,
+          delivery,
+          title: "Revised engineering delivery",
         });
         await linkArtifactToEntity(db, { organizationId: input.organizationId, projectId: link.projectId, artifactId: revisionArtifact.id, linkedEntityType: "task", linkedEntityId: link.taskId, actorUserId: execution.ownerUserId });
       }
@@ -335,7 +496,7 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
 
   if (metadata.stage === "research") {
     const approvalSummary = `Review Jarvis's cited restaurant recommendation for ${projectRow.name}. Approve to begin the demo brief and build; request changes to research another restaurant. No outreach has been sent.`;
-    const approval = await requestApproval(db, { organizationId: input.organizationId, executionId: execution.id, requestedAction: "restaurant_prospect_selection", summary: approvalSummary, riskLevel: "medium", artifactId: artifact.id, proposedActionRef: { projectId: link.projectId, taskId: link.taskId }, actorAgentId: agent.id });
+    const approval = await requestApproval(db, { organizationId: input.organizationId, executionId: execution.id, requestedAction: RESTAURANT_PROSPECT_APPROVAL_ACTION, summary: approvalSummary, riskLevel: "medium", artifactId: artifact.id, proposedActionRef: { projectId: link.projectId, taskId: link.taskId }, actorAgentId: agent.id });
     await linkApprovalToEntity(db, { organizationId: input.organizationId, projectId: link.projectId, approvalRequestId: approval.request.id, linkedEntityType: "task", linkedEntityId: link.taskId, actorUserId: execution.ownerUserId });
     await notifyJarvisApprovalNeeded(db, { organizationId: input.organizationId, ownerUserId: execution.ownerUserId, projectId: link.projectId, projectName: projectRow.name, summary: approvalSummary });
     return approval.execution;
@@ -345,7 +506,7 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
     const outreach = parseRestaurantOutreach(artifact.content);
     if (!outreach) throw new Error("outreach message evidence is missing");
     const approvalSummary = `Review the exact restaurant email and preview link for ${projectRow.name}. Approving queues one Resend email; requesting changes rewrites it. Nothing has been sent yet.`;
-    const approval = await requestApproval(db, { organizationId: input.organizationId, executionId: execution.id, requestedAction: "send_restaurant_outreach", summary: approvalSummary, riskLevel: "high", artifactId: artifact.id, proposedActionRef: { projectId: link.projectId, taskId: link.taskId, messageId: outreach.messageId }, actorAgentId: agent.id });
+    const approval = await requestApproval(db, { organizationId: input.organizationId, executionId: execution.id, requestedAction: RESTAURANT_OUTREACH_APPROVAL_ACTION, summary: approvalSummary, riskLevel: "high", artifactId: artifact.id, proposedActionRef: { projectId: link.projectId, taskId: link.taskId, messageId: outreach.messageId }, actorAgentId: agent.id });
     await attachMessageToExistingApproval(db, { organizationId: input.organizationId, messageId: outreach.messageId, approvalRequestId: approval.request.id, actorUserId: execution.ownerUserId });
     await linkApprovalToEntity(db, { organizationId: input.organizationId, projectId: link.projectId, approvalRequestId: approval.request.id, linkedEntityType: "task", linkedEntityId: link.taskId, actorUserId: execution.ownerUserId });
     await notifyJarvisApprovalNeeded(db, { organizationId: input.organizationId, ownerUserId: execution.ownerUserId, projectId: link.projectId, projectName: projectRow.name, summary: approvalSummary });
@@ -353,8 +514,10 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
   }
 
   if (metadata.stage === "qa") {
+    const reviewedDelivery = await latestEngineeringResult(db, input.organizationId, link.projectId);
+    if (!reviewedDelivery) throw new Error("QA approval is missing the Engineering delivery it reviewed");
     const approvalSummary = `Review the preview and pull request for ${projectRow.name}. Approving accepts this demo and continues any remaining planned handoff; requesting changes starts another isolated Engineering revision.`;
-    const approval = await requestApproval(db, { organizationId: input.organizationId, executionId: execution.id, requestedAction: "office_demo_approval", summary: approvalSummary, riskLevel: "high", artifactId: artifact.id, proposedActionRef: { projectId: link.projectId, taskId: link.taskId }, actorAgentId: agent.id });
+    const approval = await requestApproval(db, { organizationId: input.organizationId, executionId: execution.id, requestedAction: DEMO_APPROVAL_ACTION, summary: approvalSummary, riskLevel: "high", artifactId: artifact.id, proposedActionRef: { projectId: link.projectId, taskId: link.taskId, commitSha: reviewedDelivery.commitSha, previewPath: reviewedDelivery.previewPath }, actorAgentId: agent.id });
     await linkApprovalToEntity(db, { organizationId: input.organizationId, projectId: link.projectId, approvalRequestId: approval.request.id, linkedEntityType: "task", linkedEntityId: link.taskId, actorUserId: execution.ownerUserId });
     await notifyJarvisApprovalNeeded(db, { organizationId: input.organizationId, ownerUserId: execution.ownerUserId, projectId: link.projectId, projectName: projectRow.name, summary: approvalSummary });
     return approval.execution;
