@@ -59,7 +59,11 @@ export async function GET(_request: Request, { params }: RouteParams) {
         commands: await Promise.all(
           call.commands.map(async (command) => {
             if (command.dispatchState !== "dispatching" || isDispatchInFlight(command, DISPATCH_LEASE_MS)) return command;
-            const reaped = await reapStalledDispatch(db, { organizationId, command, actorUserId: user.userId });
+            // No actor: nobody asked for this. It is a repair that happened to
+            // be noticed while rendering, and attributing it to whoever opened
+            // the screen put a member's name on a dispatch failure they could
+            // not have caused.
+            const reaped = await reapStalledDispatch(db, { organizationId, command });
             return reaped ? { ...command, ...reaped } : command;
           })
         ),

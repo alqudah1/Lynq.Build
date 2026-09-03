@@ -5,6 +5,8 @@ import {
   FounderVerificationUnavailableError,
   MAX_VERIFICATION_ATTEMPTS,
   normalizeSpokenPasscode,
+  PASSCODE_DIGITS,
+  PASSCODE_SKEW_STEPS,
   PASSCODE_STEP_MS,
   passcodeMillisecondsRemaining,
   verifyFounderPasscode,
@@ -14,10 +16,20 @@ const SECRET = "a-test-secret-that-is-at-least-32-characters-long";
 const NOW = 1_800_000_000_000;
 
 describe("deriveFounderPasscode", () => {
-  it("produces a stable six-digit code for a time step", () => {
+  it("produces a stable code of the configured length for a time step", () => {
     const code = deriveFounderPasscode(SECRET, NOW);
-    expect(code).toMatch(/^\d{6}$/);
+    expect(code).toMatch(new RegExp(`^\\d{${PASSCODE_DIGITS}}$`));
     expect(deriveFounderPasscode(SECRET, NOW + 1000)).toBe(code);
+  });
+
+  it("is long enough that guessing it within the attempt budgets is not worth trying", () => {
+    // Three codes are live at once (PASSCODE_SKEW_STEPS = 1), so one guess wins
+    // with probability 3/10^digits. The budgets around this — three attempts a
+    // call, six calls an hour from one number — allow roughly 1.6e5 guesses a
+    // year, and six digits put that at about a two-in-five chance of a hit.
+    const guessesPerYear = 3 * 6 * 24 * 365;
+    const perGuess = (2 * PASSCODE_SKEW_STEPS + 1) / 10 ** PASSCODE_DIGITS;
+    expect(1 - (1 - perGuess) ** guessesPerYear).toBeLessThan(0.01);
   });
 
   it("changes when the step changes", () => {

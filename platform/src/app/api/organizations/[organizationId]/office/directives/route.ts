@@ -88,7 +88,21 @@ export async function POST(request: Request, { params }: RouteParams) {
     // fall through to a generic 500) and tells the caller what actually
     // happened.
     if (err instanceof DirectivePartiallyCreatedError) {
-      console.error("[office-directive]", JSON.stringify({ event: "partially-created", projectId: err.projectId }));
+      // The wrapped error is logged too. `DirectiveHandoffIncompleteError` is a
+      // domain rule violation, so `handleRouteError` answers 409 and never
+      // reaches its own unexpected-error logging — which meant the only record
+      // of WHY a handoff died was a project id, and the cause was unrecoverable
+      // from the logs. The phone lane already unwraps `reason` to classify the
+      // failure; the web route threw it away.
+      console.error(
+        "[office-directive]",
+        JSON.stringify({
+          event: "partially-created",
+          projectId: err.projectId,
+          reason: err.reason instanceof Error ? `${err.reason.name}: ${err.reason.message}` : String(err.reason),
+        }),
+        err.reason instanceof Error ? err.reason.stack : undefined
+      );
       return handleRouteError(new DirectiveHandoffIncompleteError(err.projectId, err.projectName));
     }
     return handleRouteError(err);

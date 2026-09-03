@@ -160,15 +160,58 @@ describe("Vapi webhook — phone control is off by default", () => {
 
 describe("Vapi webhook — the shared secret must be long enough to be one", () => {
   /**
-   * The whole inbound lane collapses to this one string. It was checked only
-   * for being non-empty, in the route and in readiness alike, so a
-   * four-character value passed every check the deployment makes — while
+   * The inbound lane collapses to this one string. It was checked only for
+   * being non-empty, in the route and in readiness alike, so a four-character
+   * value passed every check the deployment makes — while
    * JARVIS_PHONE_VERIFICATION_SECRET, which protects strictly less, was
    * already held to 32.
+   *
+   * The floor belongs to the INBOUND lane, not to the door. Enforcing it at
+   * the door — the first version of this rule — 401s every request on any
+   * deployment whose secret predates it, and that endpoint is shared with the
+   * pre-existing outbound founder notifications, which this branch is not
+   * supposed to touch at all. The two tests below are the two halves of that:
+   * the old lane keeps working, the new lane refuses to start.
    */
-  it("refuses every request when the configured secret is too short, even a correct one", async () => {
+  it("keeps the existing notification lane working when the secret predates the length rule", async () => {
     vi.stubEnv("VAPI_WEBHOOK_SECRET", "short");
-    const response = await POST(post({ message: { type: "status-update", status: "ended" } }, { authorization: "Bearer short" }));
-    expect(response.status).toBe(401);
+    const log = vi.spyOn(console, "info").mockImplementation(() => undefined);
+
+    const response = await POST(
+      post({ message: { type: "status-update", status: "ended", call: { id: "call-9" } } }, { authorization: "Bearer short" })
+    );
+
+    expect(response.status).toBe(200);
+    expect(log).toHaveBeenCalledWith("[jarvis-voice]", expect.stringContaining("call-9"));
+  });
+
+  it("refuses to run the inbound lane on a short secret, and names the variable rather than its value", async () => {
+    vi.stubEnv("VAPI_WEBHOOK_SECRET", "short");
+    vi.stubEnv("JARVIS_PHONE_COMMANDS_ENABLED", "true");
+    vi.stubEnv("JARVIS_PHONE_ORGANIZATION_ID", "11111111-1111-4111-8111-111111111111");
+    vi.stubEnv("JARVIS_PHONE_FOUNDER_USER_ID", "22222222-2222-4222-8222-222222222222");
+    vi.stubEnv("JARVIS_PHONE_VERIFICATION_SECRET", "a-verification-secret-long-enough-01234567");
+    vi.stubEnv("JARVIS_FOUNDER_PHONE_E164", "+14165551234");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    const response = await POST(
+      post({ message: { type: "assistant-request", call: { id: "call-9" }, customer: { number: "+14165551234" } } }, { authorization: "Bearer short" })
+    );
+
+    expect(await response.json()).toEqual({ received: true });
+    expect(createDbClient).not.toHaveBeenCalled();
+    const logged = String(warn.mock.calls.at(-1)?.[1] ?? "");
+    expect(logged).toContain("weak_webhook_secret");
+    expect(logged).toContain("VAPI_WEBHOOK_SECRET");
+    expect(logged).not.toContain("short");
+  });
+
+  it("says nothing about the length rule on a deployment that never asked for phone control", async () => {
+    vi.stubEnv("VAPI_WEBHOOK_SECRET", "short");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    await POST(post({ message: { type: "status-update", status: "ended", call: { id: "call-9" } } }, { authorization: "Bearer short" }));
+
+    expect(warn).not.toHaveBeenCalled();
   });
 });

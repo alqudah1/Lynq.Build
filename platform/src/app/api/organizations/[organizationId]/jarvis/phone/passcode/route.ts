@@ -17,6 +17,7 @@ import {
 } from "@/lib/voice/founder-verification";
 import { PasscodeRateLimitedError } from "@/lib/voice/errors";
 import { resolveJarvisPhoneCommandConfig } from "@/lib/voice/phone-config";
+import { clearVerificationBudget, readVerificationBudget } from "@/lib/voice/verification-budget";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +46,7 @@ function noStoreJson<T>(data: T): Response {
 const PASSCODE_RATE_LIMIT: RateLimitConfig = { limit: 30, windowSeconds: 300 };
 
 /**
- * The rotating six-digit code the founder reads to Jarvis on a call.
+ * The rotating numeric code the founder reads to Jarvis on a call.
  *
  * This route IS the second authentication factor. Everything about it is
  * therefore deliberately strict:
@@ -115,6 +116,20 @@ export async function GET(_request: Request, { params }: RouteParams) {
     const now = Date.now();
     const passcode = deriveFounderPasscode(resolution.config.verificationSecret, now);
 
+    // Whether the caller budgets are currently spent. Both are keyed on the
+    // number a caller ASSERTS, and caller ID is spoofable, so someone else can
+    // spend them from a spoofed line and the founder is then refused before
+    // their correct code is ever checked. That used to be invisible: the only
+    // evidence was Jarvis saying "there have been too many code attempts from
+    // this number" on a call the founder had not made before. Reading it here
+    // costs two selects and spends nothing, and it gives the screen something
+    // true to say — with a time, and a way out.
+    const lockout = await readVerificationBudget(db, {
+      verificationSecret: resolution.config.verificationSecret,
+      founderPhoneNumber: resolution.config.founderPhoneNumber,
+      organizationId,
+    }).catch(() => null);
+
     await recordAuditEvent(db, {
       // Deliberately its own event type, not `jarvis_phone_founder_verified`:
       // "a code was displayed in a browser" and "a caller authenticated on a
@@ -129,23 +144,89 @@ export async function GET(_request: Request, { params }: RouteParams) {
     });
 
     return Response.json(
-      { data: { available: true, passcode, expiresInMs: passcodeMillisecondsRemaining(now) } },
+      { data: { available: true, passcode, expiresInMs: passcodeMillisecondsRemaining(now), lockout } },
       { status: 200, headers: NO_STORE_HEADERS }
     );
   } catch (err) {
-    if (err instanceof PasscodeRateLimitedError) {
-      return Response.json(
-        { error: { code: err.code, message: err.message, requestId: randomUUID() } },
-        { status: err.httpStatus, headers: NO_STORE_HEADERS }
-      );
-    }
-    if (err instanceof FounderVerificationUnavailableError) {
-      return noStoreJson({ available: false, reason: "Phone control is not fully set up yet.", passcode: null, expiresInMs: null });
-    }
-    // Even an unexpected error carries the headers: every response from this
-    // route is uncacheable, without exception.
-    const response = handleRouteError(err);
-    for (const [key, value] of Object.entries(NO_STORE_HEADERS)) response.headers.set(key, value);
-    return response;
+    return passcodeErrorResponse(err);
   }
+}
+
+/**
+ * Clears the caller budgets for the founder's own number.
+ *
+ * Necessary because both budgets are keyed on an asserted, spoofable caller ID,
+ * which makes them a denial-of-service primitive aimed at the person they
+ * protect: someone spoofing the founder's line can keep both spent
+ * indefinitely, and the founder is then refused on a call they did make, before
+ * their correct code is checked. Without a way to clear it, the answer would be
+ * "wait, and hope they stop" — or a redeploy.
+ *
+ * Safe to expose, because it grants nothing. A cleared budget still leaves the
+ * caller facing the rotating passcode, the three-attempt per-call cap, and the
+ * caller-number precondition; this only undoes a throttle. It is nonetheless
+ * held to exactly the same floor as reading the code — a validated session,
+ * owner/admin, the configured organization, and the configured founder account
+ * — because the person who should decide to reopen the door is the one it
+ * belongs to.
+ */
+export async function POST(_request: Request, { params }: RouteParams) {
+  try {
+    const { organizationId: rawOrganizationId } = await params;
+    const organizationId = parseUuidParam(rawOrganizationId);
+    const env = loadEnv();
+    const db = createDbClient(env);
+    const user = await getAuthenticatedUser(db);
+    await requireOrganizationAdminOverride(db, organizationId, user.userId);
+
+    const resolution = resolveJarvisPhoneCommandConfig();
+    if (!resolution.ok || resolution.config.organizationId !== organizationId || resolution.config.founderUserId !== user.userId) {
+      // The same answer for all three, and deliberately so: "not set up", "not
+      // your organization" and "not your account" are already distinguished by
+      // the GET above for a caller who is allowed to know. This one changes
+      // state, so it says only that it did not.
+      return noStoreJson({ cleared: false, reason: "This is not available for your account.", lockout: null });
+    }
+
+    await clearVerificationBudget(db, {
+      verificationSecret: resolution.config.verificationSecret,
+      founderPhoneNumber: resolution.config.founderPhoneNumber,
+      organizationId,
+    });
+
+    await recordAuditEvent(db, {
+      eventType: "jarvis_phone_verification_lockout_cleared",
+      organizationId,
+      actorUserId: user.userId,
+      targetType: "jarvis_phone_passcode",
+      metadata: { channel: "command_center" },
+    });
+
+    const lockout = await readVerificationBudget(db, {
+      verificationSecret: resolution.config.verificationSecret,
+      founderPhoneNumber: resolution.config.founderPhoneNumber,
+      organizationId,
+    }).catch(() => null);
+
+    return noStoreJson({ cleared: true, reason: null, lockout });
+  } catch (err) {
+    return passcodeErrorResponse(err);
+  }
+}
+
+function passcodeErrorResponse(err: unknown): Response {
+  if (err instanceof PasscodeRateLimitedError) {
+    return Response.json(
+      { error: { code: err.code, message: err.message, requestId: randomUUID() } },
+      { status: err.httpStatus, headers: NO_STORE_HEADERS }
+    );
+  }
+  if (err instanceof FounderVerificationUnavailableError) {
+    return noStoreJson({ available: false, reason: "Phone control is not fully set up yet.", passcode: null, expiresInMs: null });
+  }
+  // Even an unexpected error carries the headers: every response from this
+  // route is uncacheable, without exception.
+  const response = handleRouteError(err);
+  for (const [key, value] of Object.entries(NO_STORE_HEADERS)) response.headers.set(key, value);
+  return response;
 }

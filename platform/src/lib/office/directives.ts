@@ -245,12 +245,51 @@ function companyHandoffPlan(instruction: string, agents: Agent[]): OfficeDirecti
     assignments: chain.map((item, index) => ({
       agentId: item.agent.id,
       title: `${getAgentOfficeIdentity(item.agent).title}: ${item.title}`,
-      goal: `${getAgentOfficeIdentity(item.agent).title} owns this handoff for the founder directive: ${instruction}`.slice(0, 2000),
+      goal: composeAgentGoal(`${getAgentOfficeIdentity(item.agent).title} owns this handoff for the founder directive: `, instruction),
       successCriteria: item.successCriteria,
       handoff: index === chain.length - 1 ? "Return the complete project record to the Executive Assistant and founder for review." : `Share the completed deliverable and decisions with ${getAgentOfficeIdentity(chain[index + 1].agent).title}.`,
       stage: item.stage,
     })),
   };
+}
+
+/** The plan schema's cap on an assignment goal. */
+const MAX_GOAL_LENGTH = 2000;
+
+const FOUNDER_FENCE_END = "--- END FOUNDER REQUEST ---";
+
+/**
+ * Builds one agent's goal out of a role prefix and the directive instruction,
+ * without ever cutting a fence open.
+ *
+ * A directive that came from a phone call arrives wrapped: a block of safety
+ * rules, then `--- BEGIN FOUNDER REQUEST ---`, the founder's own words, and
+ * `--- END FOUNDER REQUEST ---`. `toDirectiveInstruction` goes to real trouble
+ * to guarantee that fence always closes — it trims the BODY rather than the
+ * whole string for exactly this reason. Composing the goal as
+ * `prefix + instruction` and then slicing the RESULT threw that guarantee away:
+ * once the fenced body passes about 1,400 characters (a minute of dictation)
+ * the closing marker falls off the end, and the goal that reaches the agent
+ * prompt announces a transcript is starting and never says where it stops.
+ *
+ * So the body is trimmed and the closing marker is kept, which is the same rule
+ * one layer up. An instruction with no fence is sliced exactly as before.
+ */
+export function composeAgentGoal(prefix: string, instruction: string, limit: number = MAX_GOAL_LENGTH): string {
+  const composed = `${prefix}${instruction}`;
+  if (composed.length <= limit) return composed;
+
+  const endAt = instruction.lastIndexOf(FOUNDER_FENCE_END);
+  if (endAt === -1) return composed.slice(0, limit);
+
+  const head = instruction.slice(0, endAt);
+  const tail = instruction.slice(endAt);
+  // Room for the trimmed head, an ellipsis, a newline, and the closing marker.
+  const budget = limit - prefix.length - tail.length - 2;
+  // Degenerate only if the prefix alone nearly fills the limit; keeping the
+  // fence closed still beats keeping more text.
+  if (budget <= 0) return `${prefix}${tail}`.slice(0, limit);
+  return `${prefix}${head.slice(0, budget)}…\n${tail}`;
 }
 
 export function deriveDirectiveProjectName(instruction: string): string {
@@ -282,7 +321,7 @@ function fallbackPlan(instruction: string, agents: Agent[], preferredAgentId?: s
         assignments: required.map((agent, index) => ({
           agentId: agent.id,
           title: titles[index],
-          goal: `${getAgentOfficeIdentity(agent).title} will complete the ${stages[index]} stage for this founder directive: ${instruction}`.slice(0, 2000),
+          goal: composeAgentGoal(`${getAgentOfficeIdentity(agent).title} will complete the ${stages[index]} stage for this founder directive: `, instruction),
           successCriteria: index === 0 ? "A testable product brief and bounded acceptance criteria exist." : index === 1 ? "A feature-branch pull request exists with relevant validations executed." : "The pull request, automated checks, and Vercel preview are reviewed and returned for founder approval.",
           handoff: handoffs[index],
           stage: stages[index],
@@ -296,7 +335,7 @@ function fallbackPlan(instruction: string, agents: Agent[], preferredAgentId?: s
     return {
       agentId: agent.id,
       title: `${identity.title}: ${index === 0 ? "lead the initial brief" : "deliver the assigned workstream"}`,
-      goal: `${identity.title} will contribute to this founder directive: ${instruction}`.slice(0, 2000),
+      goal: composeAgentGoal(`${identity.title} will contribute to this founder directive: `, instruction),
       successCriteria: `Produce a clear, reviewable ${identity.title.toLowerCase()} deliverable with assumptions, decisions, and next actions documented.`,
       handoff: index === selected.length - 1 ? "Return the completed workstream to the Executive Assistant for founder review." : `Share conclusions with ${getAgentOfficeIdentity(selected[index + 1]).title}.`,
       stage: "advisory" as const,

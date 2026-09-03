@@ -73,10 +73,19 @@ const startedCall = {
   ],
 };
 
-function stubFetch(state: unknown, extra?: Record<string, unknown>) {
-  const fetchMock = vi.fn(async (url: string) => {
+function stubFetch(state: unknown, extra?: Record<string, unknown>, passcodeData?: Record<string, unknown>) {
+  const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     if (String(url).endsWith("/passcode")) {
-      return new Response(JSON.stringify({ data: { available: true, passcode: "417296", expiresInMs: 300000 } }), { status: 200 });
+      if (init?.method === "POST") {
+        return new Response(
+          JSON.stringify({ data: { cleared: true, reason: null, lockout: { locked: false, resetAt: null, callsRemaining: 6, attemptsRemaining: 12 } } }),
+          { status: 200 }
+        );
+      }
+      return new Response(
+        JSON.stringify({ data: passcodeData ?? { available: true, passcode: "41729638", expiresInMs: 300000, lockout: null } }),
+        { status: 200 }
+      );
     }
     if (extra && String(url).includes("/commands/")) {
       return new Response(JSON.stringify(extra), { status: 200 });
@@ -150,12 +159,47 @@ describe("JarvisPhoneControl accessibility", () => {
     const reveal = await screen.findByRole("button", { name: /show my code/i });
     fireEvent.click(reveal);
 
-    await waitFor(() => expect(screen.getByText("417296")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("41729638")).toBeInTheDocument());
     // The live region is a node that is ALWAYS mounted, not the code element
     // itself. A polite region that comes into existence at the same moment as
     // its content is unreliable — the announcement races the node carrying it.
     expect(screen.getByText(/your code is showing/i)).toHaveAttribute("aria-live", "polite");
+    // No lockout in this fixture, so no alarming panel about one.
+    expect(screen.queryByRole("button", { name: /let me call in again/i })).not.toBeInTheDocument();
     expect(await axe(container)).toHaveNoViolations();
+  });
+
+  /**
+   * Round twelve. Both caller budgets are keyed on the number a caller ASSERTS,
+   * and caller ID can be faked — so someone else can spend them from a line
+   * that looks like the founder's, and the founder is then refused on the phone
+   * before their correct code is ever checked. The only evidence used to be
+   * Jarvis saying "there have been too many code attempts from this number" on
+   * a call they had not made, with nothing on the screen and no way out short
+   * of waiting or a redeploy.
+   */
+  it("explains a lockout in the founder's own terms and offers a way out of it", async () => {
+    stubFetch({ ...readyState, calls: [] }, undefined, {
+      available: true,
+      passcode: "41729638",
+      expiresInMs: 300000,
+      lockout: { locked: true, resetAt: "2026-09-01T16:30:00.000Z", callsRemaining: 0, attemptsRemaining: 0 },
+    });
+
+    const { container } = render(<JarvisPhoneControl organizationId="organization-1" organizationSlug="lynq" />);
+    fireEvent.click(await screen.findByRole("button", { name: /show my code/i }));
+
+    const clear = await screen.findByRole("button", { name: /let me call in again/i });
+    // Said in terms of what the founder actually experiences, and honest that
+    // clearing it grants nothing on its own.
+    expect(screen.getByText(/turning down calls from your number/i)).toBeInTheDocument();
+    expect(screen.getByText(/your code is still required/i)).toBeInTheDocument();
+    expect(await axe(container)).toHaveNoViolations();
+
+    fireEvent.click(clear);
+    await waitFor(() => expect(screen.queryByRole("button", { name: /let me call in again/i })).not.toBeInTheDocument());
+    // Still shows the code afterwards: clearing the throttle is not signing out.
+    expect(screen.getByText("41729638")).toBeInTheDocument();
   });
 
   it("says plainly when phone control is off, and offers no controls that would imply otherwise", async () => {

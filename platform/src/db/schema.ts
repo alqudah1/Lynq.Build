@@ -5813,6 +5813,21 @@ export const jarvisVoiceWebhookEvents = pgTable("jarvis_voice_webhook_events", {
   callSessionId: uuid("call_session_id").references(() => jarvisCallSessions.id, { onDelete: "set null" }),
   processingStatus: jarvisWebhookProcessingStatusEnum("processing_status").notNull(),
   failureCode: text("failure_code"),
+  /**
+   * What the assistant was told to say for this event, so a provider retry can
+   * be answered with the SAME words rather than with nothing.
+   *
+   * Vapi reads a tool result out of the response body. A retry that lost the
+   * idempotency claim used to receive a bare acknowledgement, which carries no
+   * tool result at all — so a `confirm_command` that took longer than the
+   * provider's timeout left the assistant with no answer while a real project
+   * was being created behind it. Recording the answer is what makes "handled
+   * exactly once" and "answered every time" both true.
+   *
+   * Jarvis's own sentence, never the caller's speech, and every field it is
+   * built from was redacted before it was stored.
+   */
+  responseText: text("response_text"),
   receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [

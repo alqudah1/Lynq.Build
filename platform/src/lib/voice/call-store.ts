@@ -211,6 +211,8 @@ export async function recordWebhookEventOutcome(
     organizationId: string;
     processingStatus?: "processed" | "ignored" | "failed";
     failureCode?: string | null;
+    /** Jarvis's own sentence for this event, so a provider retry gets the same answer. */
+    responseText?: string | null;
     provider?: string;
   }
 ): Promise<void> {
@@ -221,6 +223,7 @@ export async function recordWebhookEventOutcome(
       organizationId: input.organizationId,
       ...(input.processingStatus ? { processingStatus: input.processingStatus } : {}),
       ...(input.failureCode !== undefined ? { failureCode: input.failureCode } : {}),
+      ...(input.responseText !== undefined ? { responseText: input.responseText } : {}),
     })
     .where(
       and(
@@ -228,6 +231,39 @@ export async function recordWebhookEventOutcome(
         eq(jarvisVoiceWebhookEvents.externalEventId, input.externalEventId)
       )
     );
+}
+
+export interface RecordedWebhookAnswer {
+  responseText: string | null;
+  processingStatus: "processed" | "ignored" | "failed";
+}
+
+/**
+ * What a previous delivery of this exact event was answered with.
+ *
+ * Only ever read on a LOST idempotency claim, which is precisely the case the
+ * claim could not answer on its own: the claim proves the event was already
+ * taken, and this says what taking it produced. A null `responseText` means the
+ * first delivery has not finished (or died before recording), which the caller
+ * must report as still-in-progress rather than inventing an outcome for.
+ */
+export async function findRecordedWebhookAnswer(
+  db: Db,
+  input: { externalEventId: string; provider?: string }
+): Promise<RecordedWebhookAnswer | null> {
+  const [row] = await db
+    .select({
+      responseText: jarvisVoiceWebhookEvents.responseText,
+      processingStatus: jarvisVoiceWebhookEvents.processingStatus,
+    })
+    .from(jarvisVoiceWebhookEvents)
+    .where(
+      and(
+        eq(jarvisVoiceWebhookEvents.provider, input.provider ?? "vapi"),
+        eq(jarvisVoiceWebhookEvents.externalEventId, input.externalEventId)
+      )
+    );
+  return row ? { responseText: row.responseText, processingStatus: row.processingStatus } : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -385,23 +421,52 @@ export async function completeCallSession(
   input: { sessionId: string; organizationId: string; endedReason: string | null; summaryTranscript: string | null; failureCode?: string | null }
 ): Promise<void> {
   const summary = input.summaryTranscript ? redactSensitiveText(input.summaryTranscript).text.slice(0, 20_000) : null;
-  await db
+
+  // Two statements, because two different things are happening and only one of
+  // them may happen once.
+  //
+  // The TRANSITION is claimed: guarded on `status = 'active'`, so the delivery
+  // that actually ends the call is the only one that audits it. Unguarded, a
+  // redelivery — and this event's claim is deliberately released on failure so
+  // that a stuck call can heal — wrote a second `jarvis_phone_call_ended` row
+  // for one call, and a call that had been REFUSED was quietly re-labelled
+  // "completed" by the ordinary end-of-call event that followed the refusal.
+  const [ended] = await db
     .update(jarvisCallSessions)
     .set({
       status: input.failureCode ? "failed" : "completed",
-      // Never overwrite a value already recorded with an empty one. A call ends
-      // with up to three provider deliveries and only one of them carries the
-      // transcript, so whichever arrives last must not wipe what an earlier one
-      // wrote.
-      ...(input.endedReason ? { endedReason: input.endedReason } : {}),
       failureCode: input.failureCode ?? null,
-      ...(summary ? { redactedSummaryTranscript: summary } : {}),
       deliveryStatus: "ended",
       endedAt: new Date(),
       lastEventAt: new Date(),
       updatedAt: new Date(),
     })
-    .where(and(eq(jarvisCallSessions.id, input.sessionId), eq(jarvisCallSessions.organizationId, input.organizationId)));
+    .where(
+      and(
+        eq(jarvisCallSessions.id, input.sessionId),
+        eq(jarvisCallSessions.organizationId, input.organizationId),
+        eq(jarvisCallSessions.status, "active")
+      )
+    )
+    .returning({ id: jarvisCallSessions.id });
+
+  // The DETAIL is not claimed, because it legitimately arrives later. A call
+  // ends with up to three provider deliveries and only one of them carries the
+  // transcript, so this fills in what it has and never overwrites a value
+  // already recorded with an empty one.
+  if (input.endedReason || summary) {
+    await db
+      .update(jarvisCallSessions)
+      .set({
+        ...(input.endedReason ? { endedReason: input.endedReason } : {}),
+        ...(summary ? { redactedSummaryTranscript: summary } : {}),
+        lastEventAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(jarvisCallSessions.id, input.sessionId), eq(jarvisCallSessions.organizationId, input.organizationId)));
+  }
+
+  if (!ended) return;
 
   await recordAuditEvent(db, {
     eventType: "jarvis_phone_call_ended",
@@ -444,6 +509,19 @@ const TRANSCRIPT_SEQUENCE_ATTEMPTS = 4;
  * Duplicate SUPPRESSION is not this function's job — the webhook's event claim
  * already handles redelivery. This function's job is not to lose anything.
  */
+export async function countTranscriptTurns(db: Db, input: { sessionId: string; organizationId: string }): Promise<number> {
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(jarvisCallTranscriptTurns)
+    .where(
+      and(
+        eq(jarvisCallTranscriptTurns.callSessionId, input.sessionId),
+        eq(jarvisCallTranscriptTurns.organizationId, input.organizationId)
+      )
+    );
+  return Number(row?.count ?? 0);
+}
+
 export async function appendTranscriptTurn(
   db: Db,
   input: { sessionId: string; organizationId: string; role: "founder" | "jarvis"; text: string; isFinal: boolean }

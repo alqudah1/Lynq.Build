@@ -7,6 +7,7 @@ const COMPLETE = {
   JARVIS_PHONE_FOUNDER_USER_ID: "1b2c3d4e-5f6a-4b8c-9d0e-1f2a3b4c5d6e",
   JARVIS_PHONE_VERIFICATION_SECRET: "a-test-secret-that-is-at-least-32-characters-long",
   JARVIS_FOUNDER_PHONE_E164: "+14165551234",
+  VAPI_WEBHOOK_SECRET: "a-webhook-secret-that-is-at-least-32-characters-long",
 };
 
 describe("phoneCommandsFlagEnabled", () => {
@@ -69,7 +70,7 @@ describe("resolveJarvisPhoneCommandConfig", () => {
 describe("getJarvisPhoneCommandReadiness", () => {
   it("reports every check complete for a valid configuration", () => {
     const readiness = getJarvisPhoneCommandReadiness(null, COMPLETE);
-    expect(readiness).toMatchObject({ enabled: true, ready: true, completedChecks: 5, totalChecks: 5, missing: [] });
+    expect(readiness).toMatchObject({ enabled: true, ready: true, completedChecks: 6, totalChecks: 6, missing: [] });
   });
 
   it("reports what is missing in founder-readable language, never a value", () => {
@@ -79,5 +80,32 @@ describe("getJarvisPhoneCommandReadiness", () => {
     expect(readiness.missing).toContain("Phone commands enabled");
     expect(readiness.missing).toContain("Founder verification secret");
     expect(readiness.missing.join(" ")).not.toMatch(/JARVIS_|SECRET=/);
+  });
+
+  it("is not ready on a webhook secret the inbound lane would refuse to run on", () => {
+    // The webhook skips the whole inbound lane below 32 characters, so a
+    // screen that said "ready" here would be promising a capability that
+    // silently dead-ends every call.
+    const readiness = getJarvisPhoneCommandReadiness(null, { ...COMPLETE, VAPI_WEBHOOK_SECRET: "short" });
+    expect(readiness.ready).toBe(false);
+    expect(readiness.missing).toContain("Webhook secret");
+  });
+
+  it("tells another organization nothing about the deployment's configuration", () => {
+    // Scoping the `enabled` flag stopped the panel from rendering for a tenant
+    // that does not have phone control. It did not stop the check list from
+    // reporting which of the DEPLOYMENT's variables are set — a founder
+    // account, a verification secret, a valid founder number — to a tenant
+    // those values do not belong to.
+    const readiness = getJarvisPhoneCommandReadiness("00000000-0000-4000-8000-000000000000", COMPLETE);
+    expect(readiness).toEqual({ enabled: false, ready: false, completedChecks: 0, totalChecks: 0, missing: [] });
+
+    const partial = getJarvisPhoneCommandReadiness("00000000-0000-4000-8000-000000000000", {
+      ...COMPLETE,
+      JARVIS_PHONE_VERIFICATION_SECRET: undefined,
+    });
+    // Identical either way: the answer must not vary with the deployment's
+    // state, or it is an oracle for it.
+    expect(partial).toEqual(readiness);
   });
 });

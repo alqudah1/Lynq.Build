@@ -3,6 +3,7 @@ import "server-only";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { recordAuditEvent } from "@/lib/audit";
 import { createDirectiveProject, DirectivePartiallyCreatedError } from "@/lib/office/directive-intake";
+import { deriveDirectiveProjectName } from "@/lib/office/directives";
 import { toDirectiveInstruction } from "./command-draft";
 import { redactLogFields } from "./redaction";
 import { phoneAutoDispatchEnabled } from "./phone-config";
@@ -251,7 +252,22 @@ export async function retryFailedDispatch(
  */
 export async function reapStalledDispatch(
   db: Db,
-  input: { organizationId: string; command: JarvisPhoneCommand; actorUserId: string; nowMs?: number }
+  input: {
+    organizationId: string;
+    command: JarvisPhoneCommand;
+    /**
+     * The person whose action caused the reap, when one did — a retry. Omitted
+     * when the reap merely happened to be OBSERVED during a read.
+     *
+     * The read path used to pass the viewer, so any member opening the Jarvis
+     * screen while a lease happened to be expired was recorded in the audit
+     * trail as the actor of a dispatch failure they neither caused nor could
+     * have caused. The lease expiring is a fact about a dead process, not
+     * something a reader did.
+     */
+    actorUserId?: string | null;
+    nowMs?: number;
+  }
 ): Promise<JarvisPhoneCommand | null> {
   const { command } = input;
   if (command.dispatchState !== "dispatching") return null;
@@ -291,10 +307,18 @@ export async function reapStalledDispatch(
   await recordAuditEvent(db, {
     eventType: "jarvis_phone_command_dispatch_failed",
     organizationId: input.organizationId,
-    actorUserId: input.actorUserId,
+    // Null when nobody asked for this. An audit row that names a reader as the
+    // actor of a failure is worse than one with no actor at all.
+    actorUserId: input.actorUserId ?? null,
     targetType: "jarvis_phone_command",
     targetId: command.id,
-    metadata: { failureCode, attempts: reaped.dispatchAttempts, partiallyCreated: partial, reapedStaleLease: true },
+    metadata: {
+      failureCode,
+      attempts: reaped.dispatchAttempts,
+      partiallyCreated: partial,
+      reapedStaleLease: true,
+      observedOnRead: !input.actorUserId,
+    },
   }).catch(() => {
     console.error("[jarvis-phone]", JSON.stringify(redactLogFields({ event: "reap-audit-failed", commandId: command.id })));
   });
@@ -360,6 +384,14 @@ export async function runDirectiveDispatch(
     const result = await createDirectiveProject(db, {
       organizationId: input.organizationId,
       instruction,
+      // Named from what the founder actually asked for, not from the whole
+      // instruction. The instruction opens with the safety preamble, and the
+      // planner's naming heuristics read it as the request — so every phone
+      // directive came out called "Captured from a verified founder phone",
+      // which is what Jarvis then said back on the call and what the Jarvis
+      // screen and the approval email showed. The same heuristics applied to
+      // the founder's own sentence give the name they would expect.
+      projectNameHint: deriveDirectiveProjectName(command.requestedOutcome),
       workspaceId: input.workspaceId,
       actorUserId: input.founderUserId,
       source: "founder_phone_call",
@@ -394,6 +426,27 @@ export async function runDirectiveDispatch(
         "[jarvis-phone]",
         JSON.stringify(redactLogFields({ event: "dispatch-transition-lost", commandId: command.id, projectId: result.project.id }))
       );
+      // The dispatch is audited even though the row moved on. A real project
+      // exists and real agents were launched by THIS call; without a row here,
+      // the one path that creates live work while losing its own transition
+      // left no `jarvis_phone_command_dispatched` entry at all, and the audit
+      // trail said the work was never dispatched. `transitionLost` is what
+      // keeps it honest about which part did not stick.
+      await recordAuditEvent(db, {
+        eventType: "jarvis_phone_command_dispatched",
+        organizationId: input.organizationId,
+        actorUserId: input.founderUserId,
+        targetType: "jarvis_phone_command",
+        targetId: command.id,
+        metadata: {
+          projectId: result.project.id,
+          assignments: result.assignments.length,
+          riskLevel: command.riskLevel,
+          transitionLost: true,
+        },
+      }).catch(() => {
+        console.error("[jarvis-phone]", JSON.stringify(redactLogFields({ event: "dispatch-audit-failed", commandId: command.id })));
+      });
       // Re-read for the same reason the lost-claim branch above does: the
       // caller's row is stale by definition here.
       const current = await resolveCommandById(db, { organizationId: input.organizationId, commandId: command.id }).catch(() => command);

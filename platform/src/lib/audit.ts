@@ -615,6 +615,10 @@ export type AuditEventType =
   | "jarvis_phone_founder_verified"
   | "jarvis_phone_passcode_issued"
   | "jarvis_phone_verification_failed"
+  // The founder cleared their own caller budgets. Recorded because it reopens
+  // a throttle that something spent — usually a spoofed line — and the pattern
+  // of clears is the only durable evidence that happened.
+  | "jarvis_phone_verification_lockout_cleared"
   | "jarvis_phone_command_captured"
   | "jarvis_phone_command_confirmed"
   | "jarvis_phone_command_gated"

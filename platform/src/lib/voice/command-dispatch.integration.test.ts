@@ -3,6 +3,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { loadEnv } from "@/lib/env";
 import { createDbClient } from "@/db/client";
 import {
+  auditLogs,
   jarvisCallSessions,
   jarvisPhoneCommands,
   organizationMemberships,
@@ -19,7 +20,7 @@ import {
   resolveCommandById,
   upsertCommandDraft,
 } from "./call-store";
-import { dispatchConfirmedCommand, retryFailedDispatch, runDirectiveDispatch } from "./command-dispatch";
+import { dispatchConfirmedCommand, DISPATCH_LEASE_MS, MAX_DISPATCH_ATTEMPTS, reapStalledDispatch, retryFailedDispatch, runDirectiveDispatch } from "./command-dispatch";
 import { createDirectiveProject, DirectivePartiallyCreatedError } from "@/lib/office/directive-intake";
 import { CommandNotRetryableError } from "./errors";
 
@@ -138,6 +139,31 @@ describe("a confirmed low-risk command really opens a project", () => {
     expect(stored.failureCode).toBeNull();
     // The claim counted exactly one attempt, not one per transition.
     expect(stored.dispatchAttempts).toBe(1);
+  });
+
+  it("names the project after what the founder asked for", async () => {
+    const { userId, organizationId } = await makeFounder();
+    const { command } = await openCommand(organizationId, userId, "Research three Brampton restaurants and compare their websites");
+
+    const outcome = await dispatchConfirmedCommand(db, { organizationId, founderUserId: userId, command });
+    if (outcome.status !== "directive_created") throw new Error("expected a directive");
+
+    const [project] = await db
+      .select({ name: projects.name, projectKey: projects.projectKey })
+      .from(projects)
+      .where(eq(projects.id, outcome.projectId));
+
+    // The instruction handed to the planner opens with four hundred characters
+    // of safety preamble, and the planner's naming heuristics read it as the
+    // request — so every phone directive came out called "Captured from a
+    // verified founder phone" with a CAPTURE key, and that is the name Jarvis
+    // read back on the call and the name on the Jarvis screen. Two phone
+    // directives were indistinguishable from each other.
+    expect(project.name).not.toMatch(/^Captured from a verified founder phone/i);
+    expect(project.projectKey).not.toMatch(/^CAPTURE/);
+    expect(project.name).toBe("Research three Brampton restaurants and compare");
+    // And the spoken line says the same name the screen shows.
+    expect(outcome.spoken).toContain(project.name);
   });
 });
 
@@ -565,5 +591,86 @@ describe("a confirmed low-risk command against a real database, with auto-dispat
     } finally {
       process.env.JARVIS_PHONE_AUTO_DISPATCH_ENABLED = previous;
     }
+  });
+});
+
+describe("reaping a stalled dispatch names no actor it cannot name", () => {
+  /**
+   * Round twelve. The read path passed the VIEWER as the actor, so any member
+   * who happened to open the Jarvis screen while a lease was expired was
+   * recorded in the audit trail as the actor of a dispatch failure they neither
+   * caused nor could have caused — and, on a `member` role, could not have
+   * triggered by any action available to them. A lease expiring is a fact about
+   * a process that died, not something a reader did.
+   */
+  it("records the reap with no actor when nobody asked for it", async () => {
+    const { userId, organizationId } = await makeFounder();
+    const { command } = await openCommand(organizationId, userId);
+
+    const claimed = await claimDispatchAttempt(db, {
+      organizationId,
+      commandId: command.id,
+      expectedRevision: command.revision,
+      maxAttempts: MAX_DISPATCH_ATTEMPTS,
+      fromStates: ["awaiting_confirmation"],
+      staleAfterMs: DISPATCH_LEASE_MS,
+    });
+    expect(claimed?.dispatchState).toBe("dispatching");
+
+    // The lease is expired as far as this call is concerned: the process that
+    // held it is gone.
+    const reaped = await reapStalledDispatch(db, {
+      organizationId,
+      command: claimed!,
+      nowMs: Date.now() + DISPATCH_LEASE_MS + 1000,
+    });
+    expect(reaped?.dispatchState).toBe("failed");
+
+    const [row] = await db
+      .select({ actorUserId: auditLogs.actorUserId, metadata: auditLogs.metadata })
+      .from(auditLogs)
+      .where(
+        and(
+          eq(auditLogs.organizationId, organizationId),
+          eq(auditLogs.eventType, "jarvis_phone_command_dispatch_failed"),
+          eq(auditLogs.targetId, command.id)
+        )
+      );
+    expect(row.actorUserId).toBeNull();
+    expect((row.metadata as { observedOnRead?: boolean }).observedOnRead).toBe(true);
+  });
+
+  it("still names the person when a retry caused it", async () => {
+    const { userId, organizationId } = await makeFounder();
+    const { command } = await openCommand(organizationId, userId);
+
+    const claimed = await claimDispatchAttempt(db, {
+      organizationId,
+      commandId: command.id,
+      expectedRevision: command.revision,
+      maxAttempts: MAX_DISPATCH_ATTEMPTS,
+      fromStates: ["awaiting_confirmation"],
+      staleAfterMs: DISPATCH_LEASE_MS,
+    });
+
+    await reapStalledDispatch(db, {
+      organizationId,
+      command: claimed!,
+      actorUserId: userId,
+      nowMs: Date.now() + DISPATCH_LEASE_MS + 1000,
+    });
+
+    const [row] = await db
+      .select({ actorUserId: auditLogs.actorUserId, metadata: auditLogs.metadata })
+      .from(auditLogs)
+      .where(
+        and(
+          eq(auditLogs.organizationId, organizationId),
+          eq(auditLogs.eventType, "jarvis_phone_command_dispatch_failed"),
+          eq(auditLogs.targetId, command.id)
+        )
+      );
+    expect(row.actorUserId).toBe(userId);
+    expect((row.metadata as { observedOnRead?: boolean }).observedOnRead).toBe(false);
   });
 });

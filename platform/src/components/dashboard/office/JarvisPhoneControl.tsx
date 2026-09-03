@@ -82,7 +82,22 @@ type PhoneState = {
   refreshAfterMs: number | null;
 };
 
-type PasscodeState = { available: boolean; passcode: string | null; expiresInMs: number | null; reason?: string };
+/**
+ * Whether calls or codes from the founder's number are currently being refused
+ * before the code is even checked. Both budgets are keyed on an asserted caller
+ * ID, so someone spoofing the line can spend them; without this the founder
+ * heard "there have been too many code attempts from this number" on a call
+ * they had not made, and had nothing to do about it.
+ */
+type LockoutState = { locked: boolean; resetAt: string | null; callsRemaining: number; attemptsRemaining: number };
+
+type PasscodeState = {
+  available: boolean;
+  passcode: string | null;
+  expiresInMs: number | null;
+  reason?: string;
+  lockout?: LockoutState | null;
+};
 
 const DISPATCH_LABEL: Record<string, string> = {
   awaiting_confirmation: "Waiting for you to confirm on the call",
@@ -149,6 +164,8 @@ export function JarvisPhoneControl({ organizationId, organizationSlug }: { organ
   const [passcode, setPasscode] = useState<PasscodeState | null>(null);
   const [showPasscode, setShowPasscode] = useState(false);
   const [passcodeLoading, setPasscodeLoading] = useState(false);
+  const [clearingLockout, setClearingLockout] = useState(false);
+  const [lockoutError, setLockoutError] = useState<string | null>(null);
   const [pendingCommandId, setPendingCommandId] = useState<string | null>(null);
   const [decisionMessage, setDecisionMessage] = useState<string | null>(null);
   const [decisionError, setDecisionError] = useState<string | null>(null);
@@ -198,6 +215,22 @@ export function JarvisPhoneControl({ organizationId, organizationSlug }: { organ
       setPasscode({ available: false, passcode: null, expiresInMs: null, reason: codeError instanceof Error ? codeError.message : "unavailable" });
     } finally {
       setPasscodeLoading(false);
+    }
+  }, [organizationId]);
+
+  const clearLockout = useCallback(async () => {
+    setClearingLockout(true);
+    setLockoutError(null);
+    try {
+      const response = await fetch(`/api/organizations/${organizationId}/jarvis/phone/passcode`, { method: "POST", cache: "no-store" });
+      const payload = (await response.json()) as { data?: { cleared: boolean; reason: string | null; lockout: LockoutState | null }; error?: { message?: string } };
+      if (!response.ok || !payload.data) throw new Error(payload.error?.message ?? "That could not be cleared just now.");
+      if (!payload.data.cleared) throw new Error(payload.data.reason ?? "That could not be cleared just now.");
+      setPasscode((current) => (current ? { ...current, lockout: payload.data?.lockout ?? null } : current));
+    } catch (clearError) {
+      setLockoutError(clearError instanceof Error ? clearError.message : "That could not be cleared just now.");
+    } finally {
+      setClearingLockout(false);
     }
   }, [organizationId]);
 
@@ -289,8 +322,8 @@ export function JarvisPhoneControl({ organizationId, organizationSlug }: { organ
         <div className="office-panel">
           <h3 className="font-serif text-xl font-light text-foreground">Your verification code</h3>
           <p className="mt-2 text-sm leading-6 text-muted">
-            When you call Jarvis, he will ask for this six-digit code before he takes any instruction. Your phone number alone is not enough
-            to prove it is you.
+            When you call Jarvis, he will ask for this code before he takes any instruction. Your phone number alone is not enough to prove
+            it is you.
           </p>
           {/* Always in the DOM, so the announcement is reliable rather than
               racing the node that carries it into existence. */}
@@ -316,6 +349,41 @@ export function JarvisPhoneControl({ organizationId, organizationSlug }: { organ
               {passcode?.reason ?? "The code is not available right now."}
             </p>
           )}
+
+          {/*
+            The lockout is shown only when it is real, and it is written in the
+            terms the founder experiences: Jarvis refusing them on the phone.
+            Both budgets are keyed on the number a caller claims, and caller ID
+            can be faked, so someone else calling from a line that looks like
+            theirs can spend both — and the founder is then turned away before
+            their correct code is ever checked, with nothing on screen to
+            explain it. Clearing grants no access: the code, the three-try cap
+            and the number check all still apply afterwards.
+          */}
+          {passcode?.lockout?.locked ? (
+            <div className="mt-5 rounded-sm border border-amber-300/40 bg-amber-300/10 px-3 py-3">
+              <p className="text-sm font-medium text-amber-100">Jarvis is turning down calls from your number right now</p>
+              <p className="mt-1 text-sm leading-6 text-amber-100/80">
+                Too many calls or wrong codes came from a line matching yours. That can happen if someone else is calling in pretending to be
+                you — a phone number is easy to fake. It clears on its own
+                {passcode.lockout.resetAt ? ` at ${formatTime(passcode.lockout.resetAt)}` : " shortly"}, or you can clear it now and try
+                again. Clearing it does not let anyone in: your code is still required.
+              </p>
+              <button
+                type="button"
+                onClick={() => void clearLockout()}
+                disabled={clearingLockout}
+                className="office-dispatch-button mt-3"
+              >
+                {clearingLockout ? "Clearing…" : "Let me call in again"}
+              </button>
+              {lockoutError ? (
+                <p role="alert" className="mt-2 text-sm text-danger">
+                  {lockoutError}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       ) : null}
 

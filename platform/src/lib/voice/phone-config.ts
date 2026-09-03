@@ -81,10 +81,20 @@ type PhoneEnvironment = Partial<
     | "JARVIS_PHONE_ORGANIZATION_ID"
     | "JARVIS_PHONE_FOUNDER_USER_ID"
     | "JARVIS_PHONE_VERIFICATION_SECRET"
-    | "JARVIS_FOUNDER_PHONE_E164",
+    | "JARVIS_FOUNDER_PHONE_E164"
+    | "VAPI_WEBHOOK_SECRET",
     string
   >
 >;
+
+/**
+ * The inbound lane refuses to run on a webhook secret shorter than this, so
+ * readiness must say so too. Kept here rather than in the route because a
+ * screen that reports "ready" for a deployment the webhook will silently skip
+ * is exactly the kind of confident-but-wrong status this feature is not
+ * allowed to produce.
+ */
+export const MIN_WEBHOOK_SECRET_LENGTH = 32;
 
 /**
  * Never throws — a misconfiguration is a state the webhook must report
@@ -148,7 +158,7 @@ export interface JarvisPhoneCommandReadiness {
  *   organization (`JARVIS_PHONE_ORGANIZATION_ID`), but this function read only
  *   `process.env` and so reported `enabled: true` to every tenant — every other
  *   organization's owner was shown the verification-code panel and told "when
- *   you call Jarvis, he will ask for this six-digit code", for a capability
+ *   you call Jarvis, he will ask for this code", for a capability
  *   their organization does not have. The passcode route already scopes
  *   correctly; this is the read that did not.
  */
@@ -158,6 +168,18 @@ export function getJarvisPhoneCommandReadiness(
 ): JarvisPhoneCommandReadiness {
   const configuredOrganizationId = environment.JARVIS_PHONE_ORGANIZATION_ID?.trim();
   const scopedToThisOrganization = !organizationId || (Boolean(configuredOrganizationId) && configuredOrganizationId === organizationId);
+
+  // An organization that is not the configured one is told only that it does
+  // not have this capability. Enumerating the checks would report which of the
+  // DEPLOYMENT's variables are set — a founder account, a verification secret,
+  // a valid founder number — to a tenant those values do not belong to. The
+  // scoping fix that already lives on the `enabled` flag stopped the panel from
+  // rendering; it did not stop the configuration inventory from being returned
+  // alongside it.
+  if (!scopedToThisOrganization) {
+    return { enabled: false, ready: false, completedChecks: 0, totalChecks: 0, missing: [] };
+  }
+
   const checks = [
     {
       label: "Phone commands enabled",
@@ -177,6 +199,13 @@ export function getJarvisPhoneCommandReadiness(
           return false;
         }
       })(),
+    },
+    // Reported because the webhook enforces it: below this length the inbound
+    // lane is skipped entirely and every call reaches a dead end, with the only
+    // evidence a server log nobody is watching.
+    {
+      label: "Webhook secret",
+      complete: (environment.VAPI_WEBHOOK_SECRET?.trim().length ?? 0) >= MIN_WEBHOOK_SECRET_LENGTH,
     },
   ];
 

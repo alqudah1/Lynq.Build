@@ -90,7 +90,17 @@ export async function POST(request: Request, { params }: RouteParams) {
         actorUserId: user.userId,
         targetType: "jarvis_phone_command",
         targetId: commandId,
-        metadata: { outcome: outcome.status, attempt: command.dispatchAttempts + 1, riskLevel: command.riskLevel },
+        // `attempt` comes from the row the dispatch actually produced, not from
+        // the caller's read plus one. `already_dispatched` means the claim was
+        // LOST and no attempt was consumed, so recording an ordinal for it
+        // asserted something the code had not verified — and put a phantom
+        // attempt in the trail an auditor would count.
+        metadata: {
+          outcome: outcome.status,
+          attempt: outcome.command.dispatchAttempts,
+          attemptConsumed: outcome.status !== "already_dispatched",
+          riskLevel: command.riskLevel,
+        },
       });
 
       if (outcome.status === "directive_created") {

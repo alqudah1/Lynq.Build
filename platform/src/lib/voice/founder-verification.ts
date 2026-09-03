@@ -17,7 +17,7 @@ import { findSpokenDigitRuns } from "./redaction";
  * ---------------------------------------------------------------------------
  * The second factor
  * ---------------------------------------------------------------------------
- * A rotating six-digit passcode, derived by HMAC-SHA256 from a server-only
+ * A rotating numeric passcode (see `PASSCODE_DIGITS`), derived by HMAC-SHA256 from a server-only
  * secret and the current time step. The founder reads it from the Jarvis
  * Command Center — a page that already requires a validated database session
  * and an owner/admin organization membership. So a successful verification
@@ -42,7 +42,32 @@ export const PASSCODE_STEP_MS = 5 * 60 * 1000;
 /** How many steps on either side of "now" are accepted. One step of skew covers a code read just before a rollover. */
 export const PASSCODE_SKEW_STEPS = 1;
 
-export const PASSCODE_DIGITS = 6;
+/**
+ * How long the spoken passcode is.
+ *
+ * Eight, not six, and the arithmetic is the reason. `PASSCODE_SKEW_STEPS` of 1
+ * means THREE codes are simultaneously valid, so a single guess succeeds with
+ * probability 3/10^digits. The budgets an attacker faces — three attempts per
+ * call, and the hourly ceiling on how many calls one number may open — allow on
+ * the order of 150,000 guesses a year from a spoofed line. At six digits that
+ * is roughly a two-in-five chance of a hit within a year, which is not an
+ * acceptable standing risk for a factor that can open Office projects; at eight
+ * it is under one percent.
+ *
+ * Two extra digits cost a founder about a second of reading. Nothing else in
+ * the design changes: the code is still read aloud, still normalized from
+ * spoken words, still compared in constant time, and still redacted out of the
+ * transcript. Every sentence that mentions the length is generated from this
+ * constant rather than written out, so the two can never disagree.
+ */
+export const PASSCODE_DIGITS = 8;
+
+const DIGIT_WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
+
+/** "eight" for 8 — so spoken copy and the constant can never drift apart. */
+export function passcodeDigitsWord(): string {
+  return DIGIT_WORDS[PASSCODE_DIGITS] ?? String(PASSCODE_DIGITS);
+}
 
 /** A call gets three tries. After that the session is refused and must be re-established by calling back. */
 export const MAX_VERIFICATION_ATTEMPTS = 3;

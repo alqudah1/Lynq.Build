@@ -7,6 +7,9 @@ import { createSession } from "@/lib/auth/session";
 import { SESSION_COOKIE_NAME } from "@/lib/auth/cookies";
 import { ensureCallSession, upsertCommandDraft } from "@/lib/voice/call-store";
 import { buildCommandDraft } from "@/lib/voice/command-draft";
+import { PASSCODE_DIGITS } from "@/lib/voice/founder-verification";
+import { PostgresRateLimiter } from "@/lib/rate-limit/postgres";
+import { callBudgetKey, callerBudgetIdentityForNumber, INBOUND_CALL_RATE_LIMIT } from "@/lib/voice/verification-budget";
 
 /**
  * The HTTP boundary of the phone lane.
@@ -37,7 +40,7 @@ vi.mock("next/headers", () => ({
 }));
 
 const { GET: GET_PHONE } = await import("./route");
-const { GET: GET_PASSCODE } = await import("./passcode/route");
+const { GET: GET_PASSCODE, POST: POST_PASSCODE } = await import("./passcode/route");
 const { POST: POST_DECISION } = await import("./commands/[commandId]/route");
 
 const env = loadEnv();
@@ -226,7 +229,86 @@ describe("GET /jarvis/phone/passcode — the second factor", () => {
       data: { available: boolean; passcode: string | null };
     };
     expect(issued.data.available).toBe(true);
-    expect(issued.data.passcode).toMatch(/^\d{6}$/);
+    expect(issued.data.passcode).toMatch(new RegExp(`^\\d{${PASSCODE_DIGITS}}$`));
+  });
+
+  /**
+   * Round twelve. Both caller budgets are keyed on the number a caller asserts,
+   * and caller ID is spoofable — so someone spoofing the founder's line can
+   * spend them and keep them spent, and the founder is refused before their
+   * correct code is ever checked. A rate limit that an attacker can hold down
+   * is a denial-of-service primitive aimed at the person it protects, so it has
+   * to be visible and clearable from an authenticated session.
+   */
+  it("shows the founder a spent caller budget, and lets the founder clear it", async () => {
+    const founder = await makeUser();
+    const organizationId = await makeOrg(founder);
+    vi.stubEnv("JARVIS_PHONE_COMMANDS_ENABLED", "true");
+    vi.stubEnv("JARVIS_PHONE_ORGANIZATION_ID", organizationId);
+    vi.stubEnv("JARVIS_PHONE_FOUNDER_USER_ID", founder);
+    vi.stubEnv("JARVIS_PHONE_VERIFICATION_SECRET", "a-verification-secret-that-is-long-enough-01234");
+    vi.stubEnv("JARVIS_FOUNDER_PHONE_E164", "+14165551234");
+    await authenticateAs(founder);
+
+    const identity = callerBudgetIdentityForNumber({
+      verificationSecret: "a-verification-secret-that-is-long-enough-01234",
+      callerNumber: "+14165551234",
+      organizationId,
+    });
+    const limiter = new PostgresRateLimiter(db);
+    for (let attempt = 0; attempt <= INBOUND_CALL_RATE_LIMIT.limit; attempt += 1) {
+      await limiter.recordAttempt(callBudgetKey(identity), INBOUND_CALL_RATE_LIMIT);
+    }
+
+    const locked = (await (await GET_PASSCODE(new Request("https://app.lynq.build/x"), phoneParams(organizationId))).json()) as {
+      data: { lockout: { locked: boolean; resetAt: string | null } | null };
+    };
+    expect(locked.data.lockout?.locked).toBe(true);
+    expect(locked.data.lockout?.resetAt).toBeTruthy();
+
+    const cleared = (await (await POST_PASSCODE(new Request("https://app.lynq.build/x", { method: "POST" }), phoneParams(organizationId))).json()) as {
+      data: { cleared: boolean; lockout: { locked: boolean } | null };
+    };
+    expect(cleared.data.cleared).toBe(true);
+    expect(cleared.data.lockout?.locked).toBe(false);
+
+    const after = (await (await GET_PASSCODE(new Request("https://app.lynq.build/x"), phoneParams(organizationId))).json()) as {
+      data: { available: boolean; lockout: { locked: boolean } | null };
+    };
+    expect(after.data.lockout?.locked).toBe(false);
+    // Clearing a throttle is not a grant: the code is still the thing that
+    // authenticates, and it is still required.
+    expect(after.data.available).toBe(true);
+
+    const audited = await db
+      .select({ id: auditLogs.id })
+      .from(auditLogs)
+      .where(and(eq(auditLogs.organizationId, organizationId), eq(auditLogs.eventType, "jarvis_phone_verification_lockout_cleared")));
+    expect(audited).toHaveLength(1);
+  });
+
+  it("will not let an admin who is not the founder clear the founder's lockout", async () => {
+    const founder = await makeUser();
+    const organizationId = await makeOrg(founder);
+    const admin = await makeUser();
+    await addMember(organizationId, admin, "admin");
+    vi.stubEnv("JARVIS_PHONE_COMMANDS_ENABLED", "true");
+    vi.stubEnv("JARVIS_PHONE_ORGANIZATION_ID", organizationId);
+    vi.stubEnv("JARVIS_PHONE_FOUNDER_USER_ID", founder);
+    vi.stubEnv("JARVIS_PHONE_VERIFICATION_SECRET", "a-verification-secret-that-is-long-enough-01234");
+    vi.stubEnv("JARVIS_FOUNDER_PHONE_E164", "+14165551234");
+    await authenticateAs(admin);
+
+    const response = (await (await POST_PASSCODE(new Request("https://app.lynq.build/x", { method: "POST" }), phoneParams(organizationId))).json()) as {
+      data: { cleared: boolean };
+    };
+    expect(response.data.cleared).toBe(false);
+
+    const audited = await db
+      .select({ id: auditLogs.id })
+      .from(auditLogs)
+      .where(and(eq(auditLogs.organizationId, organizationId), eq(auditLogs.eventType, "jarvis_phone_verification_lockout_cleared")));
+    expect(audited).toHaveLength(0);
   });
 });
 

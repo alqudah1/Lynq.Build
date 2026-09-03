@@ -22,6 +22,7 @@ import {
   ensureCallSession,
   findOpenCommandForSession,
   listPhoneCallsForUser,
+  markCallSessionRefused,
   PhoneCommandActorUnavailableError,
   recordVerificationAttempt,
   resolveCommandById,
@@ -514,6 +515,56 @@ describe("call completion", () => {
     expect(row.status).toBe("completed");
     // The provider's own end-of-call transcript is redacted before storage too.
     expect(row.redactedSummaryTranscript).not.toContain("swordfish99");
+  });
+
+  /**
+   * Round twelve. A `call_ended` event releases its idempotency claim when it
+   * fails, deliberately, so that a stuck call can heal — which means this
+   * function can genuinely run twice for one call. It audited unconditionally,
+   * so the trail showed a call ending twice; and it set `status`
+   * unconditionally, so the ordinary end-of-call event that follows a REFUSAL
+   * quietly relabelled a refused call "completed".
+   */
+  it("ends a call once, however many times the provider delivers the end of it", async () => {
+    const userId = await makeUser();
+    const organizationId = await makeOrg(userId);
+    const session = await openSession(organizationId, userId);
+
+    // The real shape: the status update arrives first with no transcript, and
+    // the end-of-call report second carrying one.
+    await completeCallSession(db, { sessionId: session.id, organizationId, endedReason: "customer-ended-call", summaryTranscript: null });
+    await completeCallSession(db, { sessionId: session.id, organizationId, endedReason: null, summaryTranscript: "we talked about the launch" });
+
+    const ended = await db
+      .select({ id: auditLogs.id })
+      .from(auditLogs)
+      .where(
+        and(
+          eq(auditLogs.organizationId, organizationId),
+          eq(auditLogs.eventType, "jarvis_phone_call_ended"),
+          eq(auditLogs.targetId, session.id)
+        )
+      );
+    expect(ended).toHaveLength(1);
+
+    const [row] = await db.select().from(jarvisCallSessions).where(eq(jarvisCallSessions.id, session.id));
+    // The later delivery still fills in what only it carries, and neither
+    // delivery wipes what the other wrote.
+    expect(row.endedReason).toBe("customer-ended-call");
+    expect(row.redactedSummaryTranscript).toContain("launch");
+  });
+
+  it("does not relabel a refused call as completed", async () => {
+    const userId = await makeUser();
+    const organizationId = await makeOrg(userId);
+    const session = await openSession(organizationId, userId);
+    await markCallSessionRefused(db, { sessionId: session.id, organizationId, failureCode: "caller_number_mismatch" });
+
+    await completeCallSession(db, { sessionId: session.id, organizationId, endedReason: "assistant-ended-call", summaryTranscript: null });
+
+    const [row] = await db.select().from(jarvisCallSessions).where(eq(jarvisCallSessions.id, session.id));
+    expect(row.status).toBe("refused");
+    expect(row.failureCode).toBe("caller_number_mismatch");
   });
 });
 

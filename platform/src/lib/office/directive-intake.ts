@@ -87,6 +87,24 @@ export interface CreateDirectiveProjectInput {
    */
   source?: "command_center" | "founder_phone_call";
   /**
+   * What to call the project, when the caller knows better than the planner's
+   * heuristics do.
+   *
+   * `deriveDirectiveProjectName` reads the instruction, and a phone directive's
+   * instruction opens with four hundred characters of safety preamble. None of
+   * its patterns match that, so it fell through to "first six words" and named
+   * every single phone-originated project "Captured from a verified founder
+   * phone", with a `CAPTURE` key — the name Jarvis then read back on the call
+   * ("I've opened the project Captured from a verified founder phone"), the
+   * name on the Jarvis screen, and the name in the approval email. Two phone
+   * directives were indistinguishable.
+   *
+   * The founder's own requested outcome is the honest source for the name, and
+   * only the caller has it separated from the preamble. Ignored when blank, so
+   * the existing web path is untouched.
+   */
+  projectNameHint?: string | null;
+  /**
    * Called the moment the project row exists, before any task or agent
    * execution is created.
    *
@@ -109,6 +127,16 @@ export interface CreateDirectiveProjectResult {
   assignments: DirectiveDispatchAssignment[];
   /** How many executions were actually launched — the caller uses this to size its background drain. */
   launchedCount: number;
+}
+
+/**
+ * The caller's name wins when it has one, subject to the same bounds the plan
+ * schema puts on a planned name (non-empty, at most 200 characters) so a hint
+ * can never produce a project the database would reject.
+ */
+function resolveProjectName(hint: string | null | undefined, planned: string): string {
+  const cleaned = hint?.replace(/\s+/g, " ").trim().slice(0, 200) ?? "";
+  return cleaned.length > 0 ? cleaned : planned;
 }
 
 export function buildProjectKey(name: string): string {
@@ -142,11 +170,12 @@ export async function createDirectiveProject(db: Db, input: CreateDirectiveProje
     preferredAgentId: input.preferredAgentId ?? null,
   });
 
+  const projectName = resolveProjectName(input.projectNameHint, plan.projectName);
   const project = await createProject(db, {
     organizationId: input.organizationId,
     workspaceId: input.workspaceId ?? null,
-    name: plan.projectName,
-    projectKey: buildProjectKey(plan.projectName),
+    name: projectName,
+    projectKey: buildProjectKey(projectName),
     description: formatDirectiveDescription({ instruction: input.instruction, assistantReply: plan.assistantReply, source: input.source }),
     objective: plan.objective,
     priority: "high",

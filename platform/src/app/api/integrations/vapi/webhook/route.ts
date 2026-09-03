@@ -3,10 +3,16 @@ import "server-only";
 import { timingSafeEqualStrings } from "@/lib/communications-os/secrets";
 import { loadEnv } from "@/lib/env";
 import { createDbClient } from "@/db/client";
-import { resolveJarvisPhoneCommandConfig } from "@/lib/voice/phone-config";
-import { normalizeVapiEvent, type VapiServerMessageEnvelope } from "@/lib/voice/vapi-events";
+import { resolveJarvisPhoneCommandConfig, type JarvisPhoneCommandConfig } from "@/lib/voice/phone-config";
+import { normalizeVapiEvent, type NormalizedVapiEvent, type VapiServerMessageEnvelope } from "@/lib/voice/vapi-events";
 import { handleInboundConversationEvent } from "@/lib/voice/inbound-conversation";
-import { claimWebhookEvent, PhoneCommandActorUnavailableError, recordWebhookEventOutcome, releaseWebhookEventClaim } from "@/lib/voice/call-store";
+import {
+  claimWebhookEvent,
+  findRecordedWebhookAnswer,
+  PhoneCommandActorUnavailableError,
+  recordWebhookEventOutcome,
+  releaseWebhookEventClaim,
+} from "@/lib/voice/call-store";
 import { redactLogFields } from "@/lib/voice/redaction";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +30,68 @@ const NOTIFICATION_EVENT_TYPES = new Set(["status-update", "end-of-call-report",
 
 function unauthorized() {
   return Response.json({ error: { code: "unauthorized", message: "Unauthorized" } }, { status: 401 });
+}
+
+/**
+ * What a redelivery of an event this deployment has already taken gets back.
+ *
+ * The claim is what stops the SIDE EFFECTS happening twice. It is not an
+ * answer, and for two of the five event kinds an answer is exactly what the
+ * provider is waiting on: Vapi reads a tool result out of `results` and an
+ * assistant out of `assistant`, and a bare `{received:true}` carries neither.
+ * So a `confirm_command` that outran the provider's timeout — which is the
+ * normal case, since creating a directive means an LLM plan and a chain of
+ * writes — was retried, lost the claim, and left the assistant with no result
+ * at all while a real project was being created behind it. The founder heard
+ * silence, or whatever the model invented to fill it. An `assistant-request`
+ * that failed once was worse: every retry returned no assistant, so a single
+ * transient error killed that call permanently.
+ *
+ * Two different answers, because the two events differ in kind:
+ *
+ * - A tool call is answered with the SAME sentence the first delivery
+ *   produced, replayed from the event row. If that sentence is not there yet,
+ *   the first delivery has not finished, and the honest answer is that it is
+ *   still going — never an invented outcome.
+ * - An assistant request is REBUILT rather than replayed. Its handler is
+ *   read-only apart from `ensureCallSession`, which is idempotent by
+ *   construction and audits only a genuine creation, and the config depends on
+ *   live state (whether the founder has verified yet), so a rebuild is both
+ *   safe and more accurate than a stored copy.
+ */
+async function duplicateResponse(
+  db: ReturnType<typeof createDbClient>,
+  input: { config: JarvisPhoneCommandConfig; event: NormalizedVapiEvent }
+): Promise<Response> {
+  const { event } = input;
+
+  if (event.kind === "assistant_request") {
+    try {
+      const result = await handleInboundConversationEvent(db, { config: input.config, event });
+      if (result.payload) return Response.json(result.payload);
+    } catch {
+      console.error("[jarvis-phone]", JSON.stringify({ event: "duplicate-assistant-rebuild-failed" }));
+    }
+    return Response.json({ received: true, duplicate: true });
+  }
+
+  if (event.kind === "tool_call") {
+    const recorded = await findRecordedWebhookAnswer(db, { externalEventId: event.idempotencyKey }).catch(() => null);
+    const replay = recorded?.responseText?.trim();
+    return Response.json({
+      results: [
+        {
+          toolCallId: event.toolCallId,
+          result:
+            replay && replay.length > 0
+              ? replay
+              : "I'm still working on that one. Give me a moment — whatever happens, it'll be on the Jarvis screen in LYNQ Office.",
+        },
+      ],
+    });
+  }
+
+  return Response.json({ received: true, duplicate: true });
 }
 
 /**
@@ -50,14 +118,28 @@ function unauthorized() {
  * is already held to 32; this was checked only for being non-empty, in the
  * route and in readiness alike, so a four-character value passed every check
  * the deployment makes.
+ *
+ * It is a precondition for the INBOUND lane only, and that placement is the
+ * whole point. Enforcing it at the door — which is how this was first written
+ * — turns every request into a 401 on any deployment whose existing
+ * `VAPI_WEBHOOK_SECRET` is shorter than 32, and nothing ever required 32
+ * before this branch. The outbound founder-notification events share this
+ * endpoint and have nothing to do with phone control, so that upgrade would
+ * have silently ended all Jarvis call-status logging on a lane this branch is
+ * not supposed to touch. The door therefore keeps the original rule
+ * (non-empty, constant-time equal) and the length floor gates the new lane,
+ * which is where a weak secret actually buys an attacker something.
  */
 const MIN_WEBHOOK_SECRET_LENGTH = 32;
+
+function webhookSecretStrongEnoughForPhoneControl(secret: string | undefined): boolean {
+  return (secret?.trim().length ?? 0) >= MIN_WEBHOOK_SECRET_LENGTH;
+}
 
 export async function POST(request: Request) {
   const configuredSecret = process.env.VAPI_WEBHOOK_SECRET;
   const providedSecret = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-  if (!configuredSecret || configuredSecret.trim().length < MIN_WEBHOOK_SECRET_LENGTH) return unauthorized();
-  if (!providedSecret || !timingSafeEqualStrings(providedSecret, configuredSecret)) return unauthorized();
+  if (!configuredSecret || !providedSecret || !timingSafeEqualStrings(providedSecret, configuredSecret)) return unauthorized();
 
   const declaredLength = Number(request.headers.get("content-length") ?? 0);
   if (Number.isFinite(declaredLength) && declaredLength > MAX_WEBHOOK_BYTES) {
@@ -108,6 +190,18 @@ export async function POST(request: Request) {
     return Response.json({ received: true });
   }
 
+  // Checked after the flag, so a deployment that has not asked for phone
+  // control is neither refused nor warned about a rule that does not apply to
+  // it. Checked before any state is touched, so a weak secret means the
+  // inbound lane simply does not run.
+  if (!webhookSecretStrongEnoughForPhoneControl(configuredSecret)) {
+    console.warn(
+      "[jarvis-phone]",
+      JSON.stringify({ event: "config-incomplete", reason: "weak_webhook_secret", missing: ["VAPI_WEBHOOK_SECRET"] })
+    );
+    return Response.json({ received: true });
+  }
+
   const event = normalizeVapiEvent(payload);
   if (event.kind === "ignored") return Response.json({ received: true });
 
@@ -132,7 +226,7 @@ export async function POST(request: Request) {
   });
   if (!claim.claimed) {
     console.info("[jarvis-phone]", JSON.stringify({ event: "duplicate-ignored", eventType: event.rawType }));
-    return Response.json({ received: true, duplicate: true });
+    return duplicateResponse(db, { config: configResolution.config, event });
   }
 
   try {
@@ -141,12 +235,17 @@ export async function POST(request: Request) {
     // The claim row is written before the handler runs (so a retry cannot
     // re-run it), so the real outcome is recorded back onto it here. Without
     // this, every event would read `processed` — including refusals.
+    //
+    // `responseText` is recorded for the same reason: a retry that loses the
+    // claim has to be answered with the SAME sentence, and this row is the
+    // only place that sentence survives.
     await recordWebhookEventOutcome(db, {
       externalEventId: event.idempotencyKey,
       callSessionId: result.sessionId ?? null,
       organizationId: configResolution.config.organizationId,
       processingStatus: result.processingStatus,
       failureCode: result.failureCode ?? null,
+      responseText: event.kind === "tool_call" ? result.spoken : null,
     }).catch(() => undefined);
 
     // Vapi reads `assistant` from the top level of an assistant-request

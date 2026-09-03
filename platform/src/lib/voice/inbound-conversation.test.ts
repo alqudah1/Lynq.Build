@@ -21,6 +21,7 @@ const upsertCommandDraft = vi.fn();
 const findOpenCommandForSession = vi.fn();
 const transitionCommand = vi.fn();
 const appendTranscriptTurn = vi.fn();
+const countTranscriptTurns = vi.fn(async () => 0);
 const touchCallSession = vi.fn();
 const completeCallSession = vi.fn();
 const dispatchConfirmedCommand = vi.fn();
@@ -37,6 +38,7 @@ vi.mock("./call-store", () => ({
   findOpenCommandForSession,
   transitionCommand,
   appendTranscriptTurn,
+  countTranscriptTurns,
   touchCallSession,
   completeCallSession,
 }));
@@ -44,8 +46,10 @@ vi.mock("./command-dispatch", () => ({ dispatchConfirmedCommand }));
 vi.mock("@/lib/audit", () => ({ recordAuditEvent }));
 
 /** The cross-call verification lockout. Allowed by default; one test drives it to refuse. */
-const recordRateLimitAttempt = vi.fn(async () => ({ allowed: true, remaining: 11, resetAt: new Date() }));
-const resetRateLimit = vi.fn(async () => undefined);
+const recordRateLimitAttempt = vi.fn<(key: string, config?: unknown) => Promise<{ allowed: boolean; remaining: number; resetAt: Date }>>(
+  async () => ({ allowed: true, remaining: 11, resetAt: new Date() })
+);
+const resetRateLimit = vi.fn<(key: string) => Promise<void>>(async () => undefined);
 vi.mock("@/lib/rate-limit/postgres", () => ({
   PostgresRateLimiter: class {
     recordAttempt = recordRateLimitAttempt;
@@ -102,10 +106,14 @@ beforeEach(() => {
     resolvePhoneCommandActor, ensureCallSession, findCallSessionByProviderCallId, findLatestCommandForSession,
     recordVerificationAttempt, markCallSessionRefused, upsertCommandDraft, findOpenCommandForSession,
     transitionCommand, appendTranscriptTurn, touchCallSession, completeCallSession,
-    dispatchConfirmedCommand, recordAuditEvent,
+    dispatchConfirmedCommand, recordAuditEvent, countTranscriptTurns,
+    recordRateLimitAttempt, resetRateLimit,
   ]) {
     mock.mockReset();
   }
+  countTranscriptTurns.mockResolvedValue(0);
+  recordRateLimitAttempt.mockResolvedValue({ allowed: true, remaining: 11, resetAt: new Date() });
+  resetRateLimit.mockResolvedValue(undefined);
   findCallSessionByProviderCallId.mockResolvedValue(null);
   findLatestCommandForSession.mockResolvedValue(null);
   resolvePhoneCommandActor.mockResolvedValue({ organizationId: CONFIG.organizationId, founderUserId: CONFIG.founderUserId, organizationSlug: "lynq", founderName: "Mustafa" });
@@ -136,7 +144,7 @@ describe("caller ID is a precondition, never the authentication", () => {
 
     const result = await handleInboundConversationEvent(db, { config: CONFIG, event, nowMs: NOW });
 
-    expect(result.spoken).toMatch(/six-digit code/i);
+    expect(result.spoken).toMatch(/\d-digit code/i);
     expect(result.payload).toBeDefined();
   });
 
@@ -155,7 +163,7 @@ describe("nothing is accepted before verification", () => {
     const result = await handleInboundConversationEvent(db, { config: CONFIG, event: toolEvent("capture_command", { requestedOutcome: "Research the market" }), nowMs: NOW });
 
     expect(result.failureCode).toBe("not_verified");
-    expect(result.spoken).toMatch(/six-digit code/i);
+    expect(result.spoken).toMatch(/\d-digit code/i);
     expect(upsertCommandDraft).not.toHaveBeenCalled();
   });
 
@@ -201,7 +209,7 @@ describe("verification", () => {
 
     const result = await handleInboundConversationEvent(db, { config: CONFIG, event: toolEvent("verify_founder", { code: "four one" }), nowMs: NOW });
 
-    expect(result.spoken).toMatch(/all six digits/i);
+    expect(result.spoken).toMatch(/I need all \w+ digits/i);
   });
 
   it("refuses the call once the attempt budget is spent, and records it", async () => {
@@ -460,6 +468,66 @@ describe("the caller-number precondition applies to every event, not just the fi
     expect(appendTranscriptTurn).toHaveBeenCalledTimes(1);
   });
 
+  /**
+   * Round twelve. The re-check recomputed the match from the CURRENT event, and
+   * an event that carries no `customer` object produced `false` — so a delivery
+   * without one refused a call that had already matched and verified. Two
+   * consequences, both bad: a `caller_number_mismatch` audit row recording a
+   * security finding that did not happen, and — because the refusal returns
+   * before the switch — `finalizeCall` never running, which leaves an
+   * unconfirmed draft in `awaiting_confirmation` with no exit in the entire
+   * system.
+   */
+  it("does not refuse a matched call over an event that simply carries no number", async () => {
+    findCallSessionByProviderCallId.mockResolvedValue(session({ verificationState: "verified" }));
+    const event = normalizeVapiEvent({ message: { type: "status-update", status: "ended", call: { id: "call-1" } } });
+    expect(event.callerNumber).toBeNull();
+
+    const result = await handleInboundConversationEvent(db, { config: CONFIG, event, nowMs: NOW });
+
+    expect(result.failureCode).toBeUndefined();
+    expect(markCallSessionRefused).not.toHaveBeenCalled();
+    // And the call is actually finalized, which is the part a refusal skipped.
+    expect(completeCallSession).toHaveBeenCalledTimes(1);
+  });
+
+  /**
+   * Round twelve. The session lookup is keyed on (provider, provider call id)
+   * with no tenant predicate — it cannot have one, since the tenant is what it
+   * is being used to find. Repointing JARVIS_PHONE_ORGANIZATION_ID (a tenant
+   * migration, or a second deployment sharing this database) therefore meant a
+   * late or replayed event resolved the OLD organization's session, proved
+   * membership against the NEW one, and wrote the transcript, the draft and
+   * the audit rows into the old tenant. Every check passed on its own; nothing
+   * checked that they agreed.
+   */
+  it("writes nothing through a session that belongs to another organization", async () => {
+    findCallSessionByProviderCallId.mockResolvedValue(session({ organizationId: "99999999-9999-4999-8999-999999999999", verificationState: "verified" }));
+
+    const result = await handleInboundConversationEvent(db, {
+      config: CONFIG,
+      event: toolEvent("capture_command", { requestedOutcome: "Research the market" }),
+      nowMs: NOW,
+    });
+
+    expect(result.failureCode).toBe("session_tenant_mismatch");
+    expect(upsertCommandDraft).not.toHaveBeenCalled();
+    expect(appendTranscriptTurn).not.toHaveBeenCalled();
+    expect(recordAuditEvent).not.toHaveBeenCalled();
+  });
+
+  it("still refuses when a number IS supplied and does not match", async () => {
+    findCallSessionByProviderCallId.mockResolvedValue(session({ verificationState: "verified" }));
+    const event = normalizeVapiEvent({
+      message: { type: "status-update", status: "in-progress", call: { id: "call-1" }, customer: { number: "+14165559999" } },
+    });
+
+    const result = await handleInboundConversationEvent(db, { config: CONFIG, event, nowMs: NOW });
+
+    expect(result.failureCode).toBe("caller_number_mismatch");
+    expect(markCallSessionRefused).toHaveBeenCalledTimes(1);
+  });
+
   it("hands a refused caller a closed assistant, not the lane's own instructions", async () => {
     findCallSessionByProviderCallId.mockResolvedValue(null);
     ensureCallSession.mockResolvedValue(session({ callerNumberMatched: false }));
@@ -513,6 +581,148 @@ describe("the passcode attempt budget survives a redial", () => {
 
     expect(result.failureCode).toBe("verification_rate_limited");
     expect(recordVerificationAttempt).not.toHaveBeenCalled();
+  });
+});
+
+describe("what an unverified caller costs", () => {
+  /**
+   * Round twelve. Caller ID is spoofable — this file's own comments say so —
+   * and a spoofed line matching the founder's number was not refused. Every
+   * redial opened a session row, wrote a start audit entry, was handed a
+   * ten-minute assistant, and could write unbounded transcript turns that the
+   * Jarvis screen renders as the founder's own words. The passcode budget did
+   * not bound any of it, because an attacker who never guesses never spends a
+   * passcode attempt.
+   */
+  it("opens no session at all once the caller has spent its hourly call budget", async () => {
+    findCallSessionByProviderCallId.mockResolvedValue(null);
+    recordRateLimitAttempt.mockResolvedValueOnce({ allowed: false, remaining: 0, resetAt: new Date() });
+    const event = normalizeVapiEvent({
+      message: { type: "assistant-request", call: { id: "call-1" }, customer: { number: CONFIG.founderPhoneNumber } },
+    });
+
+    const result = await handleInboundConversationEvent(db, { config: CONFIG, event, nowMs: NOW });
+
+    expect(result.failureCode).toBe("call_rate_limited");
+    // Nothing durable is written — no session, no audit row.
+    expect(ensureCallSession).not.toHaveBeenCalled();
+    expect(recordAuditEvent).not.toHaveBeenCalled();
+    // And the caller gets the closed assistant: one sentence, no tools.
+    const assistant = (result.payload as { assistant?: Record<string, unknown> } | undefined)?.assistant;
+    expect(assistant?.tools).toBeUndefined();
+    expect(Number(assistant?.maxDurationSeconds)).toBeLessThanOrEqual(60);
+  });
+
+  it("does not spend the call budget on later events of a call already open", async () => {
+    findCallSessionByProviderCallId.mockResolvedValue(session({ verificationState: "verified" }));
+
+    await handleInboundConversationEvent(db, {
+      config: CONFIG,
+      event: normalizeVapiEvent({
+        message: { type: "status-update", status: "in-progress", call: { id: "call-1" }, customer: { number: CONFIG.founderPhoneNumber } },
+      }),
+      nowMs: NOW,
+    });
+
+    expect(recordRateLimitAttempt).not.toHaveBeenCalled();
+  });
+
+  it("gives the call budget back when the founder actually verifies", async () => {
+    findCallSessionByProviderCallId.mockResolvedValue(session({ verificationAttempts: 0 }));
+    recordVerificationAttempt.mockResolvedValue(session({ verificationState: "verified" }));
+
+    const result = await handleInboundConversationEvent(db, {
+      config: CONFIG,
+      event: toolEvent("verify_founder", { code: deriveFounderPasscode(CONFIG.verificationSecret, NOW) }),
+      nowMs: NOW,
+    });
+
+    expect(result.spoken).toMatch(/you're verified/i);
+    // Both budgets, for the same reason: a caller who can read the current code
+    // is the founder, and the founder must never be locked out of their own
+    // phone by someone spoofing their number into the limits.
+    const resetKeys = resetRateLimit.mock.calls.map((call) => String(call[0]));
+    expect(resetKeys.some((key) => key.startsWith("jarvis-phone:verify:"))).toBe(true);
+    expect(resetKeys.some((key) => key.startsWith("jarvis-phone:call:"))).toBe(true);
+  });
+
+  it("stops recording an unverified caller's speech once the cap is reached", async () => {
+    findCallSessionByProviderCallId.mockResolvedValue(session({ verificationState: "unverified" }));
+    countTranscriptTurns.mockResolvedValue(25);
+    const event = normalizeVapiEvent({
+      message: {
+        type: "transcript",
+        transcriptType: "final",
+        role: "user",
+        transcript: "and here is another paragraph nobody asked for",
+        call: { id: "call-1" },
+        customer: { number: CONFIG.founderPhoneNumber },
+      },
+    });
+
+    const result = await handleInboundConversationEvent(db, { config: CONFIG, event, nowMs: NOW });
+
+    expect(result.failureCode).toBe("unverified_transcript_capped");
+    expect(appendTranscriptTurn).not.toHaveBeenCalled();
+    // The call itself is not refused — verification still has to be reachable.
+    expect(markCallSessionRefused).not.toHaveBeenCalled();
+  });
+
+  /**
+   * Round twelve. A failed `transcript` event releases its idempotency claim so
+   * the provider can retry it, which is right for an event whose only job is a
+   * state update — but with the durable insert first, a failure in anything
+   * after it released a claim on work that had already happened, and the retry
+   * wrote the identical sentence again. `appendTranscriptTurn` does not dedupe
+   * on content by design; the claim was supposed to be what handled that.
+   */
+  it("does the durable write last, so a released claim can only mean nothing was written", async () => {
+    findCallSessionByProviderCallId.mockResolvedValue(session({ verificationState: "verified" }));
+    const order: string[] = [];
+    touchCallSession.mockImplementation(async () => {
+      order.push("touch");
+    });
+    appendTranscriptTurn.mockImplementation(async () => {
+      order.push("insert");
+      return null;
+    });
+
+    await handleInboundConversationEvent(db, {
+      config: CONFIG,
+      event: normalizeVapiEvent({
+        message: {
+          type: "transcript",
+          transcriptType: "final",
+          role: "user",
+          transcript: "Research three restaurants",
+          call: { id: "call-1" },
+          customer: { number: CONFIG.founderPhoneNumber },
+        },
+      }),
+      nowMs: NOW,
+    });
+
+    expect(order).toEqual(["touch", "insert"]);
+  });
+
+  it("keeps recording once the founder is verified, however long the call runs", async () => {
+    findCallSessionByProviderCallId.mockResolvedValue(session({ verificationState: "verified" }));
+    countTranscriptTurns.mockResolvedValue(500);
+    const event = normalizeVapiEvent({
+      message: {
+        type: "transcript",
+        transcriptType: "final",
+        role: "user",
+        transcript: "and the last thing I need is the launch checklist",
+        call: { id: "call-1" },
+        customer: { number: CONFIG.founderPhoneNumber },
+      },
+    });
+
+    await handleInboundConversationEvent(db, { config: CONFIG, event, nowMs: NOW });
+
+    expect(appendTranscriptTurn).toHaveBeenCalledTimes(1);
+    expect(countTranscriptTurns).not.toHaveBeenCalled();
   });
 });
 

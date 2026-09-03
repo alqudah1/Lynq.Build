@@ -1,19 +1,26 @@
 import "server-only";
 
-import { createHmac } from "node:crypto";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { PostgresRateLimiter } from "@/lib/rate-limit/postgres";
-import type { RateLimitConfig } from "@/lib/rate-limit/types";
+import {
+  callBudgetKey,
+  callerBudgetIdentity,
+  callerBudgetIdentityForNumber,
+  INBOUND_CALL_RATE_LIMIT,
+  verifyBudgetKey,
+  VERIFICATION_RATE_LIMIT,
+} from "./verification-budget";
 import { recordAuditEvent } from "@/lib/audit";
 import { buildCommandDraft, commandDraftInputSchema } from "./command-draft";
 import { dispatchConfirmedCommand } from "./command-dispatch";
-import { callerNumberMatchesFounder, MAX_VERIFICATION_ATTEMPTS, verifyFounderPasscode } from "./founder-verification";
+import { callerNumberMatchesFounder, MAX_VERIFICATION_ATTEMPTS, PASSCODE_DIGITS, passcodeDigitsWord, verifyFounderPasscode } from "./founder-verification";
 import type { JarvisPhoneCommandConfig } from "./phone-config";
 import { redactLogFields } from "./redaction";
 import { phoneAutoDispatchEnabled } from "./phone-config";
 import {
   appendTranscriptTurn,
   completeCallSession,
+  countTranscriptTurns,
   ensureCallSession,
   findCallSessionByProviderCallId,
   findLatestCommandForSession,
@@ -72,12 +79,15 @@ export interface ConversationResult {
 }
 
 /**
- * The cross-call ceiling on passcode attempts from one caller. The per-call
- * cap of three still applies; this is what a redial cannot reset. Generous
- * enough that a founder mistyping a rotating code a few times over a couple of
- * calls is unaffected.
+ * How much an UNVERIFIED caller may write into the founder's transcript.
+ *
+ * Reading a code aloud takes a handful of turns; twenty-five is
+ * generous for three attempts plus greetings. Past it, the call still runs and
+ * verification still works — nothing further is stored. Without the cap, a
+ * caller who never verifies could fill the founder's screen with 8,000
+ * characters per turn, attributed to "Founder", for the length of the call.
  */
-const VERIFICATION_RATE_LIMIT: RateLimitConfig = { limit: 12, windowSeconds: 1800 };
+const MAX_UNVERIFIED_TRANSCRIPT_TURNS = 25;
 
 /** How many times hanging up may lose the revision race against a final capture before it is logged for a human. */
 const CANCEL_ON_HANGUP_ATTEMPTS = 3;
@@ -85,8 +95,7 @@ const CANCEL_ON_HANGUP_ATTEMPTS = 3;
 const REFUSAL_SPOKEN =
   "I can't take instructions on this call. I'll only work with the founder's registered line, and this isn't it. Goodbye.";
 
-const NEEDS_VERIFICATION_SPOKEN =
-  "Before we start, please read me the six-digit code on the Jarvis screen in LYNQ Office.";
+const NEEDS_VERIFICATION_SPOKEN = `Before we start, please read me the ${PASSCODE_DIGITS}-digit code on the Jarvis screen in LYNQ Office.`;
 
 /**
  * The dynamic assistant returned on `assistant-request`. It is built per call
@@ -111,7 +120,7 @@ function buildAssistantConfig(input: { founderName: string | null; firstMessage:
               `You are Jarvis, ${name}'s executive operating assistant inside LYNQ Office. This is a working call: the founder will describe work they want done, and your job is to understand it precisely, read it back, and get an explicit yes or no.`,
               "",
               "Order of operations, without exception:",
-              `1. The founder is NOT authenticated until the verify_founder tool returns verified. Before that, answer nothing else and take no instruction. Ask for the six-digit code shown on the Jarvis screen in LYNQ Office and pass exactly what they say to verify_founder.`,
+              `1. The founder is NOT authenticated until the verify_founder tool returns verified. Before that, answer nothing else and take no instruction. Ask for the ${PASSCODE_DIGITS}-digit code shown on the Jarvis screen in LYNQ Office and pass exactly what they say to verify_founder.`,
               "2. Once verified, listen. Ask short questions only where you genuinely cannot fill a field. Do not suggest work they did not ask for.",
               "3. When you can describe the work, call capture_command with: requestedOutcome, target (the company or person, only if they named one), constraints, requiredIntegrations, proposedSteps, and missingInformation. Never invent a value to fill a field — leave it out and list it in missingInformation instead.",
               "4. Read back the exact text the tool returns, then ask if you got it right.",
@@ -137,7 +146,7 @@ function buildAssistantConfig(input: { founderName: string | null; firstMessage:
           type: "function",
           function: {
             name: "verify_founder",
-            description: "Verify the caller is the founder using the six-digit code shown in LYNQ Office. Must succeed before any instruction is accepted.",
+            description: `Verify the caller is the founder using the ${PASSCODE_DIGITS}-digit code shown in LYNQ Office. Must succeed before any instruction is accepted.`,
             parameters: {
               type: "object",
               properties: { code: { type: "string", description: "Exactly what the caller said, digits or words." } },
@@ -188,6 +197,7 @@ function logPhoneEvent(fields: Record<string, unknown>): void {
   console.info("[jarvis-phone]", JSON.stringify(redactLogFields({ provider: "vapi", ...fields })));
 }
 
+
 export interface HandleInboundEventInput {
   config: JarvisPhoneCommandConfig;
   event: NormalizedVapiEvent;
@@ -214,12 +224,60 @@ export async function handleInboundConversationEvent(db: Db, input: HandleInboun
     return { spoken: "", processingStatus: "ignored", failureCode: "not_an_inbound_command_call" };
   }
 
+  // The session lookup is keyed on (provider, provider call id) only, with no
+  // tenant predicate — it cannot have one, because the tenant is what the
+  // lookup is being used to find. So the answer has to be reconciled against
+  // the configured tenant before anything is written through it. Without this,
+  // repointing `JARVIS_PHONE_ORGANIZATION_ID` (a tenant migration, or a second
+  // deployment sharing this database) meant a late or replayed event resolved
+  // the OLD organization's session, proved membership against the NEW one, and
+  // wrote the transcript, the command draft and the audit rows into the old
+  // tenant. Every individual check passed; nothing checked that they agreed.
+  if (existing && existing.organizationId !== config.organizationId) {
+    logPhoneEvent({ event: "session-tenant-mismatch", sessionId: existing.id });
+    return { spoken: "", processingStatus: "ignored", failureCode: "session_tenant_mismatch", sessionId: existing.id };
+  }
+
   // Proves the configured founder really is an owner/admin of the configured
   // organization right now. A revoked membership stops phone control on the
   // very next call, with no deploy.
   const actor = await resolvePhoneCommandActor(db, { organizationId: config.organizationId, founderUserId: config.founderUserId });
 
   const callerNumberMatched = callerNumberMatchesFounder(event.callerNumber, config.founderPhoneNumber);
+
+  // Opening a NEW call costs the caller against an hourly budget, checked
+  // before any row exists. Everything before verification used to be free —
+  // a session row, a start audit entry, a ten-minute assistant and an
+  // unbounded transcript, per redial, for anyone able to spoof the founder's
+  // caller ID. The passcode budget did not bound it, because an attacker who
+  // never guesses never spends a passcode attempt.
+  if (!existing) {
+    const callerKey = callerBudgetIdentityForNumber({
+      verificationSecret: config.verificationSecret,
+      callerNumber: event.callerNumber,
+      organizationId: config.organizationId,
+    });
+    let withinCallBudget = false;
+    try {
+      withinCallBudget = (await new PostgresRateLimiter(db).recordAttempt(callBudgetKey(callerKey), INBOUND_CALL_RATE_LIMIT)).allowed;
+    } catch {
+      // Fails closed, like every other rate limit in this lane.
+      withinCallBudget = false;
+    }
+    if (!withinCallBudget) {
+      logPhoneEvent({ event: "call-rate-limited" });
+      return {
+        spoken: REFUSAL_SPOKEN,
+        // The closed assistant: one sentence, no tools, twenty seconds. No
+        // session row is written, so a flood costs the attacker a phone bill
+        // and costs this deployment one rate-limit update.
+        payload: buildRefusalAssistantConfig(),
+        processingStatus: "ignored",
+        failureCode: "call_rate_limited",
+      };
+    }
+  }
+
   const session =
     existing ??
     (await ensureCallSession(db, {
@@ -245,7 +303,19 @@ export async function handleInboundConversationEvent(db: Db, input: HandleInboun
   // reach the refusal branch below and would leave the passcode as the only
   // barrier. `session.callerNumberMatched` is what the first event recorded;
   // this re-checks the current event too, so neither can be skipped.
-  if (!session.callerNumberMatched || !callerNumberMatched) {
+  //
+  // But only when the event actually CARRIES a number. Not every server message
+  // includes a `customer` object, and treating its absence as a mismatch turned
+  // an ordinary terminal delivery into a refusal of a call that was already
+  // verified: `markCallSessionRefused` wrote `caller_number_mismatch` — a
+  // security finding that never happened — and, worse, `finalizeCall` then
+  // never ran, so an unconfirmed draft stayed in `awaiting_confirmation` with
+  // no exit at all (tool calls are refused once inactive, the decision route
+  // requires `awaiting_approval`, retry requires `failed`, the reaper only
+  // looks at `dispatching`). A supplied number that does not match is still a
+  // refusal; a number the provider did not send is not evidence of anything.
+  const eventNumberMismatch = Boolean(event.callerNumber) && !callerNumberMatched;
+  if (!session.callerNumberMatched || eventNumberMismatch) {
     // Record what an unauthorized caller said BEFORE refusing. The refusal used
     // to return above the switch, so `handleTranscript` never ran and nothing
     // the caller said was stored anywhere — the one path where a transcript is
@@ -379,6 +449,34 @@ async function handleTranscript(
   db: Db,
   input: { session: JarvisCallSession; event: Extract<NormalizedVapiEvent, { kind: "transcript" }> }
 ): Promise<ConversationResult> {
+  // An unverified caller may not fill the founder's screen. The turns are
+  // rendered under the founder's own name, so an unbounded write here is both a
+  // storage cost and a place to put text aimed at whoever reads the approval
+  // screen. Verification lifts the cap; nothing else does.
+  if (input.session.verificationState !== "verified") {
+    const already = await countTranscriptTurns(db, {
+      sessionId: input.session.id,
+      organizationId: input.session.organizationId,
+    }).catch(() => 0);
+    if (already >= MAX_UNVERIFIED_TRANSCRIPT_TURNS) {
+      logPhoneEvent({ event: "unverified-transcript-capped", sessionId: input.session.id, turns: already });
+      await touchCallSession(db, { sessionId: input.session.id, organizationId: input.session.organizationId });
+      return { spoken: "", processingStatus: "ignored", failureCode: "unverified_transcript_capped", sessionId: input.session.id };
+    }
+  }
+
+  // `touchCallSession` first, and the durable insert LAST, deliberately.
+  //
+  // A failed `transcript` event releases its idempotency claim so the provider
+  // can retry it — the right call for an event whose only job is a state
+  // update. But with the insert first, a failure in anything AFTER it released
+  // a claim on work that had already happened, and the retry inserted the
+  // identical sentence at the next sequence. `appendTranscriptTurn` does not
+  // dedupe on content, by design: the claim was supposed to be what handles
+  // redelivery. So the founder's transcript showed the line twice. Making the
+  // insert the last thing this function does means a released claim can only
+  // ever mean nothing was written.
+  await touchCallSession(db, { sessionId: input.session.id, organizationId: input.session.organizationId });
   await appendTranscriptTurn(db, {
     sessionId: input.session.id,
     organizationId: input.session.organizationId,
@@ -386,7 +484,6 @@ async function handleTranscript(
     text: input.event.text,
     isFinal: input.event.isFinal,
   });
-  await touchCallSession(db, { sessionId: input.session.id, organizationId: input.session.organizationId });
   return { spoken: "", processingStatus: "processed", sessionId: input.session.id };
 }
 
@@ -500,12 +597,14 @@ async function handleVerify(
   // it. Fails CLOSED, like every other rate limit here: if the backend is
   // unreachable, verification is refused rather than waved through.
   const limiter = new PostgresRateLimiter(db);
-  const callerKey = createHmac("sha256", input.config.verificationSecret)
-    .update(`jarvis-phone-verify:${session.callerNumberLastFour ?? "unknown"}:${session.organizationId}`)
-    .digest("hex");
+  const callerKey = callerBudgetIdentity({
+    verificationSecret: input.config.verificationSecret,
+    callerNumberLastFour: session.callerNumberLastFour,
+    organizationId: session.organizationId,
+  });
   let withinLimit = false;
   try {
-    withinLimit = (await limiter.recordAttempt(`jarvis-phone:verify:${callerKey}`, VERIFICATION_RATE_LIMIT)).allowed;
+    withinLimit = (await limiter.recordAttempt(verifyBudgetKey(callerKey), VERIFICATION_RATE_LIMIT)).allowed;
   } catch {
     withinLimit = false;
   }
@@ -548,7 +647,12 @@ async function handleVerify(
     // success means the attacker pays for the lockout and the founder does
     // not: any window in which the founder can get one code right is a window
     // in which the budget resets.
-    await limiter.resetLimit(`jarvis-phone:verify:${callerKey}`).catch(() => undefined);
+    await limiter.resetLimit(verifyBudgetKey(callerKey)).catch(() => undefined);
+    // The call budget is refunded on the same evidence and for the same
+    // reason: a caller who can read the current code is the founder, and the
+    // founder must never be locked out of their own phone control by someone
+    // spoofing their number into the limits.
+    await limiter.resetLimit(callBudgetKey(callerKey)).catch(() => undefined);
     logPhoneEvent({ event: "founder-verified", sessionId: session.id });
     return { spoken: "Thanks, you're verified. What would you like me to work on?", processingStatus: "processed", sessionId: session.id };
   }
@@ -585,7 +689,7 @@ async function handleVerify(
   return {
     spoken:
       outcome.reason === "unreadable"
-        ? `I need all six digits. You have ${remaining} more ${remaining === 1 ? "try" : "tries"} — please read the code again.`
+        ? `I need all ${passcodeDigitsWord()} digits. You have ${remaining} more ${remaining === 1 ? "try" : "tries"} — please read the code again.`
         : `That code didn't match. You have ${remaining} more ${remaining === 1 ? "try" : "tries"}. Make sure you're reading the current one.`,
     processingStatus: "processed",
     sessionId: session.id,

@@ -20,7 +20,7 @@ Mustafa calls the imported Twilio number
 assistant-request ──► caller ID must be the enrolled founder number
         │                 └─ any other number: refused, call over, nothing recorded as a command
         ▼
-Jarvis asks for the six-digit code shown in the Jarvis Command Center
+Jarvis asks for the eight-digit code shown in the Jarvis Command Center
         │
         ▼
 verify_founder ──► constant-time check, 3 attempts per call
@@ -54,8 +54,17 @@ Mustafa's mobile number could open projects in his name.
 
 So the caller number is a **necessary precondition only** — a call from any
 other number is refused before a word is taken — and the actual second factor
-is a **rotating six-digit code** derived by HMAC-SHA256 from a server-only
+is a **rotating eight-digit code** derived by HMAC-SHA256 from a server-only
 secret and the current five-minute time step.
+
+Eight digits, not six, and the arithmetic is the reason. One step of skew is
+accepted on either side, so three codes are live at once and a single guess
+wins with probability 3/10^digits. The budgets an attacker faces below allow
+roughly 1.6 x 10^5 guesses a year from a spoofed line; at six digits that is
+about a two-in-five chance of a hit within a year, and at eight it is under one
+percent. Two extra digits cost a founder about a second of reading. Every
+sentence in the product that mentions the length is generated from the
+constant, so the copy and the code cannot drift apart.
 
 The code is readable **only** from the Jarvis Command Center, which requires a
 validated database session, an owner/admin organization membership, **and**
@@ -85,6 +94,28 @@ Details that matter:
   counter, so a limit keyed on a one-way identifier derived from the caller's
   number (never the number itself) caps attempts across calls. It fails closed
   — if the rate-limit backend is unreachable, verification is refused.
+- A **call** ceiling as well: six inbound command calls per hour from one
+  number. Without it, everything before verification was free — a spoofed line
+  matching the founder's number was not refused, and each redial opened a
+  session row, wrote a start audit entry, was handed a ten-minute assistant,
+  and could write unbounded transcript turns that the Jarvis screen renders as
+  the founder's own words. The passcode budget did not bound any of that,
+  because an attacker who never guesses never spends a passcode attempt. A
+  caller who has not verified may also write at most 25 transcript turns; the
+  call keeps running and verification still works, but nothing further is
+  stored.
+- **Both budgets are refunded the moment a caller verifies**, and both are
+  visible and clearable from the Jarvis screen. This matters more than it
+  looks: the keys are derived from the number a caller *asserts*, so anyone who
+  can spoof the founder's line can spend both and hold them at zero — and the
+  founder, calling from the real phone, is then refused before their correct
+  code is ever checked. A rate limit an attacker can hold down is a
+  denial-of-service primitive aimed at the person it protects. The refund means
+  any window in which the founder gets through resets both; the screen shows
+  the lockout in plain language with the time it clears; and "Let me call in
+  again" clears it immediately. Clearing grants nothing — the code, the
+  three-try cap and the number check all still apply — and it is audited as
+  `jarvis_phone_verification_lockout_cleared`.
 - The code is redacted out of the transcript before anything is stored, and is
   never written to a log or an audit row. Redaction and verification share one
   digit vocabulary and one scanner, so "what verification accepts, redaction
@@ -207,6 +238,22 @@ act on the same command at once. Four independent layers make that safe:
    call id, event type, and whatever makes the occurrence distinct (tool call
    id, transcript text and finality, status value). Two genuine deliveries hash
    identically; two different events never collide.
+
+   The claim stops the *side effects* happening twice. It is not an answer, and
+   for two event kinds Vapi is waiting on one: a tool result lives in `results`
+   and an assistant config lives in `assistant`, and a bare `{received:true}`
+   carries neither. So a redelivered **tool call** is answered with the same
+   sentence the first delivery produced, replayed from `response_text` on the
+   event row — and when that column is still empty, meaning the first delivery
+   has not finished, with an honest "still working on that one" rather than an
+   invented outcome. A redelivered **assistant request** is rebuilt rather than
+   replayed: its handler is read-only apart from `ensureCallSession`, which is
+   idempotent and audits only a genuine creation, and the config depends on
+   live state. Without this, a `confirm_command` that outran the provider's
+   timeout — the normal case, since creating a directive means an LLM plan and
+   a chain of writes — left the assistant with no result at all while a real
+   project was being created behind it, and one transient failure on an
+   `assistant-request` permanently bricked the call it belonged to.
 2. **Session and command uniqueness.** `(provider, provider_call_id)` resolves
    one call session; a concurrent first event loses the race at the database
    and re-reads the winner's row. A confirmed command's `idempotency_key` is
@@ -387,11 +434,23 @@ The existing Vapi Bearer Token custom credential and `VAPI_WEBHOOK_SECRET`
 already cover the new events — no new credential is needed. Confirm the
 `Bearer` prefix is enabled.
 
-**`VAPI_WEBHOOK_SECRET` must be at least 32 characters.** The whole inbound
-lane collapses to this one string, and the route now refuses every request —
-including one presenting the correct value — when the configured secret is
-shorter than that. If the currently deployed value is shorter, rotate it in
-Vercel and in the Vapi dashboard together, or inbound calls will 401.
+**`VAPI_WEBHOOK_SECRET` must be at least 32 characters for phone control.**
+The inbound lane collapses to this one string, so a short one is a deployment
+error rather than a configuration choice.
+
+The floor gates the inbound lane, **not** the endpoint. That distinction is
+load-bearing: this webhook is shared with the pre-existing outbound founder
+notifications, and enforcing the length at the door — which is how the rule
+was first written — 401s every request on any deployment whose secret predates
+it, silently ending all Jarvis call-status logging on a lane this work is not
+supposed to touch. So the door keeps the original rule (non-empty,
+constant-time equal) and the floor is checked after the feature flag.
+
+Below the floor: notifications keep working exactly as before, the webhook logs
+`{"event":"config-incomplete","reason":"weak_webhook_secret"}` (naming the
+variable, never its value), the inbound lane does not run, and the Jarvis
+screen lists **Webhook secret** under "Still to set up". Rotate it in Vercel
+and in the Vapi dashboard together before enabling phone control.
 
 ### 7.4 Call limits
 
@@ -421,7 +480,16 @@ New:
 Reused unchanged:
 
 - `VAPI_API_KEY`, `VAPI_ASSISTANT_ID`, `VAPI_PHONE_NUMBER_ID`
-- `VAPI_WEBHOOK_SECRET` — **now required to be ≥ 32 characters** (see §7.3)
+- `VAPI_WEBHOOK_SECRET` — **must be ≥ 32 characters for the INBOUND lane**
+  (see §7.3). The length floor gates phone control only; it is deliberately not
+  enforced at the door. Enforcing it there — the first version of the rule —
+  turns every request into a 401 on any deployment whose secret predates it,
+  and this endpoint is shared with the pre-existing outbound founder
+  notifications, so the upgrade would have silently ended all Jarvis
+  call-status logging on a lane this work does not touch. Below the floor the
+  webhook logs `weak_webhook_secret`, skips the inbound lane, and the Jarvis
+  screen reports **Webhook secret** as still to set up rather than claiming the
+  feature is ready.
 - `JARVIS_FOUNDER_PHONE_E164`
 - `JARVIS_VOICE_NOTIFICATIONS_ENABLED` *(outbound only; independent of this lane)*
 
@@ -434,7 +502,7 @@ Reused unchanged:
    Opening it as any other owner or admin should show the phone screen without
    the code panel; opening it in any other organization should not show the
    phone surface at all.
-2. Press **Show my code** and confirm a six-digit code appears.
+2. Press **Show my code** and confirm an eight-digit code appears.
 3. Call from a number that is **not** the founder line. Confirm Jarvis refuses
    and the call appears in the UI marked refused with no command.
 4. Call from the founder line. Confirm Jarvis asks for the code before
@@ -530,8 +598,20 @@ Reused unchanged:
   itself a bug once: sharing the wide vocabulary made "the code is 014149 too"
   unreadable and burned an attempt. Watch the first few real calls for a
   correct code being rejected.
+- **A caller who can spoof the founder's number still gets a phone call.** The
+  number is a precondition, not the authentication, so a spoofed line is not
+  refused outright — it reaches the passcode and no further. What it costs is
+  now bounded (six calls an hour, twenty-five unverified transcript turns, an
+  eight-digit code, three attempts a call, twelve an hour), and what it can
+  take away from the founder is recoverable in one tap from the Jarvis screen.
+  What is *not* bounded is the ten-minute assistant a first call is handed:
+  the assistant duration is fixed at `assistant-request`, when every caller is
+  unverified by definition, so it cannot be raised after verification and
+  lowering it would cut real calls short. The call ceiling is what caps the
+  telephony and model spend; watch it on the first bill.
+
 - **Nothing here has been exercised against the real Vapi.** Every behaviour
   above is proved by unit, integration, accessibility and concurrency tests
-  against a real Postgres, and the risk gate and redaction have mutation
-  evidence. The provider itself has not been called once. Step 9 is the first
-  time this lane meets a real phone call.
+  against a real Postgres, and the risk gate, redaction, the idempotency replay
+  and the caller budgets have mutation evidence. The provider itself has not
+  been called once. Step 9 is the first time this lane meets a real phone call.
