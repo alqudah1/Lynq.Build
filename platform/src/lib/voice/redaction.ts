@@ -61,10 +61,41 @@ export type RedactionPlaceholder = keyof typeof REDACTION_PLACEHOLDERS;
  * One vocabulary and one scanner is the only structural guarantee that what
  * verification accepts, redaction removes.
  */
-const SPOKEN_DIGITS: Record<string, string> = {
+/**
+ * What a digit can be SPELLED as, for detection. Deliberately wide: it carries
+ * the homophones a transcriber produces, because over-detecting a number in a
+ * transcript costs a `[redacted-number]` where a figure used to be, and
+ * under-detecting one leaves a live credential in the database.
+ */
+const SPOKEN_DIGITS_WIDE: Record<string, string> = {
   zero: "0", oh: "0", o: "0", one: "1", two: "2", to: "2", too: "2", three: "3",
   four: "4", for: "4", five: "5", six: "6", seven: "7", eight: "8", ate: "8", nine: "9",
 };
+
+/**
+ * What a digit can be spelled as when READING A CODE BACK for comparison.
+ * Narrow on purpose, and a strict subset of the wide list.
+ *
+ * The wide list's homophones are wrong here: they are ordinary English words
+ * that sit next to a code in ordinary speech, and each one silently extends
+ * the run. "the code is 014149 too" normalized to a seven-digit `0141492` and
+ * was rejected as unreadable — burning one of three attempts and telling the
+ * founder "I need all six digits" when they had read exactly six. Same for
+ * "014149 for the call", "014149 to verify", and "it's for 014149".
+ *
+ * The subset relationship is what preserves the safety guarantee: any run
+ * verification will accept is also found by the wide scanner, so anything that
+ * can authenticate is still redacted.
+ */
+const SPOKEN_DIGITS_NARROW: Record<string, string> = {
+  // `o` stays: as a standalone token it is a spoken zero, never an English
+  // word. `to`, `too`, `for` and `ate` are the ones that had to go — those are
+  // ordinary words that sit next to a code and silently extend it.
+  zero: "0", oh: "0", o: "0", one: "1", two: "2", three: "3",
+  four: "4", five: "5", six: "6", seven: "7", eight: "8", nine: "9",
+};
+
+const SPOKEN_DIGITS = SPOKEN_DIGITS_WIDE;
 
 /**
  * Words a speaker drops into the middle of a code without breaking it
@@ -72,6 +103,28 @@ const SPOKEN_DIGITS: Record<string, string> = {
  * run survives, bounded so a run cannot wander across a whole sentence.
  */
 const RUN_FILLERS = new Set(["um", "uh", "er", "ah", "like", "then", "and", "ok", "okay", "so", "sorry", "again", "is", "its", "it", "my", "the", "code", "that"]);
+
+/**
+ * The fillers a caller actually says INSIDE a code, as they read it out:
+ * "417, um, 296", "417 then 296". A filler can only bridge two genuine digit
+ * groups, never introduce a digit of its own, so this list is safe to keep
+ * short but useful.
+ *
+ * `and` is deliberately NOT here. It is a filler in the wide list, where
+ * over-detection is the safe direction, but it bridged "014149 and to be
+ * clear" into a seven-digit run and made a correct code unreadable.
+ */
+const RUN_FILLERS_NARROW = new Set(["um", "uh", "er", "ah", "sorry", "then"]);
+
+export interface DigitRunOptions {
+  /**
+   * `wide` (default) detects as much as possible, for redaction. `narrow`
+   * reads a code back for comparison and must not absorb ordinary words next
+   * to it. Narrow is a strict subset of wide, so anything narrow accepts is
+   * still redacted.
+   */
+  vocabulary?: "wide" | "narrow";
+}
 
 const MAX_FILLERS_PER_RUN = 2;
 
@@ -95,7 +148,11 @@ export interface SpokenDigitRun {
  * clients", and that mangled text is what reached the risk classifier and the
  * Office planner. Detection and rewriting are different jobs.
  */
-export function findSpokenDigitRuns(value: string): SpokenDigitRun[] {
+export function findSpokenDigitRuns(value: string, options: DigitRunOptions = {}): SpokenDigitRun[] {
+  const narrow = options.vocabulary === "narrow";
+  const words = narrow ? SPOKEN_DIGITS_NARROW : SPOKEN_DIGITS_WIDE;
+  const fillers = narrow ? RUN_FILLERS_NARROW : RUN_FILLERS;
+
   const tokens: Array<{ text: string; start: number; end: number }> = [];
   for (const match of value.matchAll(/[A-Za-z]+|\d+/g)) {
     tokens.push({ text: match[0], start: match.index, end: match.index + match[0].length });
@@ -103,7 +160,7 @@ export function findSpokenDigitRuns(value: string): SpokenDigitRun[] {
 
   const digitsOf = (token: string): string | null => {
     if (/^\d+$/.test(token)) return token;
-    return SPOKEN_DIGITS[token.toLowerCase()] ?? null;
+    return words[token.toLowerCase()] ?? null;
   };
 
   const runs: SpokenDigitRun[] = [];
@@ -118,7 +175,7 @@ export function findSpokenDigitRuns(value: string): SpokenDigitRun[] {
     let digits = first;
     let last = index;
     let cursor = index + 1;
-    let fillers = 0;
+    let fillersUsed = 0;
     while (cursor < tokens.length) {
       const value = digitsOf(tokens[cursor].text);
       if (value !== null) {
@@ -128,9 +185,9 @@ export function findSpokenDigitRuns(value: string): SpokenDigitRun[] {
         continue;
       }
       // A filler only extends the run if a digit actually follows it.
-      const isFiller = RUN_FILLERS.has(tokens[cursor].text.toLowerCase());
-      if (isFiller && fillers < MAX_FILLERS_PER_RUN && cursor + 1 < tokens.length && digitsOf(tokens[cursor + 1].text) !== null) {
-        fillers += 1;
+      const isFiller = fillers.has(tokens[cursor].text.toLowerCase());
+      if (isFiller && fillersUsed < MAX_FILLERS_PER_RUN && cursor + 1 < tokens.length && digitsOf(tokens[cursor + 1].text) !== null) {
+        fillersUsed += 1;
         cursor += 1;
         continue;
       }
@@ -317,28 +374,47 @@ export interface RedactionResult {
  */
 const MAX_REDACTION_INPUT = 40_000;
 
+/** A match that is nothing but placeholders has already been redacted; anything else may still hide a value. */
+const ONLY_PLACEHOLDERS = /^(?:\[redacted-[a-z-]+\])+$/;
+
+/**
+ * No genuine spoken word is this long. Collapsing any unbroken run that is,
+ * before the rules see it, is both the honest classification (an opaque
+ * 200-character blob in a phone transcript is a credential or garbage) and
+ * what keeps the rules linear.
+ */
+const MAX_TOKEN_LENGTH = 200;
+const LONG_TOKEN = /\S{200,}/g;
+
 export function redactSensitiveText(value: string): RedactionResult {
   if (!value) return { text: "", redactedKinds: [] };
 
   const applied = new Set<RedactionPlaceholder>();
   let text = value.slice(0, MAX_REDACTION_INPUT);
 
-  // No genuine spoken word is 200 characters long. Collapsing any unbroken run
-  // that is, before any rule sees it, is both the honest classification (an
-  // opaque 200-character blob in a phone transcript is a credential or garbage)
-  // and what keeps every rule below linear. Several of them are quadratic on a
-  // single enormous token — the email rule alone cost ~1.9s at the input cap on
-  // a plain run of digits — and the webhook accepts a 1 MB body.
-  const capped = text.replace(/\S{200,}/g, REDACTION_PLACEHOLDERS.secret);
-  if (capped !== text) {
-    applied.add("secret");
-    text = capped;
-  }
+  // Several rules are quadratic on a single enormous token — the email rule
+  // alone cost ~1.9s at the input cap on a plain run of digits — and the
+  // webhook accepts a 1 MB body. Capping first keeps them linear.
+  const capLongTokens = () => {
+    const capped = text.replace(LONG_TOKEN, REDACTION_PLACEHOLDERS.secret);
+    if (capped !== text) {
+      applied.add("secret");
+      text = capped;
+    }
+  };
+  capLongTokens();
+  void MAX_TOKEN_LENGTH;
 
   const runRules = (rules: typeof SECRET_RULES) => {
   for (const rule of rules) {
     text = text.replace(rule.pattern, (match, ...groups) => {
-      if (match.includes("[redacted-")) return match;
+      // Skip only a match that IS already a placeholder. `includes` was too
+      // broad: with the digit-run scan running first, "the password is
+      // 123456hunter2" became "…is [redacted-number]hunter2", and the lead-in
+      // rule that would have taken the WHOLE value then refused to fire
+      // because its match contained a placeholder — leaving the tail of the
+      // credential in the transcript.
+      if (ONLY_PLACEHOLDERS.test(match)) return match;
       const placeholder = REDACTION_PLACEHOLDERS[rule.placeholder];
       // The lead-in rules keep the phrase ("the password is") and replace only
       // the value, so the transcript still reads naturally.
@@ -359,6 +435,13 @@ export function redactSensitiveText(value: string): RedactionResult {
   // Cards, government IDs, emails and phone numbers first, so each keeps its
   // own placeholder rather than being swallowed as a generic run of digits.
   runRules(PRE_RUN_RULES);
+  // Re-cap. The card, government-ID and phone rules consume their own trailing
+  // separator, so a run of adjacent matches is replaced by adjacent
+  // placeholders with NO whitespace between them — one enormous token that the
+  // first cap never saw. `"1111111111111 "` repeated to the input cap turned
+  // 39 KB of digits and spaces into a 61 KB unbroken token and cost 4 seconds
+  // in the value-first secret rule below.
+  capLongTokens();
   const runs = redactDigitRuns(text);
   text = runs.text;
   if (runs.redacted) applied.add("number");

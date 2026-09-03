@@ -853,3 +853,87 @@ describe("claimApprovalDecision — decide-once cannot be defeated by a re-read"
     expect(claimed).toBeNull();
   });
 });
+
+describe("claimApprovalDecision — decline needs the same guard as approve", () => {
+  /**
+   * Round seven. Approve was given a fact-based guard; decline was left on a
+   * revision guard, and the two are not equivalent — because approval does not
+   * change `dispatchState`. Between one admin's approval and their dispatch
+   * claim the row is still `awaiting_approval` at a new revision, so a
+   * revision-guarded decline landing in that window SUCCEEDED: it overwrote
+   * the recorded approver and marked as declined a command that had just been
+   * approved.
+   */
+  it("refuses a decline once an approval has been recorded", async () => {
+    const founderId = await makeUser();
+    const organizationId = await makeOrg(founderId);
+    const other = await makeUser();
+    const session = await ensureCallSession(db, {
+      organizationId,
+      founderUserId: founderId,
+      providerCallId: `call-${crypto.randomUUID()}`,
+      direction: "inbound",
+      purpose: "founder_command",
+      callerNumber: "+14165551234",
+      callerNumberMatched: true,
+    });
+    const draft = await upsertCommandDraft(db, {
+      organizationId,
+      callSessionId: session.id,
+      founderUserId: founderId,
+      draft: buildCommandDraft({ requestedOutcome: "Email the restaurant owner our proposal" }),
+    });
+    await db.update(jarvisPhoneCommands).set({ dispatchState: "awaiting_approval" }).where(eq(jarvisPhoneCommands.id, draft.id));
+
+    const approved = await claimApprovalDecision(db, {
+      organizationId,
+      commandId: draft.id,
+      approverUserId: founderId,
+      decisionNote: null,
+    });
+    expect(approved?.approvalDecidedByUserId).toBe(founderId);
+
+    const declined = await claimApprovalDecision(db, {
+      organizationId,
+      commandId: draft.id,
+      approverUserId: other,
+      decisionNote: "changed my mind",
+      dispatchState: "declined",
+    });
+    expect(declined).toBeNull();
+
+    const [settled] = await db.select().from(jarvisPhoneCommands).where(eq(jarvisPhoneCommands.id, draft.id));
+    expect(settled.dispatchState).toBe("awaiting_approval");
+    expect(settled.approvalDecidedByUserId).toBe(founderId);
+  });
+
+  it("still lets a decline settle a command nobody has decided", async () => {
+    const founderId = await makeUser();
+    const organizationId = await makeOrg(founderId);
+    const session = await ensureCallSession(db, {
+      organizationId,
+      founderUserId: founderId,
+      providerCallId: `call-${crypto.randomUUID()}`,
+      direction: "inbound",
+      purpose: "founder_command",
+      callerNumber: "+14165551234",
+      callerNumberMatched: true,
+    });
+    const draft = await upsertCommandDraft(db, {
+      organizationId,
+      callSessionId: session.id,
+      founderUserId: founderId,
+      draft: buildCommandDraft({ requestedOutcome: "Email the restaurant owner our proposal" }),
+    });
+    await db.update(jarvisPhoneCommands).set({ dispatchState: "awaiting_approval" }).where(eq(jarvisPhoneCommands.id, draft.id));
+
+    const declined = await claimApprovalDecision(db, {
+      organizationId,
+      commandId: draft.id,
+      approverUserId: founderId,
+      decisionNote: null,
+      dispatchState: "declined",
+    });
+    expect(declined?.dispatchState).toBe("declined");
+  });
+});

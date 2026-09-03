@@ -105,7 +105,17 @@ export function deriveFounderPasscode(secret: string | undefined, atMs: number, 
  * a sentence are not a code being read out.
  */
 export function normalizeSpokenPasscode(value: string): string {
-  const runs = findSpokenDigitRuns(value);
+  // NARROW vocabulary: the wide one carries transcriber homophones ("too",
+  // "for", "to", "ate", "o") that are ordinary words sitting next to a code in
+  // ordinary speech. Each silently extended the run, so "the code is 014149
+  // too" normalized to a seven-digit 0141492 and was rejected as unreadable —
+  // burning an attempt and telling the founder "I need all six digits" when
+  // they had read exactly six.
+  //
+  // Narrow is a strict SUBSET of wide, which is what preserves the property
+  // this function shares a scanner for: anything that can authenticate is
+  // still found, and removed, by redaction.
+  const runs = findSpokenDigitRuns(value, { vocabulary: "narrow" });
   if (runs.length === 0) return "";
   // The longest run is the code; ties resolve to the earliest, which is the
   // order a caller reads it in.

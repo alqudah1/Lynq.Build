@@ -80,6 +80,25 @@ function normalizeRole(role: string | undefined): "founder" | "jarvis" {
   return role === "assistant" || role === "bot" ? "jarvis" : "founder";
 }
 
+/**
+ * A call ends with up to three deliveries: `status-update`/ended, then
+ * `end-of-call-report`, and sometimes `hang`. They are the same logical event
+ * for FINALIZATION, so they must not each finalize the call — but only the
+ * report carries `artifact.transcript`, and it arrives second.
+ *
+ * Keying all three identically meant the first delivery won the claim and the
+ * one actually carrying the transcript was acknowledged as a duplicate and
+ * never handled, so every call stored a null summary. Keying them all
+ * differently would finalize the call three times.
+ *
+ * So the discriminator is exactly the thing that differs: whether this
+ * delivery carries a transcript. `completeCallSession` is written to not
+ * clobber a summary it already has.
+ */
+function callEndedKey(keyFor: (kind: string, ...parts: Array<string | null | undefined>) => string, summaryTranscript: string | null): string {
+  return keyFor("call_ended", summaryTranscript ? "with-summary" : "no-summary");
+}
+
 export function normalizeVapiEvent(payload: VapiServerMessageEnvelope): NormalizedVapiEvent {
   const message = payload.message ?? {};
   const rawType = typeof message.type === "string" ? message.type : "unknown";
@@ -151,24 +170,26 @@ export function normalizeVapiEvent(payload: VapiServerMessageEnvelope): Normaliz
   if (rawType === "status-update") {
     const status = typeof message.status === "string" ? message.status : null;
     if (status === "ended") {
+      const summaryTranscript = typeof message.artifact?.transcript === "string" ? message.artifact.transcript : null;
       return {
         kind: "call_ended",
         ...base,
         endedReason: typeof message.endedReason === "string" ? message.endedReason : null,
-        summaryTranscript: typeof message.artifact?.transcript === "string" ? message.artifact.transcript : null,
-        idempotencyKey: keyFor("call_ended"),
+        summaryTranscript,
+        idempotencyKey: callEndedKey(keyFor, summaryTranscript),
       };
     }
     return { kind: "status_update", ...base, status, idempotencyKey: keyFor("status_update", status) };
   }
 
   if (rawType === "end-of-call-report" || rawType === "hang") {
+    const summaryTranscript = typeof message.artifact?.transcript === "string" ? message.artifact.transcript : null;
     return {
       kind: "call_ended",
       ...base,
       endedReason: typeof message.endedReason === "string" ? message.endedReason : rawType === "hang" ? "hang" : null,
-      summaryTranscript: typeof message.artifact?.transcript === "string" ? message.artifact.transcript : null,
-      idempotencyKey: keyFor("call_ended"),
+      summaryTranscript,
+      idempotencyKey: callEndedKey(keyFor, summaryTranscript),
     };
   }
 

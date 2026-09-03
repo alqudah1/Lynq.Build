@@ -118,3 +118,42 @@ describe("isJarvisPhoneTool", () => {
     expect(isJarvisPhoneTool("transfer_call")).toBe(false);
   });
 });
+
+describe("a call ends with three deliveries, and only one carries the transcript", () => {
+  /**
+   * Round seven. Round six keyed idempotency on the normalized KIND rather
+   * than the raw provider type, which was right for `tool-calls` /
+   * `function-call` — but it collapsed `status-update`/ended,
+   * `end-of-call-report` and `hang` into one key. Vapi sends the status update
+   * FIRST and only the report carries `artifact.transcript`, so the first
+   * delivery won the claim and the one actually carrying the transcript was
+   * acknowledged as a duplicate and never handled. Every call stored a null
+   * summary.
+   *
+   * The discriminator is exactly the thing that differs between them.
+   */
+  const call = { id: "call-1", type: "inboundPhoneCall" };
+
+  it("does not let the status update swallow the report's claim", () => {
+    const statusEnded = normalizeVapiEvent({ message: { type: "status-update", status: "ended", call } });
+    const report = normalizeVapiEvent({
+      message: { type: "end-of-call-report", call, artifact: { transcript: "AI: hello\nUser: draft the plan" } },
+    });
+
+    expect(statusEnded.kind).toBe("call_ended");
+    expect(report.kind).toBe("call_ended");
+    expect(statusEnded.idempotencyKey).not.toBe(report.idempotencyKey);
+  });
+
+  it("still treats two deliveries that carry nothing new as one event", () => {
+    const statusEnded = normalizeVapiEvent({ message: { type: "status-update", status: "ended", call } });
+    const hang = normalizeVapiEvent({ message: { type: "hang", call } });
+    expect(statusEnded.idempotencyKey).toBe(hang.idempotencyKey);
+  });
+
+  it("is stable for a redelivery of the same report", () => {
+    const once = normalizeVapiEvent({ message: { type: "end-of-call-report", call, artifact: { transcript: "same" } } });
+    const twice = normalizeVapiEvent({ message: { type: "end-of-call-report", call, artifact: { transcript: "same" } } });
+    expect(once.idempotencyKey).toBe(twice.idempotencyKey);
+  });
+});

@@ -389,9 +389,13 @@ export async function completeCallSession(
     .update(jarvisCallSessions)
     .set({
       status: input.failureCode ? "failed" : "completed",
-      endedReason: input.endedReason,
+      // Never overwrite a value already recorded with an empty one. A call ends
+      // with up to three provider deliveries and only one of them carries the
+      // transcript, so whichever arrives last must not wipe what an earlier one
+      // wrote.
+      ...(input.endedReason ? { endedReason: input.endedReason } : {}),
       failureCode: input.failureCode ?? null,
-      redactedSummaryTranscript: summary,
+      ...(summary ? { redactedSummaryTranscript: summary } : {}),
       deliveryStatus: "ended",
       endedAt: new Date(),
       lastEventAt: new Date(),
@@ -888,7 +892,14 @@ export async function recordDispatchProject(
  */
 export async function claimApprovalDecision(
   db: Db,
-  input: { organizationId: string; commandId: string; approverUserId: string; decisionNote: string | null }
+  input: {
+    organizationId: string;
+    commandId: string;
+    approverUserId: string;
+    decisionNote: string | null;
+    /** Set for a decline, which is terminal. Omitted for an approval, which leaves the dispatch claim to move the row. */
+    dispatchState?: DispatchState;
+  }
 ): Promise<JarvisPhoneCommand | null> {
   const [row] = await db
     .update(jarvisPhoneCommands)
@@ -896,6 +907,7 @@ export async function claimApprovalDecision(
       approvalDecidedByUserId: input.approverUserId,
       approvalDecidedAt: new Date(),
       approvalDecisionNote: input.decisionNote,
+      ...(input.dispatchState ? { dispatchState: input.dispatchState } : {}),
       revision: sql`${jarvisPhoneCommands.revision} + 1`,
       updatedAt: new Date(),
     })

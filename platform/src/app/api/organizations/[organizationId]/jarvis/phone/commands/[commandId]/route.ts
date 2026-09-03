@@ -12,7 +12,7 @@ import { requireOrganizationAdminOverride } from "@/lib/authz/helpers";
 import { CommandAlreadyDecidedError, CommandNotAwaitingApprovalError } from "@/lib/voice/errors";
 import { recordAuditEvent } from "@/lib/audit";
 import { pollAndProcess } from "@/lib/runtime/worker";
-import { claimApprovalDecision, resolveCommandById, transitionCommand } from "@/lib/voice/call-store";
+import { claimApprovalDecision, resolveCommandById } from "@/lib/voice/call-store";
 import { MAX_DISPATCH_ATTEMPTS, retryFailedDispatch, runDirectiveDispatch } from "@/lib/voice/command-dispatch";
 
 export const dynamic = "force-dynamic";
@@ -131,13 +131,18 @@ export async function POST(request: Request, { params }: RouteParams) {
     }
 
     if (body.decision === "decline") {
-      const declined = await transitionCommand(db, {
+      // The SAME fact-based guard the approve path uses, not a revision guard.
+      // Approval does not change `dispatchState` — the dispatch claim does —
+      // so between one admin's approval and their dispatch claim the row is
+      // still `awaiting_approval` at a new revision, and a revision-guarded
+      // decline landing in that window succeeded: it overwrote the recorded
+      // approver and marked as declined a command that had just been approved.
+      const declined = await claimApprovalDecision(db, {
         organizationId,
         commandId,
-        expectedRevision: command.revision,
+        approverUserId: user.userId,
+        decisionNote: body.decisionNote ?? null,
         dispatchState: "declined",
-        approvalDecidedByUserId: user.userId,
-        approvalDecisionNote: body.decisionNote ?? null,
       });
       if (!declined) throw new CommandAlreadyDecidedError();
 

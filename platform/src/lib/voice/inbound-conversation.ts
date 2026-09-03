@@ -511,6 +511,14 @@ async function handleVerify(
       // succeeded.
       return { spoken: "You're already verified. What would you like me to work on?", processingStatus: "processed", sessionId: session.id };
     }
+    // A SUCCESSFUL verification gives the budget back. The key is derived from
+    // the caller's asserted number, and caller ID is spoofable — so without
+    // this, twelve wrong codes from a spoofed line every thirty minutes would
+    // lock the real founder out of their own phone control. Refunding on
+    // success means the attacker pays for the lockout and the founder does
+    // not: any window in which the founder can get one code right is a window
+    // in which the budget resets.
+    await limiter.resetLimit(`jarvis-phone:verify:${callerKey}`).catch(() => undefined);
     logPhoneEvent({ event: "founder-verified", sessionId: session.id });
     return { spoken: "Thanks, you're verified. What would you like me to work on?", processingStatus: "processed", sessionId: session.id };
   }

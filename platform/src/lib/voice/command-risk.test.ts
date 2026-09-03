@@ -526,3 +526,118 @@ describe("assessCommandRisk — the clause rule is what holds when the vocabular
     expect(result.reasons[0]).toMatch(/could not tell/i);
   });
 });
+
+describe("assessCommandRisk — a topic narrowing must never be able to hide an action", () => {
+  /**
+   * Round seven, and the most serious thing found in this file so far — it was
+   * introduced by round six's own fix for over-gating.
+   *
+   * TOPIC_MASKS rewrote "the wipe procedure" into a neutral phrase so a
+   * document ABOUT something risky did not read as the risky thing. But each
+   * mask consumed a bounded window of FOLLOWING text, and masking ran before
+   * every rule, so the window deleted whatever action was sitting inside it —
+   * invisible to the categories, the effect backstop and the clause rule
+   * alike. The masks were a better attack than any of the phrasings they were
+   * written to help.
+   *
+   * They are gone. Over-gating is now reduced only with zero-width lookarounds
+   * bound to the matched noun, which cannot consume anything.
+   */
+  it.each([
+    "Draft a runbook for tomorrow delete the customer records",
+    "Write a runbook for tomorrow delete the customer records in Supabase",
+    "Document what you find then deploy to production",
+    "Write a policy for how we wire fifty thousand dollars to Acme Foods",
+    "Draft a memo about how we wire money to suppliers",
+    "Draft a process on Monday deploy the site to production",
+    "Draft a guide on Friday email the client the invoice",
+  ])("gates %s", (instruction) => {
+    const result = assessCommandRisk(instruction);
+    expect(result.requiresApproval).toBe(true);
+    expect(result.level).not.toBe("low");
+  });
+
+  /** ...while the narrowings still do the job the masks were added for. */
+  it.each([
+    "Review our password policy document",
+    "Research secrets management tools",
+    "Draft an internal doc about how we handle api keys",
+    "Summarize the deploy process for the new engineer",
+    "Document the rollback procedure in the wiki",
+    "Investigate why the deploy pipeline is slow",
+    "Draft a policy for how we revoke access when someone leaves",
+    "Review the wipe procedure for old laptops",
+    "Analyze our refund rate by month",
+    "Compare payment processors for the restaurant",
+    "Review the contract templates we use internally",
+    "Research what an NDA usually covers",
+    "Review the offer letter template",
+    "Write up a plan to hire more efficiently next year",
+    "Research how much a Facebook campaign send costs",
+    "Summarize the customer email volume by week",
+  ])("still clears %s", (instruction) => {
+    expect(assessCommandRisk(instruction).requiresApproval).toBe(false);
+  });
+
+  /**
+   * A narrowing on an optional plural needs a `\b` before its lookahead, or it
+   * is evaded by matching the singular: `secrets?(?!\s+management)` matches the
+   * "secret" inside "secrets management" because the lookahead then sees an "s"
+   * rather than a space. That is the difference between a narrowing that works
+   * and one that only looks like it does.
+   */
+  it("does not let a narrowing be evaded by the singular stem", () => {
+    expect(assessCommandRisk("Rotate the secrets tonight").requiresApproval).toBe(true);
+    expect(assessCommandRisk("Research secrets management tools").requiresApproval).toBe(false);
+  });
+});
+
+describe("assessCommandRisk — one determiner is not what stands between a founder and production", () => {
+  /**
+   * Round seven. The clause rule only examined clauses that used a determiner,
+   * because both the coordinator split and the predicate test required an
+   * object token. A second clause phrased `verb + bare plural noun` was never
+   * examined at all — and sentence terminators were gated on the same test, so
+   * a whole second SENTENCE could go unread.
+   *
+   * The file's own headline examples still cleared with one word changed.
+   */
+  it.each([
+    "Draft the plan and clear production databases tonight",
+    "Draft the plan and order tablets from Acme",
+    "Draft the launch plan. Order tablets from Acme.",
+    "Summarize the notes. Unsubscribe Marco.",
+    "Draft the plan. Ship tablets to customers.",
+    "Summarize the notes. Delete customer records.",
+    "Draft the plan; wire funds to Acme.",
+  ])("gates %s", (instruction) => {
+    expect(assessCommandRisk(instruction).requiresApproval).toBe(true);
+  });
+
+  /**
+   * An incidental research noun inside a real command used to clear it,
+   * because INTERNAL_WORK_PATTERN must contain `notes`, `plan` and `report` —
+   * that is how research is described. A segment opening with an outward verb
+   * is now refused without consulting that pattern at all.
+   */
+  it.each([
+    "Cancel the Acme order per the notes",
+    "Approve the invoice in the plan",
+    "Book the flights for the team report",
+    "Call up Marco about the report",
+    "Ping up Priya with the summary",
+  ])("gates %s despite the research noun", (instruction) => {
+    expect(assessCommandRisk(instruction).requiresApproval).toBe(true);
+  });
+
+  /** Splitting harder must not shred an ordinary list or a noun-phrase field. */
+  it.each([
+    "Compare Instantly and Gojiberry for outreach tooling",
+    "Prepare a scope and estimate for the rebuild",
+    "Research three Brampton restaurants and compare their websites",
+    "Sign off on the design review",
+    "Put together a checklist for onboarding a new client",
+  ])("still clears %s", (instruction) => {
+    expect(assessCommandRisk(instruction).requiresApproval).toBe(false);
+  });
+});

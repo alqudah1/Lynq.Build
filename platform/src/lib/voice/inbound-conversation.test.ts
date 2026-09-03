@@ -45,9 +45,11 @@ vi.mock("@/lib/audit", () => ({ recordAuditEvent }));
 
 /** The cross-call verification lockout. Allowed by default; one test drives it to refuse. */
 const recordRateLimitAttempt = vi.fn(async () => ({ allowed: true, remaining: 11, resetAt: new Date() }));
+const resetRateLimit = vi.fn(async () => undefined);
 vi.mock("@/lib/rate-limit/postgres", () => ({
   PostgresRateLimiter: class {
     recordAttempt = recordRateLimitAttempt;
+    resetLimit = resetRateLimit;
   },
 }));
 

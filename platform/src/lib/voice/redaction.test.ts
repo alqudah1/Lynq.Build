@@ -257,3 +257,84 @@ describe("redaction stays linear on a hostile payload", () => {
     expect(result.text).not.toContain("a1a1a1");
   });
 });
+
+describe("redaction — regressions the round-six reordering introduced", () => {
+  /**
+   * Round seven. Moving the digit-run scan ahead of the lead-in rules — done so
+   * that "the code is 417 296" lost the whole code rather than half of it —
+   * created a new leak. The scan replaced the numeric PREFIX of a credential,
+   * and the lead-in rule that would have taken the whole value then refused to
+   * fire, because it skipped any match containing a placeholder. The tail of
+   * the credential stayed in the transcript.
+   *
+   * The skip is now "this match IS a placeholder", not "this match contains
+   * one".
+   */
+  it.each([
+    ["the password is 123456hunter2", "hunter2"],
+    ["my api key is 9182736455abcdefg", "abcdefg"],
+    ["the api key is 1234567890abcdef", "abcdef"],
+    ["the pin is 000000secret", "secret"],
+    ["the token is 55555555aaaa", "aaaa"],
+  ])("leaves no tail behind in %s", (text, tail) => {
+    const result = redactSensitiveText(text);
+    expect(result.text).toContain("[redacted-secret]");
+    expect(result.text.replace(/\[redacted-[a-z-]+\]/g, "")).not.toContain(tail);
+  });
+
+  it("still takes the whole of a code read as separated groups", () => {
+    expect(redactTranscriptText("the code is 417 296")).not.toMatch(/417|296/);
+  });
+
+  /**
+   * The card, government-ID and phone rules consume their own trailing
+   * separator, so a run of adjacent matches is replaced by adjacent
+   * placeholders with NO whitespace between them — one enormous token that the
+   * input-time cap never saw, because it ran before those rules. 39 KB of
+   * digits and spaces became a 61 KB unbroken token and cost four seconds in
+   * the value-first secret rule.
+   */
+  it.each([
+    ["a run of card-shaped groups", `${"1".repeat(13)} `.repeat(2900)],
+    ["a run of phone-shaped groups", "555 123 4567 ".repeat(3000)],
+    ["a run of SSN-shaped groups", "123 45 6789 ".repeat(3300)],
+  ])("stays linear on %s", (_name, payload) => {
+    const started = Date.now();
+    const result = redactSensitiveText(payload);
+    expect(Date.now() - started).toBeLessThan(250);
+    // The cap is re-applied after those rules, so no token survives that could
+    // make a later rule quadratic.
+    expect(Math.max(...result.text.split(/\s+/).map((token) => token.length))).toBeLessThan(200);
+  });
+});
+
+describe("normalizeSpokenPasscode — the narrow vocabulary", () => {
+  /**
+   * Round seven. Sharing one scanner with redaction was right, but sharing its
+   * VOCABULARY was not: the wide list carries transcriber homophones ("too",
+   * "for", "to", "ate") that are ordinary words sitting next to a code in
+   * ordinary speech. Each silently extended the run to seven digits, and the
+   * attempt was rejected as unreadable — burning one of three attempts and
+   * telling the founder "I need all six digits" when they had read exactly six.
+   *
+   * Narrow is a strict SUBSET of wide, which is what keeps the safety property:
+   * anything that can authenticate is still found, and removed, by redaction.
+   */
+  it.each([
+    "the code is 417296 too",
+    "417296 for the call",
+    "417296 to verify",
+    "it's for 417296",
+    "the code is 417296 and to be clear that's it",
+    "four one seven two nine six too",
+  ])("reads exactly six digits from %s", (spoken) => {
+    expect(normalizeSpokenPasscode(spoken)).toBe("417296");
+    // ...and the same utterance is still redacted out of the transcript.
+    expect(redactTranscriptText(spoken)).toContain("[redacted-");
+  });
+
+  it("keeps the fillers a caller actually says inside a code", () => {
+    expect(normalizeSpokenPasscode("417, um, 296")).toBe("417296");
+    expect(normalizeSpokenPasscode("It's 417 then 296")).toBe("417296");
+  });
+});
