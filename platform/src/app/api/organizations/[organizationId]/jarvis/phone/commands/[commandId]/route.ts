@@ -12,7 +12,7 @@ import { requireOrganizationAdminOverride } from "@/lib/authz/helpers";
 import { CommandAlreadyDecidedError, CommandNotAwaitingApprovalError } from "@/lib/voice/errors";
 import { recordAuditEvent } from "@/lib/audit";
 import { pollAndProcess } from "@/lib/runtime/worker";
-import { resolveCommandById, transitionCommand } from "@/lib/voice/call-store";
+import { claimApprovalDecision, resolveCommandById, transitionCommand } from "@/lib/voice/call-store";
 import { MAX_DISPATCH_ATTEMPTS, retryFailedDispatch, runDirectiveDispatch } from "@/lib/voice/command-dispatch";
 
 export const dynamic = "force-dynamic";
@@ -169,15 +169,11 @@ export async function POST(request: Request, { params }: RouteParams) {
     // a human, with work possibly already running, and no record anywhere of
     // who approved it. `dispatchConfirmedCommand` already records the
     // confirmation before acting for exactly this reason.
-    const approved = await transitionCommand(db, {
+    const approved = await claimApprovalDecision(db, {
       organizationId,
       commandId,
-      expectedRevision: command.revision,
-      // Unchanged: this write exists to durably record the decision, not to
-      // move the command. `runDirectiveDispatch` claims from here.
-      dispatchState: "awaiting_approval",
-      approvalDecidedByUserId: user.userId,
-      approvalDecisionNote: body.decisionNote ?? null,
+      approverUserId: user.userId,
+      decisionNote: body.decisionNote ?? null,
     });
     if (!approved) throw new CommandAlreadyDecidedError();
 

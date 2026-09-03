@@ -327,6 +327,52 @@ describe("POST /jarvis/phone/commands/[commandId] — deciding", () => {
     expect(decisions.filter((row) => row.eventType === "jarvis_phone_command_decided")).toHaveLength(1);
   });
 
+  /**
+   * The follow-up to the case above, at the route level: once a decision has
+   * been made, a second admin arriving later is refused and the first
+   * approver's identity survives.
+   *
+   * This does NOT isolate the decide-once guard itself — by the time the
+   * second request arrives the first has already moved the command out of
+   * `awaiting_approval`, so the route's own state check refuses it before the
+   * guard is reached. The guard is exercised directly in
+   * `call-store.integration.test.ts`, where the state can be held still.
+   */
+  it("keeps the first approver on the record when a second admin arrives later", async () => {
+    const owner = await makeUser();
+    const organizationId = await makeOrg(owner);
+    const admin = await makeUser();
+    await addMember(organizationId, admin, "admin");
+    const command = await openGatedCommand(organizationId, owner);
+
+    const { rawToken: ownerToken } = await createSession(db, { userId: owner });
+    const { rawToken: adminToken } = await createSession(db, { userId: admin });
+
+    cookieStore.set(SESSION_COOKIE_NAME, ownerToken);
+    await POST_DECISION(decisionRequest("approve"), decisionParams(organizationId, command.id));
+
+    // The second admin loads the screen fresh — so they hold the CURRENT
+    // revision, not a stale one — and then approves.
+    const current = await db.select().from(jarvisPhoneCommands).where(eq(jarvisPhoneCommands.id, command.id));
+    expect(current[0].revision).toBeGreaterThan(command.revision);
+    expect(current[0].approvalDecidedByUserId).toBe(owner);
+
+    cookieStore.set(SESSION_COOKIE_NAME, adminToken);
+    const second = await POST_DECISION(decisionRequest("approve"), decisionParams(organizationId, command.id));
+    expect(second.status).toBeGreaterThanOrEqual(400);
+
+    const settled = await db.select().from(jarvisPhoneCommands).where(eq(jarvisPhoneCommands.id, command.id));
+    // The first approver's identity survives. It is the record of who
+    // authorized work that may already be running.
+    expect(settled[0].approvalDecidedByUserId).toBe(owner);
+
+    const decisions = await db
+      .select()
+      .from(auditLogs)
+      .where(and(eq(auditLogs.organizationId, organizationId), eq(auditLogs.targetId, command.id)));
+    expect(decisions.filter((row) => row.eventType === "jarvis_phone_command_decided")).toHaveLength(1);
+  });
+
   it("refuses to retry a command that has never been dispatched", async () => {
     // The safety property the retry path rests on: a command still awaiting
     // approval cannot be retried into existence.

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createHash } from "node:crypto";
-import { and, desc, eq, inArray, lt, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import {
   jarvisCallSessions,
@@ -867,6 +867,50 @@ export async function recordDispatchProject(
  * and returns null, so the caller reports the existing outcome instead of
  * creating a second project.
  */
+/**
+ * Records WHO approved a gated command, and is the decide-once guard for
+ * approval.
+ *
+ * Deliberately not `transitionCommand` with a revision. Approval leaves the
+ * command in `awaiting_approval` — the dispatch claim is what moves it — so a
+ * revision guard alone is defeated by an ordinary re-read: two admins pressing
+ * approve at the same moment both find `awaiting_approval`, the second reads
+ * the first's bumped revision, and its guarded write then SUCCEEDS, silently
+ * replacing the recorded approver and writing a second decision to the audit
+ * trail. This is the same shape of mistake as guarding a claim on revision
+ * alone, which this lane has already made once.
+ *
+ * So the guard is on the facts instead: the command must still be awaiting
+ * approval, and no approver may be recorded yet. That holds no matter what
+ * revision the caller read, or when.
+ *
+ * Returns null when another decision got there first.
+ */
+export async function claimApprovalDecision(
+  db: Db,
+  input: { organizationId: string; commandId: string; approverUserId: string; decisionNote: string | null }
+): Promise<JarvisPhoneCommand | null> {
+  const [row] = await db
+    .update(jarvisPhoneCommands)
+    .set({
+      approvalDecidedByUserId: input.approverUserId,
+      approvalDecidedAt: new Date(),
+      approvalDecisionNote: input.decisionNote,
+      revision: sql`${jarvisPhoneCommands.revision} + 1`,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(jarvisPhoneCommands.id, input.commandId),
+        eq(jarvisPhoneCommands.organizationId, input.organizationId),
+        eq(jarvisPhoneCommands.dispatchState, "awaiting_approval"),
+        isNull(jarvisPhoneCommands.approvalDecidedByUserId)
+      )
+    )
+    .returning();
+  return row ? toCommand(row) : null;
+}
+
 export async function transitionCommand(
   db: Db,
   input: {

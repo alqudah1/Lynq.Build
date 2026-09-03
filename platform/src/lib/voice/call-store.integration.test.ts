@@ -30,6 +30,7 @@ import {
   isDispatchInFlight,
   transitionCommand,
   upsertCommandDraft,
+  claimApprovalDecision,
 } from "./call-store";
 
 /**
@@ -744,5 +745,111 @@ describe("verification state — the guards live in the WHERE clause, not the ca
     expect(results.filter(Boolean)).toHaveLength(3);
     const [current] = await db.select().from(jarvisCallSessions).where(eq(jarvisCallSessions.id, session.id));
     expect(current.verificationAttempts).toBe(3);
+  });
+});
+
+describe("claimApprovalDecision — decide-once cannot be defeated by a re-read", () => {
+  /**
+   * Found by a flaky test of my own, which is how it should be read: the
+   * concurrent route test sometimes caught a second approval and sometimes did
+   * not, because which error the loser gets depends on the interleaving — and
+   * one of those interleavings was not an error at all.
+   *
+   * Approval leaves the command in `awaiting_approval`; the dispatch claim is
+   * what moves it. So a guard on the revision alone is defeated by an ordinary
+   * re-read: the second admin loads the screen, gets the first's bumped
+   * revision, and their guarded write then SUCCEEDS — replacing the recorded
+   * approver of work that may already be running, and writing a second
+   * decision to the audit trail. It is the same shape of mistake as guarding a
+   * dispatch claim on revision alone, which this lane has made before.
+   *
+   * The guard is on the facts instead — still awaiting approval, no approver
+   * recorded — which holds whatever revision the caller read, and whenever.
+   */
+  async function awaitingApprovalCommand(organizationId: string, founderUserId: string) {
+    const session = await ensureCallSession(db, {
+      organizationId,
+      founderUserId,
+      providerCallId: `call-${crypto.randomUUID()}`,
+      direction: "inbound",
+      purpose: "founder_command",
+      callerNumber: "+14165551234",
+      callerNumberMatched: true,
+    });
+    const command = await upsertCommandDraft(db, {
+      organizationId,
+      callSessionId: session.id,
+      founderUserId,
+      draft: buildCommandDraft({ requestedOutcome: "Email the restaurant owner our proposal" }),
+    });
+    const [row] = await db
+      .update(jarvisPhoneCommands)
+      .set({ dispatchState: "awaiting_approval" })
+      .where(eq(jarvisPhoneCommands.id, command.id))
+      .returning();
+    return row;
+  }
+
+  it("refuses a second approver who read the row AFTER the first approval", async () => {
+    const founderId = await makeUser();
+    const organizationId = await makeOrg(founderId);
+    const secondApprover = await makeUser();
+    const command = await awaitingApprovalCommand(organizationId, founderId);
+
+    const first = await claimApprovalDecision(db, {
+      organizationId,
+      commandId: command.id,
+      approverUserId: founderId,
+      decisionNote: null,
+    });
+    expect(first?.approvalDecidedByUserId).toBe(founderId);
+
+    // The command is STILL awaiting approval — that is the whole point, the
+    // dispatch claim is what moves it — and the second caller holds the
+    // current revision, not a stale one.
+    const [afterFirst] = await db.select().from(jarvisPhoneCommands).where(eq(jarvisPhoneCommands.id, command.id));
+    expect(afterFirst.dispatchState).toBe("awaiting_approval");
+    expect(afterFirst.revision).toBeGreaterThan(command.revision);
+
+    const second = await claimApprovalDecision(db, {
+      organizationId,
+      commandId: command.id,
+      approverUserId: secondApprover,
+      decisionNote: null,
+    });
+    expect(second).toBeNull();
+
+    const [settled] = await db.select().from(jarvisPhoneCommands).where(eq(jarvisPhoneCommands.id, command.id));
+    expect(settled.approvalDecidedByUserId).toBe(founderId);
+  });
+
+  it("lets exactly one of many simultaneous approvers through", async () => {
+    const founderId = await makeUser();
+    const organizationId = await makeOrg(founderId);
+    const command = await awaitingApprovalCommand(organizationId, founderId);
+
+    const approvers = await Promise.all(Array.from({ length: 6 }, () => makeUser()));
+    const results = await Promise.all(
+      approvers.map((approverUserId) =>
+        claimApprovalDecision(db, { organizationId, commandId: command.id, approverUserId, decisionNote: null })
+      )
+    );
+
+    expect(results.filter(Boolean)).toHaveLength(1);
+  });
+
+  it("refuses to record an approval for a command that is not awaiting one", async () => {
+    const founderId = await makeUser();
+    const organizationId = await makeOrg(founderId);
+    const command = await awaitingApprovalCommand(organizationId, founderId);
+    await db.update(jarvisPhoneCommands).set({ dispatchState: "declined" }).where(eq(jarvisPhoneCommands.id, command.id));
+
+    const claimed = await claimApprovalDecision(db, {
+      organizationId,
+      commandId: command.id,
+      approverUserId: founderId,
+      decisionNote: null,
+    });
+    expect(claimed).toBeNull();
   });
 });
