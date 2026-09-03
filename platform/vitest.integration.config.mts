@@ -18,7 +18,6 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.integration.test.ts"],
-    setupFiles: process.env.NEON_LOCAL_SHIM ? ["./test/setup/neon-local.mts"] : [],
     // Real network round-trips per test; the default 5s unit-test timeout is too tight.
     testTimeout: 20000,
   },
