@@ -138,7 +138,9 @@ export function founderLineBudgetIdentity(input: { verificationSecret: string; o
  *
  * A rate-limit counter is used as the claim rather than a new table because it
  * is exactly the shape needed: one atomic upsert, a limit of one, and a window
- * that expires on its own.
+ * that expires on its own. The cost is one `rate_limit_counters` row per call,
+ * refused calls included, cleared by the existing
+ * `deleteStaleRateLimitCounters` job.
  */
 export const ONE_CHARGE_PER_CALL: RateLimitConfig = { limit: 1, windowSeconds: 3600 };
 

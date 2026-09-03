@@ -285,49 +285,59 @@ export async function handleInboundConversationEvent(db: Db, input: HandleInboun
   // rotation can escape because it is not keyed on anything the caller
   // controls. An attacker filling the second one cannot touch the first.
   //
-  // Charged once per CALL, and the admission decision comes from the atomic
-  // increment rather than from a read.
+  // Charged once per CALL, and only the delivery that pays ever consults a
+  // budget.
   //
-  // Two mistakes have been made here and both are worth naming. Gating on the
-  // event KIND let any other inbound-typed delivery create the session first,
-  // after which the budget was never entered again and the whole call was free.
-  // Replacing the atomic `recordAttempt` decision with a `checkLimit` was
-  // worse: two statements with no transaction between them, so forty
-  // simultaneous calls all read the same count, all passed, and all were
-  // admitted against a cap of twenty — defeating the cap in precisely the
-  // concurrent case a flood arrives in.
+  // Three versions of this were wrong and each is worth recording. Gating on
+  // the event KIND let another delivery create the session first, after which
+  // the budget was never entered again. Deciding from a `checkLimit` made it
+  // two statements with no transaction, so forty simultaneous calls all read
+  // the same count and all passed against a cap of twenty. And letting a
+  // NON-paying delivery consult a budget of its own broke the cap a third way:
+  // which budget a delivery picks depends on whether that delivery carried the
+  // caller's number, and not every delivery does — so one call could pay into
+  // the wrong-number bucket and then be admitted against the founder-line
+  // bucket it had never incremented, free, for ever.
   //
-  // So the decision is `recordAttempt`'s own return value, which is one upsert
-  // and cannot be raced. What "no session yet" could not tell us — whether this
-  // delivery is a NEW call or the third delivery of one already paid for — is
-  // answered by claiming a one-per-call key, which is the same atomic
-  // primitive. Exactly one delivery per call pays; every other delivery, a
-  // provider redelivery included, is judged against the budget without
-  // spending it, with one unit of slack so a call is never refused by the very
-  // increment it made itself.
-  if (!existing) {
+  // A non-paying delivery now consults nothing. Whether the call it belongs to
+  // was admitted is already recorded, in the only place that cannot disagree
+  // with itself: whether a session row exists. So the paying delivery decides
+  // with one atomic increment, and every other delivery of that call reads the
+  // answer rather than re-deriving it.
+  let opened = existing;
+  if (!opened) {
     const limiter = new PostgresRateLimiter(db);
     const budget = callerNumberMatched
       ? { key: callBudgetKey(founderLineBudgetIdentity(config)), config: INBOUND_CALL_RATE_LIMIT }
       : { key: refusedBudgetKey(refusedCallBudgetIdentity(config)), config: REFUSED_CALL_RATE_LIMIT };
 
-    let withinBudget = false;
+    let admitted = false;
     try {
       const chargeKey = callChargeKey({
         verificationSecret: config.verificationSecret,
         organizationId: config.organizationId,
         providerCallId: event.providerCallId,
       });
-      const paysNow = (await limiter.recordAttempt(chargeKey, ONE_CHARGE_PER_CALL)).allowed;
-      withinBudget = paysNow
-        ? (await limiter.recordAttempt(budget.key, budget.config)).allowed
-        : (await limiter.checkLimit(budget.key, { ...budget.config, limit: budget.config.limit + 1 })).allowed;
+      if ((await limiter.recordAttempt(chargeKey, ONE_CHARGE_PER_CALL)).allowed) {
+        // This delivery pays. The increment's own answer is the decision — one
+        // upsert, and nothing can race it.
+        admitted = (await limiter.recordAttempt(budget.key, budget.config)).allowed;
+      } else {
+        // Another delivery of this call already paid. It either opened a
+        // session or was refused, and re-reading says which — including in the
+        // narrow window where its insert has not landed yet.
+        const settled = await findCallSessionByProviderCallId(db, "vapi", event.providerCallId);
+        if (settled && settled.organizationId === config.organizationId) {
+          opened = settled;
+          admitted = true;
+        }
+      }
     } catch {
       // Fails closed, like every other rate limit in this lane.
-      withinBudget = false;
+      admitted = false;
     }
 
-    if (!withinBudget) {
+    if (!admitted) {
       logPhoneEvent({ event: "call-rate-limited", founderLine: callerNumberMatched });
       return {
         // Two different truths, and neither may borrow the other's words. A
@@ -337,7 +347,7 @@ export async function handleInboundConversationEvent(db: Db, input: HandleInboun
         spoken: callerNumberMatched ? FOUNDER_LINE_BUSY_SPOKEN : REFUSAL_SPOKEN,
         // The closed assistant: one sentence, no tools, twenty seconds. No
         // session row is written, so a flood costs the attacker a phone bill
-        // and costs this deployment one rate-limit write.
+        // and this deployment two rate-limit writes.
         payload: buildRefusalAssistantConfig(callerNumberMatched ? FOUNDER_LINE_BUSY_SPOKEN : REFUSAL_SPOKEN),
         processingStatus: "ignored",
         failureCode: callerNumberMatched ? "call_rate_limited" : "refused_call_rate_limited",
@@ -346,7 +356,7 @@ export async function handleInboundConversationEvent(db: Db, input: HandleInboun
   }
 
   let session =
-    existing ??
+    opened ??
     (await ensureCallSession(db, {
       organizationId: actor.organizationId,
       founderUserId: actor.founderUserId,
@@ -448,10 +458,16 @@ export async function handleInboundConversationEvent(db: Db, input: HandleInboun
   // one provider delivery, and a lost delivery leaves the row `active`
   // forever — so a guard that reads only `status` never engages for exactly the
   // call whose ending went missing, on a session whose verification is
-  // permanent. A session silent for longer than any call can last is over,
-  // whatever the row says, and a forged or replayed tool call against it is
-  // refused without waiting for anyone to load a screen.
-  const callIsOver = session.status !== "active" || nowMs - session.lastEventAt.getTime() > ABANDONED_DRAFT_MS;
+  // permanent.
+  //
+  // The clock is `startedAt`, which nothing can move, and deliberately NOT
+  // `lastEventAt`. A tool call is one of the events that advances
+  // `lastEventAt`, so a guard reading that clock would be reset by the very
+  // deliveries it exists to refuse: a stream of replayed or forged tool calls
+  // at under-twenty-minute intervals would be honoured for ever. A call cannot
+  // outlive the assistant's own ceiling, so age since it began is the honest
+  // measure of whether it is over.
+  const callIsOver = session.status !== "active" || nowMs - session.startedAt.getTime() > ABANDONED_DRAFT_MS;
   if (callIsOver && event.kind === "tool_call") {
     return {
       spoken: "That call has already ended. Please call back if you still need this.",
@@ -461,21 +477,25 @@ export async function handleInboundConversationEvent(db: Db, input: HandleInboun
     };
   }
 
-  // Every event marks the call as alive, not only the two kinds that happened
-  // to write for other reasons.
+  // An ACCEPTED event marks the call as alive.
   //
-  // `lastEventAt` is what `reapAbandonedDraft` reads to decide a call has gone
-  // silent, and it was written only by `touchCallSession` (transcripts and
-  // status updates) and by the verification and completion writes — NOT by
-  // `assistant_request`, `capture_command` or `confirm_command`, which are the
-  // three events that bracket the entire `awaiting_confirmation` window. A
-  // deployment whose provider subscription omits `transcript` therefore had a
-  // live call that looked silent, and a member loading the Jarvis screen could
-  // cancel a draft out from under a founder who was still describing it — who
-  // would then say "yes" and be told they had cancelled it.
-  if (event.kind === "assistant_request" || event.kind === "tool_call") {
-    await touchCallSession(db, { sessionId: session.id, organizationId: session.organizationId }).catch(() => undefined);
-  }
+  // `lastEventAt` is what the reapers read to decide a call has gone silent,
+  // and it was written only by transcripts, status updates and the
+  // verification and completion writes — NOT by `assistant_request`,
+  // `capture_command` or `confirm_command`, which are the three events that
+  // bracket the entire `awaiting_confirmation` window. A deployment whose
+  // provider subscription omits `transcript` therefore had a live call that
+  // looked silent, and a member loading the Jarvis screen could cancel a draft
+  // out from under a founder still describing it.
+  //
+  // ACCEPTED is the load-bearing word. Touching for every delivery, including
+  // the ones about to be refused, would let a caller whose number was never
+  // established keep an unusable session looking alive for ever — the screen
+  // saying "On the call" and re-polling every five seconds, with
+  // `reapUnfinishedCallSession` never firing because its clock keeps moving.
+  // So the touch happens where the event is actually taken: inside
+  // `handleAssistantRequest` on the working-assistant path, and inside
+  // `handleToolCall` once the tool and the caller's number have both passed.
 
   switch (event.kind) {
     case "assistant_request":
@@ -592,6 +612,7 @@ async function handleAssistantRequest(
       ? "Welcome back. What would you like me to work on?"
       : `Hi, it's Jarvis. ${NEEDS_VERIFICATION_SPOKEN}`;
 
+  await touchCallSession(db, { sessionId: session.id, organizationId: session.organizationId }).catch(() => undefined);
   logPhoneEvent({ event: "assistant-request", sessionId: session.id, verificationState: session.verificationState });
   return {
     spoken: firstMessage,
@@ -736,6 +757,10 @@ async function handleToolCall(
       sessionId: session.id,
     };
   }
+
+  // Past both preconditions, so this delivery is being taken: the call is
+  // alive. Above them it would have kept a refused session looking alive.
+  await touchCallSession(db, { sessionId: session.id, organizationId: session.organizationId }).catch(() => undefined);
 
   if (event.toolName === "verify_founder") {
     return handleVerify(db, { session, config: input.config, spoken: String(event.args.code ?? ""), nowMs: input.nowMs });

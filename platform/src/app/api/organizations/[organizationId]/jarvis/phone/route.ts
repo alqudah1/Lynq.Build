@@ -65,7 +65,16 @@ export async function GET(_request: Request, { params }: RouteParams) {
         session:
           call.session.status === "active" && call.session.lastEventAt < silentSince
             ? (await reapUnfinishedCallSession(db, { sessionId: call.session.id, organizationId, silentSince }))
-              ? { ...call.session, status: "completed" as const, failureCode: "call_end_not_received", endedAt: new Date() }
+              ? {
+                  ...call.session,
+                  status: "completed" as const,
+                  failureCode: "call_end_not_received",
+                  // Every field the write actually set. Omitting one left the
+                  // response reporting a completed call beside a stale
+                  // `deliveryStatus` of "in-progress" for a render.
+                  deliveryStatus: "ended",
+                  endedAt: new Date(),
+                }
               : call.session
             : call.session,
         commands: await Promise.all(

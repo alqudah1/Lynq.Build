@@ -137,14 +137,30 @@ Details that matter:
 
   A caller who has not verified may also write at most 25 transcript turns; the
   call keeps running and verification still works, but nothing further is
-  stored. Both budgets are charged on the events that can START a call — an
-  assistant request, or a tool call where a statically-assigned assistant means
-  no assistant request ever arrives — so a call already turned away does not
-  keep spending for the rest of its deliveries. A provider REDELIVERY reads the
-  budget without spending it: it is not a new call, but it is still subject to
-  the cap, and suppressing the whole check rather than just the charge let a
-  redelivery whose first delivery died before creating a session through for
-  free.
+  stored. Both budgets are charged **once per call**, by exactly one
+  delivery, and the admission answer is that delivery's own atomic increment.
+  Getting this right took four attempts, and each failure is worth recording
+  because each looked reasonable:
+
+  - charging on a particular event KIND meant any other inbound-typed delivery
+    landing first created the session unconditionally, after which the budget
+    was never entered again and the whole call, and every redial, was free;
+  - deciding from a read — check, then charge — made it two statements with no
+    transaction, so forty simultaneous calls all read the same count, all
+    passed, and all were admitted against a cap of twenty: the cap failing in
+    exactly the concurrent case a flood arrives in;
+  - letting a NON-paying delivery consult a budget of its own broke it a third
+    way, because which bucket a delivery picks depends on whether *that
+    delivery* carried the caller's number and not every delivery does — so one
+    call could pay into the wrong-number bucket and then be admitted against a
+    founder-line bucket it had never incremented.
+
+  What "no session yet" cannot answer — is this a new call, or the third
+  delivery of one already paid for? — is settled by claiming a one-per-call key,
+  the same atomic primitive. And whether the call was admitted is already
+  recorded in the only place that cannot disagree with itself: whether a session
+  row exists. So one delivery decides with one increment, and every other
+  delivery of that call reads the answer rather than re-deriving it.
 - **The founder-line budgets are refunded the moment a caller verifies**, and
   all three are visible and clearable from the Jarvis screen — the refused-call
   budget included, because a founder call the provider sent no number for lands
@@ -321,15 +337,37 @@ act on the same command at once. Four independent layers make that safe:
    is looking at "Waiting for you to confirm on the call" on a call that ended,
    permanently, with no button. `reapAbandonedDraft` expires a draft whose call
    is no longer active, or has been silent for longer than any call can last, on
-   the read path. That silence clock is `jarvis_call_sessions.last_event_at`,
-   and it is written by EVERY provider delivery — it was not, and while it was
-   driven only by transcripts and status updates, a deployment whose provider
-   subscription omits transcripts had a live call that looked silent within
-   minutes, so a member loading the screen could cancel a draft out from under a
-   founder still describing it. Removing the wedge as a class is also what lets
-   the webhook go on acknowledging an ambiguous event exactly as it did before
-   phone control existed, rather than answering 5xx on an endpoint the outbound
-   notification lane shares.
+   the read path.
+
+   That silence clock is `jarvis_call_sessions.last_event_at`, and it is written
+   by every provider delivery the lane ACCEPTS. Both halves of that sentence
+   were once wrong. It was driven only by transcripts and status updates, so on
+   a deployment whose provider subscription omits transcripts a live call looked
+   silent within minutes and a member loading the screen could cancel a draft
+   out from under a founder still describing it. Then it was written for every
+   delivery including the refused ones, which let a caller whose number was
+   never established keep an unusable session looking alive for ever — the
+   screen saying "On the call" and the session reaper never firing because its
+   clock kept moving.
+
+   The session is reaped the same way and for the same reason. An ambiguous
+   event lost during a database blip is acknowledged rather than retried, so
+   `completeCallSession` can simply never run, and the row then stays `active`
+   for good. `reapUnfinishedCallSession` ends such a call with
+   `failure_code = call_end_not_received`, which says what actually happened:
+   not that the call failed, but that nobody reported it ending. The guard
+   against a tool call arriving after a call has ended no longer waits for
+   that — it refuses a tool call on a session OLDER than `ABANDONED_DRAFT_MS`,
+   so a reordered, replayed or forged delivery cannot open a project after a
+   call is over even if nobody has loaded the screen. Age since the call began,
+   deliberately, and not time since its last event: a tool call is one of the
+   deliveries that marks a call alive, so a guard reading that clock would be
+   reset by the very deliveries it exists to refuse.
+
+   Removing the wedge as a class is also what lets the webhook go on
+   acknowledging an ambiguous event exactly as it did before phone control
+   existed, rather than answering 5xx on an endpoint the outbound notification
+   lane shares.
 
 4. **A dispatch claim taken BEFORE anything is created**, which also moves the
    row into `dispatching`. The three layers above all protect the command

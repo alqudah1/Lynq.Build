@@ -818,6 +818,9 @@ describe("what an unverified caller costs", () => {
         : { allowed: true, remaining: 5, resetAt: new Date() }
     );
 
+    // The paying delivery already opened the session.
+    findCallSessionByProviderCallId.mockResolvedValueOnce(null).mockResolvedValueOnce(session());
+
     await handleInboundConversationEvent(db, {
       config: CONFIG,
       event: normalizeVapiEvent({ message: { type: "assistant-request", call: { id: "call-1" }, customer: { number: CONFIG.founderPhoneNumber } } }),
@@ -826,8 +829,33 @@ describe("what an unverified caller costs", () => {
 
     const charged = recordRateLimitAttempt.mock.calls.map((call) => String(call[0]));
     expect(charged.filter((key) => key.startsWith("jarvis-phone:call:"))).toHaveLength(0);
-    // Still subject to the cap, just not charged again for it.
-    expect(checkRateLimit).toHaveBeenCalledTimes(1);
+    // And it consults no budget of its own. Which budget a delivery would pick
+    // depends on whether THAT delivery carried the caller's number, and not
+    // every delivery does — so a call could pay into one bucket and then be
+    // admitted against another it had never incremented.
+    expect(checkRateLimit).not.toHaveBeenCalled();
+    expect(ensureCallSession).not.toHaveBeenCalled();
+  });
+
+  it("refuses a later delivery of a call whose paying delivery was turned away", async () => {
+    // No session exists, and this delivery is not the one that paid — so the
+    // delivery that did pay was refused. Re-deriving that from a counter is
+    // what let the two budgets disagree; the session row cannot.
+    findCallSessionByProviderCallId.mockResolvedValue(null);
+    recordRateLimitAttempt.mockImplementation(async (key) =>
+      key.startsWith("jarvis-phone:call-seen:")
+        ? { allowed: false, remaining: 0, resetAt: new Date() }
+        : { allowed: true, remaining: 5, resetAt: new Date() }
+    );
+
+    const result = await handleInboundConversationEvent(db, {
+      config: CONFIG,
+      event: normalizeVapiEvent({ message: { type: "assistant-request", call: { id: "call-1" }, customer: { number: CONFIG.founderPhoneNumber } } }),
+      nowMs: NOW,
+    });
+
+    expect(result.failureCode).toBe("call_rate_limited");
+    expect(ensureCallSession).not.toHaveBeenCalled();
   });
 
   it("refuses a later delivery of a call whose budget is genuinely spent", async () => {
@@ -923,24 +951,20 @@ describe("what an unverified caller costs", () => {
     expect(ensureCallSession).not.toHaveBeenCalled();
   });
 
-  it("never refuses a call by the very increment that call made itself", async () => {
+  it("admits a later delivery whose paying delivery opened the session moments earlier", async () => {
     /**
-     * `checkLimit` refuses at the count `recordAttempt` admits, and the paying
-     * delivery always charges before the session exists — so a second delivery
-     * of the LAST permitted call of the hour was turned away, for a call the
-     * budget had just allowed.
+     * The narrow window this replaced a `checkLimit` to close: the paying
+     * delivery has been admitted but its session insert has not landed when a
+     * second delivery of the same call arrives. Re-reading answers it exactly;
+     * a counter could only guess, and guessed wrong at the boundary — refusing
+     * the last permitted call of the hour by the very increment it made itself.
      */
-    findCallSessionByProviderCallId.mockResolvedValue(null);
+    findCallSessionByProviderCallId.mockResolvedValueOnce(null).mockResolvedValueOnce(session({ verificationState: "verified" }));
     recordRateLimitAttempt.mockImplementation(async (key) =>
       key.startsWith("jarvis-phone:call-seen:")
         ? { allowed: false, remaining: 0, resetAt: new Date() }
         : { allowed: true, remaining: 5, resetAt: new Date() }
     );
-    checkRateLimit.mockImplementation(async (_key, config) => {
-      // Stored count is 6: the limit, spent by this call's own paying delivery.
-      const limit = (config as { limit: number }).limit;
-      return { allowed: 6 < limit, remaining: Math.max(0, limit - 6), resetAt: new Date() };
-    });
 
     const result = await handleInboundConversationEvent(db, {
       config: CONFIG,
@@ -950,6 +974,7 @@ describe("what an unverified caller costs", () => {
 
     expect(result.failureCode).toBeUndefined();
     expect(result.payload).toBeDefined();
+    expect(ensureCallSession).not.toHaveBeenCalled();
   });
 
   it("does not spend the call budget on later events of a call already open", async () => {
@@ -1045,6 +1070,29 @@ describe("what an unverified caller costs", () => {
     expect(touchCallSession).toHaveBeenCalled();
   });
 
+  it("does not mark a call alive on a delivery it is about to refuse", async () => {
+    /**
+     * Touching above the authorization checks let a caller whose number was
+     * never established keep an unusable session looking alive indefinitely:
+     * the Jarvis screen saying "On the call" and re-polling every five seconds,
+     * with the session reaper never firing because its clock kept moving.
+     */
+    findCallSessionByProviderCallId.mockResolvedValue(
+      session({ callerNumberMatched: false, callerNumberLastFour: null, verificationState: "verified" })
+    );
+
+    const result = await handleInboundConversationEvent(db, {
+      config: CONFIG,
+      event: normalizeVapiEvent({
+        message: { type: "tool-calls", call: { id: "call-1" }, toolCalls: [{ id: "tc-1", function: { name: "capture_command", arguments: { requestedOutcome: "x" } } }] },
+      }),
+      nowMs: NOW,
+    });
+
+    expect(result.failureCode).toBe("caller_number_unestablished");
+    expect(touchCallSession).not.toHaveBeenCalled();
+  });
+
   it("does the durable write last, so a released claim can only mean nothing was written", async () => {
     findCallSessionByProviderCallId.mockResolvedValue(session({ verificationState: "verified" }));
     const order: string[] = [];
@@ -1127,9 +1175,12 @@ describe("a call whose ending was never delivered", () => {
    * forged against it would be fully honoured: capture a fresh draft, confirm
    * it, and open a real project after the call was over.
    */
-  it("refuses a tool call on a session silent longer than any call can last, whatever the row says", async () => {
+  it("refuses a tool call on a call older than any call can be, whatever the row says", async () => {
+    // The clock is `startedAt`, which nothing can move. Reading `lastEventAt`
+    // instead would let the very deliveries this refuses reset it — a stream of
+    // replayed tool calls at under-twenty-minute intervals honoured for ever.
     findCallSessionByProviderCallId.mockResolvedValue(
-      session({ status: "active", verificationState: "verified", lastEventAt: new Date(NOW - 21 * 60 * 1000) })
+      session({ status: "active", verificationState: "verified", startedAt: new Date(NOW - 21 * 60 * 1000), lastEventAt: new Date(NOW) })
     );
 
     const result = await handleInboundConversationEvent(db, {
@@ -1144,7 +1195,7 @@ describe("a call whose ending was never delivered", () => {
 
   it("still answers a call that is merely mid-pause", async () => {
     findCallSessionByProviderCallId.mockResolvedValue(
-      session({ status: "active", verificationState: "verified", lastEventAt: new Date(NOW - 5 * 60 * 1000) })
+      session({ status: "active", verificationState: "verified", startedAt: new Date(NOW - 5 * 60 * 1000), lastEventAt: new Date(NOW - 5 * 60 * 1000) })
     );
     upsertCommandDraft.mockResolvedValue({ id: "command-1", readbackText: "ok", riskLevel: "low", requiresApproval: false, overrideAttempted: false });
 
