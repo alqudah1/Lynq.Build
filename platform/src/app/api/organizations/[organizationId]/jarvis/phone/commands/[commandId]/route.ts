@@ -153,13 +153,20 @@ export async function POST(request: Request, { params }: RouteParams) {
       approvalDecisionNote: body.decisionNote ?? null,
     });
 
+    // Only record an approval that actually decided something. A request that
+    // lost the dispatch claim to a concurrent approver changed nothing, and
+    // logging it as an approval would show two approvers for a command whose
+    // row records one.
     await recordAuditEvent(db, {
       eventType: "jarvis_phone_command_decided",
       organizationId,
       actorUserId: user.userId,
       targetType: "jarvis_phone_command",
       targetId: commandId,
-      metadata: { decision: "approved", outcome: outcome.status, riskLevel: command.riskLevel },
+      metadata:
+        outcome.status === "already_dispatched"
+          ? { decision: "approved_no_op", outcome: outcome.status, riskLevel: command.riskLevel }
+          : { decision: "approved", outcome: outcome.status, riskLevel: command.riskLevel },
     });
 
     if (outcome.status === "directive_created") {
@@ -189,8 +196,10 @@ export async function POST(request: Request, { params }: RouteParams) {
       });
     }
 
+    // `outcome.command` is re-read by the dispatcher for this branch, so the
+    // reported state is the row's real one rather than the caller's stale read.
     return jsonSuccess({
-      decision: "approved",
+      decision: outcome.status === "already_dispatched" ? "no_op" : "approved",
       command: { id: outcome.command.id, dispatchState: outcome.command.dispatchState, projectId: outcome.command.projectId },
       message: outcome.spoken,
     });

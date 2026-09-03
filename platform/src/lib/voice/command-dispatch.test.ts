@@ -17,6 +17,7 @@ const createDirectiveProject = vi.fn();
 const transitionCommand = vi.fn();
 const claimDispatchAttempt = vi.fn();
 const isDispatchInFlight = vi.fn();
+const resolveCommandById = vi.fn();
 const recordAuditEvent = vi.fn();
 
 class DirectivePartiallyCreatedError extends Error {
@@ -28,7 +29,7 @@ class DirectivePartiallyCreatedError extends Error {
 
 vi.mock("@/lib/office/directive-intake", () => ({ createDirectiveProject, DirectivePartiallyCreatedError }));
 vi.mock("@/lib/audit", () => ({ recordAuditEvent }));
-vi.mock("./call-store", () => ({ transitionCommand, claimDispatchAttempt, isDispatchInFlight }));
+vi.mock("./call-store", () => ({ transitionCommand, claimDispatchAttempt, isDispatchInFlight, resolveCommandById }));
 
 const { dispatchConfirmedCommand, retryFailedDispatch, runDirectiveDispatch, MAX_DISPATCH_ATTEMPTS, DISPATCH_LEASE_MS } = await import("./command-dispatch");
 const { CommandNotRetryableError } = await import("./errors");
@@ -61,6 +62,7 @@ function makeCommand(overrides: Partial<Command> = {}): Command {
     failureCode: null,
     failureMessage: null,
     dispatchAttempts: 0,
+    dispatchStartedAt: null,
     idempotencyKey: "key-1",
     revision: 1,
     createdAt: new Date(),
@@ -78,6 +80,8 @@ beforeEach(() => {
   claimDispatchAttempt.mockReset();
   isDispatchInFlight.mockReset();
   isDispatchInFlight.mockReturnValue(false);
+  resolveCommandById.mockReset();
+  resolveCommandById.mockImplementation(async () => makeCommand({ dispatchState: "dispatching" }));
   recordAuditEvent.mockReset();
   recordAuditEvent.mockResolvedValue(undefined);
   // By default the claim succeeds and returns the row with its revision bumped
@@ -406,6 +410,25 @@ describe("an in-flight dispatch is never dispatched again", () => {
     expect(outcome.spoken).toMatch(/opening that one right now/i);
     expect(createDirectiveProject).not.toHaveBeenCalled();
   });
+
+  it("re-reads the row when it loses the claim, so it reports the CURRENT state not its stale read", async () => {
+    // The loser holds an `awaiting_approval` snapshot while the winner is
+    // already dispatching. Reporting the snapshot would tell a second admin
+    // "nothing has started" while agents are being launched.
+    claimDispatchAttempt.mockResolvedValue(null);
+    resolveCommandById.mockResolvedValue(makeCommand({ dispatchState: "dispatching" }));
+
+    const outcome = await runDirectiveDispatch(db, {
+      organizationId: "org-1",
+      founderUserId: "approver-2",
+      command: makeCommand({ dispatchState: "awaiting_approval", requiresApproval: true }),
+      workspaceId: null,
+    });
+
+    expect(resolveCommandById).toHaveBeenCalled();
+    expect(outcome.spoken).toMatch(/opening that one right now/i);
+    expect(outcome.spoken).not.toMatch(/nothing has started/i);
+  });
 });
 
 describe("failures are classified from the real cause, not the wrapper", () => {
@@ -429,5 +452,45 @@ describe("failures are classified from the real cause, not the wrapper", () => {
     // message match no rule, so without unwrapping this degraded to
     // `unknown_error`.
     expect(outcome.failureCode).toBe("authorization_failed");
+  });
+});
+
+describe("a stalled dispatch can be recovered", () => {
+  const retryInput = { organizationId: "org-1", actorUserId: "approver-1", workspaceId: null };
+
+  /**
+   * The lease existed but was unreachable: every entry point pre-gated on a
+   * state a `dispatching` row is not in, so `claimDispatchAttempt`'s takeover
+   * branch could never fire and a command whose process died mid-dispatch
+   * stayed wedged forever — the exact failure the lease was added to prevent.
+   */
+  it("retries a dispatching command whose lease has expired", async () => {
+    isDispatchInFlight.mockReturnValue(false);
+    createDirectiveProject.mockResolvedValue({
+      assistantReply: "ok",
+      plannedByAI: false,
+      executionMode: "advisory",
+      project: { id: "project-1", name: "P", projectKey: "P01", status: "active", workspaceId: null },
+      assignments: [],
+      launchedCount: 0,
+    });
+    transitionCommand.mockResolvedValue(makeCommand({ dispatchState: "directive_created" }));
+
+    const outcome = await retryFailedDispatch(db, {
+      ...retryInput,
+      command: makeCommand({ dispatchState: "dispatching", dispatchAttempts: 1, dispatchStartedAt: new Date(0) }),
+    });
+
+    expect(outcome.status).toBe("directive_created");
+    expect(claimDispatchAttempt).toHaveBeenCalledTimes(1);
+  });
+
+  it("still refuses while the lease is live, so a running dispatch is never disturbed", async () => {
+    isDispatchInFlight.mockReturnValue(true);
+
+    await expect(
+      retryFailedDispatch(db, { ...retryInput, command: makeCommand({ dispatchState: "dispatching", dispatchStartedAt: new Date() }) })
+    ).rejects.toThrow(CommandNotRetryableError);
+    expect(claimDispatchAttempt).not.toHaveBeenCalled();
   });
 });

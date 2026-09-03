@@ -47,6 +47,8 @@ type PhoneCommand = {
   failureMessage: string | null;
   dispatchAttempts: number;
   retryable: boolean;
+  /** True only while a dispatch is genuinely running; a stuck one is `dispatching` but not in flight. */
+  inFlight: boolean;
   decidedAt: string | null;
   decisionNote: string | null;
   createdAt: string;
@@ -84,6 +86,7 @@ const DISPATCH_LABEL: Record<string, string> = {
   awaiting_confirmation: "Waiting for you to confirm on the call",
   awaiting_approval: "Needs your approval",
   dispatching: "Opening the project now",
+  dispatching_stalled: "Stopped part-way",
   declined: "You declined it",
   directive_created: "Work started",
   cancelled: "Cancelled on the call",
@@ -327,8 +330,15 @@ export function JarvisPhoneControl({ organizationId, organizationSlug }: { organ
                 <h4 id={`command-${command.id}`} className="font-serif text-lg font-light text-foreground">
                   What Jarvis understood
                 </h4>
-                <span className={`rounded-full border px-2 py-1 text-[0.6rem] uppercase tracking-[0.12em] ${DISPATCH_STYLE[command.dispatchState] ?? "border-border text-muted"}`}>
-                  {DISPATCH_LABEL[command.dispatchState] ?? command.dispatchState}
+                <span
+                  className={`rounded-full border px-2 py-1 text-[0.6rem] uppercase tracking-[0.12em] ${
+                    (command.dispatchState === "dispatching" && !command.inFlight ? DISPATCH_STYLE.failed : DISPATCH_STYLE[command.dispatchState]) ??
+                    "border-border text-muted"
+                  }`}
+                >
+                  {command.dispatchState === "dispatching" && !command.inFlight
+                    ? DISPATCH_LABEL.dispatching_stalled
+                    : DISPATCH_LABEL[command.dispatchState] ?? command.dispatchState}
                 </span>
               </div>
 
@@ -423,10 +433,35 @@ export function JarvisPhoneControl({ organizationId, organizationSlug }: { organ
                       Watch it live →
                     </Link>
                   </p>
-                ) : command.dispatchState === "dispatching" ? (
+                ) : command.dispatchState === "dispatching" && command.inFlight ? (
                   <p className="mt-1 text-sm text-muted" role="status">
                     Starting now. Jarvis is opening the project and briefing the team — this page updates on its own.
                   </p>
+                ) : command.dispatchState === "dispatching" ? (
+                  <>
+                    {/* Past its lease: the dispatch stopped without recording
+                        an outcome, so promising it is still working would be
+                        false. */}
+                    <p role="alert" className="mt-1 text-sm text-danger">
+                      Jarvis started opening this and then stopped without finishing. Nothing was recorded as started.
+                    </p>
+                    {command.retryable ? (
+                      <button
+                        type="button"
+                        onClick={() => void decide(command.id, "retry")}
+                        disabled={pendingCommandId === command.id}
+                        className="office-dispatch-button mt-3"
+                      >
+                        {pendingCommandId === command.id ? "Trying again…" : "Try again"}
+                      </button>
+                    ) : (
+                      <p className="mt-2 text-sm text-muted">
+                        {state?.canDecide
+                          ? "This one has been tried as many times as it can be. Call Jarvis again if you still want it."
+                          : "Only an organization owner or admin can try this again."}
+                      </p>
+                    )}
+                  </>
                 ) : command.dispatchState === "failed" && command.projectId ? (
                   <>
                     {/* A project exists despite the failure, so claiming

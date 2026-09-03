@@ -45,7 +45,7 @@ const gatedCall = {
       failureMessage: null,
       dispatchAttempts: 0,
       retryable: false,
-      dispatchStartedAt: null,
+      inFlight: false,
       decidedAt: null,
       decisionNote: null,
       createdAt: "2026-09-01T15:06:00.000Z",
@@ -335,6 +335,7 @@ describe("JarvisPhoneControl accessibility", () => {
           riskReasons: [],
           dispatchState: "dispatching",
           retryable: false,
+          inFlight: true,
         },
       ],
     };
@@ -346,6 +347,44 @@ describe("JarvisPhoneControl accessibility", () => {
     // Neither "nothing started" nor "work started" is true while it is running.
     expect(screen.queryByText(/nothing has been started for this yet/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /try again/i })).not.toBeInTheDocument();
+    expect(await axe(container)).toHaveNoViolations();
+  });
+
+  it("stops promising a stalled dispatch is still working, and offers a real way out", async () => {
+    // Past its lease: the process died without recording an outcome. Saying
+    // "this page updates on its own" would be false — polling has stopped.
+    const stalled = {
+      ...gatedCall,
+      session: { ...gatedCall.session, id: "session-8" },
+      commands: [
+        {
+          ...gatedCall.commands[0],
+          id: "command-7",
+          requiresApproval: false,
+          gatedReasons: [],
+          riskReasons: [],
+          dispatchState: "dispatching",
+          inFlight: false,
+          retryable: true,
+          dispatchAttempts: 1,
+        },
+      ],
+    };
+    const fetchMock = stubFetch({ ...readyState, calls: [stalled] }, { data: { message: "It worked this time." } });
+
+    const { container } = render(<JarvisPhoneControl organizationId="organization-1" organizationSlug="lynq" />);
+
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent(/stopped without finishing/i));
+    expect(screen.queryByText(/starting now/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/stopped part-way/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /try again/i }));
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/organizations/organization-1/jarvis/phone/commands/command-7",
+        expect.objectContaining({ body: JSON.stringify({ decision: "retry" }) })
+      )
+    );
     expect(await axe(container)).toHaveNoViolations();
   });
 });

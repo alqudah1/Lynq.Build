@@ -95,10 +95,14 @@ export async function GET(_request: Request, { params }: RouteParams) {
           // retryable: the work already exists.
           retryable:
             canDecide &&
-            command.dispatchState === "failed" &&
+            (command.dispatchState === "failed" || command.dispatchState === "dispatching") &&
             command.projectId === null &&
             command.dispatchAttempts < MAX_DISPATCH_ATTEMPTS &&
             !isDispatchInFlight(command, DISPATCH_LEASE_MS),
+          // True only while a dispatch is genuinely running. A `dispatching`
+          // row past its lease is NOT in flight — it is stuck, and the screen
+          // must say so rather than promising it is still working.
+          inFlight: isDispatchInFlight(command, DISPATCH_LEASE_MS),
           decidedAt: command.approvalDecidedAt?.toISOString() ?? null,
           decisionNote: command.approvalDecisionNote,
           createdAt: command.createdAt.toISOString(),

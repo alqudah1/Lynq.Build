@@ -542,6 +542,10 @@ function describeSettledCommand(dispatchState: string): string {
       return "That one was declined in the Office, so nothing was started.";
     case "cancelled":
       return "You cancelled that one, so I didn't start anything. Tell me the new version whenever you're ready.";
+    case "dispatching":
+      // Never the `default` below: saying "nothing new has started" while
+      // agents are being launched is the exact inverse of this file's rule.
+      return "I'm opening that one right now — give it a moment and it'll show up on the Jarvis screen.";
     case "failed":
       return "That one failed to open earlier, and nothing was started. The reason is saved on the Jarvis screen.";
     default:

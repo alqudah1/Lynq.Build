@@ -27,6 +27,7 @@ import {
   resolveCommandById,
   resolvePhoneCommandActor,
   claimDispatchAttempt,
+  isDispatchInFlight,
   transitionCommand,
   upsertCommandDraft,
 } from "./call-store";
@@ -588,5 +589,61 @@ describe("the in-flight state is what closes the duplicate-dispatch race", () =>
 
     expect(takeover).not.toBeNull();
     expect(takeover!.dispatchAttempts).toBe(2);
+  });
+});
+
+describe("a stalled dispatch is recoverable end to end", () => {
+  it("wedges nothing: a claim nobody resolved can be taken over and driven to an outcome", async () => {
+    // The whole point of the lease. Before the fix this row was unreachable
+    // from every production entry point and stayed `dispatching` forever.
+    const userId = await makeUser();
+    const organizationId = await makeOrg(userId);
+    const session = await openSession(organizationId, userId);
+    const command = await upsertCommandDraft(db, {
+      organizationId,
+      callSessionId: session.id,
+      founderUserId: userId,
+      draft: buildCommandDraft({ requestedOutcome: "Research the market" }),
+    });
+
+    // A dispatch claims the row, then the process dies — nothing transitions it.
+    const claimed = await claimDispatchAttempt(db, {
+      organizationId,
+      commandId: command.id,
+      expectedRevision: command.revision,
+      maxAttempts: 5,
+      fromStates: ["awaiting_confirmation"],
+      staleAfterMs: 600_000,
+    });
+    expect(claimed!.dispatchState).toBe("dispatching");
+    expect(claimed!.dispatchStartedAt).toBeInstanceOf(Date);
+
+    // A later reader finds it exactly as production would.
+    const stuck = await resolveCommandById(db, { organizationId, commandId: command.id });
+    expect(stuck.dispatchState).toBe("dispatching");
+    expect(isDispatchInFlight(stuck, 600_000)).toBe(true);
+    // Once the lease is provably past, it is no longer treated as running.
+    expect(isDispatchInFlight(stuck, 0)).toBe(false);
+
+    // ...and can be taken over and driven to a real outcome.
+    const takeover = await claimDispatchAttempt(db, {
+      organizationId,
+      commandId: command.id,
+      expectedRevision: stuck.revision,
+      maxAttempts: 5,
+      fromStates: ["awaiting_confirmation"],
+      staleAfterMs: 0,
+    });
+    expect(takeover).not.toBeNull();
+
+    const finished = await transitionCommand(db, {
+      organizationId,
+      commandId: command.id,
+      expectedRevision: takeover!.revision,
+      dispatchState: "failed",
+      failureCode: "model_rate_limited",
+    });
+    expect(finished!.dispatchState).toBe("failed");
+    expect(finished!.dispatchAttempts).toBe(2);
   });
 });

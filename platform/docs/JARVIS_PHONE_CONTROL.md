@@ -182,9 +182,16 @@ act on the same command at once. Four independent layers make that safe:
 
    A claim that is never resolved — the process dies mid-dispatch — would wedge
    the command forever, so `dispatch_started_at` bounds it: after a ten-minute
-   lease (twice the route's own five-minute `maxDuration`) the claim may be
-   taken over. Until then the screen says "Starting now" and offers no retry,
-   because neither "nothing started" nor "work started" would be true.
+   lease (longer than either dispatching route's own limit, five minutes for
+   the decision route and two for the webhook) the claim may be taken over.
+
+   While the lease is live the screen says "Starting now" and offers no retry,
+   because neither "nothing started" nor "work started" would be true. Once it
+   has expired the screen says the dispatch stopped part-way and offers
+   **Try again**, which takes the claim over. Recovery has to be reachable from
+   a real entry point to be worth anything: an earlier version had the lease in
+   the SQL but every caller pre-gated on a state a `dispatching` row is not in,
+   so the takeover branch could never fire and the command stayed stuck anyway.
 
 ### Partial creation
 
@@ -236,7 +243,7 @@ Nothing in this lane reports success it did not achieve.
 | `declined` | A human declined it. Nothing started |
 | `directive_created` | A real project exists and the first handoff dispatched |
 | `cancelled` | Said no on the call, or the call ended before confirming |
-| `dispatching` | A dispatch is in flight right now, claimed by exactly one caller |
+| `dispatching` | A dispatch is in flight right now, claimed by exactly one caller. Past its lease it reads as "stopped part-way" and becomes retryable |
 | `failed` | Dispatch genuinely failed; `failure_code` says why |
 
 Dispatch failures are classified into a bounded vocabulary —

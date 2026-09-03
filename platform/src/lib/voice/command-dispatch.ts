@@ -5,7 +5,7 @@ import { recordAuditEvent } from "@/lib/audit";
 import { createDirectiveProject, DirectivePartiallyCreatedError } from "@/lib/office/directive-intake";
 import { toDirectiveInstruction } from "./command-draft";
 import { redactLogFields } from "./redaction";
-import { claimDispatchAttempt, isDispatchInFlight, transitionCommand, type JarvisPhoneCommand } from "./call-store";
+import { claimDispatchAttempt, isDispatchInFlight, resolveCommandById, transitionCommand, type JarvisPhoneCommand } from "./call-store";
 import { CommandNotRetryableError } from "./errors";
 
 type Db = NeonHttpDatabase<Record<string, unknown>>;
@@ -144,7 +144,8 @@ export const MAX_DISPATCH_ATTEMPTS = 5;
 
 /**
  * How long an in-flight dispatch is trusted before another caller may take it
- * over. Comfortably longer than the route's own `maxDuration` of five minutes,
+ * over. Comfortably longer than either route that can dispatch — the
+ * decision route's `maxDuration` of five minutes and the webhook's of two —
  * so a slow-but-alive dispatch is never stolen from; short enough that a
  * process killed mid-dispatch does not wedge the command for a working day.
  */
@@ -164,8 +165,15 @@ export async function retryFailedDispatch(
   input: { organizationId: string; actorUserId: string; command: JarvisPhoneCommand; workspaceId?: string | null }
 ): Promise<DispatchOutcome> {
   const { command } = input;
+  // A dispatch that is genuinely still running must not be disturbed.
   if (isDispatchInFlight(command, DISPATCH_LEASE_MS)) throw new CommandNotRetryableError("in_flight");
-  if (command.dispatchState !== "failed") throw new CommandNotRetryableError("not_failed");
+  // ...but one whose lease has expired is exactly what retry exists for. Without
+  // this, the stale-lease takeover in `claimDispatchAttempt` was unreachable:
+  // every entry point pre-gated on a state a `dispatching` row is not in, so a
+  // command whose process died mid-dispatch stayed wedged forever — the precise
+  // failure the lease was added to prevent.
+  const staleLease = command.dispatchState === "dispatching";
+  if (!staleLease && command.dispatchState !== "failed") throw new CommandNotRetryableError("not_failed");
   // A failed dispatch that already produced a project is NOT retryable: the
   // project exists, its tasks exist, and its agents may already be running.
   // Re-running would create a second copy of live work, which is worse than
@@ -217,11 +225,17 @@ export async function runDirectiveDispatch(
     // A dispatch may only begin from a state that has not begun one: confirmed
     // low-risk work, or a gated command a human just approved, or a previous
     // attempt that genuinely failed.
+    // `dispatching` is deliberately absent: a LIVE lease is never claimable.
+    // A stale one still is, through the timestamp branch inside the claim.
     fromStates: ["awaiting_confirmation", "awaiting_approval", "failed"],
     staleAfterMs: DISPATCH_LEASE_MS,
   });
   if (!command) {
-    return { status: "already_dispatched", command: input.command, spoken: describeExistingState(input.command) };
+    // Report what the row says NOW, not the caller's stale read — otherwise a
+    // caller that lost the race to a dispatch already in flight is told
+    // "nothing has started" while agents are being launched.
+    const current = await resolveCommandById(db, { organizationId: input.organizationId, commandId: input.command.id }).catch(() => input.command);
+    return { status: "already_dispatched", command: current, spoken: describeExistingState(current) };
   }
 
   // `toDirectiveInstruction` reads only the founder-authored fields; the risk
