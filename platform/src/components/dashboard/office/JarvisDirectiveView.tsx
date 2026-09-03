@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { JARVIS_STATE_LABELS, jarvisRecommendation, type JarvisStepState } from "@/lib/office/jarvis-presentation";
+import { JARVIS_STATE_LABELS, jarvisRecommendation, type DemoDeliverySummary, type JarvisFailure, type JarvisStepState } from "@/lib/office/jarvis-presentation";
 
 type JarvisStep = {
   taskId: string;
@@ -13,6 +13,8 @@ type JarvisStep = {
   handoff: string | null;
   agent: { id: string; name: string; role: string } | null;
   execution: { id: string; status: string; waitReason: string | null } | null;
+  failure: JarvisFailure | null;
+  demo: DemoDeliverySummary | null;
   approval: { id: string; status: string } | null;
   deliverable: { id: string; title: string } | null;
   pullRequestUrl: string | null;
@@ -143,8 +145,21 @@ export function JarvisDirectiveView({ organizationId, organizationSlug, projectI
                 {step.agent ? (
                   <p className="mt-3 text-xs text-subtle">{step.agent.role} · {step.agent.name}</p>
                 ) : null}
-                {step.execution?.waitReason ? (
-                  <p className="mt-3 border-l-2 border-red-300/50 pl-3 text-xs leading-5 text-red-100">{step.execution.waitReason}</p>
+                {step.failure ? (
+                  <div className="mt-3 border-l-2 border-red-300/50 pl-3 text-xs leading-5 text-red-100">
+                    <p className="font-medium">{step.failure.headline}</p>
+                    <p className="mt-1 text-red-100/80">{step.failure.detail}</p>
+                    <p className="mt-1 text-red-100/80">What to do: {step.failure.nextStep}</p>
+                    <details className="mt-2">
+                      <summary className="cursor-pointer text-red-100/60">Technical detail</summary>
+                      <p className="mt-1 break-words text-red-100/60">{step.failure.technical}</p>
+                    </details>
+                  </div>
+                ) : null}
+                {step.demo && !step.demo.built ? (
+                  <p className="mt-3 border-l-2 border-amber-300/50 pl-3 text-xs leading-5 text-amber-100">
+                    Not a finished demo yet — still missing {step.demo.missing.join(" and ")}.
+                  </p>
                 ) : null}
                 {step.handoff ? <p className="mt-3 text-xs leading-5 text-subtle">Next handoff: {step.handoff}</p> : null}
               </div>
@@ -153,7 +168,7 @@ export function JarvisDirectiveView({ organizationId, organizationSlug, projectI
                 {step.execution ? <Link href={`/app/${organizationSlug}/agent-executions/${step.execution.id}`} className="text-muted hover:text-foreground">View evidence →</Link> : null}
                 {step.deliverable && step.execution ? <Link href={`/app/${organizationSlug}/agent-executions/${step.execution.id}#deliverables`} className="text-muted hover:text-foreground">Read deliverable →</Link> : null}
                 {step.pullRequestUrl ? <a href={step.pullRequestUrl} target="_blank" rel="noreferrer" className="text-muted hover:text-foreground">Pull request ↗</a> : null}
-                {step.previewUrl ? <a href={step.previewUrl} target="_blank" rel="noreferrer" className="text-accent-foreground hover:text-foreground">Preview ↗</a> : null}
+                {step.previewUrl && (!step.demo || step.demo.built) ? <a href={step.previewUrl} target="_blank" rel="noreferrer" className="text-accent-foreground hover:text-foreground">Preview ↗</a> : null}
               </div>
             </li>
           ))}
