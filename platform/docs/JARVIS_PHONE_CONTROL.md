@@ -57,10 +57,19 @@ other number is refused before a word is taken — and the actual second factor
 is a **rotating six-digit code** derived by HMAC-SHA256 from a server-only
 secret and the current five-minute time step.
 
-The code is readable **only** from the Jarvis Command Center, which already
-requires a validated database session and an owner/admin organization
-membership. A successful verification therefore proves possession of **both**
-the enrolled phone **and** a live authenticated LYNQ session.
+The code is readable **only** from the Jarvis Command Center, which requires a
+validated database session, an owner/admin organization membership, **and**
+that the signed-in account is the one named by `JARVIS_PHONE_FOUNDER_USER_ID`.
+A successful verification therefore proves possession of **both** the enrolled
+phone **and** a live authenticated session belonging to the founder.
+
+The founder-only floor is deliberately tighter than owner/admin. The code is
+scoped by time, not by user, so any account that can mint it holds the second
+factor for a first factor this document already calls spoofable — an admin
+could then act as the founder from any phone. The configuration names exactly
+one founder account, so the narrower rule costs nothing. Everyone else, including
+other owners, is told plainly that the code is not theirs; the panel is hidden
+for them rather than offering a button that would be refused.
 
 Details that matter:
 
@@ -68,10 +77,24 @@ Details that matter:
   rollover still works.
 - Comparison is constant-time; a spoken code is normalized first, so "four one
   seven two nine six", "417296" and "417-296" all resolve identically.
-- Three attempts per call. After that the session is refused permanently and
-  Mustafa must call back.
+- Three attempts per call, enforced in the `UPDATE` statement itself rather
+  than against a count read earlier in the request, so concurrent deliveries
+  cannot jointly exceed it. A verified session is never walked back to
+  unverified by a late failing attempt.
+- A **cross-call** ceiling on top of that: a redial resets the per-call
+  counter, so a limit keyed on a one-way identifier derived from the caller's
+  number (never the number itself) caps attempts across calls. It fails closed
+  — if the rate-limit backend is unreachable, verification is refused.
 - The code is redacted out of the transcript before anything is stored, and is
-  never written to a log or an audit row.
+  never written to a log or an audit row. Redaction and verification share one
+  digit vocabulary and one scanner, so "what verification accepts, redaction
+  removes" is structural rather than two lists that have to be kept in step.
+  They were once separate implementations that disagreed, and the disagreement
+  meant the live code sat in plaintext in a transcript any organization member
+  can read.
+- The Command Center's code response carries `Cache-Control: no-store` and
+  `Referrer-Policy: no-referrer`, and issuance is rate limited so an automated
+  client cannot drown the `jarvis_phone_passcode_issued` audit trail.
 
 No new provider, no new stored credential, no new third party.
 
@@ -335,6 +358,12 @@ The existing Vapi Bearer Token custom credential and `VAPI_WEBHOOK_SECRET`
 already cover the new events — no new credential is needed. Confirm the
 `Bearer` prefix is enabled.
 
+**`VAPI_WEBHOOK_SECRET` must be at least 32 characters.** The whole inbound
+lane collapses to this one string, and the route now refuses every request —
+including one presenting the correct value — when the configured secret is
+shorter than that. If the currently deployed value is shorter, rotate it in
+Vercel and in the Vapi dashboard together, or inbound calls will 401.
+
 ### 7.4 Call limits
 
 Raise the inbound assistant's maximum duration to ten minutes. A working
@@ -358,7 +387,7 @@ New:
 Reused unchanged:
 
 - `VAPI_API_KEY`, `VAPI_ASSISTANT_ID`, `VAPI_PHONE_NUMBER_ID`
-- `VAPI_WEBHOOK_SECRET`
+- `VAPI_WEBHOOK_SECRET` — **now required to be ≥ 32 characters** (see §7.3)
 - `JARVIS_FOUNDER_PHONE_E164`
 - `JARVIS_VOICE_NOTIFICATIONS_ENABLED` *(outbound only; independent of this lane)*
 
@@ -366,7 +395,11 @@ Reused unchanged:
 
 ## 9. First test, once enabled
 
-1. Open the Jarvis Command Center and confirm phone control reports ready.
+1. Open the Jarvis Command Center **as the account named by
+   `JARVIS_PHONE_FOUNDER_USER_ID`** and confirm phone control reports ready.
+   Opening it as any other owner or admin should show the phone screen without
+   the code panel; opening it in any other organization should not show the
+   phone surface at all.
 2. Press **Show my code** and confirm a six-digit code appears.
 3. Call from a number that is **not** the founder line. Confirm Jarvis refuses
    and the call appears in the UI marked refused with no command.
@@ -389,5 +422,25 @@ Reused unchanged:
     is easy to observe), confirm the UI states the failure and the reason,
     offers **Try again**, and that pressing it either opens the project or
     reports a second honest failure — never a silent success.
-12. Confirm server logs contain no full phone number, no transcript, and no
+12. Read the code aloud as separated groups ("four one seven, two nine six")
+    and confirm verification succeeds **and** the stored transcript shows
+    `[redacted-number]` rather than the digits.
+13. Confirm server logs contain no full phone number, no transcript, and no
     code.
+
+### Known residual risks to weigh before enabling
+
+- **The gate is a deterministic classifier over speech.** It fails closed:
+  clearance requires every command-shaped clause to read as internal work, so
+  an unrecognized verb gates rather than passes. The cost of that direction is
+  over-gating, which is visible and recoverable. It is still a regex over an
+  unbounded natural language, and it should be read as "very hard to walk
+  past", not "impossible".
+- **The approval gate is a pre-directive gate, not an `agent_approval_requests`
+  row** (§3). This is the design decision most worth a human's judgment before
+  this ships; the reasoning is set out there.
+- **Nothing here has been exercised against the real Vapi.** Every behaviour
+  above is proved by unit, integration, accessibility and concurrency tests
+  against a real Postgres, and the risk gate and redaction have mutation
+  evidence. The provider itself has not been called once. Step 9 is the first
+  time this lane meets a real phone call.
