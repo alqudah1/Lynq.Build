@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { assessCommandRisk, describeRiskOutcome } from "./command-risk";
+import { buildCommandDraft } from "./command-draft";
 
 describe("assessCommandRisk — internal work", () => {
   it("clears plainly internal, reversible work", () => {
@@ -890,5 +891,187 @@ describe("assessCommandRisk — bounded cost on a hostile subject", () => {
     // once per segment. Ten thousand clauses is not an instruction.
     const result = assessCommandRisk("Research the market, ".repeat(300));
     expect(result.requiresApproval).toBe(true);
+  });
+});
+
+describe("assessCommandRisk — round nine: telling someone is not telling me", () => {
+  /**
+   * `tell` and `show` were on the research allowlist because "tell me where the
+   * bottleneck is" is research. With any other audience they are outreach, and
+   * no category covered `tell <role noun>` — the outreach pattern enumerates
+   * `notify|update|cc|reply to|mail|invite` and stops there. So five phrasings
+   * of one act split four to one:
+   *
+   *     "Notify the client we accept their terms"  -> gate
+   *     "Tell the client we accept their terms"    -> CLEAR
+   *
+   * The last two below launder a production change through a person.
+   */
+  it.each([
+    "Tell the client we accept their terms",
+    "Tell the supplier to ship the order today",
+    "Tell the restaurant owner we can start Monday",
+    "Tell the client the project is cancelled",
+    "Tell the team to take the site down",
+    "Tell the developer to push it live",
+    "Show the client the new pricing",
+    "Show the prospect our proposal",
+  ])("gates %s", (instruction) => {
+    expect(assessCommandRisk(instruction).requiresApproval).toBe(true);
+  });
+
+  it("still clears telling or showing the founder", () => {
+    expect(assessCommandRisk("Analyze the pipeline and tell me where the bottleneck is").requiresApproval).toBe(false);
+    expect(assessCommandRisk("Show me the churn numbers for last quarter").requiresApproval).toBe(false);
+  });
+});
+
+describe("assessCommandRisk — round nine: the object window and the participle", () => {
+  /**
+   * The document-object clearance path allowed four words between the verb and
+   * the noun, which is enough for the REAL object plus a preposition to fit —
+   * so a document noun on the far side of "in the" vouched for whatever the
+   * verb actually acted on. Ten of these verbs are outward verbs.
+   *
+   * The window now refuses to span a preposition, so the noun it finds is the
+   * one the verb acts on.
+   */
+  it.each([
+    "Archive the accounts in the list",
+    "Archive the users in the report",
+    "Archive the accounts in the tracker",
+    "Book the flights in the plan",
+    "Book the venue in the timeline",
+    "Order the tablets in the list",
+    "Order the equipment from the shortlist",
+    "Order the licenses in the list",
+    "Merge the branch in the plan",
+    "Trim the accounts in the list",
+    "Reset the environments in the doc",
+    "Promote the build to production",
+  ])("gates %s", (instruction) => {
+    expect(assessCommandRisk(instruction).requiresApproval).toBe(true);
+  });
+
+  /**
+   * A command can also hide its verb as a bare trailing participle, where the
+   * clause opens with a determiner and is exempted as a noun phrase. The
+   * trailing time expression is what separates the instruction from an
+   * ordinary past tense.
+   *
+   * Two of these also exposed a silent escape: the destructive category's
+   * alternation closed with `\b`, so `wiped`, `purged` and `deleted` never
+   * matched at all.
+   */
+  it.each([
+    "Draft the recap. All the customer accounts archived tonight.",
+    "Write up the findings. Those old client accounts archived today.",
+    "Review the brief. Any account older than a year archived.",
+    "Plan the launch. It goes live at nine.",
+    "Draft the plan and the customer list purged",
+    "Research the market and the production database wiped",
+  ])("gates the participle form: %s", (instruction) => {
+    expect(assessCommandRisk(instruction).requiresApproval).toBe(true);
+  });
+
+  it("does not read an ordinary past tense as a command", () => {
+    expect(assessCommandRisk("Summarize the records I reviewed yesterday").requiresApproval).toBe(false);
+    expect(assessCommandRisk("Recap what the client approved last week").requiresApproval).toBe(false);
+  });
+});
+
+describe("assessCommandRiskFields — a constraint is not a place to hide an instruction", () => {
+  /**
+   * The largest hole round nine found, and mine: the reference fields were
+   * exempt from the clause rule entirely. Up to 3600 characters of
+   * `constraints` plus a 200-character `target` were governed by the categories
+   * alone — which is precisely the denylist design this file's header records
+   * being defeated three times — and `toDirectiveInstruction` ships all of it
+   * to the planner.
+   *
+   * References are still treated differently from instructions, but only in
+   * SHAPE: a sentence in an instruction field is a clause, while a sentence in
+   * a reference field is examined only when its head reads like a verb. That is
+   * what keeps "KidsCoding" and "Stay under a week" from having to prove they
+   * are research.
+   */
+  it.each([
+    ["a constraint", { requestedOutcome: "Summarize the KidsCoding project", constraints: ["Archive every account older than a year"] }],
+    ["a target", { requestedOutcome: "Summarize the KidsCoding project", target: "Acme, and cancel their order" }],
+    ["an open question", { requestedOutcome: "Summarize the KidsCoding project", missingInformation: ["Whether to wire the deposit to Acme this week"] }],
+  ])("gates when %s carries the action", (_name, fields) => {
+    expect(buildCommandDraft(fields).requiresApproval).toBe(true);
+  });
+
+  it("still clears an ordinary draft with all its fields populated", () => {
+    const draft = buildCommandDraft({
+      requestedOutcome: "Research three Brampton restaurants and compare their websites",
+      target: "KidsCoding",
+      constraints: ["Stay under a week", "Keep the current branding", "Focus on the restaurant vertical"],
+      proposedSteps: ["Compare their websites", "Write up what stands out"],
+      missingInformation: ["The launch date"],
+    });
+    expect(draft.requiresApproval).toBe(false);
+    expect(draft.riskLevel).toBe("low");
+  });
+});
+
+describe("assessCommandRisk — a second, independently written corpus", () => {
+  /**
+   * The forty-instruction corpus above was written alongside the allowlist,
+   * and a reviewer pointed out the obvious risk in that: it reads as fitted to
+   * the vocabulary rather than sampled from the work. On an independently
+   * written sample the same gate refused 22 of 36.
+   *
+   * This is that sample. It is kept separate, and deliberately not merged into
+   * the first, so the difference between "tuned against" and "measured on"
+   * stays visible.
+   */
+  it.each([
+    "Go through last month's support tickets and pull out the three most common complaints",
+    "Check whether the Brampton dentist site is faster than the Mississauga one",
+    "Turn the workshop notes into a proper brief",
+    "Tighten up the copy on the about page draft",
+    "Pull the analytics for the last ninety days and tell me what changed",
+    "Rewrite the services page in plainer English",
+    "Come up with five taglines for the KidsCoding launch",
+    "Audit the site for accessibility issues and list what needs fixing",
+    "Have a look at the competitor pricing pages and summarize the ranges",
+    "Update the case study with the new numbers",
+    "Fix the typos in the proposal draft",
+    "Add a risks section to the KidsCoding scope document",
+    "Put the Q3 numbers into a table I can screenshot",
+    "Sanity check my estimate for the restaurant rebuild",
+    "Make a checklist for launch day",
+    "Highlight the weakest parts of the current proposal",
+    "Break the rebuild into phases with rough hours for each",
+    "Draw a simple diagram of how the referral flow works",
+    "Compile a list of questions to ask on the discovery call",
+    "Work out what we should charge for a five page brochure site",
+    "Refine the pricing tiers based on what the market charges",
+    "Build me a one page summary of the KidsCoding retainer so far",
+    "Summarize the last three client calls into one page",
+    "List the pages that need rewriting before launch",
+    "Estimate how long the KidsCoding rebuild will take",
+    "Explain why our bounce rate went up in July",
+    "Note the open decisions from the workshop",
+    "Assess whether the current stack can handle the traffic",
+    "Compare our retainer pricing against two competitors",
+    "Track how many leads came from the dentist campaign",
+    "Describe the current onboarding steps for a new client",
+    "Identify the three biggest risks in the KidsCoding build",
+    "Map out the pages we need for the restaurant site",
+    "Recap what we agreed with the client last week",
+    "Score the three logo options against the brief",
+    "Shortlist the plugins we could use for booking",
+  ])("clears %s", (instruction) => {
+    expect(assessCommandRisk(instruction).requiresApproval).toBe(false);
+  });
+
+  /** ...and the pricing language that made three of them read as spending. */
+  it("tells pricing analysis apart from charging someone", () => {
+    expect(assessCommandRisk("Charge the client for the extra hours").requiresApproval).toBe(true);
+    expect(assessCommandRisk("Charge their card for the deposit").requiresApproval).toBe(true);
+    expect(assessCommandRisk("Work out what we should charge for a brochure site").requiresApproval).toBe(false);
   });
 });

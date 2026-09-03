@@ -288,13 +288,13 @@ const CATEGORY_RULES: Array<{ category: GatedCategory; level: CommandRiskLevel; 
       // outreach for the restaurant owners" clear completely. Default-gate
       // with named exceptions is the only safe direction here: a missing
       // exception costs an approval click, a missing verb costs a gate.
-      /\b(?:cold[-\s]?(?:call|email)|outreach(?!\s+(?:tool|tools|tooling|software|platforms?|providers?|vendors?|stack|strategy|strategies|numbers?|metrics?|rates?|performance|results?|data|reports?|reporting|budget|costs?|options?|approach|process|playbooks?|templates?|copy|examples?|benchmarks?))|reach\s+out|email\s+(?:\w+\s+){0,3}(?:client|customer|prospect|lead|restaurant|owner|them|him|her)(?!\s+(?:volume|counts?|lists?|addresses|templates?))|(?:send|forward|deliver|share)\s+(?:\w+\s+){0,3}(?:email|message|dm|text|sms|proposal|pitch|invoice|newsletter|quote|note|summary|deck|link)|(?:send|forward|get|pass|run)\s+(?:\w+\s+){0,3}(?:to|over\s+to|out\s+to|across\s+to|by|in\s+front\s+of)\s+(?:the\s+|a\s+|an\s+)?(?:client|customer|prospect|lead|restaurant|owner|supplier|vendor|partner|them|him|her)|(?:send|forward)\s+(?:it|them|those|these)\s+(?:out|over|off)|follow[-\s]?up\s+with|contact\s+(?:\w+\s+){0,2}(?:client|customer|prospect|lead|restaurant|owner)|blast|campaign\s+send(?!\s+costs?)|mail\s?merge|(?:let|keep)\s+(?:the\s+)?(?:client|customer|owner|prospect|lead|supplier)\s+(?:know|posted|informed)|(?:notify|update|cc|bcc|reply\s+to|respond\s+to|mail|invite)\s+(?:the\s+)?(?:client|customer|prospect|lead|restaurant|owner|supplier|vendor)|check\s+in\s+with|touch\s+base|circle\s+back|drop\s+(?:\w+\s+){0,2}a\s+line|set\s+up\s+(?:a\s+)?(?:meeting|call|demo)\s+with|loop\s+in|enviar|envoyer|correo|courriel|nachricht)\b/i,
+      /\b(?:cold[-\s]?(?:call|email)|outreach(?!\s+(?:tool|tools|tooling|software|platforms?|providers?|vendors?|stack|strategy|strategies|numbers?|metrics?|rates?|performance|results?|data|reports?|reporting|budget|costs?|options?|approach|process|playbooks?|templates?|copy|examples?|benchmarks?))|reach\s+out|email\s+(?:\w+\s+){0,3}(?:client|customer|prospect|lead|restaurant|owner|them|him|her)(?!\s+(?:volume|counts?|lists?|addresses|templates?))|(?:send|forward|deliver|share)\s+(?:\w+\s+){0,3}(?:email|message|dm|text|sms|proposal|pitch|invoice|newsletter|quote|note|summary|deck|link)|(?:send|forward|get|pass|run)\s+(?:\w+\s+){0,3}(?:to|over\s+to|out\s+to|across\s+to|by|in\s+front\s+of)\s+(?:the\s+|a\s+|an\s+)?(?:client|customer|prospect|lead|restaurant|owner|supplier|vendor|partner|them|him|her)|(?:send|forward)\s+(?:it|them|those|these)\s+(?:out|over|off)|follow[-\s]?up\s+with|contact\s+(?:\w+\s+){0,2}(?:client|customer|prospect|lead|restaurant|owner)|blast|campaign\s+send(?!\s+costs?)|mail\s?merge|(?:let|keep)\s+(?:the\s+)?(?:client|customer|owner|prospect|lead|supplier)\s+(?:know|posted|informed)|(?:notify|update|cc|bcc|reply\s+to|respond\s+to|mail|invite)\s+(?:the\s+)?(?:client|customer|prospect|lead|restaurant|owner|supplier|vendor)|check\s+in\s+with|touch\s+base|circle\s+back|drop\s+(?:\w+\s+){0,2}a\s+line|(?:set\s+up|book|schedule|arrange)\s+(?:\w+\s+){0,3}(?:meeting|call|demo|time|slot)?\s*with\s+(?:the\s+)?(?:client|customer|prospect|lead|owner|supplier|vendor|partner|them|him|her)|loop\s+in|enviar|envoyer|correo|courriel|nachricht)\b/i,
   },
   {
     category: "payment_or_spend",
     level: "critical",
     pattern:
-      /\b(?:pay|pays|paid|paying|payments?\b(?!\s+(?:processors?|providers?|gateways?|polic|terms|schedule|methods?|rails?))|purchase(?!\s+(?:costs?|prices?|history|orders?|behaviou?rs?|patterns?|data|funnels?|process(?:es)?))|buy(?:s|ing)?(?!\s+(?:in\b|process|journey|cycle|behaviou?r|patterns?|signals?))|subscribe|subscriptions?|upgrade\s+the\s+plan|refunds?\b(?!\s+(?:rates?|polic|process|procedur|volume|reasons?))|invoice\s+them|charges?|wire|transfer\s+(?:funds|money|\$?\d[\d,.]*)|top\s?up|billing|credit\s?card|budget\s+increase|(?<!how\s+much\s+we\s+)spend(?!ing\s+(?:polic|process))|settle\s+(?:the\s+|up\b)|release\s+(?:\w+\s+){0,2}(?:payments?|funds|invoices?)|reimburse|payout|deposits?|place\s+(?:an?|the)\s+order|order\s+(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|twenty|thirty|forty|fifty|a\s+hundred|\w+\s+(?:from|for)\s+the)|move\s+\$?\d[\d,.]*|move\s+\d+\s*k\b|renew\s+(?:our|the)\s+(?:\w+\s+){0,2}(?:plan|subscription|licen[cs]e|contract|credits?)|accept\s+(?:the\s+|their\s+)?(?:\w+\s+){0,2}quote|procure|expense\s+(?:it|the|this)|check\s?out\s+(?:the\s+)?cart)\b/i,
+      /\b(?:pay|pays|paid|paying|payments?\b(?!\s+(?:processors?|providers?|gateways?|polic|terms|schedule|methods?|rails?))|purchase(?!\s+(?:costs?|prices?|history|behaviou?rs?|patterns?|data|funnels?|process(?:es)?|order\s+(?:history|process|templates?)))|buy(?:s|ing)?(?!\s+(?:in\b|process|journey|cycle|behaviou?r|patterns?|signals?))|subscribe|subscriptions?|upgrade\s+the\s+plan|refunds?\b(?!\s+(?:rates?|polic|process|procedur|volume|reasons?))|invoice\s+them|charges?\s+(?:the\s+|their\s+|his\s+|her\s+)?(?:client|customer|card|account|them|him|her|us)\b|wire|transfer\s+(?:funds|money|\$?\d[\d,.]*)|top\s?up|billing|credit\s?card|budget\s+increase|(?<!how\s+much\s+we\s+)spend(?!ing\s+(?:polic|process))|settle\s+(?:the\s+|up\b)|release\s+(?:\w+\s+){0,2}(?:payments?|funds|invoices?)|reimburse|payout|deposits?|place\s+(?:an?|the)\s+order|order\s+(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|twenty|thirty|forty|fifty|a\s+hundred|\w+\s+(?:from|for)\s+the)|move\s+\$?\d[\d,.]*|move\s+\d+\s*k\b|renew\s+(?:our|the)\s+(?:\w+\s+){0,2}(?:plan|subscription|licen[cs]e|contract|credits?)|accept\s+(?:the\s+|their\s+)?(?:\w+\s+){0,2}quote|procure|expense\s+(?:it|the|this)|check\s?out\s+(?:the\s+)?cart)\b/i,
   },
   {
     category: "third_party_call",
@@ -308,15 +308,15 @@ const CATEGORY_RULES: Array<{ category: GatedCategory; level: CommandRiskLevel; 
     // "review the content production process" and "analyze our production
     // capacity for the kitchen" are ordinary agency work, and gating them as
     // a live-site change was both wrong and confusingly explained. (Those two
-    // shapes are also neutralized by TOPIC_MASKS before this runs.)
+    // shapes are also narrowed by the lookarounds in this pattern.)
     pattern:
-      /\b(?:deploy(?:s|ed|ing)?(?!\s+(?:process(?:es)?|procedur|polic|guides?|pipelines?|checklists?|runbooks?|schedule|frequency|cadence|steps?|docs?))|promote\s+(?:it\s+|this\s+|that\s+)?(?:to\s+)?(?:prod|production|live|the\s+live\s+site|the\s+release)\b|ship\s+(?:\w+\s+){0,4}(?:to\s+)?(?:prod|production|live|the\s+live\s+site)|release\s+(?:\w+\s+){0,3}(?:to\s+)?(?:prod|production|live)|cut\s+(?:a|the)\s+release|go\s+live|live\s+site|push\s+(?:\w+\s+){0,3}to\s+(?:main|master|production)|merge\s+(?:to|into)\s+(?:main|master)|(?:to|on|in|into)\s+production\b|production\s+(?:deploy|release|server|environment|branch|build|site)|prod\b|rollbacks?\b(?!\s+(?:procedur|process|polic|plans?|guides?|runbooks?|steps?))|roll\s+back|roll\s+(?:it|this|that)?\s*out\b|change\s+the\s+(?:alias|domain|dns)|point\s+the\s+domain|repoint|update\s+the\s+dns|cname|flip\s+(?:the\s+)?(?:feature\s+)?flag|(?:put|push|publish)\s+(?:\w+\s+){0,4}(?:on|to)\s+the\s+(?:site|website|homepage|landing\s+page)|make\s+(?:it|this|that)\s+available\s+to\s+(?:customers|everyone|the\s+public))\b/i,
+      /\b(?:deploy(?:s|ed|ing)?(?!\s+(?:process(?:es)?|procedur|polic|guides?|pipelines?|checklists?|runbooks?|schedule|frequency|cadence|steps?|docs?))|promote\s+(?:it\s+|this\s+|that\s+)?(?:to\s+)?(?:prod|production|live|the\s+live\s+site|the\s+release)\b|ship\s+(?:\w+\s+){0,4}(?:to\s+)?(?:prod|production|live|the\s+live\s+site)|release\s+(?:\w+\s+){0,3}(?:to\s+)?(?:prod|production|live)|cut\s+(?:a|the)\s+release|go(?:es)?\s+live|going\s+live|live\s+site|push\s+(?:\w+\s+){0,3}to\s+(?:main|master|production)|merge\s+(?:to|into)\s+(?:main|master)|(?:to|on|in|into)\s+production\b|production\s+(?:deploy|release|server|environment|branch|build|site)|prod\b|rollbacks?\b(?!\s+(?:procedur|process|polic|plans?|guides?|runbooks?|steps?))|roll\s+back|roll\s+(?:it|this|that)?\s*out\b|change\s+the\s+(?:alias|domain|dns)|point\s+the\s+domain|repoint|update\s+the\s+dns|cname|flip\s+(?:the\s+)?(?:feature\s+)?flag|(?:put|push|publish)\s+(?:\w+\s+){0,4}(?:on|to)\s+the\s+(?:site|website|homepage|landing\s+page)|make\s+(?:it|this|that)\s+available\s+to\s+(?:customers|everyone|the\s+public))\b/i,
   },
   {
     category: "destructive_change",
     level: "critical",
     pattern:
-      /\b(?:delete(?:s|d)?|deleting|remove\s+(?:\w+\s+){0,3}(?:projects?|accounts?|records?|data|tables?|repos?|branch(?:es)?|duplicates?|files?|users?)|remove\s+(?:\w+\s+){0,3}permanently|drop\s+(?:\w+\s+){0,3}(?:tables?|databases?|schemas?|collections?|indexes|indices)|wipe(?!\s+(?:procedur|process|polic|guides?|runbooks?))|purge|erase|truncate|(?<!how\s+we\s+)revoke\s+access|deactivate|cancel\s+the\s+(?:account|subscription)|clear\s+(?:out\s+)?(?:the|all|our|any|every)\s+(?:\w+\s+){0,2}(?:database|data|records?|rows?|accounts?|tables?|logs?|history|files?|customers?|users?|projects?)|reset\s+(?:the|our|all)\s+(?:\w+\s+){0,2}(?:database|data|records?|accounts?|passwords?|environment)|empty\s+the\s+(?:table|database|bucket|queue)|take\s+down\s+(?:the|our)|shut\s+down\s+(?:the|our)|tear\s+down|destroy|get\s+rid\s+of\s+(?:the|all|our)|prune|overwrite|force[-\s]?push|unpublish|disable\s+(?:the\s+)?(?:account|user|integration|webhook))\b/i,
+      /\b(?:delet(?:e|es|ed|ing)|remove\s+(?:\w+\s+){0,3}(?:projects?|accounts?|records?|data|tables?|repos?|branch(?:es)?|duplicates?|files?|users?)|remove\s+(?:\w+\s+){0,3}permanently|drop\s+(?:\w+\s+){0,3}(?:tables?|databases?|schemas?|collections?|indexes|indices)|wipe(?:s|d)?(?!\s+(?:procedur|process|polic|guides?|runbooks?))|purg(?:e|es|ed)|eras(?:e|es|ed)|truncat(?:e|es|ed)|(?<!how\s+we\s+)revoke\s+access|deactivat(?:e|es|ed)|archiv(?:e|es|ed)\s+(?:\w+\s+){0,3}(?:accounts?|records?|customers?|users?|data)|cancel\s+the\s+(?:account|subscription)|clear\s+(?:out\s+)?(?:the|all|our|any|every)\s+(?:\w+\s+){0,2}(?:database|data|records?|rows?|accounts?|tables?|logs?|history|files?|customers?|users?|projects?)|reset\s+(?:the|our|all)\s+(?:\w+\s+){0,2}(?:database|data|records?|accounts?|passwords?|environment)|empty\s+the\s+(?:table|database|bucket|queue)|take\s+down\s+(?:the|our)|shut\s+down\s+(?:the|our)|tear\s+down|destroy|get\s+rid\s+of\s+(?:the|all|our)|prune|overwrite|force[-\s]?push|unpublish|disable\s+(?:the\s+)?(?:account|user|integration|webhook))\b/i,
   },
   {
     category: "contract_or_legal",
@@ -325,13 +325,13 @@ const CATEGORY_RULES: Array<{ category: GatedCategory; level: CommandRiskLevel; 
     // funnel drop-off" and "sign off on the design review" — both routine, and
     // both then labelled "Signing or committing to an agreement".
     pattern:
-      /\b(?:sign(?:s|ed|ing)?\s+(?:\w+\s+){0,3}(?:contracts?|agreements?|nda|msa|sow\b|retainer|deal|papers|offer|terms)|e[-\s]?sign|docusign|initial\s+the\s+(?:paperwork|contract|agreement)|contracts?\b(?!\s+(?:templates?|polic|process|management|software|law\b|lifecycle))|agreements?\b(?!\s+templates?)|nda\b(?!\s+(?:templates?|polic|usually|typically|generally))|msa\b|statement\s+of\s+work|sow\b|legally\s+binding|commit\s+us\s+to|counter[-\s]?sign|retainer|agree\s+to\s+(?:the\s+)?(?:terms|contract|agreement|deal|proposal)|accept\s+(?:them|it)\s+on\s+our\s+behalf|close\s+the\s+deal)\b/i,
+      /\b(?:sign(?:s|ed|ing)?\s+(?:\w+\s+){0,3}(?:contracts?|agreements?|nda|msa|sow\b|retainer|deal|papers|offer|terms)|e[-\s]?sign|docusign|initial\s+the\s+(?:paperwork|contract|agreement)|contracts?\b(?!\s+(?:templates?|polic|process|management|software|law\b|lifecycle))|agreements?\b(?!\s+templates?)|nda\b(?!\s+(?:templates?|polic|usually|typically|generally))|msa\b|statement\s+of\s+work|sow\b|legally\s+binding|commit\s+us\s+to|counter[-\s]?sign|(?:sign|agree|start|end|renew)\s+(?:the\s+)?retainer|agree\s+to\s+(?:the\s+)?(?:terms|contract|agreement|deal|proposal)|accept\s+(?:them|it)\s+on\s+our\s+behalf|close\s+the\s+deal)\b/i,
   },
   {
     category: "credential_access",
     level: "critical",
     pattern:
-      /\b(?:(?<!handle\s)(?<!handling\s)(?<!manage\s)(?<!managing\s)(?<!store\s)(?<!storing\s)api\s?keys?\b(?!\s+(?:polic|management|rotation))|access\s?tokens?|secrets?\b(?!\s+(?:management|manager|store|storage|scanning|handling|hygiene))|credentials?\b(?!\s+(?:polic|procedur|process|guide|management|hygiene))|passwords?\b(?!\s+(?:polic|manager|hygiene|standards?|requirements?|rules?|reset))|env\s+(?:vars?|variables?|file)|environment\s+variables?|private\s?keys?|ssh\s+keys?|rotate\s+(?:\w+\s+){0,2}(?:keys?|credentials?|secrets?|tokens?|them)|service\s+account|read\s+(?:me\s+)?(?:the\s+|what(?:'s|\s+is)\s+in\s+the\s+)?\.?env|(?:read|tell|give)\s+me\s+(?:the\s+)?(?:\w+\s+){0,2}(?:key|token|secret|password|login|credentials?|connection\s+string)|connection\s+string|admin\s+(?:login|password|access)|grant\s+(?:\w+\s+){0,2}(?:admin|owner|root|write)\s+access|invite\s+(?:a\s+|an\s+)?(?:new\s+)?(?:admin|owner)\b)/i,
+      /\b(?:(?<!handle\s)(?<!handling\s)(?<!manage\s)(?<!managing\s)(?<!store\s)(?<!storing\s)api\s?keys?\b(?!\s+(?:polic|management|rotation))|access\s?tokens?|secrets?\b(?!\s+(?:management|manager|store|storage|scanning|handling|hygiene))|credentials?\b(?!\s+(?:polic|procedur|process|guide|management|hygiene))|passwords?\b(?!\s+(?:polic|manager|hygiene|standards?|requirements?|rules?|reset))|env\s+(?:vars?|variables?|file)|environment\s+variables?|private\s?keys?|ssh\s+keys?|rotate\s+(?:\w+\s+){0,2}(?:keys?|credentials?|secrets?|tokens?|them)|service\s+account|read\s+(?:me\s+)?(?:the\s+|what(?:'s|\s+is)\s+in\s+the\s+)?\.?env|(?:read|tell|give)\s+me\s+(?:the\s+)?(?:\w+\s+){0,2}(?:key|token|secret|password|login|credentials?|connection\s+string)|connection\s+string|admin\s+(?:login|password|access)|(?:grant|give|add)\s+(?:\w+\s+){0,2}(?:admin|owner|root|write)\s+access|add\s+(?:\w+\s+){0,2}as\s+(?:an?\s+)?(?:admin|owner)|invite\s+(?:a\s+|an\s+)?(?:new\s+)?(?:admin|owner)\b)/i,
   },
   {
     category: "public_publishing",
@@ -372,7 +372,7 @@ const OVERRIDE_ATTEMPT_PATTERN =
  * teaches the founder to approve without reading.
  */
 const HARD_EFFECT_PATTERN =
-  /\b(?:send\b(?!\s+costs?)|sends|sending|sent|forward|forwards|forwarding|forwarded|deliver|delivers|delivered|emails?\b(?!\s+(?:volumes?|counts?|lists?|addresses|templates?|providers?|clients?|marketing))|emailed|emailing|dm|publish|publishes|publishing|pay|pays|paying|paid|charge|charges|refunds?\b(?!\s+(?:rates?|polic|process|procedur|volume|reasons?))|transfer(?!\s+(?:fees?|costs?|rates?|pricing|process(?:es)?|times?|speed|volumes?))|wire|deploy(?:s|ed|ing)?\b(?!\s+(?:process(?:es)?|procedur|polic|guides?|pipelines?|checklists?|runbooks?|schedule|frequency|cadence|steps?|docs?))|wipe\b(?!\s+(?:procedur|process|polic|guides?|runbooks?))|purge|erase|rotate|rotates|rotating|(?<!how\s+we\s+)revokes?\b|hire\b(?!\s+(?:more\s+)?(?:efficiently|effectively|better|faster|smarter))|fire|terminate|settle|reimburse|docusign|unpublish)\b/i;
+  /\b(?:send\b(?!\s+costs?)|sends|sending|sent|forward|forwards|forwarding|forwarded|deliver|delivers|delivered|emails?\b(?!\s+(?:volumes?|counts?|lists?|addresses|templates?|providers?|clients?|marketing))|emailed|emailing|dm|publish|publishes|publishing|pay|pays|paying|paid|charges?\s+(?:the\s+|their\s+|his\s+|her\s+)?(?:client|customer|card|account|them|him|her|us)\b|refunds?\b(?!\s+(?:rates?|polic|process|procedur|volume|reasons?))|transfer(?!\s+(?:fees?|costs?|rates?|pricing|process(?:es)?|times?|speed|volumes?))|wire|deploy(?:s|ed|ing)?\b(?!\s+(?:process(?:es)?|procedur|polic|guides?|pipelines?|checklists?|runbooks?|schedule|frequency|cadence|steps?|docs?))|wipe\b(?!\s+(?:procedur|process|polic|guides?|runbooks?))|purge|erase|rotate|rotates|rotating|(?<!how\s+we\s+)revokes?\b|hire\b(?!\s+(?:more\s+)?(?:efficiently|effectively|better|faster|smarter))|fire|terminate|settle|reimburse|docusign|unpublish)\b/i;
 
 const LEVEL_ORDER: Record<CommandRiskLevel, number> = { low: 0, medium: 1, high: 2, critical: 3 };
 
@@ -527,14 +527,17 @@ const RESEARCH_HEAD =
   "break\\s+down|walk\\s+(?:me\\s+)?through|mock\\s+up|write\\s+up|double[-\\s]?check|cross[-\\s]?reference|think\\s+(?:about|through)|" +
   "research|analy[sz]e|review|summari[sz]e|draft|outline|plan|prepare|brainstorm|compare|contrast|investigate|explore|examine|study|" +
   "organi[sz]e|categori[sz]e|classify|document|estimate|scope|map|identify|evaluate|assess|benchmark|" +
-  "tell|show|explain|propose|recommend|suggest|sketch|list|track|monitor|audit|note|describe|recap|shortlist|weigh|consider|rank|arrange|give\\s+me|" +
-  "collect|gather|calculate|compute|forecast|score|rate|measure|count|write|proofread|clarify|define|refine|read\\s+through|" +
-  "find|discover|search|see|determine|understand|quantify|diagnose|draw\\s+up|jot\\s+down|flesh\\s+out";
+  "tell\\s+(?:me|us)|show\\s+(?:me|us)|explain|propose|recommend|suggest|sketch|list|track|monitor|audit|note|describe|recap|shortlist|weigh|consider|rank|arrange|give\\s+me|" +
+  "collect|gather|calculate|compute|forecast|score|rate|measure|count|write|proofread|clarify|define|refine|read\\s+through|pull|check|tighten|highlight|compile|draw|fix|add|update|revise|rewrite|reword|expand|adjust|annotate|build|come\\s+up\\s+with|have\\s+a\\s+look|sanity\\s+check|work\\s+out|turn\\s+(?:\\w+\\s+){0,3}into|break\\s+(?:\\w+\\s+){0,3}into|" +
+  "find|discover|search|see|determine|understand|quantify|diagnose|draw\\s+up|jot\\s+down|flesh\\s+out|" +
+  // Qualifiers rather than actions — the shape a `constraints` entry takes.
+  "order\\s+(?:\\w+\\s+){0,3}by\\s+(?!(?:friday|monday|tuesday|wednesday|thursday|saturday|sunday|today|tomorrow|tonight|next|the\\s+end|eod|noon)\\b)|book\\s+time|focus|keep|stay|avoid|prioriti[sz]e|limit|include|exclude|match|follow|stick|aim|ensure|maintain|preserve|mind|assume|treat|reuse";
 
 const RESEARCH_OBJECT =
   "findings?|shortlists?|lists?|options?|results?|notes?|briefs?|decks?|slides?|outlines?|drafts?|documents?|docs?|" +
   "tables?|sections?|trackers?|timelines?|roadmaps?|summar(?:y|ies)|reports?|leads?|items?|rows?|columns?|" +
-  "questions?|risks?|criteria|sprints?|plans?|breakdowns?|comparisons?|candidates?|entries";
+  "questions?|risks?|criteria|sprints?|plans?|breakdowns?|comparisons?|candidates?|entries|" +
+  "numbers?|figures?|checklists?|diagrams?|agendas?|templates?|mockups?|wireframes?|taglines?|headlines?|copy|pages?";
 
 /**
  * A second clearance path, for verbs that are ordinary document work when
@@ -551,9 +554,12 @@ const RESEARCH_OBJECT =
  * requests is how a founder learns to approve without reading — which is what
  * makes every real gate in this file worthless.
  */
+/** Words that end a direct object. A document noun on the far side of one of these is not what the verb acts on. */
+const OBJECT_BREAK = "in|into|onto|on|from|to|for|with|at|of|by|per|via|about|under|over|against|across";
+
 const RESEARCH_WITH_OBJECT =
-  `(?:order|sort|rank|group|arrange|place|drop|archive|merge|extend|reset|clear|book|promote|trim|split|combine)` +
-  `(?:\\s+(?:${VERB_PARTICLES}))?\\s+(?:\\w+\\s+){0,4}(?:${RESEARCH_OBJECT})\\b`;
+  `(?:sort|rank|group|arrange|place|drop|archive|merge|extend|reset|clear|trim|split|combine|put|make|draw|promote)` +
+  `(?:\\s+(?:${VERB_PARTICLES}))?\\s+(?:(?!(?:${OBJECT_BREAK})\\b)\\w+\\s+){0,3}(?:${RESEARCH_OBJECT})\\b`;
 
 const RESEARCH_HEAD_PATTERN = new RegExp(`^(?:(?:${RESEARCH_HEAD})\\b|${RESEARCH_WITH_OBJECT})`, "iu");
 
@@ -580,8 +586,21 @@ const NON_VERB_HEAD =
 const NOMINALIZED_ACTION =
   /\b(?:needs?|has\s+to\s+be|have\s+to\s+be|should\s+be|must\s+be|ought\s+to\s+be|wants?)\s+(?:to\s+be\s+)?[\p{L}]{3,}(?:ing|ed)\b|\bget\s+(?:it|them|the\s+[\p{L}]+|[\p{L}]+)\s+[\p{L}]{3,}(?:ed|ing)\b/iu;
 
+/**
+ * A command with the verb as a bare trailing participle: "All the customer
+ * accounts archived tonight", "Those old client accounts archived today".
+ *
+ * These open with a determiner, so the head test exempts them as noun phrases,
+ * and they carry none of the `needs`/`has to be` markers above. The trailing
+ * time expression is what distinguishes the imperative from an ordinary past
+ * tense — "The records I reviewed yesterday" is a description; "the accounts
+ * archived tonight" is an instruction.
+ */
+const PARTICIPLE_COMMAND =
+  /\b[\p{L}]{3,}ed\b(?:\s+(?:today|tonight|tomorrow|now|immediately|asap|this\s+[\p{L}]+|next\s+[\p{L}]+|by\s+[\p{L}]+|before\s+[\p{L}]+|after\s+[\p{L}]+))?\s*$/iu;
+
 const NOMINALIZED_RESEARCH =
-  /\b(?:research|review|summar|draft|analy|writ|document|outlin|compar|investigat|organi[sz]|check|estimat|plan|scop|track|note|list|rank|sort)\w*(?:ing|ed)\b/iu;
+  /\b(?:research|review|summar|draft|analy|writ|document|outlin|compar|investigat|organi[sz]|check|estimat|plan|scop|track|note|list|rank|sort|fix|rewrit|build|edit|tidy|tighten)\w*(?:ing|ed)\b/iu;
 
 /**
  * A segment the clause rule must examine.
@@ -600,11 +619,11 @@ function isInstructionClause(segment: string, fromSentence: boolean): boolean {
   // A nominalized command opens with a determiner, so the head test would
   // exempt it. It is still a command.
   if (NOMINALIZED_ACTION.test(head)) return true;
-  if (NON_VERB_HEAD.test(head)) return false;
+  if (NON_VERB_HEAD.test(head)) return PARTICIPLE_COMMAND.test(head) && !NOMINALIZED_RESEARCH.test(head);
   if (fromSentence) return true;
   // A coordinator continuation is a clause only when it reads like one: a
   // recognized verb of any kind, or an unknown word followed by an object.
-  return RESEARCH_HEAD_PATTERN.test(head) || OPENS_WITH_ACTION_VERB.test(head) || PREDICATE_SHAPE.test(head) || words.length === 1;
+  return RESEARCH_HEAD_PATTERN.test(head) || OPENS_WITH_ACTION_VERB.test(head) || PREDICATE_SHAPE.test(head);
 }
 
 /** True when this clause may start work on its own. */
@@ -657,9 +676,26 @@ export function assessCommandRiskFields(input: { instructions: string[]; referen
     };
   }
 
-  // Only the instruction fields are subject to the clause rule.
+  // The clause rule applies to BOTH lists — it just applies differently.
+  //
+  // Exempting the reference fields entirely was a hole, and a large one: up to
+  // 3600 characters of `constraints` plus a 200-character `target` were
+  // governed by the categories alone, which is exactly the denylist design this
+  // file's header records being defeated three times. A constraint reading
+  // "Archive every account older than a year" cleared, and shipped to the
+  // planner verbatim, while the identical string as an outcome gated.
+  //
+  // The difference that remains is only about SHAPE. An instruction field is
+  // an instruction, so a whole sentence in one is a clause. A reference field
+  // is usually a noun phrase or a qualifier — "KidsCoding", "Stay under a
+  // week" — so a sentence in one is examined only when its head reads like a
+  // verb, the same test a coordinator continuation gets.
   const segments = splitSegments(instructionText.slice(0, MAX_SUBJECT_LENGTH));
-  const allSegments = splitSegments(subject);
+  const referenceSegments = splitSegments(referenceText.slice(0, MAX_SUBJECT_LENGTH)).map((segment) => ({
+    ...segment,
+    fromSentence: false,
+  }));
+  const allSegments = [...segments, ...referenceSegments];
   if (allSegments.length > MAX_SEGMENTS) {
     return {
       level: "medium",
@@ -716,7 +752,7 @@ export function assessCommandRiskFields(input: { instructions: string[]; referen
     // allowlist. Not "contains an internal word" — the head, and only the head:
     // INTERNAL_WORK_PATTERN necessarily contains nouns like `notes` and `plan`,
     // and one of those anywhere in the string used to vouch for the whole of it.
-    const clauses = segments.filter((segment) => isInstructionClause(segment.text, segment.fromSentence));
+    const clauses = allSegments.filter((segment) => isInstructionClause(segment.text, segment.fromSentence));
     const uncleared = clauses.find((segment) => !isClearedClause(segment.text));
     if (uncleared) {
       const spoken = uncleared.text.replace(/\s+/g, " ").slice(0, 80);

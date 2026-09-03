@@ -454,11 +454,24 @@ Reused unchanged:
   make the reason specific and the level honest; a gap in them costs a vaguer
   explanation, not a silent action.
 
-  The cost is over-gating, and it is measured rather than assumed. A corpus of
-  forty realistic internal instructions lives in `command-risk.test.ts` and the
-  gate must clear all forty. The first version of the allowlist gated thirteen
-  of them, which is a third of a working day and is exactly how a founder
-  learns to approve without reading.
+  The cost is over-gating, and it is measured rather than assumed. TWO corpora
+  of realistic internal instructions live in `command-risk.test.ts` and the
+  gate must clear all of both. They are kept separate on purpose: the first was
+  written alongside the allowlist and a reviewer rightly pointed out that it
+  reads as fitted to the vocabulary, so the second was written independently.
+  The numbers are the reason to keep both — the first version of the allowlist
+  gated 13 of the 40 it was tuned against, and 22 of the 36 it was not. A gate
+  that fires on a fifth to a third of ordinary requests is exactly how a
+  founder learns to approve without reading. Both corpora now clear entirely.
+
+  A ninth review found the largest hole in this design and it was in the
+  plumbing rather than the vocabulary: the `constraints`, `target` and
+  `missingInformation` fields were exempt from the clause rule altogether, so
+  up to 3.6 KB of attacker-influenced text per command was still governed by
+  the old denylist. They are examined now; the only remaining difference is
+  that a sentence in a reference field must LOOK like a command before it is
+  treated as one, which is what keeps "KidsCoding" and "Stay under a week" from
+  having to prove they are research.
 
   **If you change this file:** nothing in it may rewrite or delete text
   (narrowings are zero-width lookarounds bound to the word they attach to), and
