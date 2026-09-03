@@ -7,6 +7,7 @@ import {
   redactSensitiveText,
   redactTranscriptText,
 } from "./redaction";
+import { normalizeSpokenPasscode } from "./founder-verification";
 
 describe("collapseSpokenDigits", () => {
   it("collapses a spoken run of three or more digits", () => {
@@ -130,5 +131,129 @@ describe("redactLogFields", () => {
   it("still redacts a secret that appears inside an innocuously named field", () => {
     const safe = redactLogFields({ note: "the password is swordfish99" });
     expect(safe.note).toContain("[redacted-secret]");
+  });
+});
+
+describe("redaction and verification cannot disagree about a spoken code", () => {
+  /**
+   * The leak this suite exists for, found by review round six.
+   *
+   * `normalizeSpokenPasscode` concatenates digits across ANY separator — it
+   * exists because transcribers split codes — while redaction merged only runs
+   * of three or more consecutive digit WORDS, and otherwise needed one unbroken
+   * numeric token. So the most natural utterance of all, "the code is 417 296",
+   * authenticated the caller AND was stored verbatim in the transcript, which
+   * `listPhoneCallsForUser` shows to any member of the organization, next to
+   * the last four digits of the founder's number, for as long as the code stays
+   * valid. Reading it there is a straight escalation from member to founder.
+   *
+   * The property under test is not "these strings are redacted" — it is that
+   * the two functions cannot drift apart again. They now share one vocabulary
+   * and one scanner.
+   */
+  const spokenForms = [
+    "417 296",
+    "4 1 7 2 9 6",
+    "the code is 417 296",
+    "It's 417 then 296",
+    "code 417 296 okay",
+    "four one seven um two nine six",
+    "o four one seven two six",
+    "four one seven two nine six",
+    "my code is 417296",
+    "417-296",
+    "four one seven, two nine six",
+  ];
+
+  it.each(spokenForms)("does not store a code it would accept: %s", (spoken) => {
+    expect(normalizeSpokenPasscode(spoken).length).toBeGreaterThanOrEqual(6);
+    expect(redactTranscriptText(spoken)).toContain("[redacted-");
+  });
+
+  it("no longer authenticates digits scattered across a sentence", () => {
+    // Concatenating every digit in the string meant this normalized to 417296
+    // and could verify. A code is a contiguous run, not an arithmetic sum of a
+    // sentence.
+    expect(normalizeSpokenPasscode("my code is 417, and I need 296 units")).not.toBe("417296");
+  });
+});
+
+describe("redaction preserves the meaning of ordinary speech", () => {
+  /**
+   * Redaction used to REWRITE the text, collapsing any three adjacent number
+   * words into digits. The rewritten string is what reaches the risk
+   * classifier and the Office planner, so "we lost one, oh, two clients" was
+   * planned from as "we lost 102 clients". Detection and rewriting are
+   * different jobs; the scanner now returns spans and only spans long enough
+   * to be a code are replaced.
+   */
+  it.each([
+    "we lost one, oh, two clients last month",
+    "phase one two three of the rebuild",
+    "we need one, two, three things done",
+    "build a two three four bedroom listing page",
+    "the password, which we rotate monthly, lives in a manager",
+  ])("leaves it exactly as spoken: %s", (text) => {
+    expect(redactTranscriptText(text)).toBe(text);
+  });
+});
+
+describe("redaction catches a secret however the sentence is built", () => {
+  /**
+   * The lead-in rule bound its connector directly to the noun, so a single
+   * intervening word leaked the credential verbatim — into the transcript, and
+   * through `redactLogFields` into the logs.
+   */
+  it.each([
+    "the password for the admin account is swordfish99",
+    "my api key for stripe is sk1234liveabcd",
+    "the access code you need is hunter2please",
+    "the passcode to get in is hunter2please",
+    "the password is: swordfish99",
+    "the password's swordfish99",
+    "the password, swordfish99",
+    "the password - swordfish99",
+    "the password is\nswordfish99",
+    "use swordfish99 as the password",
+    "the key is A B C D E F G H",
+  ])("removes the value in: %s", (text) => {
+    const result = redactSensitiveText(text);
+    expect(result.text).toContain("[redacted-secret]");
+    expect(result.text).not.toMatch(/swordfish99|hunter2please|sk1234liveabcd/);
+  });
+
+  it("redacts a secret inside an innocuously named log field, with words in between", () => {
+    const safe = redactLogFields({ note: "the password for the admin account is swordfish99" });
+    expect(String(safe.note)).not.toContain("swordfish99");
+  });
+});
+
+describe("redaction stays linear on a hostile payload", () => {
+  /**
+   * The regexes were quadratic on a long unbroken token: the email rule's
+   * `[A-Za-z0-9._%+-]+@` consumes to the end, fails on `@`, backtracks and
+   * restarts one position later. At the input cap that was ~1.9s of blocked
+   * event loop per webhook, reachable with a plain run of digits — something a
+   * real end-of-call summary can contain. The earlier regression test used
+   * `password` plus 200k SPACES, which the bounded-whitespace fix had already
+   * made linear, so it passed in 1ms and gave false assurance.
+   */
+  it.each([
+    ["a run of digits", "1".repeat(40_000)],
+    ["a dashed run", "a-".repeat(20_000)],
+    ["a mixed run", "aB0-".repeat(10_000)],
+    ["a dotted run", `one${".".repeat(39_000)}one`],
+    ["an unterminated address", `${"a".repeat(19_000)}@${"b".repeat(19_000)}`],
+    ["trailing whitespace", `password${" ".repeat(200_000)}`],
+  ])("completes promptly on %s", (_name, payload) => {
+    const started = Date.now();
+    redactSensitiveText(payload);
+    expect(Date.now() - started).toBeLessThan(250);
+  });
+
+  it("classifies an opaque 200-character token as a secret rather than scanning it", () => {
+    const result = redactSensitiveText(`the value is ${"a1".repeat(200)}`);
+    expect(result.redactedKinds).toContain("secret");
+    expect(result.text).not.toContain("a1a1a1");
   });
 });

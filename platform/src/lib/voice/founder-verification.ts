@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { findSpokenDigitRuns } from "./redaction";
 
 /**
  * Founder verification for inbound phone control.
@@ -85,25 +86,30 @@ export function deriveFounderPasscode(secret: string | undefined, atMs: number, 
   return String(binary % 10 ** PASSCODE_DIGITS).padStart(PASSCODE_DIGITS, "0");
 }
 
-const SPOKEN_DIGITS: Record<string, string> = {
-  zero: "0", oh: "0", o: "0", one: "1", two: "2", to: "2", too: "2", three: "3", four: "4", for: "4",
-  five: "5", six: "6", seven: "7", eight: "8", ate: "8", nine: "9",
-};
-
 /**
  * A founder reading a code aloud produces "four one seven", "417", or
  * "four-one-seven" depending on the transcriber. This normalizes all three to
- * bare digits before comparison. Anything that is not a digit or a recognized
- * digit word is discarded, so "the code is 417 296" still resolves.
+ * bare digits before comparison, so "the code is 417 296" still resolves.
+ *
+ * It delegates to the redaction module's run scanner rather than keeping its
+ * own digit vocabulary. The two used to be separate implementations that
+ * disagreed, and the disagreement was a credential leak: every spoken form
+ * this function accepted but redaction did not recognize was stored verbatim
+ * in a transcript any org member can read. Sharing the scanner makes "what
+ * verification accepts, redaction removes" a structural property rather than
+ * two lists someone has to remember to keep in step.
+ *
+ * It also now reads a single CONTIGUOUS run instead of concatenating every
+ * digit in the string. Concatenating meant "my code is 417, and I need 296
+ * units" normalized to 417296 and could authenticate — digits scattered across
+ * a sentence are not a code being read out.
  */
 export function normalizeSpokenPasscode(value: string): string {
-  const tokens = value.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
-  let digits = "";
-  for (const token of tokens) {
-    if (/^\d+$/.test(token)) digits += token;
-    else if (SPOKEN_DIGITS[token] !== undefined) digits += SPOKEN_DIGITS[token];
-  }
-  return digits;
+  const runs = findSpokenDigitRuns(value);
+  if (runs.length === 0) return "";
+  // The longest run is the code; ties resolve to the earliest, which is the
+  // order a caller reads it in.
+  return runs.reduce((best, run) => (run.digits.length > best.digits.length ? run : best)).digits;
 }
 
 function constantTimeEquals(a: string, b: string): boolean {
