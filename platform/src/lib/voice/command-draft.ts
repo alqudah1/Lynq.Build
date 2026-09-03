@@ -90,7 +90,17 @@ function normalizeList(values: string[] | undefined | null, limit: number): stri
  * redacted on the way in, so a secret spoken into a "constraint" never
  * reaches the database.
  */
-export function buildCommandDraft(input: CommandDraftInput): CommandDraft {
+/**
+ * Whether a confirmed low-risk command will actually start work. Passed in
+ * rather than read from the environment, because this module is deliberately
+ * dependency-free — but the read-back cannot promise something the caller is
+ * not going to do.
+ */
+export interface CommandDraftOptions {
+  autoDispatch?: boolean;
+}
+
+export function buildCommandDraft(input: CommandDraftInput, options: CommandDraftOptions = {}): CommandDraft {
   const requestedOutcome = redactTranscriptText(input.requestedOutcome).replace(/\s+/g, " ").trim().slice(0, 2000);
   const target = input.target ? redactTranscriptText(input.target).replace(/\s+/g, " ").trim().slice(0, 200) || null : null;
   const constraints = normalizeList(input.constraints, 12);
@@ -151,7 +161,7 @@ export function buildCommandDraft(input: CommandDraftInput): CommandDraft {
     readyToConfirm: requestedOutcome.length >= 10,
   };
 
-  return { ...draft, readback: formatCommandReadback(draft) };
+  return { ...draft, readback: formatCommandReadback(draft, options) };
 }
 
 /**
@@ -160,7 +170,7 @@ export function buildCommandDraft(input: CommandDraftInput): CommandDraft {
  * happen. It always ends with a yes/no question, because the founder's answer
  * to that question is the only thing that moves a draft to confirmed.
  */
-export function formatCommandReadback(draft: Omit<CommandDraft, "readback">): string {
+export function formatCommandReadback(draft: Omit<CommandDraft, "readback">, options: CommandDraftOptions = {}): string {
   const lines: string[] = [];
 
   lines.push(`Here's what I understood. You want me to ${lowerFirst(draft.requestedOutcome)}.`);
@@ -183,8 +193,22 @@ export function formatCommandReadback(draft: Omit<CommandDraft, "readback">): st
         ? `I can't start this from a phone call, because it involves ${lowerFirst(reason)}. I'll put it in LYNQ Office for you to approve there, and nothing happens until you do.`
         : "I can't start this from a phone call. I'll put it in LYNQ Office for you to approve there, and nothing happens until you do."
     );
-  } else {
+  } else if (options.autoDispatch) {
     lines.push("This is internal work, so once you confirm I'll open the project and brief the team.");
+  } else {
+    // The read-back is the sentence the founder says "yes" to, and the whole
+    // safety story of this lane is that they confirm what was read to them. It
+    // promised "once you confirm I'll open the project" regardless of whether
+    // confirming would actually open anything — and with auto-dispatch off, the
+    // documented default, confirming parks the command for a human instead.
+    //
+    // The dispatcher's spoken line and the screen's badge were both updated for
+    // that default. This was not, and it is the one that gets stored as
+    // `readback_text` and shown back under "What Jarvis understood", so the
+    // false promise outlived the call.
+    lines.push(
+      "This is ordinary internal work — but nothing said on a call starts on its own, so once you confirm I'll put it on the Jarvis screen for you to start with one tap."
+    );
   }
 
   lines.push("Did I get that right?");

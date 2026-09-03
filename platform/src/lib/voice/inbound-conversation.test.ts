@@ -561,3 +561,121 @@ describe("a repeat confirmation reports what actually happened", () => {
     expect(result.spoken).toMatch(/nothing has started/i);
   });
 });
+
+describe("the call says what confirming will actually do", () => {
+  /**
+   * Round eleven. `JARVIS_PHONE_AUTO_DISPATCH_ENABLED` defaults off, so a
+   * confirmed low-risk command parks for a human instead of opening a project.
+   * The dispatcher's spoken line and the screen's badge were both updated for
+   * that; the READ-BACK was not — and the read-back is the sentence the founder
+   * says "yes" to, and the one stored as `readback_text` and shown back under
+   * "What Jarvis understood". The false promise outlived the call.
+   */
+  it("does not promise a project when confirming will not open one", async () => {
+    vi.stubEnv("JARVIS_PHONE_AUTO_DISPATCH_ENABLED", "");
+    ensureCallSession.mockResolvedValue(session({ verificationState: "verified", verifiedAt: new Date() }));
+    upsertCommandDraft.mockImplementation(async (_db: unknown, { draft }: { draft: { readback: string } }) => ({
+      id: "command-1",
+      riskLevel: "low",
+      requiresApproval: false,
+      overrideAttempted: false,
+      readbackText: draft.readback,
+    }));
+
+    const result = await handleInboundConversationEvent(db, {
+      config: CONFIG,
+      event: toolEvent("capture_command", { requestedOutcome: "Research three Brampton restaurants" }),
+      nowMs: NOW,
+    });
+
+    expect(result.spoken).not.toMatch(/i'll open the project/i);
+    expect(result.spoken).toMatch(/nothing said on a call starts on its own/i);
+  });
+
+  it("promises the project when it really will open one", async () => {
+    vi.stubEnv("JARVIS_PHONE_AUTO_DISPATCH_ENABLED", "true");
+    ensureCallSession.mockResolvedValue(session({ verificationState: "verified", verifiedAt: new Date() }));
+    upsertCommandDraft.mockImplementation(async (_db: unknown, { draft }: { draft: { readback: string } }) => ({
+      id: "command-1",
+      riskLevel: "low",
+      requiresApproval: false,
+      overrideAttempted: false,
+      readbackText: draft.readback,
+    }));
+
+    const result = await handleInboundConversationEvent(db, {
+      config: CONFIG,
+      event: toolEvent("capture_command", { requestedOutcome: "Research three Brampton restaurants" }),
+      nowMs: NOW,
+    });
+
+    expect(result.spoken).toMatch(/i'll open the project/i);
+  });
+
+  /**
+   * Two commands share `awaiting_approval` and mean different things. Calling
+   * both "waiting for your approval" is the conflation the screen goes out of
+   * its way to avoid, and for the same reason.
+   */
+  it("does not call a cleared command an approval when the founder repeats themselves", async () => {
+    ensureCallSession.mockResolvedValue(session({ verificationState: "verified", verifiedAt: new Date() }));
+    findOpenCommandForSession.mockResolvedValue(null);
+    findLatestCommandForSession.mockResolvedValue({ dispatchState: "awaiting_approval", requiresApproval: false });
+
+    const result = await handleInboundConversationEvent(db, {
+      config: CONFIG,
+      event: toolEvent("confirm_command", { confirmed: true }),
+      nowMs: NOW,
+    });
+
+    expect(result.spoken).toMatch(/waiting for you to start it/i);
+    expect(result.spoken).not.toMatch(/waiting for your approval/i);
+  });
+
+  it("treats a retraction as a retraction, not as another yes", async () => {
+    ensureCallSession.mockResolvedValue(session({ verificationState: "verified", verifiedAt: new Date() }));
+    findOpenCommandForSession.mockResolvedValue(null);
+    findLatestCommandForSession.mockResolvedValue({ dispatchState: "awaiting_approval", requiresApproval: true });
+
+    const result = await handleInboundConversationEvent(db, {
+      config: CONFIG,
+      event: toolEvent("confirm_command", { confirmed: false }),
+      nowMs: NOW,
+    });
+
+    // Saying "no, cancel that" right after a yes used to be answered "that one
+    // is already waiting…", which reads as agreement.
+    expect(result.spoken).toMatch(/can't undo it from the call/i);
+    expect(result.spoken).toMatch(/decline it there/i);
+  });
+});
+
+describe("a draft is never left open after the call ends", () => {
+  /**
+   * `finalizeCall` is the only writer that can move a command out of
+   * `awaiting_confirmation`, and it discarded the result of its revision-guarded
+   * write. A final `capture_command` delivered in parallel with the hangup
+   * bumps the revision in between, so the cancel silently did nothing and the
+   * row was wedged: tool calls are refused once the session is inactive, the
+   * decision route needs `awaiting_approval`, retry needs `failed`, and the
+   * reaper only looks at `dispatching`.
+   */
+  it("re-reads and retries when a concurrent capture wins the revision race", async () => {
+    findCallSessionByProviderCallId.mockResolvedValue(session({ verificationState: "verified" }));
+    findOpenCommandForSession
+      .mockResolvedValueOnce({ id: "command-1", revision: 1 })
+      .mockResolvedValueOnce({ id: "command-1", revision: 2 });
+    transitionCommand.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: "command-1", dispatchState: "cancelled" });
+
+    await handleInboundConversationEvent(db, {
+      config: CONFIG,
+      event: normalizeVapiEvent({
+        message: { type: "status-update", status: "ended", call: { id: "call-1" }, customer: { number: CONFIG.founderPhoneNumber } },
+      }),
+      nowMs: NOW,
+    });
+
+    expect(transitionCommand).toHaveBeenCalledTimes(2);
+    expect(transitionCommand).toHaveBeenLastCalledWith(db, expect.objectContaining({ expectedRevision: 2, dispatchState: "cancelled" }));
+  });
+});

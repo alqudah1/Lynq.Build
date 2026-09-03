@@ -10,6 +10,7 @@ import { dispatchConfirmedCommand } from "./command-dispatch";
 import { callerNumberMatchesFounder, MAX_VERIFICATION_ATTEMPTS, verifyFounderPasscode } from "./founder-verification";
 import type { JarvisPhoneCommandConfig } from "./phone-config";
 import { redactLogFields } from "./redaction";
+import { phoneAutoDispatchEnabled } from "./phone-config";
 import {
   appendTranscriptTurn,
   completeCallSession,
@@ -77,6 +78,9 @@ export interface ConversationResult {
  * calls is unaffected.
  */
 const VERIFICATION_RATE_LIMIT: RateLimitConfig = { limit: 12, windowSeconds: 1800 };
+
+/** How many times hanging up may lose the revision race against a final capture before it is logged for a human. */
+const CANCEL_ON_HANGUP_ATTEMPTS = 3;
 
 const REFUSAL_SPOKEN =
   "I can't take instructions on this call. I'll only work with the founder's registered line, and this isn't it. Goodbye.";
@@ -399,9 +403,26 @@ async function finalizeCall(
 
   // A draft the founder never confirmed must not linger as if it might still
   // run. It expires with the call, visibly.
-  const open = await findOpenCommandForSession(db, { organizationId: input.session.organizationId, callSessionId: input.session.id });
-  if (open) {
-    await transitionCommand(db, {
+  //
+  // This is the ONLY writer that can move a command out of
+  // `awaiting_confirmation`, so a lost revision guard here wedges the row for
+  // good: tool calls are refused once the session is inactive, the decision
+  // route requires `awaiting_approval`, retry requires `failed`, and the reaper
+  // only looks at `dispatching`. The founder would be left looking at "Waiting
+  // for you to confirm on the call" on a call that ended, permanently, with no
+  // button.
+  //
+  // The guard can genuinely be lost: a final `capture_command` and
+  // `status-update/ended` are delivered in parallel, and `upsertCommandDraft`
+  // bumps the revision in between. So this re-reads and retries rather than
+  // discarding the result.
+  let cancelled = false;
+  let hadOpenDraft = false;
+  for (let attempt = 0; attempt < CANCEL_ON_HANGUP_ATTEMPTS && !cancelled; attempt += 1) {
+    const open = await findOpenCommandForSession(db, { organizationId: input.session.organizationId, callSessionId: input.session.id });
+    if (!open) break;
+    hadOpenDraft = true;
+    const settled = await transitionCommand(db, {
       organizationId: input.session.organizationId,
       commandId: open.id,
       expectedRevision: open.revision,
@@ -409,8 +430,17 @@ async function finalizeCall(
       dispatchState: "cancelled",
       failureCode: "call_ended_before_confirmation",
     });
+    cancelled = Boolean(settled);
   }
-  logPhoneEvent({ event: "call-ended", sessionId: input.session.id, endedReason: input.endedReason, hadOpenDraft: Boolean(open) });
+  if (hadOpenDraft && !cancelled) {
+    // Surfaced rather than swallowed: a draft still open after the call ended
+    // is a row a person has to look at.
+    console.error(
+      "[jarvis-phone]",
+      JSON.stringify(redactLogFields({ event: "open-draft-not-cancelled", sessionId: input.session.id }))
+    );
+  }
+  logPhoneEvent({ event: "call-ended", sessionId: input.session.id, endedReason: input.endedReason, hadOpenDraft });
 }
 
 async function handleToolCall(
@@ -581,7 +611,8 @@ async function handleCapture(db: Db, input: { session: JarvisCallSession; args: 
     };
   }
 
-  const draft = buildCommandDraft(parsed.data);
+  // The read-back must promise only what confirming will actually do.
+  const draft = buildCommandDraft(parsed.data, { autoDispatch: phoneAutoDispatchEnabled() });
   const command = await upsertCommandDraft(db, {
     organizationId: input.session.organizationId,
     callSessionId: input.session.id,
@@ -622,6 +653,11 @@ async function handleConfirm(
   input: { session: JarvisCallSession; args: Record<string, unknown>; workspaceId: string | null }
 ): Promise<ConversationResult> {
   const { session } = input;
+  // Read the answer BEFORE branching on whether a draft is open: "no" and
+  // "yes" mean different things to a command that has already moved on, and
+  // the no-open-draft branch used to answer both as a repeat "yes".
+  const confirmed = input.args.confirmed === true || String(input.args.confirmed).toLowerCase() === "true";
+  const retracted = input.args.confirmed === false || String(input.args.confirmed).toLowerCase() === "false";
   const open = await findOpenCommandForSession(db, { organizationId: session.organizationId, callSessionId: session.id });
   if (!open) {
     // A second "yes" after a command was already dispatched is common — the
@@ -629,7 +665,18 @@ async function handleConfirm(
     // with what actually happened rather than pretending nothing was said.
     const latest = await findLatestCommandForSession(db, { organizationId: session.organizationId, callSessionId: session.id });
     if (latest) {
-      return { spoken: describeSettledCommand(latest.dispatchState), processingStatus: "processed", sessionId: session.id };
+      // A retraction is not a repeat confirmation. Saying "no, cancel that"
+      // straight after a yes used to be answered "that one is already
+      // waiting…", which reads as agreement — and is far more reachable now
+      // that a yes leaves something pending rather than opening a project.
+      if (retracted) {
+        return {
+          spoken: `${describeSettledCommand(latest.dispatchState, latest.requiresApproval)} I can't undo it from the call — open the Jarvis screen to decline it there.`,
+          processingStatus: "processed",
+          sessionId: session.id,
+        };
+      }
+      return { spoken: describeSettledCommand(latest.dispatchState, latest.requiresApproval), processingStatus: "processed", sessionId: session.id };
     }
     return {
       spoken: "I don't have anything written down yet. Tell me what you'd like done and I'll read it back.",
@@ -639,7 +686,6 @@ async function handleConfirm(
     };
   }
 
-  const confirmed = input.args.confirmed === true || String(input.args.confirmed).toLowerCase() === "true";
   if (!confirmed) {
     await transitionCommand(db, {
       organizationId: session.organizationId,
@@ -673,12 +719,19 @@ async function handleConfirm(
  * line states only what the row actually records — never that work started
  * when it did not, and never that something was approved.
  */
-function describeSettledCommand(dispatchState: string): string {
+function describeSettledCommand(dispatchState: string, requiresApproval = true): string {
   switch (dispatchState) {
     case "directive_created":
       return "I already opened that project and briefed the team. It's on the Jarvis screen.";
     case "awaiting_approval":
-      return "That one is already waiting for your approval in LYNQ Office. Nothing has started.";
+      // Two commands share this state and mean different things: one the risk
+      // gate stopped, and one it cleared that is waiting only because nothing
+      // said on a call starts on its own. Calling both "waiting for your
+      // approval" is the conflation the screen deliberately avoids, and for the
+      // same reason — it makes the word "approval" stop carrying information.
+      return requiresApproval
+        ? "That one is already waiting for your approval in LYNQ Office. Nothing has started."
+        : "That one's already on the Jarvis screen waiting for you to start it. Nothing has started yet.";
     case "declined":
       return "That one was declined in the Office, so nothing was started.";
     case "cancelled":

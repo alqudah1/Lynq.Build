@@ -338,3 +338,41 @@ describe("normalizeSpokenPasscode — the narrow vocabulary", () => {
     expect(normalizeSpokenPasscode("It's 417 then 296")).toBe("417296");
   });
 });
+
+describe("redaction leaves ordinary speech about keys and codes alone", () => {
+  /**
+   * Round eleven. The `key` lead-in carried an exclusion list — `key metrics`,
+   * `key findings`, `key accounts` — written as `key(?!\\s*(?:metrics?|…))`
+   * inside a REGEX LITERAL, where `\\s` is an escaped backslash followed by
+   * `s*`. The lookahead could only match text containing a literal backslash,
+   * so every exclusion in it was dead.
+   *
+   * The damage was not only a placeholder in the transcript. `buildCommandDraft`
+   * redacts before the classifier reads the text, so the gate scored mangled
+   * input; the corrupted string went to the Office planner; and the screen told
+   * the founder "Something sensitive was removed before saving" about a
+   * sentence that contained nothing sensitive.
+   */
+  it.each([
+    "Pull the key metrics into this deck",
+    "Draft the key points from this analysis",
+    "Summarise the key risks in this proposal",
+    "Can you check the key accounts in this spreadsheet",
+    "List the key findings from this research",
+    "Note the key dates in this timeline",
+  ])("leaves it exactly as spoken: %s", (text) => {
+    const result = redactSensitiveText(text);
+    expect(result.text).toBe(text);
+    // ...and does not claim something was removed.
+    expect(result.redactedKinds).toEqual([]);
+  });
+
+  /** ...while a key that really is one is still taken. */
+  it.each([
+    "the api key is abc123def456",
+    "the key is A B C D E F G H",
+    "my private key is zx9k2m4p8q1w",
+  ])("still removes the value in: %s", (text) => {
+    expect(redactSensitiveText(text).text).toContain("[redacted-secret]");
+  });
+});

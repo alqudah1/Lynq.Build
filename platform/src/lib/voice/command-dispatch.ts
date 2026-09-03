@@ -114,7 +114,14 @@ export async function dispatchConfirmedCommand(db: Db, input: DispatchConfirmedC
       confirmationStatus: "confirmed",
       dispatchState: "awaiting_approval",
     });
-    if (!gated) return { status: "already_dispatched", command, spoken: describeExistingState(command) };
+    if (!gated) {
+      // Re-read for the same reason both lost-race branches below do: the
+      // caller's row is stale by definition here, and reporting it produced a
+      // vague "I already have that one recorded" for a command that is in fact
+      // waiting on the Jarvis screen.
+      const current = await resolveCommandById(db, { organizationId: input.organizationId, commandId: command.id }).catch(() => command);
+      return { status: "already_dispatched", command: current, spoken: describeExistingState(current) };
+    }
 
     await recordAuditEvent(db, {
       eventType: "jarvis_phone_command_gated",
@@ -488,6 +495,15 @@ function classifyDispatchFailure(rawError: unknown): string {
   const message = error instanceof Error ? error.message.toLowerCase() : "";
   if (error instanceof Error && error.name) {
     if (/authz|role|membership|tenant/i.test(error.name)) return "authorization_failed";
+    // Deliberately after the authorization test, and currently unreachable.
+    // The one not-found error this path can raise is
+    // `TenantResourceNotFoundError`, which is an AUTHORIZATION outcome wearing
+    // a 404 — the codebase returns it so a cross-tenant read cannot confirm a
+    // row exists — so "Jarvis was not allowed to open it" is the honest label
+    // for it and the order must stay this way. This branch is the fallback for
+    // a future not-found error that is genuinely about a missing resource; a
+    // review flagged its unreachability, and the answer is a comment rather
+    // than a reorder that would mislabel a permissions failure.
     if (/notfound/i.test(error.name)) return "resource_not_found";
   }
   if (/rate limit|429|quota|too many requests/.test(message)) return "model_rate_limited";

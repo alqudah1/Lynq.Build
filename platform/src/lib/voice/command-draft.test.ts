@@ -83,9 +83,18 @@ describe("readback", () => {
     expect(draft.readback.trim()).toMatch(/did i get that right\?$/i);
   });
 
-  it("promises the project only for work that is not gated", () => {
-    const internal = buildCommandDraft({ requestedOutcome: "Research the market" });
-    expect(internal.readback).toMatch(/i'll open the project/i);
+  it("promises the project only when confirming will actually open one", () => {
+    // The read-back is the sentence the founder says yes to, so it must
+    // describe what confirming does. With auto-dispatch off — the default —
+    // confirming parks the command for a human instead.
+    const withAutoDispatch = buildCommandDraft({ requestedOutcome: "Research the market" }, { autoDispatch: true });
+    expect(withAutoDispatch.readback).toMatch(/i'll open the project/i);
+
+    const byDefault = buildCommandDraft({ requestedOutcome: "Research the market" });
+    expect(byDefault.requiresApproval).toBe(false);
+    expect(byDefault.readback).not.toMatch(/i'll open the project/i);
+    expect(byDefault.readback).toMatch(/nothing said on a call starts on its own/i);
+    expect(byDefault.readback).toMatch(/for you to start/i);
   });
 
   it("states plainly that nothing happens until approval, for gated work", () => {

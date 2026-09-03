@@ -245,7 +245,7 @@ function redactDigitRuns(text: string): { text: string; redacted: boolean } {
  * negative (storing a credential).
  */
 const SECRET_LEAD_IN =
-  /\b(?:password|passphrase|pass\s?code|passcode|pin|otp|one[-\s]?time\s?code|security\s?code|verification\s?code|access\s?code|secret|api\s?key|apikey|token|private\s?key|(?<!low[- ])(?<!high[- ])key(?!\\s*(?:metrics?|findings?|takeaways?|points?|results?|players?|dates?|risks?|drivers?|accounts?|words?|word|performance|indicators?))|credential|cvv|cvc|(?<!source\s)(?<!zip\s)(?<!postal\s)(?<!post\s)(?<!area\s)code(?!\s*(?:base|review|freeze|quality|coverage|style|snippet)))\b/i;
+  /\b(?:password|passphrase|pass\s?code|passcode|pin|otp|one[-\s]?time\s?code|security\s?code|verification\s?code|access\s?code|secret|api\s?key|apikey|token|private\s?key|(?<!low[- ])(?<!high[- ])key\b(?!\s*(?:metrics?|findings?|takeaways?|points?|results?|players?|dates?|risks?|drivers?|accounts?|words?|word|performance|indicators?|stakeholders?|themes?|questions?|numbers?))|credential|cvv|cvc|(?<!source\s)(?<!zip\s)(?<!postal\s)(?<!post\s)(?<!area\s)code(?!\s*(?:base|review|freeze|quality|coverage|style|snippet)))\b/i;
 
 /**
  * Up to four words may sit between the lead-in noun and the connector. Real
@@ -257,7 +257,7 @@ const SECRET_LEAD_IN =
  * Bounded on both axes (at most 4 words, each at most 20 characters) so the
  * nested quantifier cannot backtrack expensively.
  */
-const LEAD_IN_GAP = "(?:[ \\t]{1,4}[A-Za-z'’]{1,20}){0,4}";
+const LEAD_IN_GAP = "(?:[ \\t]{1,4}[A-Za-z'’]{1,20}\\b){0,4}";
 /** Connectors that assert "what follows IS the value". A value after one of these is redacted whatever it looks like. */
 const STRONG_CONNECTOR = "(?:is|are|equals|reads|=|:|'s|’s)";
 /** Weaker separators. A value after one of these is redacted only when it also looks like a credential. */
