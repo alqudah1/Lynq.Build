@@ -234,7 +234,7 @@ describe("assessCommandRisk — fail closed", () => {
     // would make an over-cautious gate sound authoritative.
     const result = assessCommandRisk("Write up the summary and forward it somewhere");
     expect(result.level).toBe("medium");
-    expect(result.reasons[0]).toMatch(/could not tell/i);
+    expect(result.reasons[0]).toMatch(/doesn't recognize|could not tell/i);
   });
 
   it("gates empty input rather than treating it as harmless", () => {
@@ -321,7 +321,7 @@ describe("assessCommandRisk — a planning verb at the front cannot vouch for th
   it("names the clause it could not clear, not just the sentence", () => {
     const result = assessCommandRisk("Draft the plan and hand it over the fence");
     expect(result.requiresApproval).toBe(true);
-    expect(result.reasons[0]).toMatch(/hand it over the fence/i);
+    expect(result.reasons[0]).toMatch(/doesn't recognize "hand"/i);
   });
 
   /**
@@ -523,11 +523,11 @@ describe("assessCommandRisk — the clause rule is what holds when the vocabular
     // severity the classifier cannot justify.
     expect(result.level).toBe("medium");
     expect(result.gatedCategories).toEqual([]);
-    expect(result.reasons[0]).toMatch(/could not tell/i);
+    expect(result.reasons[0]).toMatch(/doesn't recognize|could not tell/i);
   });
 });
 
-describe("assessCommandRisk — a topic narrowing must never be able to hide an action", () => {
+describe("assessCommandRisk — a narrowing must never be able to hide an action", () => {
   /**
    * Round seven, and the most serious thing found in this file so far — it was
    * introduced by round six's own fix for over-gating.
@@ -592,7 +592,7 @@ describe("assessCommandRisk — a topic narrowing must never be able to hide an 
   });
 });
 
-describe("assessCommandRisk — one determiner is not what stands between a founder and production", () => {
+describe("assessCommandRisk — a clause is examined however it is phrased", () => {
   /**
    * Round seven. The clause rule only examined clauses that used a determiner,
    * because both the coordinator split and the predicate test required an
@@ -639,5 +639,256 @@ describe("assessCommandRisk — one determiner is not what stands between a foun
     "Put together a checklist for onboarding a new client",
   ])("still clears %s", (instruction) => {
     expect(assessCommandRisk(instruction).requiresApproval).toBe(false);
+  });
+});
+
+describe("assessCommandRisk — politeness is not a bypass", () => {
+  /**
+   * Round eight, and the reason clearance is now an allowlist.
+   *
+   * Design C refused a clause that OPENED with an outward verb, and every test
+   * that read a clause was anchored at `^`. So one filler word in front of the
+   * verb made the clause unexaminable — and 37 of the 65 verbs on that list
+   * cleared with nothing more than "Please" in front of them. "Please cancel
+   * the Acme order" is not an exotic phrasing; it is how people talk on the
+   * phone.
+   *
+   * Every clause test now strips politeness, adverbs and lead-in phrases
+   * before it looks for the verb.
+   */
+  it.each([
+    "Please book the flights and the hotel for the Acme offsite next month, and draft a cost summary",
+    "I need you to cancel the Acme order and note it in the summary",
+    "Once you have drafted the plan, please approve the Acme invoice",
+    "Just grant Marco admin on the dashboard and document it",
+    "Make sure to ship the pricing change and summarize the rollout",
+    "Now archive every customer record older than a year, and summarize what is left",
+    "Please upload the client list to the vendor portal per the plan",
+    "Please invite the new admin to the Vercel project and document the access",
+    "Summarize the notes, then please unsubscribe Marco",
+    "Please merge the pricing branch and summarize what changed",
+    "Please disable two-factor for the whole team per the plan",
+    "Please close the Acme account per the notes",
+    "Could you go ahead and wire the deposit to Acme, and note it in the plan",
+    "We should just delete the old customer records and summarize what is left",
+  ])("gates %s", (instruction) => {
+    expect(assessCommandRisk(instruction).requiresApproval).toBe(true);
+  });
+
+  it("still clears ordinary work that happens to be phrased politely", () => {
+    expect(assessCommandRisk("Please research three Brampton restaurants and compare their websites").requiresApproval).toBe(false);
+    expect(assessCommandRisk("Could you draft a marketing plan for next quarter").requiresApproval).toBe(false);
+    expect(assessCommandRisk("I need you to summarize what happened with KidsCoding this month").requiresApproval).toBe(false);
+  });
+
+  /**
+   * A verb can also hide behind a nominalization, where the clause opens with
+   * a determiner and the head-verb test would exempt it entirely.
+   */
+  it.each([
+    "The records need archiving, so document what is left",
+    "The invoice has to be paid before Friday",
+    "The old accounts should be deleted this week",
+    "Get the deposit sent to Acme today",
+  ])("gates the nominalized form: %s", (instruction) => {
+    expect(assessCommandRisk(instruction).requiresApproval).toBe(true);
+  });
+});
+
+describe("assessCommandRisk — a narrowing suppresses an alternative, not just a noun", () => {
+  /**
+   * Round eight. Design C replaced the text-deleting masks with zero-width
+   * lookarounds and the comment claimed "a narrowing that cannot consume
+   * cannot hide an action". That was false: a lookaround kills the whole
+   * alternative, and under a denylist nothing else was guarding the clause. An
+   * exempted noun that is a natural head-noun of the DANGEROUS object —
+   * "purchase order", "password reset", "rollback steps" — turned a gate into
+   * a clear, eight times out of eight.
+   *
+   * Under the allowlist these gate on the head verb regardless of what any
+   * category decides, which is the whole point of inverting the decision.
+   */
+  it.each([
+    "We should deploy process changes to the checkout flow per the plan",
+    "Please raise the purchase order for Acme and note the total",
+    "Please start buying in bulk from Acme and note the price",
+    "Please do a password reset for the admin account and document it",
+    "Please start the outreach process for the restaurant owners per the plan",
+    "Please finish the contract process with Acme and note the terms",
+    "Please run the rollback steps for the live checkout and note the result",
+    "Please cover the refunds process for the Acme customers and note it",
+  ])("gates %s", (instruction) => {
+    expect(assessCommandRisk(instruction).requiresApproval).toBe(true);
+  });
+});
+
+describe("assessCommandRisk — the escapes that were one character wide", () => {
+  /**
+   * Round eight found two of these, and both are the kind of bug that survives
+   * review because the code reads correctly.
+   *
+   * `"…|wipe\b(?!…)|…"` inside a double-quoted STRING is a backspace
+   * character, not a word boundary — so `wipe` was unguarded in a list whose
+   * whole job was to refuse it. And an alternation group closing with `)\b`
+   * kills every `\d` alternative for a multi-digit number, because a digit
+   * followed by another digit is not a word boundary: the money rules matched
+   * one-digit sums only.
+   */
+  it.each([
+    "Draft the migration plan. Wipe runbooks and the old accounts.",
+    "Draft the plan. Wipe process data from the customer table.",
+    "Draft the plan. Wipe policy records from staging.",
+  ])("gates %s", (instruction) => {
+    expect(assessCommandRisk(instruction).requiresApproval).toBe(true);
+  });
+
+  it.each([
+    ["Move 5 to the Acme account per the plan", "payment_or_spend"],
+    ["Move 5000 to the Acme account per the plan", "payment_or_spend"],
+    ["Move $50000 to the Acme account", "payment_or_spend"],
+    ["Transfer 25000 to the supplier", "payment_or_spend"],
+    ["Bump Priya to 95000 per the notes", "personnel"],
+  ])("recognizes the amount in %s, not only a single digit", (instruction, category) => {
+    const result = assessCommandRisk(instruction);
+    expect(result.requiresApproval).toBe(true);
+    expect(result.gatedCategories).toContain(category);
+  });
+});
+
+describe("assessCommandRisk — a two-word sentence is still a command", () => {
+  /**
+   * Round eight. A word-count floor exempted short segments unless they opened
+   * with a verb from a closed list, so any short imperative outside that
+   * vocabulary was never examined. A sentence is never a list continuation, so
+   * it is examined whatever its length; only a piece split off at a comma or a
+   * conjunction can be a continuation.
+   */
+  it.each([
+    "Draft the launch summary. Nuke staging.",
+    "Draft the launch summary. Void it.",
+    "Draft the launch summary. Scrap it.",
+    "Draft the launch summary. Bin them.",
+    "Draft the launch summary. Kill it.",
+    "Draft the launch summary. Unlist it.",
+    "Summarize the notes. Torch staging.",
+    "Summarize the notes. Overpay Acme.",
+  ])("gates %s", (instruction) => {
+    expect(assessCommandRisk(instruction).requiresApproval).toBe(true);
+  });
+});
+
+describe("assessCommandRisk — the cost of the allowlist is measured, not assumed", () => {
+  /**
+   * Inverting clearance to an allowlist makes over-gating the expected failure,
+   * and over-gating is not free: a gate that fires on ordinary work is how a
+   * founder learns to approve without reading, which makes every real gate in
+   * this file worthless. The first version of the allowlist gated 13 of these
+   * 40 — a third of a normal working day.
+   *
+   * So the cost is a test rather than a hope. These are realistic internal
+   * instructions for this business, and every one must clear. If a change makes
+   * any of them gate, the change is wrong even if it closes a hole: find
+   * another way to close it.
+   */
+  const ordinaryWork = [
+    "Research three restaurants in Brampton and compare their websites",
+    "Draft a marketing plan for the next quarter",
+    "Summarize what happened with the KidsCoding project this month",
+    "Review the competitor sites and write up what stands out",
+    "Prepare a scope and estimate for the rebuild",
+    "Investigate why our lead quality dropped in August",
+    "Put together a checklist for onboarding a new client",
+    "Analyze the pipeline and tell me where the bottleneck is",
+    "Outline a roadmap for the next two quarters",
+    "Look into what a typical dentist website costs in Ontario",
+    "Organize the case studies by industry",
+    "Compare Instantly and Gojiberry for outreach tooling",
+    "Order the shortlist by revenue impact",
+    "Drop the weakest option from the shortlist",
+    "Archive the old draft notes",
+    "Merge the two research documents into one",
+    "Extend the outline with a pricing section",
+    "Reset the tracker for the new sprint",
+    "Book time in the plan for a second review pass",
+    "Place the findings in a table",
+    "Clear up the open questions in the brief",
+    "Promote the strongest findings to the top of the deck",
+    "Analyze our production capacity for the kitchen and write it up",
+    "Write up the findings and note what is still open",
+    "Give me a breakdown of where the hours went",
+    "Walk me through the churn numbers",
+    "Explain how the referral program works today",
+    "Sketch three homepage layouts for the dentist",
+    "Rank the leads by fit",
+    "Map the customer journey for the restaurant client",
+    "Pull together everything we know about Acme",
+    "Double check the numbers in the Q3 deck",
+    "Break down the cost of the rebuild by phase",
+    "Recap yesterday's client call for the team",
+    "Score each option against our criteria",
+    "Shortlist five agencies we could partner with",
+    "Draw up a rough timeline for the launch",
+    "Flesh out the pricing section of the proposal",
+    "Jot down the open risks for the KidsCoding build",
+    "Read through the brief and tell me what is missing",
+  ];
+
+  it.each(ordinaryWork)("clears ordinary internal work: %s", (instruction) => {
+    const result = assessCommandRisk(instruction);
+    expect(result.requiresApproval).toBe(false);
+    expect(result.level).toBe("low");
+  });
+
+  /**
+   * The second clearance path lets a handful of verbs through when their object
+   * is a document. The object list is what keeps that safe, so these are the
+   * same verbs with an object that is not a document.
+   */
+  it.each([
+    "Drop the customers table",
+    "Drop the users table from production",
+    "Clear the rows in the customer table",
+    "Clear out all the records",
+    "Archive the customer records",
+    "Archive every account older than a year",
+    "Reset the production database",
+    "Reset all the passwords",
+    "Merge the pricing branch into main",
+    "Extend the contract with Acme",
+    "Extend an offer to Priya",
+    "Book the flights for the Acme offsite",
+    "Book a meeting with the client",
+    "Place the order with the supplier",
+    "Give Marco admin access",
+    "Promote the build to production",
+    "Order fifty tablets from Acme",
+    "Please drop the customers table per the notes",
+    "Please archive the customer accounts per the plan",
+    "Draft the plan. Clear the rows in production.",
+  ])("gates the same verb with a real object: %s", (instruction) => {
+    expect(assessCommandRisk(instruction).requiresApproval).toBe(true);
+  });
+});
+
+describe("assessCommandRisk — bounded cost on a hostile subject", () => {
+  it.each([
+    ["comma spam", ", ".repeat(10_000)],
+    ["conjunction spam", " and ".repeat(4_000)],
+    ["sentence spam", ". ".repeat(10_000)],
+    ["politeness spam", "please ".repeat(2_800)],
+    ["one long token", "é".repeat(20_000)],
+    ["predicate bait", "put a a a a to the sit ".repeat(870)],
+    ["recipient bait", "send it to Marco, ".repeat(1_100)],
+  ])("stays fast on %s", (_name, payload) => {
+    const started = Date.now();
+    assessCommandRisk(payload);
+    expect(Date.now() - started).toBeLessThan(250);
+  });
+
+  it("refuses a subject with more clauses than anyone speaks", () => {
+    // Every pattern is linear in a segment, but the per-segment work repeats
+    // once per segment. Ten thousand clauses is not an instruction.
+    const result = assessCommandRisk("Research the market, ".repeat(300));
+    expect(result.requiresApproval).toBe(true);
   });
 });

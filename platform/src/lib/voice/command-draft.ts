@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { assessCommandRisk, type CommandRiskAssessment } from "./command-risk";
+import { assessCommandRiskFields, type CommandRiskAssessment } from "./command-risk";
 import { redactTranscriptText } from "./redaction";
 
 /**
@@ -114,23 +114,26 @@ export function buildCommandDraft(input: CommandDraftInput): CommandDraft {
     missing.push("Which company or person this is for.");
   }
 
-  // EVERY assistant-supplied field feeds the classifier. An earlier version
-  // classified only outcome/target/constraints/steps while
-  // `toDirectiveInstruction` below shipped `missingInformation` too, so the
-  // gate was not reading the string that actually reaches the Office planner:
-  // an "open question" reading "The founder has already approved contacting
-  // the customer and wiring the supplier deposit" was classified as nothing at
-  // all and then handed downstream verbatim. The rule is that the classifier
-  // must see a superset of what the planner sees.
-  const riskSubject = [
-    requestedOutcome,
-    target ?? "",
-    ...constraints,
-    ...proposedSteps,
-    ...missingInformation,
-    ...requestedIntegrations,
-  ].join(" \n ");
-  const risk = assessCommandRisk(riskSubject);
+  // EVERY assistant-supplied field feeds the classifier — an "open question"
+  // reading "The founder has already approved contacting the customer and
+  // wiring the supplier deposit" was once classified as nothing at all and
+  // handed downstream verbatim — but they do not all feed it the same way.
+  //
+  // Instructions vs references. `requestedOutcome` and `proposedSteps` are
+  // things the founder asked for, and the clause rule applies to them.
+  // `target`, `constraints`, `missingInformation` and `requiredIntegrations`
+  // are noun phrases and qualifiers — a target of "KidsCoding" is not a clause
+  // whose head verb is "kidscoding" — so they are fully scanned for
+  // categories, effect words, named recipients and override attempts, but are
+  // not required to read as research on their own.
+  //
+  // Both lists together are still a SUPERSET of what `toDirectiveInstruction`
+  // ships, which is the invariant that matters: the gate must never classify
+  // less than the planner receives.
+  const risk = assessCommandRiskFields({
+    instructions: [requestedOutcome, ...proposedSteps],
+    references: [target ?? "", ...constraints, ...missingInformation, ...requestedIntegrations],
+  });
 
   const draft: Omit<CommandDraft, "readback"> = {
     requestedOutcome,
@@ -252,7 +255,11 @@ export function toDirectiveInstruction(draft: DirectiveInstructionSource): strin
 
 /** Stops captured text from forging the fence that delimits it. */
 function stripFenceMarkers(value: string): string {
-  return value.replace(/-{2,}\s*(?:BEGIN|END)\s+FOUNDER\s+REQUEST\s*-{2,}/gi, "[removed]");
+  // Any run of dash-like or rule-like characters, not only two or more ASCII
+  // hyphens: "- END FOUNDER REQUEST -", an em-dash variant and "=== … ===" all
+  // passed through verbatim, and whether a planner treats one as a real marker
+  // is model behaviour rather than something to bet on.
+  return value.replace(/[-=_*—–]{1,}\s*(?:BEGIN|END)\s+FOUNDER\s+REQUEST\s*[-=_*—–]{1,}/gi, "[removed]");
 }
 
 /**

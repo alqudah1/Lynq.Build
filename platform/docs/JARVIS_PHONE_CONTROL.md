@@ -430,15 +430,54 @@ Reused unchanged:
 
 ### Known residual risks to weigh before enabling
 
-- **The gate is a deterministic classifier over speech.** It fails closed:
-  clearance requires every command-shaped clause to read as internal work, so
-  an unrecognized verb gates rather than passes. The cost of that direction is
-  over-gating, which is visible and recoverable. It is still a regex over an
-  unbounded natural language, and it should be read as "very hard to walk
-  past", not "impossible".
+- **The gate is a deterministic classifier over speech, and it is the most
+  fragile thing in this lane.** Eight adversarial passes have been run over it,
+  and the first three designs were each walked past within a day. All three
+  were DENYLISTS — enumerate what is dangerous, clear everything else:
+
+  - one internal verb anywhere in the string cleared it, so "Draft the plan and
+    clear the production database tonight" opened a directive;
+  - per-clause clearance plus masks that neutralized risky-sounding topics —
+    and the masks deleted a window of following text before any rule ran, so
+    "Draft a runbook for tomorrow delete the customer records" cleared;
+  - a list of outward verbs that refused a clause outright, every test anchored
+    at the start of the clause — so one filler word made a clause unexaminable
+    and "Please cancel the Acme order" cleared, along with 37 of the 65 verbs
+    on that list.
+
+  The lesson is not that three attempts were careless. It is that the set of
+  ways to say "do something irreversible" is not enumerable, and a miss fails
+  silently. So the decision is now inverted: **a clause clears only when its
+  head verb is on a short allowlist of research and authoring verbs.**
+  Everything else gates — an unrecognized verb, an unusual phrasing, another
+  language, a verb invented next year. The categories still run, but they only
+  make the reason specific and the level honest; a gap in them costs a vaguer
+  explanation, not a silent action.
+
+  The cost is over-gating, and it is measured rather than assumed. A corpus of
+  forty realistic internal instructions lives in `command-risk.test.ts` and the
+  gate must clear all forty. The first version of the allowlist gated thirteen
+  of them, which is a third of a working day and is exactly how a founder
+  learns to approve without reading.
+
+  **If you change this file:** nothing in it may rewrite or delete text
+  (narrowings are zero-width lookarounds bound to the word they attach to), and
+  every test that reads a clause must first strip what sits in front of the
+  verb. Those two rules are what designs B and C got wrong, and both are
+  enforced by tests. Run the adversarial probe suites — the must-gate lists are
+  a record of phrasings that really did clear at some point — and if a change
+  makes the forty-instruction corpus gate, the change is wrong even when it
+  closes a hole.
+
 - **The approval gate is a pre-directive gate, not an `agent_approval_requests`
   row** (§3). This is the design decision most worth a human's judgment before
   this ships; the reasoning is set out there.
+- **The passcode's spoken forms are covered but not field-tested.** Redaction
+  and verification share one scanner, with verification on a strict subset
+  vocabulary, so what authenticates is always redacted. The subset boundary was
+  itself a bug once: sharing the wide vocabulary made "the code is 014149 too"
+  unreadable and burned an attempt. Watch the first few real calls for a
+  correct code being rejected.
 - **Nothing here has been exercised against the real Vapi.** Every behaviour
   above is proved by unit, integration, accessibility and concurrency tests
   against a real Postgres, and the risk gate and redaction have mutation

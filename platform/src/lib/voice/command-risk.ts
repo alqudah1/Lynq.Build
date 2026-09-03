@@ -25,31 +25,51 @@
  * the gate is deterministic, fully unit-testable, and cannot fail open
  * because a model was rate-limited.
  *
- * ## Why clearance is decided per clause
+ * ## Why clearance is an allowlist
  *
- * The first version of this file asked its questions of the WHOLE string:
- * does any category match, does any effect word appear, does any internal
- * verb appear. That last question is the one that broke it. "Does any
- * internal verb appear" is satisfied by a single word, so an instruction
- * only had to *begin* like internal work to clear:
+ * This decision has now been designed four times, and the first three are the
+ * argument for the fourth. Each was a DENYLIST — enumerate what is dangerous,
+ * clear everything else — and each was walked past within a day:
  *
- *     "Draft the plan and clear the production database tonight"  →  low
- *     "Draft the plan and read me the stripe restricted key"      →  low
- *     "Draft the plan and order fifty tablets"                    →  low
+ *   A. Clearance needed one internal verb anywhere in the string.
+ *      "Draft the plan and clear the production database tonight" cleared.
+ *   B. Per-clause clearance, plus masks that rewrote risky-sounding topics so a
+ *      write-up ABOUT something risky did not read as the risky thing. The
+ *      masks consumed a window of following text before any rule ran:
+ *      "Draft a runbook for tomorrow delete the customer records" cleared.
+ *   C. Masks removed; a list of outward verbs refused a clause outright. Every
+ *      test was anchored at `^`, so one filler word made a clause unexaminable:
+ *      "Please cancel the Acme order and note it in the summary" cleared, along
+ *      with 37 of the 65 verbs on that list.
  *
- * Each of those really did clear, because the smuggled clause contains no
- * word from the effect list — and the effect list can never be complete.
- * The planning verb was not incidental; it was the disarm mechanism, and it
- * is the single most natural way a founder opens a sentence.
+ * The pattern is not that three people were careless. It is that the set of
+ * ways to say "do something irreversible" is not enumerable, and the failure
+ * direction of a miss is silent.
  *
- * So clearance is now asked of every clause, not of the string. The text is
- * split at coordination and sentence boundaries, each segment that has the
- * shape of a command (a verb followed by an object) must ITSELF read as
- * internal work, and a segment that does not is named back to the founder.
- * This inverts the failure direction: a clause whose verb nobody thought of
- * now gates, because it fails to be recognized as internal rather than
- * failing to be recognized as dangerous. Vocabulary gaps become approval
- * clicks instead of silent external actions.
+ * So the decision is inverted. A clause clears only when its HEAD VERB is on a
+ * short, explicit list of research and authoring verbs (or, for a handful of
+ * verbs that are ordinary document work with a document as their object, when
+ * that object is one too). Everything else gates: an unrecognized verb, an
+ * unusual phrasing, another language, a verb someone invents next year.
+ *
+ * The categories and the effect backstop still run, but they no longer decide
+ * whether work starts — they make the REASON specific and the level honest. A
+ * gap in them costs a vaguer explanation, not a silent external action.
+ *
+ * Two rules follow, and both are enforced by tests:
+ *
+ *   1. **Nothing here may rewrite or delete text.** Narrowings are zero-width
+ *      lookarounds bound to the word they attach to. That is what design B got
+ *      wrong.
+ *   2. **Every test that reads a clause must first strip what sits in front of
+ *      the verb.** Politeness, adverbs and lead-in phrases are how people
+ *      actually talk. That is what design C got wrong.
+ *
+ * The cost is over-gating, and it is measured rather than assumed: a corpus of
+ * forty realistic internal instructions lives in the tests, and the gate is
+ * expected to clear all of them. If a change makes that corpus gate, the
+ * change is wrong — a gate that fires on ordinary work teaches the founder to
+ * approve without reading, which is what makes every real gate here worthless.
  */
 
 /** Matches `agentApprovalRequests.riskLevel` so a gated phone command and a gated agent action speak the same vocabulary. */
@@ -157,11 +177,16 @@ const ACTION_VERB_HINT =
  */
 const SENTENCE_BOUNDARY = /[.;!?\n]+/;
 
-const COORDINATOR = new RegExp(
-  `(?:,\\s+|\\s+(?:and\\s+then|and|then|also|plus|next|after\\s+that|followed\\s+by)\\s+)` +
-    `(?=[^A-Za-z0-9]*(?:(?:${ACTION_VERB_HINT})\\b|[\\p{L}'-]+(?:\\s+(?:${VERB_PARTICLES}))?\\s+(?:${OBJECT_TOKENS}|\\d+)\\b))`,
-  "iu"
-);
+/**
+ * The coordinator LITERALS, with no lookahead.
+ *
+ * The lookahead used to be part of this pattern, which meant the engine tried
+ * a seventy-alternative verb list at every character position: `", "` repeated
+ * to the length cap cost 760ms of blocked event loop per webhook. The same
+ * decision is now made once per candidate piece in `splitSegments`, which is
+ * linear in the number of pieces rather than in characters times alternatives.
+ */
+const COORDINATOR = /(?:,\s+|\s+(?:and\s+then|and|then|also|plus|next|after\s+that|followed\s+by)\s+)/iu;
 
 /**
  * ============================================================================
@@ -217,6 +242,8 @@ const NON_PERSON_TOKENS = new Set([
   // "forward it somewhere" must stay an honest "I could not tell", not become
   // a confident claim that a customer is being contacted.
   "somewhere", "anywhere", "everywhere", "elsewhere", "there", "here", "along", "ahead", "around", "onward",
+  // Prepositions are never a recipient.
+  "for", "from", "about", "with", "at", "by", "of", "per", "via", "into", "onto", "during", "after", "before",
   "today", "tomorrow", "tonight", "now", "soon", "first", "next", "then", "quickly", "please", "over", "through",
 ]);
 
@@ -267,7 +294,7 @@ const CATEGORY_RULES: Array<{ category: GatedCategory; level: CommandRiskLevel; 
     category: "payment_or_spend",
     level: "critical",
     pattern:
-      /\b(?:pay|pays|paid|paying|payments?\b(?!\s+(?:processors?|providers?|gateways?|polic|terms|schedule|methods?|rails?))|purchase(?!\s+(?:costs?|prices?|history|orders?|behaviou?rs?|patterns?|data|funnels?|process(?:es)?))|buy(?:s|ing)?(?!\s+(?:in\b|process|journey|cycle|behaviou?r|patterns?|signals?))|subscribe|subscriptions?|upgrade\s+the\s+plan|refunds?\b(?!\s+(?:rates?|polic|process|procedur|volume|reasons?))|invoice\s+them|charges?|wire|transfer\s+(?:funds|money|\$?\d)|top\s?up|billing|credit\s?card|budget\s+increase|(?<!how\s+much\s+we\s+)spend(?!ing\s+(?:polic|process))|settle\s+(?:the\s+|up\b)|release\s+(?:\w+\s+){0,2}(?:payments?|funds|invoices?)|reimburse|payout|deposits?|place\s+(?:an?|the)\s+order|order\s+(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|twenty|thirty|forty|fifty|a\s+hundred|\w+\s+(?:from|for)\s+the)|move\s+\$?\d|move\s+\d+\s*k\b|renew\s+(?:our|the)\s+(?:\w+\s+){0,2}(?:plan|subscription|licen[cs]e|contract|credits?)|accept\s+(?:the\s+|their\s+)?(?:\w+\s+){0,2}quote|procure|expense\s+(?:it|the|this)|check\s?out\s+(?:the\s+)?cart)\b/i,
+      /\b(?:pay|pays|paid|paying|payments?\b(?!\s+(?:processors?|providers?|gateways?|polic|terms|schedule|methods?|rails?))|purchase(?!\s+(?:costs?|prices?|history|orders?|behaviou?rs?|patterns?|data|funnels?|process(?:es)?))|buy(?:s|ing)?(?!\s+(?:in\b|process|journey|cycle|behaviou?r|patterns?|signals?))|subscribe|subscriptions?|upgrade\s+the\s+plan|refunds?\b(?!\s+(?:rates?|polic|process|procedur|volume|reasons?))|invoice\s+them|charges?|wire|transfer\s+(?:funds|money|\$?\d[\d,.]*)|top\s?up|billing|credit\s?card|budget\s+increase|(?<!how\s+much\s+we\s+)spend(?!ing\s+(?:polic|process))|settle\s+(?:the\s+|up\b)|release\s+(?:\w+\s+){0,2}(?:payments?|funds|invoices?)|reimburse|payout|deposits?|place\s+(?:an?|the)\s+order|order\s+(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|twenty|thirty|forty|fifty|a\s+hundred|\w+\s+(?:from|for)\s+the)|move\s+\$?\d[\d,.]*|move\s+\d+\s*k\b|renew\s+(?:our|the)\s+(?:\w+\s+){0,2}(?:plan|subscription|licen[cs]e|contract|credits?)|accept\s+(?:the\s+|their\s+)?(?:\w+\s+){0,2}quote|procure|expense\s+(?:it|the|this)|check\s?out\s+(?:the\s+)?cart)\b/i,
   },
   {
     category: "third_party_call",
@@ -283,13 +310,13 @@ const CATEGORY_RULES: Array<{ category: GatedCategory; level: CommandRiskLevel; 
     // a live-site change was both wrong and confusingly explained. (Those two
     // shapes are also neutralized by TOPIC_MASKS before this runs.)
     pattern:
-      /\b(?:deploy(?:s|ed|ing)?(?!\s+(?:process(?:es)?|procedur|polic|guides?|pipelines?|checklists?|runbooks?|schedule|frequency|cadence|steps?|docs?))|promote|ship\s+(?:\w+\s+){0,4}(?:to\s+)?(?:prod|production|live|the\s+live\s+site)|release\s+(?:\w+\s+){0,3}(?:to\s+)?(?:prod|production|live)|cut\s+(?:a|the)\s+release|go\s+live|live\s+site|push\s+(?:\w+\s+){0,3}to\s+(?:main|master|production)|merge\s+(?:to|into)\s+(?:main|master)|(?:to|on|in|into)\s+production\b|production\s+(?:deploy|release|server|environment|branch|build|site)|prod\b|rollbacks?\b(?!\s+(?:procedur|process|polic|plans?|guides?|runbooks?|steps?))|roll\s+back|roll\s+(?:it|this|that)?\s*out\b|change\s+the\s+(?:alias|domain|dns)|point\s+the\s+domain|repoint|update\s+the\s+dns|cname|flip\s+(?:the\s+)?(?:feature\s+)?flag|(?:put|push|publish)\s+(?:\w+\s+){0,4}(?:on|to)\s+the\s+(?:site|website|homepage|landing\s+page)|make\s+(?:it|this|that)\s+available\s+to\s+(?:customers|everyone|the\s+public))\b/i,
+      /\b(?:deploy(?:s|ed|ing)?(?!\s+(?:process(?:es)?|procedur|polic|guides?|pipelines?|checklists?|runbooks?|schedule|frequency|cadence|steps?|docs?))|promote\s+(?:it\s+|this\s+|that\s+)?(?:to\s+)?(?:prod|production|live|the\s+live\s+site|the\s+release)\b|ship\s+(?:\w+\s+){0,4}(?:to\s+)?(?:prod|production|live|the\s+live\s+site)|release\s+(?:\w+\s+){0,3}(?:to\s+)?(?:prod|production|live)|cut\s+(?:a|the)\s+release|go\s+live|live\s+site|push\s+(?:\w+\s+){0,3}to\s+(?:main|master|production)|merge\s+(?:to|into)\s+(?:main|master)|(?:to|on|in|into)\s+production\b|production\s+(?:deploy|release|server|environment|branch|build|site)|prod\b|rollbacks?\b(?!\s+(?:procedur|process|polic|plans?|guides?|runbooks?|steps?))|roll\s+back|roll\s+(?:it|this|that)?\s*out\b|change\s+the\s+(?:alias|domain|dns)|point\s+the\s+domain|repoint|update\s+the\s+dns|cname|flip\s+(?:the\s+)?(?:feature\s+)?flag|(?:put|push|publish)\s+(?:\w+\s+){0,4}(?:on|to)\s+the\s+(?:site|website|homepage|landing\s+page)|make\s+(?:it|this|that)\s+available\s+to\s+(?:customers|everyone|the\s+public))\b/i,
   },
   {
     category: "destructive_change",
     level: "critical",
     pattern:
-      /\b(?:delete(?:s|d)?|deleting|remove\s+(?:\w+\s+){0,3}(?:projects?|accounts?|records?|data|tables?|repos?|branch(?:es)?|duplicates?|files?|users?)|remove\s+(?:\w+\s+){0,3}permanently|drop\s+(?:the\s+)?(?:table|database)|wipe(?!\s+(?:procedur|process|polic|guides?|runbooks?))|purge|erase|truncate|(?<!how\s+we\s+)revoke\s+access|deactivate|cancel\s+the\s+(?:account|subscription)|clear\s+(?:out\s+)?(?:the|all|our|any|every)\s+(?:\w+\s+){0,2}(?:database|data|records?|rows?|accounts?|tables?|logs?|history|files?|customers?|users?|projects?)|reset\s+(?:the|our|all)\s+(?:\w+\s+){0,2}(?:database|data|records?|accounts?|passwords?|environment)|empty\s+the\s+(?:table|database|bucket|queue)|take\s+down\s+(?:the|our)|shut\s+down\s+(?:the|our)|tear\s+down|destroy|get\s+rid\s+of\s+(?:the|all|our)|prune|overwrite|force[-\s]?push|unpublish|disable\s+(?:the\s+)?(?:account|user|integration|webhook))\b/i,
+      /\b(?:delete(?:s|d)?|deleting|remove\s+(?:\w+\s+){0,3}(?:projects?|accounts?|records?|data|tables?|repos?|branch(?:es)?|duplicates?|files?|users?)|remove\s+(?:\w+\s+){0,3}permanently|drop\s+(?:\w+\s+){0,3}(?:tables?|databases?|schemas?|collections?|indexes|indices)|wipe(?!\s+(?:procedur|process|polic|guides?|runbooks?))|purge|erase|truncate|(?<!how\s+we\s+)revoke\s+access|deactivate|cancel\s+the\s+(?:account|subscription)|clear\s+(?:out\s+)?(?:the|all|our|any|every)\s+(?:\w+\s+){0,2}(?:database|data|records?|rows?|accounts?|tables?|logs?|history|files?|customers?|users?|projects?)|reset\s+(?:the|our|all)\s+(?:\w+\s+){0,2}(?:database|data|records?|accounts?|passwords?|environment)|empty\s+the\s+(?:table|database|bucket|queue)|take\s+down\s+(?:the|our)|shut\s+down\s+(?:the|our)|tear\s+down|destroy|get\s+rid\s+of\s+(?:the|all|our)|prune|overwrite|force[-\s]?push|unpublish|disable\s+(?:the\s+)?(?:account|user|integration|webhook))\b/i,
   },
   {
     category: "contract_or_legal",
@@ -304,7 +331,7 @@ const CATEGORY_RULES: Array<{ category: GatedCategory; level: CommandRiskLevel; 
     category: "credential_access",
     level: "critical",
     pattern:
-      /\b(?:(?<!handle\s)(?<!handling\s)(?<!manage\s)(?<!managing\s)(?<!store\s)(?<!storing\s)api\s?keys?\b(?!\s+(?:polic|management|rotation))|access\s?tokens?|secrets?\b(?!\s+(?:management|manager|store|storage|scanning|handling|hygiene))|credentials?\b(?!\s+(?:polic|procedur|process|guide|management|hygiene|rotation))|passwords?\b(?!\s+(?:polic|manager|hygiene|standards?|requirements?|rules?|reset))|env\s+(?:vars?|variables?|file)|environment\s+variables?|private\s?keys?|ssh\s+keys?|rotate\s+(?:\w+\s+){0,2}(?:keys?|credentials?|secrets?|tokens?|them)|service\s+account|read\s+(?:me\s+)?(?:the\s+|what(?:'s|\s+is)\s+in\s+the\s+)?\.?env|(?:read|tell|give)\s+me\s+(?:the\s+)?(?:\w+\s+){0,2}(?:key|token|secret|password|login|credentials?|connection\s+string)|connection\s+string|admin\s+(?:login|password|access)|grant\s+(?:\w+\s+){0,2}(?:admin|owner|root|write)\s+access|invite\s+(?:a\s+|an\s+)?(?:new\s+)?(?:admin|owner)\b)/i,
+      /\b(?:(?<!handle\s)(?<!handling\s)(?<!manage\s)(?<!managing\s)(?<!store\s)(?<!storing\s)api\s?keys?\b(?!\s+(?:polic|management|rotation))|access\s?tokens?|secrets?\b(?!\s+(?:management|manager|store|storage|scanning|handling|hygiene))|credentials?\b(?!\s+(?:polic|procedur|process|guide|management|hygiene))|passwords?\b(?!\s+(?:polic|manager|hygiene|standards?|requirements?|rules?|reset))|env\s+(?:vars?|variables?|file)|environment\s+variables?|private\s?keys?|ssh\s+keys?|rotate\s+(?:\w+\s+){0,2}(?:keys?|credentials?|secrets?|tokens?|them)|service\s+account|read\s+(?:me\s+)?(?:the\s+|what(?:'s|\s+is)\s+in\s+the\s+)?\.?env|(?:read|tell|give)\s+me\s+(?:the\s+)?(?:\w+\s+){0,2}(?:key|token|secret|password|login|credentials?|connection\s+string)|connection\s+string|admin\s+(?:login|password|access)|grant\s+(?:\w+\s+){0,2}(?:admin|owner|root|write)\s+access|invite\s+(?:a\s+|an\s+)?(?:new\s+)?(?:admin|owner)\b)/i,
   },
   {
     category: "public_publishing",
@@ -316,7 +343,7 @@ const CATEGORY_RULES: Array<{ category: GatedCategory; level: CommandRiskLevel; 
     category: "personnel",
     level: "high",
     pattern:
-      /\b(?:hire(?!\s+(?:more\s+)?(?:efficiently|effectively|better|faster|smarter))|fire|terminate\s+(?:the\s+)?employee|lay\s+off|let\s+[\p{L}'-]+\s+go\b|raise\s+(?:their|his|her)\s+(?:salary|pay)|bump\s+(?:\w+\s+){0,3}to\s+\$?\d|offer\s+letters?\b(?!\s+templates?)|make\s+(?:\w+\s+){0,2}an?\s+offer|extend\s+an\s+offer|bring\s+on\s+(?:a|an|the)|onboard\s+(?:a|an|the)\s+(?:new\s+)?(?:contractor|hire|employee|designer|developer|engineer)|(?:change|raise|set|approve|adjust)\s+(?:\w+\s+){0,2}compensation)\b/iu,
+      /\b(?:hire(?!\s+(?:more\s+)?(?:efficiently|effectively|better|faster|smarter))|fire|terminate\s+(?:the\s+)?employee|lay\s+off|let\s+[\p{L}'-]+\s+go\b|raise\s+(?:their|his|her)\s+(?:salary|pay)|bump\s+(?:\w+\s+){0,3}to\s+\$?\d[\d,.]*|offer\s+letters?\b(?!\s+templates?)|make\s+(?:\w+\s+){0,2}an?\s+offer|extend\s+an\s+offer|bring\s+on\s+(?:a|an|the)|onboard\s+(?:a|an|the)\s+(?:new\s+)?(?:contractor|hire|employee|designer|developer|engineer)|(?:change|raise|set|approve|adjust)\s+(?:\w+\s+){0,2}compensation)\b/iu,
   },
 ];
 
@@ -347,20 +374,6 @@ const OVERRIDE_ATTEMPT_PATTERN =
 const HARD_EFFECT_PATTERN =
   /\b(?:send\b(?!\s+costs?)|sends|sending|sent|forward|forwards|forwarding|forwarded|deliver|delivers|delivered|emails?\b(?!\s+(?:volumes?|counts?|lists?|addresses|templates?|providers?|clients?|marketing))|emailed|emailing|dm|publish|publishes|publishing|pay|pays|paying|paid|charge|charges|refunds?\b(?!\s+(?:rates?|polic|process|procedur|volume|reasons?))|transfer(?!\s+(?:fees?|costs?|rates?|pricing|process(?:es)?|times?|speed|volumes?))|wire|deploy(?:s|ed|ing)?\b(?!\s+(?:process(?:es)?|procedur|polic|guides?|pipelines?|checklists?|runbooks?|schedule|frequency|cadence|steps?|docs?))|wipe\b(?!\s+(?:procedur|process|polic|guides?|runbooks?))|purge|erase|rotate|rotates|rotating|(?<!how\s+we\s+)revokes?\b|hire\b(?!\s+(?:more\s+)?(?:efficiently|effectively|better|faster|smarter))|fire|terminate|settle|reimburse|docusign|unpublish)\b/i;
 
-/**
- * Work that is genuinely internal, reversible, and produces a document rather
- * than an external effect. Matching this is necessary but NOT sufficient to
- * clear a command: it must also match no gated category, no hard effect, and
- * every command-shaped clause must match it too.
- *
- * This list is deliberately generous. Under the clause rule an unrecognized
- * internal verb costs an approval click on ordinary work, so the cost of a
- * gap here is friction — and friction, repeated, is what makes a founder stop
- * reading the gates that matter.
- */
-const INTERNAL_WORK_PATTERN =
-  /\b(?:research|analy[sz]e|analysis|review|summari[sz]e|summary|summaries|draft|outline|plan|prepare|write\s+(?:up|out|a\b|an\b|the\b)|brainstorm|compare|comparison|investigate|look\s+(?:into|at|through)|go\s+through|dig\s+into|organi[sz]e|categori[sz]e|group|sort|rank|document|audit\s+(?:the\s+)?(?:copy|content|site|process)|estimate|scope|strategy|strategies|roadmap|checklist|report|notes?\b|brief|memo|deck|overview|breakdown|break\s+down|recap|findings|options|shortlist|evaluate|assess|benchmark|map\s+out|identify|find\s+out|figure\s+out|tell\s+me|show\s+me|walk\s+me\s+through|explain|propose|recommend|suggest|sketch|mock\s+up|put\s+together|pull\s+together|list\s+(?:the|out|all)|cross[-\s]?reference|track|monitor|internal\s+topic)\b/i;
-
 const LEVEL_ORDER: Record<CommandRiskLevel, number> = { low: 0, medium: 1, high: 2, critical: 3 };
 
 function maxLevel(a: CommandRiskLevel, b: CommandRiskLevel): CommandRiskLevel {
@@ -379,43 +392,228 @@ export interface CommandRiskAssessment {
 }
 
 /** Bounded so a pathological transcript cannot make classification expensive. Well above any real spoken command. */
-const MAX_SUBJECT_LENGTH = 8000;
+/**
+ * Well above anything a spoken command produces, and — deliberately — above
+ * what `toDirectiveInstruction` can ship. `buildCommandDraft` can assemble a
+ * ~14 000-character subject from its bounded fields while the Office
+ * instruction caps at 5 000, so a lower value here would let the classifier
+ * truncate text the planner still receives. The classifier must never see less
+ * than the planner does. Every pattern in this file is linear, so the larger
+ * bound costs nothing measurable.
+ */
+const MAX_SUBJECT_LENGTH = 20_000;
+
+/**
+ * How many clauses one command may contain before it stops being a spoken
+ * instruction and starts being a denial-of-service payload.
+ *
+ * Every pattern here is linear in the length of a segment, but the per-segment
+ * work is repeated once per segment — so `", "` repeated to the length cap
+ * produced ten thousand clauses and 760ms of blocked event loop per webhook.
+ * No real command has more than a handful. Exceeding this gates, which is both
+ * the fail-closed direction and the honest description of a string nobody
+ * said.
+ */
+const MAX_SEGMENTS = 200;
 
 /**
  * Splits into clause-sized segments. Sentence terminators always split;
  * commas and coordinators split only ahead of something command-shaped.
  */
-function splitSegments(subject: string): string[] {
-  return subject
-    .split(SENTENCE_BOUNDARY)
-    .flatMap((sentence) => sentence.split(COORDINATOR))
-    .map((segment) => segment.trim())
-    .filter((segment) => segment.length > 0);
+interface Segment {
+  text: string;
+  /** True when this segment is a whole sentence rather than something split off at a comma or conjunction. */
+  fromSentence: boolean;
 }
 
-const OPENS_WITH_COMMAND_VERB = new RegExp(`^[^A-Za-z0-9]*(?:${COMMAND_VERB_HINT})\\b`, "iu");
+function splitSegments(subject: string): Segment[] {
+  const segments: Segment[] = [];
+  for (const sentence of subject.split(SENTENCE_BOUNDARY)) {
+    const pieces = sentence.split(COORDINATOR);
+    pieces.forEach((piece, index) => {
+      const text = piece.trim();
+      if (!text) return;
+      if (index === 0) {
+        segments.push({ text, fromSentence: true });
+        return;
+      }
+      // A piece after a coordinator is a new clause only if it READS like one.
+      // Otherwise it is a list continuation ("…and Gojiberry for outreach
+      // tooling") and belongs to the clause before it — splitting there would
+      // ask a noun phrase to prove it is research work.
+      const head = stripToHead(text);
+      const startsClause = OPENS_WITH_ACTION_VERB.test(head) || RESEARCH_HEAD_PATTERN.test(head) || PREDICATE_SHAPE.test(head);
+      if (startsClause || segments.length === 0) {
+        segments.push({ text, fromSentence: false });
+      } else {
+        segments[segments.length - 1].text += ` ${text}`;
+      }
+    });
+  }
+  return segments;
+}
+
 const OPENS_WITH_ACTION_VERB = new RegExp(`^[^A-Za-z0-9]*(?:${ACTION_VERB_HINT})\\b`, "iu");
 
 /**
- * A segment the clause rule examines: it opens like a command, and has enough
- * words to be an instruction rather than a list item or a noun-phrase field.
+ * ============================================================================
+ * Clearance is an ALLOWLIST over the head verb of every clause
+ * ============================================================================
+ * This is the fourth design of this decision, and the reason for the change is
+ * the first three:
  *
- * The three-word floor keeps a `target` ("Acme Foods") or a list continuation
- * ("Gojiberry") from being asked to prove it is internal work. An outward verb
- * overrides the floor, because "Unsubscribe Marco." is two words and is not a
- * list item.
+ *   A. Clearance needed one internal verb anywhere in the string. "Draft the
+ *      plan and clear the production database tonight" cleared.
+ *   B. Per-clause clearance, plus masks that rewrote risky-sounding topics.
+ *      The masks deleted a window of following text before any rule ran, so
+ *      "Draft a runbook for tomorrow delete the customer records" cleared.
+ *   C. Masks removed, replaced by a list of outward verbs that refuse a clause
+ *      outright. Every test in it was anchored at `^`, so one filler word made
+ *      a clause unexaminable: "Please cancel the Acme order and note it in the
+ *      summary" cleared, as did 37 of the 65 verbs in that list.
+ *
+ * Each of those was a DENYLIST: enumerate what is dangerous, clear everything
+ * else. Three rounds of that produced three critical holes, because the list of
+ * ways to say "do something irreversible" is not enumerable and the failure
+ * direction of a miss is silent.
+ *
+ * So the decision is inverted. A clause clears only when its HEAD VERB is on a
+ * short, explicit list of research and authoring verbs. Everything else gates:
+ * an unrecognized verb, an unusual phrasing, another language, a verb someone
+ * invents next year. The categories and the effect backstop still run, but they
+ * no longer decide whether work starts — they only make the REASON specific and
+ * the level honest. A gap in them now costs a vaguer explanation, not a silent
+ * external action.
+ *
+ * The cost is over-gating, and it is real. It is also visible, one click to
+ * resolve, and — unlike the three holes above — it is the failure a founder can
+ * see happening.
  */
-function isInstructionClause(segment: string): boolean {
-  if (OPENS_WITH_COMMAND_VERB.test(segment)) return true;
-  const words = segment.split(/\s+/).filter(Boolean);
-  if (words.length < 3) return false;
-  return PREDICATE_SHAPE.test(segment) || OPENS_WITH_ACTION_VERB.test(segment);
+
+/**
+ * Politeness, adverbs and lead-in phrases that sit in front of the verb. A real
+ * founder says "please cancel that" far more often than "cancel that", and
+ * under design C the word "please" was enough to make the rest of the sentence
+ * invisible to every check in this file.
+ */
+const LEADING_NOISE =
+  /^(?:[^\p{L}\d]*(?:please|kindly|now|just|today|tomorrow|tonight|then|also|next|first|finally|quickly|asap|ok|okay|so|and|but|well|actually|maybe|perhaps|hey|jarvis|alright|right|sure|yeah|yes|um|uh|like|basically|honestly|obviously)\b[\s,]*)+/iu;
+
+const LEAD_IN_PHRASE =
+  /^(?:[^\p{L}\d]*(?:i(?:'d| would)?\s+(?:need|want|like)\s+you\s+to|i\s+need\s+you\s+to|i\s+want\s+to|can\s+you|could\s+you|would\s+you|will\s+you|we\s+should|we\s+need\s+to|let'?s|make\s+sure\s+to|be\s+sure\s+to|go\s+ahead\s+and|remember\s+to|don'?t\s+forget\s+to|see\s+if\s+you\s+can|try\s+to|help\s+me|it\s+would\s+be\s+good\s+to|your\s+job\s+is\s+to|the\s+task\s+is\s+to)\b[\s,]*)+/iu;
+
+/** Strips everything in front of the verb, repeatedly, until the head is exposed. */
+function stripToHead(segment: string): string {
+  let text = segment.trim();
+  for (let pass = 0; pass < 6; pass += 1) {
+    const next = text.replace(LEAD_IN_PHRASE, "").replace(LEADING_NOISE, "").trim();
+    if (next === text) break;
+    text = next;
+  }
+  return text;
 }
 
-/** True when the clause rule must refuse a segment outright, without consulting INTERNAL_WORK_PATTERN. */
-function opensWithOutwardCommand(segment: string): boolean {
-  return OPENS_WITH_COMMAND_VERB.test(segment);
+/**
+ * The verbs that may start work without a human decision. Short on purpose,
+ * and deliberately only research and authoring: everything here produces a
+ * document, a comparison or an answer, and nothing here leaves LYNQ, spends
+ * anything, or cannot be undone.
+ *
+ * Adding a verb to this list is a safety change and should be treated as one.
+ * Leaving one out costs an approval click.
+ */
+const RESEARCH_HEAD =
+  "sign\\s+off|put\\s+together|pull\\s+together|look\\s+(?:into|at|through|over)|go\\s+through|dig\\s+into|figure\\s+out|find\\s+out|" +
+  "break\\s+down|walk\\s+(?:me\\s+)?through|mock\\s+up|write\\s+up|double[-\\s]?check|cross[-\\s]?reference|think\\s+(?:about|through)|" +
+  "research|analy[sz]e|review|summari[sz]e|draft|outline|plan|prepare|brainstorm|compare|contrast|investigate|explore|examine|study|" +
+  "organi[sz]e|categori[sz]e|classify|document|estimate|scope|map|identify|evaluate|assess|benchmark|" +
+  "tell|show|explain|propose|recommend|suggest|sketch|list|track|monitor|audit|note|describe|recap|shortlist|weigh|consider|rank|arrange|give\\s+me|" +
+  "collect|gather|calculate|compute|forecast|score|rate|measure|count|write|proofread|clarify|define|refine|read\\s+through|" +
+  "find|discover|search|see|determine|understand|quantify|diagnose|draw\\s+up|jot\\s+down|flesh\\s+out";
+
+const RESEARCH_OBJECT =
+  "findings?|shortlists?|lists?|options?|results?|notes?|briefs?|decks?|slides?|outlines?|drafts?|documents?|docs?|" +
+  "tables?|sections?|trackers?|timelines?|roadmaps?|summar(?:y|ies)|reports?|leads?|items?|rows?|columns?|" +
+  "questions?|risks?|criteria|sprints?|plans?|breakdowns?|comparisons?|candidates?|entries";
+
+/**
+ * A second clearance path, for verbs that are ordinary document work when
+ * their object is a document and ordinary danger when it is not: "archive the
+ * old draft notes" against "archive the customer accounts", "clear up the open
+ * questions" against "clear the production database".
+ *
+ * The object list is the load-bearing part and is deliberately all
+ * document-ish nouns. A verb here clears ONLY with one of them, so a missing
+ * noun costs an approval click and a missing verb costs nothing at all.
+ *
+ * It exists because the head-verb allowlist alone gated a third of a realistic
+ * corpus of internal agency work, and a gate that fires on a third of ordinary
+ * requests is how a founder learns to approve without reading — which is what
+ * makes every real gate in this file worthless.
+ */
+const RESEARCH_WITH_OBJECT =
+  `(?:order|sort|rank|group|arrange|place|drop|archive|merge|extend|reset|clear|book|promote|trim|split|combine)` +
+  `(?:\\s+(?:${VERB_PARTICLES}))?\\s+(?:\\w+\\s+){0,4}(?:${RESEARCH_OBJECT})\\b`;
+
+const RESEARCH_HEAD_PATTERN = new RegExp(`^(?:(?:${RESEARCH_HEAD})\\b|${RESEARCH_WITH_OBJECT})`, "iu");
+
+/**
+ * Tokens that can never be a verb, used to tell a clause from a list
+ * continuation ("Gojiberry for outreach tooling") or a noun-phrase field
+ * ("Acme Foods"). Anything else at the head of a clause is treated as a verb —
+ * which is the fail-closed direction, because an unknown verb then has to be
+ * on the allowlist to clear.
+ */
+const NON_VERB_HEAD =
+  /^(?:the|a|an|this|that|these|those|my|our|your|their|his|her|its|all|any|every|both|some|more|another|few|several|couple|no|not|for|with|about|from|into|onto|over|under|per|via|by|at|in|on|to|of|as|and|or|nor|but|if|when|while|once|because|since|though|although|it|they|he|she|we|you|there|here|which|who|what|where|why|how)\b/i;
+
+/**
+ * An instruction with the verb nominalized, so the clause opens with a
+ * determiner and the head-verb test never sees it: "The records need
+ * archiving", "The invoice has to be paid", "Get the deposit sent".
+ *
+ * These read as passive observations and act as commands. A clause in this
+ * shape is examined rather than exempted, and clears only when the
+ * nominalized verb is plainly research — the same allowlist direction as
+ * everywhere else in this file.
+ */
+const NOMINALIZED_ACTION =
+  /\b(?:needs?|has\s+to\s+be|have\s+to\s+be|should\s+be|must\s+be|ought\s+to\s+be|wants?)\s+(?:to\s+be\s+)?[\p{L}]{3,}(?:ing|ed)\b|\bget\s+(?:it|them|the\s+[\p{L}]+|[\p{L}]+)\s+[\p{L}]{3,}(?:ed|ing)\b/iu;
+
+const NOMINALIZED_RESEARCH =
+  /\b(?:research|review|summar|draft|analy|writ|document|outlin|compar|investigat|organi[sz]|check|estimat|plan|scop|track|note|list|rank|sort)\w*(?:ing|ed)\b/iu;
+
+/**
+ * A segment the clause rule must examine.
+ *
+ * `fromSentence` is the distinction that closes the two-word hole: a sentence
+ * is never a list continuation, so "Draft the launch summary. Nuke staging."
+ * gets its second sentence examined even though it is two words and "nuke" is
+ * on no list. A segment split off at a COMMA or a conjunction can genuinely be
+ * a continuation, so it is examined only when its head looks like a verb.
+ */
+function isInstructionClause(segment: string, fromSentence: boolean): boolean {
+  const head = stripToHead(segment);
+  if (!head) return false;
+  const words = head.split(/\s+/).filter(Boolean);
+  if (words.length === 0) return false;
+  // A nominalized command opens with a determiner, so the head test would
+  // exempt it. It is still a command.
+  if (NOMINALIZED_ACTION.test(head)) return true;
+  if (NON_VERB_HEAD.test(head)) return false;
+  if (fromSentence) return true;
+  // A coordinator continuation is a clause only when it reads like one: a
+  // recognized verb of any kind, or an unknown word followed by an object.
+  return RESEARCH_HEAD_PATTERN.test(head) || OPENS_WITH_ACTION_VERB.test(head) || PREDICATE_SHAPE.test(head) || words.length === 1;
 }
+
+/** True when this clause may start work on its own. */
+function isClearedClause(segment: string): boolean {
+  const head = stripToHead(segment);
+  if (NOMINALIZED_ACTION.test(head)) return NOMINALIZED_RESEARCH.test(head);
+  return RESEARCH_HEAD_PATTERN.test(head);
+}
+
 
 /**
  * Classifies the full text a command was derived from. Callers pass every
@@ -425,7 +623,30 @@ function opensWithOutwardCommand(segment: string): boolean {
  * headline outcome.
  */
 export function assessCommandRisk(text: string): CommandRiskAssessment {
-  const subject = (text ?? "").trim().slice(0, MAX_SUBJECT_LENGTH);
+  return assessCommandRiskFields({ instructions: [text ?? ""], references: [] });
+}
+
+/**
+ * The structured entry point, and the one `buildCommandDraft` uses.
+ *
+ * Not every captured field is an instruction. `requestedOutcome` and
+ * `proposedSteps` are things the founder asked for, and the clause rule
+ * applies to them. `target`, `constraints`, `missingInformation` and
+ * `requiredIntegrations` are NOUN PHRASES and qualifiers — "KidsCoding",
+ * "Stay under a week" — and asking them to prove they are research work gates
+ * every ordinary draft. Under the previous single-string API they were
+ * concatenated in with everything else, so a target of "KidsCoding" was read
+ * as a clause whose head verb was "kidscoding".
+ *
+ * References are still fully scanned for categories, effect words, named
+ * recipients and override attempts — an instruction hidden in an "open
+ * question" is exactly the injection the classifier must see. They are simply
+ * not required to look like research on their own.
+ */
+export function assessCommandRiskFields(input: { instructions: string[]; references: string[] }): CommandRiskAssessment {
+  const instructionText = input.instructions.filter(Boolean).join(" \n ");
+  const referenceText = input.references.filter(Boolean).join(" \n ");
+  const subject = [instructionText, referenceText].filter(Boolean).join(" \n ").trim().slice(0, MAX_SUBJECT_LENGTH);
   if (!subject) {
     return {
       level: "medium",
@@ -436,7 +657,18 @@ export function assessCommandRisk(text: string): CommandRiskAssessment {
     };
   }
 
-  const segments = splitSegments(subject);
+  // Only the instruction fields are subject to the clause rule.
+  const segments = splitSegments(instructionText.slice(0, MAX_SUBJECT_LENGTH));
+  const allSegments = splitSegments(subject);
+  if (allSegments.length > MAX_SEGMENTS) {
+    return {
+      level: "medium",
+      requiresApproval: true,
+      gatedCategories: [],
+      reasons: ["Jarvis could not follow this as one instruction, so it stopped for your decision"],
+      overrideAttempted: OVERRIDE_ATTEMPT_PATTERN.test(subject),
+    };
+  }
 
   const gatedCategories: GatedCategory[] = [];
   let level: CommandRiskLevel = "low";
@@ -450,7 +682,7 @@ export function assessCommandRisk(text: string): CommandRiskAssessment {
   }
   // Checked per segment so a contact verb in one clause cannot be paired with a
   // recipient-shaped word in the next.
-  if (segments.some(mentionsNamedRecipient)) addCategory("customer_outreach", "high");
+  if (allSegments.some((segment) => mentionsNamedRecipient(segment.text))) addCategory("customer_outreach", "high");
 
   const overrideAttempted = OVERRIDE_ATTEMPT_PATTERN.test(subject);
   if (overrideAttempted) level = "critical";
@@ -480,24 +712,40 @@ export function assessCommandRisk(text: string): CommandRiskAssessment {
       };
     }
 
-    // THE clause rule. Every segment that reads as a command must itself read
-    // as internal work. This is what stops a planning verb at the front of a
-    // sentence from vouching for whatever follows it.
-    const unclearedIndex = segments.findIndex(
-      (segment) => opensWithOutwardCommand(segment) || (isInstructionClause(segment) && !INTERNAL_WORK_PATTERN.test(segment))
-    );
-    if (unclearedIndex !== -1) {
-      const spoken = segments[unclearedIndex].replace(/\s+/g, " ").slice(0, 80);
+    // THE clause rule. Every clause must have a head verb on the research
+    // allowlist. Not "contains an internal word" — the head, and only the head:
+    // INTERNAL_WORK_PATTERN necessarily contains nouns like `notes` and `plan`,
+    // and one of those anywhere in the string used to vouch for the whole of it.
+    const clauses = segments.filter((segment) => isInstructionClause(segment.text, segment.fromSentence));
+    const uncleared = clauses.find((segment) => !isClearedClause(segment.text));
+    if (uncleared) {
+      const spoken = uncleared.text.replace(/\s+/g, " ").slice(0, 80);
+      // Name the verb that stopped it. For a nominalized command ("the records
+      // need archiving") the first word is a determiner, which would be a
+      // useless thing to report.
+      const stripped = stripToHead(uncleared.text);
+      const nominalized = stripped.match(NOMINALIZED_ACTION)?.[0] ?? "";
+      const head = (nominalized ? nominalized.split(/\s+/).pop() ?? "" : stripped.split(/\s+/)[0] ?? "").replace(/[^\p{L}'-]/gu, "");
       return {
         level: "medium",
         requiresApproval: true,
         gatedCategories: [],
-        reasons: [`Jarvis could not tell that "${spoken}" is internal work, so it stopped for your decision`],
+        // Names the WORD, not just the clause. "could not tell that X is
+        // internal work" was a checkable falsehood whenever X plainly
+        // contained research language, and a gate that says something untrue
+        // is how a founder learns to approve without reading.
+        reasons: [
+          head
+            ? `Jarvis doesn't recognize "${head.toLowerCase()}" as research or writing work, so it stopped for your decision`
+            : `Jarvis could not tell what "${spoken}" would do, so it stopped for your decision`,
+        ],
         overrideAttempted: false,
       };
     }
 
-    if (INTERNAL_WORK_PATTERN.test(subject)) {
+    // At least one clause has to have actually asked for something. A subject
+    // made only of noun phrases has not.
+    if (clauses.length > 0) {
       return { level: "low", requiresApproval: false, gatedCategories: [], reasons: [], overrideAttempted: false };
     }
 
