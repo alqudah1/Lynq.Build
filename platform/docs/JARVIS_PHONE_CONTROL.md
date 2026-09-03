@@ -738,6 +738,10 @@ Reused unchanged:
 
 - **Nothing here has been exercised against the real Vapi.** Every behaviour
   above is proved by unit, integration, accessibility and concurrency tests
-  against a real Postgres, and the risk gate, redaction, the idempotency replay
-  and the caller budgets have mutation evidence. The provider itself has not
-  been called once. Step 9 is the first time this lane meets a real phone call.
+  against a real Postgres — including two suites that play COMPLETE calls
+  delivery by delivery and assert on the rows left behind: one through the
+  conversation itself, one through the approval that turns a gated command into
+  a real project with real tasks and running agents. The risk gate, redaction,
+  the idempotency replay, the caller budgets, and the approval gate itself all
+  have mutation evidence. The provider itself has not been called once. Step 9
+  is the first time this lane meets a real phone call.
