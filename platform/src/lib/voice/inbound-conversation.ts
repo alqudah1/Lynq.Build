@@ -4,7 +4,9 @@ import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { PostgresRateLimiter } from "@/lib/rate-limit/postgres";
 import {
   callBudgetKey,
+  callChargeKey,
   founderLineBudgetIdentity,
+  ONE_CHARGE_PER_CALL,
   INBOUND_CALL_RATE_LIMIT,
   refusedBudgetKey,
   refusedCallBudgetIdentity,
@@ -15,6 +17,7 @@ import {
 import { recordAuditEvent } from "@/lib/audit";
 import { buildCommandDraft, commandDraftInputSchema } from "./command-draft";
 import { dispatchConfirmedCommand } from "./command-dispatch";
+import { ABANDONED_DRAFT_MS } from "./call-lifetime";
 import { callerNumberMatchesFounder, MAX_VERIFICATION_ATTEMPTS, PASSCODE_DIGITS, passcodeDigitsWord, verifyFounderPasscode } from "./founder-verification";
 import type { JarvisPhoneCommandConfig } from "./phone-config";
 import { redactLogFields } from "./redaction";
@@ -222,23 +225,6 @@ export interface HandleInboundEventInput {
   /** Injected in tests so passcode windows are deterministic. */
   nowMs?: number;
   workspaceId?: string | null;
-  /**
-   * True when this is a REDELIVERY of an event the deployment has already
-   * claimed, being re-run only to produce an answer for the provider.
-   *
-   * The webhook's duplicate path re-runs `assistant-request` rather than
-   * replaying a stored copy, because the config depends on live state. That was
-   * described as safe on the grounds that the handler is read-only apart from
-   * an idempotent `ensureCallSession` — and it stopped being true the moment
-   * this function started charging a call budget. A first delivery that outran
-   * the provider's timeout would then spend TWO units of the founder's six for
-   * one call, which is exactly the lockout the budget's refund exists to
-   * prevent.
-   *
-   * A replay therefore spends nothing. It is not a new call; the call it
-   * belongs to was already paid for.
-   */
-  replay?: boolean;
 }
 
 export async function handleInboundConversationEvent(db: Db, input: HandleInboundEventInput): Promise<ConversationResult> {
@@ -299,38 +285,43 @@ export async function handleInboundConversationEvent(db: Db, input: HandleInboun
   // rotation can escape because it is not keyed on anything the caller
   // controls. An attacker filling the second one cannot touch the first.
   //
-  // Charged when a session is about to EXIST, not when a particular event kind
-  // arrives. Gating on the kind — the previous version — meant any other
-  // inbound-typed delivery that happened to land first created the session
-  // unconditionally, after which `existing` was set and the budget was never
-  // entered again: a whole call, and every redial, for nothing. A statically
-  // assigned assistant produces exactly that shape, and so does ordinary
-  // delivery reordering.
+  // Charged once per CALL, and the admission decision comes from the atomic
+  // increment rather than from a read.
   //
-  // Checked before it is charged, so a call already over the cap costs nothing
-  // further however many deliveries it has. Only a call being let through pays,
-  // and the delivery that pays is the one that creates the session, so an
-  // admitted call is charged once.
+  // Two mistakes have been made here and both are worth naming. Gating on the
+  // event KIND let any other inbound-typed delivery create the session first,
+  // after which the budget was never entered again and the whole call was free.
+  // Replacing the atomic `recordAttempt` decision with a `checkLimit` was
+  // worse: two statements with no transaction between them, so forty
+  // simultaneous calls all read the same count, all passed, and all were
+  // admitted against a cap of twenty — defeating the cap in precisely the
+  // concurrent case a flood arrives in.
+  //
+  // So the decision is `recordAttempt`'s own return value, which is one upsert
+  // and cannot be raced. What "no session yet" could not tell us — whether this
+  // delivery is a NEW call or the third delivery of one already paid for — is
+  // answered by claiming a one-per-call key, which is the same atomic
+  // primitive. Exactly one delivery per call pays; every other delivery, a
+  // provider redelivery included, is judged against the budget without
+  // spending it, with one unit of slack so a call is never refused by the very
+  // increment it made itself.
   if (!existing) {
     const limiter = new PostgresRateLimiter(db);
     const budget = callerNumberMatched
       ? { key: callBudgetKey(founderLineBudgetIdentity(config)), config: INBOUND_CALL_RATE_LIMIT }
       : { key: refusedBudgetKey(refusedCallBudgetIdentity(config)), config: REFUSED_CALL_RATE_LIMIT };
 
-    // A REPLAY spends nothing and is judged one unit more generously, because
-    // it is by definition a call this deployment already admitted once — its
-    // own first delivery paid for it. Without the slack, `checkLimit` (which
-    // refuses at the count `recordAttempt` admits) turned away every retry of
-    // the last permitted call of the hour, permanently, for a call the budget
-    // had actually allowed. Without the check at all — suppressing the whole
-    // block, the version before that — a redelivery whose first delivery died
-    // before creating a session got a full, uncapped call for free.
-    const allowance = input.replay ? { ...budget.config, limit: budget.config.limit + 1 } : budget.config;
-
     let withinBudget = false;
     try {
-      withinBudget = (await limiter.checkLimit(budget.key, allowance)).allowed;
-      if (withinBudget && !input.replay) await limiter.recordAttempt(budget.key, budget.config);
+      const chargeKey = callChargeKey({
+        verificationSecret: config.verificationSecret,
+        organizationId: config.organizationId,
+        providerCallId: event.providerCallId,
+      });
+      const paysNow = (await limiter.recordAttempt(chargeKey, ONE_CHARGE_PER_CALL)).allowed;
+      withinBudget = paysNow
+        ? (await limiter.recordAttempt(budget.key, budget.config)).allowed
+        : (await limiter.checkLimit(budget.key, { ...budget.config, limit: budget.config.limit + 1 })).allowed;
     } catch {
       // Fails closed, like every other rate limit in this lane.
       withinBudget = false;
@@ -346,7 +337,7 @@ export async function handleInboundConversationEvent(db: Db, input: HandleInboun
         spoken: callerNumberMatched ? FOUNDER_LINE_BUSY_SPOKEN : REFUSAL_SPOKEN,
         // The closed assistant: one sentence, no tools, twenty seconds. No
         // session row is written, so a flood costs the attacker a phone bill
-        // and costs this deployment one rate-limit read.
+        // and costs this deployment one rate-limit write.
         payload: buildRefusalAssistantConfig(callerNumberMatched ? FOUNDER_LINE_BUSY_SPOKEN : REFUSAL_SPOKEN),
         processingStatus: "ignored",
         failureCode: callerNumberMatched ? "call_rate_limited" : "refused_call_rate_limited",
@@ -452,13 +443,38 @@ export async function handleInboundConversationEvent(db: Db, input: HandleInboun
   // provider, replayed, or forged — was fully honored: `capture_command` opened
   // a fresh draft and `confirm_command` dispatched it, creating a real project
   // after the call was over.
-  if (session.status !== "active" && event.kind === "tool_call") {
+  //
+  // Time is part of the test, not only status. `completeCallSession` runs on
+  // one provider delivery, and a lost delivery leaves the row `active`
+  // forever — so a guard that reads only `status` never engages for exactly the
+  // call whose ending went missing, on a session whose verification is
+  // permanent. A session silent for longer than any call can last is over,
+  // whatever the row says, and a forged or replayed tool call against it is
+  // refused without waiting for anyone to load a screen.
+  const callIsOver = session.status !== "active" || nowMs - session.lastEventAt.getTime() > ABANDONED_DRAFT_MS;
+  if (callIsOver && event.kind === "tool_call") {
     return {
       spoken: "That call has already ended. Please call back if you still need this.",
       processingStatus: "ignored",
       failureCode: "session_not_active",
       sessionId: session.id,
     };
+  }
+
+  // Every event marks the call as alive, not only the two kinds that happened
+  // to write for other reasons.
+  //
+  // `lastEventAt` is what `reapAbandonedDraft` reads to decide a call has gone
+  // silent, and it was written only by `touchCallSession` (transcripts and
+  // status updates) and by the verification and completion writes — NOT by
+  // `assistant_request`, `capture_command` or `confirm_command`, which are the
+  // three events that bracket the entire `awaiting_confirmation` window. A
+  // deployment whose provider subscription omits `transcript` therefore had a
+  // live call that looked silent, and a member loading the Jarvis screen could
+  // cancel a draft out from under a founder who was still describing it — who
+  // would then say "yes" and be told they had cancelled it.
+  if (event.kind === "assistant_request" || event.kind === "tool_call") {
+    await touchCallSession(db, { sessionId: session.id, organizationId: session.organizationId }).catch(() => undefined);
   }
 
   switch (event.kind) {

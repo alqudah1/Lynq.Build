@@ -10,7 +10,8 @@ import { requireOrganizationMembership } from "@/lib/authz/helpers";
 import { getJarvisPhoneCommandReadiness, resolveJarvisPhoneCommandConfig } from "@/lib/voice/phone-config";
 import { GATED_CATEGORY_LABELS, type GatedCategory } from "@/lib/voice/command-risk";
 import { DISPATCH_LEASE_MS, MAX_DISPATCH_ATTEMPTS, reapAbandonedDraft, reapStalledDispatch } from "@/lib/voice/command-dispatch";
-import { isDispatchInFlight } from "@/lib/voice/call-store";
+import { ABANDONED_DRAFT_MS } from "@/lib/voice/call-lifetime";
+import { isDispatchInFlight, reapUnfinishedCallSession } from "@/lib/voice/call-store";
 
 export const dynamic = "force-dynamic";
 
@@ -53,9 +54,20 @@ export async function GET(_request: Request, { params }: RouteParams) {
     // write is idempotent, revision-guarded, and only ever fires on a row whose
     // lease has already expired; losing the guard to a concurrent writer just
     // means someone else got there first.
+    const silentSince = new Date(Date.now() - ABANDONED_DRAFT_MS);
     const calls = await Promise.all(
       loaded.map(async (call) => ({
         ...call,
+        // A call whose ending was never delivered is ended here. Without it the
+        // session stays `active` for good: this screen says "On the call" and
+        // re-polls every five seconds forever, and the guard that refuses a
+        // tool call after a call has ended never engages for it.
+        session:
+          call.session.status === "active" && call.session.lastEventAt < silentSince
+            ? (await reapUnfinishedCallSession(db, { sessionId: call.session.id, organizationId, silentSince }))
+              ? { ...call.session, status: "completed" as const, failureCode: "call_end_not_received", endedAt: new Date() }
+              : call.session
+            : call.session,
         commands: await Promise.all(
           call.commands.map(async (command) => {
             // No actor on either reap: nobody asked for them. They are repairs

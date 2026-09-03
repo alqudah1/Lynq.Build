@@ -95,6 +95,8 @@ type LockoutState = {
   /** Tenant-wide, filled by calls from OTHER numbers. Never the founder's own doing, and it does not stop their calls. */
   refusedCallsSpent: boolean;
   resetAt: string | null;
+  /** The refused-call budget's own clock. Never the same as `resetAt`, and never quoted in the founder's own lockout text. */
+  refusedResetAt: string | null;
   callsRemaining: number;
   attemptsRemaining: number;
   refusedCallsRemaining: number;
@@ -376,7 +378,7 @@ export function JarvisPhoneControl({ organizationId, organizationSlug }: { organ
                   <p className="mt-1 text-sm leading-6 text-amber-100/80">
                     Your own calls still work normally. Jarvis has stopped recording the wrong-number ones for now, which also means a call is
                     turned away if your phone doesn&apos;t send your number with it. It clears on its own
-                    {passcode.lockout.resetAt ? ` at ${formatTime(passcode.lockout.resetAt)}` : " shortly"}. You can clear it now if you need
+                    {passcode.lockout.refusedResetAt ? ` at ${formatTime(passcode.lockout.refusedResetAt)}` : " shortly"}. You can clear it now if you need
                     to call in from a line that withholds its number — that will also start recording the other calls again.
                   </p>
                 </>

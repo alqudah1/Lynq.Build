@@ -9,6 +9,7 @@ import { redactLogFields } from "./redaction";
 import { phoneAutoDispatchEnabled } from "./phone-config";
 import { claimDispatchAttempt, isDispatchInFlight, recordDispatchProject, resolveCommandById, transitionCommand, type JarvisPhoneCommand } from "./call-store";
 import { CommandNotRetryableError } from "./errors";
+import { ABANDONED_DRAFT_MS } from "./call-lifetime";
 
 type Db = NeonHttpDatabase<Record<string, unknown>>;
 
@@ -326,14 +327,6 @@ export async function reapStalledDispatch(
   return reaped;
 }
 
-/**
- * How long after a call's last event an unconfirmed draft is treated as
- * abandoned.
- *
- * Comfortably longer than the assistant's own ten-minute ceiling, so a draft is
- * never expired out from under a call that is still running.
- */
-export const ABANDONED_DRAFT_MS = 20 * 60 * 1000;
 
 /**
  * Expires a draft that is waiting for a confirmation that can no longer come.

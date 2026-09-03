@@ -21,7 +21,6 @@ import {
   upsertCommandDraft,
 } from "./call-store";
 import {
-  ABANDONED_DRAFT_MS,
   dispatchConfirmedCommand,
   DISPATCH_LEASE_MS,
   MAX_DISPATCH_ATTEMPTS,
@@ -30,6 +29,7 @@ import {
   retryFailedDispatch,
   runDirectiveDispatch,
 } from "./command-dispatch";
+import { ABANDONED_DRAFT_MS } from "./call-lifetime";
 import { createDirectiveProject, DirectivePartiallyCreatedError } from "@/lib/office/directive-intake";
 import { CommandNotRetryableError } from "./errors";
 

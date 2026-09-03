@@ -321,10 +321,15 @@ act on the same command at once. Four independent layers make that safe:
    is looking at "Waiting for you to confirm on the call" on a call that ended,
    permanently, with no button. `reapAbandonedDraft` expires a draft whose call
    is no longer active, or has been silent for longer than any call can last, on
-   the read path. Removing the wedge as a class is also what lets the webhook go
-   on acknowledging an ambiguous event exactly as it did before phone control
-   existed, rather than answering 5xx on an endpoint the outbound notification
-   lane shares.
+   the read path. That silence clock is `jarvis_call_sessions.last_event_at`,
+   and it is written by EVERY provider delivery — it was not, and while it was
+   driven only by transcripts and status updates, a deployment whose provider
+   subscription omits transcripts had a live call that looked silent within
+   minutes, so a member loading the screen could cancel a draft out from under a
+   founder still describing it. Removing the wedge as a class is also what lets
+   the webhook go on acknowledging an ambiguous event exactly as it did before
+   phone control existed, rather than answering 5xx on an endpoint the outbound
+   notification lane shares.
 
 4. **A dispatch claim taken BEFORE anything is created**, which also moves the
    row into `dispatching`. The three layers above all protect the command

@@ -78,7 +78,7 @@ function stubFetch(state: unknown, extra?: Record<string, unknown>, passcodeData
     if (String(url).endsWith("/passcode")) {
       if (init?.method === "POST") {
         return new Response(
-          JSON.stringify({ data: { cleared: true, reason: null, lockout: { locked: false, refusedCallsSpent: false, resetAt: null, callsRemaining: 6, attemptsRemaining: 12, refusedCallsRemaining: 20 } } }),
+          JSON.stringify({ data: { cleared: true, reason: null, lockout: { locked: false, refusedCallsSpent: false, resetAt: null, refusedResetAt: null, callsRemaining: 6, attemptsRemaining: 12, refusedCallsRemaining: 20 } } }),
           { status: 200 }
         );
       }
@@ -190,7 +190,7 @@ describe("JarvisPhoneControl accessibility", () => {
       available: true,
       passcode: "41729638",
       expiresInMs: 300000,
-      lockout: { locked: false, refusedCallsSpent: true, resetAt: "2026-09-01T16:30:00.000Z", callsRemaining: 6, attemptsRemaining: 12, refusedCallsRemaining: 0 },
+      lockout: { locked: false, refusedCallsSpent: true, resetAt: null, refusedResetAt: "2026-09-01T16:30:00.000Z", callsRemaining: 6, attemptsRemaining: 12, refusedCallsRemaining: 0 },
     });
 
     const { container } = render(<JarvisPhoneControl organizationId="organization-1" organizationSlug="lynq" />);
@@ -203,6 +203,9 @@ describe("JarvisPhoneControl accessibility", () => {
     // implying the founder is the one being kept out.
     expect(screen.queryByRole("button", { name: /let me call in again/i })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /clear it anyway/i })).toBeInTheDocument();
+    // Its own clock. Folding both budgets into one maximum quoted the
+    // wrong-number flood's clear time inside the founder's own lockout text.
+    expect(screen.getByText(/a lot of calls from other numbers/i).parentElement?.textContent ?? "").toMatch(/clears on its own at/i);
     expect(await axe(container)).toHaveNoViolations();
   });
 
@@ -211,7 +214,7 @@ describe("JarvisPhoneControl accessibility", () => {
       available: true,
       passcode: "41729638",
       expiresInMs: 300000,
-      lockout: { locked: true, refusedCallsSpent: false, resetAt: "2026-09-01T16:30:00.000Z", callsRemaining: 0, attemptsRemaining: 0, refusedCallsRemaining: 20 },
+      lockout: { locked: true, refusedCallsSpent: false, resetAt: "2026-09-01T16:30:00.000Z", refusedResetAt: null, callsRemaining: 0, attemptsRemaining: 0, refusedCallsRemaining: 20 },
     });
 
     const { container } = render(<JarvisPhoneControl organizationId="organization-1" organizationSlug="lynq" />);

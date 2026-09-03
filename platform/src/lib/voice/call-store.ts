@@ -472,6 +472,60 @@ export async function markCallSessionRefused(
     .where(and(eq(jarvisCallSessions.id, input.sessionId), eq(jarvisCallSessions.organizationId, input.organizationId)));
 }
 
+/**
+ * Ends a call the provider never told us had ended.
+ *
+ * `completeCallSession` runs on the end-of-call delivery, and that delivery can
+ * be lost — a database blip during its one attempt, a provider that stops
+ * retrying, a payload this lane could not classify as inbound. The session then
+ * stays `active` forever: the Jarvis screen says "On the call" and re-polls
+ * every five seconds indefinitely, and the guard that stops a tool call
+ * arriving after a call has ended never engages, on a session whose
+ * verification is permanent.
+ *
+ * Guarded on the row still being `active` AND on the silence being real, so it
+ * can never end a call that is merely quiet for a moment, and losing the guard
+ * to a concurrent writer just means the real end-of-call event got there first.
+ * The recorded `failure_code` says what actually happened: not that the call
+ * failed, but that its ending was never delivered.
+ */
+export async function reapUnfinishedCallSession(
+  db: Db,
+  input: { sessionId: string; organizationId: string; silentSince: Date }
+): Promise<boolean> {
+  const [row] = await db
+    .update(jarvisCallSessions)
+    .set({
+      status: "completed",
+      failureCode: "call_end_not_received",
+      deliveryStatus: "ended",
+      endedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(jarvisCallSessions.id, input.sessionId),
+        eq(jarvisCallSessions.organizationId, input.organizationId),
+        eq(jarvisCallSessions.status, "active"),
+        lt(jarvisCallSessions.lastEventAt, input.silentSince)
+      )
+    )
+    .returning({ id: jarvisCallSessions.id });
+  if (!row) return false;
+
+  await recordAuditEvent(db, {
+    eventType: "jarvis_phone_call_ended",
+    organizationId: input.organizationId,
+    targetType: "jarvis_call_session",
+    targetId: input.sessionId,
+    // Honest about which of the two this is: nobody reported this call ending.
+    metadata: { endedReason: null, failed: false, endNotReceived: true, observedOnRead: true },
+  }).catch(() => {
+    console.error("[jarvis-phone]", JSON.stringify({ event: "call-ended-audit-failed", sessionId: input.sessionId }));
+  });
+  return true;
+}
+
 export async function completeCallSession(
   db: Db,
   input: { sessionId: string; organizationId: string; endedReason: string | null; summaryTranscript: string | null; failureCode?: string | null }

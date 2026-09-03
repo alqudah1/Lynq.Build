@@ -24,6 +24,7 @@ import {
   listPhoneCallsForUser,
   markCallSessionRefused,
   recordCallerNumberMatch,
+  reapUnfinishedCallSession,
   PhoneCommandActorUnavailableError,
   recordVerificationAttempt,
   resolveCommandById,
@@ -553,6 +554,42 @@ describe("call completion", () => {
     // delivery wipes what the other wrote.
     expect(row.endedReason).toBe("customer-ended-call");
     expect(row.redactedSummaryTranscript).toContain("launch");
+  });
+
+  /**
+   * Round sixteen. `completeCallSession` runs on one provider delivery, and the
+   * webhook acknowledges an ambiguous event rather than retrying it — so that
+   * delivery can be lost, and the session then stays `active` forever: the
+   * Jarvis screen says "On the call" and re-polls every five seconds
+   * indefinitely, and the guard that refuses a tool call after a call has ended
+   * never engages for it.
+   */
+  it("ends a call whose ending was never delivered, once it has been silent long enough", async () => {
+    const userId = await makeUser();
+    const organizationId = await makeOrg(userId);
+    const session = await openSession(organizationId, userId);
+
+    // Not yet: a call quiet for a moment is not a call that ended.
+    expect(
+      await reapUnfinishedCallSession(db, { sessionId: session.id, organizationId, silentSince: new Date(Date.now() - 60_000) })
+    ).toBe(false);
+
+    expect(
+      await reapUnfinishedCallSession(db, { sessionId: session.id, organizationId, silentSince: new Date(Date.now() + 60_000) })
+    ).toBe(true);
+
+    const [row] = await db.select().from(jarvisCallSessions).where(eq(jarvisCallSessions.id, session.id));
+    expect(row.status).toBe("completed");
+    // Honest about which of the two this is: the call did not fail, its ending
+    // was never reported.
+    expect(row.failureCode).toBe("call_end_not_received");
+    expect(row.endedAt).not.toBeNull();
+
+    // And it is one-shot: a real end-of-call event arriving later does not
+    // audit the call as ending a second time.
+    expect(
+      await reapUnfinishedCallSession(db, { sessionId: session.id, organizationId, silentSince: new Date(Date.now() + 60_000) })
+    ).toBe(false);
   });
 
   it("does not relabel a refused call as completed", async () => {

@@ -55,11 +55,11 @@ function unauthorized() {
  *   still going — never an invented outcome.
  * - An assistant request is REBUILT rather than replayed, because the config
  *   depends on live state (whether the founder has verified yet), so a rebuild
- *   is more accurate than a stored copy. It is passed `replay: true`, which is
- *   load-bearing rather than cosmetic: the handler's only durable writes are an
- *   idempotent `ensureCallSession` and a guarded refusal, but it also SPENDS a
- *   call budget, and a first delivery that outran the provider's timeout would
- *   otherwise cost the founder two of their six calls an hour for one call.
+ *   is more accurate than a stored copy. Re-running it is safe: its durable
+ *   writes are an idempotent `ensureCallSession` and a guarded refusal, and the
+ *   call budget it consults is claimed once per provider call id, so a
+ *   redelivery is recognised as a call already paid for rather than charged
+ *   again.
  */
 async function duplicateResponse(
   db: ReturnType<typeof createDbClient>,
@@ -69,7 +69,7 @@ async function duplicateResponse(
 
   if (event.kind === "assistant_request") {
     try {
-      const result = await handleInboundConversationEvent(db, { config: input.config, event, replay: true });
+      const result = await handleInboundConversationEvent(db, { config: input.config, event });
       if (result.payload) return Response.json(result.payload);
     } catch {
       console.error("[jarvis-phone]", JSON.stringify({ event: "duplicate-assistant-rebuild-failed" }));

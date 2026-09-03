@@ -125,6 +125,31 @@ export function founderLineBudgetIdentity(input: { verificationSecret: string; o
   return createHmac("sha256", input.verificationSecret).update(`jarvis-phone-founder-line:${input.organizationId}`).digest("hex");
 }
 
+/**
+ * One charge per call, however many deliveries that call produces.
+ *
+ * The budget is charged before the session row exists, and several deliveries
+ * of the same call can be in flight before it commits — a statically assigned
+ * assistant opens with `queued`, `ringing` and `in-progress` inside a few
+ * hundred milliseconds — so "no session yet" is not the same as "new call". The
+ * first delivery to claim this key is the one that pays; every other delivery
+ * of the same call, including a provider redelivery, is a call already paid
+ * for.
+ *
+ * A rate-limit counter is used as the claim rather than a new table because it
+ * is exactly the shape needed: one atomic upsert, a limit of one, and a window
+ * that expires on its own.
+ */
+export const ONE_CHARGE_PER_CALL: RateLimitConfig = { limit: 1, windowSeconds: 3600 };
+
+/** Where a single call's charge is claimed. Hashed like every other key here — the table keeps no provider identifiers. */
+export function callChargeKey(input: { verificationSecret: string; organizationId: string; providerCallId: string }): string {
+  const digest = createHmac("sha256", input.verificationSecret)
+    .update(`jarvis-phone-call-seen:${input.organizationId}:${input.providerCallId}`)
+    .digest("hex");
+  return `jarvis-phone:call-seen:${digest}`;
+}
+
 export const verifyBudgetKey = (identity: string) => `jarvis-phone:verify:${identity}`;
 export const callBudgetKey = (identity: string) => `jarvis-phone:call:${identity}`;
 
@@ -141,8 +166,10 @@ export interface VerificationBudgetState {
    * theirs, without saying that is what the button would do.
    */
   locked: boolean;
-  /** When the last of the spent budgets frees itself, if any is spent. */
+  /** When the founder's own spent budgets free themselves, if any is spent. */
   resetAt: string | null;
+  /** When the tenant-wide refused-call budget frees itself, if it is spent. Its own clock, never mixed with `resetAt`. */
+  refusedResetAt: string | null;
   callsRemaining: number;
   attemptsRemaining: number;
   /**
@@ -187,13 +214,16 @@ export async function readVerificationBudget(
   ]);
 
   const own = [calls, attempts].filter((result) => !result.allowed);
-  const spent = [...own, ...(refused.allowed ? [] : [refused])];
   return {
     locked: own.length > 0,
     refusedCallsSpent: !refused.allowed,
-    // The latest of whichever are spent, so the screen never promises it will
-    // clear before it actually does.
-    resetAt: spent.length > 0 ? new Date(Math.max(...spent.map((result) => result.resetAt.getTime()))).toISOString() : null,
+    // Two clocks, because the screen shows two different situations and each
+    // must quote its own. Folding them into one maximum meant a wrong-number
+    // flood that clears an hour later was quoted inside the FOUNDER'S lockout
+    // text — so a founder whose own budget frees at 11:00 was told to wait
+    // until 11:59, on a number this function promises will never over-promise.
+    resetAt: own.length > 0 ? new Date(Math.max(...own.map((result) => result.resetAt.getTime()))).toISOString() : null,
+    refusedResetAt: refused.allowed ? null : refused.resetAt.toISOString(),
     callsRemaining: calls.remaining,
     attemptsRemaining: attempts.remaining,
     refusedCallsRemaining: refused.remaining,
