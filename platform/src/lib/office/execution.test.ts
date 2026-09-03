@@ -94,6 +94,23 @@ const research = {
   uncertainty: ["Opening hours were only listed on one aggregator."],
 };
 
+describe("shared project memory", () => {
+  it("keeps the newest evidence marker when older artifacts exceed the prompt limit", async () => {
+    const { composeProjectContext } = await import("./execution");
+    const rows = [
+      { title: "Old one", artifactType: "report", content: `OLD_ONE ${"a".repeat(220)}`, createdAt: new Date("2026-08-01") },
+      { title: "Old two", artifactType: "report", content: `OLD_TWO ${"b".repeat(220)}`, createdAt: new Date("2026-08-02") },
+      { title: "Current evidence", artifactType: "report", content: `<!-- LYNQ_APPROVED_BRAND_PACK newest --> ${"c".repeat(120)}`, createdAt: new Date("2026-08-03") },
+    ];
+
+    const context = composeProjectContext("Project brief", rows, 300);
+
+    expect(context).toContain("LYNQ_APPROVED_BRAND_PACK newest");
+    expect(context).not.toContain("OLD_ONE");
+    expect(context.length).toBeLessThanOrEqual(300);
+  });
+});
+
 function researchMarkerFor(overrides: Partial<typeof candidate> = {}): string {
   return `<!-- LYNQ_RESTAURANT_RESEARCH ${JSON.stringify({ ...research, recommendation: { ...candidate, ...overrides } })} -->`;
 }

@@ -257,6 +257,25 @@ export function hostOf(url: string): string | null {
   }
 }
 
+function normalizedSourceUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    parsed.hash = "";
+    parsed.hostname = parsed.hostname.toLowerCase().replace(/^www\./, "");
+    parsed.pathname = parsed.pathname.replace(/\/+$/, "") || "/";
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
+type EvidenceSourcePolicy = {
+  approvedHosts: Set<string>;
+  approvedExactUrls: Set<string>;
+  approvedSocialUrls: Set<string>;
+  officialHost: string | null;
+};
+
 function isSocialHost(host: string): boolean {
   return SOCIAL_HOSTS.some((allowed) => host === allowed || host.endsWith(`.${allowed}`));
 }
@@ -287,10 +306,22 @@ export function normalizeBrandPack(input: NormalizeInput): BrandPack {
   const approvedHosts = new Set<string>();
   const officialHost = input.officialWebsite ? hostOf(input.officialWebsite) : null;
   if (officialHost) approvedHosts.add(officialHost);
+  const approvedExactUrls = new Set<string>();
+  const approvedSocialUrls = new Set<string>();
+  if (input.officialWebsite) {
+    const normalized = normalizedSourceUrl(input.officialWebsite);
+    if (normalized) approvedExactUrls.add(normalized);
+  }
   for (const source of input.researchSources) {
     const host = hostOf(source);
     if (host) approvedHosts.add(host);
+    const normalized = normalizedSourceUrl(source);
+    if (normalized) {
+      approvedExactUrls.add(normalized);
+      if (host && isSocialHost(host)) approvedSocialUrls.add(normalized);
+    }
   }
+  const sourcePolicy: EvidenceSourcePolicy = { approvedHosts, approvedExactUrls, approvedSocialUrls, officialHost };
   // An official social profile becomes an approved source only when it is
   // on a real social host; a "profile" on someone's blog is not one.
   for (const social of input.collected.socials) {
@@ -299,11 +330,13 @@ export function normalizeBrandPack(input: NormalizeInput): BrandPack {
       pack.rejected.push({ kind: "social", label: social.platform, sourceUrl: social.url, reason: "Not a recognised social platform" });
       continue;
     }
-    if (!isUsable(social.provenance, approvedHosts, input.now)) {
-      pack.rejected.push({ kind: "social", label: social.platform, sourceUrl: social.url, reason: rejectionReason(social.provenance, approvedHosts, input.now) });
+    if (!isUsable(social.provenance, sourcePolicy, input.now)) {
+      pack.rejected.push({ kind: "social", label: social.platform, sourceUrl: social.url, reason: rejectionReason(social.provenance, sourcePolicy, input.now) });
       continue;
     }
     approvedHosts.add(host);
+    const normalized = normalizedSourceUrl(social.url);
+    if (normalized) approvedSocialUrls.add(normalized);
     pack.socials.push(social);
   }
 
@@ -314,8 +347,8 @@ export function normalizeBrandPack(input: NormalizeInput): BrandPack {
   ): T[] => {
     const kept: T[] = [];
     for (const item of items) {
-      if (isUsable(item.provenance, approvedHosts, input.now)) kept.push(item);
-      else pack.rejected.push({ kind, label: label(item), sourceUrl: item.provenance.sourceUrl, reason: rejectionReason(item.provenance, approvedHosts, input.now) });
+      if (isUsable(item.provenance, sourcePolicy, input.now)) kept.push(item);
+      else pack.rejected.push({ kind, label: label(item), sourceUrl: item.provenance.sourceUrl, reason: rejectionReason(item.provenance, sourcePolicy, input.now) });
     }
     return kept;
   };
@@ -347,8 +380,8 @@ export function normalizeBrandPack(input: NormalizeInput): BrandPack {
   }
 
   for (const image of input.collected.images) {
-    if (!isUsable(image.provenance, approvedHosts, input.now)) {
-      pack.rejected.push({ kind: "image", label: image.alt, sourceUrl: image.provenance.sourceUrl, reason: rejectionReason(image.provenance, approvedHosts, input.now) });
+    if (!isUsable(image.provenance, sourcePolicy, input.now)) {
+      pack.rejected.push({ kind: "image", label: image.alt, sourceUrl: image.provenance.sourceUrl, reason: rejectionReason(image.provenance, sourcePolicy, input.now) });
       continue;
     }
     // An image may only come from the business's own site or social
@@ -415,15 +448,36 @@ function dedupe<T>(items: T[], key: (item: T) => string): T[] {
   return kept;
 }
 
-function isUsable(provenance: Provenance, approvedHosts: Set<string>, now: Date): boolean {
-  return rejectionReason(provenance, approvedHosts, now) === "";
+function isUsable(provenance: Provenance, policy: EvidenceSourcePolicy, now: Date): boolean {
+  return rejectionReason(provenance, policy, now) === "";
 }
 
-function rejectionReason(provenance: Provenance, approvedHosts: Set<string>, now: Date): string {
+function rejectionReason(provenance: Provenance, policy: EvidenceSourcePolicy, now: Date): string {
   if (provenance.confidence !== "verified") return `Confidence was "${provenance.confidence}" rather than verified`;
   const host = hostOf(provenance.sourceUrl);
   if (!host) return "Source URL could not be read";
-  if (!approvedHosts.has(host)) return `Source ${host} is not one of the approved sources for this business`;
+  if (!policy.approvedHosts.has(host)) return `Source ${host} is not one of the approved sources for this business`;
+  const normalized = normalizedSourceUrl(provenance.sourceUrl);
+  if (!normalized) return "Source URL could not be read";
+  if (provenance.sourceType === "official_website" && host !== policy.officialHost) {
+    return "The page is not on the business's official website";
+  }
+  if (provenance.sourceType === "official_social" && !policy.approvedSocialUrls.has(normalized)) {
+    return "The page is not the business's approved social profile";
+  }
+  if (
+    (provenance.sourceType === "public_listing" || provenance.sourceType === "founder_supplied")
+    && !policy.approvedExactUrls.has(normalized)
+  ) {
+    return "The exact source page was not approved for this business";
+  }
+  if (
+    provenance.sourceType === "public_menu"
+    && host !== policy.officialHost
+    && !policy.approvedExactUrls.has(normalized)
+  ) {
+    return "The exact menu page was not approved for this business";
+  }
   const retrieved = new Date(provenance.retrievedAt);
   if (Number.isNaN(retrieved.getTime())) return "Retrieval date could not be read";
   // A day of slack absorbs time-zone differences between a collector and

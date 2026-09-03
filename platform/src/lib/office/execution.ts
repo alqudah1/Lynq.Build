@@ -275,6 +275,38 @@ function withMarker(marker: string, body: string): string {
   return `${marker}\n\n${body}`.slice(0, ARTIFACT_LIMIT);
 }
 
+type ProjectContextArtifact = { title: string; content: string | null; artifactType: string; createdAt: Date };
+
+/**
+ * Keep the newest durable evidence when a project's shared memory reaches
+ * the prompt limit. Cutting the first 60k characters kept the oldest work
+ * and could hide a newly collected evidence pack, allowing an older pack
+ * to look current. Whole recent artifacts are preferred so embedded
+ * approval markers are never split merely to retain stale prose.
+ */
+export function composeProjectContext(projectBrief: string, artifactRows: ProjectContextArtifact[], limit = 60_000): string {
+  const separator = "\n\n---\n\n";
+  const brief = projectBrief.slice(0, Math.min(12_000, limit));
+  const selected: string[] = [];
+  let remaining = Math.max(0, limit - brief.length - (brief ? separator.length : 0));
+
+  for (let index = artifactRows.length - 1; index >= 0 && remaining > 0; index -= 1) {
+    const row = artifactRows[index]!;
+    const block = `# ${row.title} (${row.artifactType})\n\n${row.content ?? ""}`;
+    const cost = block.length + (selected.length > 0 ? separator.length : 0);
+    if (cost <= remaining) {
+      selected.unshift(block);
+      remaining -= cost;
+      continue;
+    }
+    // If the newest artifact alone is unusually large, retain its beginning:
+    // machine-readable markers are deliberately stored before prose.
+    if (selected.length === 0) selected.unshift(block.slice(0, remaining));
+  }
+
+  return [brief, ...selected].filter(Boolean).join(separator).slice(0, limit);
+}
+
 async function projectContext(db: Db, organizationId: string, projectId: string): Promise<string> {
   const [projectRows, artifactRows] = await Promise.all([
     db
@@ -296,8 +328,7 @@ async function projectContext(db: Db, organizationId: string, projectId: string)
   const projectBrief = project
     ? `# ${project.name} — project brief\n\n${project.description ?? "No project description recorded."}${project.objective ? `\n\n## Objective\n\n${project.objective}` : ""}`
     : "";
-  const artifacts = artifactRows.map((row) => `# ${row.title} (${row.artifactType})\n\n${row.content ?? ""}`).join("\n\n---\n\n");
-  return [projectBrief, artifacts].filter(Boolean).join("\n\n---\n\n").slice(0, 60_000);
+  return composeProjectContext(projectBrief, artifactRows);
 }
 
 async function latestEngineeringResult(db: Db, organizationId: string, projectId: string, createdAfter?: Date | null): Promise<EngineeringDeliveryResult | null> {

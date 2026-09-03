@@ -64,6 +64,22 @@ describe("brand pack normalisation", () => {
       expect(pack.rejected[0]?.reason).toContain("not one of the approved sources");
     });
 
+    it("refuses a different listing page merely hosted on an approved listing domain", () => {
+      const pack = packFrom(collect({
+        facts: [{ key: "contact.phone", label: "Phone", value: "+1 416 555 9999", provenance: { ...official, sourceUrl: "https://listings.example.ca/a-different-business", sourceType: "public_listing" } }],
+      }));
+      expect(pack.facts).toEqual([]);
+      expect(pack.rejected[0]?.reason).toContain("exact source page");
+    });
+
+    it("refuses a listing page mislabeled as the official website", () => {
+      const pack = packFrom(collect({
+        facts: [{ key: "contact.phone", label: "Phone", value: "+1 416 555 9999", provenance: { ...official, sourceUrl: "https://listings.example.ca/sumac-and-stone", sourceType: "official_website" } }],
+      }));
+      expect(pack.facts).toEqual([]);
+      expect(pack.rejected[0]?.reason).toContain("not on the business's official website");
+    });
+
     it("refuses a retrieval date that has not happened yet", () => {
       const pack = packFrom(collect({
         facts: [{ key: "contact.phone", label: "Phone", value: "+1 416 555 0142", provenance: { ...official, retrievedAt: "2027-01-01" } }],
@@ -170,6 +186,22 @@ describe("brand pack normalisation", () => {
         }],
       }));
       expect(pack.images.map((image) => image.id)).toEqual(["grill-night"]);
+    });
+
+    it("refuses evidence from another account on the same social platform", () => {
+      const pack = packFrom(collect({
+        socials: [{ platform: "Instagram", url: "https://instagram.com/sumacandstone", provenance: official }],
+        images: [{
+          id: "other-restaurant",
+          url: "https://scontent.instagram.com/other/photo.jpg",
+          alt: "A photograph posted by a different restaurant",
+          kind: "photo",
+          credit: null,
+          provenance: { ...official, sourceUrl: "https://instagram.com/anotherrestaurant", sourceType: "official_social" },
+        }],
+      }));
+      expect(pack.images).toEqual([]);
+      expect(pack.rejected.some((item) => item.reason.includes("approved social profile"))).toBe(true);
     });
 
     it("refuses a social profile that is not on a social platform, and everything sourced from it", () => {
