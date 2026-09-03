@@ -9,7 +9,8 @@ import { getAuthenticatedUser } from "@/lib/http/auth";
 import { handleRouteError, jsonSuccess } from "@/lib/http/responses";
 import { parseJsonBody, parseUuidParam, uuidParam } from "@/lib/http/validation";
 import { pollAndProcess } from "@/lib/runtime/worker";
-import { createDirectiveProject } from "@/lib/office/directive-intake";
+import { createDirectiveProject, DirectivePartiallyCreatedError } from "@/lib/office/directive-intake";
+import { DirectiveHandoffIncompleteError } from "@/lib/voice/errors";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -81,6 +82,15 @@ export async function POST(request: Request, { params }: RouteParams) {
       201
     );
   } catch (err) {
+    // A partial creation must not be reported as a clean failure: the project
+    // exists and its agents may be running. Translating it here keeps
+    // `handleRouteError`'s typed-error contract intact (a raw wrapper would
+    // fall through to a generic 500) and tells the caller what actually
+    // happened.
+    if (err instanceof DirectivePartiallyCreatedError) {
+      console.error("[office-directive]", JSON.stringify({ event: "partially-created", projectId: err.projectId }));
+      return handleRouteError(new DirectiveHandoffIncompleteError(err.projectId, err.projectName));
+    }
     return handleRouteError(err);
   }
 }

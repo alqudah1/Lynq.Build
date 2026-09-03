@@ -5,7 +5,7 @@ import { recordAuditEvent } from "@/lib/audit";
 import { createDirectiveProject, DirectivePartiallyCreatedError } from "@/lib/office/directive-intake";
 import { toDirectiveInstruction } from "./command-draft";
 import { redactLogFields } from "./redaction";
-import { claimDispatchAttempt, transitionCommand, type JarvisPhoneCommand } from "./call-store";
+import { claimDispatchAttempt, isDispatchInFlight, transitionCommand, type JarvisPhoneCommand } from "./call-store";
 import { CommandNotRetryableError } from "./errors";
 
 type Db = NeonHttpDatabase<Record<string, unknown>>;
@@ -143,6 +143,14 @@ export async function dispatchConfirmedCommand(db: Db, input: DispatchConfirmedC
 export const MAX_DISPATCH_ATTEMPTS = 5;
 
 /**
+ * How long an in-flight dispatch is trusted before another caller may take it
+ * over. Comfortably longer than the route's own `maxDuration` of five minutes,
+ * so a slow-but-alive dispatch is never stolen from; short enough that a
+ * process killed mid-dispatch does not wedge the command for a working day.
+ */
+export const DISPATCH_LEASE_MS = 10 * 60 * 1000;
+
+/**
  * Retries a dispatch that genuinely failed.
  *
  * Safe with respect to the approval gate by construction: a command can only
@@ -156,6 +164,7 @@ export async function retryFailedDispatch(
   input: { organizationId: string; actorUserId: string; command: JarvisPhoneCommand; workspaceId?: string | null }
 ): Promise<DispatchOutcome> {
   const { command } = input;
+  if (isDispatchInFlight(command, DISPATCH_LEASE_MS)) throw new CommandNotRetryableError("in_flight");
   if (command.dispatchState !== "failed") throw new CommandNotRetryableError("not_failed");
   // A failed dispatch that already produced a project is NOT retryable: the
   // project exists, its tasks exist, and its agents may already be running.
@@ -205,6 +214,11 @@ export async function runDirectiveDispatch(
     commandId: input.command.id,
     expectedRevision: input.command.revision,
     maxAttempts: MAX_DISPATCH_ATTEMPTS,
+    // A dispatch may only begin from a state that has not begun one: confirmed
+    // low-risk work, or a gated command a human just approved, or a previous
+    // attempt that genuinely failed.
+    fromStates: ["awaiting_confirmation", "awaiting_approval", "failed"],
+    staleAfterMs: DISPATCH_LEASE_MS,
   });
   if (!command) {
     return { status: "already_dispatched", command: input.command, spoken: describeExistingState(input.command) };
@@ -324,7 +338,11 @@ export async function runDirectiveDispatch(
  * value, not a fallback that hides a class of failure — it means "we did not
  * recognize this", and the message is stored alongside it.
  */
-function classifyDispatchFailure(error: unknown): string {
+function classifyDispatchFailure(rawError: unknown): string {
+  // A partial creation wraps the real error, so classify what actually went
+  // wrong rather than the wrapper — otherwise `authorization_failed` and
+  // `resource_not_found` become unreachable past the first write.
+  const error = rawError instanceof DirectivePartiallyCreatedError ? rawError.reason : rawError;
   const message = error instanceof Error ? error.message.toLowerCase() : "";
   if (error instanceof Error && error.name) {
     if (/authz|role|membership|tenant/i.test(error.name)) return "authorization_failed";
@@ -350,6 +368,8 @@ function describeExistingState(command: JarvisPhoneCommand): string {
       return "You cancelled that one, so I didn't start anything.";
     case "failed":
       return "That one failed to open earlier. The reason is saved on the Jarvis screen.";
+    case "dispatching":
+      return "I'm opening that one right now — give it a moment and it'll show up on the Jarvis screen.";
     default:
       return "I already have that one recorded.";
   }

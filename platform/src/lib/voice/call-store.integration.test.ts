@@ -445,8 +445,8 @@ describe("the dispatch claim", () => {
     });
 
     const [first, second] = await Promise.all([
-      claimDispatchAttempt(db, { organizationId, commandId: command.id, expectedRevision: command.revision, maxAttempts: 5 }),
-      claimDispatchAttempt(db, { organizationId, commandId: command.id, expectedRevision: command.revision, maxAttempts: 5 }),
+      claimDispatchAttempt(db, { organizationId, commandId: command.id, expectedRevision: command.revision, maxAttempts: 5, fromStates: ["awaiting_confirmation", "failed"], staleAfterMs: 600_000 }),
+      claimDispatchAttempt(db, { organizationId, commandId: command.id, expectedRevision: command.revision, maxAttempts: 5, fromStates: ["awaiting_confirmation", "failed"], staleAfterMs: 600_000 }),
     ]);
 
     const winners = [first, second].filter(Boolean);
@@ -455,6 +455,8 @@ describe("the dispatch claim", () => {
     expect(winners[0]!.revision).toBe(command.revision + 1);
   });
 
+  // `staleAfterMs: 0` makes every in-flight lease immediately reclaimable, which
+  // is exactly the takeover path — it isolates the CAP from the state guard.
   it("refuses the claim once the attempt cap is reached, so the cap cannot be exceeded", async () => {
     const userId = await makeUser();
     const organizationId = await makeOrg(userId);
@@ -467,12 +469,12 @@ describe("the dispatch claim", () => {
     });
 
     for (let attempt = 1; attempt <= 3; attempt += 1) {
-      const claimed = await claimDispatchAttempt(db, { organizationId, commandId: command.id, expectedRevision: command.revision, maxAttempts: 3 });
+      const claimed = await claimDispatchAttempt(db, { organizationId, commandId: command.id, expectedRevision: command.revision, maxAttempts: 3, fromStates: ["awaiting_confirmation", "dispatching", "failed"], staleAfterMs: 0 });
       expect(claimed?.dispatchAttempts).toBe(attempt);
       command = claimed!;
     }
 
-    const refused = await claimDispatchAttempt(db, { organizationId, commandId: command.id, expectedRevision: command.revision, maxAttempts: 3 });
+    const refused = await claimDispatchAttempt(db, { organizationId, commandId: command.id, expectedRevision: command.revision, maxAttempts: 3, fromStates: ["awaiting_confirmation", "dispatching", "failed"], staleAfterMs: 0 });
     expect(refused).toBeNull();
   });
 
@@ -487,8 +489,8 @@ describe("the dispatch claim", () => {
       draft: buildCommandDraft({ requestedOutcome: "Research the market" }),
     });
 
-    await claimDispatchAttempt(db, { organizationId, commandId: command.id, expectedRevision: command.revision, maxAttempts: 5 });
-    const stale = await claimDispatchAttempt(db, { organizationId, commandId: command.id, expectedRevision: command.revision, maxAttempts: 5 });
+    await claimDispatchAttempt(db, { organizationId, commandId: command.id, expectedRevision: command.revision, maxAttempts: 5, fromStates: ["awaiting_confirmation", "failed"], staleAfterMs: 600_000 });
+    const stale = await claimDispatchAttempt(db, { organizationId, commandId: command.id, expectedRevision: command.revision, maxAttempts: 5, fromStates: ["awaiting_confirmation", "failed"], staleAfterMs: 600_000 });
 
     expect(stale).toBeNull();
   });
@@ -511,5 +513,80 @@ describe("call completion", () => {
     expect(row.status).toBe("completed");
     // The provider's own end-of-call transcript is redacted before storage too.
     expect(row.redactedSummaryTranscript).not.toContain("swordfish99");
+  });
+});
+
+describe("the in-flight state is what closes the duplicate-dispatch race", () => {
+  it("refuses a second claim made after the winner bumped the revision", async () => {
+    // The sequential case, not the simultaneous one: a request arriving while
+    // the winner is still inside createDirectiveProject re-reads the row, sees
+    // the bumped revision, and must still find nothing claimable.
+    const userId = await makeUser();
+    const organizationId = await makeOrg(userId);
+    const session = await openSession(organizationId, userId);
+    const command = await upsertCommandDraft(db, {
+      organizationId,
+      callSessionId: session.id,
+      founderUserId: userId,
+      draft: buildCommandDraft({ requestedOutcome: "Research the market" }),
+    });
+
+    const claimed = await claimDispatchAttempt(db, {
+      organizationId,
+      commandId: command.id,
+      expectedRevision: command.revision,
+      maxAttempts: 5,
+      fromStates: ["awaiting_confirmation"],
+      staleAfterMs: 600_000,
+    });
+    expect(claimed?.dispatchState).toBe("dispatching");
+
+    // A later reader re-reads and gets the CURRENT revision — the case a bare
+    // revision guard would let through.
+    const reread = await resolveCommandById(db, { organizationId, commandId: command.id });
+    const second = await claimDispatchAttempt(db, {
+      organizationId,
+      commandId: command.id,
+      expectedRevision: reread.revision,
+      maxAttempts: 5,
+      fromStates: ["awaiting_confirmation"],
+      staleAfterMs: 600_000,
+    });
+
+    expect(second).toBeNull();
+  });
+
+  it("lets a provably stale lease be taken over, so a died-mid-dispatch command is not wedged forever", async () => {
+    const userId = await makeUser();
+    const organizationId = await makeOrg(userId);
+    const session = await openSession(organizationId, userId);
+    const command = await upsertCommandDraft(db, {
+      organizationId,
+      callSessionId: session.id,
+      founderUserId: userId,
+      draft: buildCommandDraft({ requestedOutcome: "Research the market" }),
+    });
+
+    const claimed = await claimDispatchAttempt(db, {
+      organizationId,
+      commandId: command.id,
+      expectedRevision: command.revision,
+      maxAttempts: 5,
+      fromStates: ["awaiting_confirmation"],
+      staleAfterMs: 600_000,
+    });
+
+    // Nothing ever transitioned it — the process died here.
+    const takeover = await claimDispatchAttempt(db, {
+      organizationId,
+      commandId: command.id,
+      expectedRevision: claimed!.revision,
+      maxAttempts: 5,
+      fromStates: ["awaiting_confirmation"],
+      staleAfterMs: 0,
+    });
+
+    expect(takeover).not.toBeNull();
+    expect(takeover!.dispatchAttempts).toBe(2);
   });
 });

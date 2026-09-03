@@ -45,6 +45,7 @@ const gatedCall = {
       failureMessage: null,
       dispatchAttempts: 0,
       retryable: false,
+      dispatchStartedAt: null,
       decidedAt: null,
       decisionNote: null,
       createdAt: "2026-09-01T15:06:00.000Z",
@@ -318,6 +319,33 @@ describe("JarvisPhoneControl accessibility", () => {
     expect(screen.queryByText(/nothing was started/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /try again/i })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /open it/i })).toHaveAttribute("href", "/app/lynq/jarvis/project-9");
+    expect(await axe(container)).toHaveNoViolations();
+  });
+
+  it("says a dispatch is under way rather than leaving the founder guessing", async () => {
+    const inFlight = {
+      ...gatedCall,
+      session: { ...gatedCall.session, id: "session-7" },
+      commands: [
+        {
+          ...gatedCall.commands[0],
+          id: "command-6",
+          requiresApproval: false,
+          gatedReasons: [],
+          riskReasons: [],
+          dispatchState: "dispatching",
+          retryable: false,
+        },
+      ],
+    };
+    stubFetch({ ...readyState, calls: [inFlight] });
+
+    const { container } = render(<JarvisPhoneControl organizationId="organization-1" organizationSlug="lynq" />);
+
+    await waitFor(() => expect(screen.getByText(/starting now/i)).toBeInTheDocument());
+    // Neither "nothing started" nor "work started" is true while it is running.
+    expect(screen.queryByText(/nothing has been started for this yet/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /try again/i })).not.toBeInTheDocument();
     expect(await axe(container)).toHaveNoViolations();
   });
 });

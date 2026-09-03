@@ -1,0 +1,2 @@
+ALTER TYPE "public"."jarvis_command_dispatch_state" ADD VALUE 'dispatching' BEFORE 'declined';--> statement-breakpoint
+ALTER TABLE "jarvis_phone_commands" ADD COLUMN "dispatch_started_at" timestamp with time zone;

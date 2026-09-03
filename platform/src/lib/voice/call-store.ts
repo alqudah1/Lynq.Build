@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createHash } from "node:crypto";
-import { and, desc, eq, lt, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, lt, or, sql } from "drizzle-orm";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import {
   jarvisCallSessions,
@@ -46,6 +46,7 @@ export type VerificationState = "unverified" | "verified" | "failed";
 export type DispatchState =
   | "awaiting_confirmation"
   | "awaiting_approval"
+  | "dispatching"
   | "declined"
   | "directive_created"
   | "cancelled"
@@ -508,6 +509,7 @@ export interface JarvisPhoneCommand {
   failureCode: string | null;
   failureMessage: string | null;
   dispatchAttempts: number;
+  dispatchStartedAt: Date | null;
   idempotencyKey: string;
   revision: number;
   createdAt: Date;
@@ -541,6 +543,7 @@ function toCommand(row: typeof jarvisPhoneCommands.$inferSelect): JarvisPhoneCom
     failureCode: row.failureCode,
     failureMessage: row.failureMessage,
     dispatchAttempts: row.dispatchAttempts,
+    dispatchStartedAt: row.dispatchStartedAt,
     idempotencyKey: row.idempotencyKey,
     revision: row.revision,
     createdAt: row.createdAt,
@@ -727,33 +730,69 @@ export async function resolveCommandById(db: Db, input: { organizationId: string
  * them ever gets linked to the command, and for an approved gated command the
  * external effect runs twice off a single approval.
  *
- * So the claim IS the guard: a single UPDATE that increments the attempt and
- * bumps the revision, conditional on both the revision the caller read AND the
- * attempt cap. Exactly one concurrent caller can win it. The loser gets null
- * and must not dispatch.
+ * So the claim IS the guard: a single UPDATE that moves the row into
+ * `dispatching`, increments the attempt and bumps the revision, conditional on
+ * the revision the caller read, the attempt cap, AND the state it is leaving.
  *
- * The state is deliberately left alone — a claimed command has not succeeded
- * yet, and saying otherwise in the row would be the same lie in a different
- * place. The caller transitions it to its real outcome afterwards, using the
- * revision this returns.
+ * The state change is the load-bearing half. A guarded increment alone only
+ * stops two callers holding the SAME revision — a request arriving while the
+ * winner is still inside `createDirectiveProject` (an LLM plan plus a long
+ * chain of writes; `maxDuration` is five minutes) would re-read the bumped
+ * revision, find a still-dispatchable state, and claim again. Two projects,
+ * two sets of running agents, off one approval. Moving the row to
+ * `dispatching` leaves a later reader nothing to claim.
+ *
+ * `staleAfterMs` is the counterweight: a process that dies between the claim
+ * and the outcome would otherwise wedge the command in `dispatching` forever,
+ * so a provably stale lease can be taken over.
  */
 export async function claimDispatchAttempt(
   db: Db,
-  input: { organizationId: string; commandId: string; expectedRevision: number; maxAttempts: number }
+  input: {
+    organizationId: string;
+    commandId: string;
+    expectedRevision: number;
+    maxAttempts: number;
+    /** The states a dispatch may legitimately start from. Anything else is not claimable. */
+    fromStates: DispatchState[];
+    /** How long an in-flight claim is trusted before it may be taken over. */
+    staleAfterMs: number;
+  }
 ): Promise<JarvisPhoneCommand | null> {
+  const staleBefore = new Date(Date.now() - input.staleAfterMs);
   const [row] = await db
     .update(jarvisPhoneCommands)
-    .set({ dispatchAttempts: sql`${jarvisPhoneCommands.dispatchAttempts} + 1`, revision: input.expectedRevision + 1, updatedAt: new Date() })
+    .set({
+      dispatchState: "dispatching",
+      dispatchStartedAt: new Date(),
+      dispatchAttempts: sql`${jarvisPhoneCommands.dispatchAttempts} + 1`,
+      revision: input.expectedRevision + 1,
+      updatedAt: new Date(),
+    })
     .where(
       and(
         eq(jarvisPhoneCommands.id, input.commandId),
         eq(jarvisPhoneCommands.organizationId, input.organizationId),
         eq(jarvisPhoneCommands.revision, input.expectedRevision),
-        lt(jarvisPhoneCommands.dispatchAttempts, input.maxAttempts)
+        lt(jarvisPhoneCommands.dispatchAttempts, input.maxAttempts),
+        or(
+          inArray(jarvisPhoneCommands.dispatchState, input.fromStates),
+          // A lease nobody finished. Taking it over is safe precisely because
+          // the previous holder can no longer transition it: its revision is
+          // stale the moment this UPDATE lands.
+          and(eq(jarvisPhoneCommands.dispatchState, "dispatching"), lt(jarvisPhoneCommands.dispatchStartedAt, staleBefore))
+        )
       )
     )
     .returning();
   return row ? toCommand(row) : null;
+}
+
+/** True when a command is mid-dispatch and its lease is still within the trusted window. */
+export function isDispatchInFlight(command: JarvisPhoneCommand, staleAfterMs: number, nowMs = Date.now()): boolean {
+  if (command.dispatchState !== "dispatching") return false;
+  if (!command.dispatchStartedAt) return true;
+  return nowMs - command.dispatchStartedAt.getTime() < staleAfterMs;
 }
 
 /**

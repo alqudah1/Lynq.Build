@@ -9,7 +9,8 @@ import { listPhoneCallsForUser } from "@/lib/voice/call-store";
 import { requireOrganizationMembership } from "@/lib/authz/helpers";
 import { getJarvisPhoneCommandReadiness } from "@/lib/voice/phone-config";
 import { GATED_CATEGORY_LABELS, type GatedCategory } from "@/lib/voice/command-risk";
-import { MAX_DISPATCH_ATTEMPTS } from "@/lib/voice/command-dispatch";
+import { DISPATCH_LEASE_MS, MAX_DISPATCH_ATTEMPTS } from "@/lib/voice/command-dispatch";
+import { isDispatchInFlight } from "@/lib/voice/call-store";
 
 export const dynamic = "force-dynamic";
 
@@ -96,14 +97,20 @@ export async function GET(_request: Request, { params }: RouteParams) {
             canDecide &&
             command.dispatchState === "failed" &&
             command.projectId === null &&
-            command.dispatchAttempts < MAX_DISPATCH_ATTEMPTS,
+            command.dispatchAttempts < MAX_DISPATCH_ATTEMPTS &&
+            !isDispatchInFlight(command, DISPATCH_LEASE_MS),
           decidedAt: command.approvalDecidedAt?.toISOString() ?? null,
           decisionNote: command.approvalDecisionNote,
           createdAt: command.createdAt.toISOString(),
         })),
       })),
-      // A live call is worth re-reading; a settled list is not.
-      refreshAfterMs: calls.some((call) => call.session.status === "active") ? 5000 : null,
+      // A live call or an in-flight dispatch is worth re-reading; a settled
+      // list is not.
+      refreshAfterMs:
+        calls.some((call) => call.session.status === "active") ||
+        calls.some((call) => call.commands.some((command) => isDispatchInFlight(command, DISPATCH_LEASE_MS)))
+          ? 5000
+          : null,
     });
   } catch (err) {
     return handleRouteError(err);

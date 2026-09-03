@@ -146,8 +146,8 @@ second one.
 
 ## 4. Idempotency
 
-A provider webhook may be delivered any number of times. Three independent
-layers make that safe:
+A provider webhook may be delivered any number of times, and two people can
+act on the same command at once. Four independent layers make that safe:
 
 1. **Event claim.** Every event is claimed once against
    `jarvis_voice_webhook_events_dedup_unique`. Because Vapi does not send a
@@ -164,15 +164,27 @@ layers make that safe:
 3. **Revision guards.** Every state transition is guarded by the revision the
    row was read at. A second confirmation finds the row moved on and reports the
    *existing* outcome instead of acting again.
-4. **A dispatch claim taken BEFORE anything is created.** The three layers above
-   all protect the command *row*; none of them stop two concurrent callers from
+4. **A dispatch claim taken BEFORE anything is created**, which also moves the
+   row into `dispatching`. The three layers above all protect the command
+   *row*; none of them stop two concurrent callers from
    each calling `createDirectiveProject` first and colliding afterwards — which
    would mean two real projects with two sets of running agents, and for an
    approved gated command, the external effect happening twice off one approval.
    So `claimDispatchAttempt` is a single guarded UPDATE that increments the
-   attempt and bumps the revision, conditional on both the revision the caller
-   read and the attempt cap. Exactly one concurrent caller wins it; the loser
-   never dispatches.
+   attempt, bumps the revision, and moves the state, conditional on the revision
+   the caller read, the attempt cap, *and* the state being left. The state
+   change is the load-bearing half: a guarded increment alone only stops two
+   callers holding the same revision, so a request arriving while the winner is
+   still inside `createDirectiveProject` would re-read the bumped revision,
+   find a still-dispatchable state, and claim again. Exactly one caller wins;
+   the loser never dispatches, and is told work is under way rather than that
+   nothing started.
+
+   A claim that is never resolved — the process dies mid-dispatch — would wedge
+   the command forever, so `dispatch_started_at` bounds it: after a ten-minute
+   lease (twice the route's own five-minute `maxDuration`) the claim may be
+   taken over. Until then the screen says "Starting now" and offers no retry,
+   because neither "nothing started" nor "work started" would be true.
 
 ### Partial creation
 
@@ -224,6 +236,7 @@ Nothing in this lane reports success it did not achieve.
 | `declined` | A human declined it. Nothing started |
 | `directive_created` | A real project exists and the first handoff dispatched |
 | `cancelled` | Said no on the call, or the call ended before confirming |
+| `dispatching` | A dispatch is in flight right now, claimed by exactly one caller |
 | `failed` | Dispatch genuinely failed; `failure_code` says why |
 
 Dispatch failures are classified into a bounded vocabulary —

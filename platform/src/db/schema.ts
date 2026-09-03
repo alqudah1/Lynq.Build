@@ -5607,6 +5607,24 @@ export const jarvisCommandDispatchStateEnum = pgEnum("jarvis_command_dispatch_st
   "awaiting_confirmation",
   /** Confirmed and gated: waiting on a human decision inside an authenticated session. */
   "awaiting_approval",
+  /**
+   * A dispatch is IN FLIGHT — claimed by exactly one caller, creating real
+   * records right now.
+   *
+   * This state is what actually closes the duplicate-dispatch race. A guarded
+   * increment alone only stops two callers holding the SAME revision; a
+   * request arriving while the winner is still inside
+   * `createDirectiveProject` (which runs an LLM plan plus a long chain of
+   * writes, and may take a minute) would re-read the bumped revision, see a
+   * still-dispatchable state, and claim again — two projects, two sets of
+   * launched agents, from one approval. Moving the row here means a later
+   * reader has nothing to claim.
+   *
+   * `dispatch_started_at` bounds it: a process that dies mid-dispatch would
+   * otherwise wedge the command forever, so the claim may be taken over once
+   * the lease is provably stale.
+   */
+  "dispatching",
   /** A human declined it in the Office. Nothing was started. */
   "declined",
   /** A real Office directive project exists and the first handoff was dispatched. */
@@ -5746,6 +5764,8 @@ export const jarvisPhoneCommands = pgTable("jarvis_phone_commands", {
   failureCode: text("failure_code"),
   failureMessage: text("failure_message"),
   dispatchAttempts: integer("dispatch_attempts").notNull().default(0),
+  /** When the in-flight dispatch was claimed. Bounds `dispatching` so a died-mid-dispatch command can be taken over rather than wedged forever. */
+  dispatchStartedAt: timestamp("dispatch_started_at", { withTimezone: true }),
   /**
    * Derived from the call and the confirmed content, not random: a retried
    * confirmation for the same command hashes identically and is rejected by

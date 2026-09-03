@@ -83,6 +83,7 @@ type PasscodeState = { available: boolean; passcode: string | null; expiresInMs:
 const DISPATCH_LABEL: Record<string, string> = {
   awaiting_confirmation: "Waiting for you to confirm on the call",
   awaiting_approval: "Needs your approval",
+  dispatching: "Opening the project now",
   declined: "You declined it",
   directive_created: "Work started",
   cancelled: "Cancelled on the call",
@@ -92,6 +93,7 @@ const DISPATCH_LABEL: Record<string, string> = {
 const DISPATCH_STYLE: Record<string, string> = {
   awaiting_confirmation: "border-white/10 bg-white/[0.02] text-muted",
   awaiting_approval: "border-amber-300/40 bg-amber-300/10 text-amber-100",
+  dispatching: "border-blue-400/30 bg-blue-400/10 text-blue-200",
   declined: "border-white/10 bg-white/[0.02] text-subtle",
   directive_created: "border-emerald-300/30 bg-emerald-300/10 text-emerald-100",
   cancelled: "border-white/10 bg-white/[0.02] text-subtle",
@@ -420,6 +422,10 @@ export function JarvisPhoneControl({ organizationId, organizationSlug }: { organ
                     <Link href={`/app/${organizationSlug}/jarvis/${command.projectId}`} className="text-accent-foreground hover:text-foreground">
                       Watch it live →
                     </Link>
+                  </p>
+                ) : command.dispatchState === "dispatching" ? (
+                  <p className="mt-1 text-sm text-muted" role="status">
+                    Starting now. Jarvis is opening the project and briefing the team — this page updates on its own.
                   </p>
                 ) : command.dispatchState === "failed" && command.projectId ? (
                   <>

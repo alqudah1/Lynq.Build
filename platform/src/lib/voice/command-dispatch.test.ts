@@ -16,10 +16,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const createDirectiveProject = vi.fn();
 const transitionCommand = vi.fn();
 const claimDispatchAttempt = vi.fn();
+const isDispatchInFlight = vi.fn();
 const recordAuditEvent = vi.fn();
 
 class DirectivePartiallyCreatedError extends Error {
-  constructor(public readonly projectId: string, public readonly projectName: string, public readonly cause: unknown) {
+  constructor(public readonly projectId: string, public readonly projectName: string, public readonly reason: unknown) {
     super("partial");
     this.name = "DirectivePartiallyCreatedError";
   }
@@ -27,9 +28,9 @@ class DirectivePartiallyCreatedError extends Error {
 
 vi.mock("@/lib/office/directive-intake", () => ({ createDirectiveProject, DirectivePartiallyCreatedError }));
 vi.mock("@/lib/audit", () => ({ recordAuditEvent }));
-vi.mock("./call-store", () => ({ transitionCommand, claimDispatchAttempt }));
+vi.mock("./call-store", () => ({ transitionCommand, claimDispatchAttempt, isDispatchInFlight }));
 
-const { dispatchConfirmedCommand, retryFailedDispatch, runDirectiveDispatch, MAX_DISPATCH_ATTEMPTS } = await import("./command-dispatch");
+const { dispatchConfirmedCommand, retryFailedDispatch, runDirectiveDispatch, MAX_DISPATCH_ATTEMPTS, DISPATCH_LEASE_MS } = await import("./command-dispatch");
 const { CommandNotRetryableError } = await import("./errors");
 type Command = Parameters<typeof dispatchConfirmedCommand>[1]["command"];
 
@@ -75,12 +76,14 @@ beforeEach(() => {
   createDirectiveProject.mockReset();
   transitionCommand.mockReset();
   claimDispatchAttempt.mockReset();
+  isDispatchInFlight.mockReset();
+  isDispatchInFlight.mockReturnValue(false);
   recordAuditEvent.mockReset();
   recordAuditEvent.mockResolvedValue(undefined);
   // By default the claim succeeds and returns the row with its revision bumped
   // and the attempt counted — exactly what the real guarded UPDATE does.
   claimDispatchAttempt.mockImplementation(async (_db: unknown, args: { expectedRevision: number }) =>
-    makeCommand({ revision: args.expectedRevision + 1, dispatchAttempts: 1 })
+    makeCommand({ revision: args.expectedRevision + 1, dispatchAttempts: 1, dispatchState: "dispatching" })
   );
 });
 
@@ -302,7 +305,17 @@ describe("the dispatch claim is what prevents duplicate real work", () => {
 
     await dispatchConfirmedCommand(db, { ...baseInput, command: makeCommand({ revision: 7 }) });
 
-    expect(claimDispatchAttempt).toHaveBeenCalledWith(db, expect.objectContaining({ expectedRevision: 7, maxAttempts: MAX_DISPATCH_ATTEMPTS }));
+    expect(claimDispatchAttempt).toHaveBeenCalledWith(
+      db,
+      expect.objectContaining({
+        expectedRevision: 7,
+        maxAttempts: MAX_DISPATCH_ATTEMPTS,
+        staleAfterMs: DISPATCH_LEASE_MS,
+        // The state guard is what stops a caller arriving mid-dispatch from
+        // claiming again; `dispatching` is deliberately absent.
+        fromStates: ["awaiting_confirmation", "awaiting_approval", "failed"],
+      })
+    );
     // The claim already counted the attempt; the outcome transition must not
     // count it a second time.
     expect(transitionCommand.mock.calls[0][1]).not.toMatchObject({ incrementDispatchAttempts: true });
@@ -355,5 +368,66 @@ describe("the approver's identity survives a failed dispatch", () => {
       approvalDecidedByUserId: "approver-1",
       approvalDecisionNote: "fine by me",
     });
+  });
+});
+
+describe("an in-flight dispatch is never dispatched again", () => {
+  const retryInput = { organizationId: "org-1", actorUserId: "approver-1", workspaceId: null };
+
+  it("refuses a retry while a dispatch is still running", async () => {
+    isDispatchInFlight.mockReturnValue(true);
+
+    await expect(
+      retryFailedDispatch(db, { ...retryInput, command: makeCommand({ dispatchState: "dispatching", dispatchAttempts: 1 }) })
+    ).rejects.toThrow(CommandNotRetryableError);
+    expect(claimDispatchAttempt).not.toHaveBeenCalled();
+  });
+
+  it("never asks to claim from the dispatching state, so a mid-flight caller finds nothing claimable", async () => {
+    createDirectiveProject.mockResolvedValue({
+      assistantReply: "ok",
+      plannedByAI: false,
+      executionMode: "advisory",
+      project: { id: "project-1", name: "P", projectKey: "P01", status: "active", workspaceId: null },
+      assignments: [],
+      launchedCount: 0,
+    });
+    transitionCommand.mockResolvedValue(makeCommand({ dispatchState: "directive_created" }));
+
+    await dispatchConfirmedCommand(db, { ...baseInput, command: makeCommand() });
+
+    expect(claimDispatchAttempt.mock.calls[0][1].fromStates).not.toContain("dispatching");
+  });
+
+  it("tells the caller work is under way rather than that nothing started", async () => {
+    const outcome = await dispatchConfirmedCommand(db, { ...baseInput, command: makeCommand({ dispatchState: "dispatching" }) });
+
+    expect(outcome.status).toBe("already_dispatched");
+    expect(outcome.spoken).toMatch(/opening that one right now/i);
+    expect(createDirectiveProject).not.toHaveBeenCalled();
+  });
+});
+
+describe("failures are classified from the real cause, not the wrapper", () => {
+  it("still recognizes an authorization failure that happened after the project was created", async () => {
+    class TenantResourceNotFoundError extends Error {
+      constructor() {
+        super("not found");
+        this.name = "TenantResourceNotFoundError";
+      }
+    }
+    createDirectiveProject.mockRejectedValue(new DirectivePartiallyCreatedError("project-9", "P", new TenantResourceNotFoundError()));
+    transitionCommand.mockResolvedValue(makeCommand({ dispatchState: "failed" }));
+
+    const outcome = await dispatchConfirmedCommand(db, { ...baseInput, command: makeCommand() });
+
+    expect(outcome.status).toBe("failed");
+    if (outcome.status !== "failed") throw new Error("expected failure");
+    // A tenant-scoped not-found IS an authorization outcome in this codebase —
+    // 404 deliberately hides cross-tenant existence. The point of the
+    // assertion is that it is classified at all: the wrapper's own name and
+    // message match no rule, so without unwrapping this degraded to
+    // `unknown_error`.
+    expect(outcome.failureCode).toBe("authorization_failed");
   });
 });

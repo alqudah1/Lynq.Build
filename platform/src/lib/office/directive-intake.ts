@@ -56,9 +56,10 @@ export class DirectivePartiallyCreatedError extends Error {
   constructor(
     public readonly projectId: string,
     public readonly projectName: string,
-    public readonly cause: unknown
+    /** Named `reason`, not `cause`: shadowing the native `Error.cause` would look like an `ErrorOptions` cause and is not one. */
+    public readonly reason: unknown
   ) {
-    super(`The directive project was created but its handoff did not complete: ${cause instanceof Error ? cause.message : "unknown error"}`);
+    super(`The directive project was created but its handoff did not complete: ${reason instanceof Error ? reason.message : "unknown error"}`);
     this.name = "DirectivePartiallyCreatedError";
   }
 }

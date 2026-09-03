@@ -32,14 +32,33 @@ export class CommandAlreadyDecidedError extends DomainRuleViolationError {
 /** Retry was asked for on a command that is not in `failed`, or that has already used its attempts. */
 export class CommandNotRetryableError extends DomainRuleViolationError {
   readonly reason = "command_not_retryable";
-  constructor(cause: "not_failed" | "attempts_exhausted" | "partially_created") {
+  constructor(cause: "not_failed" | "attempts_exhausted" | "partially_created" | "in_flight") {
     super(
-      cause === "not_failed"
+      cause === "in_flight"
+        ? "Jarvis is opening this one right now. Give it a moment and reload."
+        : cause === "not_failed"
         ? "Only a command that failed to start can be retried."
         : cause === "partially_created"
           ? "This one already opened a project before it failed, so retrying would start the work twice. Open the project and carry on from there."
           : "This command has been retried as many times as it can be. Give Jarvis the instruction again if you still want it."
     );
     this.name = "CommandNotRetryableError";
+  }
+}
+
+/**
+ * A directive whose project row exists but whose handoff did not finish.
+ *
+ * This is deliberately its OWN status rather than the underlying failure's.
+ * The operation did not fail — it partially succeeded, and the caller needs to
+ * know a project exists before they retry anything. Reporting the cause's 404
+ * or 409 would imply nothing happened, which is exactly the wrong thing to
+ * tell someone who now has a live project with running agents.
+ */
+export class DirectiveHandoffIncompleteError extends DomainRuleViolationError {
+  readonly reason = "directive_handoff_incomplete";
+  constructor(public readonly projectId: string, projectName: string) {
+    super(`The project "${projectName}" was created, but Jarvis could not finish briefing the team. Open it before trying again — some of the work may already be running.`);
+    this.name = "DirectiveHandoffIncompleteError";
   }
 }
