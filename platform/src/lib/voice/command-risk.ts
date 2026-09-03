@@ -60,7 +60,13 @@ const CATEGORY_RULES: Array<{ category: GatedCategory; level: CommandRiskLevel; 
       // Verbs allow up to three qualifier words before their object, because
       // real speech puts words in between: "send the customer email", "forward
       // it over to the owner tonight", "get the quote across to Marco".
-      /\b(?:cold[-\s]?(?:call|email)|outreach|reach\s+out|email\s+(?:\w+\s+){0,3}(?:client|customer|prospect|lead|restaurant|owner|them|him|her)|(?:send|forward|deliver|share)\s+(?:\w+\s+){0,3}(?:email|message|dm|text|sms|proposal|pitch|invoice|newsletter|quote|note|summary|deck|link)|(?:send|forward|get|pass)\s+(?:\w+\s+){0,3}(?:to|over\s+to|out\s+to|across\s+to)\s+(?:the\s+|a\s+|an\s+)?(?:client|customer|prospect|lead|restaurant|owner|supplier|vendor|partner|them|him|her)|(?:send|forward)\s+(?:it|them|those|these)\s+(?:out|over|off)|follow[-\s]?up\s+with|contact\s+(?:\w+\s+){0,2}(?:client|customer|prospect|lead|restaurant|owner)|sign(?:ed)?\s+(?:\w+\s+){0,3}up\b|blast|campaign\s+send|mail\s?merge)\b/i,
+      //
+      // "outreach" is matched only as an ACTION ("start outreach", "outreach to
+      // the owner"), never as a bare noun. LYNQ researches outreach tooling
+      // constantly — "compare Instantly and Gojiberry for outreach tooling" is
+      // internal research, and gating it as customer contact would be both
+      // wrong and, worse, wrongly EXPLAINED to the founder.
+      /\b(?:cold[-\s]?(?:call|email)|(?:do|doing|run|running|start|starting|begin|launch|launching|kick\s?off|send)\s+(?:\w+\s+){0,2}outreach|outreach\s+(?:to|the)\b|reach\s+out|email\s+(?:\w+\s+){0,3}(?:client|customer|prospect|lead|restaurant|owner|them|him|her)|(?:send|forward|deliver|share)\s+(?:\w+\s+){0,3}(?:email|message|dm|text|sms|proposal|pitch|invoice|newsletter|quote|note|summary|deck|link)|(?:send|forward|get|pass)\s+(?:\w+\s+){0,3}(?:to|over\s+to|out\s+to|across\s+to)\s+(?:the\s+|a\s+|an\s+)?(?:client|customer|prospect|lead|restaurant|owner|supplier|vendor|partner|them|him|her)|(?:send|forward)\s+(?:it|them|those|these)\s+(?:out|over|off)|follow[-\s]?up\s+with|contact\s+(?:\w+\s+){0,2}(?:client|customer|prospect|lead|restaurant|owner)|sign(?:ed)?\s+(?:\w+\s+){0,3}up\b|blast|campaign\s+send|mail\s?merge)\b/i,
   },
   {
     category: "payment_or_spend",
@@ -200,15 +206,30 @@ export function assessCommandRisk(text: string): CommandRiskAssessment {
     // The internal fast-path is only reachable when the command describes NO
     // outward or irreversible effect at all. A planning verb can never buy its
     // way past a "send", "pay", "deploy", or "delete" sitting next to it.
-    if (!EXTERNAL_EFFECT_PATTERN.test(subject) && INTERNAL_WORK_PATTERN.test(subject)) {
+    const externalEffect = subject.match(EXTERNAL_EFFECT_PATTERN)?.[0];
+    if (!externalEffect && INTERNAL_WORK_PATTERN.test(subject)) {
       return { level: "low", requiresApproval: false, gatedCategories: [], reasons: [], overrideAttempted: false };
     }
-    // Fail closed: recognized as neither purely internal nor a named category.
+
+    // Fail closed, but say WHICH word stopped it. "Jarvis could not confirm
+    // this is internal work" is honest and useless; naming the verb lets the
+    // founder either approve immediately or rephrase, and makes an
+    // over-cautious gate visible instead of mysterious.
+    if (externalEffect) {
+      return {
+        level: "high",
+        requiresApproval: true,
+        gatedCategories: [],
+        reasons: [`This would "${externalEffect.toLowerCase()}" something, which Jarvis will not do from a phone call without your approval`],
+        overrideAttempted: false,
+      };
+    }
+
     return {
       level: "medium",
       requiresApproval: true,
       gatedCategories: [],
-      reasons: ["Jarvis could not confirm this is internal, reversible work, so it stopped for your decision."],
+      reasons: ["Jarvis could not tell whether this is internal, reversible work, so it stopped for your decision"],
       overrideAttempted: false,
     };
   }

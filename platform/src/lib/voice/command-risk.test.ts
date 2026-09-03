@@ -15,6 +15,46 @@ describe("assessCommandRisk — internal work", () => {
   });
 });
 
+describe("assessCommandRisk — realistic founder phrasings that must clear", () => {
+  /**
+   * Over-gating is a real cost, not a safe default: every false positive is
+   * friction on ordinary work and trains the founder to approve without
+   * reading. These are the kinds of thing actually said on a LYNQ call.
+   */
+  const internal = [
+    "Research three Brampton restaurants and compare their websites",
+    "Draft a marketing plan for the next quarter",
+    "Summarize what happened with the KidsCoding project this month",
+    "Review the competitor sites and write up what stands out",
+    "Prepare a scope and estimate for the rebuild",
+    "Investigate why our lead quality dropped in August",
+    "Put together a checklist for onboarding a new client",
+    "Analyze the pipeline and tell me where the bottleneck is",
+    "Outline a roadmap for the next two quarters",
+    "Look into what a typical dentist website costs in Ontario",
+    "Organize the case studies by industry",
+  ];
+
+  it.each(internal)("clears %s", (instruction) => {
+    const result = assessCommandRisk(instruction);
+    expect(result.requiresApproval).toBe(false);
+    expect(result.level).toBe("low");
+  });
+
+  it("treats 'outreach' as a research topic, not an outreach action", () => {
+    // LYNQ researches outreach tooling constantly. Gating this would be wrong,
+    // and labelling it "Contacting a customer or prospect" would be worse.
+    expect(assessCommandRisk("Compare Instantly and Gojiberry for outreach tooling").requiresApproval).toBe(false);
+    expect(assessCommandRisk("Summarize how our outreach numbers moved last month").requiresApproval).toBe(false);
+  });
+
+  it("still gates outreach used as an action", () => {
+    expect(assessCommandRisk("Start outreach to the restaurants this week").requiresApproval).toBe(true);
+    expect(assessCommandRisk("Run the outreach campaign now").requiresApproval).toBe(true);
+    expect(assessCommandRisk("Outreach to the owner today").requiresApproval).toBe(true);
+  });
+});
+
 describe("assessCommandRisk — gated categories", () => {
   const cases: Array<[string, string]> = [
     ["Email the restaurant owner our proposal", "customer_outreach"],
@@ -88,6 +128,19 @@ describe("assessCommandRisk — fail closed", () => {
     const result = assessCommandRisk("Handle the thing we talked about");
     expect(result.requiresApproval).toBe(true);
     expect(result.level).toBe("medium");
+  });
+
+  it("names the word that stopped it, so an over-cautious gate is visible rather than mysterious", () => {
+    const result = assessCommandRisk("Write up the summary and forward it to the team lead");
+    expect(result.requiresApproval).toBe(true);
+    expect(result.level).toBe("high");
+    // The founder can see exactly what to rephrase, or just approve it.
+    expect(result.reasons[0]).toMatch(/forward/i);
+  });
+
+  it("distinguishes an outward effect it could not categorize from an instruction it could not read at all", () => {
+    expect(assessCommandRisk("Write up the summary and ship it").level).toBe("high");
+    expect(assessCommandRisk("Handle the thing we talked about").level).toBe("medium");
   });
 
   it("gates empty input rather than treating it as harmless", () => {

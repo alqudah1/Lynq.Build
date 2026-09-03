@@ -8,6 +8,7 @@ import { parseUuidParam } from "@/lib/http/validation";
 import { listPhoneCallsForUser } from "@/lib/voice/call-store";
 import { getJarvisPhoneCommandReadiness } from "@/lib/voice/phone-config";
 import { GATED_CATEGORY_LABELS, type GatedCategory } from "@/lib/voice/command-risk";
+import { MAX_DISPATCH_ATTEMPTS } from "@/lib/voice/command-dispatch";
 
 export const dynamic = "force-dynamic";
 
@@ -76,6 +77,10 @@ export async function GET(_request: Request, { params }: RouteParams) {
           projectKey: command.projectKey,
           failureCode: command.failureCode,
           failureMessage: command.failureMessage,
+          dispatchAttempts: command.dispatchAttempts,
+          // Whether the UI may offer a retry at all — computed here so the
+          // button can never appear for something that would be refused.
+          retryable: command.dispatchState === "failed" && command.dispatchAttempts < MAX_DISPATCH_ATTEMPTS,
           decidedAt: command.approvalDecidedAt?.toISOString() ?? null,
           decisionNote: command.approvalDecisionNote,
           createdAt: command.createdAt.toISOString(),

@@ -367,6 +367,68 @@ describe("verification state", () => {
   });
 });
 
+describe("dispatch attempts", () => {
+  it("counts each attempt atomically so the retry budget cannot be exceeded", async () => {
+    const userId = await makeUser();
+    const organizationId = await makeOrg(userId);
+    const session = await openSession(organizationId, userId);
+    let command = await upsertCommandDraft(db, {
+      organizationId,
+      callSessionId: session.id,
+      founderUserId: userId,
+      draft: buildCommandDraft({ requestedOutcome: "Research the market" }),
+    });
+
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      const next = await transitionCommand(db, {
+        organizationId,
+        commandId: command.id,
+        expectedRevision: command.revision,
+        dispatchState: "failed",
+        failureCode: "model_rate_limited",
+        incrementDispatchAttempts: true,
+      });
+      expect(next?.dispatchAttempts).toBe(attempt);
+      command = next!;
+    }
+  });
+
+  it("clears the failure reason when a later attempt succeeds", async () => {
+    const userId = await makeUser();
+    const organizationId = await makeOrg(userId);
+    const session = await openSession(organizationId, userId);
+    const created = await upsertCommandDraft(db, {
+      organizationId,
+      callSessionId: session.id,
+      founderUserId: userId,
+      draft: buildCommandDraft({ requestedOutcome: "Research the market" }),
+    });
+
+    const failed = await transitionCommand(db, {
+      organizationId,
+      commandId: created.id,
+      expectedRevision: created.revision,
+      dispatchState: "failed",
+      failureCode: "model_rate_limited",
+      failureMessage: "429",
+      incrementDispatchAttempts: true,
+    });
+    const succeeded = await transitionCommand(db, {
+      organizationId,
+      commandId: created.id,
+      expectedRevision: failed!.revision,
+      dispatchState: "directive_created",
+      failureCode: null,
+      failureMessage: null,
+      incrementDispatchAttempts: true,
+    });
+
+    expect(succeeded?.failureCode).toBeNull();
+    expect(succeeded?.failureMessage).toBeNull();
+    expect(succeeded?.dispatchAttempts).toBe(2);
+  });
+});
+
 describe("call completion", () => {
   it("expires an unconfirmed draft when the call ends, so nothing lingers as if it might still run", async () => {
     const userId = await makeUser();

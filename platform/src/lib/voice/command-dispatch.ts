@@ -6,6 +6,7 @@ import { createDirectiveProject } from "@/lib/office/directive-intake";
 import { toDirectiveInstruction } from "./command-draft";
 import { redactLogFields } from "./redaction";
 import { transitionCommand, type JarvisPhoneCommand } from "./call-store";
+import { CommandNotRetryableError } from "./errors";
 
 type Db = NeonHttpDatabase<Record<string, unknown>>;
 
@@ -131,9 +132,48 @@ export async function dispatchConfirmedCommand(db: Db, input: DispatchConfirmedC
 }
 
 /**
+ * How many times a command may be dispatched before it stops being retryable.
+ *
+ * Deliberately small, and deliberately a HUMAN retry rather than an automatic
+ * one. The common cause of a failed dispatch here is the free model pool being
+ * rate-limited, and an automatic retry loop against a rate limit is how you
+ * turn one failure into a queue of them. A person pressing "try again" also
+ * means someone has actually seen that it failed.
+ */
+export const MAX_DISPATCH_ATTEMPTS = 5;
+
+/**
+ * Retries a dispatch that genuinely failed.
+ *
+ * Safe with respect to the approval gate by construction: a command can only
+ * reach `failed` from a dispatch that was already cleared to run — low risk
+ * and confirmed on the call, or gated and since approved by a human. A command
+ * still sitting in `awaiting_approval` has never been dispatched, so it can
+ * never be retried into existence, and this refuses any state but `failed`.
+ */
+export async function retryFailedDispatch(
+  db: Db,
+  input: { organizationId: string; actorUserId: string; command: JarvisPhoneCommand; workspaceId?: string | null }
+): Promise<DispatchOutcome> {
+  const { command } = input;
+  if (command.dispatchState !== "failed") throw new CommandNotRetryableError("not_failed");
+  if (command.dispatchAttempts >= MAX_DISPATCH_ATTEMPTS) throw new CommandNotRetryableError("attempts_exhausted");
+
+  return runDirectiveDispatch(db, {
+    organizationId: input.organizationId,
+    // The person who pressed retry is the actor, so every downstream
+    // authorization check resolves against a real, current session.
+    founderUserId: input.actorUserId,
+    command,
+    workspaceId: input.workspaceId ?? null,
+  });
+}
+
+/**
  * Creates the directive for a command that is cleared to run — either
- * low-risk and confirmed on the call, or gated and since approved by a human.
- * Shared so both paths produce byte-identical Office records.
+ * low-risk and confirmed on the call, gated and since approved by a human, or
+ * a human-initiated retry of a dispatch that failed.
+ * Shared so every path produces byte-identical Office records.
  */
 export async function runDirectiveDispatch(
   db: Db,

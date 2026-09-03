@@ -13,14 +13,16 @@ import { CommandAlreadyDecidedError, CommandNotAwaitingApprovalError } from "@/l
 import { recordAuditEvent } from "@/lib/audit";
 import { pollAndProcess } from "@/lib/runtime/worker";
 import { resolveCommandById, transitionCommand } from "@/lib/voice/call-store";
-import { runDirectiveDispatch } from "@/lib/voice/command-dispatch";
+import { MAX_DISPATCH_ATTEMPTS, retryFailedDispatch, runDirectiveDispatch } from "@/lib/voice/command-dispatch";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 const bodySchema = z
   .object({
-    decision: z.enum(["approve", "decline"]),
+    // `retry` is not a decision about whether work may happen — that was
+    // already settled. It re-attempts a dispatch that genuinely failed.
+    decision: z.enum(["approve", "decline", "retry"]),
     decisionNote: z.string().trim().max(1000).optional(),
   })
   .strict();
@@ -44,6 +46,10 @@ type RouteParams = { params: Promise<{ organizationId: string; commandId: string
  * - Approving runs the SAME `runDirectiveDispatch` a low-risk command runs, so
  *   an approved gated command produces an identical Office record — one
  *   orchestration system, not two.
+ *
+ * It also handles `retry`, which is not an approval: a command can only reach
+ * `failed` from a dispatch that was already cleared to run, so retrying one
+ * can never manufacture consent that was not already given.
  */
 export async function POST(request: Request, { params }: RouteParams) {
   try {
@@ -58,6 +64,51 @@ export async function POST(request: Request, { params }: RouteParams) {
 
     // Scoped by id AND organization — never fetched globally and authorized after.
     const command = await resolveCommandById(db, { organizationId, commandId });
+
+    if (body.decision === "retry") {
+      const outcome = await retryFailedDispatch(db, { organizationId, actorUserId: user.userId, command, workspaceId: null });
+
+      await recordAuditEvent(db, {
+        eventType: "jarvis_phone_command_retried",
+        organizationId,
+        actorUserId: user.userId,
+        targetType: "jarvis_phone_command",
+        targetId: commandId,
+        metadata: { outcome: outcome.status, attempt: command.dispatchAttempts + 1, riskLevel: command.riskLevel },
+      });
+
+      if (outcome.status === "directive_created") {
+        const rawSql = neon(env.DATABASE_URL);
+        after(async () => {
+          await pollAndProcess(db, rawSql, {
+            leaseOwner: `jarvis-phone-command:${outcome.command.id}`,
+            jobTypes: ["execution_run"],
+            maxJobs: outcome.launchedCount,
+          });
+        });
+
+        return jsonSuccess({
+          decision: "retry",
+          command: { id: outcome.command.id, dispatchState: outcome.command.dispatchState, projectId: outcome.projectId },
+          message: `It worked this time. ${outcome.assistantReply}`,
+        });
+      }
+
+      if (outcome.status === "failed") {
+        const remaining = Math.max(0, MAX_DISPATCH_ATTEMPTS - outcome.command.dispatchAttempts);
+        return jsonSuccess({
+          decision: "retry",
+          command: { id: outcome.command.id, dispatchState: outcome.command.dispatchState, projectId: null },
+          message: `It failed again (${outcome.failureCode.replace(/_/g, " ")}). Nothing was started.${remaining > 0 ? ` You can try ${remaining} more time${remaining === 1 ? "" : "s"}.` : " This one has been retried as many times as it can be."}`,
+        });
+      }
+
+      return jsonSuccess({
+        decision: "retry",
+        command: { id: outcome.command.id, dispatchState: outcome.command.dispatchState, projectId: outcome.command.projectId },
+        message: outcome.spoken,
+      });
+    }
 
     if (command.dispatchState !== "awaiting_approval") {
       throw new CommandNotAwaitingApprovalError(command.dispatchState);

@@ -209,8 +209,28 @@ Dispatch failures are classified into a bounded vocabulary —
 `provider_unreachable`, `authorization_failed`, `resource_not_found`,
 `unknown_error` — stored with the message, spoken honestly on the call ("I
 couldn't open the project just now, and I'm not going to pretend otherwise"),
-and shown in the UI. A failed dispatch is never silently retried into a
-duplicate project; the founder retries it deliberately from the Jarvis screen.
+and shown in the UI.
+
+### Retry
+
+A failed dispatch is **never retried automatically**. The usual cause is the
+free model pool being rate-limited, and an automatic retry loop against a rate
+limit turns one failure into a queue of them; a human pressing the button also
+means someone has actually seen that it failed.
+
+So retry is a **Try again** control on the Jarvis screen, backed by
+`POST .../commands/{id}` with `decision: "retry"`. It requires the same
+validated session and owner/admin membership as an approval, is audited as
+`jarvis_phone_command_retried`, and is capped at five dispatch attempts per
+command (counted atomically in SQL). After that the UI stops offering it and
+says so, rather than showing a button that would be refused.
+
+Retry cannot manufacture consent: a command only ever reaches `failed` from a
+dispatch that was **already** cleared to run — low risk and confirmed on the
+call, or gated and since approved by a human. A command still sitting in
+`awaiting_approval` has never been dispatched, so there is nothing to retry,
+and the endpoint refuses any state but `failed`. A successful retry clears the
+stored failure reason rather than leaving a stale one behind.
 
 A call that ends with an unconfirmed draft expires that draft visibly, so
 nothing lingers looking like it might still run.
@@ -307,5 +327,9 @@ Reused unchanged:
 9. Approve the gated command in the UI and confirm the project then opens.
 10. Read a fake API key aloud. Confirm the stored transcript shows
     `[redacted-secret]` and the UI says something sensitive was removed.
-11. Confirm server logs contain no full phone number, no transcript, and no
+11. If a dispatch fails (the model pool is rate-limited often enough that this
+    is easy to observe), confirm the UI states the failure and the reason,
+    offers **Try again**, and that pressing it either opens the project or
+    reports a second honest failure — never a silent success.
+12. Confirm server logs contain no full phone number, no transcript, and no
     code.

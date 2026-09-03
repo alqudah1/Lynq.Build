@@ -43,6 +43,8 @@ const gatedCall = {
       projectKey: null,
       failureCode: null,
       failureMessage: null,
+      dispatchAttempts: 0,
+      retryable: false,
       decidedAt: null,
       decisionNote: null,
       createdAt: "2026-09-01T15:06:00.000Z",
@@ -199,6 +201,74 @@ describe("JarvisPhoneControl accessibility", () => {
     await waitFor(() => expect(screen.getByText(/refused this call and took no instruction/i)).toBeInTheDocument());
     expect(screen.getByText(/did not come from your registered number/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /approve and start the work/i })).not.toBeInTheDocument();
+    expect(await axe(container)).toHaveNoViolations();
+  });
+
+  it("offers a real retry on a failed dispatch and calls the endpoint with retry", async () => {
+    const failedCall = {
+      ...gatedCall,
+      session: { ...gatedCall.session, id: "session-4" },
+      commands: [
+        {
+          ...gatedCall.commands[0],
+          id: "command-3",
+          requestedOutcome: "Research three Brampton restaurants",
+          requiresApproval: false,
+          gatedReasons: [],
+          riskReasons: [],
+          dispatchState: "failed",
+          failureCode: "model_rate_limited",
+          failureMessage: "Provider returned 429",
+          dispatchAttempts: 1,
+          retryable: true,
+        },
+      ],
+    };
+    const fetchMock = stubFetch({ ...readyState, calls: [failedCall] }, { data: { message: "It worked this time. I opened the project." } });
+
+    const { container } = render(<JarvisPhoneControl organizationId="organization-1" organizationSlug="lynq" />);
+
+    // The failure is stated plainly before any retry is offered.
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent(/could not open the project/i));
+    expect(screen.getByRole("alert")).toHaveTextContent(/model rate limited/i);
+
+    const retry = screen.getByRole("button", { name: /try again/i });
+    fireEvent.click(retry);
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/organizations/organization-1/jarvis/phone/commands/command-3",
+        expect.objectContaining({ method: "POST", body: JSON.stringify({ decision: "retry" }) })
+      )
+    );
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent(/worked this time/i));
+    expect(await axe(container)).toHaveNoViolations();
+  });
+
+  it("says a command is out of retries instead of showing a button that would be refused", async () => {
+    const exhaustedCall = {
+      ...gatedCall,
+      session: { ...gatedCall.session, id: "session-5" },
+      commands: [
+        {
+          ...gatedCall.commands[0],
+          id: "command-4",
+          requiresApproval: false,
+          gatedReasons: [],
+          riskReasons: [],
+          dispatchState: "failed",
+          failureCode: "model_rate_limited",
+          dispatchAttempts: 5,
+          retryable: false,
+        },
+      ],
+    };
+    stubFetch({ ...readyState, calls: [exhaustedCall] });
+
+    const { container } = render(<JarvisPhoneControl organizationId="organization-1" organizationSlug="lynq" />);
+
+    await waitFor(() => expect(screen.getByText(/tried as many times as it can be/i)).toBeInTheDocument());
+    expect(screen.queryByRole("button", { name: /try again/i })).not.toBeInTheDocument();
     expect(await axe(container)).toHaveNoViolations();
   });
 });

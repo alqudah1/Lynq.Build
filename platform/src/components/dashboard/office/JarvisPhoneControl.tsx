@@ -45,6 +45,8 @@ type PhoneCommand = {
   projectKey: string | null;
   failureCode: string | null;
   failureMessage: string | null;
+  dispatchAttempts: number;
+  retryable: boolean;
   decidedAt: string | null;
   decisionNote: string | null;
   createdAt: string;
@@ -158,7 +160,7 @@ export function JarvisPhoneControl({ organizationId, organizationSlug }: { organ
   }, [showPasscode, passcode, revealPasscode]);
 
   const decide = useCallback(
-    async (commandId: string, decision: "approve" | "decline") => {
+    async (commandId: string, decision: "approve" | "decline" | "retry") => {
       setPendingCommandId(commandId);
       setDecisionError(null);
       setDecisionMessage(null);
@@ -414,10 +416,26 @@ export function JarvisPhoneControl({ organizationId, organizationSlug }: { organ
                     </Link>
                   </p>
                 ) : command.dispatchState === "failed" ? (
-                  <p role="alert" className="mt-1 text-sm text-danger">
-                    No. Jarvis could not open the project{command.failureCode ? ` (${command.failureCode.replace(/_/g, " ")})` : ""}. Nothing was
-                    started, and nothing was sent.
-                  </p>
+                  <>
+                    <p role="alert" className="mt-1 text-sm text-danger">
+                      No. Jarvis could not open the project{command.failureCode ? ` (${command.failureCode.replace(/_/g, " ")})` : ""}. Nothing was
+                      started, and nothing was sent.
+                    </p>
+                    {command.retryable ? (
+                      <button
+                        type="button"
+                        onClick={() => void decide(command.id, "retry")}
+                        disabled={pendingCommandId === command.id}
+                        className="office-dispatch-button mt-3"
+                      >
+                        {pendingCommandId === command.id ? "Trying again…" : "Try again"}
+                      </button>
+                    ) : (
+                      <p className="mt-2 text-sm text-muted">
+                        This one has been tried as many times as it can be. Call Jarvis again if you still want it.
+                      </p>
+                    )}
+                  </>
                 ) : (
                   <p className="mt-1 text-sm text-muted">No. Nothing has been started for this yet.</p>
                 )}

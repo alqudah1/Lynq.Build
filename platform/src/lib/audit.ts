@@ -621,6 +621,7 @@ export type AuditEventType =
   | "jarvis_phone_command_override_attempted"
   | "jarvis_phone_command_dispatched"
   | "jarvis_phone_command_dispatch_failed"
+  | "jarvis_phone_command_retried"
   | "jarvis_phone_command_decided";
 
 export interface RecordAuditEventInput {

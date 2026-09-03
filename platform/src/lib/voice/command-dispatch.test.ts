@@ -21,7 +21,8 @@ vi.mock("@/lib/office/directive-intake", () => ({ createDirectiveProject }));
 vi.mock("@/lib/audit", () => ({ recordAuditEvent }));
 vi.mock("./call-store", () => ({ transitionCommand }));
 
-const { dispatchConfirmedCommand } = await import("./command-dispatch");
+const { dispatchConfirmedCommand, retryFailedDispatch, MAX_DISPATCH_ATTEMPTS } = await import("./command-dispatch");
+const { CommandNotRetryableError } = await import("./errors");
 type Command = Parameters<typeof dispatchConfirmedCommand>[1]["command"];
 
 function makeCommand(overrides: Partial<Command> = {}): Command {
@@ -177,5 +178,81 @@ describe("failures are explicit", () => {
       if (outcome.status !== "failed") throw new Error("expected failure");
       expect(outcome.failureCode).toBe(expectedCode);
     }
+  });
+});
+
+describe("retrying a failed dispatch", () => {
+  const retryInput = { organizationId: "org-1", actorUserId: "approver-1", workspaceId: null };
+
+  it("re-runs the same directive path and reports the real success", async () => {
+    createDirectiveProject.mockResolvedValue({
+      assistantReply: "I opened the project.",
+      plannedByAI: false,
+      executionMode: "advisory",
+      project: { id: "project-1", name: "Brampton Restaurants", projectKey: "BRAMP01", status: "active", workspaceId: null },
+      assignments: [{ taskId: "task-1" }],
+      launchedCount: 1,
+    });
+    const command = makeCommand({ dispatchState: "failed", failureCode: "model_rate_limited", dispatchAttempts: 1, revision: 2 });
+    transitionCommand.mockResolvedValue({ ...command, dispatchState: "directive_created", projectId: "project-1", revision: 3 });
+
+    const outcome = await retryFailedDispatch(db, { ...retryInput, command });
+
+    expect(outcome.status).toBe("directive_created");
+    expect(createDirectiveProject).toHaveBeenCalledTimes(1);
+    // The person who pressed retry becomes the actor, so downstream
+    // authorization resolves against a real current session.
+    expect(createDirectiveProject.mock.calls[0][1]).toMatchObject({ actorUserId: "approver-1" });
+  });
+
+  it("clears the previous failure rather than leaving a stale reason behind", async () => {
+    createDirectiveProject.mockResolvedValue({
+      assistantReply: "ok",
+      plannedByAI: false,
+      executionMode: "advisory",
+      project: { id: "project-1", name: "P", projectKey: "P01", status: "active", workspaceId: null },
+      assignments: [],
+      launchedCount: 0,
+    });
+    const command = makeCommand({ dispatchState: "failed", failureCode: "model_rate_limited", dispatchAttempts: 1, revision: 2 });
+    transitionCommand.mockResolvedValue({ ...command, dispatchState: "directive_created", failureCode: null, revision: 3 });
+
+    await retryFailedDispatch(db, { ...retryInput, command });
+
+    expect(transitionCommand.mock.calls[0][1]).toMatchObject({ failureCode: null, failureMessage: null, incrementDispatchAttempts: true });
+  });
+
+  it("refuses to retry a command that is still awaiting approval — retry can never manufacture consent", async () => {
+    const command = makeCommand({ dispatchState: "awaiting_approval", requiresApproval: true });
+
+    await expect(retryFailedDispatch(db, { ...retryInput, command })).rejects.toThrow(CommandNotRetryableError);
+    expect(createDirectiveProject).not.toHaveBeenCalled();
+  });
+
+  it.each(["awaiting_confirmation", "directive_created", "declined", "cancelled"] as const)(
+    "refuses to retry a command in %s",
+    async (dispatchState) => {
+      await expect(retryFailedDispatch(db, { ...retryInput, command: makeCommand({ dispatchState }) })).rejects.toThrow(CommandNotRetryableError);
+      expect(createDirectiveProject).not.toHaveBeenCalled();
+    }
+  );
+
+  it("stops retrying once the attempt budget is spent", async () => {
+    const command = makeCommand({ dispatchState: "failed", dispatchAttempts: MAX_DISPATCH_ATTEMPTS });
+
+    await expect(retryFailedDispatch(db, { ...retryInput, command })).rejects.toThrow(CommandNotRetryableError);
+    expect(createDirectiveProject).not.toHaveBeenCalled();
+  });
+
+  it("reports a second failure honestly instead of claiming success", async () => {
+    createDirectiveProject.mockRejectedValue(new Error("Provider returned 429 Too Many Requests"));
+    const command = makeCommand({ dispatchState: "failed", dispatchAttempts: 1, revision: 2 });
+    transitionCommand.mockResolvedValue({ ...command, dispatchState: "failed", failureCode: "model_rate_limited", dispatchAttempts: 2, revision: 3 });
+
+    const outcome = await retryFailedDispatch(db, { ...retryInput, command });
+
+    expect(outcome.status).toBe("failed");
+    if (outcome.status !== "failed") throw new Error("expected failure");
+    expect(outcome.failureCode).toBe("model_rate_limited");
   });
 });
