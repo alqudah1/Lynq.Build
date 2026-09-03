@@ -44,6 +44,11 @@ import { CommandNotRetryableError } from "./errors";
  *   set -a && source .env.local && set +a && npm run test:integration
  */
 
+// Auto-dispatch is OFF in production by default — see `phoneAutoDispatchEnabled`.
+// These suites exercise the dispatch machinery itself, so they turn it on; the
+// default-off behaviour is asserted separately.
+process.env.JARVIS_PHONE_AUTO_DISPATCH_ENABLED = "true";
+
 const env = loadEnv();
 const db = createDbClient(env);
 
@@ -517,5 +522,48 @@ describe("createDirectiveProject — a failure in the project-created callback",
       .from(projects)
       .where(and(eq(projects.organizationId, organizationId), eq(projects.id, partial.projectId)));
     expect(Number(count)).toBe(1);
+  });
+});
+
+describe("a confirmed low-risk command against a real database, with auto-dispatch off", () => {
+  /**
+   * The production default. `assessCommandRisk` cleared this command, and it
+   * still opens no project: what a lexical classifier over speech decides is
+   * advice on the approval screen, not authority to start work.
+   */
+  it("creates no project and leaves the command awaiting approval", async () => {
+    const previous = process.env.JARVIS_PHONE_AUTO_DISPATCH_ENABLED;
+    process.env.JARVIS_PHONE_AUTO_DISPATCH_ENABLED = "false";
+    try {
+      const { userId, organizationId } = await makeFounder();
+      const command = await upsertCommandDraft(db, {
+        organizationId,
+        callSessionId: (
+          await ensureCallSession(db, {
+            organizationId,
+            founderUserId: userId,
+            providerCallId: `call-${crypto.randomUUID()}`,
+            direction: "inbound",
+            purpose: "founder_command",
+            callerNumber: "+14165551234",
+            callerNumberMatched: true,
+          })
+        ).id,
+        founderUserId: userId,
+        draft: buildCommandDraft({ requestedOutcome: "Research three Brampton restaurants" }),
+      });
+      expect(command.requiresApproval).toBe(false);
+
+      const outcome = await dispatchConfirmedCommand(db, { organizationId, founderUserId: userId, command });
+
+      expect(outcome.status).toBe("awaiting_approval");
+      const [{ count }] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(projects)
+        .where(eq(projects.organizationId, organizationId));
+      expect(Number(count)).toBe(0);
+    } finally {
+      process.env.JARVIS_PHONE_AUTO_DISPATCH_ENABLED = previous;
+    }
   });
 });

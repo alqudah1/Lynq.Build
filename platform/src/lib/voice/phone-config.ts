@@ -37,6 +37,40 @@ export function phoneCommandsFlagEnabled(value: string | undefined = process.env
   return value?.trim().toLowerCase() === "true";
 }
 
+/**
+ * Whether a phone command the classifier judged low-risk may open a directive
+ * WITHOUT a human decision. Separate from `JARVIS_PHONE_COMMANDS_ENABLED`, and
+ * off by default even when phone control itself is on.
+ *
+ * ---------------------------------------------------------------------------
+ * Why this exists, and why it defaults to off
+ * ---------------------------------------------------------------------------
+ * `assessCommandRisk` is a deterministic lexical classifier over speech. It has
+ * been designed five times and adversarially reviewed ten, and the tenth review
+ * is the reason for this flag: against 315 deliberately dangerous phrasings it
+ * cleared 139 — DNS cutovers, privilege grants, CRM deletion, publishing to the
+ * live site, a salary change — while gating 38 of 40 ordinary internal requests
+ * written by someone who had not seen its vocabulary.
+ *
+ * Both numbers matter, and the second explains the first: each round of tuning
+ * was measured against corpora written alongside the vocabulary, so the gate
+ * looked accurate on the sentences it had been fitted to and was neither safe
+ * nor usable on the ones it had not.
+ *
+ * The classifier is not therefore worthless. It sets the risk level, the
+ * categories and the plain-language reasons the approval screen shows, and
+ * those are useful whether or not it is trusted to DECIDE. What it should not
+ * do, on this evidence, is start work with no human in the loop.
+ *
+ * So the default is that every phone command stops for an approval, and the
+ * classifier's opinion is advice on that screen rather than authority. Turning
+ * this on is a deliberate act by someone who has read the numbers above and
+ * decided the residual risk is acceptable for their organization.
+ */
+export function phoneAutoDispatchEnabled(value: string | undefined = process.env.JARVIS_PHONE_AUTO_DISPATCH_ENABLED): boolean {
+  return value?.trim().toLowerCase() === "true";
+}
+
 export type PhoneConfigResolution =
   | { ok: true; config: JarvisPhoneCommandConfig }
   | { ok: false; reason: "disabled" | "incomplete_configuration" | "invalid_founder_number"; missing: string[] };

@@ -75,6 +75,10 @@ const db = {} as never;
 const baseInput = { organizationId: "org-1", founderUserId: "user-1", workspaceId: null };
 
 beforeEach(() => {
+  // Auto-dispatch is off by default in production — see
+  // `phoneAutoDispatchEnabled`. These tests exercise the dispatch path itself,
+  // so they turn it on; the default-off behaviour has its own test below.
+  vi.stubEnv("JARVIS_PHONE_AUTO_DISPATCH_ENABLED", "true");
   createDirectiveProject.mockReset();
   transitionCommand.mockReset();
   claimDispatchAttempt.mockReset();
@@ -492,5 +496,50 @@ describe("a stalled dispatch can be recovered", () => {
       retryFailedDispatch(db, { ...retryInput, command: makeCommand({ dispatchState: "dispatching", dispatchStartedAt: new Date() }) })
     ).rejects.toThrow(CommandNotRetryableError);
     expect(claimDispatchAttempt).not.toHaveBeenCalled();
+  });
+});
+
+describe("nothing said on a call starts work on its own by default", () => {
+  /**
+   * `assessCommandRisk` is a lexical classifier over speech. Ten adversarial
+   * reviews say it belongs on an approval screen rather than in the decision:
+   * against 315 deliberately dangerous phrasings the fifth design cleared 139,
+   * while gating 38 of 40 ordinary requests written by someone who had not seen
+   * its vocabulary. Both numbers came from the same property — every round was
+   * tuned against corpora written alongside it.
+   *
+   * So a `low` verdict no longer starts anything unless a human has explicitly
+   * enabled that, and the classifier's output becomes advice on the approval
+   * screen instead of authority.
+   */
+  it("stops a low-risk command at the approval gate when auto-dispatch is off", async () => {
+    vi.stubEnv("JARVIS_PHONE_AUTO_DISPATCH_ENABLED", "");
+    transitionCommand.mockResolvedValue({ ...makeCommand(), dispatchState: "awaiting_approval", riskLevel: "low" });
+
+    const outcome = await dispatchConfirmedCommand(db, {
+      organizationId: "org-1",
+      founderUserId: "user-1",
+      command: makeCommand(),
+    });
+
+    expect(outcome.status).toBe("awaiting_approval");
+    expect(createDirectiveProject).not.toHaveBeenCalled();
+  });
+
+  it("says why, without pretending the work was judged risky", async () => {
+    vi.stubEnv("JARVIS_PHONE_AUTO_DISPATCH_ENABLED", "");
+    transitionCommand.mockResolvedValue({ ...makeCommand(), dispatchState: "awaiting_approval", riskLevel: "low" });
+
+    const outcome = await dispatchConfirmedCommand(db, {
+      organizationId: "org-1",
+      founderUserId: "user-1",
+      command: makeCommand(),
+    });
+
+    // The founder is told the truth: this is ordinary work, and nothing said on
+    // a call starts on its own. Reporting it as "this needs your approval
+    // because it looks risky" would be a lie about work the gate cleared.
+    expect(outcome.spoken).toMatch(/ordinary internal work/i);
+    expect(outcome.spoken).toMatch(/nothing said on a call starts on its own/i);
   });
 });

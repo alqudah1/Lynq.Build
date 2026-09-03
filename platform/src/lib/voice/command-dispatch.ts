@@ -5,6 +5,7 @@ import { recordAuditEvent } from "@/lib/audit";
 import { createDirectiveProject, DirectivePartiallyCreatedError } from "@/lib/office/directive-intake";
 import { toDirectiveInstruction } from "./command-draft";
 import { redactLogFields } from "./redaction";
+import { phoneAutoDispatchEnabled } from "./phone-config";
 import { claimDispatchAttempt, isDispatchInFlight, recordDispatchProject, resolveCommandById, transitionCommand, type JarvisPhoneCommand } from "./call-store";
 import { CommandNotRetryableError } from "./errors";
 
@@ -95,7 +96,17 @@ export async function dispatchConfirmedCommand(db: Db, input: DispatchConfirmedC
     });
   }
 
-  if (command.requiresApproval) {
+  // Auto-dispatch is a separate, off-by-default decision from phone control
+  // itself. `assessCommandRisk` is a lexical classifier over speech, and ten
+  // adversarial reviews say it should inform an approval screen rather than
+  // replace one — see `phoneAutoDispatchEnabled` for the measured numbers.
+  //
+  // The classifier still runs and its verdict is still recorded: what changes
+  // is only whether a `low` verdict is allowed to START anything. When
+  // auto-dispatch is off, every phone command stops here, and the risk level,
+  // the categories and the reasons ride along to the approval screen.
+  const autoDispatch = phoneAutoDispatchEnabled();
+  if (command.requiresApproval || !autoDispatch) {
     const gated = await transitionCommand(db, {
       organizationId: input.organizationId,
       commandId: command.id,
@@ -117,8 +128,12 @@ export async function dispatchConfirmedCommand(db: Db, input: DispatchConfirmedC
     return {
       status: "awaiting_approval",
       command: gated,
-      spoken:
-        "I've written that up and put it in LYNQ Office for your approval. Nothing has started, and nothing will until you approve it there. It's on the Jarvis screen now.",
+      spoken: command.requiresApproval
+        ? "I've written that up and put it in LYNQ Office for your approval. Nothing has started, and nothing will until you approve it there. It's on the Jarvis screen now."
+        : // Honest about WHY: this one is not gated because Jarvis judged it
+          // risky, it is gated because nothing said on a call starts work on
+          // its own here.
+          "I've written that up and put it in LYNQ Office for you to start. It reads as ordinary internal work, but nothing said on a call starts on its own — one tap on the Jarvis screen and the team picks it up.",
     };
   }
 

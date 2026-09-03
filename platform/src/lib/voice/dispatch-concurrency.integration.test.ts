@@ -26,6 +26,11 @@ import { dispatchConfirmedCommand, retryFailedDispatch, runDirectiveDispatch } f
  * and the interleaving that has actually defeated a fix here before.
  */
 
+// Auto-dispatch is OFF in production by default — see `phoneAutoDispatchEnabled`.
+// These suites exercise the dispatch machinery itself, so they turn it on; the
+// default-off behaviour is asserted separately.
+process.env.JARVIS_PHONE_AUTO_DISPATCH_ENABLED = "true";
+
 const env = loadEnv();
 const db = createDbClient(env);
 

@@ -102,6 +102,35 @@ No new provider, no new stored credential, no new third party.
 
 ## 3. What may and may not start from a phone call
 
+> **By default, nothing starts from a phone call on its own.**
+>
+> `JARVIS_PHONE_AUTO_DISPATCH_ENABLED` is off, and while it is off every
+> confirmed command — including one the risk classifier judges low-risk —
+> stops at an approval in LYNQ Office. The classifier still runs: it sets the
+> risk level, the gated categories and the plain-language reasons the approval
+> screen shows. What it does not do is decide whether work starts.
+>
+> This is not caution for its own sake. `assessCommandRisk` is a deterministic
+> lexical classifier over speech-to-text. It has been designed five times and
+> adversarially reviewed ten, and the tenth review measured the fifth design at
+> **139 of 315 deliberately dangerous phrasings cleared** — DNS cutovers,
+> privilege grants, CRM deletion, publishing to the live site, a salary change
+> — while gating **38 of 40 ordinary internal requests** written by someone who
+> had not seen its vocabulary.
+>
+> Both numbers come from one property, and it is worth stating plainly because
+> it will recur: every round of tuning was measured against corpora written
+> alongside the vocabulary. The gate looked accurate on the sentences it had
+> been fitted to, and was neither safe nor usable on the ones it had not. Each
+> round's specific holes are closed and each is a regression test, but the
+> reason to expect an eleventh round to find more is that ten rounds did.
+>
+> A one-tap approval on a screen the founder is already looking at — it is
+> where the verification code is displayed — is a cheap control. Turning
+> auto-dispatch on trades that tap for the classifier's judgment. Make that
+> trade deliberately, after reading §3 and the residual risks at the end, not
+> because the flag was there.
+
 Classification is deterministic (`src/lib/voice/command-risk.ts`) — no model
 call — so a rate-limited or hallucinating model can degrade the quality of the
 captured fields but can never change whether a command is gated.
@@ -380,6 +409,11 @@ release manager.
 New:
 
 - `JARVIS_PHONE_COMMANDS_ENABLED` — must be exactly `true` to enable anything
+- `JARVIS_PHONE_AUTO_DISPATCH_ENABLED` — must be exactly `true` before a
+  low-risk phone command may open a directive without a human decision.
+  Separate from the flag above and **off by default even when phone control is
+  on**; see §3 for why, and leave it off unless you have read the measured
+  numbers there and accepted the residual risk
 - `JARVIS_PHONE_ORGANIZATION_ID`
 - `JARVIS_PHONE_FOUNDER_USER_ID`
 - `JARVIS_PHONE_VERIFICATION_SECRET` — ≥ 32 characters

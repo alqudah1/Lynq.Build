@@ -145,7 +145,7 @@ const COMMAND_VERB_HINT =
   "cancel|approve|order|buy|purchase|pay|wire|transfer|refund|charge|spend|expense|reimburse|" +
   "send|forward|email|call|text|message|ping|dm|slack|notify|reply|contact|unsubscribe|invite|" +
   "deploy|ship|publish|unpublish|push|merge|release|upload|" +
-  "delete|remove|wipe\b(?!\s+(?:procedur|process|polic|guides?|runbooks?))|purge|erase|drop|clear|reset|archive|destroy|revoke|rotate|disable|" +
+  "delete|remove|wipe|purge|erase|drop|clear|reset|archive|destroy|revoke|rotate|disable|" +
   "hire|fire|onboard|offboard|promote|bump|" +
   // `sign off` and `sign up` are ordinary review and product language, not
   // signing an agreement.
@@ -186,7 +186,7 @@ const SENTENCE_BOUNDARY = /[.;!?\n]+/;
  * decision is now made once per candidate piece in `splitSegments`, which is
  * linear in the number of pieces rather than in characters times alternatives.
  */
-const COORDINATOR = /(?:,\s+|\s+(?:and\s+then|and|then|also|plus|next|after\s+that|followed\s+by)\s+)/iu;
+const COORDINATOR = /(?:,\s+|\s+(?:and\s+then|and|then|also|plus|after\s+that|followed\s+by)\s+)/iu;
 
 /**
  * ============================================================================
@@ -258,13 +258,14 @@ const RECIPIENT_PATTERNS: RegExp[] = [
 
 /**
  * True when a contact verb is followed by something that reads as a person.
- * Runs on the MASKED segment, so "the call notes" and "text message providers"
- * have already become topics by the time this sees them.
+ * Runs on the raw segment: the masking layer this once relied on was removed,
+ * and `NON_PERSON_TOKENS` is what keeps "the call notes" and "text message
+ * providers" from reading as recipients.
  */
-function mentionsNamedRecipient(masked: string): boolean {
+function mentionsNamedRecipient(segment: string): boolean {
   for (const pattern of RECIPIENT_PATTERNS) {
     pattern.lastIndex = 0;
-    for (const match of masked.matchAll(pattern)) {
+    for (const match of segment.matchAll(pattern)) {
       const recipient = match[1]?.toLowerCase();
       if (recipient && !NON_PERSON_TOKENS.has(recipient)) return true;
     }
@@ -288,7 +289,7 @@ const CATEGORY_RULES: Array<{ category: GatedCategory; level: CommandRiskLevel; 
       // outreach for the restaurant owners" clear completely. Default-gate
       // with named exceptions is the only safe direction here: a missing
       // exception costs an approval click, a missing verb costs a gate.
-      /\b(?:cold[-\s]?(?:call|email)|outreach(?!\s+(?:tool|tools|tooling|software|platforms?|providers?|vendors?|stack|strategy|strategies|numbers?|metrics?|rates?|performance|results?|data|reports?|reporting|budget|costs?|options?|approach|process|playbooks?|templates?|copy|examples?|benchmarks?))|reach\s+out|email\s+(?:\w+\s+){0,3}(?:client|customer|prospect|lead|restaurant|owner|them|him|her)(?!\s+(?:volume|counts?|lists?|addresses|templates?))|(?:send|forward|deliver|share)\s+(?:\w+\s+){0,3}(?:email|message|dm|text|sms|proposal|pitch|invoice|newsletter|quote|note|summary|deck|link)|(?:send|forward|get|pass|run)\s+(?:\w+\s+){0,3}(?:to|over\s+to|out\s+to|across\s+to|by|in\s+front\s+of)\s+(?:the\s+|a\s+|an\s+)?(?:client|customer|prospect|lead|restaurant|owner|supplier|vendor|partner|them|him|her)|(?:send|forward)\s+(?:it|them|those|these)\s+(?:out|over|off)|follow[-\s]?up\s+with|contact\s+(?:\w+\s+){0,2}(?:client|customer|prospect|lead|restaurant|owner)|blast|campaign\s+send(?!\s+costs?)|mail\s?merge|(?:let|keep)\s+(?:the\s+)?(?:client|customer|owner|prospect|lead|supplier)\s+(?:know|posted|informed)|(?:notify|update|cc|bcc|reply\s+to|respond\s+to|mail|invite)\s+(?:the\s+)?(?:client|customer|prospect|lead|restaurant|owner|supplier|vendor)|check\s+in\s+with|touch\s+base|circle\s+back|drop\s+(?:\w+\s+){0,2}a\s+line|(?:set\s+up|book|schedule|arrange)\s+(?:\w+\s+){0,3}(?:meeting|call|demo|time|slot)?\s*with\s+(?:the\s+)?(?:client|customer|prospect|lead|owner|supplier|vendor|partner|them|him|her)|loop\s+in|enviar|envoyer|correo|courriel|nachricht)\b/i,
+      /\b(?:cold[-\s]?(?:call|email)|outreach(?!\s+(?:tool|tools|tooling|software|platforms?|providers?|vendors?|stack|strategy|strategies|numbers?|metrics?|rates?|performance|results?|data|reports?|reporting|budget|costs?|options?|approach|process|playbooks?|templates?|copy|examples?|benchmarks?))|reach\s+out|email\s+(?:\w+\s+){0,3}(?:client|customer|prospect|lead|restaurant|owner|them|him|her)(?!\s+(?:volume|counts?|lists?|addresses|templates?))|(?:send|forward|deliver|share)\s+(?:\w+\s+){0,3}(?:email|message|dm|text|sms|proposal|pitch|invoice|newsletter|quote|note|summary|deck|link)|(?:send|forward|get|pass|run)\s+(?:\w+\s+){0,3}(?:to|over\s+to|out\s+to|across\s+to|by|in\s+front\s+of)\s+(?:the\s+|a\s+|an\s+)?(?:client|customer|prospect|lead|restaurant|owner|supplier|vendor|partner|them|him|her)|(?:send|forward)\s+(?:it|them|those|these)\s+(?:out|over|off)|follow[-\s]?up\s+with|contact\s+(?:\w+\s+){0,2}(?:client|customer|prospect|lead|restaurant|owner)|blast|campaign\s+send(?!\s+costs?)|mail\s?merge|(?:let|keep)\s+(?:the\s+)?(?:client|customer|owner|prospect|lead|supplier)\s+(?:know|posted|informed)|(?:notify|update|cc|bcc|reply\s+to|respond\s+to|mail|invite)\s+(?:the\s+)?(?:client|customer|prospect|lead|restaurant|owner|supplier|vendor)|check\s+in\s+with|touch\s+base|circle\s+back|drop\s+(?:\w+\s+){0,2}a\s+line|(?:set\s+up|book|schedule|arrange)\s+(?:\w+\s+){0,3}(?:meeting|call|demo|time|slot)?\s*with\s+(?:the\s+)?(?:\w+\s+){0,2}(?:client|customer|prospect|lead|owner|supplier|vendor|partner|them|him|her)|loop\s+in|enviar|envoyer|correo|courriel|nachricht)\b/i,
   },
   {
     category: "payment_or_spend",
@@ -310,7 +311,7 @@ const CATEGORY_RULES: Array<{ category: GatedCategory; level: CommandRiskLevel; 
     // a live-site change was both wrong and confusingly explained. (Those two
     // shapes are also narrowed by the lookarounds in this pattern.)
     pattern:
-      /\b(?:deploy(?:s|ed|ing)?(?!\s+(?:process(?:es)?|procedur|polic|guides?|pipelines?|checklists?|runbooks?|schedule|frequency|cadence|steps?|docs?))|promote\s+(?:it\s+|this\s+|that\s+)?(?:to\s+)?(?:prod|production|live|the\s+live\s+site|the\s+release)\b|ship\s+(?:\w+\s+){0,4}(?:to\s+)?(?:prod|production|live|the\s+live\s+site)|release\s+(?:\w+\s+){0,3}(?:to\s+)?(?:prod|production|live)|cut\s+(?:a|the)\s+release|go(?:es)?\s+live|going\s+live|live\s+site|push\s+(?:\w+\s+){0,3}to\s+(?:main|master|production)|merge\s+(?:to|into)\s+(?:main|master)|(?:to|on|in|into)\s+production\b|production\s+(?:deploy|release|server|environment|branch|build|site)|prod\b|rollbacks?\b(?!\s+(?:procedur|process|polic|plans?|guides?|runbooks?|steps?))|roll\s+back|roll\s+(?:it|this|that)?\s*out\b|change\s+the\s+(?:alias|domain|dns)|point\s+the\s+domain|repoint|update\s+the\s+dns|cname|flip\s+(?:the\s+)?(?:feature\s+)?flag|(?:put|push|publish)\s+(?:\w+\s+){0,4}(?:on|to)\s+the\s+(?:site|website|homepage|landing\s+page)|make\s+(?:it|this|that)\s+available\s+to\s+(?:customers|everyone|the\s+public))\b/i,
+      /\b(?:deploy(?:s|ed|ing)?(?!\s+(?:process(?:es)?|procedur|polic|guides?|pipelines?|checklists?|runbooks?|schedule|frequency|cadence|steps?|docs?))|promote\s+(?:it\s+|this\s+|that\s+)?(?:to\s+)?(?:prod|production|live|the\s+live\s+site|the\s+release)\b|ship\s+(?:\w+\s+){0,4}(?:to\s+)?(?:prod|production|live|the\s+live\s+site)|release\s+(?:\w+\s+){0,3}(?:to\s+)?(?:prod|production|live)|cut\s+(?:a|the)\s+release|go(?:es)?\s+live|going\s+live|live\s+site|push\s+(?:\w+\s+){0,3}to\s+(?:main|master|production)|merge\s+(?:to|into)\s+(?:main|master)|(?:to|on|in|into)\s+production\b|production\s+(?:deploy|release|server|environment|branch|build|site)|prod\b|rollbacks?\b(?!\s+(?:procedur|process|polic|plans?|guides?|runbooks?|steps?))|roll\s+back|roll\s+(?:it|this|that)?\s*out\b|change\s+the\s+(?:alias|domain|dns)|point\s+the\s+domain|repoint|update\s+the\s+dns|cname|flip\s+(?:the\s+)?(?:feature\s+)?flag|(?:put|push|publish)\s+(?:\w+\s+){0,4}(?:on|to)\s+the\s+(?:site|website|homepage|landing\s+page)|make\s+(?:it|this|that)\s+available\s+to\s+(?:customers|everyone|the\s+public)|(?:pull|take|bring|knock)\s+(?:\w+\s+){0,3}(?:offline|down\s+for))\b/i,
   },
   {
     category: "destructive_change",
@@ -331,13 +332,13 @@ const CATEGORY_RULES: Array<{ category: GatedCategory; level: CommandRiskLevel; 
     category: "credential_access",
     level: "critical",
     pattern:
-      /\b(?:(?<!handle\s)(?<!handling\s)(?<!manage\s)(?<!managing\s)(?<!store\s)(?<!storing\s)api\s?keys?\b(?!\s+(?:polic|management|rotation))|access\s?tokens?|secrets?\b(?!\s+(?:management|manager|store|storage|scanning|handling|hygiene))|credentials?\b(?!\s+(?:polic|procedur|process|guide|management|hygiene))|passwords?\b(?!\s+(?:polic|manager|hygiene|standards?|requirements?|rules?|reset))|env\s+(?:vars?|variables?|file)|environment\s+variables?|private\s?keys?|ssh\s+keys?|rotate\s+(?:\w+\s+){0,2}(?:keys?|credentials?|secrets?|tokens?|them)|service\s+account|read\s+(?:me\s+)?(?:the\s+|what(?:'s|\s+is)\s+in\s+the\s+)?\.?env|(?:read|tell|give)\s+me\s+(?:the\s+)?(?:\w+\s+){0,2}(?:key|token|secret|password|login|credentials?|connection\s+string)|connection\s+string|admin\s+(?:login|password|access)|(?:grant|give|add)\s+(?:\w+\s+){0,2}(?:admin|owner|root|write)\s+access|add\s+(?:\w+\s+){0,2}as\s+(?:an?\s+)?(?:admin|owner)|invite\s+(?:a\s+|an\s+)?(?:new\s+)?(?:admin|owner)\b)/i,
+      /\b(?:(?<!handle\s)(?<!handling\s)(?<!manage\s)(?<!managing\s)(?<!store\s)(?<!storing\s)api\s?keys?\b(?!\s+(?:polic|management|rotation))|access\s?tokens?|secrets?\b(?!\s+(?:management|manager|store|storage|scanning|handling|hygiene))|credentials?\b(?!\s+(?:polic|procedur|process|guide|management|hygiene))|passwords?\b(?!\s+(?:polic|manager|hygiene|standards?|requirements?|rules?|reset))|env\s+(?:vars?|variables?|file)|environment\s+variables?|private\s?keys?|ssh\s+keys?|rotate\s+(?:\w+\s+){0,2}(?:keys?|credentials?|secrets?|tokens?|them)|service\s+account|read\s+(?:me\s+)?(?:the\s+|what(?:'s|\s+is)\s+in\s+the\s+)?\.?env|(?:read|tell|give)\s+me\s+(?:the\s+)?(?:\w+\s+){0,2}(?:key|token|secret|password|login|credentials?|connection\s+string)|connection\s+string|admin\s+(?:login|password|access)|(?:grant|give|add)\s+(?:\w+\s+){0,2}(?:admin|owner|root|write)\s+access|(?:add|list|make|set|name|put)\s+(?:\w+\s+){0,3}as\s+(?:an?\s+)?(?:admin|owner|editor|maintainer)|(?:admin|owner)\s+on\s+the\s+(?:\w+\s+){0,2}(?:project|repo|account|workspace)|invite\s+(?:a\s+|an\s+)?(?:new\s+)?(?:admin|owner)\b)/i,
   },
   {
     category: "public_publishing",
     level: "high",
     pattern:
-      /\b(?:publish(?:es|ed|ing)?|(?:post|share|put|get|upload)\s+(?:it\s+|this\s+|that\s+|them\s+)?(?:up\s+)?(?:to|on)\s+(?:linkedin|instagram|facebook|x\b|twitter|tiktok|youtube|reddit|our\s+socials?|social\s+media|the\s+blog|the\s+site)|go\s+public|announce\s+publicly|press\s+release|tweet)\b/i,
+      /\b(?:publish(?:es|ed|ing)?|(?:post|share|put|get|upload)\s+(?:it\s+|this\s+|that\s+|them\s+)?(?:up\s+)?(?:to|on)\s+(?:linkedin|instagram|facebook|x\b|twitter|tiktok|youtube|reddit|our\s+socials?|social\s+media|the\s+blog|the\s+site)|go\s+public|announce\s+publicly|(?:put|push|make|take)\s+(?:\w+\s+){0,3}(?:up\s+)?public(?:ly)?\b|press\s+release|tweet)\b/i,
   },
   {
     category: "personnel",
@@ -420,10 +421,19 @@ const MAX_SEGMENTS = 200;
  * Splits into clause-sized segments. Sentence terminators always split;
  * commas and coordinators split only ahead of something command-shaped.
  */
+/** Words that end a direct object. A document noun on the far side of one of these is not what the verb acts on. */
+const OBJECT_BREAK = "in|into|onto|on|from|to|for|with|at|of|by|per|via|about|under|over|against|across";
+
 interface Segment {
   text: string;
-  /** True when this segment is a whole sentence rather than something split off at a comma or conjunction. */
-  fromSentence: boolean;
+  /**
+   * True when this segment opened its sentence. A segment that did NOT — one
+   * deliberately split off at a comma or conjunction, after the continuation
+   * test above declined to re-join it — is a clause by construction and is
+   * always examined. Only a sentence-opening segment can be a bare noun phrase
+   * (a `target`, a list head), so only that one is judged by shape.
+   */
+  sentenceInitial: boolean;
 }
 
 function splitSegments(subject: string): Segment[] {
@@ -434,17 +444,34 @@ function splitSegments(subject: string): Segment[] {
       const text = piece.trim();
       if (!text) return;
       if (index === 0) {
-        segments.push({ text, fromSentence: true });
+        segments.push({ text, sentenceInitial: true });
         return;
       }
-      // A piece after a coordinator is a new clause only if it READS like one.
-      // Otherwise it is a list continuation ("…and Gojiberry for outreach
-      // tooling") and belongs to the clause before it — splitting there would
-      // ask a noun phrase to prove it is research work.
+      // A piece after a coordinator SPLITS unless it is plainly a list
+      // continuation. The condition used to be the other way round — split only
+      // when the piece matched a known verb shape — and that re-joined every
+      // unrecognized verb followed by a bare noun, handing it the research verb
+      // at the head of the sentence:
+      //
+      //     "Nuke staging"                            -> gate
+      //     "Draft the plan. Nuke staging."           -> gate
+      //     "Draft the launch plan and nuke staging"  -> CLEAR
+      //
+      // Twenty-five phrasings cleared that way, including production restores,
+      // DNS cutovers and a severance offer. Defaulting to split makes the
+      // failure over-gating instead.
+      //
+      // A continuation is either a noun phrase ("…and the hotel for the Acme
+      // offsite") or a list item whose second word is a preposition ("…and
+      // Gojiberry FOR outreach tooling"). Anything else is treated as a clause.
       const head = stripToHead(text);
-      const startsClause = OPENS_WITH_ACTION_VERB.test(head) || RESEARCH_HEAD_PATTERN.test(head) || PREDICATE_SHAPE.test(head);
+      // Only a noun phrase is re-joined. A "second word is a preposition" test
+      // was tried and removed: it cannot tell a list item ("…and Gojiberry FOR
+      // outreach tooling") from a phrasal predicate ("…and failover TO the
+      // standby", "…and escalate TO legal"), and it re-joined both.
+      const startsClause = !(NON_VERB_HEAD.test(head) && !PARTICIPLE_COMMAND.test(head));
       if (startsClause || segments.length === 0) {
-        segments.push({ text, fromSentence: false });
+        segments.push({ text, sentenceInitial: false });
       } else {
         segments[segments.length - 1].text += ` ${text}`;
       }
@@ -534,10 +561,15 @@ const RESEARCH_HEAD =
   "order\\s+(?:\\w+\\s+){0,3}by\\s+(?!(?:friday|monday|tuesday|wednesday|thursday|saturday|sunday|today|tomorrow|tonight|next|the\\s+end|eod|noon)\\b)|book\\s+time|focus|keep|stay|avoid|prioriti[sz]e|limit|include|exclude|match|follow|stick|aim|ensure|maintain|preserve|mind|assume|treat|reuse";
 
 const RESEARCH_OBJECT =
-  "findings?|shortlists?|lists?|options?|results?|notes?|briefs?|decks?|slides?|outlines?|drafts?|documents?|docs?|" +
-  "tables?|sections?|trackers?|timelines?|roadmaps?|summar(?:y|ies)|reports?|leads?|items?|rows?|columns?|" +
-  "questions?|risks?|criteria|sprints?|plans?|breakdowns?|comparisons?|candidates?|entries|" +
-  "numbers?|figures?|checklists?|diagrams?|agendas?|templates?|mockups?|wireframes?|taglines?|headlines?|copy|pages?";
+  // Documents, and only documents. The previous list called itself
+  // "document-ish" while containing `leads`, `rows`, `columns`, `items`,
+  // `tables`, `pages` and `numbers` — which name live CRM records, database
+  // rows and the live site. "Drop the leads from the CRM", "Trim the rows out
+  // of production" and "Put the pages live" all cleared on that basis. A noun
+  // stays out of this list unless it is unambiguously a thing you write.
+  "findings?|shortlists?|options?|notes?|briefs?|decks?|slides?|outlines?|drafts?|documents?|docs?|" +
+  "trackers?|roadmaps?|summar(?:y|ies)|reports?|questions?|risks?|criteria|breakdowns?|comparisons?|" +
+  "checklists?|diagrams?|agendas?|mockups?|wireframes?|taglines?";
 
 /**
  * A second clearance path, for verbs that are ordinary document work when
@@ -554,9 +586,6 @@ const RESEARCH_OBJECT =
  * requests is how a founder learns to approve without reading — which is what
  * makes every real gate in this file worthless.
  */
-/** Words that end a direct object. A document noun on the far side of one of these is not what the verb acts on. */
-const OBJECT_BREAK = "in|into|onto|on|from|to|for|with|at|of|by|per|via|about|under|over|against|across";
-
 const RESEARCH_WITH_OBJECT =
   `(?:sort|rank|group|arrange|place|drop|archive|merge|extend|reset|clear|trim|split|combine|put|make|draw|promote)` +
   `(?:\\s+(?:${VERB_PARTICLES}))?\\s+(?:(?!(?:${OBJECT_BREAK})\\b)\\w+\\s+){0,3}(?:${RESEARCH_OBJECT})\\b`;
@@ -611,23 +640,56 @@ const NOMINALIZED_RESEARCH =
  * on no list. A segment split off at a COMMA or a conjunction can genuinely be
  * a continuation, so it is examined only when its head looks like a verb.
  */
-function isInstructionClause(segment: string, fromSentence: boolean): boolean {
+function isInstructionClause(segment: string, judgeByShape: boolean): boolean {
   const head = stripToHead(segment);
   if (!head) return false;
-  const words = head.split(/\s+/).filter(Boolean);
-  if (words.length === 0) return false;
   // A nominalized command opens with a determiner, so the head test would
   // exempt it. It is still a command.
   if (NOMINALIZED_ACTION.test(head)) return true;
   if (NON_VERB_HEAD.test(head)) return PARTICIPLE_COMMAND.test(head) && !NOMINALIZED_RESEARCH.test(head);
-  if (fromSentence) return true;
-  // A coordinator continuation is a clause only when it reads like one: a
-  // recognized verb of any kind, or an unknown word followed by an object.
+  if (!judgeByShape) return true;
+  // Judged by shape: this segment opened a REFERENCE field, which is usually a
+  // noun phrase or a qualifier rather than an instruction. It is examined only
+  // when it reads like a command.
   return RESEARCH_HEAD_PATTERN.test(head) || OPENS_WITH_ACTION_VERB.test(head) || PREDICATE_SHAPE.test(head);
 }
 
+/**
+ * Nouns that mean the clause touches something live, whatever its verb is.
+ *
+ * The allowlist constrains the HEAD VERB and says nothing about its object, so
+ * "Add Marco to the production admins", "Adjust Marco's salary to ninety
+ * thousand", "Map the domain to the new host" and "Update Acme's card on file"
+ * all cleared on `add`, `adjust`, `map` and `update`. A research verb pointed
+ * at production, payroll or a payment instrument is not research.
+ *
+ * Each entry is narrowed where the word has an innocent noun sense in this
+ * business — "production capacity", "retainer pricing" — because this runs on
+ * the clearance path and a false positive here is an approval click.
+ */
+const LIVE_EFFECT_OBJECT =
+  /\b(?:production(?!\s+(?:capacity|process(?:es)?|schedule|quality|team|values?|costs?))|prod\b|staging|live\s+(?:site|dashboard|data)|databases?\b|admins?\b|payroll|salar(?:y|ies)(?!\s+(?:bands?|benchmarks?|ranges?|data|survey|market))|compensation(?!\s+(?:benchmarks?|data|survey|bands?|philosophy|review|ranges?|market))|(?:credit\s+)?card\s+(?:on\s+file|details)|invoices?\b|dns\b|domains?\b|cname|the\s+crm\b|workspace|repo(?:sitor(?:y|ies))?\b|main\b|master\b|standby|enterprise\s+tier|seats?\b|retainer(?!\s+(?:pricing|model|structure|summary|scope|so\s+far))\s+balance)\b/iu;
+
+/**
+ * Declaring something already done, which is how a real instruction hides
+ * behind a bookkeeping verb: "Treat the Acme quote as accepted", "Assume the
+ * order is placed", "Ensure Marco is off the payroll by Friday". The head verb
+ * is research in every one of them.
+ */
+const DECLARED_OUTCOME =
+  /\b(?:treat|assume|note|ensure|mark|record|log|consider|see)\s+(?:\w+\s+){0,5}(?:as|is|are|to\s+be)\s+(?:accepted|approved|cancell?ed|paid|placed|sent|signed|shipped|refunded|terminated|fired|hired|deleted|removed|closed|settled|done|off\b)/iu;
+
 /** True when this clause may start work on its own. */
 function isClearedClause(segment: string): boolean {
+  return !liveEffectNoun(segment) && isResearchShaped(segment);
+}
+
+/** The word that made a clause touch something live, for the founder-facing reason. */
+function liveEffectNoun(segment: string): string | null {
+  return segment.match(LIVE_EFFECT_OBJECT)?.[0] ?? segment.match(DECLARED_OUTCOME)?.[0] ?? null;
+}
+
+function isResearchShaped(segment: string): boolean {
   const head = stripToHead(segment);
   if (NOMINALIZED_ACTION.test(head)) return NOMINALIZED_RESEARCH.test(head);
   return RESEARCH_HEAD_PATTERN.test(head);
@@ -665,7 +727,13 @@ export function assessCommandRisk(text: string): CommandRiskAssessment {
 export function assessCommandRiskFields(input: { instructions: string[]; references: string[] }): CommandRiskAssessment {
   const instructionText = input.instructions.filter(Boolean).join(" \n ");
   const referenceText = input.references.filter(Boolean).join(" \n ");
-  const subject = [instructionText, referenceText].filter(Boolean).join(" \n ").trim().slice(0, MAX_SUBJECT_LENGTH);
+  // Each half is bounded independently. Truncating the JOIN meant a long
+  // instruction pushed the references out of the string the category rules
+  // run on, so "Per the signed NDA with Acme" went from critical to low purely
+  // because the outcome above it was long.
+  const boundedInstructions = instructionText.slice(0, MAX_SUBJECT_LENGTH);
+  const boundedReferences = referenceText.slice(0, MAX_SUBJECT_LENGTH);
+  const subject = [boundedInstructions, boundedReferences].filter(Boolean).join(" \n ").trim();
   if (!subject) {
     return {
       level: "medium",
@@ -690,11 +758,11 @@ export function assessCommandRiskFields(input: { instructions: string[]; referen
   // is usually a noun phrase or a qualifier — "KidsCoding", "Stay under a
   // week" — so a sentence in one is examined only when its head reads like a
   // verb, the same test a coordinator continuation gets.
-  const segments = splitSegments(instructionText.slice(0, MAX_SUBJECT_LENGTH));
-  const referenceSegments = splitSegments(referenceText.slice(0, MAX_SUBJECT_LENGTH)).map((segment) => ({
-    ...segment,
-    fromSentence: false,
-  }));
+  const segments = splitSegments(boundedInstructions);
+  // Only the segment that OPENED a reference field is judged by shape. One
+  // that was split off inside it is a clause like any other — the difference
+  // between the two lists is about noun phrases, not about scrutiny.
+  const referenceSegments = splitSegments(boundedReferences);
   const allSegments = [...segments, ...referenceSegments];
   if (allSegments.length > MAX_SEGMENTS) {
     return {
@@ -752,7 +820,10 @@ export function assessCommandRiskFields(input: { instructions: string[]; referen
     // allowlist. Not "contains an internal word" — the head, and only the head:
     // INTERNAL_WORK_PATTERN necessarily contains nouns like `notes` and `plan`,
     // and one of those anywhere in the string used to vouch for the whole of it.
-    const clauses = allSegments.filter((segment) => isInstructionClause(segment.text, segment.fromSentence));
+    const clauses = [
+      ...segments.filter((segment) => isInstructionClause(segment.text, false)),
+      ...referenceSegments.filter((segment) => isInstructionClause(segment.text, segment.sentenceInitial)),
+    ];
     const uncleared = clauses.find((segment) => !isClearedClause(segment.text));
     if (uncleared) {
       const spoken = uncleared.text.replace(/\s+/g, " ").slice(0, 80);
@@ -760,8 +831,22 @@ export function assessCommandRiskFields(input: { instructions: string[]; referen
       // need archiving") the first word is a determiner, which would be a
       // useless thing to report.
       const stripped = stripToHead(uncleared.text);
+      const liveNoun = liveEffectNoun(uncleared.text);
       const nominalized = stripped.match(NOMINALIZED_ACTION)?.[0] ?? "";
       const head = (nominalized ? nominalized.split(/\s+/).pop() ?? "" : stripped.split(/\s+/)[0] ?? "").replace(/[^\p{L}'-]/gu, "");
+      if (liveNoun) {
+        // The head verb was fine and the OBJECT is what stopped it. Reporting
+        // the verb here produced "Jarvis doesn't recognize 'research' as
+        // research or writing work", which is nonsense a founder would rightly
+        // stop reading.
+        return {
+          level: "medium",
+          requiresApproval: true,
+          gatedCategories: [],
+          reasons: [`This touches "${liveNoun.toLowerCase().replace(/\s+/g, " ")}", so Jarvis stopped for your decision`],
+          overrideAttempted: false,
+        };
+      }
       return {
         level: "medium",
         requiresApproval: true,

@@ -43,10 +43,32 @@ describe("assessCommandRisk — realistic founder phrasings that must clear", ()
   });
 
   it("treats named outreach research collocations as topics, not actions", () => {
-    // LYNQ researches outreach tooling constantly. Gating this would be wrong,
-    // and labelling it "Contacting a customer or prospect" would be worse.
-    expect(assessCommandRisk("Compare Instantly and Gojiberry for outreach tooling").requiresApproval).toBe(false);
+    // LYNQ researches outreach tooling constantly, and labelling this
+    // "Contacting a customer or prospect" would be worse than gating it.
     expect(assessCommandRisk("Summarize how our outreach numbers moved last month").requiresApproval).toBe(false);
+    expect(assessCommandRisk("Compare Instantly and Gojiberry for outreach tooling").gatedCategories).toEqual([]);
+  });
+
+  /**
+   * A KNOWN over-gate, recorded rather than hidden.
+   *
+   * "…and Gojiberry for outreach tooling" is a list item, and "…and failover to
+   * the standby" is a phrasal command. Both are an unrecognized word followed
+   * by a preposition, and nothing in the text distinguishes them. A rule that
+   * re-joined the first also re-joined the second, along with two dozen other
+   * real commands ("…and escalate to legal", "…and revert production"), so the
+   * coordinator now splits by default and this list gets an approval click.
+   *
+   * The trade is deliberate: one extra tap against a class of silent external
+   * actions. If a way to tell the two apart appears, this test is where to
+   * prove it.
+   */
+  it("over-gates a list whose items look like phrasal commands, and says so honestly", () => {
+    const result = assessCommandRisk("Compare Instantly and Gojiberry for outreach tooling");
+    expect(result.requiresApproval).toBe(true);
+    expect(result.level).toBe("medium");
+    // Not a claim that it is dangerous — a statement that it was not recognized.
+    expect(result.reasons[0]).toMatch(/doesn't recognize/i);
   });
 
   /**
@@ -235,7 +257,7 @@ describe("assessCommandRisk — fail closed", () => {
     // would make an over-cautious gate sound authoritative.
     const result = assessCommandRisk("Write up the summary and forward it somewhere");
     expect(result.level).toBe("medium");
-    expect(result.reasons[0]).toMatch(/doesn't recognize|could not tell/i);
+    expect(result.reasons[0]).toMatch(/doesn't recognize|could not tell|this touches/i);
   });
 
   it("gates empty input rather than treating it as harmless", () => {
@@ -343,7 +365,6 @@ describe("assessCommandRisk — a planning verb at the front cannot vouch for th
    * work LYNQ actually does.
    */
   it.each([
-    "Compare Instantly and Gojiberry for outreach tooling",
     "Prepare a scope and estimate for the rebuild",
     "Research three Brampton restaurants and compare their websites",
     "Analyze the pipeline and tell me where the bottleneck is",
@@ -524,7 +545,7 @@ describe("assessCommandRisk — the clause rule is what holds when the vocabular
     // severity the classifier cannot justify.
     expect(result.level).toBe("medium");
     expect(result.gatedCategories).toEqual([]);
-    expect(result.reasons[0]).toMatch(/doesn't recognize|could not tell/i);
+    expect(result.reasons[0]).toMatch(/doesn't recognize|could not tell|this touches/i);
   });
 });
 
@@ -633,7 +654,6 @@ describe("assessCommandRisk — a clause is examined however it is phrased", () 
 
   /** Splitting harder must not shred an ordinary list or a noun-phrase field. */
   it.each([
-    "Compare Instantly and Gojiberry for outreach tooling",
     "Prepare a scope and estimate for the rebuild",
     "Research three Brampton restaurants and compare their websites",
     "Sign off on the design review",
@@ -803,7 +823,6 @@ describe("assessCommandRisk — the cost of the allowlist is measured, not assum
     "Outline a roadmap for the next two quarters",
     "Look into what a typical dentist website costs in Ontario",
     "Organize the case studies by industry",
-    "Compare Instantly and Gojiberry for outreach tooling",
     "Order the shortlist by revenue impact",
     "Drop the weakest option from the shortlist",
     "Archive the old draft notes",
@@ -1040,7 +1059,6 @@ describe("assessCommandRisk — a second, independently written corpus", () => {
     "Update the case study with the new numbers",
     "Fix the typos in the proposal draft",
     "Add a risks section to the KidsCoding scope document",
-    "Put the Q3 numbers into a table I can screenshot",
     "Sanity check my estimate for the restaurant rebuild",
     "Make a checklist for launch day",
     "Highlight the weakest parts of the current proposal",
@@ -1068,10 +1086,186 @@ describe("assessCommandRisk — a second, independently written corpus", () => {
     expect(assessCommandRisk(instruction).requiresApproval).toBe(false);
   });
 
+  /**
+   * Two KNOWN over-gates from this corpus, recorded rather than quietly
+   * dropped. Both are the price of a change that closed a class of leaks:
+   *
+   *   "Put the Q3 numbers into a table" — `numbers` and `tables` came off the
+   *   document-object list because they also name live dashboard data and
+   *   database tables, and "Clear the numbers from the live dashboard" and
+   *   "Drop the columns from the customers table" cleared on them.
+   *
+   *   "Compare Instantly and Gojiberry for outreach tooling" — a list item and
+   *   a phrasal command ("…and failover to the standby") are the same shape,
+   *   and re-joining the first re-joined the second.
+   *
+   * Each costs one approval click. Each closed several silent external actions.
+   * If either becomes distinguishable, this is where to prove it.
+   */
+  it.each([
+    "Put the Q3 numbers into a table I can screenshot",
+    "Compare Instantly and Gojiberry for outreach tooling",
+  ])("over-gates, knowingly: %s", (instruction) => {
+    const result = assessCommandRisk(instruction);
+    expect(result.requiresApproval).toBe(true);
+    // Never claimed to be dangerous — only unrecognized.
+    expect(result.gatedCategories).toEqual([]);
+    expect(result.level).toBe("medium");
+  });
+
   /** ...and the pricing language that made three of them read as spending. */
   it("tells pricing analysis apart from charging someone", () => {
     expect(assessCommandRisk("Charge the client for the extra hours").requiresApproval).toBe(true);
     expect(assessCommandRisk("Charge their card for the deposit").requiresApproval).toBe(true);
     expect(assessCommandRisk("Work out what we should charge for a brochure site").requiresApproval).toBe(false);
+  });
+});
+
+describe("assessCommandRisk — round ten: an allowlisted verb still cannot touch something live", () => {
+  /**
+   * The allowlist constrained the head verb and said nothing about its object,
+   * so a research verb pointed at production, payroll or a payment instrument
+   * cleared. `add`, `adjust`, `map`, `update`, `list`, `pull` and `note` are
+   * all legitimately research verbs; none of these is research.
+   */
+  it.each([
+    "Add Marco to the production admins",
+    "Include Marco as an admin on the repo",
+    "List Marco as an owner on the Vercel project",
+    "Fix the production database",
+    "Adjust the production config",
+    "Map the domain to the new host",
+    "Map our DNS across to Cloudflare tonight",
+    "Pull the site offline for maintenance",
+    "Adjust Marco's salary to ninety thousand",
+    "Add fifty seats to our plan",
+    "Update Acme's card on file",
+    "Sign off the Acme invoice",
+    "Expand the plan to the enterprise tier",
+    "Draw down the retainer balance",
+    "Book time with the Acme owner",
+  ])("gates %s", (instruction) => {
+    expect(assessCommandRisk(instruction).requiresApproval).toBe(true);
+  });
+
+  /**
+   * Declaring an outcome is causing it. Every one of these has a research verb
+   * at its head and is an instruction to change something real.
+   */
+  it.each([
+    "Treat the Acme quote as accepted",
+    "Treat the invoice as approved",
+    "Assume the Acme order is placed",
+    "Assume Marco is terminated as of Friday",
+    "Ensure the Acme order is cancelled",
+    "See that Marco is off the payroll by Friday",
+    "Note the Acme order as cancelled in the tracker",
+  ])("gates the declared outcome: %s", (instruction) => {
+    expect(assessCommandRisk(instruction).requiresApproval).toBe(true);
+  });
+
+  it("says the noun that stopped it, not the verb", () => {
+    // "Jarvis doesn't recognize 'research' as research or writing work" is what
+    // this branch used to produce when the head verb was fine and the object
+    // was the problem — nonsense a founder would rightly stop reading.
+    const result = assessCommandRisk("Adjust Marco's salary to ninety thousand");
+    expect(result.reasons[0]).toMatch(/touches "salary"/i);
+  });
+
+  /** ...while the same nouns in their analysis sense still clear. */
+  it.each([
+    "Research a compensation benchmark for the industry",
+    "Analyze our production capacity for the kitchen and write it up",
+    "Compare our retainer pricing against two competitors",
+    "Summarize the salary bands we use today",
+  ])("still clears %s", (instruction) => {
+    expect(assessCommandRisk(instruction).requiresApproval).toBe(false);
+  });
+});
+
+describe("assessCommandRisk — round ten: a coordinator no longer hands over its research verb", () => {
+  /**
+   * The coordinator split only when the following piece matched a known verb
+   * shape, so any unrecognized verb followed by a bare noun was re-joined and
+   * inherited the research verb at the head of the sentence. The separator was
+   * the whole difference:
+   *
+   *     "Nuke staging"                            -> gate
+   *     "Draft the plan. Nuke staging."           -> gate
+   *     "Draft the launch plan and nuke staging"  -> CLEAR
+   *
+   * Splitting is now the default and re-joining is the exception.
+   */
+  it.each([
+    "Draft the launch plan and nuke staging",
+    "Draft the launch plan and bill Acme five thousand",
+    "Summarise the notes and bin production",
+    "Write up the brief and torch staging",
+    "Prepare the deck and blacklist Marco",
+    "Compare the hosts and migrate everything tonight",
+    "Analyse the funnel and sunset checkout v1",
+    "Draft the plan and flush redis",
+    "Review the repo and squash main",
+    "Plan the sprint and rebase main",
+    "Draft the notes and restore production from backup",
+    "Review the invoice and credit Acme two thousand",
+    "Outline the offer and comp Marco three months",
+    "Draft the runbook and failover to the standby",
+    "Draft the plan and suspend Marco",
+    "Draft the summary and revert production",
+    "Review the leads and dedupe production",
+    "Outline the migration and cut DNS over",
+    "Summarise the thread and escalate to legal",
+    "Draft the proposal and comp Acme their invoice",
+    "Review the Acme deck, and drop the leads from the CRM",
+    "Draft the plan, put the pages live, and note it in the tracker",
+  ])("gates %s", (instruction) => {
+    expect(assessCommandRisk(instruction).requiresApproval).toBe(true);
+  });
+
+  /** Disfluency and lead-in phrasing do not change the answer. */
+  it.each([
+    "Uh, so, like, basically just review the notes and, um, bin production",
+    "Your job is to review the plan and torch staging",
+    "The task is to compare hosts and migrate everything tonight",
+    "Help me review the plan and blacklist Marco",
+    "It would be good to review the plan and comp Marco three months",
+  ])("gates %s", (instruction) => {
+    expect(assessCommandRisk(instruction).requiresApproval).toBe(true);
+  });
+});
+
+describe("assessCommandRisk — round ten: live data is not a document", () => {
+  /**
+   * The document-object clearance path called its list "all document-ish
+   * nouns" while containing `leads`, `rows`, `columns`, `items`, `tables`,
+   * `pages`, `copy` and `numbers` — which name CRM records, database rows, job
+   * applicants and the live site. That list is now documents only.
+   */
+  it.each([
+    "Drop the leads from the CRM",
+    "Drop the rows for the churned customers",
+    "Drop the entries for the old accounts",
+    "Drop the columns from the customers table",
+    "Archive the leads in the CRM",
+    "Archive the candidates we rejected",
+    "Archive the rows we no longer need",
+    "Clear out the entries in the tracker",
+    "Clear the numbers from the live dashboard",
+    "Clear the pages from the site",
+    "Reset the numbers on the live dashboard",
+    "Reset the figures for every client",
+    "Trim the rows out of production",
+    "Put the pages live",
+    "Put the copy live tonight",
+    "Promote the copy live",
+    "Put the headlines live on the homepage",
+    "Put the drafts up publicly",
+    "Merge the timelines into main",
+    "Merge the sections into the release",
+    "Place the items in the cart and check out",
+    "Extend the retainer plans another year",
+  ])("gates %s", (instruction) => {
+    expect(assessCommandRisk(instruction).requiresApproval).toBe(true);
   });
 });
