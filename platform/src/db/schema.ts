@@ -5547,3 +5547,290 @@ export const founderGoals = pgTable("founder_goals", {
   }).onDelete("restrict"),
   index("founder_goals_org_status_idx").on(t.organizationId, t.status),
 ]);
+
+// =============================================================================
+// Jarvis secure phone control — inbound founder call sessions and commands
+// =============================================================================
+// Four tables, each justified against a requirement of the phone-control lane
+// (platform/docs/JARVIS_PHONE_CONTROL.md):
+//
+//   `jarvis_call_sessions`        the stateful conversation (§4)
+//   `jarvis_call_transcript_turns` partial + final speech, redacted (§3)
+//   `jarvis_phone_commands`        the structured command draft (§5)
+//   `jarvis_voice_webhook_events`  provider-event idempotency (§11)
+//
+// This module deliberately adds NO approval, project, task, execution, or job
+// table. A confirmed low-risk command becomes a real `projects` row through
+// the existing Office directive intake; a gated one stops at a decision on its
+// own `jarvis_phone_commands` row and only becomes a project after a human
+// decides it inside an authenticated session. There is exactly one
+// orchestration system and this is not it — see
+// `src/lib/office/directive-intake.ts`.
+//
+// No column in these tables ever holds raw speech, a caller's full phone
+// number, or a verification passcode: transcripts are redacted by
+// `src/lib/voice/redaction.ts` before insertion, and a caller is identified by
+// its last four digits plus a match flag, never by the number itself.
+
+/** Outbound is the existing two-minute founder notification call; inbound is the new command lane. Both are recorded so one screen shows every call Jarvis was part of. */
+export const jarvisCallDirectionEnum = pgEnum("jarvis_call_direction", ["inbound", "outbound"]);
+
+/** What the call itself was for. Keeps the pre-existing notification mode distinguishable from command capture forever. */
+export const jarvisCallPurposeEnum = pgEnum("jarvis_call_purpose", ["founder_notification", "founder_command"]);
+
+export const jarvisCallSessionStatusEnum = pgEnum("jarvis_call_session_status", [
+  "active",
+  "completed",
+  "failed",
+  /** The caller was not the enrolled founder number, or verification was exhausted. No command may exist under this session. */
+  "refused",
+]);
+
+/** Caller ID alone never reaches `verified` — see src/lib/voice/founder-verification.ts. */
+export const jarvisCallVerificationStateEnum = pgEnum("jarvis_call_verification_state", ["unverified", "verified", "failed"]);
+
+export const jarvisCommandRiskLevelEnum = pgEnum("jarvis_command_risk_level", ["low", "medium", "high", "critical"]);
+
+export const jarvisCommandConfirmationStatusEnum = pgEnum("jarvis_command_confirmation_status", [
+  "pending",
+  "confirmed",
+  "declined",
+  "expired",
+]);
+
+/**
+ * The honest lifecycle of a spoken command. Every terminal state names what
+ * actually happened; there is no state that means "probably fine".
+ */
+export const jarvisCommandDispatchStateEnum = pgEnum("jarvis_command_dispatch_state", [
+  /** Captured, read back, not yet confirmed by the founder on the call. */
+  "awaiting_confirmation",
+  /** Confirmed and gated: waiting on a human decision inside an authenticated session. */
+  "awaiting_approval",
+  /**
+   * A dispatch is IN FLIGHT — claimed by exactly one caller, creating real
+   * records right now.
+   *
+   * This state is what actually closes the duplicate-dispatch race. A guarded
+   * increment alone only stops two callers holding the SAME revision; a
+   * request arriving while the winner is still inside
+   * `createDirectiveProject` (which runs an LLM plan plus a long chain of
+   * writes, and may take a minute) would re-read the bumped revision, see a
+   * still-dispatchable state, and claim again — two projects, two sets of
+   * launched agents, from one approval. Moving the row here means a later
+   * reader has nothing to claim.
+   *
+   * `dispatch_started_at` bounds it: a process that dies mid-dispatch would
+   * otherwise wedge the command forever, so the claim may be taken over once
+   * the lease is provably stale.
+   */
+  "dispatching",
+  /** A human declined it in the Office. Nothing was started. */
+  "declined",
+  /** A real Office directive project exists and the first handoff was dispatched. */
+  "directive_created",
+  /** The founder said no during the read-back. */
+  "cancelled",
+  /** Dispatch was attempted and genuinely failed; `failure_code` says why. Never silently retried into a duplicate. */
+  "failed",
+]);
+
+export const jarvisWebhookProcessingStatusEnum = pgEnum("jarvis_webhook_processing_status", [
+  "processed",
+  "ignored",
+  "failed",
+]);
+
+/**
+ * One row per call. This is what makes the conversation stateful: every
+ * webhook turn resolves its session by `(provider, provider_call_id)`, reads
+ * the verification state and the open command draft, and advances them —
+ * rather than replaying a one-way script.
+ */
+export const jarvisCallSessions = pgTable("jarvis_call_sessions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  /** The LYNQ account the call acts as. RESTRICT, not SET NULL: a call session without an actor could never be audited or authorized after the fact. */
+  founderUserId: uuid("founder_user_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  direction: jarvisCallDirectionEnum("direction").notNull(),
+  purpose: jarvisCallPurposeEnum("purpose").notNull(),
+  provider: text("provider").notNull().default("vapi"),
+  providerCallId: text("provider_call_id").notNull(),
+  /**
+   * Deliberately NOT the caller's number. Four digits is enough for a founder
+   * to recognize their own call in the UI and enough for an investigation to
+   * correlate one, and is not a re-usable identifier if this table leaks.
+   */
+  callerNumberLastFour: text("caller_number_last_four"),
+  /** Whether the caller ID matched the enrolled founder number. A necessary precondition, never sufficient on its own. */
+  callerNumberMatched: boolean("caller_number_matched").notNull().default(false),
+  status: jarvisCallSessionStatusEnum("status").notNull().default("active"),
+  verificationState: jarvisCallVerificationStateEnum("verification_state").notNull().default("unverified"),
+  verificationAttempts: integer("verification_attempts").notNull().default(0),
+  verifiedAt: timestamp("verified_at", { withTimezone: true }),
+  /** Honest, provider-reported delivery state for the call itself (queued/ringing/in-progress/ended). Free text: the provider's vocabulary is not ours to enumerate. */
+  deliveryStatus: text("delivery_status"),
+  endedReason: text("ended_reason"),
+  /** Set only when this lane itself failed (not when the founder simply hung up). Drives the visible failure state in Jarvis. */
+  failureCode: text("failure_code"),
+  startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+  lastEventAt: timestamp("last_event_at", { withTimezone: true }).notNull().defaultNow(),
+  endedAt: timestamp("ended_at", { withTimezone: true }),
+  /** The provider's own end-of-call transcript, redacted. Convenience for review; the per-turn rows remain the record. */
+  redactedSummaryTranscript: text("redacted_summary_transcript"),
+  revision: integer("revision").notNull().default(1),
+  ...timestamps,
+}, (t) => [
+  // The idempotency anchor for every webhook: a retried call event resolves
+  // the same session instead of opening a second one.
+  unique("jarvis_call_sessions_provider_call_unique").on(t.provider, t.providerCallId),
+  // Enables the composite tenant FK from both child tables below — the
+  // established `projects_id_org_unique` pattern.
+  unique("jarvis_call_sessions_id_org_unique").on(t.id, t.organizationId),
+  index("jarvis_call_sessions_org_started_idx").on(t.organizationId, t.startedAt),
+  index("jarvis_call_sessions_org_status_idx").on(t.organizationId, t.status),
+]);
+
+/** Who was speaking. `founder` is whoever is on the call; the row is only ever trusted after `verification_state = 'verified'`. */
+export const jarvisTranscriptRoleEnum = pgEnum("jarvis_transcript_role", ["founder", "jarvis"]);
+
+/**
+ * Partial and final speech, in order. Both are kept: a partial is what makes
+ * the live Jarvis screen feel real while a call is still running, and a final
+ * is what the command draft is built from. Every `redacted_text` has already
+ * passed through `redactSensitiveText` — there is no raw column.
+ */
+export const jarvisCallTranscriptTurns = pgTable("jarvis_call_transcript_turns", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  callSessionId: uuid("call_session_id").notNull(),
+  sequence: integer("sequence").notNull(),
+  role: jarvisTranscriptRoleEnum("role").notNull(),
+  isFinal: boolean("is_final").notNull(),
+  redactedText: text("redacted_text").notNull(),
+  /** Which redaction rules fired, e.g. ["secret"]. Lets the founder see that something was removed without ever storing what it was. */
+  redactedKinds: jsonb("redacted_kinds").notNull().default([]),
+  spokenAt: timestamp("spoken_at", { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  foreignKey({
+    name: "jarvis_call_transcript_turns_session_org_fk",
+    columns: [t.callSessionId, t.organizationId],
+    foreignColumns: [jarvisCallSessions.id, jarvisCallSessions.organizationId],
+  }).onDelete("cascade"),
+  // Second idempotency layer: even if two provider retries somehow pass the
+  // event-level dedup, the same turn cannot be written twice.
+  unique("jarvis_call_transcript_turns_session_sequence_unique").on(t.callSessionId, t.sequence),
+  index("jarvis_call_transcript_turns_session_idx").on(t.callSessionId, t.sequence),
+]);
+
+/**
+ * The structured command a conversation became — the eight required fields,
+ * the risk decision, the confirmation, and the honest dispatch outcome.
+ *
+ * `project_id` is a plain nullable reference (the identical judgment
+ * `workflow_executions.projectId` and `founder_decisions.relatedProjectId`
+ * already make): tenant safety is enforced at the application layer, which
+ * re-fetches by id AND organization_id on every read.
+ */
+export const jarvisPhoneCommands = pgTable("jarvis_phone_commands", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  callSessionId: uuid("call_session_id").notNull(),
+  requestedOutcome: text("requested_outcome").notNull(),
+  /** The company or person the work is about, when the founder named one. Never inferred. */
+  targetName: text("target_name"),
+  constraints: jsonb("constraints").notNull().default([]),
+  requiredIntegrations: jsonb("required_integrations").notNull().default([]),
+  proposedSteps: jsonb("proposed_steps").notNull().default([]),
+  missingInformation: jsonb("missing_information").notNull().default([]),
+  riskLevel: jarvisCommandRiskLevelEnum("risk_level").notNull(),
+  requiresApproval: boolean("requires_approval").notNull(),
+  gatedCategories: jsonb("gated_categories").notNull().default([]),
+  riskReasons: jsonb("risk_reasons").notNull().default([]),
+  /** True when the caller used language intended to skip the gate. Recorded, audited, and never honored. */
+  overrideAttempted: boolean("override_attempted").notNull().default(false),
+  /** Exactly what Jarvis read back on the call, so the Office shows the founder the same words they confirmed. */
+  readbackText: text("readback_text").notNull(),
+  confirmationStatus: jarvisCommandConfirmationStatusEnum("confirmation_status").notNull().default("pending"),
+  confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+  dispatchState: jarvisCommandDispatchStateEnum("dispatch_state").notNull().default("awaiting_confirmation"),
+  /** Set only by a real human decision made inside an authenticated session — never by anything spoken on the call. */
+  approvalDecidedByUserId: uuid("approval_decided_by_user_id").references(() => users.id, { onDelete: "set null" }),
+  approvalDecidedAt: timestamp("approval_decided_at", { withTimezone: true }),
+  approvalDecisionNote: text("approval_decision_note"),
+  projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
+  /** Machine-readable reason a dispatch genuinely failed. Never null while `dispatch_state = 'failed'`. */
+  failureCode: text("failure_code"),
+  failureMessage: text("failure_message"),
+  dispatchAttempts: integer("dispatch_attempts").notNull().default(0),
+  /** When the in-flight dispatch was claimed. Bounds `dispatching` so a died-mid-dispatch command can be taken over rather than wedged forever. */
+  dispatchStartedAt: timestamp("dispatch_started_at", { withTimezone: true }),
+  /**
+   * Derived from the call and the confirmed content, not random: a retried
+   * confirmation for the same command hashes identically and is rejected by
+   * this constraint instead of opening a second project.
+   */
+  idempotencyKey: text("idempotency_key").notNull(),
+  revision: integer("revision").notNull().default(1),
+  ...timestamps,
+}, (t) => [
+  foreignKey({
+    name: "jarvis_phone_commands_session_org_fk",
+    columns: [t.callSessionId, t.organizationId],
+    foreignColumns: [jarvisCallSessions.id, jarvisCallSessions.organizationId],
+  }).onDelete("cascade"),
+  unique("jarvis_phone_commands_idempotency_unique").on(t.organizationId, t.idempotencyKey),
+  // At most ONE draft per call may be awaiting confirmation. Without this,
+  // two concurrent `capture_command` events with different content both saw
+  // no open row, derived different idempotency keys, and both inserted — and
+  // only the newest was ever read or expired, leaving the other stuck on an
+  // ended call forever.
+  uniqueIndex("jarvis_phone_commands_one_open_per_call")
+    .on(t.callSessionId)
+    .where(sql`${t.dispatchState} = 'awaiting_confirmation'`),
+  index("jarvis_phone_commands_session_idx").on(t.callSessionId),
+  index("jarvis_phone_commands_org_state_idx").on(t.organizationId, t.dispatchState),
+]);
+
+/**
+ * Provider-event idempotency, modelled directly on
+ * `communication_provider_events` — the precedent this codebase already set
+ * for "a webhook may be delivered more than once and must never act twice".
+ *
+ * `organization_id` is nullable because an event can arrive before (or
+ * without) a resolvable tenant — a forged or misrouted delivery still gets
+ * recorded as seen, and still cannot be replayed.
+ */
+export const jarvisVoiceWebhookEvents = pgTable("jarvis_voice_webhook_events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
+  provider: text("provider").notNull().default("vapi"),
+  /** Derived by `normalizeVapiEvent` — content-addressed, because Vapi does not send a unique id on every message type. */
+  externalEventId: text("external_event_id").notNull(),
+  eventType: text("event_type").notNull(),
+  providerCallId: text("provider_call_id"),
+  callSessionId: uuid("call_session_id").references(() => jarvisCallSessions.id, { onDelete: "set null" }),
+  processingStatus: jarvisWebhookProcessingStatusEnum("processing_status").notNull(),
+  failureCode: text("failure_code"),
+  /**
+   * What the assistant was told to say for this event, so a provider retry can
+   * be answered with the SAME words rather than with nothing.
+   *
+   * Vapi reads a tool result out of the response body. A retry that lost the
+   * idempotency claim used to receive a bare acknowledgement, which carries no
+   * tool result at all — so a `confirm_command` that took longer than the
+   * provider's timeout left the assistant with no answer while a real project
+   * was being created behind it. Recording the answer is what makes "handled
+   * exactly once" and "answered every time" both true.
+   *
+   * Jarvis's own sentence, never the caller's speech, and every field it is
+   * built from was redacted before it was stored.
+   */
+  responseText: text("response_text"),
+  receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex("jarvis_voice_webhook_events_dedup_unique").on(t.provider, t.externalEventId),
+  index("jarvis_voice_webhook_events_call_idx").on(t.providerCallId),
+]);

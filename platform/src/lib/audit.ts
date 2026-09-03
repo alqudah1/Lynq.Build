@@ -592,7 +592,46 @@ export type AuditEventType =
   | "founder_permission_granted"
   | "founder_permission_revoked"
   | "founder_permission_denied"
-  | "founder_approval_decided";
+  | "founder_approval_decided"
+  // -----------------------------------------------------------------------
+  // Jarvis secure phone control. Every event that changes what the platform
+  // will actually DO on a founder's spoken instruction is audited: the call
+  // itself, both verification outcomes, capture, confirmation, the dispatch
+  // result, and the human decision on a gated command. Routine chatter is
+  // NOT — an individual transcript turn carries no security signal beyond
+  // what capture and confirmation already record, the identical "audit noise
+  // without real investigative value" reasoning applied to
+  // `knowledge_item_viewed` above.
+  //
+  // Metadata here is ids, enums, counts and booleans only. Never a
+  // transcript, never a caller's phone number, never a verification
+  // passcode — this file's blanket redaction rule, restated because this
+  // module's inputs come from live speech and are therefore the likeliest
+  // place for a secret to arrive by accident.
+  // -----------------------------------------------------------------------
+  | "jarvis_phone_call_started"
+  | "jarvis_phone_call_ended"
+  | "jarvis_phone_call_refused"
+  | "jarvis_phone_founder_verified"
+  | "jarvis_phone_passcode_issued"
+  | "jarvis_phone_verification_failed"
+  // The founder cleared their own caller budgets. Recorded because it reopens
+  // a throttle that something spent — usually a spoofed line — and the pattern
+  // of clears is the only durable evidence that happened.
+  | "jarvis_phone_verification_lockout_cleared"
+  | "jarvis_phone_command_captured"
+  | "jarvis_phone_command_confirmed"
+  | "jarvis_phone_command_gated"
+  | "jarvis_phone_command_override_attempted"
+  | "jarvis_phone_command_dispatched"
+  | "jarvis_phone_command_dispatch_failed"
+  | "jarvis_phone_command_retried"
+  // A draft the founder never confirmed, expired because the call it belonged
+  // to is over — either the row says so, or the call has been silent for
+  // longer than any call can last. `metadata.reason` says which. Recorded with
+  // no actor: nobody asked for it.
+  | "jarvis_phone_command_expired"
+  | "jarvis_phone_command_decided";
 
 export interface RecordAuditEventInput {
   eventType: AuditEventType;

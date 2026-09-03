@@ -40,6 +40,11 @@ export function getJarvisVoiceReadiness(environment: VoiceEnvironment = process.
         }
       })(),
     },
+    // Presence, not length. This is the OUTBOUND notification lane's readiness,
+    // and the webhook authenticates it on any non-empty secret exactly as it
+    // always has. The 32-character floor belongs to inbound phone control and
+    // is reported by `getJarvisPhoneCommandReadiness`; asserting it here told
+    // an existing, working deployment that its voice integration needed setup.
     { label: "Secure call-status connection", complete: Boolean(environment.VAPI_WEBHOOK_SECRET?.trim()) },
   ];
   const completedChecks = checks.filter((check) => check.complete).length;

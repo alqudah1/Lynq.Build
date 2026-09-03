@@ -1,0 +1,1 @@
+ALTER TABLE "jarvis_voice_webhook_events" ADD COLUMN "response_text" text;

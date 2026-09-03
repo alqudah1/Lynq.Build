@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "jarvis_phone_commands_one_open_per_call" ON "jarvis_phone_commands" USING btree ("call_session_id") WHERE "jarvis_phone_commands"."dispatch_state" = 'awaiting_confirmation';
