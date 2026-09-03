@@ -6,11 +6,27 @@ import { Sandbox } from "@vercel/sandbox";
 import { ToolLoopAgent, isStepCount, tool } from "ai";
 import { z } from "zod";
 import { getOfficeGenerationConfig } from "./models";
+import { parseRestaurantResearch } from "./restaurant-research";
+import { brandPackParseFailed, parseBrandPack } from "./website/evidence";
+import { generateRestaurantWebsite, type GeneratedWebsite, type WebsiteDraftGenerator } from "./website/factory";
+import { renderViolations } from "./website/validation";
 
 const CONNECTOR_ID = "github/lynq-office-github";
 const DEFAULT_REPOSITORY = "alqudah1/lynq.build";
 const DEFAULT_BASE_BRANCH = "main";
 const MAX_TOOL_OUTPUT = 16_000;
+
+export type RestaurantWebsiteDelivery = {
+  designName: string;
+  layout: string;
+  pages: string[];
+  designRationale: string;
+  evidenceTable: string;
+  uncertainties: string[];
+  qaSummary: string;
+  attempts: number;
+  files: string[];
+};
 
 export type EngineeringDeliveryResult = {
   repository: string;
@@ -22,7 +38,16 @@ export type EngineeringDeliveryResult = {
   previewPath?: string | null;
   validationSummary: string;
   agentSummary: string;
+  /** Present only for founder-approved restaurant demos built by the website factory. */
+  website?: RestaurantWebsiteDelivery;
 };
+
+export class RestaurantResearchUnavailableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "RestaurantResearchUnavailableError";
+  }
+}
 
 const RESTAURANT_RESEARCH_MARKER = "<!-- LYNQ_RESTAURANT_RESEARCH ";
 
@@ -108,6 +133,184 @@ async function findPreviewUrl(token: string, repository: string, sha: string): P
   return urls.find((url) => /\.vercel\.app(?:\/|$)/i.test(url)) ?? null;
 }
 
+/**
+ * Commit, push and open the pull request. Source control is deliberately
+ * the Office's job and never the agent's: whichever path produced the
+ * change, publication happens here, once, with the same protections.
+ */
+async function publishBranch(input: {
+  sandbox: Sandbox;
+  root: string;
+  token: string;
+  repository: string;
+  baseBranch: string;
+  branch: string;
+  projectName: string;
+  objective: string;
+  previewPath: string | null;
+  report: string;
+  summary: string;
+  website?: RestaurantWebsiteDelivery;
+}): Promise<EngineeringDeliveryResult> {
+  const { sandbox, root, token, repository, branch } = input;
+  const status = await sandbox.runCommand({ cmd: "git", args: ["status", "--porcelain"], cwd: root });
+  const changed = (await status.stdout()).trim();
+  if (!changed) throw new Error("Engineering completed without producing repository changes");
+  if (changed.split("\n").some((line) => /(?:^|\/)\.env(?:\.|$)/.test(line.slice(3)))) throw new Error("Engineering attempted to modify a protected environment file");
+
+  await sandbox.runCommand({ cmd: "git", args: ["add", "--all"], cwd: root });
+  await sandbox.runCommand({ cmd: "git", args: ["-c", "user.name=LYNQ Office", "-c", "user.email=office@lynq.build", "commit", "-m", `feat: ${input.projectName.slice(0, 60)}`], cwd: root });
+  const shaResult = await sandbox.runCommand({ cmd: "git", args: ["rev-parse", "HEAD"], cwd: root });
+  const commitSha = (await shaResult.stdout()).trim();
+
+  await sandbox.writeFiles([{ path: "/tmp/lynq-git-askpass.sh", mode: 0o700, content: "#!/bin/sh\ncase \"$1\" in *Username*) printf '%s\\n' x-access-token;; *) printf '%s\\n' \"$GITHUB_TOKEN\";; esac\n" }]);
+  const push = await sandbox.runCommand({
+    cmd: "git",
+    args: ["push", "--set-upstream", "origin", branch],
+    cwd: root,
+    env: { GIT_ASKPASS: "/tmp/lynq-git-askpass.sh", GIT_TERMINAL_PROMPT: "0", GITHUB_TOKEN: token },
+    timeoutMs: 240_000,
+  });
+  if (push.exitCode !== 0) throw new Error(`Feature branch push failed: ${trimOutput(await push.stderr())}`);
+
+  const pullRequest = await githubFetch<{ number: number; html_url: string }>(token, `/repos/${repository}/pulls`, {
+    method: "POST",
+    body: JSON.stringify({
+      title: `[LYNQ Office] ${input.projectName}`.slice(0, 250),
+      head: branch,
+      base: input.baseBranch,
+      body: `## Founder objective\n\n${input.objective}\n\n## Engineering report\n\n${input.report.slice(0, 20_000)}\n\n---\nCreated by LYNQ Office. This pull request does not merge or deploy production automatically.`,
+    }),
+  });
+  const previewUrl = withPreviewPath(await findPreviewUrl(token, repository, commitSha), input.previewPath);
+
+  return {
+    repository,
+    branch,
+    commitSha,
+    pullRequestNumber: pullRequest.number,
+    pullRequestUrl: pullRequest.html_url,
+    previewUrl,
+    previewPath: input.previewPath,
+    validationSummary: input.report.slice(0, 20_000),
+    agentSummary: input.summary.slice(0, 5_000),
+    ...(input.website ? { website: input.website } : {}),
+  };
+}
+
+/**
+ * Build the founder-approved restaurant website before any sandbox is
+ * created. Generation is deterministic and fully validated in-process, so
+ * a prospect demo that cannot be proven correct fails here — cheaply, and
+ * without leaving a half-built branch behind.
+ */
+export async function buildApprovedRestaurantWebsite(input: {
+  projectKey: string;
+  route: string;
+  objective: string;
+  sharedContext: string;
+  /** Test seam. Production always uses the Office model configured for planning. */
+  generator?: WebsiteDraftGenerator;
+}): Promise<GeneratedWebsite> {
+  const research = parseRestaurantResearch(input.sharedContext);
+  if (!research) {
+    throw new RestaurantResearchUnavailableError(
+      "Engineering cannot build a restaurant demo before the founder-approved research is recorded on the project",
+    );
+  }
+  // Approved brand material that will not parse is an error, not an
+  // absence: silently shipping an image-free site would hide the fact
+  // that someone's approval never reached the page.
+  if (brandPackParseFailed(input.sharedContext)) {
+    throw new RestaurantResearchUnavailableError("The approved brand pack on this project is malformed, so no asset, menu or service from it can be used");
+  }
+  return generateRestaurantWebsite({
+    projectKey: input.projectKey,
+    route: input.route,
+    candidate: research.recommendation,
+    brandPack: parseBrandPack(input.sharedContext),
+    objective: input.objective,
+    researchUncertainty: research.uncertainty,
+    generator: input.generator,
+  });
+}
+
+/**
+ * Write the generated route into the sandbox and prove that what landed on
+ * disk is byte-for-byte what was validated, and that nothing else changed.
+ * No model participates in this path.
+ */
+async function writeGeneratedWebsite(sandbox: Sandbox, root: string, website: GeneratedWebsite): Promise<string> {
+  // Demo routes are keyed by project, and two projects could in principle
+  // slugify to the same route. Overwriting another prospect's live demo
+  // would be silent and unrecoverable, so it is refused here.
+  const existing = await sandbox.readFileToBuffer({ path: safeWorkspacePath(root, `${website.routeSourceDir}/site.data.ts`) });
+  const occupant = /"projectKey":\s*"([^"]+)"/.exec(existing?.toString("utf8") ?? "")?.[1];
+  if (occupant && occupant !== website.spec.projectKey) {
+    throw new Error(`The route ${website.spec.route} already belongs to project ${occupant}; refusing to overwrite another prospect's demo`);
+  }
+  for (const file of website.files) {
+    const target = safeWorkspacePath(root, file.path);
+    await sandbox.runCommand({ cmd: "mkdir", args: ["-p", path.posix.dirname(target)] });
+    await sandbox.writeFiles([{ path: target, content: file.content }]);
+  }
+  for (const file of website.files) {
+    const written = await sandbox.readFileToBuffer({ path: safeWorkspacePath(root, file.path) });
+    if (written?.toString("utf8") !== file.content) {
+      throw new Error(`The generated demo file ${file.path} did not land in the workspace intact`);
+    }
+  }
+  const status = await sandbox.runCommand({ cmd: "git", args: ["status", "--porcelain"], cwd: root });
+  const changedFiles = (await status.stdout())
+    .trim()
+    .split("\n")
+    .map((line) => line.slice(3).trim())
+    .filter(Boolean);
+  const expected = new Set(website.files.map((file) => file.path));
+  if (changedFiles.length === 0) {
+    throw new Error(`The regenerated site for ${website.spec.route} is identical to the base branch, so there is nothing to deliver`);
+  }
+  const unexpected = changedFiles.filter((file) => !expected.has(file));
+  if (unexpected.length > 0) {
+    throw new Error(`The restaurant demo changed files outside its own route: ${unexpected.slice(0, 5).join(", ")}`);
+  }
+  for (const file of expected) {
+    if (!changedFiles.includes(file)) throw new Error(`The restaurant demo did not produce ${file}`);
+  }
+  return [
+    `# ${website.spec.businessName} — generated concept website`,
+    "",
+    `Route: \`${website.spec.route}\``,
+    `Pages: ${website.spec.pages.map((page) => `\`${website.spec.route}${page.path ? `/${page.path}` : ""}\``).join(", ")}`,
+    `Generation attempts: ${website.attempts}`,
+    "",
+    website.designRationale,
+    "",
+    "## Deterministic validation",
+    "",
+    `Pages rendered and checked: ${website.report.checkedPages.join(", ")}`,
+    `Rendered bytes: ${Object.entries(website.report.renderedBytes).map(([page, bytes]) => `${page} ${bytes}B`).join(", ")}`,
+    "",
+    "Every check below is a computation, not a judgement: the preview route exists as source, every page renders,",
+    "every navigation target resolves, no placeholder copy survives, every visible fact resolves to the approved",
+    "evidence, and no service is offered that the evidence does not establish.",
+    "",
+    `Violations: ${renderViolations(website.report.violations)}`,
+    "",
+    "## Evidence behind every visible fact",
+    "",
+    website.evidenceTable,
+    "",
+    "## Remaining uncertainty",
+    "",
+    website.uncertainties.length > 0 ? website.uncertainties.map((item) => `- ${item}`).join("\n") : "- None beyond the research's own caveats.",
+    "",
+    "## Files",
+    "",
+    website.files.map((file) => `- \`${file.path}\``).join("\n"),
+  ].join("\n");
+}
+
 export async function executeEngineeringDelivery(input: {
   executionId: string;
   projectKey: string;
@@ -120,9 +323,18 @@ export async function executeEngineeringDelivery(input: {
   const token = await githubToken();
   const repoName = repository.split("/")[1];
   const branch = `office/${input.projectKey.toLowerCase()}-${input.executionId.slice(0, 8)}`;
-  const isRestaurantDemo = input.sharedContext.includes(RESTAURANT_RESEARCH_MARKER);
-  const previewPath = isRestaurantDemo ? restaurantDemoPath(input.projectKey) : null;
-  const requiredDemoSource = previewPath ? `platform/src/app${previewPath}/page.tsx` : null;
+  // A project whose shared context carries founder-approved restaurant
+  // research is a prospect demo, and takes the deterministic factory path
+  // below rather than the free-form engineering agent.
+  const previewPath = input.sharedContext.includes(RESTAURANT_RESEARCH_MARKER) ? restaurantDemoPath(input.projectKey) : null;
+  const website = previewPath
+    ? await buildApprovedRestaurantWebsite({
+        projectKey: input.projectKey,
+        route: previewPath,
+        objective: input.objective,
+        sharedContext: input.sharedContext,
+      })
+    : null;
   const sandbox = await Sandbox.create({
     source: {
       type: "git",
@@ -143,11 +355,42 @@ export async function executeEngineeringDelivery(input: {
     await sandbox.runCommand({ cmd: "git", args: ["remote", "set-url", "origin", `https://github.com/${repository}.git`], cwd: root });
     await sandbox.runCommand({ cmd: "git", args: ["checkout", "-b", branch], cwd: root });
 
+    // A founder-approved restaurant demo is generated deterministically and
+    // validated in-process, so no model writes files here. The sandbox
+    // agent remains the path for ordinary product features.
+    if (website) {
+      const websiteReport = await writeGeneratedWebsite(sandbox, root, website);
+      return await publishBranch({
+        sandbox,
+        root,
+        token,
+        repository,
+        baseBranch,
+        branch,
+        projectName: input.projectName,
+        objective: input.objective,
+        previewPath,
+        report: websiteReport,
+        summary: `Generated a ${website.design.layout} concept website for ${website.spec.businessName} across ${website.spec.pages.length} page(s) and proved it against ${website.report.checkedPages.length} rendered page(s) with no outstanding violations.`,
+        website: {
+          designName: website.design.name,
+          layout: website.design.layout,
+          pages: website.spec.pages.map((page) => (page.path ? `${website.spec.route}/${page.path}` : website.spec.route)),
+          designRationale: website.designRationale,
+          evidenceTable: website.evidenceTable,
+          uncertainties: website.uncertainties,
+          qaSummary: renderViolations(website.report.violations),
+          attempts: website.attempts,
+          files: website.files.map((file) => file.path),
+        },
+      });
+    }
+
     const allowedCommands = new Set(["ls", "find", "rg", "sed", "pwd", "node", "npm", "npx", "pnpm", "yarn", "git"]);
     const engineeringAgent = new ToolLoopAgent({
       ...getOfficeGenerationConfig("engineering"),
       instructions:
-        `You are LYNQ's Software Engineering Lead working inside an isolated feature-branch sandbox. Inspect the repository before editing. Implement the objective completely but narrowly, preserve existing authentication and security, and never access production data or secrets. Use write_file for edits and run_command for inspection and validation. You may inspect git status/diff/log, but you must not commit, push, merge, deploy, alter remotes, or create credentials; the Office performs source-control actions after validation. Run the relevant lint, typecheck, tests, and build. End with a concise factual summary of changes, checks, and unresolved risks.${isRestaurantDemo ? ` This is a custom restaurant demo, not an Office feature or generic template. Build the public route ${previewPath} inside the platform Next.js application. Base its information architecture, copy direction, and conversion flow on the approved restaurant research in sharedProjectContext. Make it visually distinctive, responsive, accessible, and convincingly functional: navigation and calls to action must work, and any form must be an honest non-sending demo unless a safe existing backend is explicitly available. Do not invent awards, reviews, prices, menu items, opening hours, contact details, or customer claims. Do not modify unrelated Office screens. Reuse the repository's proven primitives where useful, but create a tailored design rather than cloning an existing demo.` : ""}`,
+        "You are LYNQ's Software Engineering Lead working inside an isolated feature-branch sandbox. Inspect the repository before editing. Implement the objective completely but narrowly, preserve existing authentication and security, and never access production data or secrets. Use write_file for edits and run_command for inspection and validation. You may inspect git status/diff/log, but you must not commit, push, merge, deploy, alter remotes, or create credentials; the Office performs source-control actions after validation. Run the relevant lint, typecheck, tests, and build. End with a concise factual summary of changes, checks, and unresolved risks.",
       stopWhen: isStepCount(36),
       tools: {
         read_file: tool({
@@ -190,13 +433,7 @@ export async function executeEngineeringDelivery(input: {
         sharedProjectContext: input.sharedContext.slice(0, 40_000),
         repository,
         baseBranch,
-        deliveryProfile: isRestaurantDemo
-          ? {
-              kind: "custom_restaurant_demo",
-              requiredPublicRoute: previewPath,
-              qualityBar: "A tailored, production-quality prospect demo whose visible facts are grounded in the approved research.",
-            }
-          : { kind: "product_feature" },
+        deliveryProfile: { kind: "product_feature" },
       }),
     });
 
@@ -204,55 +441,19 @@ export async function executeEngineeringDelivery(input: {
     const changed = (await status.stdout()).trim();
     if (!changed) throw new Error("Engineering completed without producing repository changes");
     if (changed.split("\n").some((line) => /(?:^|\/)\.env(?:\.|$)/.test(line.slice(3)))) throw new Error("Engineering attempted to modify a protected environment file");
-    if (requiredDemoSource) {
-      const changedFiles = changed.split("\n").map((line) => line.slice(3).trim());
-      if (!changedFiles.includes(requiredDemoSource)) {
-        throw new Error(`Restaurant Engineering did not create the required demo route (${previewPath})`);
-      }
-      const demoSource = await sandbox.readFileToBuffer({ path: safeWorkspacePath(root, requiredDemoSource) });
-      const sourceText = demoSource?.toString("utf8") ?? "";
-      if (sourceText.length < 500 || !/export\s+default/.test(sourceText)) {
-        throw new Error(`Restaurant Engineering produced an incomplete demo route (${previewPath})`);
-      }
-    }
-
-    await sandbox.runCommand({ cmd: "git", args: ["add", "--all"], cwd: root });
-    await sandbox.runCommand({ cmd: "git", args: ["-c", "user.name=LYNQ Office", "-c", "user.email=office@lynq.build", "commit", "-m", `feat: ${input.projectName.slice(0, 60)}`], cwd: root });
-    const shaResult = await sandbox.runCommand({ cmd: "git", args: ["rev-parse", "HEAD"], cwd: root });
-    const commitSha = (await shaResult.stdout()).trim();
-
-    await sandbox.writeFiles([{ path: "/tmp/lynq-git-askpass.sh", mode: 0o700, content: "#!/bin/sh\ncase \"$1\" in *Username*) printf '%s\\n' x-access-token;; *) printf '%s\\n' \"$GITHUB_TOKEN\";; esac\n" }]);
-    const push = await sandbox.runCommand({
-      cmd: "git",
-      args: ["push", "--set-upstream", "origin", branch],
-      cwd: root,
-      env: { GIT_ASKPASS: "/tmp/lynq-git-askpass.sh", GIT_TERMINAL_PROMPT: "0", GITHUB_TOKEN: token },
-      timeoutMs: 240_000,
-    });
-    if (push.exitCode !== 0) throw new Error(`Feature branch push failed: ${trimOutput(await push.stderr())}`);
-
-    const pullRequest = await githubFetch<{ number: number; html_url: string }>(token, `/repos/${repository}/pulls`, {
-      method: "POST",
-      body: JSON.stringify({
-        title: `[LYNQ Office] ${input.projectName}`.slice(0, 250),
-        head: branch,
-        base: baseBranch,
-        body: `## Founder objective\n\n${input.objective}\n\n## Engineering report\n\n${result.text.slice(0, 20_000)}\n\n---\nCreated by LYNQ Office. This pull request does not merge or deploy production automatically.`,
-      }),
-    });
-    const previewUrl = withPreviewPath(await findPreviewUrl(token, repository, commitSha), previewPath);
-
-    return {
+    return await publishBranch({
+      sandbox,
+      root,
+      token,
       repository,
+      baseBranch,
       branch,
-      commitSha,
-      pullRequestNumber: pullRequest.number,
-      pullRequestUrl: pullRequest.html_url,
-      previewUrl,
+      projectName: input.projectName,
+      objective: input.objective,
       previewPath,
-      validationSummary: result.text.slice(0, 20_000),
-      agentSummary: result.text.slice(0, 5_000),
-    };
+      report: result.text,
+      summary: result.text.slice(0, 5_000),
+    });
   } finally {
     await sandbox.stop().catch(() => undefined);
   }
