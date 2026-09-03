@@ -279,11 +279,19 @@ export function composeAgentGoal(prefix: string, instruction: string, limit: num
   const composed = `${prefix}${instruction}`;
   if (composed.length <= limit) return composed;
 
-  const endAt = instruction.lastIndexOf(FOUNDER_FENCE_END);
+  // The marker only counts as a FENCE when it terminates the instruction, which
+  // is the shape `toDirectiveInstruction` always produces. A web directive is
+  // ordinary user text and may contain the literal marker anywhere; treating a
+  // mid-text occurrence as the fence made `tail` almost the whole instruction,
+  // drove the budget negative, and returned prefix + tail — silently dropping
+  // the opening of the request with no ellipsis, via exactly the blind slice on
+  // a marker-bearing string this function exists to avoid.
+  const trimmed = instruction.trimEnd();
+  const endAt = trimmed.endsWith(FOUNDER_FENCE_END) ? trimmed.length - FOUNDER_FENCE_END.length : -1;
   if (endAt === -1) return composed.slice(0, limit);
 
-  const head = instruction.slice(0, endAt);
-  const tail = instruction.slice(endAt);
+  const head = trimmed.slice(0, endAt);
+  const tail = trimmed.slice(endAt);
   // Room for the trimmed head, an ellipsis, a newline, and the closing marker.
   const budget = limit - prefix.length - tail.length - 2;
   // Degenerate only if the prefix alone nearly fills the limit; keeping the
@@ -297,7 +305,11 @@ export function deriveDirectiveProjectName(instruction: string): string {
   if (signed) return signed;
   const named = instruction.match(/(?:project|client|company|business)\s+(?:for|called|named)\s+([A-Za-z0-9][A-Za-z0-9 .&'-]{1,60}?)(?:\s+to\s+|[,.]|$)/i)?.[1]?.trim();
   if (named) return named;
-  const words = instruction.replace(/[^A-Za-z0-9 '&-]/g, " ").trim().split(/\s+/).slice(0, 6);
+  // `.split(/\s+/)` on an empty string yields `[""]`, so the length test was
+  // always true and an instruction with no ASCII-alphanumeric words — anything
+  // dictated in a non-Latin script — returned an EMPTY name rather than the
+  // fallback this line was written to provide.
+  const words = instruction.replace(/[^A-Za-z0-9 '&-]/g, " ").trim().split(/\s+/).filter(Boolean).slice(0, 6);
   return words.length > 0 ? words.join(" ") : "Founder Directive";
 }
 

@@ -9,7 +9,7 @@ import { ensureCallSession, upsertCommandDraft } from "@/lib/voice/call-store";
 import { buildCommandDraft } from "@/lib/voice/command-draft";
 import { PASSCODE_DIGITS } from "@/lib/voice/founder-verification";
 import { PostgresRateLimiter } from "@/lib/rate-limit/postgres";
-import { callBudgetKey, callerBudgetIdentityForNumber, INBOUND_CALL_RATE_LIMIT } from "@/lib/voice/verification-budget";
+import { callBudgetKey, founderLineBudgetIdentity, INBOUND_CALL_RATE_LIMIT } from "@/lib/voice/verification-budget";
 
 /**
  * The HTTP boundary of the phone lane.
@@ -250,9 +250,8 @@ describe("GET /jarvis/phone/passcode — the second factor", () => {
     vi.stubEnv("JARVIS_FOUNDER_PHONE_E164", "+14165551234");
     await authenticateAs(founder);
 
-    const identity = callerBudgetIdentityForNumber({
+    const identity = founderLineBudgetIdentity({
       verificationSecret: "a-verification-secret-that-is-long-enough-01234",
-      callerNumber: "+14165551234",
       organizationId,
     });
     const limiter = new PostgresRateLimiter(db);

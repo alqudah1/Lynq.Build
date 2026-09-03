@@ -172,6 +172,43 @@ describe("a redelivered tool call", () => {
   });
 });
 
+describe("a redelivered tool call from another tenant", () => {
+  it("will not replay one organization's answer onto another organization's call", async () => {
+    /**
+     * Round thirteen. The replay path does not go through the handler, so the
+     * tenant reconciliation that guards every other read of a call's state does
+     * not apply to it — and the sentence being replayed is the founder's own
+     * read-back. The dedup index is on (provider, external_event_id) alone, so
+     * repointing JARVIS_PHONE_ORGANIZATION_ID would have let a redelivery speak
+     * one tenant's dictated request aloud on another tenant's call.
+     */
+    const first = await makeFounderOrg();
+    const second = await makeFounderOrg();
+    const callId = `call-${crypto.randomUUID()}`;
+    createdCallIds.push(callId);
+
+    const { normalizeVapiEvent } = await import("@/lib/voice/vapi-events");
+    const event = normalizeVapiEvent(toolCall(callId, "tc-1", "confirm_command", { confirmed: true }));
+    await db.insert(jarvisVoiceWebhookEvents).values({
+      organizationId: first.organizationId,
+      provider: "vapi",
+      externalEventId: event.idempotencyKey,
+      eventType: event.rawType,
+      providerCallId: callId,
+      processingStatus: "processed",
+      responseText: "Done. I've opened the project Northwind Pricing and briefed the team.",
+    });
+
+    // The deployment is now pointed at the SECOND organization.
+    configure(second.organizationId, second.founderUserId);
+    const response = await POST(post(toolCall(callId, "tc-1", "confirm_command", { confirmed: true })));
+    const body = (await response.json()) as { results?: Array<{ result: string }> };
+
+    expect(body.results?.[0]?.result).not.toContain("Northwind Pricing");
+    expect(body.results?.[0]?.result).toMatch(/still working on that one/i);
+  });
+});
+
 describe("a redelivered assistant request", () => {
   it("gets a real assistant back rather than an acknowledgement with none", async () => {
     const { organizationId, founderUserId } = await makeFounderOrg();

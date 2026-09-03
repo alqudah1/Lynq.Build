@@ -126,7 +126,6 @@ export async function GET(_request: Request, { params }: RouteParams) {
     // true to say — with a time, and a way out.
     const lockout = await readVerificationBudget(db, {
       verificationSecret: resolution.config.verificationSecret,
-      founderPhoneNumber: resolution.config.founderPhoneNumber,
       organizationId,
     }).catch(() => null);
 
@@ -190,7 +189,6 @@ export async function POST(_request: Request, { params }: RouteParams) {
 
     await clearVerificationBudget(db, {
       verificationSecret: resolution.config.verificationSecret,
-      founderPhoneNumber: resolution.config.founderPhoneNumber,
       organizationId,
     });
 
@@ -204,7 +202,6 @@ export async function POST(_request: Request, { params }: RouteParams) {
 
     const lockout = await readVerificationBudget(db, {
       verificationSecret: resolution.config.verificationSecret,
-      founderPhoneNumber: resolution.config.founderPhoneNumber,
       organizationId,
     }).catch(() => null);
 

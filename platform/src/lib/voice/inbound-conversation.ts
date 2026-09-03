@@ -4,9 +4,11 @@ import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { PostgresRateLimiter } from "@/lib/rate-limit/postgres";
 import {
   callBudgetKey,
-  callerBudgetIdentity,
-  callerBudgetIdentityForNumber,
+  founderLineBudgetIdentity,
   INBOUND_CALL_RATE_LIMIT,
+  refusedBudgetKey,
+  refusedCallBudgetIdentity,
+  REFUSED_CALL_RATE_LIMIT,
   verifyBudgetKey,
   VERIFICATION_RATE_LIMIT,
 } from "./verification-budget";
@@ -26,6 +28,7 @@ import {
   findLatestCommandForSession,
   findOpenCommandForSession,
   markCallSessionRefused,
+  recordCallerNumberMatch,
   recordVerificationAttempt,
   resolvePhoneCommandActor,
   touchCallSession,
@@ -96,6 +99,14 @@ const REFUSAL_SPOKEN =
   "I can't take instructions on this call. I'll only work with the founder's registered line, and this isn't it. Goodbye.";
 
 const NEEDS_VERIFICATION_SPOKEN = `Before we start, please read me the ${PASSCODE_DIGITS}-digit code on the Jarvis screen in LYNQ Office.`;
+
+/**
+ * What the FOUNDER hears when the founder-line budget is spent — never the
+ * wrong-number refusal, which would tell them their own registered line is not
+ * their registered line.
+ */
+const FOUNDER_LINE_BUSY_SPOKEN =
+  "There have been a lot of calls from this number in the last hour, so I've paused new ones for a little while. Nothing is wrong with your account. Open the Jarvis screen in LYNQ Office and you can let yourself back in straight away.";
 
 /**
  * The dynamic assistant returned on `assistant-request`. It is built per call
@@ -204,6 +215,23 @@ export interface HandleInboundEventInput {
   /** Injected in tests so passcode windows are deterministic. */
   nowMs?: number;
   workspaceId?: string | null;
+  /**
+   * True when this is a REDELIVERY of an event the deployment has already
+   * claimed, being re-run only to produce an answer for the provider.
+   *
+   * The webhook's duplicate path re-runs `assistant-request` rather than
+   * replaying a stored copy, because the config depends on live state. That was
+   * described as safe on the grounds that the handler is read-only apart from
+   * an idempotent `ensureCallSession` — and it stopped being true the moment
+   * this function started charging a call budget. A first delivery that outran
+   * the provider's timeout would then spend TWO units of the founder's six for
+   * one call, which is exactly the lockout the budget's refund exists to
+   * prevent.
+   *
+   * A replay therefore spends nothing. It is not a new call; the call it
+   * belongs to was already paid for.
+   */
+  replay?: boolean;
 }
 
 export async function handleInboundConversationEvent(db: Db, input: HandleInboundEventInput): Promise<ConversationResult> {
@@ -245,40 +273,57 @@ export async function handleInboundConversationEvent(db: Db, input: HandleInboun
 
   const callerNumberMatched = callerNumberMatchesFounder(event.callerNumber, config.founderPhoneNumber);
 
-  // Opening a NEW call costs the caller against an hourly budget, checked
-  // before any row exists. Everything before verification used to be free —
-  // a session row, a start audit entry, a ten-minute assistant and an
-  // unbounded transcript, per redial, for anyone able to spoof the founder's
-  // caller ID. The passcode budget did not bound it, because an attacker who
-  // never guesses never spends a passcode attempt.
-  if (!existing) {
-    const callerKey = callerBudgetIdentityForNumber({
-      verificationSecret: config.verificationSecret,
-      callerNumber: event.callerNumber,
-      organizationId: config.organizationId,
-    });
-    let withinCallBudget = false;
+  // Opening a NEW call costs something, and WHICH budget it costs depends on
+  // whether the caller is claiming to be the founder.
+  //
+  // The first version of this charged one budget keyed on the caller's last
+  // four digits, before the caller-number precondition was consulted. Both
+  // halves were wrong. All ten thousand numbers sharing the founder's last four
+  // shared a bucket, so six calls from an unrelated line exhausted the
+  // founder's budget and the founder was then refused — with a sentence saying
+  // their line was not the registered one, on the registered line, from a
+  // branch that had not looked at their number. And it bounded nothing, because
+  // an attacker rotating the asserted suffix got a fresh bucket per suffix.
+  //
+  // So: a call asserting the founder's exact number spends the founder-line
+  // budget, which only the founder can spend and which a successful
+  // verification refunds. Every other call spends a separate tenant-wide
+  // budget that bounds how many refused sessions may be recorded, and that no
+  // rotation can escape because it is not keyed on anything the caller
+  // controls. An attacker filling the second one cannot touch the first.
+  if (!existing && !input.replay) {
+    const limiter = new PostgresRateLimiter(db);
+    const budget = callerNumberMatched
+      ? { key: callBudgetKey(founderLineBudgetIdentity(config)), config: INBOUND_CALL_RATE_LIMIT }
+      : { key: refusedBudgetKey(refusedCallBudgetIdentity(config)), config: REFUSED_CALL_RATE_LIMIT };
+
+    let withinBudget = false;
     try {
-      withinCallBudget = (await new PostgresRateLimiter(db).recordAttempt(callBudgetKey(callerKey), INBOUND_CALL_RATE_LIMIT)).allowed;
+      withinBudget = (await limiter.recordAttempt(budget.key, budget.config)).allowed;
     } catch {
       // Fails closed, like every other rate limit in this lane.
-      withinCallBudget = false;
+      withinBudget = false;
     }
-    if (!withinCallBudget) {
-      logPhoneEvent({ event: "call-rate-limited" });
+
+    if (!withinBudget) {
+      logPhoneEvent({ event: "call-rate-limited", founderLine: callerNumberMatched });
       return {
-        spoken: REFUSAL_SPOKEN,
+        // Two different truths, and neither may borrow the other's words. A
+        // founder who has hit the ceiling is not being told their number is
+        // wrong; a caller on the wrong number is not being told to go and look
+        // at a screen they cannot open.
+        spoken: callerNumberMatched ? FOUNDER_LINE_BUSY_SPOKEN : REFUSAL_SPOKEN,
         // The closed assistant: one sentence, no tools, twenty seconds. No
         // session row is written, so a flood costs the attacker a phone bill
         // and costs this deployment one rate-limit update.
-        payload: buildRefusalAssistantConfig(),
+        payload: buildRefusalAssistantConfig(callerNumberMatched ? FOUNDER_LINE_BUSY_SPOKEN : REFUSAL_SPOKEN),
         processingStatus: "ignored",
-        failureCode: "call_rate_limited",
+        failureCode: callerNumberMatched ? "call_rate_limited" : "refused_call_rate_limited",
       };
     }
   }
 
-  const session =
+  let session =
     existing ??
     (await ensureCallSession(db, {
       organizationId: actor.organizationId,
@@ -300,22 +345,30 @@ export async function handleInboundConversationEvent(db: Db, input: HandleInboun
   // The caller-number precondition applies to EVERY event, not only the first
   // one. Vapi emits `assistant-request` only when the number has no statically
   // assigned assistant, so a configuration that pins one would otherwise never
-  // reach the refusal branch below and would leave the passcode as the only
-  // barrier. `session.callerNumberMatched` is what the first event recorded;
-  // this re-checks the current event too, so neither can be skipped.
+  // reach the refusal below and would leave the passcode as the only barrier.
   //
-  // But only when the event actually CARRIES a number. Not every server message
-  // includes a `customer` object, and treating its absence as a mismatch turned
-  // an ordinary terminal delivery into a refusal of a call that was already
-  // verified: `markCallSessionRefused` wrote `caller_number_mismatch` — a
-  // security finding that never happened — and, worse, `finalizeCall` then
-  // never ran, so an unconfirmed draft stayed in `awaiting_confirmation` with
-  // no exit at all (tool calls are refused once inactive, the decision route
-  // requires `awaiting_approval`, retry requires `failed`, the reaper only
-  // looks at `dispatching`). A supplied number that does not match is still a
-  // refusal; a number the provider did not send is not evidence of anything.
+  // A refusal needs EVIDENCE of a wrong number, not merely the absence of a
+  // right one. Not every server message carries a `customer` object, and
+  // treating its absence as a mismatch was wrong in two separate places:
+  //
+  //  - on a later event, it refused a call that had already matched and
+  //    verified, wrote a false `caller_number_mismatch`, and — because the
+  //    refusal returns before the switch — skipped `finalizeCall`, leaving an
+  //    unconfirmed draft in `awaiting_confirmation` with no exit anywhere in
+  //    the system;
+  //  - on the FIRST event, it stamped the session unmatched for good, so every
+  //    later event, including ones carrying the founder's real number, was
+  //    refused against that stamp and the call could never work at all.
+  //
+  // `callerNumberLastFour` is null exactly when no number was supplied, which
+  // is what separates "supplied and wrong" from "not yet established". The
+  // second is not a refusal — but it is not clearance either: `handleToolCall`
+  // refuses to take any instruction until a number has positively matched, and
+  // `recordCallerNumberMatch` is how a later event that does carry it gets the
+  // session there.
+  const sessionNumberMismatch = session.callerNumberLastFour !== null && !session.callerNumberMatched;
   const eventNumberMismatch = Boolean(event.callerNumber) && !callerNumberMatched;
-  if (!session.callerNumberMatched || eventNumberMismatch) {
+  if (sessionNumberMismatch || eventNumberMismatch) {
     // Record what an unauthorized caller said BEFORE refusing. The refusal used
     // to return above the switch, so `handleTranscript` never ran and nothing
     // the caller said was stored anywhere — the one path where a transcript is
@@ -326,6 +379,18 @@ export async function handleInboundConversationEvent(db: Db, input: HandleInboun
       await handleTranscript(db, { session, event }).catch(() => undefined);
     }
     return refuseCall(db, { session, actor, reason: "caller_number_mismatch" });
+  }
+
+  if (callerNumberMatched && !session.callerNumberMatched) {
+    const promoted = await recordCallerNumberMatch(db, {
+      sessionId: session.id,
+      organizationId: session.organizationId,
+      callerNumber: event.callerNumber,
+    }).catch(() => null);
+    if (promoted) {
+      session = promoted;
+      logPhoneEvent({ event: "caller-number-established", sessionId: session.id });
+    }
   }
 
   // A call that has ended accepts nothing further. `completeCallSession` leaves
@@ -403,10 +468,10 @@ async function refuseCall(
  * The assistant returned to a caller this lane will not work with: it says one
  * sentence and hangs up. No system prompt, no tools, no time.
  */
-function buildRefusalAssistantConfig(): Record<string, unknown> {
+function buildRefusalAssistantConfig(firstMessage: string = REFUSAL_SPOKEN): Record<string, unknown> {
   return {
     assistant: {
-      firstMessage: REFUSAL_SPOKEN,
+      firstMessage,
       firstMessageMode: "assistant-speaks-first-with-model-generated-message",
       maxDurationSeconds: 20,
       endCallAfterSpokenWords: true,
@@ -458,6 +523,11 @@ async function handleTranscript(
       sessionId: input.session.id,
       organizationId: input.session.organizationId,
     }).catch(() => 0);
+    // Read-then-write, with no guard between them: two turns delivered
+    // concurrently can both read 24 and both insert. The overshoot is bounded
+    // by the provider's delivery concurrency — a handful of turns, not an
+    // unbounded stream — which is what this cap exists to prevent, so the exact
+    // number is not worth a second statement on every unverified turn.
     if (already >= MAX_UNVERIFIED_TRANSCRIPT_TURNS) {
       logPhoneEvent({ event: "unverified-transcript-capped", sessionId: input.session.id, turns: already });
       await touchCallSession(db, { sessionId: input.session.id, organizationId: input.session.organizationId });
@@ -557,6 +627,25 @@ async function handleToolCall(
     return { spoken: "I can't do that on a call.", processingStatus: "ignored", failureCode: "unknown_tool", sessionId: session.id };
   }
 
+  // The caller-number precondition, stated positively.
+  //
+  // The refusal above fires on EVIDENCE of a wrong number, which correctly
+  // leaves "the provider never told us the number" unrefused — a call whose
+  // deliveries carry no `customer` object is not a wrong number and must not be
+  // recorded as one. But it is not a right number either, and this lane's whole
+  // first factor is that exactly one line may give instructions. So nothing is
+  // taken until a number has positively matched; verification alone is not
+  // enough to substitute for it.
+  if (!session.callerNumberMatched) {
+    logPhoneEvent({ event: "tool-refused", sessionId: session.id, reason: "caller_number_unestablished" });
+    return {
+      spoken: "I can't take instructions on this call — I wasn't able to confirm the number you're calling from. Please hang up and call back.",
+      processingStatus: "ignored",
+      failureCode: "caller_number_unestablished",
+      sessionId: session.id,
+    };
+  }
+
   if (event.toolName === "verify_founder") {
     return handleVerify(db, { session, config: input.config, spoken: String(event.args.code ?? ""), nowMs: input.nowMs });
   }
@@ -597,11 +686,10 @@ async function handleVerify(
   // it. Fails CLOSED, like every other rate limit here: if the backend is
   // unreachable, verification is refused rather than waved through.
   const limiter = new PostgresRateLimiter(db);
-  const callerKey = callerBudgetIdentity({
-    verificationSecret: input.config.verificationSecret,
-    callerNumberLastFour: session.callerNumberLastFour,
-    organizationId: session.organizationId,
-  });
+  // The same identity the call budget uses: this session reached here only by
+  // asserting the founder's exact number, so "this caller" and "the founder's
+  // line" are the same thing by construction.
+  const callerKey = founderLineBudgetIdentity(input.config);
   let withinLimit = false;
   try {
     withinLimit = (await limiter.recordAttempt(verifyBudgetKey(callerKey), VERIFICATION_RATE_LIMIT)).allowed;

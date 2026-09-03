@@ -22,10 +22,26 @@ describe("getJarvisVoiceReadiness", () => {
       VAPI_ASSISTANT_ID: "assistant-1",
       VAPI_PHONE_NUMBER_ID: "phone-1",
       JARVIS_FOUNDER_PHONE_E164: "+14165551234",
-      VAPI_WEBHOOK_SECRET: "webhook-secret-long-enough-to-be-real-0123456789",
+      VAPI_WEBHOOK_SECRET: "webhook-secret",
     });
     expect(result).toMatchObject({ ready: true, callingReady: true, activityTrackingReady: true, completedChecks: 6 });
     expect(result.missing).toEqual([]);
+  });
+
+  it("stays ready on a short secret — the length floor belongs to phone control, not to this lane", () => {
+    // Round twelve moved the 32-character rule off the webhook door precisely
+    // so an existing deployment's notifications keep working. Asserting the
+    // removed rule here told a working integration that it needed setup.
+    const result = getJarvisVoiceReadiness({
+      JARVIS_VOICE_NOTIFICATIONS_ENABLED: "true",
+      VAPI_API_KEY: "key",
+      VAPI_ASSISTANT_ID: "assistant-1",
+      VAPI_PHONE_NUMBER_ID: "phone-1",
+      JARVIS_FOUNDER_PHONE_E164: "+14165551234",
+      VAPI_WEBHOOK_SECRET: "short",
+    });
+    expect(result.ready).toBe(true);
+    expect(result.activityTrackingReady).toBe(true);
   });
 
   it("rejects a non-North-American founder destination", () => {
@@ -35,7 +51,7 @@ describe("getJarvisVoiceReadiness", () => {
       VAPI_ASSISTANT_ID: "assistant-1",
       VAPI_PHONE_NUMBER_ID: "phone-1",
       JARVIS_FOUNDER_PHONE_E164: "+962790000000",
-      VAPI_WEBHOOK_SECRET: "webhook-secret-long-enough-to-be-real-0123456789",
+      VAPI_WEBHOOK_SECRET: "webhook-secret",
     });
     expect(result.callingReady).toBe(false);
     expect(result.missing).toContain("Founder phone number");

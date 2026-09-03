@@ -84,8 +84,17 @@ Details that matter:
 
 - One step of skew on either side is accepted, so a code read just before a
   rollover still works.
-- Comparison is constant-time; a spoken code is normalized first, so "four one
-  seven two nine six", "417296" and "417-296" all resolve identically.
+- Comparison is constant-time; a spoken code is normalized first, so a code
+  read as words, as digits, or with hyphens all resolve identically.
+- The number is a **precondition, and it must be positively met**: a refusal
+  needs evidence of a *wrong* number, not merely the absence of a right one, so
+  a delivery that carries no `customer` object is neither a refusal nor a pass.
+  A later delivery that does carry the founder's number brings the session up
+  to date; until one does, no tool call is answered at all. Treating absence as
+  a mismatch had refused calls that had already verified, and — when it happened
+  on the first delivery — stamped a session unmatched for good, so the call
+  could never work and a `caller_number_mismatch` audit row recorded a security
+  finding that had not happened.
 - Three attempts per call, enforced in the `UPDATE` statement itself rather
   than against a count read earlier in the request, so concurrent deliveries
   cannot jointly exceed it. A verified session is never walked back to
@@ -94,18 +103,36 @@ Details that matter:
   counter, so a limit keyed on a one-way identifier derived from the caller's
   number (never the number itself) caps attempts across calls. It fails closed
   — if the rate-limit backend is unreachable, verification is refused.
-- A **call** ceiling as well: six inbound command calls per hour from one
-  number. Without it, everything before verification was free — a spoofed line
-  matching the founder's number was not refused, and each redial opened a
-  session row, wrote a start audit entry, was handed a ten-minute assistant,
-  and could write unbounded transcript turns that the Jarvis screen renders as
-  the founder's own words. The passcode budget did not bound any of that,
-  because an attacker who never guesses never spends a passcode attempt. A
-  caller who has not verified may also write at most 25 transcript turns; the
+- A **call** ceiling as well, and it is deliberately two ceilings rather than
+  one. A call asserting the founder's exact number spends a **founder-line**
+  budget of six an hour. Every other call spends a separate **refused-call**
+  budget of twenty an hour. Without either, everything before verification was
+  free — a spoofed line matching the founder's number was not refused, and each
+  redial opened a session row, wrote a start audit entry, was handed a
+  ten-minute assistant, and could write unbounded transcript turns that the
+  Jarvis screen renders as the founder's own words. The passcode budget bounded
+  none of it, because an attacker who never guesses never spends a passcode
+  attempt.
+
+  The split is the correction to a first version that keyed one budget on the
+  caller's last four digits and charged it *before* the caller-number
+  precondition ran. It was wrong in both directions at once: six calls from an
+  unrelated line sharing those four digits exhausted the founder's allowance —
+  and the founder, dialling from the real phone, was then refused with "I'll
+  only work with the founder's registered line, and this isn't it", from a
+  branch that had never looked at their number — while an attacker rotating the
+  asserted suffix simply got a fresh bucket per suffix and was bounded by
+  nothing. The founder-line budget is now keyed on the tenant and spent only on
+  an exact match, so only the founder can spend it; the refused-call budget is
+  keyed on the tenant alone, which is the one thing in the request a caller
+  cannot vary. A caller who hits the founder-line ceiling is told so honestly,
+  in its own words, and never with the wrong-number refusal.
+
+  A caller who has not verified may also write at most 25 transcript turns; the
   call keeps running and verification still works, but nothing further is
   stored.
-- **Both budgets are refunded the moment a caller verifies**, and both are
-  visible and clearable from the Jarvis screen. This matters more than it
+- **The founder-line budgets are refunded the moment a caller verifies**, and
+  both are visible and clearable from the Jarvis screen. This matters more than it
   looks: the keys are derived from the number a caller *asserts*, so anyone who
   can spoof the founder's line can spend both and hold them at zero — and the
   founder, calling from the real phone, is then refused before their correct

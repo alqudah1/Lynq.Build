@@ -364,8 +364,8 @@ export function JarvisPhoneControl({ organizationId, organizationSlug }: { organ
             <div className="mt-5 rounded-sm border border-amber-300/40 bg-amber-300/10 px-3 py-3">
               <p className="text-sm font-medium text-amber-100">Jarvis is turning down calls from your number right now</p>
               <p className="mt-1 text-sm leading-6 text-amber-100/80">
-                Too many calls or wrong codes came from a line matching yours. That can happen if someone else is calling in pretending to be
-                you — a phone number is easy to fake. It clears on its own
+                Too many calls or wrong codes came from a line claiming to be yours. That can happen if someone else is calling in pretending
+                to be you — a phone number is easy to fake. It clears on its own
                 {passcode.lockout.resetAt ? ` at ${formatTime(passcode.lockout.resetAt)}` : " shortly"}, or you can clear it now and try
                 again. Clearing it does not let anyone in: your code is still required.
               </p>

@@ -4,7 +4,7 @@ import { timingSafeEqualStrings } from "@/lib/communications-os/secrets";
 import { loadEnv } from "@/lib/env";
 import { createDbClient } from "@/db/client";
 import { resolveJarvisPhoneCommandConfig, type JarvisPhoneCommandConfig } from "@/lib/voice/phone-config";
-import { normalizeVapiEvent, type NormalizedVapiEvent, type VapiServerMessageEnvelope } from "@/lib/voice/vapi-events";
+import { isInboundCallEvent, normalizeVapiEvent, type NormalizedVapiEvent, type VapiServerMessageEnvelope } from "@/lib/voice/vapi-events";
 import { handleInboundConversationEvent } from "@/lib/voice/inbound-conversation";
 import {
   claimWebhookEvent,
@@ -53,11 +53,13 @@ function unauthorized() {
  *   produced, replayed from the event row. If that sentence is not there yet,
  *   the first delivery has not finished, and the honest answer is that it is
  *   still going — never an invented outcome.
- * - An assistant request is REBUILT rather than replayed. Its handler is
- *   read-only apart from `ensureCallSession`, which is idempotent by
- *   construction and audits only a genuine creation, and the config depends on
- *   live state (whether the founder has verified yet), so a rebuild is both
- *   safe and more accurate than a stored copy.
+ * - An assistant request is REBUILT rather than replayed, because the config
+ *   depends on live state (whether the founder has verified yet), so a rebuild
+ *   is more accurate than a stored copy. It is passed `replay: true`, which is
+ *   load-bearing rather than cosmetic: the handler's only durable writes are an
+ *   idempotent `ensureCallSession` and a guarded refusal, but it also SPENDS a
+ *   call budget, and a first delivery that outran the provider's timeout would
+ *   otherwise cost the founder two of their six calls an hour for one call.
  */
 async function duplicateResponse(
   db: ReturnType<typeof createDbClient>,
@@ -67,7 +69,7 @@ async function duplicateResponse(
 
   if (event.kind === "assistant_request") {
     try {
-      const result = await handleInboundConversationEvent(db, { config: input.config, event });
+      const result = await handleInboundConversationEvent(db, { config: input.config, event, replay: true });
       if (result.payload) return Response.json(result.payload);
     } catch {
       console.error("[jarvis-phone]", JSON.stringify({ event: "duplicate-assistant-rebuild-failed" }));
@@ -76,7 +78,10 @@ async function duplicateResponse(
   }
 
   if (event.kind === "tool_call") {
-    const recorded = await findRecordedWebhookAnswer(db, { externalEventId: event.idempotencyKey }).catch(() => null);
+    const recorded = await findRecordedWebhookAnswer(db, {
+      externalEventId: event.idempotencyKey,
+      organizationId: input.config.organizationId,
+    }).catch(() => null);
     const replay = recorded?.responseText?.trim();
     return Response.json({
       results: [
@@ -206,24 +211,39 @@ export async function POST(request: Request) {
   if (event.kind === "ignored") return Response.json({ received: true });
 
   let db;
+  let claim;
   try {
     db = createDbClient(loadEnv());
+    // Claim first. Losing this race means the event was already handled, so it
+    // is acted on no further — though it is still ANSWERED; see
+    // `duplicateResponse`.
+    claim = await claimWebhookEvent(db, {
+      organizationId: configResolution.config.organizationId,
+      externalEventId: event.idempotencyKey,
+      eventType: event.rawType,
+      providerCallId: event.providerCallId,
+      processingStatus: "processed",
+    });
   } catch {
-    // A configuration failure must not look like a successful delivery, and
-    // must not tell the provider what is misconfigured.
-    console.error("[jarvis-phone]", JSON.stringify({ event: "database-unavailable" }));
+    // Neither of those touches the founder's state, so failing here means the
+    // event has not been acted on at all — and what to answer depends entirely
+    // on which lane the event belongs to.
+    //
+    // The OUTBOUND founder notifications share this endpoint and were
+    // acknowledged unconditionally with a 200 before phone control existed.
+    // Turning a transient Neon error into a 5xx for them is a regression on a
+    // lane this branch is not supposed to touch: the provider would retry, and
+    // then give up, on an event whose only purpose here is the log line
+    // already written above.
+    //
+    // An event that demonstrably belongs to an INBOUND command call is
+    // different — it has real work waiting on it, so it gets an honest 503 and
+    // the provider retries.
+    console.error("[jarvis-phone]", JSON.stringify({ event: "event-store-unavailable", eventType: event.rawType }));
+    if (!isInboundCallEvent(event)) return Response.json({ received: true });
     return Response.json({ error: { code: "unavailable", message: "Temporarily unavailable" } }, { status: 503 });
   }
 
-  // Claim first. Losing this race means the event was already handled, so it
-  // is acknowledged without acting a second time.
-  const claim = await claimWebhookEvent(db, {
-    organizationId: configResolution.config.organizationId,
-    externalEventId: event.idempotencyKey,
-    eventType: event.rawType,
-    providerCallId: event.providerCallId,
-    processingStatus: "processed",
-  });
   if (!claim.claimed) {
     console.info("[jarvis-phone]", JSON.stringify({ event: "duplicate-ignored", eventType: event.rawType }));
     return duplicateResponse(db, { config: configResolution.config, event });

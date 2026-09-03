@@ -249,7 +249,7 @@ export interface RecordedWebhookAnswer {
  */
 export async function findRecordedWebhookAnswer(
   db: Db,
-  input: { externalEventId: string; provider?: string }
+  input: { externalEventId: string; organizationId: string; provider?: string }
 ): Promise<RecordedWebhookAnswer | null> {
   const [row] = await db
     .select({
@@ -260,7 +260,14 @@ export async function findRecordedWebhookAnswer(
     .where(
       and(
         eq(jarvisVoiceWebhookEvents.provider, input.provider ?? "vapi"),
-        eq(jarvisVoiceWebhookEvents.externalEventId, input.externalEventId)
+        eq(jarvisVoiceWebhookEvents.externalEventId, input.externalEventId),
+        // Scoped, even though the dedup index is not. The replay path does not
+        // go through the handler, so the tenant reconciliation that guards
+        // every other read of a call's state does not apply to it — and the
+        // sentence being replayed is a founder's own read-back. Repointing
+        // JARVIS_PHONE_ORGANIZATION_ID would otherwise let a redelivery speak
+        // one tenant's dictated request aloud on another tenant's call.
+        eq(jarvisVoiceWebhookEvents.organizationId, input.organizationId)
       )
     );
   return row ? { responseText: row.responseText, processingStatus: row.processingStatus } : null;
@@ -332,6 +339,46 @@ export async function findCallSessionByProviderCallId(db: Db, provider: string, 
     .select()
     .from(jarvisCallSessions)
     .where(and(eq(jarvisCallSessions.provider, provider), eq(jarvisCallSessions.providerCallId, providerCallId)));
+  return row ? toSession(row) : null;
+}
+
+/**
+ * Records that this call's caller number has now been seen, and matched.
+ *
+ * Needed because the match is stamped from the FIRST event and never revisited,
+ * while not every provider message carries a `customer` object. A first
+ * delivery without one left the session permanently marked unmatched, and every
+ * later event — including ones carrying the founder's real number — was refused
+ * against that stamp, with a `caller_number_mismatch` audit row recording a
+ * security finding that had not happened.
+ *
+ * The promotion needs the same evidence the first event would have provided: an
+ * event that actually carries the founder's number. Guarded on the session
+ * still being unmatched, so it can only ever move `false -> true` once, and it
+ * is unreachable for a refused session because a refusal short-circuits above
+ * it.
+ */
+export async function recordCallerNumberMatch(
+  db: Db,
+  input: { sessionId: string; organizationId: string; callerNumber: string | null | undefined }
+): Promise<JarvisCallSession | null> {
+  const [row] = await db
+    .update(jarvisCallSessions)
+    .set({
+      callerNumberMatched: true,
+      callerNumberLastFour: phoneNumberLastFour(input.callerNumber),
+      lastEventAt: new Date(),
+      updatedAt: new Date(),
+      revision: sql`${jarvisCallSessions.revision} + 1`,
+    })
+    .where(
+      and(
+        eq(jarvisCallSessions.id, input.sessionId),
+        eq(jarvisCallSessions.organizationId, input.organizationId),
+        eq(jarvisCallSessions.callerNumberMatched, false)
+      )
+    )
+    .returning();
   return row ? toSession(row) : null;
 }
 
@@ -423,14 +470,38 @@ export async function completeCallSession(
   const summary = input.summaryTranscript ? redactSensitiveText(input.summaryTranscript).text.slice(0, 20_000) : null;
 
   // Two statements, because two different things are happening and only one of
-  // them may happen once.
+  // them may happen once — and in this order, because there is no transaction
+  // to make the pair atomic.
   //
-  // The TRANSITION is claimed: guarded on `status = 'active'`, so the delivery
-  // that actually ends the call is the only one that audits it. Unguarded, a
-  // redelivery — and this event's claim is deliberately released on failure so
-  // that a stuck call can heal — wrote a second `jarvis_phone_call_ended` row
-  // for one call, and a call that had been REFUSED was quietly re-labelled
-  // "completed" by the ordinary end-of-call event that followed the refusal.
+  // The DETAIL goes first. A call ends with up to three provider deliveries and
+  // only one of them carries the transcript, so this fills in what it has and
+  // never overwrites a value already recorded with an empty one. It is
+  // idempotent, so re-running it costs nothing.
+  if (input.endedReason || summary) {
+    await db
+      .update(jarvisCallSessions)
+      .set({
+        ...(input.endedReason ? { endedReason: input.endedReason } : {}),
+        ...(summary ? { redactedSummaryTranscript: summary } : {}),
+        lastEventAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(jarvisCallSessions.id, input.sessionId), eq(jarvisCallSessions.organizationId, input.organizationId)));
+  }
+
+  // The TRANSITION goes second, and is claimed: guarded on `status = 'active'`,
+  // so the delivery that actually ends the call is the only one that audits it.
+  // Unguarded, a redelivery — and this event's claim is deliberately released
+  // on failure so a stuck call can heal — wrote a second
+  // `jarvis_phone_call_ended` row for one call, and a call that had been
+  // REFUSED was quietly relabelled "completed" by the ordinary end-of-call
+  // event that followed the refusal.
+  //
+  // Second rather than first because the guard makes it one-shot: if it ran
+  // first and the detail write then failed, the released claim would bring the
+  // event back, the guard would refuse it, and the audit row would be lost for
+  // good. With the guard last, every failure before it leaves the whole
+  // sequence repeatable.
   const [ended] = await db
     .update(jarvisCallSessions)
     .set({
@@ -450,32 +521,23 @@ export async function completeCallSession(
     )
     .returning({ id: jarvisCallSessions.id });
 
-  // The DETAIL is not claimed, because it legitimately arrives later. A call
-  // ends with up to three provider deliveries and only one of them carries the
-  // transcript, so this fills in what it has and never overwrites a value
-  // already recorded with an empty one.
-  if (input.endedReason || summary) {
-    await db
-      .update(jarvisCallSessions)
-      .set({
-        ...(input.endedReason ? { endedReason: input.endedReason } : {}),
-        ...(summary ? { redactedSummaryTranscript: summary } : {}),
-        lastEventAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(and(eq(jarvisCallSessions.id, input.sessionId), eq(jarvisCallSessions.organizationId, input.organizationId)));
-  }
-
   if (!ended) return;
 
+  // Best-effort, and loudly so. The row is already authoritative; letting an
+  // audit failure throw would release the claim, and the retry would then find
+  // the guard closed and never audit at all — a silent hole where a logged one
+  // is the honest outcome.
   await recordAuditEvent(db, {
     eventType: "jarvis_phone_call_ended",
     organizationId: input.organizationId,
     targetType: "jarvis_call_session",
     targetId: input.sessionId,
     metadata: { endedReason: input.endedReason, failed: Boolean(input.failureCode) },
+  }).catch(() => {
+    console.error("[jarvis-phone]", JSON.stringify({ event: "call-ended-audit-failed", sessionId: input.sessionId }));
   });
 }
+
 
 // ---------------------------------------------------------------------------
 // Transcript turns

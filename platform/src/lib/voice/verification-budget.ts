@@ -4,7 +4,6 @@ import { createHmac } from "node:crypto";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { PostgresRateLimiter } from "@/lib/rate-limit/postgres";
 import type { RateLimitConfig } from "@/lib/rate-limit/types";
-import { phoneNumberLastFour } from "./redaction";
 
 type Db = NeonHttpDatabase<Record<string, unknown>>;
 
@@ -64,20 +63,61 @@ export const VERIFICATION_RATE_LIMIT: RateLimitConfig = { limit: 12, windowSecon
  */
 export const INBOUND_CALL_RATE_LIMIT: RateLimitConfig = { limit: 6, windowSeconds: 3600 };
 
-/** A one-way identifier for one caller within one tenant. Never the number itself. */
-export function callerBudgetIdentity(input: { verificationSecret: string; callerNumberLastFour: string | null; organizationId: string }): string {
-  return createHmac("sha256", input.verificationSecret)
-    .update(`jarvis-phone-verify:${input.callerNumberLastFour ?? "unknown"}:${input.organizationId}`)
-    .digest("hex");
+/**
+ * How many calls from a number that is NOT the founder's may open a refused
+ * session in an hour.
+ *
+ * A refused call still costs a row: `refuseCall` records the session and a
+ * `jarvis_phone_call_refused` audit entry, deliberately, because a call that
+ * was turned away is exactly the kind of thing a later review wants to find.
+ * But the cost has to be bounded, and it cannot be bounded per caller — the
+ * number is asserted, so an attacker rotates it and gets a fresh bucket every
+ * time. So this one is keyed on the tenant alone, which is the only thing in
+ * the request an attacker cannot vary.
+ *
+ * Twenty an hour keeps the forensic value of recording wrong-number calls (a
+ * handful of genuine misdials, and the leading edge of any campaign, are all
+ * recorded) while capping what a flood can write. Past it the caller still
+ * gets the same closed twenty-second assistant; nothing further is stored, and
+ * the fact that the cap was reached is logged.
+ *
+ * It is deliberately NOT shared with the founder-line budget: an attacker
+ * filling this one must not be able to stop the founder from calling.
+ */
+export const REFUSED_CALL_RATE_LIMIT: RateLimitConfig = { limit: 20, windowSeconds: 3600 };
+
+/** Where refused, non-founder calls are counted. Keyed on the tenant only — see above. */
+export function refusedCallBudgetIdentity(input: { verificationSecret: string; organizationId: string }): string {
+  return createHmac("sha256", input.verificationSecret).update(`jarvis-phone-refused:${input.organizationId}`).digest("hex");
 }
 
-/** The same identity, derived from a full number rather than its last four. */
-export function callerBudgetIdentityForNumber(input: { verificationSecret: string; callerNumber: string | null | undefined; organizationId: string }): string {
-  return callerBudgetIdentity({
-    verificationSecret: input.verificationSecret,
-    callerNumberLastFour: phoneNumberLastFour(input.callerNumber),
-    organizationId: input.organizationId,
-  });
+export const refusedBudgetKey = (identity: string) => `jarvis-phone:refused:${identity}`;
+
+/**
+ * The identity both budgets are spent against.
+ *
+ * It identifies THE FOUNDER'S LINE within one tenant, not "whoever is calling",
+ * and both budgets are charged only on a call that asserts exactly that number.
+ * That is a correction, and the reason is worth stating plainly.
+ *
+ * The first version keyed on the caller's last four digits. Two things were
+ * wrong with it, in opposite directions. All ten thousand numbers sharing the
+ * founder's last four mapped to one bucket, and the charge happened before the
+ * caller-number precondition was consulted — so six calls from an unrelated
+ * number ending 0142 exhausted the founder's budget, and the founder, dialling
+ * from the real phone, was then told "I'll only work with the founder's
+ * registered line, and this isn't it" by a branch that had not looked at their
+ * number. And in the other direction it bounded nothing: an attacker rotating
+ * the asserted last four got a fresh six-per-hour bucket per suffix.
+ *
+ * Keyed on the tenant, charged only on an exact match, it means what it says:
+ * this is what calls claiming to be the founder may cost, and only the founder
+ * can spend it. Calls from any other number are bounded separately by
+ * `REFUSED_CALL_RATE_LIMIT`, which no rotation can escape because it is not
+ * keyed on anything the caller controls.
+ */
+export function founderLineBudgetIdentity(input: { verificationSecret: string; organizationId: string }): string {
+  return createHmac("sha256", input.verificationSecret).update(`jarvis-phone-founder-line:${input.organizationId}`).digest("hex");
 }
 
 export const verifyBudgetKey = (identity: string) => `jarvis-phone:verify:${identity}`;
@@ -101,13 +141,9 @@ export interface VerificationBudgetState {
  */
 export async function readVerificationBudget(
   db: Db,
-  input: { verificationSecret: string; founderPhoneNumber: string; organizationId: string }
+  input: { verificationSecret: string; organizationId: string }
 ): Promise<VerificationBudgetState> {
-  const identity = callerBudgetIdentityForNumber({
-    verificationSecret: input.verificationSecret,
-    callerNumber: input.founderPhoneNumber,
-    organizationId: input.organizationId,
-  });
+  const identity = founderLineBudgetIdentity(input);
   const limiter = new PostgresRateLimiter(db);
   const [calls, attempts] = await Promise.all([
     limiter.checkLimit(callBudgetKey(identity), INBOUND_CALL_RATE_LIMIT),
@@ -138,15 +174,8 @@ export async function readVerificationBudget(
  * number could take phone control away from its owner until they noticed and
  * redeployed.
  */
-export async function clearVerificationBudget(
-  db: Db,
-  input: { verificationSecret: string; founderPhoneNumber: string; organizationId: string }
-): Promise<void> {
-  const identity = callerBudgetIdentityForNumber({
-    verificationSecret: input.verificationSecret,
-    callerNumber: input.founderPhoneNumber,
-    organizationId: input.organizationId,
-  });
+export async function clearVerificationBudget(db: Db, input: { verificationSecret: string; organizationId: string }): Promise<void> {
+  const identity = founderLineBudgetIdentity(input);
   const limiter = new PostgresRateLimiter(db);
   await limiter.resetLimit(callBudgetKey(identity));
   await limiter.resetLimit(verifyBudgetKey(identity));

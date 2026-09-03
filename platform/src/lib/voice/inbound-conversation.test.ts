@@ -16,6 +16,7 @@ const ensureCallSession = vi.fn();
 const findCallSessionByProviderCallId = vi.fn();
 const findLatestCommandForSession = vi.fn();
 const recordVerificationAttempt = vi.fn();
+const recordCallerNumberMatch = vi.fn();
 const markCallSessionRefused = vi.fn();
 const upsertCommandDraft = vi.fn();
 const findOpenCommandForSession = vi.fn();
@@ -33,6 +34,7 @@ vi.mock("./call-store", () => ({
   findCallSessionByProviderCallId,
   findLatestCommandForSession,
   recordVerificationAttempt,
+  recordCallerNumberMatch,
   markCallSessionRefused,
   upsertCommandDraft,
   findOpenCommandForSession,
@@ -104,7 +106,7 @@ function toolEvent(name: string, args: Record<string, unknown>, callerNumber = C
 beforeEach(() => {
   for (const mock of [
     resolvePhoneCommandActor, ensureCallSession, findCallSessionByProviderCallId, findLatestCommandForSession,
-    recordVerificationAttempt, markCallSessionRefused, upsertCommandDraft, findOpenCommandForSession,
+    recordVerificationAttempt, recordCallerNumberMatch, markCallSessionRefused, upsertCommandDraft, findOpenCommandForSession,
     transitionCommand, appendTranscriptTurn, touchCallSession, completeCallSession,
     dispatchConfirmedCommand, recordAuditEvent, countTranscriptTurns,
     recordRateLimitAttempt, resetRateLimit,
@@ -120,6 +122,7 @@ beforeEach(() => {
   ensureCallSession.mockResolvedValue(session());
   recordAuditEvent.mockResolvedValue(undefined);
   markCallSessionRefused.mockResolvedValue(undefined);
+  recordCallerNumberMatch.mockResolvedValue(null);
   touchCallSession.mockResolvedValue(undefined);
   appendTranscriptTurn.mockResolvedValue(null);
   completeCallSession.mockResolvedValue(undefined);
@@ -516,6 +519,53 @@ describe("the caller-number precondition applies to every event, not just the fi
     expect(recordAuditEvent).not.toHaveBeenCalled();
   });
 
+  /**
+   * Round thirteen. The same "absence is not evidence" rule the previous test
+   * applies to a LATER event was not applied to the FIRST one: a session opened
+   * by a delivery with no `customer` object was stamped unmatched for good, and
+   * every subsequent event — including ones carrying the founder's real number
+   * — was refused against that stamp, writing the same false
+   * `caller_number_mismatch` finding and making the call unusable end to end.
+   */
+  it("does not brand a call a wrong number just because the first event carried none", async () => {
+    findCallSessionByProviderCallId.mockResolvedValue(null);
+    ensureCallSession.mockResolvedValue(session({ callerNumberMatched: false, callerNumberLastFour: null }));
+    recordCallerNumberMatch.mockResolvedValue(session({ callerNumberMatched: true }));
+
+    const result = await handleInboundConversationEvent(db, {
+      config: CONFIG,
+      event: normalizeVapiEvent({ message: { type: "assistant-request", call: { id: "call-1" }, customer: { number: CONFIG.founderPhoneNumber } } }),
+      nowMs: NOW,
+    });
+
+    expect(markCallSessionRefused).not.toHaveBeenCalled();
+    // The number arrived on this event, so the session is brought up to date
+    // rather than being judged on what the first delivery happened to omit.
+    expect(recordCallerNumberMatch).toHaveBeenCalledTimes(1);
+    expect(result.payload).toBeDefined();
+  });
+
+  it("takes no instruction while the caller's number is still unestablished", async () => {
+    // Not refused — no evidence of a wrong number — but not cleared either.
+    // Exactly one line may give instructions on this lane, and a number the
+    // provider never sent has not proved to be it.
+    findCallSessionByProviderCallId.mockResolvedValue(
+      session({ callerNumberMatched: false, callerNumberLastFour: null, verificationState: "verified" })
+    );
+
+    const result = await handleInboundConversationEvent(db, {
+      config: CONFIG,
+      event: normalizeVapiEvent({
+        message: { type: "tool-calls", call: { id: "call-1" }, toolCalls: [{ id: "tc-1", function: { name: "capture_command", arguments: { requestedOutcome: "Research the market" } } }] },
+      }),
+      nowMs: NOW,
+    });
+
+    expect(result.failureCode).toBe("caller_number_unestablished");
+    expect(upsertCommandDraft).not.toHaveBeenCalled();
+    expect(markCallSessionRefused).not.toHaveBeenCalled();
+  });
+
   it("still refuses when a number IS supplied and does not match", async () => {
     findCallSessionByProviderCallId.mockResolvedValue(session({ verificationState: "verified" }));
     const event = normalizeVapiEvent({
@@ -611,6 +661,86 @@ describe("what an unverified caller costs", () => {
     const assistant = (result.payload as { assistant?: Record<string, unknown> } | undefined)?.assistant;
     expect(assistant?.tools).toBeUndefined();
     expect(Number(assistant?.maxDurationSeconds)).toBeLessThanOrEqual(60);
+  });
+
+  /**
+   * Round thirteen. The first version keyed this budget on the caller's last
+   * four digits and charged it BEFORE the caller-number precondition ran. So
+   * six calls from an unrelated line ending in the same four digits exhausted
+   * the founder's budget — and the founder, dialling from the real phone, was
+   * then refused with "I'll only work with the founder's registered line, and
+   * this isn't it", by a branch that had never looked at their number. In the
+   * other direction it bounded nothing: rotating the asserted suffix bought a
+   * fresh bucket each time.
+   */
+  it("does not let a call from another number spend the founder's budget", async () => {
+    findCallSessionByProviderCallId.mockResolvedValue(null);
+    ensureCallSession.mockResolvedValue(session({ callerNumberMatched: false }));
+
+    await handleInboundConversationEvent(db, {
+      config: CONFIG,
+      // Same last four as the founder's +14165551234, different number.
+      event: normalizeVapiEvent({ message: { type: "assistant-request", call: { id: "call-1" }, customer: { number: "+12129991234" } } }),
+      nowMs: NOW,
+    });
+
+    const charged = recordRateLimitAttempt.mock.calls.map((call) => String(call[0]));
+    expect(charged.some((key) => key.startsWith("jarvis-phone:call:"))).toBe(false);
+    // It is bounded, just not out of the founder's allowance.
+    expect(charged.some((key) => key.startsWith("jarvis-phone:refused:"))).toBe(true);
+  });
+
+  it("tells a rate-limited founder the truth instead of the wrong-number refusal", async () => {
+    findCallSessionByProviderCallId.mockResolvedValue(null);
+    recordRateLimitAttempt.mockResolvedValueOnce({ allowed: false, remaining: 0, resetAt: new Date() });
+
+    const result = await handleInboundConversationEvent(db, {
+      config: CONFIG,
+      event: normalizeVapiEvent({ message: { type: "assistant-request", call: { id: "call-1" }, customer: { number: CONFIG.founderPhoneNumber } } }),
+      nowMs: NOW,
+    });
+
+    expect(result.failureCode).toBe("call_rate_limited");
+    // Not "this isn't the founder's registered line" — it is.
+    expect(result.spoken).not.toMatch(/registered line/i);
+    expect(result.spoken).toMatch(/paused new ones/i);
+    expect(result.spoken).toMatch(/nothing is wrong with your account/i);
+    // And the closed assistant says the same thing, not the refusal.
+    const assistant = (result.payload as { assistant?: { firstMessage?: string } } | undefined)?.assistant;
+    expect(assistant?.firstMessage).toBe(result.spoken);
+  });
+
+  it("bounds refused wrong-number calls on a key the caller cannot rotate", async () => {
+    findCallSessionByProviderCallId.mockResolvedValue(null);
+    recordRateLimitAttempt.mockResolvedValueOnce({ allowed: false, remaining: 0, resetAt: new Date() });
+
+    const result = await handleInboundConversationEvent(db, {
+      config: CONFIG,
+      event: normalizeVapiEvent({ message: { type: "assistant-request", call: { id: "call-1" }, customer: { number: "+14165559999" } } }),
+      nowMs: NOW,
+    });
+
+    expect(result.failureCode).toBe("refused_call_rate_limited");
+    // Past the cap nothing durable is written at all — not even the refused
+    // session row that a wrong-number call normally records.
+    expect(ensureCallSession).not.toHaveBeenCalled();
+    expect(markCallSessionRefused).not.toHaveBeenCalled();
+    expect(result.spoken).toMatch(/registered line/i);
+  });
+
+  it("spends nothing when the provider merely redelivers an event already claimed", async () => {
+    findCallSessionByProviderCallId.mockResolvedValue(null);
+
+    await handleInboundConversationEvent(db, {
+      config: CONFIG,
+      event: normalizeVapiEvent({ message: { type: "assistant-request", call: { id: "call-1" }, customer: { number: CONFIG.founderPhoneNumber } } }),
+      nowMs: NOW,
+      replay: true,
+    });
+
+    // A redelivery is not a new call. Charging it meant a first delivery that
+    // outran the provider's timeout cost the founder two of six.
+    expect(recordRateLimitAttempt).not.toHaveBeenCalled();
   });
 
   it("does not spend the call budget on later events of a call already open", async () => {
