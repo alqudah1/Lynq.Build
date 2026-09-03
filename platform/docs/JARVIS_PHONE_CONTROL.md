@@ -86,15 +86,22 @@ Details that matter:
   rollover still works.
 - Comparison is constant-time; a spoken code is normalized first, so a code
   read as words, as digits, or with hyphens all resolve identically.
-- The number is a **precondition, and it must be positively met**: a refusal
+- The number is a **precondition, and it must be positively met**. A refusal
   needs evidence of a *wrong* number, not merely the absence of a right one, so
-  a delivery that carries no `customer` object is neither a refusal nor a pass.
-  A later delivery that does carry the founder's number brings the session up
-  to date; until one does, no tool call is answered at all. Treating absence as
-  a mismatch had refused calls that had already verified, and — when it happened
-  on the first delivery — stamped a session unmatched for good, so the call
-  could never work and a `caller_number_mismatch` audit row recorded a security
-  finding that had not happened.
+  a delivery carrying no `customer` object is not recorded as a mismatch — but
+  it is not clearance either, and the difference between those two is where
+  this went wrong twice. Treating absence as a mismatch refused calls that had
+  already verified and, on a first delivery, stamped a session unmatched for
+  good; treating "not refused" as "cleared" then handed a caller who simply
+  withholds caller ID the full system prompt, all three tool declarations and
+  ten minutes of model time.
+
+  So there are three states, not two. A number that matched: the working
+  assistant. A number that was supplied and did not match: refused, with the
+  closed twenty-second assistant. A number never supplied: **not** refused, no
+  audit finding, and the same closed assistant — no tools are declared and no
+  tool call is answered — until a later delivery carries the founder's number,
+  which promotes the session and lets the call proceed normally.
 - Three attempts per call, enforced in the `UPDATE` statement itself rather
   than against a count read earlier in the request, so concurrent deliveries
   cannot jointly exceed it. A verified session is never walked back to
@@ -130,9 +137,19 @@ Details that matter:
 
   A caller who has not verified may also write at most 25 transcript turns; the
   call keeps running and verification still works, but nothing further is
-  stored.
+  stored. Both budgets are charged on the events that can START a call — an
+  assistant request, or a tool call where a statically-assigned assistant means
+  no assistant request ever arrives — so a call already turned away does not
+  keep spending for the rest of its deliveries. A provider REDELIVERY reads the
+  budget without spending it: it is not a new call, but it is still subject to
+  the cap, and suppressing the whole check rather than just the charge let a
+  redelivery whose first delivery died before creating a session through for
+  free.
 - **The founder-line budgets are refunded the moment a caller verifies**, and
-  both are visible and clearable from the Jarvis screen. This matters more than it
+  all three are visible and clearable from the Jarvis screen — the refused-call
+  budget included, because a founder call the provider sent no number for lands
+  in that one, and leaving it out of the lockout state and the clear was the
+  same invisible wall moved to a different bucket. This matters more than it
   looks: the keys are derived from the number a caller *asserts*, so anyone who
   can spoof the founder's line can spend both and hold them at zero — and the
   founder, calling from the real phone, is then refused before their correct

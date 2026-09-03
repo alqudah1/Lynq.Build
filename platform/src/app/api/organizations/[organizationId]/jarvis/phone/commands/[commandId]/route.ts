@@ -11,6 +11,7 @@ import { parseJsonBody, parseUuidParam } from "@/lib/http/validation";
 import { requireOrganizationAdminOverride } from "@/lib/authz/helpers";
 import { CommandAlreadyDecidedError, CommandNotAwaitingApprovalError } from "@/lib/voice/errors";
 import { recordAuditEvent } from "@/lib/audit";
+import { describeDispatchFailure as describeFailureCode } from "@/lib/voice/failure-labels";
 import { pollAndProcess } from "@/lib/runtime/worker";
 import { claimApprovalDecision, resolveCommandById } from "@/lib/voice/call-store";
 import { MAX_DISPATCH_ATTEMPTS, retryFailedDispatch, runDirectiveDispatch } from "@/lib/voice/command-dispatch";
@@ -37,7 +38,14 @@ type RouteParams = { params: Promise<{ organizationId: string; commandId: string
  * fix.
  */
 function describeDispatchFailure(failureCode: string, projectId: string | null, remainingAttempts: number): string {
-  const reason = failureCode.replace(/_/g, " ");
+  // Through the shared label map, not `replace(/_/g, " ")`. The raw codes are
+  // written for a log, and this sentence is rendered verbatim in the decision
+  // banner — so a founder who pressed "Approve and start the work" read "It
+  // failed (model rate limited)". The Jarvis screen already had this mapping;
+  // the route did not, and the component's own test guards the command card
+  // rather than the banner, so the code leaked through the one surface nothing
+  // was watching.
+  const reason = describeFailureCode(failureCode);
   if (projectId) {
     return `The project was created but Jarvis could not finish briefing the team (${reason}). Some of the work may already be running — open the project rather than trying again.`;
   }

@@ -78,7 +78,7 @@ function stubFetch(state: unknown, extra?: Record<string, unknown>, passcodeData
     if (String(url).endsWith("/passcode")) {
       if (init?.method === "POST") {
         return new Response(
-          JSON.stringify({ data: { cleared: true, reason: null, lockout: { locked: false, resetAt: null, callsRemaining: 6, attemptsRemaining: 12 } } }),
+          JSON.stringify({ data: { cleared: true, reason: null, lockout: { locked: false, resetAt: null, callsRemaining: 6, attemptsRemaining: 12, refusedCallsRemaining: 20 } } }),
           { status: 200 }
         );
       }
@@ -96,7 +96,7 @@ function stubFetch(state: unknown, extra?: Record<string, unknown>, passcodeData
   return fetchMock;
 }
 
-const readyState = { readiness: { enabled: true, ready: true, completedChecks: 5, totalChecks: 5, missing: [] }, canDecide: true, canSeePasscode: true, refreshAfterMs: null };
+const readyState = { readiness: { enabled: true, ready: true, completedChecks: 6, totalChecks: 6, missing: [] }, canDecide: true, canSeePasscode: true, refreshAfterMs: null };
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -183,7 +183,7 @@ describe("JarvisPhoneControl accessibility", () => {
       available: true,
       passcode: "41729638",
       expiresInMs: 300000,
-      lockout: { locked: true, resetAt: "2026-09-01T16:30:00.000Z", callsRemaining: 0, attemptsRemaining: 0 },
+      lockout: { locked: true, resetAt: "2026-09-01T16:30:00.000Z", callsRemaining: 0, attemptsRemaining: 0, refusedCallsRemaining: 0 },
     });
 
     const { container } = render(<JarvisPhoneControl organizationId="organization-1" organizationSlug="lynq" />);

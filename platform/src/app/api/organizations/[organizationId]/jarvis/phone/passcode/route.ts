@@ -92,11 +92,16 @@ export async function GET(_request: Request, { params }: RouteParams) {
 
     const resolution = resolveJarvisPhoneCommandConfig();
     if (!resolution.ok) {
-      // Honest, non-leaking: says it is unavailable and why in category
-      // terms, never which secret is missing or what its value looks like.
+      // Honest, non-leaking, and in words rather than in the enum: says it is
+      // unavailable and why in category terms, never which secret is missing or
+      // what its value looks like. The raw reason is rendered verbatim on the
+      // screen, so "incomplete_configuration" would have reached a founder.
       return noStoreJson({
         available: false,
-        reason: resolution.reason,
+        reason:
+          resolution.reason === "disabled"
+            ? "Phone control is switched off for this deployment."
+            : "Phone control is not finished being set up yet. Ask whoever set up LYNQ to finish it.",
         passcode: null,
         expiresInMs: null,
       });
@@ -116,10 +121,13 @@ export async function GET(_request: Request, { params }: RouteParams) {
     const now = Date.now();
     const passcode = deriveFounderPasscode(resolution.config.verificationSecret, now);
 
-    // Whether the caller budgets are currently spent. Both are keyed on the
-    // number a caller ASSERTS, and caller ID is spoofable, so someone else can
-    // spend them from a spoofed line and the founder is then refused before
-    // their correct code is ever checked. That used to be invisible: the only
+    // Whether any of the caller budgets is currently spent. The founder-line
+    // budgets are charged on a caller ID that asserts the founder's number, and
+    // caller ID is spoofable, so someone else can spend them from a spoofed line
+    // and the founder is then refused before their correct code is ever checked.
+    // The refused-call budget is read here too, because a founder call the
+    // provider sent no number for lands in THAT one — and leaving it out was
+    // the same invisible wall in a different bucket. That used to be invisible: the only
     // evidence was Jarvis saying "there have been too many code attempts from
     // this number" on a call the founder had not made before. Reading it here
     // costs two selects and spends nothing, and it gives the screen something

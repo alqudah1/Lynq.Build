@@ -158,6 +158,50 @@ describe("Vapi webhook — phone control is off by default", () => {
   });
 });
 
+describe("Vapi webhook — a transient event-store failure", () => {
+  /**
+   * Round fourteen. The claim moved inside a try so a database blip on an
+   * OUTBOUND notification event would not become a 500 where base returned 200.
+   * The first version of that test was "not demonstrably inbound" — but
+   * `isInboundCallEvent` falls back to the event KIND when `call.type` is
+   * absent, and that fallback covers only assistant requests and tool calls. A
+   * transcript or end-of-call event for a real inbound command call, delivered
+   * without `call.type`, therefore classified as not-inbound and was
+   * acknowledged rather than retried, which loses `finalizeCall` and wedges any
+   * open draft. The test is now "demonstrably OUTBOUND".
+   */
+  function configurePhoneControl() {
+    vi.stubEnv("JARVIS_PHONE_COMMANDS_ENABLED", "true");
+    vi.stubEnv("JARVIS_PHONE_ORGANIZATION_ID", "11111111-1111-4111-8111-111111111111");
+    vi.stubEnv("JARVIS_PHONE_FOUNDER_USER_ID", "22222222-2222-4222-8222-222222222222");
+    vi.stubEnv("JARVIS_PHONE_VERIFICATION_SECRET", "a-verification-secret-long-enough-01234567");
+    vi.stubEnv("JARVIS_FOUNDER_PHONE_E164", "+14165551234");
+  }
+
+  it("acknowledges an outbound notification event rather than asking the provider to retry it", async () => {
+    configurePhoneControl();
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const response = await POST(
+      authed({ message: { type: "end-of-call-report", call: { id: "call-1", type: "outboundPhoneCall" }, endedReason: "assistant-ended-call" } })
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ received: true });
+  });
+
+  it("asks the provider to retry an event that might belong to an inbound call", async () => {
+    configurePhoneControl();
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    // No `call.type` — ambiguous. Losing this one wedges a draft; retrying an
+    // outbound one costs a duplicated log line.
+    const response = await POST(authed({ message: { type: "end-of-call-report", call: { id: "call-1" }, endedReason: "customer-ended-call" } }));
+
+    expect(response.status).toBe(503);
+  });
+});
+
 describe("Vapi webhook — the shared secret must be long enough to be one", () => {
   /**
    * The inbound lane collapses to this one string. It was checked only for

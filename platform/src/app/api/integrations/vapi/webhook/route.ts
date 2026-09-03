@@ -4,7 +4,7 @@ import { timingSafeEqualStrings } from "@/lib/communications-os/secrets";
 import { loadEnv } from "@/lib/env";
 import { createDbClient } from "@/db/client";
 import { resolveJarvisPhoneCommandConfig, type JarvisPhoneCommandConfig } from "@/lib/voice/phone-config";
-import { isInboundCallEvent, normalizeVapiEvent, type NormalizedVapiEvent, type VapiServerMessageEnvelope } from "@/lib/voice/vapi-events";
+import { normalizeVapiEvent, type NormalizedVapiEvent, type VapiServerMessageEnvelope } from "@/lib/voice/vapi-events";
 import { handleInboundConversationEvent } from "@/lib/voice/inbound-conversation";
 import {
   claimWebhookEvent,
@@ -236,11 +236,22 @@ export async function POST(request: Request) {
     // then give up, on an event whose only purpose here is the log line
     // already written above.
     //
-    // An event that demonstrably belongs to an INBOUND command call is
-    // different — it has real work waiting on it, so it gets an honest 503 and
-    // the provider retries.
+    // Everything else gets an honest 503 so the provider retries, and the test
+    // is deliberately "demonstrably OUTBOUND" rather than "not demonstrably
+    // inbound". `isInboundCallEvent` falls back to the event KIND when
+    // `call.type` is absent, and that fallback covers only `assistant_request`
+    // and `tool_call` — so a `transcript`, `status-update` or
+    // `end-of-call-report` belonging to a real inbound command call, delivered
+    // without `call.type`, would classify as not-inbound and be acknowledged
+    // rather than retried. Dropping the end of an inbound call is not a
+    // cosmetic loss: `finalizeCall` never runs, so the session stays `active`
+    // and an unconfirmed draft stays in `awaiting_confirmation` with no exit
+    // anywhere in the system. An unnecessary retry of an outbound notification
+    // event costs nothing but a duplicated log line, because its log line is
+    // written before any of this.
+    const demonstrablyOutbound = typeof event.callType === "string" && /^outbound/i.test(event.callType);
     console.error("[jarvis-phone]", JSON.stringify({ event: "event-store-unavailable", eventType: event.rawType }));
-    if (!isInboundCallEvent(event)) return Response.json({ received: true });
+    if (demonstrablyOutbound) return Response.json({ received: true });
     return Response.json({ error: { code: "unavailable", message: "Temporarily unavailable" } }, { status: 503 });
   }
 

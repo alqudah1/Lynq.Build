@@ -105,8 +105,15 @@ const NEEDS_VERIFICATION_SPOKEN = `Before we start, please read me the ${PASSCOD
  * wrong-number refusal, which would tell them their own registered line is not
  * their registered line.
  */
+/**
+ * What a caller hears when the provider never told us what number they are
+ * calling from. Not an accusation — it says what is missing and what fixes it.
+ */
+const UNIDENTIFIED_CALLER_SPOKEN =
+  "I can't take instructions on this call — I wasn't told what number you're calling from. Please call back with your number showing. Goodbye.";
+
 const FOUNDER_LINE_BUSY_SPOKEN =
-  "There have been a lot of calls from this number in the last hour, so I've paused new ones for a little while. Nothing is wrong with your account. Open the Jarvis screen in LYNQ Office and you can let yourself back in straight away.";
+  "I've had more calls on this line than usual in the last hour, so I've paused new ones for a little while. Nothing is wrong with your account. Open the Jarvis screen in LYNQ Office and you can let yourself back in straight away.";
 
 /**
  * The dynamic assistant returned on `assistant-request`. It is built per call
@@ -291,7 +298,14 @@ export async function handleInboundConversationEvent(db: Db, input: HandleInboun
   // budget that bounds how many refused sessions may be recorded, and that no
   // rotation can escape because it is not keyed on anything the caller
   // controls. An attacker filling the second one cannot touch the first.
-  if (!existing && !input.replay) {
+  //
+  // Charged on the events that can START a call — an assistant request, or a
+  // tool call when a statically-assigned assistant means no assistant request
+  // ever arrives. A transcript or status update belonging to a call that has no
+  // session is not a new call, and counting those meant a call already turned
+  // away kept spending the budget for the rest of its deliveries.
+  const opensACall = event.kind === "assistant_request" || event.kind === "tool_call";
+  if (!existing && opensACall) {
     const limiter = new PostgresRateLimiter(db);
     const budget = callerNumberMatched
       ? { key: callBudgetKey(founderLineBudgetIdentity(config)), config: INBOUND_CALL_RATE_LIMIT }
@@ -299,7 +313,13 @@ export async function handleInboundConversationEvent(db: Db, input: HandleInboun
 
     let withinBudget = false;
     try {
-      withinBudget = (await limiter.recordAttempt(budget.key, budget.config)).allowed;
+      // A REPLAY reads the budget without spending it. Suppressing the whole
+      // block instead — the first version of this — skipped the DECISION as
+      // well as the charge, so a redelivery of an event whose first delivery
+      // died before creating a session got a full, uncapped call for free.
+      withinBudget = input.replay
+        ? (await limiter.checkLimit(budget.key, budget.config)).allowed
+        : (await limiter.recordAttempt(budget.key, budget.config)).allowed;
     } catch {
       // Fails closed, like every other rate limit in this lane.
       withinBudget = false;
@@ -390,6 +410,15 @@ export async function handleInboundConversationEvent(db: Db, input: HandleInboun
     if (promoted) {
       session = promoted;
       logPhoneEvent({ event: "caller-number-established", sessionId: session.id });
+    } else {
+      // The guard refused, which on this path almost always means a concurrent
+      // delivery got there first — the number IS established, this request just
+      // does not know it yet. Falling through on the stale snapshot told a
+      // founder "I wasn't told what number you're calling from" about a row
+      // that recorded their number, in the same instant. Re-read rather than
+      // answer from a copy known to be out of date.
+      const current = await findCallSessionByProviderCallId(db, "vapi", event.providerCallId).catch(() => null);
+      if (current && current.organizationId === config.organizationId) session = current;
     }
   }
 
@@ -410,6 +439,28 @@ export async function handleInboundConversationEvent(db: Db, input: HandleInboun
 
   switch (event.kind) {
     case "assistant_request":
+      // A call whose number has never been established gets the CLOSED
+      // assistant, not the working one.
+      //
+      // Not refusing such a call was right — absence of a number is not
+      // evidence of a wrong one, and refusing on it wrote a security finding
+      // that had not happened. But "not refused" is not "cleared", and reading
+      // the two as the same handed a caller who simply withholds caller ID the
+      // full system prompt, all three tool declarations and ten minutes of a
+      // live model session: exactly the exposure `buildRefusalAssistantConfig`
+      // was written to end. The working assistant requires a number that
+      // positively matched; everything else gets one sentence and twenty
+      // seconds, and says plainly what to do about it.
+      if (!session.callerNumberMatched) {
+        logPhoneEvent({ event: "assistant-request-unidentified", sessionId: session.id });
+        return {
+          spoken: UNIDENTIFIED_CALLER_SPOKEN,
+          payload: buildRefusalAssistantConfig(UNIDENTIFIED_CALLER_SPOKEN),
+          processingStatus: "ignored",
+          failureCode: "caller_number_unestablished",
+          sessionId: session.id,
+        };
+      }
       return handleAssistantRequest(db, { session, actor });
     case "tool_call":
       return handleToolCall(db, { session, config, event, nowMs, workspaceId: input.workspaceId ?? null });
@@ -639,7 +690,7 @@ async function handleToolCall(
   if (!session.callerNumberMatched) {
     logPhoneEvent({ event: "tool-refused", sessionId: session.id, reason: "caller_number_unestablished" });
     return {
-      spoken: "I can't take instructions on this call — I wasn't able to confirm the number you're calling from. Please hang up and call back.",
+      spoken: UNIDENTIFIED_CALLER_SPOKEN,
       processingStatus: "ignored",
       failureCode: "caller_number_unestablished",
       sessionId: session.id,

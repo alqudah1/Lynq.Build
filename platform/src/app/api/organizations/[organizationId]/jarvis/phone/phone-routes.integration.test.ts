@@ -286,6 +286,27 @@ describe("GET /jarvis/phone/passcode — the second factor", () => {
     expect(audited).toHaveLength(1);
   });
 
+  /**
+   * Round fourteen, from the compliance audit. `describeDispatchFailure`
+   * rendered the raw code — "It failed (model rate limited). Nothing was
+   * started." — into `data.message`, which the Jarvis screen shows verbatim in
+   * its decision banner. The component already had a founder-readable mapping
+   * and its own test asserts the card never shows a code; the banner is a
+   * different element, so the one surface the test could not see was the one
+   * that leaked.
+   */
+  it("never puts a raw failure code in the sentence the founder reads", async () => {
+    const { describeDispatchFailure } = await import("@/lib/voice/failure-labels");
+    for (const code of ["model_rate_limited", "no_agents_available", "provider_unreachable", "unknown_error", "authorization_failed"]) {
+      const described = describeDispatchFailure(code);
+      expect(described).not.toContain("_");
+      expect(described).not.toMatch(/model rate limited|no agents available|provider unreachable|unknown error/i);
+    }
+    // An unmapped code reads as the honest generic rather than as jargon.
+    expect(describeDispatchFailure("some_future_code")).toBe("an unexpected problem");
+    expect(describeDispatchFailure(null)).toBe("an unexpected problem");
+  });
+
   it("will not let an admin who is not the founder clear the founder's lockout", async () => {
     const founder = await makeUser();
     const organizationId = await makeOrg(founder);

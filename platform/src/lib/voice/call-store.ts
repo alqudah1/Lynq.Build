@@ -354,9 +354,17 @@ export async function findCallSessionByProviderCallId(db: Db, provider: string, 
  *
  * The promotion needs the same evidence the first event would have provided: an
  * event that actually carries the founder's number. Guarded on the session
- * still being unmatched, so it can only ever move `false -> true` once, and it
- * is unreachable for a refused session because a refusal short-circuits above
- * it.
+ * still being unmatched, so it can only ever move `false -> true` once, and on
+ * the session still being ACTIVE.
+ *
+ * That second predicate is not decoration. The caller's short-circuit above
+ * this is a per-request snapshot, and there is no transaction: two deliveries
+ * for one call can be in flight at once, one of them carrying a wrong number
+ * and refusing the session while the other still holds a snapshot that says
+ * `active`. Without a status predicate the loser stamped
+ * `caller_number_matched = true` onto a row already recorded as refused for a
+ * caller-number mismatch — a refusal whose own record then asserted the number
+ * had matched.
  */
 export async function recordCallerNumberMatch(
   db: Db,
@@ -375,7 +383,8 @@ export async function recordCallerNumberMatch(
       and(
         eq(jarvisCallSessions.id, input.sessionId),
         eq(jarvisCallSessions.organizationId, input.organizationId),
-        eq(jarvisCallSessions.callerNumberMatched, false)
+        eq(jarvisCallSessions.callerNumberMatched, false),
+        eq(jarvisCallSessions.status, "active")
       )
     )
     .returning();

@@ -23,6 +23,7 @@ import {
   findOpenCommandForSession,
   listPhoneCallsForUser,
   markCallSessionRefused,
+  recordCallerNumberMatch,
   PhoneCommandActorUnavailableError,
   recordVerificationAttempt,
   resolveCommandById,
@@ -565,6 +566,65 @@ describe("call completion", () => {
     const [row] = await db.select().from(jarvisCallSessions).where(eq(jarvisCallSessions.id, session.id));
     expect(row.status).toBe("refused");
     expect(row.failureCode).toBe("caller_number_mismatch");
+  });
+});
+
+describe("establishing a caller number after the fact", () => {
+  /**
+   * The stamp is taken from the FIRST event, and not every provider message
+   * carries a `customer` object, so a session can legitimately open without one.
+   * A later event that does carry the founder's number brings it up to date —
+   * with the same evidence the first event would have supplied.
+   */
+  it("promotes an unestablished session exactly once", async () => {
+    const userId = await makeUser();
+    const organizationId = await makeOrg(userId);
+    const session = await ensureCallSession(db, {
+      organizationId,
+      founderUserId: userId,
+      providerCallId: `call-${crypto.randomUUID()}`,
+      direction: "inbound",
+      purpose: "founder_command",
+      callerNumber: null,
+      callerNumberMatched: false,
+    });
+    expect(session.callerNumberLastFour).toBeNull();
+
+    const first = await recordCallerNumberMatch(db, { sessionId: session.id, organizationId, callerNumber: "+14165551234" });
+    expect(first?.callerNumberMatched).toBe(true);
+    expect(first?.callerNumberLastFour).toBe("1234");
+
+    // Guarded on the fact, so a second delivery changes nothing.
+    expect(await recordCallerNumberMatch(db, { sessionId: session.id, organizationId, callerNumber: "+14165551234" })).toBeNull();
+  });
+
+  it("will not stamp a refused session as having matched", async () => {
+    /**
+     * Two deliveries for one call can be in flight at once with no transaction
+     * between them: one carrying a wrong number refuses the session while the
+     * other still holds a snapshot saying `active`. Without a status predicate
+     * the loser wrote `caller_number_matched = true` onto a row already
+     * recorded as refused FOR a caller-number mismatch — a refusal whose own
+     * record then asserted the number had matched.
+     */
+    const userId = await makeUser();
+    const organizationId = await makeOrg(userId);
+    const session = await ensureCallSession(db, {
+      organizationId,
+      founderUserId: userId,
+      providerCallId: `call-${crypto.randomUUID()}`,
+      direction: "inbound",
+      purpose: "founder_command",
+      callerNumber: null,
+      callerNumberMatched: false,
+    });
+    await markCallSessionRefused(db, { sessionId: session.id, organizationId, failureCode: "caller_number_mismatch" });
+
+    expect(await recordCallerNumberMatch(db, { sessionId: session.id, organizationId, callerNumber: "+14165551234" })).toBeNull();
+
+    const [row] = await db.select().from(jarvisCallSessions).where(eq(jarvisCallSessions.id, session.id));
+    expect(row.callerNumberMatched).toBe(false);
+    expect(row.status).toBe("refused");
   });
 });
 

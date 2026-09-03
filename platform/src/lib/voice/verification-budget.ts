@@ -110,11 +110,16 @@ export const refusedBudgetKey = (identity: string) => `jarvis-phone:refused:${id
  * number. And in the other direction it bounded nothing: an attacker rotating
  * the asserted last four got a fresh six-per-hour bucket per suffix.
  *
- * Keyed on the tenant, charged only on an exact match, it means what it says:
- * this is what calls claiming to be the founder may cost, and only the founder
- * can spend it. Calls from any other number are bounded separately by
- * `REFUSED_CALL_RATE_LIMIT`, which no rotation can escape because it is not
- * keyed on anything the caller controls.
+ * Keyed on the tenant and charged only on an exact match, it is what calls
+ * CLAIMING to be the founder may cost. Not "only the founder can spend it" —
+ * the match is against an asserted caller ID, which this file's own header
+ * calls spoofable, so anyone able to spoof the number can spend all six units
+ * and the real founder then hears `FOUNDER_LINE_BUSY_SPOKEN`. What the key buys
+ * is that no OTHER number can reach that budget by accident or by rotation, and
+ * what makes the residual survivable is the refund on verification plus a
+ * lockout the founder can see and clear. Calls from any other number are
+ * bounded separately by `REFUSED_CALL_RATE_LIMIT`, which no rotation can escape
+ * because it is not keyed on anything the caller controls.
  */
 export function founderLineBudgetIdentity(input: { verificationSecret: string; organizationId: string }): string {
   return createHmac("sha256", input.verificationSecret).update(`jarvis-phone-founder-line:${input.organizationId}`).digest("hex");
@@ -124,12 +129,23 @@ export const verifyBudgetKey = (identity: string) => `jarvis-phone:verify:${iden
 export const callBudgetKey = (identity: string) => `jarvis-phone:call:${identity}`;
 
 export interface VerificationBudgetState {
-  /** True when either budget is spent, i.e. the next call or code would be refused. */
+  /** True when ANY of the three budgets is spent, i.e. some call or code would be turned away. */
   locked: boolean;
-  /** When the budget frees itself, if it is locked. */
+  /** When the last of the spent budgets frees itself, if any is spent. */
   resetAt: string | null;
   callsRemaining: number;
   attemptsRemaining: number;
+  /**
+   * How many more calls from OTHER numbers may be recorded this hour.
+   *
+   * Reported because it can turn a founder away too. A call whose caller number
+   * the provider never sent is not proved to be the founder, so it spends this
+   * budget rather than theirs — and if an attacker has filled it, that founder
+   * hears a refusal with nothing on screen to explain it. Leaving it out of
+   * this state was the same invisible wall the founder-line split was meant to
+   * remove, moved to the other budget.
+   */
+  refusedCallsRemaining: number;
 }
 
 /**
@@ -144,23 +160,23 @@ export async function readVerificationBudget(
   input: { verificationSecret: string; organizationId: string }
 ): Promise<VerificationBudgetState> {
   const identity = founderLineBudgetIdentity(input);
+  const refusedIdentity = refusedCallBudgetIdentity(input);
   const limiter = new PostgresRateLimiter(db);
-  const [calls, attempts] = await Promise.all([
+  const [calls, attempts, refused] = await Promise.all([
     limiter.checkLimit(callBudgetKey(identity), INBOUND_CALL_RATE_LIMIT),
     limiter.checkLimit(verifyBudgetKey(identity), VERIFICATION_RATE_LIMIT),
+    limiter.checkLimit(refusedBudgetKey(refusedIdentity), REFUSED_CALL_RATE_LIMIT),
   ]);
 
-  const locked = !calls.allowed || !attempts.allowed;
-  const resets = [!calls.allowed ? calls.resetAt : null, !attempts.allowed ? attempts.resetAt : null].filter(
-    (value): value is Date => value instanceof Date
-  );
+  const spent = [calls, attempts, refused].filter((result) => !result.allowed);
   return {
-    locked,
-    // The later of the two, so the screen never promises it will clear before
-    // it actually does.
-    resetAt: resets.length > 0 ? new Date(Math.max(...resets.map((date) => date.getTime()))).toISOString() : null,
+    locked: spent.length > 0,
+    // The latest of whichever are spent, so the screen never promises it will
+    // clear before it actually does.
+    resetAt: spent.length > 0 ? new Date(Math.max(...spent.map((result) => result.resetAt.getTime()))).toISOString() : null,
     callsRemaining: calls.remaining,
     attemptsRemaining: attempts.remaining,
+    refusedCallsRemaining: refused.remaining,
   };
 }
 
@@ -179,4 +195,10 @@ export async function clearVerificationBudget(db: Db, input: { verificationSecre
   const limiter = new PostgresRateLimiter(db);
   await limiter.resetLimit(callBudgetKey(identity));
   await limiter.resetLimit(verifyBudgetKey(identity));
+  // The refused-call budget too. It is a cost control rather than a security
+  // control — clearing it grants nobody anything the passcode does not still
+  // stand in front of — and leaving it out meant a founder whose own call
+  // landed in it (because the provider sent no caller number) had no way out
+  // at all.
+  await limiter.resetLimit(refusedBudgetKey(refusedCallBudgetIdentity(input)));
 }

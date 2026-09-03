@@ -52,9 +52,13 @@ const recordRateLimitAttempt = vi.fn<(key: string, config?: unknown) => Promise<
   async () => ({ allowed: true, remaining: 11, resetAt: new Date() })
 );
 const resetRateLimit = vi.fn<(key: string) => Promise<void>>(async () => undefined);
+const checkRateLimit = vi.fn<(key: string, config?: unknown) => Promise<{ allowed: boolean; remaining: number; resetAt: Date }>>(
+  async () => ({ allowed: true, remaining: 5, resetAt: new Date() })
+);
 vi.mock("@/lib/rate-limit/postgres", () => ({
   PostgresRateLimiter: class {
     recordAttempt = recordRateLimitAttempt;
+    checkLimit = checkRateLimit;
     resetLimit = resetRateLimit;
   },
 }));
@@ -109,13 +113,14 @@ beforeEach(() => {
     recordVerificationAttempt, recordCallerNumberMatch, markCallSessionRefused, upsertCommandDraft, findOpenCommandForSession,
     transitionCommand, appendTranscriptTurn, touchCallSession, completeCallSession,
     dispatchConfirmedCommand, recordAuditEvent, countTranscriptTurns,
-    recordRateLimitAttempt, resetRateLimit,
+    recordRateLimitAttempt, resetRateLimit, checkRateLimit,
   ]) {
     mock.mockReset();
   }
   countTranscriptTurns.mockResolvedValue(0);
   recordRateLimitAttempt.mockResolvedValue({ allowed: true, remaining: 11, resetAt: new Date() });
   resetRateLimit.mockResolvedValue(undefined);
+  checkRateLimit.mockResolvedValue({ allowed: true, remaining: 5, resetAt: new Date() });
   findCallSessionByProviderCallId.mockResolvedValue(null);
   findLatestCommandForSession.mockResolvedValue(null);
   resolvePhoneCommandActor.mockResolvedValue({ organizationId: CONFIG.organizationId, founderUserId: CONFIG.founderUserId, organizationSlug: "lynq", founderName: "Mustafa" });
@@ -545,6 +550,36 @@ describe("the caller-number precondition applies to every event, not just the fi
     expect(result.payload).toBeDefined();
   });
 
+  /**
+   * Round fourteen, and a regression the round-thirteen change introduced. Not
+   * refusing a numberless call was right; treating "not refused" as "cleared"
+   * was not. A caller who simply withholds caller ID reached
+   * `handleAssistantRequest` and was handed the full system prompt, all three
+   * tool declarations and a ten-minute model session — the exact exposure
+   * `buildRefusalAssistantConfig` exists to end, and one that costs real
+   * telephony and model time on every redial.
+   */
+  it("gives a caller whose number was never established the closed assistant, not the working one", async () => {
+    findCallSessionByProviderCallId.mockResolvedValue(null);
+    ensureCallSession.mockResolvedValue(session({ callerNumberMatched: false, callerNumberLastFour: null }));
+
+    const result = await handleInboundConversationEvent(db, {
+      config: CONFIG,
+      // No `customer` object at all — caller ID withheld.
+      event: normalizeVapiEvent({ message: { type: "assistant-request", call: { id: "call-1", type: "inboundPhoneCall" } } }),
+      nowMs: NOW,
+    });
+
+    const assistant = (result.payload as { assistant?: Record<string, unknown> } | undefined)?.assistant;
+    expect(assistant).toBeTruthy();
+    expect(assistant?.tools).toBeUndefined();
+    expect(JSON.stringify(assistant)).not.toMatch(/verify_founder|capture_command|confirm_command/);
+    expect(Number(assistant?.maxDurationSeconds)).toBeLessThanOrEqual(60);
+    expect(result.failureCode).toBe("caller_number_unestablished");
+    // Still not a refusal: no false security finding is recorded.
+    expect(markCallSessionRefused).not.toHaveBeenCalled();
+  });
+
   it("takes no instruction while the caller's number is still unestablished", async () => {
     // Not refused — no evidence of a wrong number — but not cleared either.
     // Exactly one line may give instructions on this lane, and a number the
@@ -740,6 +775,50 @@ describe("what an unverified caller costs", () => {
 
     // A redelivery is not a new call. Charging it meant a first delivery that
     // outran the provider's timeout cost the founder two of six.
+    expect(recordRateLimitAttempt).not.toHaveBeenCalled();
+    // But it is still SUBJECT to the cap. Suppressing the whole block instead
+    // of just the charge skipped the decision as well, so a redelivery whose
+    // first delivery died before creating a session got a free uncapped call.
+    expect(checkRateLimit).toHaveBeenCalledTimes(1);
+  });
+
+  it("refuses a replay that arrives while the budget is already spent", async () => {
+    findCallSessionByProviderCallId.mockResolvedValue(null);
+    checkRateLimit.mockResolvedValue({ allowed: false, remaining: 0, resetAt: new Date() });
+
+    const result = await handleInboundConversationEvent(db, {
+      config: CONFIG,
+      event: normalizeVapiEvent({ message: { type: "assistant-request", call: { id: "call-1" }, customer: { number: CONFIG.founderPhoneNumber } } }),
+      nowMs: NOW,
+      replay: true,
+    });
+
+    expect(result.failureCode).toBe("call_rate_limited");
+    expect(ensureCallSession).not.toHaveBeenCalled();
+  });
+
+  it("does not keep charging a call that has already been turned away", async () => {
+    // The charge is gated on "no session row exists", and a rate-limited call
+    // never gets one — so every later delivery of that call re-entered the
+    // block and incremented again. A transcript belonging to a call with no
+    // session is not a new call.
+    findCallSessionByProviderCallId.mockResolvedValue(null);
+
+    await handleInboundConversationEvent(db, {
+      config: CONFIG,
+      event: normalizeVapiEvent({
+        message: {
+          type: "transcript",
+          transcriptType: "final",
+          role: "user",
+          transcript: "hello",
+          call: { id: "call-1", type: "inboundPhoneCall" },
+          customer: { number: CONFIG.founderPhoneNumber },
+        },
+      }),
+      nowMs: NOW,
+    });
+
     expect(recordRateLimitAttempt).not.toHaveBeenCalled();
   });
 

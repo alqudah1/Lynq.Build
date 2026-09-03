@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { describeDispatchFailure as describeFailureCode } from "@/lib/voice/failure-labels";
 
 /**
  * The founder-facing phone-control surface inside the Jarvis Command Center.
@@ -89,7 +90,7 @@ type PhoneState = {
  * heard "there have been too many code attempts from this number" on a call
  * they had not made, and had nothing to do about it.
  */
-type LockoutState = { locked: boolean; resetAt: string | null; callsRemaining: number; attemptsRemaining: number };
+type LockoutState = { locked: boolean; resetAt: string | null; callsRemaining: number; attemptsRemaining: number; refusedCallsRemaining: number };
 
 type PasscodeState = {
   available: boolean;
@@ -135,27 +136,6 @@ function formatTime(value: string): string {
  */
 const MAX_DISPATCH_ATTEMPTS_UI = 5;
 
-/**
- * Failure codes are written for a log, not for a founder. Rendering them raw
- * produced "(model rate limited)", "(no agents available)" and "(unknown
- * error)" on a screen whose whole point is that a non-technical reader can act
- * on what it says.
- */
-const FAILURE_LABELS: Record<string, string> = {
-  model_rate_limited: "Jarvis's planner was busy",
-  provider_unreachable: "Jarvis could not reach the planner",
-  no_agents_available: "there was no one on the team free to take it",
-  authorization_failed: "Jarvis was not allowed to open it",
-  resource_not_found: "something it needed was missing",
-  attempts_exhausted: "it has been tried as many times as it can be",
-  partially_created: "the handoff stopped part-way",
-  stalled: "it stopped part-way",
-  unknown_error: "an unexpected problem",
-};
-
-function describeFailureCode(code: string): string {
-  return FAILURE_LABELS[code] ?? "an unexpected problem";
-}
 
 export function JarvisPhoneControl({ organizationId, organizationSlug }: { organizationId: string; organizationSlug: string }) {
   const [state, setState] = useState<PhoneState | null>(null);
