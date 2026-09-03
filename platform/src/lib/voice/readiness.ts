@@ -40,7 +40,9 @@ export function getJarvisVoiceReadiness(environment: VoiceEnvironment = process.
         }
       })(),
     },
-    { label: "Secure call-status connection", complete: Boolean(environment.VAPI_WEBHOOK_SECRET?.trim()) },
+    // Length, not just presence: the webhook route refuses a secret shorter
+    // than this, so reporting "ready" for one would be a lie.
+    { label: "Secure call-status connection", complete: (environment.VAPI_WEBHOOK_SECRET?.trim().length ?? 0) >= 32 },
   ];
   const completedChecks = checks.filter((check) => check.complete).length;
   const callingReady = checks.slice(0, 5).every((check) => check.complete);

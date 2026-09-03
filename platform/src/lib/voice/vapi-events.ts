@@ -91,8 +91,20 @@ export function normalizeVapiEvent(payload: VapiServerMessageEnvelope): Normaliz
   const callType = typeof message.call?.type === "string" ? message.call.type : null;
   const base = { providerCallId, callerNumber, callType, rawType };
 
+  // Idempotency keys are built from the NORMALIZED kind, never from `rawType`.
+  //
+  // Several provider type strings alias to one logical event — `tool-calls`,
+  // `function-call` and `tool-call` all mean "the assistant called a tool", and
+  // `status-update`/ended, `end-of-call-report` and `hang` all mean "the call
+  // is over". Folding `rawType` into the key gave the same logical event a
+  // different key per alias, so the dedup layer's promise that an event is
+  // claimed exactly once did not actually hold: `finalizeCall` could run three
+  // times for one call. Downstream guards absorbed it, but "claimed once" has
+  // to be true where it is claimed.
+  const keyFor = (kind: string, ...parts: Array<string | null | undefined>) => hashKey([providerCallId, kind, ...parts]);
+
   if (rawType === "assistant-request") {
-    return { kind: "assistant_request", ...base, idempotencyKey: hashKey([providerCallId, rawType]) };
+    return { kind: "assistant_request", ...base, idempotencyKey: keyFor("assistant_request") };
   }
 
   if (rawType === "tool-calls" || rawType === "function-call" || rawType === "tool-call") {
@@ -102,7 +114,7 @@ export function normalizeVapiEvent(payload: VapiServerMessageEnvelope): Normaliz
       (typeof fromToolCalls?.function?.name === "string" ? fromToolCalls.function.name : null) ??
       (typeof fromToolCallList?.name === "string" ? fromToolCallList.name : null) ??
       (typeof message.functionCall?.name === "string" ? message.functionCall.name : null);
-    if (!toolName) return { kind: "ignored", ...base, idempotencyKey: hashKey([providerCallId, rawType, "no-tool"]) };
+    if (!toolName) return { kind: "ignored", ...base, idempotencyKey: keyFor("tool_call", "no-tool") };
 
     const args = readArguments(fromToolCalls?.function?.arguments ?? fromToolCallList?.arguments ?? message.functionCall?.parameters);
     const toolCallId = (typeof fromToolCalls?.id === "string" ? fromToolCalls.id : null) ?? (typeof fromToolCallList?.id === "string" ? fromToolCallList.id : null) ?? hashKey([providerCallId, toolName, JSON.stringify(args)]).slice(0, 32);
@@ -116,13 +128,13 @@ export function normalizeVapiEvent(payload: VapiServerMessageEnvelope): Normaliz
       // The tool call id is provider-unique per invocation; when absent it is
       // derived above from the call, name and arguments, which is exactly the
       // property a retry must hash identically on.
-      idempotencyKey: hashKey([providerCallId, rawType, toolCallId]),
+      idempotencyKey: keyFor("tool_call", toolCallId),
     };
   }
 
   if (rawType === "transcript" || rawType === "transcript[transcriptType='final']") {
     const text = typeof message.transcript === "string" ? message.transcript : "";
-    if (!text.trim()) return { kind: "ignored", ...base, idempotencyKey: hashKey([providerCallId, rawType, "empty"]) };
+    if (!text.trim()) return { kind: "ignored", ...base, idempotencyKey: keyFor("transcript", "empty") };
     const isFinal = message.transcriptType !== "partial";
     return {
       kind: "transcript",
@@ -132,7 +144,7 @@ export function normalizeVapiEvent(payload: VapiServerMessageEnvelope): Normaliz
       isFinal,
       // Content-addressed: a redelivered partial and its final differ in
       // `transcriptType`, so both are recorded once and neither duplicates.
-      idempotencyKey: hashKey([providerCallId, rawType, message.role ?? "", isFinal ? "final" : "partial", text]),
+      idempotencyKey: keyFor("transcript", typeof message.role === "string" ? message.role : "", isFinal ? "final" : "partial", text),
     };
   }
 
@@ -144,10 +156,10 @@ export function normalizeVapiEvent(payload: VapiServerMessageEnvelope): Normaliz
         ...base,
         endedReason: typeof message.endedReason === "string" ? message.endedReason : null,
         summaryTranscript: typeof message.artifact?.transcript === "string" ? message.artifact.transcript : null,
-        idempotencyKey: hashKey([providerCallId, rawType, "ended"]),
+        idempotencyKey: keyFor("call_ended"),
       };
     }
-    return { kind: "status_update", ...base, status, idempotencyKey: hashKey([providerCallId, rawType, status]) };
+    return { kind: "status_update", ...base, status, idempotencyKey: keyFor("status_update", status) };
   }
 
   if (rawType === "end-of-call-report" || rawType === "hang") {
@@ -156,11 +168,13 @@ export function normalizeVapiEvent(payload: VapiServerMessageEnvelope): Normaliz
       ...base,
       endedReason: typeof message.endedReason === "string" ? message.endedReason : rawType === "hang" ? "hang" : null,
       summaryTranscript: typeof message.artifact?.transcript === "string" ? message.artifact.transcript : null,
-      idempotencyKey: hashKey([providerCallId, rawType]),
+      idempotencyKey: keyFor("call_ended"),
     };
   }
 
-  return { kind: "ignored", ...base, idempotencyKey: hashKey([providerCallId, rawType]) };
+  // `ignored` keeps `rawType`: two different unrecognized event types are not
+  // the same event, and collapsing them would silently drop one.
+  return { kind: "ignored", ...base, idempotencyKey: keyFor("ignored", rawType) };
 }
 
 /** The three tool names the inbound assistant is allowed to call. Anything else is refused rather than guessed at. */

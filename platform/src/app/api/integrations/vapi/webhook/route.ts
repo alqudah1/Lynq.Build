@@ -44,10 +44,20 @@ function unauthorized() {
  * once against a unique index, so a provider retry cannot create a second
  * project, command, or transcript turn.
  */
+/**
+ * The whole inbound lane collapses to this one string, so a short one is a
+ * deployment error rather than a configuration choice. `JARVIS_PHONE_VERIFICATION_SECRET`
+ * is already held to 32; this was checked only for being non-empty, in the
+ * route and in readiness alike, so a four-character value passed every check
+ * the deployment makes.
+ */
+const MIN_WEBHOOK_SECRET_LENGTH = 32;
+
 export async function POST(request: Request) {
   const configuredSecret = process.env.VAPI_WEBHOOK_SECRET;
   const providedSecret = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-  if (!configuredSecret || !providedSecret || !timingSafeEqualStrings(providedSecret, configuredSecret)) return unauthorized();
+  if (!configuredSecret || configuredSecret.trim().length < MIN_WEBHOOK_SECRET_LENGTH) return unauthorized();
+  if (!providedSecret || !timingSafeEqualStrings(providedSecret, configuredSecret)) return unauthorized();
 
   const declaredLength = Number(request.headers.get("content-length") ?? 0);
   if (Number.isFinite(declaredLength) && declaredLength > MAX_WEBHOOK_BYTES) {

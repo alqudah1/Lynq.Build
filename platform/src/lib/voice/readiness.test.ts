@@ -22,7 +22,7 @@ describe("getJarvisVoiceReadiness", () => {
       VAPI_ASSISTANT_ID: "assistant-1",
       VAPI_PHONE_NUMBER_ID: "phone-1",
       JARVIS_FOUNDER_PHONE_E164: "+14165551234",
-      VAPI_WEBHOOK_SECRET: "webhook-secret",
+      VAPI_WEBHOOK_SECRET: "webhook-secret-long-enough-to-be-real-0123456789",
     });
     expect(result).toMatchObject({ ready: true, callingReady: true, activityTrackingReady: true, completedChecks: 6 });
     expect(result.missing).toEqual([]);
@@ -35,7 +35,7 @@ describe("getJarvisVoiceReadiness", () => {
       VAPI_ASSISTANT_ID: "assistant-1",
       VAPI_PHONE_NUMBER_ID: "phone-1",
       JARVIS_FOUNDER_PHONE_E164: "+962790000000",
-      VAPI_WEBHOOK_SECRET: "webhook-secret",
+      VAPI_WEBHOOK_SECRET: "webhook-secret-long-enough-to-be-real-0123456789",
     });
     expect(result.callingReady).toBe(false);
     expect(result.missing).toContain("Founder phone number");

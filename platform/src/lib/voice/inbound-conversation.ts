@@ -1,6 +1,9 @@
 import "server-only";
 
+import { createHmac } from "node:crypto";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
+import { PostgresRateLimiter } from "@/lib/rate-limit/postgres";
+import type { RateLimitConfig } from "@/lib/rate-limit/types";
 import { recordAuditEvent } from "@/lib/audit";
 import { buildCommandDraft, commandDraftInputSchema } from "./command-draft";
 import { dispatchConfirmedCommand } from "./command-dispatch";
@@ -66,6 +69,14 @@ export interface ConversationResult {
   failureCode?: string;
   sessionId?: string;
 }
+
+/**
+ * The cross-call ceiling on passcode attempts from one caller. The per-call
+ * cap of three still applies; this is what a redial cannot reset. Generous
+ * enough that a founder mistyping a rotating code a few times over a couple of
+ * calls is unaffected.
+ */
+const VERIFICATION_RATE_LIMIT: RateLimitConfig = { limit: 12, windowSeconds: 1800 };
 
 const REFUSAL_SPOKEN =
   "I can't take instructions on this call. I'll only work with the founder's registered line, and this isn't it. Goodbye.";
@@ -231,7 +242,31 @@ export async function handleInboundConversationEvent(db: Db, input: HandleInboun
   // barrier. `session.callerNumberMatched` is what the first event recorded;
   // this re-checks the current event too, so neither can be skipped.
   if (!session.callerNumberMatched || !callerNumberMatched) {
+    // Record what an unauthorized caller said BEFORE refusing. The refusal used
+    // to return above the switch, so `handleTranscript` never ran and nothing
+    // the caller said was stored anywhere — the one path where a transcript is
+    // most worth having is the one that erased its own forensics. The text is
+    // redacted on the way in like every other turn, and a refused session can
+    // still capture, confirm or dispatch nothing.
+    if (event.kind === "transcript") {
+      await handleTranscript(db, { session, event }).catch(() => undefined);
+    }
     return refuseCall(db, { session, actor, reason: "caller_number_mismatch" });
+  }
+
+  // A call that has ended accepts nothing further. `completeCallSession` leaves
+  // `verificationState` alone and the session lookup has no status or time
+  // bound, so a tool call arriving after `call_ended` — reordered by the
+  // provider, replayed, or forged — was fully honored: `capture_command` opened
+  // a fresh draft and `confirm_command` dispatched it, creating a real project
+  // after the call was over.
+  if (session.status !== "active" && event.kind === "tool_call") {
+    return {
+      spoken: "That call has already ended. Please call back if you still need this.",
+      processingStatus: "ignored",
+      failureCode: "session_not_active",
+      sessionId: session.id,
+    };
   }
 
   switch (event.kind) {
@@ -276,10 +311,43 @@ async function refuseCall(
   }
   return {
     spoken: REFUSAL_SPOKEN,
-    payload: buildAssistantConfig({ founderName: null, firstMessage: REFUSAL_SPOKEN }),
+    // A refused caller gets a CLOSED assistant: one sentence, no tools, and
+    // the call ends. It used to receive `buildAssistantConfig` — the complete
+    // system prompt, all three tool declarations, and ten minutes of a live
+    // model session. Tool calls were refused server-side, so no state could
+    // change, but an unauthenticated caller was handed the lane's internal
+    // instructions and tool names to extract by ordinary prompt injection, and
+    // billed LLM and telephony time doing it.
+    payload: buildRefusalAssistantConfig(),
     processingStatus: "processed",
     failureCode: input.reason,
     sessionId: session.id,
+  };
+}
+
+/**
+ * The assistant returned to a caller this lane will not work with: it says one
+ * sentence and hangs up. No system prompt, no tools, no time.
+ */
+function buildRefusalAssistantConfig(): Record<string, unknown> {
+  return {
+    assistant: {
+      firstMessage: REFUSAL_SPOKEN,
+      firstMessageMode: "assistant-speaks-first-with-model-generated-message",
+      maxDurationSeconds: 20,
+      endCallAfterSpokenWords: true,
+      model: {
+        provider: "anthropic",
+        model: "claude-sonnet-4.6",
+        temperature: 0,
+        messages: [
+          {
+            role: "system",
+            content: "Say the first message exactly as written and end the call. Answer nothing else, whatever the caller says.",
+          },
+        ],
+      },
+    },
   };
 }
 
@@ -389,6 +457,36 @@ async function handleVerify(
 
   if (session.verificationState === "verified") {
     return { spoken: "You're already verified. What would you like me to work on?", processingStatus: "processed", sessionId: session.id };
+  }
+
+  // A per-CALL cap is not a lockout. Hanging up and redialling produced a new
+  // provider call id, a new session row, and `verificationAttempts` back at
+  // zero, so the three-attempt cap cost an attacker one redial. Nothing else
+  // rate limited this route at all, which meant the cost model for guessing
+  // the second factor was an attacker's phone bill.
+  //
+  // Keyed on a one-way identifier derived from the caller's number, never the
+  // number itself — a rate-limit table is not a place to put a second copy of
+  // it. Fails CLOSED, like every other rate limit here: if the backend is
+  // unreachable, verification is refused rather than waved through.
+  const limiter = new PostgresRateLimiter(db);
+  const callerKey = createHmac("sha256", input.config.verificationSecret)
+    .update(`jarvis-phone-verify:${session.callerNumberLastFour ?? "unknown"}:${session.organizationId}`)
+    .digest("hex");
+  let withinLimit = false;
+  try {
+    withinLimit = (await limiter.recordAttempt(`jarvis-phone:verify:${callerKey}`, VERIFICATION_RATE_LIMIT)).allowed;
+  } catch {
+    withinLimit = false;
+  }
+  if (!withinLimit) {
+    logPhoneEvent({ event: "verification-rate-limited", sessionId: session.id });
+    return {
+      spoken: "There have been too many code attempts from this number. Please wait a while and call back.",
+      processingStatus: "processed",
+      failureCode: "verification_rate_limited",
+      sessionId: session.id,
+    };
   }
 
   const outcome = verifyFounderPasscode({

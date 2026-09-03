@@ -43,6 +43,14 @@ vi.mock("./call-store", () => ({
 vi.mock("./command-dispatch", () => ({ dispatchConfirmedCommand }));
 vi.mock("@/lib/audit", () => ({ recordAuditEvent }));
 
+/** The cross-call verification lockout. Allowed by default; one test drives it to refuse. */
+const recordRateLimitAttempt = vi.fn(async () => ({ allowed: true, remaining: 11, resetAt: new Date() }));
+vi.mock("@/lib/rate-limit/postgres", () => ({
+  PostgresRateLimiter: class {
+    recordAttempt = recordRateLimitAttempt;
+  },
+}));
+
 const { handleInboundConversationEvent } = await import("./inbound-conversation");
 
 const CONFIG = {
@@ -441,7 +449,91 @@ describe("the caller-number precondition applies to every event, not just the fi
     const result = await handleInboundConversationEvent(db, { config: CONFIG, event, nowMs: NOW });
 
     expect(result.failureCode).toBe("caller_number_mismatch");
-    expect(appendTranscriptTurn).not.toHaveBeenCalled();
+    // Refused — but what an unauthorized caller said IS recorded, redacted,
+    // before the refusal. The refusal used to return above the switch, so
+    // `handleTranscript` never ran and nothing they said was stored anywhere:
+    // the one call most worth having a transcript of was the one that erased
+    // its own forensics. Recording it changes nothing else — a refused session
+    // can still capture, confirm or dispatch nothing.
+    expect(appendTranscriptTurn).toHaveBeenCalledTimes(1);
+  });
+
+  it("hands a refused caller a closed assistant, not the lane's own instructions", async () => {
+    findCallSessionByProviderCallId.mockResolvedValue(null);
+    ensureCallSession.mockResolvedValue(session({ callerNumberMatched: false }));
+    const event = normalizeVapiEvent({
+      message: { type: "assistant-request", call: { id: "call-9", type: "inboundPhoneCall" }, customer: { number: "+14165559999" } },
+    });
+
+    const result = await handleInboundConversationEvent(db, { config: CONFIG, event, nowMs: NOW });
+
+    const assistant = (result.payload as { assistant?: Record<string, unknown> } | undefined)?.assistant;
+    expect(assistant).toBeTruthy();
+    // No tools, and no ten-minute window to extract the system prompt from.
+    expect(assistant?.tools).toBeUndefined();
+    expect(JSON.stringify(assistant)).not.toMatch(/verify_founder|capture_command|confirm_command/);
+    expect(JSON.stringify(assistant)).not.toMatch(/LYNQ Office/);
+    expect(Number(assistant?.maxDurationSeconds)).toBeLessThanOrEqual(60);
+  });
+});
+
+describe("the passcode attempt budget survives a redial", () => {
+  /**
+   * The three-attempt cap was per CALL SESSION only. Hanging up and redialling
+   * produced a new provider call id, a new session row, and
+   * `verificationAttempts` back at zero — so the cap cost an attacker one
+   * redial, and nothing else rate limited this route at all. The cost model for
+   * guessing the second factor was an attacker's phone bill.
+   */
+  it("refuses further attempts from a number that has already spent its budget across calls", async () => {
+    findCallSessionByProviderCallId.mockResolvedValue(session({ verificationAttempts: 0 }));
+    recordRateLimitAttempt.mockResolvedValueOnce({ allowed: false, remaining: 0, resetAt: new Date() });
+
+    const result = await handleInboundConversationEvent(db, {
+      config: CONFIG,
+      event: toolEvent("verify_founder", { code: "000000" }),
+      nowMs: NOW,
+    });
+
+    expect(result.failureCode).toBe("verification_rate_limited");
+    expect(recordVerificationAttempt).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when the rate-limit backend is unreachable", async () => {
+    findCallSessionByProviderCallId.mockResolvedValue(session({ verificationAttempts: 0 }));
+    recordRateLimitAttempt.mockRejectedValueOnce(new Error("backend down"));
+
+    const result = await handleInboundConversationEvent(db, {
+      config: CONFIG,
+      event: toolEvent("verify_founder", { code: deriveFounderPasscode(CONFIG.verificationSecret, NOW) }),
+      nowMs: NOW,
+    });
+
+    expect(result.failureCode).toBe("verification_rate_limited");
+    expect(recordVerificationAttempt).not.toHaveBeenCalled();
+  });
+});
+
+describe("a call that has ended accepts nothing further", () => {
+  /**
+   * `completeCallSession` leaves `verificationState` alone and the session
+   * lookup has no status or time bound, so a tool call arriving after
+   * `call_ended` — reordered by the provider, replayed, or forged — was fully
+   * honored: `capture_command` opened a fresh draft and `confirm_command`
+   * dispatched it, creating a real project after the call was over.
+   */
+  it("refuses a tool call that arrives after the call is over", async () => {
+    findCallSessionByProviderCallId.mockResolvedValue(session({ verificationState: "verified", status: "completed" }));
+
+    const result = await handleInboundConversationEvent(db, {
+      config: CONFIG,
+      event: toolEvent("capture_command", { requestedOutcome: "Research three Brampton restaurants" }),
+      nowMs: NOW,
+    });
+
+    expect(result.failureCode).toBe("session_not_active");
+    expect(upsertCommandDraft).not.toHaveBeenCalled();
+    expect(dispatchConfirmedCommand).not.toHaveBeenCalled();
   });
 });
 

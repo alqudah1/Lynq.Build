@@ -20,7 +20,7 @@ vi.mock("@/db/client", () => ({ createDbClient }));
 
 const { POST } = await import("./route");
 
-const SECRET = "expected-secret";
+const SECRET = "expected-secret-long-enough-to-be-real-0123456789";
 
 function post(body: unknown, headers: Record<string, string> = {}): Request {
   return new Request("https://app.lynq.build/api/integrations/vapi/webhook", {
@@ -155,5 +155,20 @@ describe("Vapi webhook — phone control is off by default", () => {
     const response = await POST(authed({ message: { type: "speech-update", call: { id: "call-1" } } }));
     expect(response.status).toBe(200);
     expect(createDbClient).not.toHaveBeenCalled();
+  });
+});
+
+describe("Vapi webhook — the shared secret must be long enough to be one", () => {
+  /**
+   * The whole inbound lane collapses to this one string. It was checked only
+   * for being non-empty, in the route and in readiness alike, so a
+   * four-character value passed every check the deployment makes — while
+   * JARVIS_PHONE_VERIFICATION_SECRET, which protects strictly less, was
+   * already held to 32.
+   */
+  it("refuses every request when the configured secret is too short, even a correct one", async () => {
+    vi.stubEnv("VAPI_WEBHOOK_SECRET", "short");
+    const response = await POST(post({ message: { type: "status-update", status: "ended" } }, { authorization: "Bearer short" }));
+    expect(response.status).toBe(401);
   });
 });
