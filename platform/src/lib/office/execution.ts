@@ -442,6 +442,48 @@ async function recordAutoDecision(db: Db, stage: StageContext, decision: {
   return artifact;
 }
 
+/**
+ * Look again for a preview that had not appeared yet.
+ *
+ * The status on a delivery is a snapshot from the moment the branch was
+ * pushed, and a Vercel preview commonly comes up a minute or two after
+ * that. Judging the demo on the stale snapshot would tell the founder his
+ * site was never finished while it is sitting there working — and, in an
+ * autonomous run, would refuse to accept a demo that plainly exists.
+ *
+ * When it is up now, the correction is written as its own delivery record.
+ * That is what makes it stick: everything downstream reads the newest
+ * delivery on the project, so the run report, the QA gate and the outreach
+ * link all agree rather than each deciding for itself.
+ */
+async function confirmPreview(db: Db, stage: StageContext, delivery: EngineeringDeliveryResult): Promise<EngineeringDeliveryResult> {
+  if (demoIsBuilt(delivery)) return delivery;
+  let previewUrl: string | null = null;
+  try {
+    ({ previewUrl } = await inspectEngineeringDelivery(delivery));
+  } catch {
+    // Not being able to ask is not evidence of absence; the delivery keeps
+    // the status it had.
+    return delivery;
+  }
+  if (!previewUrl || !delivery.previewPath || !delivery.commitSha) return delivery;
+
+  const corrected: EngineeringDeliveryResult = { ...delivery, previewUrl, previewStatus: "ready", previewCheckedAt: new Date().toISOString() };
+  const artifact = await createArtifact(db, {
+    organizationId: stage.organizationId,
+    executionId: stage.executionId,
+    artifactType: "report",
+    title: `Preview confirmed — ${stage.projectKey}`,
+    content: withMarker(
+      engineeringMarker({ ...corrected, website: undefined }),
+      `# The preview came up\n\nWhen the branch was pushed the deployment was not live yet. It is now: ${previewUrl}\n\nCommit \`${corrected.commitSha}\`, checked ${corrected.previewCheckedAt}.`,
+    ),
+    actorAgentId: stage.agentId,
+  });
+  await linkArtifactToEntity(db, { organizationId: stage.organizationId, projectId: stage.projectId, artifactId: artifact.id, linkedEntityType: "task", linkedEntityId: stage.taskId, actorUserId: stage.actorUserId });
+  return corrected;
+}
+
 /** Record work that could not be finished, so the run reports it instead of dying on it. */
 async function recordIncomplete(db: Db, stage: StageContext, outcome: { stage: string; headline: string; detail: string }) {
   const record = { ...outcome, recordedAt: new Date().toISOString() };
@@ -756,7 +798,15 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
         }
         if (!delivery) throw new Error("QA is waiting for an Engineering pull request");
         const inspected = await inspectEngineeringDelivery(delivery);
-        if (!inspected.previewUrl) throw new Error("Quality Assurance is waiting for the preview link. The branch and commit exist, but no preview deployment has appeared yet, so there is nothing for you to open and approve.");
+        // Supervised, this is a wait: there is nothing for the founder to
+        // open, so asking him to approve it would be asking him to approve
+        // something he cannot see, and the retry policy owns the wait.
+        // Unattended, nobody is waiting — so QA reviews what there is, and
+        // the gate below records honestly that the demo was never finished
+        // rather than killing a run that has real work to report.
+        if (!inspected.previewUrl && policy.build !== "auto") {
+          throw new Error("Quality Assurance is waiting for the preview link. The branch and commit exist, but no preview deployment has appeared yet, so there is nothing for you to open and approve.");
+        }
         const review = await generateText({
           ...getOfficeGenerationConfig("review"),
           system: "You are LYNQ's independent Quality Assurance Lead. Review the supplied implementation evidence against the objective and acceptance criteria. Be concise and factual. Identify defects or missing evidence; never claim checks passed unless the evidence says so. Return polished Markdown with Verdict, Acceptance criteria, Risks, and Founder recommendation.",
@@ -767,7 +817,7 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
           executionId: execution.id,
           artifactType: "report",
           title: `Founder review — ${projectRow.projectKey}`,
-          content: `# Founder review\n\n${review.text.trim()}\n\n## What was built\n\n${delivery.agentSummary}\n\n## Review links\n\n- Preview: ${inspected.previewUrl}\n- Pull request: ${delivery.pullRequestUrl}\n- Commit: \`${delivery.commitSha}\`\n\n## Automated checks\n\n\`\`\`text\n${inspected.checks}\n\`\`\`\n\n## Decision\n\nApprove the verified preview to continue the planned handoff, or request changes to send it through another isolated Engineering revision.`,
+          content: `# Founder review\n\n${review.text.trim()}\n\n## What was built\n\n${delivery.agentSummary}\n\n## Review links\n\n- Preview: ${inspected.previewUrl ?? "none — the deployment never came up"}\n- Pull request: ${delivery.pullRequestUrl}\n- Commit: \`${delivery.commitSha}\`\n\n## Automated checks\n\n\`\`\`text\n${inspected.checks}\n\`\`\`\n\n## Decision\n\nApprove the verified preview to continue the planned handoff, or request changes to send it through another isolated Engineering revision.`,
           actorAgentId: agent.id,
         });
       } else {
@@ -859,8 +909,11 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
   }
 
   if (metadata.stage === "qa") {
-    const reviewedDelivery = await latestEngineeringResult(db, input.organizationId, link.projectId);
-    if (!reviewedDelivery) throw new Error("QA approval is missing the Engineering delivery it reviewed");
+    const recordedDelivery = await latestEngineeringResult(db, input.organizationId, link.projectId);
+    if (!recordedDelivery) throw new Error("QA approval is missing the Engineering delivery it reviewed");
+    // Ask GitHub once more before judging: the recorded status is from the
+    // moment of the push, and the deployment usually finishes after it.
+    const reviewedDelivery = await confirmPreview(db, stage, recordedDelivery);
     const approvalSummary = `Review the preview and pull request for ${projectRow.name}. Approving accepts this demo and continues any remaining planned handoff; requesting changes starts another isolated Engineering revision.`;
     if (policy.build === "auto") {
       // Accepting a demo on the founder's behalf is only honest when the

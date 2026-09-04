@@ -466,14 +466,54 @@ describe("running the whole directive without the founder", () => {
 
   it("refuses to accept a demo that was never finished, and says so", async () => {
     stage = "qa";
-    // A commit exists and QA could review it, but the delivery on record
-    // never got a preview — so there is nothing a founder could open.
+    // A commit exists and QA could review it, but the deployment never came
+    // up — not when the branch was pushed, and not when QA looked again.
+    inspectEngineeringDelivery.mockResolvedValue({ previewUrl: null, checks: "no deployment" });
     await run({ approved: { fingerprint: APPROVED_FINGERPRINT }, projectPack: brandPack, deliveryInContext: true, deliveryPreviewStatus: "pending" });
 
     expect(autoDecisions().some((item) => item.action === DEMO_APPROVAL_ACTION)).toBe(false);
     const recorded = incompleteOutcomes();
     expect(recorded[0]?.headline).toMatch(/did not accept it/i);
     expect(recorded[0]?.detail).toContain("a working preview link");
+  });
+
+  it("accepts the demo when the preview came up after the push", async () => {
+    stage = "qa";
+    // The recorded status is a snapshot from the moment of the push, and a
+    // Vercel preview usually finishes a minute or two later. Judging on the
+    // snapshot would tell the founder his site was never built while it is
+    // sitting there working.
+    await run({ approved: { fingerprint: APPROVED_FINGERPRINT }, projectPack: brandPack, deliveryInContext: true, deliveryPreviewStatus: "pending" });
+
+    expect(incompleteOutcomes()).toEqual([]);
+    const decision = autoDecisions().find((item) => item.action === DEMO_APPROVAL_ACTION);
+    expect(decision?.commitSha).toBe(delivery.commitSha);
+    expect(decision?.summary).toContain(delivery.previewUrl);
+  });
+
+  it("writes the confirmed preview back, so the run report does not still call it unfinished", async () => {
+    stage = "qa";
+    await run({ approved: { fingerprint: APPROVED_FINGERPRINT }, projectPack: brandPack, deliveryInContext: true, deliveryPreviewStatus: "pending" });
+
+    // Everything downstream reads the newest delivery on the project, so the
+    // correction has to be recorded rather than kept in this pass's memory.
+    const confirmation = artifactsByTitle().get("Preview confirmed — SUMAC");
+    expect(confirmation).toBeTruthy();
+    expect(confirmation!.content).toContain('"previewStatus":"ready"');
+    expect(confirmation!.content).toContain(delivery.previewUrl);
+  });
+
+  it("leaves the delivery alone when GitHub cannot be asked", async () => {
+    stage = "qa";
+    // A resume, so QA's review already exists and the only call left is the
+    // second look at the preview. Not being able to look is not evidence
+    // that no preview exists, so the delivery keeps the status it had.
+    listArtifactsForExecution.mockResolvedValue([{ id: "artifact-qa", createdAt: new Date("2026-08-20T12:00:00.000Z"), content: "# Founder review" }]);
+    inspectEngineeringDelivery.mockRejectedValue(new Error("GitHub request failed (502)"));
+    await run({ approved: { fingerprint: APPROVED_FINGERPRINT }, projectPack: brandPack, deliveryInContext: true, deliveryPreviewStatus: "pending" });
+
+    expect(artifactsByTitle().has("Preview confirmed — SUMAC")).toBe(false);
+    expect(incompleteOutcomes()[0]?.headline).toMatch(/did not accept it/i);
   });
 
   it("does not record the same decision twice when a stage runs again", async () => {
