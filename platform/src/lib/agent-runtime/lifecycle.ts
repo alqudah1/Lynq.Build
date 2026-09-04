@@ -277,7 +277,7 @@ export async function completeExecution(db: Db, input: CompleteExecutionInput): 
 }
 
 /** §11's retryable classes only — never a human rejection or a permission denial, "which retrying cannot fix." */
-const RETRYABLE_FAILURE_CLASSES = new Set<FailureClass>(["timeout", "provider_unavailable", "transient_tool_failure"]);
+const RETRYABLE_FAILURE_CLASSES = new Set<FailureClass>(["timeout", "provider_unavailable", "transient_tool_failure", "runtime_error"]);
 
 export interface FailExecutionInput {
   organizationId: string;

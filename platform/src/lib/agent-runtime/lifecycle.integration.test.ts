@@ -275,6 +275,20 @@ describe("retry", () => {
     await expect(retryExecution(db, { organizationId: orgId, executionId: execution.id, actorUserId: ownerId })).rejects.toBeInstanceOf(RetryLimitExceededError);
   });
 
+  it("allows a human to retry a bounded runtime error after the underlying configuration is repaired", async () => {
+    const ownerId = await makeUser();
+    const orgId = await makeOrgWithOwner(ownerId);
+    const agent = await makeAgent(orgId, ownerId);
+    const execution = await makeExecution(orgId, ownerId);
+    await assignExecution(db, { organizationId: orgId, executionId: execution.id, assignedAgentId: agent.id, actorUserId: ownerId });
+    await startExecution(db, { organizationId: orgId, executionId: execution.id, actorUserId: ownerId });
+    await failExecution(db, { organizationId: orgId, executionId: execution.id, failureClass: "runtime_error", reason: "provider configuration failed", actorAgentId: agent.id });
+
+    const retried = await retryExecution(db, { organizationId: orgId, executionId: execution.id, actorUserId: ownerId });
+    expect(retried.status).toBe("queued");
+    expect(retried.retryCount).toBe(1);
+  });
+
   it("refuses to retry a non-transient failure (permission_failure)", async () => {
     const ownerId = await makeUser();
     const orgId = await makeOrgWithOwner(ownerId);
