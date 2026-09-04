@@ -37,13 +37,13 @@ function EmployeeOffice({ employee, organizationSlug }: { employee: OfficeAgentP
           <span className={`office-presence office-presence--${employee.presence}`}>{employee.presenceLabel}</span>
         </div>
 
-        <div className="mt-8">
+        <div className="mt-6">
           <p className="text-[0.62rem] uppercase tracking-[0.2em] text-subtle">{employee.room}</p>
           <h3 className="mt-1 font-serif text-[1.65rem] leading-tight font-light text-foreground">{employee.title}</h3>
           <p className="mt-1 text-xs text-muted">{employee.registryName}</p>
         </div>
 
-        <div className="mt-auto border-t border-white/[0.08] pt-4">
+        <div className="mt-auto border-t border-border pt-4">
           {employee.currentAssignment ? (
             <>
               <p className="text-[0.6rem] uppercase tracking-[0.18em] text-subtle">Currently working on</p>
@@ -60,6 +60,37 @@ function EmployeeOffice({ employee, organizationSlug }: { employee: OfficeAgentP
       </div>
     </Link>
   );
+}
+
+const TEAM_LANES = [
+  {
+    id: "leadership",
+    eyebrow: "Direction",
+    title: "Leadership",
+    description: "Turns your direction into a coordinated company plan.",
+  },
+  {
+    id: "growth",
+    eyebrow: "Demand",
+    title: "Growth & clients",
+    description: "Finds opportunities, creates campaigns, and manages relationships.",
+  },
+  {
+    id: "delivery",
+    eyebrow: "Execution",
+    title: "Product & delivery",
+    description: "Designs, builds, checks, and delivers the work.",
+  },
+] as const;
+
+function teamLaneFor(employee: OfficeAgentProfile): (typeof TEAM_LANES)[number]["id"] {
+  if (["founders_office", "finance_and_operations", "legal_and_compliance"].includes(employee.department)) {
+    return "leadership";
+  }
+  if (["sales_and_bizdev", "marketing_and_brand", "client_success", "support"].includes(employee.department)) {
+    return "growth";
+  }
+  return "delivery";
 }
 
 export function DashboardHome({
@@ -84,21 +115,23 @@ export function DashboardHome({
   const firstName = displayName.split(/\s|@/)[0] || displayName;
   const pendingWorkTotal = summary.pendingTaskCount + summary.pendingApprovalCount + summary.pendingFollowUpCount;
   const readyCount = office.employees.filter((employee) => employee.presence === "ready").length;
+  const workingCount = office.employees.filter((employee) => employee.presence === "working").length;
+  const attentionCount = office.employees.filter((employee) => employee.presence === "attention").length;
 
   return (
-    <div className="office-floor flex flex-col gap-10 px-5 py-7 md:px-8 lg:px-10 lg:py-9">
+    <div className="office-floor flex min-h-full flex-col gap-8 px-4 py-5 md:px-7 md:py-7 lg:px-9 lg:py-8">
       <Suspense fallback={null}>
         <InvitationStatusBanner />
       </Suspense>
 
       <header className="office-hero">
         <div>
-          <p className="text-[0.65rem] uppercase tracking-[0.32em] text-accent-foreground">{organizationName} · LYNQ Office</p>
-          <h1 className="mt-3 max-w-3xl font-serif text-4xl leading-[0.98] font-light text-foreground md:text-6xl">
-            The company is <em className="text-accent-foreground">online.</em>
+          <p className="text-[0.65rem] uppercase tracking-[0.28em] text-subtle">{organizationName} · Company Office</p>
+          <h1 className="mt-3 max-w-3xl font-serif text-4xl leading-[1.02] font-light text-foreground md:text-5xl">
+            Good to see you, {firstName}.
           </h1>
           <p className="mt-4 max-w-2xl text-sm leading-6 text-muted md:text-base">
-            Welcome back, {firstName}. Start with your assigned work or open a project. Leaders can ask Jarvis to coordinate company work and track every handoff.
+            This is your company at a glance. Give Jarvis a direction, see who is working, and step in only when the team needs you.
           </p>
         </div>
         <div className="office-hero__pulse" aria-label={`${readyCount} employees ready and ${office.activeAssignmentCount} active assignments`}>
@@ -110,47 +143,86 @@ export function DashboardHome({
         </div>
       </header>
 
-      <section aria-labelledby="office-start-heading" className="grid gap-3 md:grid-cols-3">
-        <div className="office-panel md:col-span-2">
-          <p className="text-[0.65rem] uppercase tracking-[0.2em] text-subtle">Start here</p>
-          <h2 id="office-start-heading" className="mt-1 font-serif text-2xl font-light text-foreground">Find what you need</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">Your tasks live in My Work. Project briefs, tasks, and progress live in Projects. Use the Office home when you want a leader to coordinate a new piece of work.</p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Link href={`${base}/my-work`} className="office-mini-link">Open My Work</Link>
-            <Link href={`${base}/projects`} className="office-mini-link">Open Projects</Link>
-            <Link href={`${base}/workflows`} className="office-mini-link">View workflows</Link>
-            <Link href={`${base}/jarvis`} className="office-mini-link">Ask Jarvis</Link>
-          </div>
+      <section aria-label="Company status" className="office-overview-grid">
+        <div className="office-overview-card">
+          <span>Working now</span>
+          <strong>{workingCount}</strong>
+          <small>{office.activeAssignmentCount} active assignments</small>
         </div>
-        <aside className="office-panel">
-          <p className="text-[0.65rem] uppercase tracking-[0.2em] text-subtle">New here?</p>
-          <h2 className="mt-1 font-serif text-xl font-light text-foreground">Work in three steps</h2>
-          <ol className="mt-3 space-y-2 text-sm leading-5 text-muted">
-            <li><span className="mr-2 text-accent-foreground">1.</span>Open My Work.</li>
-            <li><span className="mr-2 text-accent-foreground">2.</span>Open the related project.</li>
-            <li><span className="mr-2 text-accent-foreground">3.</span>Update progress or ask for help.</li>
-          </ol>
-        </aside>
+        <div className="office-overview-card">
+          <span>Needs you</span>
+          <strong>{pendingWorkTotal}</strong>
+          <small>{attentionCount} employees waiting</small>
+        </div>
+        <div className="office-overview-card">
+          <span>Active projects</span>
+          <strong>{summary.activeProjectCount}</strong>
+          <small>{office.completedThisPeriod} completed</small>
+        </div>
+        <div className="office-overview-card">
+          <span>Open pipeline</span>
+          <strong>{summary.openOpportunityCount}</strong>
+          <small>sales opportunities</small>
+        </div>
       </section>
 
-      <OfficeCommandCenter
-        organizationId={organizationId}
-        organizationSlug={organizationSlug}
-        workspaceId={workspaceId}
-      />
+      <section aria-labelledby="office-start-heading" className="office-start-grid">
+        <div className="min-w-0">
+          <div className="mb-4 flex items-end justify-between gap-3">
+            <div>
+              <p className="text-[0.65rem] uppercase tracking-[0.2em] text-subtle">Command center</p>
+              <h2 id="office-start-heading" className="mt-1 font-serif text-2xl font-light text-foreground">Tell Jarvis what happens next</h2>
+            </div>
+            <Link href={`${base}/jarvis`} className="office-text-link">See every directive →</Link>
+          </div>
+          <OfficeCommandCenter
+            organizationId={organizationId}
+            organizationSlug={organizationSlug}
+            workspaceId={workspaceId}
+          />
+        </div>
+
+        <aside className="office-panel office-shortcuts" aria-label="Quick access">
+          <p className="text-[0.65rem] uppercase tracking-[0.2em] text-subtle">Quick access</p>
+          <h2 className="mt-1 font-serif text-xl font-light text-foreground">Go straight to the work</h2>
+          <nav className="mt-5 grid gap-2">
+            <Link href={`${base}/my-work`} className="office-shortcut"><span>01</span><div><strong>My Work</strong><small>Tasks and approvals for you</small></div><b>→</b></Link>
+            <Link href={`${base}/projects`} className="office-shortcut"><span>02</span><div><strong>Projects</strong><small>Briefs, progress, and files</small></div><b>→</b></Link>
+            <Link href={`${base}/marketing`} className="office-shortcut"><span>03</span><div><strong>Marketing</strong><small>Plan, create, and publish</small></div><b>→</b></Link>
+            <Link href={`${base}/crm`} className="office-shortcut"><span>04</span><div><strong>CRM</strong><small>Leads and conversations</small></div><b>→</b></Link>
+          </nav>
+        </aside>
+      </section>
 
       <section aria-labelledby="office-team-heading">
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="text-[0.65rem] uppercase tracking-[0.24em] text-subtle">Company floor</p>
-            <h2 id="office-team-heading" className="mt-1 font-serif text-3xl font-light text-foreground">Your leadership team</h2>
+            <p className="text-[0.65rem] uppercase tracking-[0.24em] text-subtle">Connected company</p>
+            <h2 id="office-team-heading" className="mt-1 font-serif text-3xl font-light text-foreground">See how the team works together</h2>
           </div>
-          <Link href={`${base}/founder/agents`} className="text-xs text-subtle transition-colors hover:text-foreground">Workforce report →</Link>
+          <Link href={`${base}/founder/agents`} className="office-text-link">Open workforce report →</Link>
         </div>
-        <div className="office-grid">
-          {office.employees.map((employee) => (
-            <EmployeeOffice key={employee.id} employee={employee} organizationSlug={organizationSlug} />
-          ))}
+        <div className="office-company-map">
+          {TEAM_LANES.map((lane, index) => {
+            const employees = office.employees.filter((employee) => teamLaneFor(employee) === lane.id);
+            return (
+              <section key={lane.id} className="office-team-lane" aria-labelledby={`office-lane-${lane.id}`}>
+                <div className="office-team-lane__heading">
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  <div>
+                    <p>{lane.eyebrow}</p>
+                    <h3 id={`office-lane-${lane.id}`}>{lane.title}</h3>
+                    <small>{lane.description}</small>
+                  </div>
+                </div>
+                <div className="office-grid">
+                  {employees.map((employee) => (
+                    <EmployeeOffice key={employee.id} employee={employee} organizationSlug={organizationSlug} />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
         </div>
       </section>
 
@@ -161,7 +233,7 @@ export function DashboardHome({
               <p className="text-[0.65rem] uppercase tracking-[0.2em] text-subtle">Live company feed</p>
               <h2 id="office-activity-heading" className="mt-1 font-serif text-2xl font-light text-foreground">What&apos;s happening</h2>
             </div>
-            <Link href={`${base}/my-work`} className="text-xs text-subtle hover:text-foreground">Open work →</Link>
+            <Link href={`${base}/my-work`} className="office-text-link">Open work →</Link>
           </div>
           {office.recentActivity.length > 0 ? (
             <ol className="mt-5 flex flex-col">
@@ -187,19 +259,19 @@ export function DashboardHome({
           <p className="text-[0.65rem] uppercase tracking-[0.2em] text-subtle">Founder&apos;s snapshot</p>
           <h2 id="office-company-heading" className="mt-1 font-serif text-2xl font-light text-foreground">Company today</h2>
           <dl className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-md border border-border bg-border">
-            <div className="bg-[#0c0c0c] p-4">
+            <div className="office-metric p-4">
               <dt className="text-[0.62rem] uppercase tracking-[0.12em] text-subtle">Projects</dt>
               <dd className="mt-2 font-serif text-3xl font-light text-foreground">{summary.activeProjectCount}</dd>
             </div>
-            <div className="bg-[#0c0c0c] p-4">
+            <div className="office-metric p-4">
               <dt className="text-[0.62rem] uppercase tracking-[0.12em] text-subtle">Completed</dt>
               <dd className="mt-2 font-serif text-3xl font-light text-foreground">{office.completedThisPeriod}</dd>
             </div>
-            <div className="bg-[#0c0c0c] p-4">
+            <div className="office-metric p-4">
               <dt className="text-[0.62rem] uppercase tracking-[0.12em] text-subtle">Pipeline</dt>
               <dd className="mt-2 font-serif text-2xl font-light text-foreground">{summary.openOpportunityCount}</dd>
             </div>
-            <div className="bg-[#0c0c0c] p-4">
+            <div className="office-metric p-4">
               <dt className="text-[0.62rem] uppercase tracking-[0.12em] text-subtle">Needs you</dt>
               <dd className="mt-2 font-serif text-2xl font-light text-foreground">{pendingWorkTotal}</dd>
             </div>

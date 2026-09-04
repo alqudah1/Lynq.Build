@@ -530,3 +530,252 @@ body {
   .employee-office-hero { flex-wrap: wrap; }
   .employee-office-hero > .office-presence { margin-left: calc(clamp(4.5rem, 9vw, 7rem) + 1rem); }
 }
+
+/* Office V2 — a bright, legible operating space. These tokens are scoped to
+ * the Office home so the rest of the product keeps its existing appearance. */
+.office-floor {
+  --lynq-bg: #f3f1ea;
+  --lynq-bg-elevated: #ffffff;
+  --lynq-bg-elevated-2: #f8f7f3;
+  --lynq-fg: #151515;
+  --lynq-fg-muted: #615f59;
+  --lynq-fg-subtle: #807d75;
+  --lynq-border: rgba(21, 21, 21, 0.12);
+  --lynq-border-strong: rgba(21, 21, 21, 0.24);
+  --lynq-accent: #151515;
+  --lynq-accent-foreground: #151515;
+  --lynq-accent-wash: rgba(21, 21, 21, 0.06);
+  overflow: visible;
+  color: var(--lynq-fg);
+  background:
+    linear-gradient(rgba(21, 21, 21, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(21, 21, 21, 0.035) 1px, transparent 1px),
+    var(--lynq-bg);
+  background-size: 32px 32px;
+}
+
+.office-floor::before {
+  inset: 0;
+  height: auto;
+  z-index: 0;
+  background: radial-gradient(56rem 30rem at 85% -8%, rgba(255, 255, 255, 0.92), transparent 65%);
+}
+
+.office-floor > * { position: relative; z-index: 1; }
+
+.office-hero {
+  align-items: center;
+  padding: clamp(1.1rem, 2.5vw, 2.25rem) clamp(1rem, 2.6vw, 2rem);
+  border: 1px solid var(--lynq-border);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 18px 50px -42px rgba(0, 0, 0, 0.45);
+}
+
+.office-hero__pulse {
+  min-width: 13.5rem;
+  border-left-color: var(--lynq-border-strong);
+}
+
+.office-hero__pulse-dot {
+  background: #191919;
+  box-shadow: 0 0 0 0.3rem rgba(21, 21, 21, 0.08);
+}
+
+.office-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--lynq-border);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.office-overview-card {
+  min-width: 0;
+  border-left: 1px solid var(--lynq-border);
+  padding: 1rem 1.15rem;
+}
+.office-overview-card:first-child { border-left: 0; }
+.office-overview-card span,
+.office-overview-card small { display: block; color: var(--lynq-fg-subtle); }
+.office-overview-card span { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.office-overview-card strong { display: block; margin-top: 0.25rem; color: var(--lynq-fg); font-size: clamp(1.55rem, 3vw, 2.2rem); font-weight: 500; letter-spacing: -0.05em; }
+.office-overview-card small { margin-top: 0.1rem; font-size: 0.7rem; }
+
+.office-start-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(17rem, 0.72fr);
+  align-items: start;
+  gap: 1rem;
+}
+
+.office-text-link {
+  color: var(--lynq-fg-subtle);
+  font-size: 0.72rem;
+  transition: color 160ms var(--lynq-ease);
+}
+.office-text-link:hover { color: var(--lynq-fg); }
+
+.office-command {
+  border-color: var(--lynq-border);
+  background: #ffffff;
+  box-shadow: 0 18px 40px -34px rgba(0, 0, 0, 0.35);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.office-command::after {
+  inset: auto -8rem -12rem auto;
+  background: radial-gradient(circle, rgba(21, 21, 21, 0.05), transparent 68%);
+}
+.office-command__assistant {
+  border-color: #151515;
+  background: #151515;
+  color: #fff;
+}
+.office-command__assistant i {
+  border-color: #fff;
+  background: #fff;
+  box-shadow: 0 0 0 1px #151515;
+}
+.office-command__input {
+  border-color: var(--lynq-border);
+  background: #f7f6f2;
+  color: var(--lynq-fg);
+}
+.office-command__input:hover { border-color: var(--lynq-border-strong); }
+.office-command__input:focus { border-color: #151515; background: #fff; }
+.office-starter,
+.office-mini-link {
+  border-color: var(--lynq-border);
+  background: #f7f6f2;
+  color: var(--lynq-fg-muted);
+}
+.office-starter:hover,
+.office-mini-link:hover { border-color: #151515; background: #fff; color: #151515; }
+.office-dispatch-button {
+  border-color: #151515;
+  background: #151515;
+  color: #fff;
+}
+.office-dispatch-button:hover:not(:disabled) { box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16); }
+
+.office-panel {
+  border-color: var(--lynq-border);
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.office-shortcuts { min-height: 100%; }
+.office-shortcut {
+  display: grid;
+  grid-template-columns: 1.8rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  border-top: 1px solid var(--lynq-border);
+  padding: 0.72rem 0;
+  color: var(--lynq-fg);
+}
+.office-shortcut:first-child { border-top: 0; }
+.office-shortcut > span { color: var(--lynq-fg-subtle); font-size: 0.62rem; letter-spacing: 0.08em; }
+.office-shortcut strong,
+.office-shortcut small { display: block; }
+.office-shortcut strong { font-size: 0.8rem; font-weight: 600; }
+.office-shortcut small { margin-top: 0.08rem; color: var(--lynq-fg-subtle); font-size: 0.65rem; }
+.office-shortcut b { color: var(--lynq-fg-subtle); font-size: 0.8rem; font-weight: 400; transition: transform 160ms var(--lynq-ease); }
+.office-shortcut:hover b { transform: translateX(3px); color: var(--lynq-fg); }
+
+.office-company-map {
+  position: relative;
+  display: grid;
+  gap: 0.9rem;
+}
+.office-company-map::before {
+  content: "";
+  position: absolute;
+  top: 2rem;
+  bottom: 2rem;
+  left: 1.55rem;
+  width: 1px;
+  background: #151515;
+}
+.office-team-lane {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(12rem, 0.42fr) minmax(0, 1.58fr);
+  gap: 1.1rem;
+  border: 1px solid var(--lynq-border);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.76);
+  padding: 1rem;
+}
+.office-team-lane__heading {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  padding: 0.5rem 0.35rem;
+}
+.office-team-lane__heading > span {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 2.4rem;
+  height: 2.4rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #151515;
+  border-radius: 50%;
+  background: #151515;
+  color: #fff;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+}
+.office-team-lane__heading p { color: var(--lynq-fg-subtle); font-size: 0.58rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
+.office-team-lane__heading h3 { margin-top: 0.18rem; color: var(--lynq-fg); font-size: 1rem; font-weight: 650; }
+.office-team-lane__heading small { display: block; margin-top: 0.35rem; max-width: 14rem; color: var(--lynq-fg-muted); font-size: 0.68rem; line-height: 1.45; }
+
+.office-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13.5rem), 1fr));
+  gap: 0.7rem;
+}
+.office-room {
+  min-height: 14.5rem;
+  border-color: var(--lynq-border);
+  background: #fff;
+  box-shadow: 0 12px 28px -28px rgba(0, 0, 0, 0.4);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.office-room:hover {
+  border-color: #151515;
+  box-shadow: 0 18px 34px -27px rgba(0, 0, 0, 0.45);
+}
+.office-room__ambient { display: none; }
+.office-monogram,
+.employee-office-hero__monogram {
+  border-color: #151515;
+  background: #151515;
+  color: #fff;
+}
+.office-presence { border-color: var(--lynq-border); background: #f7f6f2; color: var(--lynq-fg-muted); }
+.office-presence--working { border-color: rgba(60, 95, 125, 0.24); background: #eef3f7; color: #3c5f7d; }
+.office-presence--ready { border-color: var(--lynq-border); background: #f7f6f2; color: #383733; }
+.office-presence--attention { border-color: rgba(142, 98, 33, 0.25); background: #fbf3e8; color: #8e6221; }
+.office-presence--offline { color: var(--lynq-fg-subtle); }
+.office-metric { background: #fff; }
+
+@media (max-width: 1023px) {
+  .office-overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .office-overview-card:nth-child(3) { border-top: 1px solid var(--lynq-border); border-left: 0; }
+  .office-overview-card:nth-child(4) { border-top: 1px solid var(--lynq-border); }
+  .office-start-grid { grid-template-columns: 1fr; }
+  .office-team-lane { grid-template-columns: 1fr; }
+  .office-company-map::before { display: none; }
+}
+
+@media (max-width: 639px) {
+  .office-overview-grid { grid-template-columns: 1fr; }
+  .office-overview-card { border-top: 1px solid var(--lynq-border); border-left: 0; }
+  .office-overview-card:first-child { border-top: 0; }
+  .office-team-lane { padding: 0.75rem; }
+}
