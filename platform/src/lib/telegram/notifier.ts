@@ -38,6 +38,13 @@ async function deliver(
   transport?: TelegramTransport | null,
 ): Promise<TelegramDeliveryStatus> {
   const resolution = resolveTelegramConfig();
+  // The tenant is fixed at deploy time, and this bot speaks for that one
+  // workspace only. Repointing the configuration leaves the old workspace's
+  // links in the table; the control lane already refuses those chats, and
+  // this is the same refusal in the outbound direction, so a chat cannot
+  // keep receiving a workspace's work after it has stopped being able to
+  // act on it.
+  if (resolution.ok && resolution.config.organizationId !== input.organizationId) return "not_configured";
   const client = transport ?? (resolution.ok ? createTelegramTransport(resolution.config.botToken) : null);
   if (!client) return "not_configured";
   try {
