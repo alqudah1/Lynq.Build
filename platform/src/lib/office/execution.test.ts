@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { agentApprovalRequests, projectApprovalLinks, projectArtifactLinks, projectExecutionLinks, projects } from "@/db/schema";
 import { brandPack, candidate, collectedBrandPack, packFrom } from "../../../test/support/website-fixtures";
-import { RESTAURANT_PROSPECT_APPROVAL_ACTION } from "./approvals";
+import { DEMO_APPROVAL_ACTION, RESTAURANT_OUTREACH_APPROVAL_ACTION, RESTAURANT_PROSPECT_APPROVAL_ACTION } from "./approvals";
 import { formatOfficeTaskDescription, type OfficeDeliveryStage } from "./task-metadata";
 import { brandPackMarker, fingerprintBrandPack } from "./website/brand-pack";
+import { autoDecisionMarker, autonomyFromDirective, autonomyMarker, parseAutoDecisions, parseIncompleteOutcomes } from "./autonomy";
 
 /**
  * The founder approval gates are the whole reason this workflow is safe to
@@ -27,17 +28,28 @@ const completeExecution = vi.hoisted(() => vi.fn());
 const requestApproval = vi.hoisted(() => vi.fn());
 const researchRestaurantProspects = vi.hoisted(() => vi.fn());
 const collectRestaurantBrandPack = vi.hoisted(() => vi.fn());
+const notifyJarvisRunFinished = vi.hoisted(() => vi.fn());
+const draftRestaurantOutreach = vi.hoisted(() => vi.fn());
+const queueMessageAfterRecordedApproval = vi.hoisted(() => vi.fn());
+const createDraftMessage = vi.hoisted(() => vi.fn());
+const listConnectionsForUser = vi.hoisted(() => vi.fn());
+const findOrCreateConversation = vi.hoisted(() => vi.fn());
+const inspectEngineeringDelivery = vi.hoisted(() => vi.fn());
 
 vi.mock("./engineering", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./engineering")>()),
   executeEngineeringDelivery,
-  inspectEngineeringDelivery: vi.fn(),
+  inspectEngineeringDelivery,
 }));
 vi.mock("./restaurant-research", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./restaurant-research")>()),
   researchRestaurantProspects,
 }));
 vi.mock("./restaurant-brand-collection", () => ({ collectRestaurantBrandPack }));
+vi.mock("./restaurant-outreach", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./restaurant-outreach")>()),
+  draftRestaurantOutreach,
+}));
 vi.mock("@/lib/agents/agents", () => ({ resolveAgentById: vi.fn(async () => ({ id: AGENT, organizationId: ORG, name: "Engineering Lead", role: "engineering" })) }));
 vi.mock("@/lib/agent-runtime/artifacts", () => ({ createArtifact, listArtifactsForExecution: vi.fn(async () => []) }));
 vi.mock("@/lib/agent-runtime/approvals", () => ({ requestApproval }));
@@ -67,10 +79,10 @@ vi.mock("@/lib/projects/tasks", () => ({
   resolveTaskById: vi.fn(async () => ({ id: TASK, status: "in_progress", revision: 1, description: taskDescriptionFor(stage) })),
   transitionTaskStatus: vi.fn(async () => ({ id: TASK, status: "review", revision: 2 })),
 }));
-vi.mock("@/lib/email/jarvis-notifier", () => ({ notifyJarvisApprovalNeeded: vi.fn() }));
-vi.mock("@/lib/communications-os/connections", () => ({ ensureEnvironmentManagedResendConnection: vi.fn(), listConnectionsForUser: vi.fn(async () => []) }));
-vi.mock("@/lib/communications-os/conversations", () => ({ findOrCreateConversation: vi.fn() }));
-vi.mock("@/lib/communications-os/messages", () => ({ attachMessageToExistingApproval: vi.fn(), createDraftMessage: vi.fn(), queueMessageAfterRecordedApproval: vi.fn() }));
+vi.mock("@/lib/email/jarvis-notifier", () => ({ notifyJarvisApprovalNeeded: vi.fn(), notifyJarvisRunFinished }));
+vi.mock("@/lib/communications-os/connections", () => ({ ensureEnvironmentManagedResendConnection: vi.fn(), listConnectionsForUser }));
+vi.mock("@/lib/communications-os/conversations", () => ({ findOrCreateConversation }));
+vi.mock("@/lib/communications-os/messages", () => ({ attachMessageToExistingApproval: vi.fn(), createDraftMessage, queueMessageAfterRecordedApproval }));
 vi.mock("ai", () => ({ generateText: vi.fn(async () => ({ text: "review" })) }));
 vi.mock("./models", () => ({ getOfficeGenerationConfig: () => ({ model: "test" }) }));
 
@@ -104,18 +116,52 @@ type Rows = {
   approved: { candidate?: Partial<typeof candidate>; fingerprint: string | null } | null;
   /** The evidence currently attached to the project. */
   projectPack: typeof brandPack | null;
+  /** The directive text, which is where the autonomy policy comes from. */
+  directive?: string;
+  /** Put a finished engineering delivery on the project, as the later stages see it. */
+  deliveryInContext?: boolean;
+  /** Record that Jarvis already accepted the demo on the founder's behalf. */
+  demoAcceptedInContext?: boolean;
+  /** Record that Jarvis already chose the prospect on the founder's behalf. */
+  prospectDecidedInContext?: string | null;
+  /** Whether the delivery on the project ever got a preview. */
+  deliveryPreviewStatus?: "ready" | "pending";
 };
 
 function makeDb(rows: Rows) {
   const result = (table: unknown) => {
     if (table === projectExecutionLinks) return [{ projectId: PROJECT, taskId: TASK }];
-    if (table === projects) return [{ name: "Sumac & Stone demo", projectKey: "SUMAC", objective: "Show the kitchen a site that reads on a phone.", description: "Prospect demo" }];
+    if (table === projects) {
+      return [{
+        name: "Sumac & Stone demo",
+        projectKey: "SUMAC",
+        objective: "Show the kitchen a site that reads on a phone.",
+        description: `Founder directive\n\n${rows.directive ?? "Find a restaurant and build it a demo."}\n\n${autonomyMarker(autonomyFromDirective(rows.directive ?? ""))}`,
+      }];
+    }
     if (table === agentApprovalRequests) return [];
     if (table === projectArtifactLinks) {
       return [{
         title: "Restaurant recommendation",
         artifactType: "report",
-        content: [researchMarkerFor(), rows.projectPack ? brandPackMarker(rows.projectPack) : ""].filter(Boolean).join("\n\n"),
+        content: [
+          researchMarkerFor(),
+          rows.projectPack ? brandPackMarker(rows.projectPack) : "",
+          rows.deliveryInContext
+            ? `<!-- LYNQ_ENGINEERING_RESULT ${JSON.stringify({
+                ...delivery,
+                website: undefined,
+                previewStatus: rows.deliveryPreviewStatus ?? "ready",
+                previewUrl: (rows.deliveryPreviewStatus ?? "ready") === "ready" ? delivery.previewUrl : null,
+              })} -->`
+            : "",
+          rows.demoAcceptedInContext
+            ? autoDecisionMarker({ action: DEMO_APPROVAL_ACTION, decidedAt: "2026-08-20T10:00:00.000Z", policyReason: "handed over", summary: "Accepted the demo.", restaurantName: candidate.name, brandPackFingerprint: null, commitSha: delivery.commitSha })
+            : "",
+          rows.prospectDecidedInContext !== undefined
+            ? autoDecisionMarker({ action: RESTAURANT_PROSPECT_APPROVAL_ACTION, decidedAt: "2026-08-20T09:00:00.000Z", policyReason: "handed over", summary: "Went ahead.", restaurantName: candidate.name, brandPackFingerprint: rows.prospectDecidedInContext, commitSha: null })
+            : "",
+        ].filter(Boolean).join("\n\n"),
       }];
     }
     if (table === projectApprovalLinks) {
@@ -141,6 +187,9 @@ function makeDb(rows: Rows) {
 }
 
 const APPROVED_FINGERPRINT = fingerprintBrandPack(brandPack);
+
+/** A directive that asks Jarvis to stop at every gate, the way it always used to. */
+const SUPERVISED = "Find a restaurant, but check with me first before you build anything.";
 
 const delivery = {
   repository: "alqudah1/lynq.build",
@@ -172,6 +221,18 @@ async function run(rows: Rows) {
   return continueOfficeDirectiveExecution(makeDb(rows), { organizationId: ORG, executionId: EXECUTION });
 }
 
+function allArtifactContent(): string {
+  return createArtifact.mock.calls.map((call) => (call[1] as { content: string }).content).join("\n\n");
+}
+
+function autoDecisions() {
+  return parseAutoDecisions(allArtifactContent());
+}
+
+function incompleteOutcomes() {
+  return parseIncompleteOutcomes(allArtifactContent());
+}
+
 function artifactsByTitle() {
   return new Map(createArtifact.mock.calls.map((call) => {
     const input = call[1] as { title: string; content: string };
@@ -188,6 +249,13 @@ beforeEach(() => {
   researchRestaurantProspects.mockResolvedValue(research);
   collectRestaurantBrandPack.mockResolvedValue({ pack: brandPack, failure: null });
   requestApproval.mockImplementation(async () => ({ request: { id: "approval-1" }, execution: { id: EXECUTION, status: "human_approval" } }));
+  notifyJarvisRunFinished.mockResolvedValue({ email: "sent", voice: "sent" });
+  inspectEngineeringDelivery.mockResolvedValue({ previewUrl: delivery.previewUrl, checks: "all green" });
+  listConnectionsForUser.mockResolvedValue([{ id: "conn-1", provider: "resend", integrationType: "email", status: "connected" }]);
+  findOrCreateConversation.mockResolvedValue({ id: "conv-1" });
+  draftRestaurantOutreach.mockResolvedValue({ subject: "A concept site for Sumac & Stone", body: "Hello — we built you a concept." });
+  createDraftMessage.mockResolvedValue({ id: "7f1b3d2e-8a4c-4f11-9a0e-2b6d5c8e9f01" });
+  queueMessageAfterRecordedApproval.mockResolvedValue(undefined);
 });
 
 describe("research stage — gathering evidence and putting it to the founder", () => {
@@ -217,8 +285,8 @@ describe("research stage — gathering evidence and putting it to the founder", 
     expect(approvalArtifact.content).toContain("## Recommended design direction");
   });
 
-  it("binds the approval it requests to that exact evidence version", async () => {
-    await run({ approved: null, projectPack: brandPack });
+  it("binds the approval it requests to that exact evidence version when the founder asked to be consulted", async () => {
+    await run({ approved: null, projectPack: brandPack, directive: SUPERVISED });
     const approval = requestApproval.mock.calls[0]![1] as { requestedAction: string; summary: string; proposedActionRef: Record<string, unknown> };
     expect(approval.requestedAction).toBe(RESTAURANT_PROSPECT_APPROVAL_ACTION);
     expect(approval.proposedActionRef.brandPackFingerprint).toBe(APPROVED_FINGERPRINT);
@@ -279,14 +347,22 @@ describe("engineering stage — founder approval enforcement", () => {
       expect(executeEngineeringDelivery).not.toHaveBeenCalled();
     });
 
-    it("stops when the approval recorded no evidence version at all", async () => {
-      await expect(run({ approved: { fingerprint: null }, projectPack: brandPack }))
-        .rejects.toThrow(/no approved evidence version recorded/i);
+    it("stops the build, but not the run, when no evidence version was approved", async () => {
+      await run({ approved: { fingerprint: null }, projectPack: brandPack });
       expect(executeEngineeringDelivery).not.toHaveBeenCalled();
+      const recorded = incompleteOutcomes();
+      expect(recorded[0]?.headline).toMatch(/no approved evidence to build from/i);
+      expect(recorded[0]?.stage).toBe("engineering");
     });
 
-    it("stops when the approved evidence is gone from the project", async () => {
-      await expect(run({ approved: { fingerprint: APPROVED_FINGERPRINT }, projectPack: null }))
+    it("stops the build, but not the run, when the approved evidence is gone", async () => {
+      await run({ approved: { fingerprint: APPROVED_FINGERPRINT }, projectPack: null });
+      expect(executeEngineeringDelivery).not.toHaveBeenCalled();
+      expect(incompleteOutcomes()).toHaveLength(1);
+    });
+
+    it("still refuses outright when the founder asked to be consulted", async () => {
+      await expect(run({ approved: { fingerprint: null }, projectPack: brandPack, directive: SUPERVISED }))
         .rejects.toThrow(/no approved evidence version recorded/i);
       expect(executeEngineeringDelivery).not.toHaveBeenCalled();
     });
@@ -331,5 +407,103 @@ describe("engineering stage — founder approval enforcement", () => {
 
   it("names the approval action it is waiting for", () => {
     expect(RESTAURANT_PROSPECT_APPROVAL_ACTION).toBe("restaurant_prospect_selection");
+  });
+});
+
+describe("running the whole directive without the founder", () => {
+  it("decides the prospect itself and moves on, instead of waiting", async () => {
+    stage = "research";
+    await run({ approved: null, projectPack: brandPack });
+
+    expect(requestApproval).not.toHaveBeenCalled();
+    const [decision] = autoDecisions();
+    expect(decision?.action).toBe(RESTAURANT_PROSPECT_APPROVAL_ACTION);
+    expect(decision?.restaurantName).toBe("Sumac & Stone");
+    expect(decision?.brandPackFingerprint).toBe(APPROVED_FINGERPRINT);
+    expect(decision?.summary).toContain("Went ahead with Sumac & Stone");
+  });
+
+  it("treats its own decision as the licence to build, bound to that evidence version", async () => {
+    stage = "engineering";
+    // No founder approval anywhere — only the decision Jarvis recorded.
+    await run({ approved: null, projectPack: brandPack, prospectDecidedInContext: APPROVED_FINGERPRINT });
+
+    expect(executeEngineeringDelivery).toHaveBeenCalledTimes(1);
+    const passed = executeEngineeringDelivery.mock.calls[0]![0] as { approvedBrandPackFingerprint: string | null };
+    expect(passed.approvedBrandPackFingerprint).toBe(APPROVED_FINGERPRINT);
+  });
+
+  it("will not build on its own decision once the evidence underneath it has changed", async () => {
+    stage = "engineering";
+    const changed = packFrom({ ...collectedBrandPack, images: collectedBrandPack.images.slice(0, 1) });
+    await expect(run({ approved: null, projectPack: changed, prospectDecidedInContext: APPROVED_FINGERPRINT }))
+      .rejects.toThrow(/evidence on this project has changed/i);
+    expect(executeEngineeringDelivery).not.toHaveBeenCalled();
+  });
+
+  it("accepts a finished demo on the founder's behalf", async () => {
+    stage = "qa";
+    await run({ approved: { fingerprint: APPROVED_FINGERPRINT }, projectPack: brandPack, deliveryInContext: true });
+
+    expect(requestApproval).not.toHaveBeenCalled();
+    const decision = autoDecisions().find((item) => item.action === DEMO_APPROVAL_ACTION);
+    expect(decision?.commitSha).toBe(delivery.commitSha);
+    expect(decision?.summary).toContain(delivery.previewUrl);
+  });
+
+  it("refuses to accept a demo that was never finished, and says so", async () => {
+    stage = "qa";
+    // A commit exists and QA could review it, but the delivery on record
+    // never got a preview — so there is nothing a founder could open.
+    await run({ approved: { fingerprint: APPROVED_FINGERPRINT }, projectPack: brandPack, deliveryInContext: true, deliveryPreviewStatus: "pending" });
+
+    expect(autoDecisions().some((item) => item.action === DEMO_APPROVAL_ACTION)).toBe(false);
+    const recorded = incompleteOutcomes();
+    expect(recorded[0]?.headline).toMatch(/did not accept it/i);
+    expect(recorded[0]?.detail).toContain("a working preview link");
+  });
+
+  it("sends the one email itself when the founder handed outreach over", async () => {
+    stage = "outreach";
+    await run({
+      approved: { fingerprint: APPROVED_FINGERPRINT },
+      projectPack: brandPack,
+      deliveryInContext: true,
+      demoAcceptedInContext: true,
+      directive: "Find a restaurant, build the demo and send the email yourself.",
+    });
+
+    expect(queueMessageAfterRecordedApproval).toHaveBeenCalledTimes(1);
+    expect(requestApproval).not.toHaveBeenCalled();
+    const decision = autoDecisions().find((item) => item.action === RESTAURANT_OUTREACH_APPROVAL_ACTION);
+    expect(decision?.summary).toContain("Sent one email to hello@sumacandstone.example.ca");
+  });
+
+  it("drafts the email and waits, when the founder did not hand outreach over", async () => {
+    stage = "outreach";
+    await run({
+      approved: { fingerprint: APPROVED_FINGERPRINT },
+      projectPack: brandPack,
+      deliveryInContext: true,
+      demoAcceptedInContext: true,
+    });
+
+    expect(queueMessageAfterRecordedApproval).not.toHaveBeenCalled();
+    expect(requestApproval).toHaveBeenCalledTimes(1);
+    expect((requestApproval.mock.calls[0]![1] as { requestedAction: string }).requestedAction).toBe(RESTAURANT_OUTREACH_APPROVAL_ACTION);
+  });
+
+  it("writes one report at the end and tells the founder once", async () => {
+    stage = "qa";
+    await run({ approved: { fingerprint: APPROVED_FINGERPRINT }, projectPack: brandPack, deliveryInContext: true });
+
+    const report = artifactsByTitle().get("Run report — SUMAC");
+    expect(report).toBeTruthy();
+    expect(report!.content).toContain("what Jarvis did");
+    expect(report!.content).toContain("Sumac & Stone");
+    expect(report!.content).toContain("## What Jarvis decided without you");
+    expect(notifyJarvisRunFinished).toHaveBeenCalledTimes(1);
+    const notified = notifyJarvisRunFinished.mock.calls[0]![1] as { headline: string; needsFounder: string[] };
+    expect(notified.headline).toContain("Sumac & Stone");
   });
 });

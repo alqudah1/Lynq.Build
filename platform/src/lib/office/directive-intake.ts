@@ -11,6 +11,7 @@ import { ensureOfficeDeliveryTeam } from "./team";
 import { formatOfficeTaskDescription } from "./task-metadata";
 import { getAgentOfficeIdentity } from "./view";
 import { getDirectiveDomains, planOfficeDirective } from "./directives";
+import { autonomyFromDirective, autonomyMarker } from "./autonomy";
 
 type Db = NeonHttpDatabase<Record<string, unknown>>;
 
@@ -155,7 +156,12 @@ export function buildProjectKey(name: string): string {
  */
 function formatDirectiveDescription(input: { instruction: string; assistantReply: string; source: CreateDirectiveProjectInput["source"] }): string {
   const base = `Founder directive\n\n${input.instruction}\n\nExecutive Assistant kickoff\n\n${input.assistantReply}`;
-  return input.source === "founder_phone_call" ? `${base}\n\nCaptured from a verified founder phone call.` : base;
+  const withSource = input.source === "founder_phone_call" ? `${base}\n\nCaptured from a verified founder phone call.` : base;
+  // How much Jarvis may decide alone, read from what the founder just said
+  // and stored with the directive so the policy travels with the work. The
+  // marker goes last so `extractFounderDirective`, which stops at the
+  // kickoff section, keeps returning exactly what it always did.
+  return `${withSource}\n\n${autonomyMarker(autonomyFromDirective(input.instruction))}`;
 }
 
 export async function createDirectiveProject(db: Db, input: CreateDirectiveProjectInput): Promise<CreateDirectiveProjectResult> {
