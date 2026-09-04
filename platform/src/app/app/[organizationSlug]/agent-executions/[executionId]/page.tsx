@@ -8,6 +8,7 @@ import { createDbClient } from "@/db/client";
 import { requireDashboardUser } from "@/lib/dashboard/session-gate";
 import { getOrganizationBySlugForUser } from "@/lib/organizations/organizations";
 import { getExecutionForUser, type AgentExecutionStatus } from "@/lib/agent-runtime/executions";
+import { retryExecution } from "@/lib/agent-runtime/lifecycle";
 import { listArtifactsForExecution } from "@/lib/agent-runtime/artifacts";
 import { getExecutionTimeline } from "@/lib/agent-runtime/events";
 import { getLatestPlan, getPlanSteps } from "@/lib/agent-runtime/plans";
@@ -118,11 +119,20 @@ export default async function AgentExecutionDetailPage({ params }: { params: Pro
     const actionDb = createDbClient(actionEnv);
     const actionUser = await requireDashboardUser(actionDb, `/app/${organizationSlug}/agent-executions/${executionId}`);
     const { organization: actionOrganization } = await getOrganizationBySlugForUser(actionDb, organizationSlug, actionUser.userId);
-    await retryDeadLetteredJob(actionDb, {
-      organizationId: actionOrganization.id,
-      jobId: runtimeJob!.id,
-      actorUserId: actionUser.userId,
-    });
+    if (execution.status === "failed") {
+      await retryExecution(actionDb, {
+        organizationId: actionOrganization.id,
+        executionId,
+        actorUserId: actionUser.userId,
+      });
+    }
+    if (runtimeJob?.status === "dead_lettered") {
+      await retryDeadLetteredJob(actionDb, {
+        organizationId: actionOrganization.id,
+        jobId: runtimeJob.id,
+        actorUserId: actionUser.userId,
+      });
+    }
     revalidatePath(`/app/${organizationSlug}/agent-executions/${executionId}`);
     if (linked) revalidatePath(`/app/${organizationSlug}/jarvis/${linked.projectId}`);
     redirect(`/app/${organizationSlug}/agent-executions/${executionId}`);
@@ -183,10 +193,10 @@ export default async function AgentExecutionDetailPage({ params }: { params: Pro
               </div>
             ) : null}
             {runtimeJob.status === "retry_scheduled" ? <p className="mt-3 text-xs text-subtle">Automatic retry scheduled for {runtimeJob.availableAt.toLocaleString()}.</p> : null}
-            {runtimeJob.status === "dead_lettered" ? (
+            {execution.status === "failed" ? (
               <form action={retryProcessingRun} className="mt-4">
                 <button type="submit" className="inline-flex min-h-10 items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
-                  Retry this step
+                  Resume this step
                 </button>
               </form>
             ) : null}
