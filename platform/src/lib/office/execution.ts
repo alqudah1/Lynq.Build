@@ -393,14 +393,33 @@ type StageContext = {
   policy: AutonomyPolicy;
 };
 
-/** Record a decision Jarvis took in the founder's place, with the same binding an approval would carry. */
+/**
+ * Record a decision Jarvis took in the founder's place, with the same
+ * binding an approval would carry.
+ *
+ * A stage can run more than once — a retry after a transient fault, a
+ * worker picking the task back up — and the decision is idempotent by
+ * nature: it is about one action covering one evidence version or one
+ * commit. Writing it twice would not decide anything twice, but it would
+ * put the same line in the founder's report twice, which reads like Jarvis
+ * did the thing twice.
+ */
 async function recordAutoDecision(db: Db, stage: StageContext, decision: {
   action: string;
   summary: string;
   restaurantName?: string | null;
   brandPackFingerprint?: string | null;
   commitSha?: string | null;
+  /** The project record as this pass read it, used to avoid a duplicate. */
+  existingContext?: string;
 }) {
+  const alreadyDecided = parseAutoDecisions(decision.existingContext ?? "").some(
+    (item) =>
+      item.action === decision.action &&
+      item.brandPackFingerprint === (decision.brandPackFingerprint ?? null) &&
+      item.commitSha === (decision.commitSha ?? null),
+  );
+  if (alreadyDecided) return null;
   const record = {
     action: decision.action,
     decidedAt: new Date().toISOString(),
@@ -769,7 +788,8 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
     // The decision names the exact evidence version it covers. Gathering
     // evidence again produces a different version, which this decision
     // then provably does not cover — whoever made it.
-    const approvedPack = parseBrandPack(await projectContext(db, input.organizationId, link.projectId));
+    const recordedContext = await projectContext(db, input.organizationId, link.projectId);
+    const approvedPack = parseBrandPack(recordedContext);
     const fingerprint = approvedPack ? fingerprintBrandPack(approvedPack) : null;
     const prospectName = parseRestaurantResearch(artifact.content)?.recommendation.name ?? null;
     const approvalSummary = `Review Jarvis's cited restaurant recommendation for ${projectRow.name}${approvedPack ? ` — ${approvalSummaryLine(approvedPack)}` : " — no public evidence could be gathered"}. Approving accepts this restaurant and this exact evidence; requesting changes researches another restaurant. No outreach has been sent.`;
@@ -779,6 +799,7 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
         summary: `Went ahead with ${prospectName ?? "the recommended restaurant"}${approvedPack ? ` on ${approvalSummaryLine(approvedPack)}` : " with no public evidence gathered"}.`,
         restaurantName: prospectName,
         brandPackFingerprint: fingerprint,
+        existingContext: recordedContext,
       });
       return await finishStage(db, stage);
     }
@@ -810,6 +831,7 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
         action: RESTAURANT_OUTREACH_APPROVAL_ACTION,
         summary: `Sent one email to ${outreach.recipient}, pointing at ${outreach.previewUrl}.`,
         restaurantName: parseRestaurantResearch(context)?.recommendation.name ?? null,
+        existingContext: context,
       });
       await decideFounderApproval(db, {
         organizationId: input.organizationId,
@@ -837,6 +859,7 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
           action: DEMO_APPROVAL_ACTION,
           summary: `Accepted the concept site at ${reviewedDelivery.previewUrl}.`,
           commitSha: reviewedDelivery.commitSha,
+          existingContext: context,
         });
       } else {
         await recordIncomplete(db, stage, {

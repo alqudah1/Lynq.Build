@@ -474,6 +474,24 @@ describe("running the whole directive without the founder", () => {
     expect(recorded[0]?.detail).toContain("a working preview link");
   });
 
+  it("does not record the same decision twice when a stage runs again", async () => {
+    stage = "qa";
+    // A retry after a transient fault re-enters a stage that already decided.
+    // Deciding again decides nothing new; it only puts the same line in the
+    // founder's report twice, which reads as if Jarvis did it twice.
+    await run({ approved: { fingerprint: APPROVED_FINGERPRINT }, projectPack: brandPack, deliveryInContext: true, demoAcceptedInContext: true });
+
+    expect(autoDecisions().some((item) => item.action === DEMO_APPROVAL_ACTION)).toBe(false);
+  });
+
+  it("still records a decision covering a different commit", async () => {
+    stage = "qa";
+    await run({ approved: { fingerprint: APPROVED_FINGERPRINT }, projectPack: brandPack, deliveryInContext: true });
+
+    const decision = autoDecisions().find((item) => item.action === DEMO_APPROVAL_ACTION);
+    expect(decision?.commitSha).toBe(delivery.commitSha);
+  });
+
   it("sends the one email itself when the founder handed outreach over", async () => {
     stage = "outreach";
     await run({
