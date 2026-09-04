@@ -284,6 +284,12 @@ export function validateGeneratedSite(input: {
   files: EmittedFile[];
   /** The repository-relative directory the route was emitted into, e.g. "platform/src/app/demos/acme". */
   routeSourceDir: string;
+  /**
+   * How a page becomes HTML. The real renderer by default; a test supplies
+   * its own so a rule that only the component can break — the referrer
+   * suppression below, for one — can still be proved to bite.
+   */
+  renderPage?: (spec: SiteSpec, path: string) => string;
 }): ValidationReport {
   const violations: WebsiteViolation[] = [];
   const { spec, evidence, files } = input;
@@ -342,7 +348,7 @@ export function validateGeneratedSite(input: {
   for (const page of spec.pages) {
     let html = "";
     try {
-      html = renderSpecPage(spec, page.path);
+      html = (input.renderPage ?? renderSpecPage)(spec, page.path);
     } catch (error) {
       violations.push(violation("render_failed", `page:${page.path || "/"}`, `The page threw while rendering: ${(error as Error).message}`));
       continue;
@@ -576,6 +582,14 @@ export function validateGeneratedSite(input: {
     for (const tag of html.match(/<img\b[^>]*>/gi) ?? []) {
       const alt = /\salt="([^"]*)"/.exec(tag);
       if (!alt || !alt[1]?.trim()) violations.push(violation("image_alt_missing", where, "An image renders without alternative text"));
+      // Every photograph here is hotlinked from the business's own host, so
+      // each one is a request their server logs. Sending no referrer keeps
+      // this preview's address out of those logs until the founder has
+      // decided to make contact — and gets past the referrer-based hotlink
+      // protection that would otherwise leave a hole in the page.
+      if (!/\sreferrerpolicy="no-referrer"/i.test(tag)) {
+        violations.push(violation("referrer_leak", where, "An image is loaded from the business's own host without suppressing the referrer"));
+      }
     }
     const labelled = new Set(attributeValues(html, /<label\b[^>]*\sfor="([^"]*)"/g));
     for (const tag of html.match(/<(?:input|textarea|select)\b[^>]*>/gi) ?? []) {

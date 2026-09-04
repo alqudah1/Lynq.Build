@@ -58,8 +58,15 @@ const SITE_CSS = `
 .demo-sticky{position:sticky;top:0;z-index:20;backdrop-filter:saturate(1.4) blur(14px);background:var(--demo-veil);border-bottom:1px solid var(--demo-rule)}
 .demo-link-underline{background-image:linear-gradient(var(--demo-accent),var(--demo-accent));background-size:0% 1px;background-repeat:no-repeat;background-position:0 100%;transition:background-size .4s var(--demo-ease)}
 .demo-link-underline:hover{background-size:100% 1px}
-.demo-frame{position:relative;overflow:hidden;border-radius:var(--demo-radius)}
-.demo-frame img{transition:transform 1.2s var(--demo-ease)}
+/* Every photograph on a prospect demo is the business's own file on the
+   business's own host, and those move, 404 and refuse hotlinks. A browser's
+   answer to that is a broken-image icon with the alt text sprawling beside
+   it — on the one page meant to win the work. The frame carries the tone
+   instead, and the image is painted transparent over it, so a file that
+   never arrives reads as a quiet panel rather than as a mistake. Screen
+   readers still get the alt text; the caption is still on the page. */
+.demo-frame{position:relative;overflow:hidden;border-radius:var(--demo-radius);background:var(--demo-surface)}
+.demo-frame img{background:var(--demo-surface);color:transparent;transition:transform 1.2s var(--demo-ease)}
 .demo-frame:hover img{transform:scale(1.04)}
 @media (prefers-reduced-motion:reduce){.demo-rise,.demo-reveal{animation:none;opacity:1;transform:none}.demo-frame img{transition:none}.demo-frame:hover img{transform:none}}
 `;
@@ -81,8 +88,16 @@ function Picture({
 }) {
   return (
     <figure className={`demo-frame ${priority ? "demo-reveal" : ""} ${className ?? ""}`} style={ratio ? ({ aspectRatio: ratio } as CSSProperties) : undefined}>
+      {/*
+        No referrer, for two reasons that point the same way. A good many
+        hotlink protections key on the Referer header, so sending none is
+        the difference between the photograph appearing and not. And the
+        demo is built before anyone has spoken to the business: sending the
+        header would put this preview's URL in their access logs days
+        before the founder has decided whether to contact them at all.
+      */}
       {/* eslint-disable-next-line @next/next/no-img-element -- approved public asset on an arbitrary third-party host; no loader configuration is added for prospect demos. */}
-      <img src={src} alt={alt} loading={priority ? "eager" : "lazy"} decoding="async" className="h-full w-full object-cover" />
+      <img src={src} alt={alt} loading={priority ? "eager" : "lazy"} decoding="async" referrerPolicy="no-referrer" className="h-full w-full object-cover" />
       {credit ? <figcaption className="mt-3 text-xs leading-5 text-[var(--demo-muted)]">{credit}</figcaption> : null}
     </figure>
   );

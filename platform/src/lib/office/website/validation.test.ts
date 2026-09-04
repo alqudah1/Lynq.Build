@@ -3,6 +3,7 @@ import { brandPack, candidate, content, designProposal } from "../../../../test/
 import { buildSiteEvidence, type SiteEvidence } from "./evidence";
 import { emitSiteFiles, routeSourceDir } from "./emit";
 import { generateRestaurantWebsite } from "./factory";
+import { renderSpecPage } from "./render";
 import type { SiteSpec } from "./spec";
 import { headingOutlineProblem, validateGeneratedSite, type EmittedFile } from "./validation";
 
@@ -52,6 +53,34 @@ describe("generated site validation", () => {
     expect(report.violations).toEqual([]);
     expect(report.ok).toBe(true);
     expect(report.checkedPages).toEqual(["/", "menu", "visit"]);
+  });
+
+  describe("photographs borrowed from the business's own host", () => {
+    it("are loaded without telling that host where the demo lives", () => {
+      // The demo is built before anyone has spoken to the restaurant. Every
+      // photograph is a request their server logs, and a referrer would put
+      // this preview's address in those logs days before the founder has
+      // decided whether to contact them. It also gets past the hotlink
+      // protection that keys on the header, which would otherwise leave a
+      // hole in the page.
+      const images = good.pages.flatMap((page) => renderSpecPage(good, page.path).match(/<img\b[^>]*>/gi) ?? []);
+      expect(images.length).toBeGreaterThan(0);
+      for (const tag of images) expect(tag).toContain('referrerpolicy="no-referrer"');
+    });
+
+    it("fail validation if that is ever dropped from the component", () => {
+      // The rule lives in the validator, not only in the component, so
+      // losing it stops a branch being pushed rather than quietly shipping
+      // a demo that announces itself to the prospect.
+      const report = validateGeneratedSite({
+        spec: good,
+        evidence,
+        files: emitSiteFiles(good),
+        routeSourceDir: routeSourceDir(good),
+        renderPage: (spec, path) => renderSpecPage(spec, path).replaceAll(' referrerpolicy="no-referrer"', ""),
+      });
+      expect(report.violations.map((item) => item.code)).toContain("referrer_leak");
+    });
   });
 
   describe("the preview route exists and renders", () => {
