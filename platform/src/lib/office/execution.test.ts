@@ -39,6 +39,7 @@ const findOrCreateConversation = vi.hoisted(() => vi.fn());
 const inspectEngineeringDelivery = vi.hoisted(() => vi.fn());
 const decideFounderApproval = vi.hoisted(() => vi.fn());
 const listArtifactsForExecution = vi.hoisted(() => vi.fn());
+const transitionProjectStatus = vi.hoisted(() => vi.fn());
 
 vi.mock("./engineering", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./engineering")>()),
@@ -77,7 +78,7 @@ vi.mock("@/lib/projects/links", () => ({
 }));
 vi.mock("@/lib/projects/projects", () => ({
   resolveProjectById: vi.fn(async () => ({ id: PROJECT, status: "active", revision: 1 })),
-  transitionProjectStatus: vi.fn(),
+  transitionProjectStatus,
 }));
 vi.mock("@/lib/projects/tasks", () => ({
   listTasks: vi.fn(async () => []),
@@ -254,6 +255,7 @@ beforeEach(() => {
   stage = "engineering";
   createArtifact.mockImplementation(async (_db: unknown, input: { title: string; content: string }) => ({ id: `artifact-${input.title}`, ...input }));
   listArtifactsForExecution.mockResolvedValue([]);
+  transitionProjectStatus.mockResolvedValue({ id: PROJECT, status: "completed", revision: 2 });
   executeEngineeringDelivery.mockResolvedValue(delivery);
   completeExecution.mockResolvedValue({ id: EXECUTION, status: "completed" });
   researchRestaurantProspects.mockResolvedValue(research);
@@ -581,6 +583,20 @@ describe("running the whole directive without the founder", () => {
     expect(queueMessageAfterRecordedApproval).not.toHaveBeenCalled();
     expect(requestApproval).toHaveBeenCalledTimes(1);
     expect((requestApproval.mock.calls[0]![1] as { requestedAction: string }).requestedAction).toBe(RESTAURANT_OUTREACH_APPROVAL_ACTION);
+  });
+
+  it("tells the founder once when two tasks finish at the same moment", async () => {
+    stage = "qa";
+    // The loser of the race to close the project has nothing left to do.
+    // Failing here would fail an execution whose work all succeeded, and
+    // sending anyway would tell the founder the run finished twice.
+    const { InvalidProjectTransitionError } = await import("@/lib/projects/errors");
+    transitionProjectStatus.mockRejectedValue(new InvalidProjectTransitionError("completed", "completed"));
+
+    await run({ approved: { fingerprint: APPROVED_FINGERPRINT }, projectPack: brandPack, deliveryInContext: true });
+
+    expect(notifyJarvisRunFinished).not.toHaveBeenCalled();
+    expect(artifactsByTitle().has("Run report — SUMAC")).toBe(false);
   });
 
   it("writes one report at the end and tells the founder once", async () => {

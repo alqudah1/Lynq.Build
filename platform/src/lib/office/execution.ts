@@ -14,6 +14,7 @@ import { advanceExecution, completeExecution } from "@/lib/agent-runtime/lifecyc
 import { completePlanStep, getLatestPlan, getPlanSteps } from "@/lib/agent-runtime/plans";
 import { getUnresolvedBlockingTaskIds } from "@/lib/projects/dependencies";
 import { launchAgentForTask, listArtifactLinks, linkApprovalToEntity, linkArtifactToEntity } from "@/lib/projects/links";
+import { InvalidProjectTransitionError } from "@/lib/projects/errors";
 import { resolveProjectById, transitionProjectStatus } from "@/lib/projects/projects";
 import { listTasks, resolveTaskById, transitionTaskStatus } from "@/lib/projects/tasks";
 import { demoIsBuilt, executeEngineeringDelivery, inspectEngineeringDelivery, missingDemoParts, type EngineeringDeliveryResult } from "./engineering";
@@ -490,7 +491,18 @@ async function closeDirectiveIfFinished(db: Db, stage: StageContext) {
   const tasks = await listTasks(db, { organizationId: stage.organizationId, projectId: stage.projectId, actorUserId: stage.actorUserId });
   if (project.status !== "active" || !tasks.every((item) => item.status === "completed")) return;
 
-  await transitionProjectStatus(db, { organizationId: stage.organizationId, projectId: stage.projectId, toStatus: "completed", expectedRevision: project.revision, actorUserId: stage.actorUserId });
+  // Closing the project is the lock on sending the report. Two tasks can
+  // finish close enough together that both see every task completed; the
+  // optimistic revision means exactly one of them wins the transition. The
+  // loser has nothing left to do — the winner writes the report and tells
+  // the founder — so it returns rather than failing an execution whose work
+  // all succeeded, and the founder is told once rather than twice.
+  try {
+    await transitionProjectStatus(db, { organizationId: stage.organizationId, projectId: stage.projectId, toStatus: "completed", expectedRevision: project.revision, actorUserId: stage.actorUserId });
+  } catch (error) {
+    if (error instanceof InvalidProjectTransitionError) return;
+    throw error;
+  }
 
   const briefing = buildRunBriefing({
     projectName: stage.projectName,
