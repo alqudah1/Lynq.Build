@@ -58,18 +58,23 @@ export async function resolveActiveLink(db: Db, chatId: string): Promise<Telegra
  * anyway for the audit trail, so the budget needs no second table and
  * survives a restart.
  */
-export async function recentFailedLinkAttempts(db: Db, chatId: string, now: Date = new Date()): Promise<number> {
+export async function recentEventCount(db: Db, input: { chatId: string; outcome: string; now?: Date; windowMs?: number }): Promise<number> {
+  const now = input.now ?? new Date();
   const rows = await db
     .select({ id: jarvisTelegramEvents.id })
     .from(jarvisTelegramEvents)
     .where(
       and(
-        eq(jarvisTelegramEvents.chatId, chatId),
-        eq(jarvisTelegramEvents.outcome, "link_refused"),
-        gt(jarvisTelegramEvents.createdAt, new Date(now.getTime() - 3600_000)),
+        eq(jarvisTelegramEvents.chatId, input.chatId),
+        eq(jarvisTelegramEvents.outcome, input.outcome),
+        gt(jarvisTelegramEvents.createdAt, new Date(now.getTime() - (input.windowMs ?? 3600_000))),
       ),
     );
   return rows.length;
+}
+
+export async function recentFailedLinkAttempts(db: Db, chatId: string, now: Date = new Date()): Promise<number> {
+  return recentEventCount(db, { chatId, outcome: "link_refused", now });
 }
 
 export async function linkTelegramChat(
@@ -169,10 +174,31 @@ export async function claimTelegramEvent(
   return inserted.length > 0;
 }
 
-/** A refused attempt still needs a row, because the attempt budget counts rows. */
+/**
+ * Say what the claimed update actually did.
+ *
+ * The row is written before the work so a redelivery cannot act twice,
+ * which means it is written before anyone knows the outcome. Recording it
+ * afterwards is what turns the event log from "an update arrived" into a
+ * usable history — and it is what the per-chat budgets count.
+ */
+export async function recordEventOutcome(db: Db, input: { eventId: string; outcome: string }): Promise<void> {
+  await db.update(jarvisTelegramEvents).set({ outcome: input.outcome }).where(eq(jarvisTelegramEvents.externalEventId, input.eventId));
+}
+
+/**
+ * A refused attempt still needs a row, because the attempt budget counts
+ * rows.
+ *
+ * The update that carried the bad code was already claimed, so this is
+ * normally the claim row being told what it turned out to be — hence the
+ * upsert rather than an insert. Inserting would silently conflict and the
+ * budget would count nothing at all, which is the failure mode that makes a
+ * rate limit worse than none: it looks enforced and is not.
+ */
 export async function recordLinkRefusal(db: Db, input: { eventId: string; chatId: string | null; reason: string }): Promise<void> {
   await db
     .insert(jarvisTelegramEvents)
     .values({ externalEventId: input.eventId, organizationId: null, chatId: input.chatId, kind: "message", outcome: "link_refused", detail: input.reason })
-    .onConflictDoNothing({ target: jarvisTelegramEvents.externalEventId });
+    .onConflictDoUpdate({ target: jarvisTelegramEvents.externalEventId, set: { outcome: "link_refused", detail: input.reason } });
 }

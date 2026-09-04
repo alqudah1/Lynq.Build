@@ -22,12 +22,13 @@ const linkTelegramChat = vi.hoisted(() => vi.fn());
 const recordLinkRefusal = vi.hoisted(() => vi.fn());
 const revokeTelegramLink = vi.hoisted(() => vi.fn());
 const touchLink = vi.hoisted(() => vi.fn());
+const recentEventCount = vi.hoisted(() => vi.fn());
 const resolvePhoneCommandActor = vi.hoisted(() => vi.fn());
 const createDirectiveProject = vi.hoisted(() => vi.fn());
 const decideFounderApproval = vi.hoisted(() => vi.fn());
 const listPendingApprovalsForApprover = vi.hoisted(() => vi.fn());
 
-vi.mock("./link", () => ({ resolveActiveLink, linkTelegramChat, recordLinkRefusal, revokeTelegramLink, touchLink }));
+vi.mock("./link", () => ({ resolveActiveLink, linkTelegramChat, recordLinkRefusal, revokeTelegramLink, touchLink, recentEventCount }));
 vi.mock("@/lib/voice/call-store", () => ({ resolvePhoneCommandActor }));
 vi.mock("@/lib/office/directive-intake", () => ({ createDirectiveProject }));
 vi.mock("@/lib/founder-os/approval-center", () => ({ decideFounderApproval }));
@@ -78,6 +79,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   sent.length = 0;
   resolveActiveLink.mockResolvedValue(link);
+  recentEventCount.mockResolvedValue(0);
   resolvePhoneCommandActor.mockResolvedValue({ organizationId: ORG, founderUserId: FOUNDER, organizationSlug: "lynq", founderName: "Mustafa" });
   createDirectiveProject.mockResolvedValue({
     assistantReply: "I'll find one and build it.",
@@ -163,12 +165,66 @@ describe("a linked chat", () => {
     expect(revokeTelegramLink).toHaveBeenCalledWith(db, expect.objectContaining({ link, actorUserId: FOUNDER }));
   });
 
+  it("refuses to open more directives than one chat may start in an hour", async () => {
+    recentEventCount.mockResolvedValue(12);
+    const result = await handleTelegramUpdate(db, { update: update("Build me another demo"), config, transport });
+
+    expect(result.outcome).toBe("directive_rate_limited");
+    expect(createDirectiveProject).not.toHaveBeenCalled();
+    expect(lastMessage().text).toContain("12 directives in the last hour");
+  });
+
+  it("still opens the twelfth directive", async () => {
+    recentEventCount.mockResolvedValue(11);
+    const result = await handleTelegramUpdate(db, { update: update("Build me another demo"), config, transport });
+    expect(result.outcome).toBe("directive_created");
+  });
+
+  it("counts only the directives this chat actually opened", async () => {
+    recentEventCount.mockResolvedValue(0);
+    await handleTelegramUpdate(db, { update: update("Build me a demo"), config, transport });
+    expect(recentEventCount).toHaveBeenCalledWith(db, expect.objectContaining({ chatId: CHAT, outcome: "directive_created" }));
+  });
+
+  it("does not spend the directive budget on a /status or a /help", async () => {
+    recentEventCount.mockResolvedValue(99);
+    expect((await handleTelegramUpdate(db, { update: update("/status"), config, transport })).outcome).toBe("status");
+    expect((await handleTelegramUpdate(db, { update: update("/help"), config, transport })).outcome).toBe("help");
+  });
+
   it("stops dead when the linked account may no longer act on the workspace", async () => {
     resolvePhoneCommandActor.mockRejectedValue(new Error("insufficient_role"));
     const result = await handleTelegramUpdate(db, { update: update("Build me a demo"), config, transport });
     expect(result.outcome).toBe("actor_unavailable");
     expect(createDirectiveProject).not.toHaveBeenCalled();
     expect(lastMessage().text).toContain("no longer act");
+  });
+});
+
+describe("a chat linked to a workspace this deployment no longer serves", () => {
+  // Repointing JARVIS_TELEGRAM_ORGANIZATION_ID after a chat was linked would
+  // otherwise leave that chat acting on the old tenant — outside what the
+  // deployment declares it is for.
+  beforeEach(() => resolveActiveLink.mockResolvedValue({ ...link, organizationId: "99999999-9999-4999-8999-999999999999" }));
+
+  it("does nothing, and says why", async () => {
+    const result = await handleTelegramUpdate(db, { update: update("Build me a demo"), config, transport });
+    expect(result.outcome).toBe("link_tenant_mismatch");
+    expect(createDirectiveProject).not.toHaveBeenCalled();
+    expect(resolvePhoneCommandActor).not.toHaveBeenCalled();
+    expect(lastMessage().text).toContain("different workspace");
+  });
+
+  it("cannot decide an approval either", async () => {
+    const result = await handleTelegramUpdate(db, { update: press("approve", true), config, transport });
+    expect(result.outcome).toBe("link_tenant_mismatch");
+    expect(decideFounderApproval).not.toHaveBeenCalled();
+  });
+
+  it("can still link again, which is the way out", async () => {
+    linkTelegramChat.mockResolvedValue({ ok: true, link, relinked: true });
+    const result = await handleTelegramUpdate(db, { update: update("/start 41729608"), config, transport });
+    expect(result.outcome).toBe("link_repeated");
   });
 });
 

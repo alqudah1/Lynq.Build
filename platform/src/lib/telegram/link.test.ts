@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { jarvisTelegramEvents, jarvisTelegramLinks } from "@/db/schema";
 import { deriveFounderPasscode } from "@/lib/voice/founder-verification";
 import { TELEGRAM_LINK_SCOPE, type JarvisTelegramConfig } from "./config";
-import { claimTelegramEvent, currentTelegramLinkCode, linkTelegramChat, recentFailedLinkAttempts } from "./link";
+import { claimTelegramEvent, currentTelegramLinkCode, linkTelegramChat, recentEventCount, recentFailedLinkAttempts, recordEventOutcome, recordLinkRefusal } from "./link";
 
 vi.mock("@/lib/audit", () => ({ recordAuditEvent: vi.fn(async () => undefined) }));
 
@@ -26,7 +26,15 @@ const config: JarvisTelegramConfig = {
   linkSecret: "s".repeat(32),
 };
 
-type State = { refusals: number; existingLink: boolean; insertedEvents: Record<string, unknown>[]; insertedLinks: Record<string, unknown>[]; conflict: boolean };
+type State = {
+  refusals: number;
+  existingLink: boolean;
+  insertedEvents: Record<string, unknown>[];
+  insertedLinks: Record<string, unknown>[];
+  conflict: boolean;
+  conflictSets: Record<string, unknown>[];
+  updates: Record<string, unknown>[];
+};
 
 let state: State;
 
@@ -51,15 +59,24 @@ function makeDb() {
         return {
           returning,
           onConflictDoNothing: () => ({ returning, then: (resolve: (value: unknown) => unknown) => returning().then(resolve) }),
+          onConflictDoUpdate: (options: { set: Record<string, unknown> }) => {
+            state.conflictSets.push(options.set);
+            return { returning, then: (resolve: (value: unknown) => unknown) => returning().then(resolve) };
+          },
         };
       },
     }),
-    update: () => ({ set: () => ({ where: async () => undefined }) }),
+    update: () => ({
+      set: (values: Record<string, unknown>) => {
+        state.updates.push(values);
+        return { where: async () => undefined };
+      },
+    }),
   } as never;
 }
 
 beforeEach(() => {
-  state = { refusals: 0, existingLink: false, insertedEvents: [], insertedLinks: [], conflict: false };
+  state = { refusals: 0, existingLink: false, insertedEvents: [], insertedLinks: [], conflict: false, conflictSets: [], updates: [] };
 });
 
 describe("the pairing code", () => {
@@ -137,5 +154,30 @@ describe("handling an update exactly once", () => {
   it("refuses a redelivery of one it has already handled", async () => {
     state.conflict = true;
     expect(await claimTelegramEvent(makeDb(), { eventId: "77", organizationId: ORG, chatId: CHAT, kind: "message", outcome: "claimed", detail: null })).toBe(false);
+  });
+});
+
+/**
+ * The claim row is written before the work, so it is written before anyone
+ * knows what the update did. Everything that reads the event log afterwards
+ * — the per-chat budgets above all — depends on that row being corrected.
+ */
+describe("saying what an update turned out to be", () => {
+  it("replaces the placeholder outcome on the row that was claimed", async () => {
+    await recordEventOutcome(makeDb(), { eventId: "77", outcome: "directive_created" });
+    expect(state.updates).toEqual([{ outcome: "directive_created" }]);
+  });
+
+  it("writes a refused pairing onto the claimed row rather than a second one", async () => {
+    // Inserting would conflict on the unique update id and record nothing,
+    // and the attempt budget counts rows — so it would look enforced and be
+    // enforcing nothing.
+    await recordLinkRefusal(makeDb(), { eventId: "77", chatId: CHAT, reason: "bad_code" });
+    expect(state.conflictSets).toEqual([{ outcome: "link_refused", detail: "bad_code" }]);
+  });
+
+  it("counts an outcome only within its window", async () => {
+    state.refusals = 4;
+    expect(await recentEventCount(makeDb(), { chatId: CHAT, outcome: "directive_created", now: NOW })).toBe(4);
   });
 });

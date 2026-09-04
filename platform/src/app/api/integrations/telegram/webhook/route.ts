@@ -9,7 +9,7 @@ import { pollAndProcess } from "@/lib/runtime/worker";
 import { createTelegramTransport } from "@/lib/telegram/api";
 import { resolveTelegramConfig } from "@/lib/telegram/config";
 import { handleTelegramUpdate } from "@/lib/telegram/control";
-import { claimTelegramEvent } from "@/lib/telegram/link";
+import { claimTelegramEvent, recordEventOutcome } from "@/lib/telegram/link";
 import { normalizeTelegramUpdate, redactForEventLog } from "@/lib/telegram/updates";
 
 export const dynamic = "force-dynamic";
@@ -78,11 +78,29 @@ export async function POST(request: Request) {
     });
     if (!first) return acknowledge();
 
-    const result = await handleTelegramUpdate(db, {
-      update,
-      config,
-      transport: createTelegramTransport(config.botToken),
-    });
+    const transport = createTelegramTransport(config.botToken);
+
+    let result;
+    try {
+      result = await handleTelegramUpdate(db, { update, config, transport });
+    } catch (error) {
+      // Silence is the worst answer here: the founder sent something, the
+      // event is already claimed so no retry will run it, and without a word
+      // in the chat he would wait for a reply that is never coming.
+      console.error("[jarvis-telegram] update handling failed:", error instanceof Error ? error.message : "unknown error");
+      await recordEventOutcome(db, { eventId: update.eventId, outcome: "handler_failed" }).catch(() => undefined);
+      if (update.chatId) {
+        await transport
+          .sendMessage({ chatId: update.chatId, text: "Something broke on my side handling that, so nothing was done. Try again in a moment." })
+          .catch(() => undefined);
+      }
+      return acknowledge();
+    }
+
+    // The claim row was written before anyone knew the outcome. Correcting it
+    // now is what makes the event log a history rather than a queue — and the
+    // per-chat budgets count these rows.
+    await recordEventOutcome(db, { eventId: update.eventId, outcome: result.outcome }).catch(() => undefined);
 
     if (result.launched > 0) {
       const rawSql = neon(env.DATABASE_URL);
@@ -97,10 +115,8 @@ export async function POST(request: Request) {
 
     return acknowledge();
   } catch (error) {
-    // A crash must not make Telegram retry the same update forever. It is
-    // already recorded as claimed, and the founder gets no silent success:
-    // the failure is logged with the update it belonged to.
-    console.error("[jarvis-telegram] update handling failed:", error instanceof Error ? error.message : "unknown error");
+    // A crash must not make Telegram retry the same update forever.
+    console.error("[jarvis-telegram] webhook failed:", error instanceof Error ? error.message : "unknown error");
     return acknowledge();
   }
 }

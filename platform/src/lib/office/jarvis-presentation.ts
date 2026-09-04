@@ -164,7 +164,7 @@ export type DemoDeliverySummary = {
   missing: string[];
 };
 
-const ENGINEERING_RESULT = /<!-- LYNQ_ENGINEERING_RESULT ([\s\S]*?) -->/;
+const ENGINEERING_RESULT = /<!-- LYNQ_ENGINEERING_RESULT ([\s\S]*?) -->/g;
 
 /**
  * Read the machine-readable delivery record rather than the prose around
@@ -174,14 +174,29 @@ const ENGINEERING_RESULT = /<!-- LYNQ_ENGINEERING_RESULT ([\s\S]*?) -->/;
  */
 export function summarizeDemoDelivery(content: string | null): DemoDeliverySummary {
   const empty: DemoDeliverySummary = { built: false, route: null, commitSha: null, previewUrl: null, pullRequestUrl: null, missing: [] };
-  const raw = content ? ENGINEERING_RESULT.exec(content)?.[1] : null;
-  if (!raw) return empty;
-  let parsed: Record<string, unknown>;
-  try {
-    parsed = JSON.parse(raw) as Record<string, unknown>;
-  } catch {
-    return empty;
+  if (!content) return empty;
+  // The LAST delivery, not the first.
+  //
+  // This reads a single artifact in one caller and the whole project's
+  // shared context in another, and a founder who requests changes leaves
+  // two delivery records on that project — oldest first. Taking the first
+  // match meant the run report, the "is it built" decision and the preview
+  // link a founder was handed all described the build he had already
+  // rejected.
+  const markers = [...content.matchAll(ENGINEERING_RESULT)];
+  let parsed: Record<string, unknown> | null = null;
+  for (const marker of markers.reverse()) {
+    try {
+      const candidate = JSON.parse(marker[1] ?? "") as Record<string, unknown>;
+      if (candidate && typeof candidate === "object" && !Array.isArray(candidate)) {
+        parsed = candidate;
+        break;
+      }
+    } catch {
+      // A damaged marker is skipped rather than hiding an intact older one.
+    }
   }
+  if (!parsed) return empty;
   const text = (key: string) => (typeof parsed[key] === "string" && parsed[key] ? (parsed[key] as string) : null);
   const route = text("previewPath");
   const commitSha = text("commitSha");

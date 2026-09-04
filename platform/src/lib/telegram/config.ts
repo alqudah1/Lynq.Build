@@ -105,3 +105,13 @@ export const TELEGRAM_LINK_SCOPE = "jarvis-telegram-link";
 
 /** How many failed pairing attempts one chat may make in an hour before it is refused outright. */
 export const MAX_LINK_ATTEMPTS_PER_HOUR = 5;
+
+/**
+ * How many directives one chat may open in an hour.
+ *
+ * Each one opens a project and runs models, which costs real money on the
+ * founder's own account. A compromised or simply excited chat should hit a
+ * ceiling that is far above ordinary use and far below a bill worth
+ * noticing.
+ */
+export const MAX_DIRECTIVES_PER_HOUR = 12;

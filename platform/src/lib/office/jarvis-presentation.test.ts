@@ -99,3 +99,27 @@ describe("whether a demo is actually built", () => {
     expect(summarizeDemoDelivery("<!-- LYNQ_ENGINEERING_RESULT {not json} -->").commitSha).toBeNull();
   });
 });
+
+describe("a project that has been revised", () => {
+  const marker = (delivery: Record<string, unknown>) => `<!-- LYNQ_ENGINEERING_RESULT ${JSON.stringify(delivery)} -->`;
+  const rejected = { previewPath: "/demos/x", commitSha: "old111", previewUrl: "https://old.vercel.app/demos/x", previewStatus: "ready", pullRequestUrl: "https://github.com/o/r/pull/1" };
+  const revised = { previewPath: "/demos/x", commitSha: "new222", previewUrl: "https://new.vercel.app/demos/x", previewStatus: "ready", pullRequestUrl: "https://github.com/o/r/pull/2" };
+
+  it("describes the newest delivery, not the one the founder rejected", () => {
+    const context = [marker(rejected), "# Founder review", marker(revised), "# Revised delivery"].join("\n\n");
+    expect(summarizeDemoDelivery(context)).toMatchObject({ commitSha: "new222", previewUrl: "https://new.vercel.app/demos/x", pullRequestUrl: "https://github.com/o/r/pull/2" });
+  });
+
+  it("does not fall back to a superseded build when the newest one has no preview", () => {
+    const context = [marker(rejected), marker({ ...revised, previewUrl: null, previewStatus: "pending" })].join("\n\n");
+    const summary = summarizeDemoDelivery(context);
+    expect(summary.built).toBe(false);
+    expect(summary.commitSha).toBe("new222");
+    expect(summary.previewUrl).toBeNull();
+  });
+
+  it("skips a damaged newest record rather than reporting nothing at all", () => {
+    const context = [marker(rejected), "<!-- LYNQ_ENGINEERING_RESULT {broken -->"].join("\n\n");
+    expect(summarizeDemoDelivery(context).commitSha).toBe("old111");
+  });
+});

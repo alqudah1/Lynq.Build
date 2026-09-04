@@ -12,6 +12,8 @@ const WEBHOOK_SECRET = "w".repeat(24);
 
 const handleTelegramUpdate = vi.hoisted(() => vi.fn());
 const claimTelegramEvent = vi.hoisted(() => vi.fn());
+const recordEventOutcome = vi.hoisted(() => vi.fn());
+const sendMessage = vi.hoisted(() => vi.fn());
 const resolveTelegramConfig = vi.hoisted(() => vi.fn());
 const pollAndProcess = vi.hoisted(() => vi.fn());
 const after = vi.hoisted(() => vi.fn());
@@ -21,10 +23,10 @@ vi.mock("@neondatabase/serverless", () => ({ neon: () => ({}) }));
 vi.mock("@/db/client", () => ({ createDbClient: () => ({}) }));
 vi.mock("@/lib/env", () => ({ loadEnv: () => ({ DATABASE_URL: "postgres://x" }) }));
 vi.mock("@/lib/runtime/worker", () => ({ pollAndProcess }));
-vi.mock("@/lib/telegram/api", () => ({ createTelegramTransport: () => ({ sendMessage: vi.fn(), answerCallback: vi.fn() }) }));
+vi.mock("@/lib/telegram/api", () => ({ createTelegramTransport: () => ({ sendMessage, answerCallback: vi.fn() }) }));
 vi.mock("@/lib/telegram/config", () => ({ resolveTelegramConfig }));
 vi.mock("@/lib/telegram/control", () => ({ handleTelegramUpdate }));
-vi.mock("@/lib/telegram/link", () => ({ claimTelegramEvent }));
+vi.mock("@/lib/telegram/link", () => ({ claimTelegramEvent, recordEventOutcome }));
 
 const { POST } = await import("./route");
 
@@ -48,6 +50,8 @@ beforeEach(() => {
     config: { botToken: "1234567890:AAaa", webhookSecret: WEBHOOK_SECRET, organizationId: ORG, founderUserId: FOUNDER, linkSecret: "s".repeat(32) },
   });
   claimTelegramEvent.mockResolvedValue(true);
+  recordEventOutcome.mockResolvedValue(undefined);
+  sendMessage.mockResolvedValue(undefined);
   handleTelegramUpdate.mockResolvedValue({ outcome: "directive_created", launched: 0, projectId: "project-1" });
 });
 
@@ -107,8 +111,30 @@ describe("the Telegram webhook", () => {
     expect(after).not.toHaveBeenCalled();
   });
 
-  it("acknowledges rather than looping when handling throws", async () => {
+  it("records what the update turned out to be, over the placeholder it was claimed with", async () => {
+    // The claim is written before the work, so it cannot know the outcome.
+    // Everything that reads the log afterwards — the per-chat budgets above
+    // all — depends on this correction happening.
+    await POST(request(update));
+    expect(claimTelegramEvent).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ outcome: "claimed" }));
+    expect(recordEventOutcome).toHaveBeenCalledWith(expect.anything(), { eventId: "77", outcome: "directive_created" });
+  });
+
+  it("acknowledges rather than looping when handling throws, and says so in the chat", async () => {
     handleTelegramUpdate.mockRejectedValue(new Error("database is down"));
+    const response = await POST(request(update));
+
+    expect(response.status).toBe(200);
+    // The event is already claimed, so no redelivery will retry it. Silence
+    // would leave the founder waiting for an answer that is never coming.
+    expect(sendMessage).toHaveBeenCalledWith(expect.objectContaining({ chatId: "4242" }));
+    expect(sendMessage.mock.calls[0]![0].text).toContain("nothing was done");
+    expect(recordEventOutcome).toHaveBeenCalledWith(expect.anything(), { eventId: "77", outcome: "handler_failed" });
+  });
+
+  it("still acknowledges when even the apology cannot be delivered", async () => {
+    handleTelegramUpdate.mockRejectedValue(new Error("database is down"));
+    sendMessage.mockRejectedValue(new Error("telegram is down"));
     const response = await POST(request(update));
     expect(response.status).toBe(200);
   });

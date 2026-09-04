@@ -119,6 +119,9 @@ What that buys, and what it costs:
   on the Jarvis screen.
 - **Pairing is budgeted.** Five failed attempts from one chat in an hour
   and it is refused outright. Every attempt is recorded.
+- **So is work.** One chat may start twelve directives an hour — far above
+  ordinary use, far below a model bill worth noticing. `/status` and
+  `/help` cost nothing.
 - **A tap is not consent for everything.** A low-risk approval decides on
   one tap. A high-risk one — the outreach that reaches a real business —
   asks again in the chat and names what is about to happen. Stopping
@@ -149,4 +152,7 @@ second approval path.
 | "That code is not right, or it has expired" | Read the current code from the Jarvis screen — it rotates every five minutes. |
 | "Too many wrong codes" | Five failures in an hour. Wait it out. |
 | "This chat is linked, but that LYNQ account can no longer act" | The account lost its owner/admin role. Nothing was done. |
+| "That is 12 directives in the last hour" | The hourly ceiling for one chat. Wait, or use the Command Center. |
+| "This chat is linked to a different workspace" | `JARVIS_TELEGRAM_ORGANIZATION_ID` changed after the chat was linked. Send `/unlink`, then link again. |
+| "Something broke on my side handling that" | The update failed and will not be retried — Telegram was already acknowledged. Send it again. |
 | The panel says "not finished being set up" | An environment variable is missing. The panel never says which one. |

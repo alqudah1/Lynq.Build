@@ -10,9 +10,9 @@ import { createDirectiveProject } from "@/lib/office/directive-intake";
 import { autonomyFromDirective } from "@/lib/office/autonomy";
 import { resolvePhoneCommandActor } from "@/lib/voice/call-store";
 import { clampMessage, escapeTelegram, type TelegramTransport } from "./api";
-import { linkTelegramChat, recordLinkRefusal, resolveActiveLink, revokeTelegramLink, touchLink, type TelegramLink } from "./link";
+import { linkTelegramChat, recentEventCount, recordLinkRefusal, resolveActiveLink, revokeTelegramLink, touchLink, type TelegramLink } from "./link";
 import { decisionCallbackData, redactForEventLog, type NormalizedUpdate } from "./updates";
-import type { JarvisTelegramConfig } from "./config";
+import { MAX_DIRECTIVES_PER_HOUR, type JarvisTelegramConfig } from "./config";
 
 type Db = NeonHttpDatabase<Record<string, unknown>>;
 
@@ -117,6 +117,14 @@ export async function handleTelegramUpdate(
   /* --- everything else needs a trusted chat ------------------------- */
 
   const link = await resolveActiveLink(db, chatId);
+  // A link that points at a different tenant than this deployment is
+  // configured for is not usable here. It can only happen if the
+  // configuration was repointed after a chat was linked, and acting on the
+  // old tenant would be acting outside what the deployment declares.
+  if (link && link.organizationId !== config.organizationId) {
+    await reply(transport, chatId, "This chat is linked to a different workspace than this bot now serves. Unlink it and link it again.");
+    return { outcome: "link_tenant_mismatch", launched: 0, projectId: null };
+  }
   if (!link) {
     await reply(
       transport,
@@ -148,6 +156,18 @@ export async function handleTelegramUpdate(
       return { outcome: "status", launched: 0, projectId: null };
 
     case "directive": {
+      // Each directive opens a project and runs models on the founder's own
+      // account. The ceiling is far above ordinary use and far below a bill
+      // worth noticing.
+      const opened = await recentEventCount(db, { chatId, outcome: "directive_created", now });
+      if (opened >= MAX_DIRECTIVES_PER_HOUR) {
+        await reply(
+          transport,
+          chatId,
+          `That is ${opened} directives in the last hour, which is as many as I'll start from one chat. Try again shortly, or use the Command Center.`,
+        );
+        return { outcome: "directive_rate_limited", launched: 0, projectId: null };
+      }
       const policy = autonomyFromDirective(update.action.instruction);
       const result = await createDirectiveProject(db, {
         organizationId: actor.organizationId,
