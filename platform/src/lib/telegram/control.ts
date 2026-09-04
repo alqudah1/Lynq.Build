@@ -173,7 +173,7 @@ export async function handleTelegramUpdate(
         organizationId: actor.organizationId,
         instruction: update.action.instruction,
         actorUserId: actor.founderUserId,
-        source: "command_center",
+        source: "founder_telegram",
       });
       await recordAuditEvent(db, {
         eventType: "jarvis_telegram_directive_created",

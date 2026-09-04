@@ -136,7 +136,10 @@ describe("a linked chat", () => {
   it("opens a directive from an ordinary message and says what it will do", async () => {
     const result = await handleTelegramUpdate(db, { update: update("Find a restaurant in Little Italy and build them a demo"), config, transport });
 
-    expect(createDirectiveProject).toHaveBeenCalledWith(db, expect.objectContaining({ organizationId: ORG, actorUserId: FOUNDER }));
+    // The project records how the directive arrived, so a month later it is
+    // still answerable whether this came from the browser, a phone call, or
+    // a chat.
+    expect(createDirectiveProject).toHaveBeenCalledWith(db, expect.objectContaining({ organizationId: ORG, actorUserId: FOUNDER, source: "founder_telegram" }));
     expect(result).toMatchObject({ outcome: "directive_created", launched: 2, projectId: "project-1" });
     expect(lastMessage().text).toContain("Little Italy demo");
     expect(lastMessage().text).toContain("come back to you before anything is sent");
