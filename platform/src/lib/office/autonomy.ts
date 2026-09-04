@@ -212,6 +212,16 @@ const PERMANENT_GAPS = [
   /no approved evidence version/i,
   /already belongs to project/i,
   /identical to the base branch/i,
+  // The three ways outreach arrives with nothing to send. Under an
+  // autonomous policy the demo decision has already been made — accepted, or
+  // recorded as unfinished — so retrying outreach cannot change the answer,
+  // and a missing email connection is a setting, not a wait. Note that these
+  // match the *outreach* wording only: Quality Assurance waiting on a
+  // preview that may still appear stays retryable, which is what the retry
+  // policy is for.
+  /waiting for the founder to approve the built demo/i,
+  /waiting for a working preview link/i,
+  /Resend email connection is not connected/i,
 ];
 
 export function isPermanentGap(error: unknown): boolean {

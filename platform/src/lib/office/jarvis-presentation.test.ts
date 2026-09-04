@@ -35,6 +35,11 @@ describe("failures in plain language", () => {
     ["Quality Assurance is waiting for the preview link.", /preview has not appeared yet/i],
     ["Outreach is ready, but a verified Resend email connection is not connected in Communications", /email is not connected/i],
     ["GitHub request failed (404)", /cannot reach the code repository/i],
+    ["Outreach is waiting for the founder to approve the built demo", /never accepted/i],
+    // Not the same sentence as QA's, and it used to fall through to the
+    // generic "this step stopped" — which told the founder nothing about
+    // why no email went out.
+    ["Outreach is waiting for a working preview link. Nothing is sent while the demo the email would point at cannot be opened.", /preview has not appeared yet/i],
   ])("explains %s", (raw, expected) => {
     const failure = explainJarvisFailure(raw)!;
     expect(failure.headline).toMatch(expected);

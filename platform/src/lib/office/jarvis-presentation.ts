@@ -93,7 +93,12 @@ const FAILURE_PATTERNS: Array<[RegExp, Omit<JarvisFailure, "technical">]> = [
     detail: "Jarvis refused to overwrite a demo that belongs to a different project rather than replace someone else's preview.",
     nextStep: "Tell Jarvis to use a new project for this prospect.",
   }],
-  [/waiting for the preview link|preview deployment had not appeared/i, {
+  [/waiting for the founder to approve the built demo/i, {
+    headline: "The demo was never accepted, so nothing was sent",
+    detail: "An email only goes out for a demo that has been accepted. This one has not been — usually because the preview never came up, so there was nothing to accept.",
+    nextStep: "Open the demo. If it looks right, approve it and Jarvis sends the email; if it never built, ask Jarvis to build it again.",
+  }],
+  [/waiting for (?:a working |the )preview link|preview deployment had not appeared/i, {
     headline: "The preview has not appeared yet",
     detail: "The code is committed, but the hosted preview it points at is not live, so there is nothing to open and approve.",
     nextStep: "Give the deployment a few minutes, then refresh. If it never appears, the deployment itself failed.",

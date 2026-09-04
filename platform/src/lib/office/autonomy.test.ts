@@ -120,6 +120,11 @@ describe("deciding whether to retry or report", () => {
     "The approved brand pack on this project is malformed",
     "This prospect has no approved evidence version recorded",
     "The route /demos/x already belongs to project OTHER",
+    // Outreach reached with nothing to send. Under an autonomous policy the
+    // demo decision was already taken, so no retry changes any of these.
+    "Outreach is waiting for the founder to approve the built demo",
+    "Outreach is waiting for a working preview link. Nothing is sent while the demo the email would point at cannot be opened.",
+    "Outreach is ready, but a verified Resend email connection is not connected in Communications",
   ])("reports rather than retries: %s", (message) => {
     expect(isPermanentGap(new Error(message))).toBe(true);
   });
