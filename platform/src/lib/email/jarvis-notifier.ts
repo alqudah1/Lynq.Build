@@ -167,14 +167,19 @@ export async function notifyJarvisRunFinished(
       ? `Still needs you:\n${input.needsFounder.map((item) => `- ${item}`).join("\n")}`
       : "Nothing is waiting on you.";
     const text = `Hi ${name},\n\nJarvis finished ${input.projectName}.\n\n${input.headline}\n\n${outstanding}\n\nRead the full report: ${projectUrl}`;
-    const voicePromise = notifyFounderByVoice({
-      kind: "approval_needed",
-      founderName: name,
-      projectName: input.projectName,
-      summary: `${input.headline}. ${input.needsFounder.length > 0 ? `${input.needsFounder.length} thing${input.needsFounder.length === 1 ? "" : "s"} still needs you.` : "Nothing is waiting on you."}`.slice(0, 1000),
-      actionUrl: projectUrl,
-      context: { organizationId: input.organizationId, ownerUserId: input.ownerUserId, projectId: input.projectId },
-    });
+    // Jarvis rings the phone when it wants something, not to announce that
+    // it is done. A run that finished with nothing outstanding is a message,
+    // not a call; the report is in the chat and the inbox either way.
+    const voicePromise: Promise<VoiceDeliveryStatus> = input.needsFounder.length > 0
+      ? notifyFounderByVoice({
+          kind: "run_finished",
+          founderName: name,
+          projectName: input.projectName,
+          summary: `${input.headline}. ${input.needsFounder.length === 1 ? "1 thing still needs you" : `${input.needsFounder.length} things still need you`}.`.slice(0, 1000),
+          actionUrl: projectUrl,
+          context: { organizationId: input.organizationId, ownerUserId: input.ownerUserId, projectId: input.projectId },
+        })
+      : Promise.resolve<VoiceDeliveryStatus>("not_needed");
     const telegramPromise = notifyTelegramRunFinished(db, {
       organizationId: input.organizationId,
       projectName: input.projectName,
