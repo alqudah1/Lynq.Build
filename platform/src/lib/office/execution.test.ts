@@ -5,6 +5,7 @@ import { DEMO_APPROVAL_ACTION, RESTAURANT_OUTREACH_APPROVAL_ACTION, RESTAURANT_P
 import { formatOfficeTaskDescription, type OfficeDeliveryStage } from "./task-metadata";
 import { brandPackMarker, fingerprintBrandPack } from "./website/brand-pack";
 import { autoDecisionMarker, autonomyFromDirective, autonomyMarker, parseAutoDecisions, parseIncompleteOutcomes } from "./autonomy";
+import { restaurantOutreachMarker } from "./restaurant-outreach";
 
 /**
  * The founder approval gates are the whole reason this workflow is safe to
@@ -20,6 +21,7 @@ const AGENT = "33333333-3333-4333-8333-333333333333";
 const PROJECT = "44444444-4444-4444-8444-444444444444";
 const TASK = "55555555-5555-4555-8555-555555555555";
 const OWNER = "66666666-6666-4666-8666-666666666666";
+const MESSAGE = "7f1b3d2e-8a4c-4f11-9a0e-2b6d5c8e9f01";
 
 const executeEngineeringDelivery = vi.hoisted(() => vi.fn());
 const createArtifact = vi.hoisted(() => vi.fn());
@@ -35,6 +37,8 @@ const createDraftMessage = vi.hoisted(() => vi.fn());
 const listConnectionsForUser = vi.hoisted(() => vi.fn());
 const findOrCreateConversation = vi.hoisted(() => vi.fn());
 const inspectEngineeringDelivery = vi.hoisted(() => vi.fn());
+const decideFounderApproval = vi.hoisted(() => vi.fn());
+const listArtifactsForExecution = vi.hoisted(() => vi.fn());
 
 vi.mock("./engineering", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./engineering")>()),
@@ -51,8 +55,9 @@ vi.mock("./restaurant-outreach", async (importOriginal) => ({
   draftRestaurantOutreach,
 }));
 vi.mock("@/lib/agents/agents", () => ({ resolveAgentById: vi.fn(async () => ({ id: AGENT, organizationId: ORG, name: "Engineering Lead", role: "engineering" })) }));
-vi.mock("@/lib/agent-runtime/artifacts", () => ({ createArtifact, listArtifactsForExecution: vi.fn(async () => []) }));
+vi.mock("@/lib/agent-runtime/artifacts", () => ({ createArtifact, listArtifactsForExecution }));
 vi.mock("@/lib/agent-runtime/approvals", () => ({ requestApproval }));
+vi.mock("@/lib/founder-os/approval-center", () => ({ decideFounderApproval }));
 vi.mock("@/lib/agent-runtime/checkpoints", () => ({ listCheckpointsForExecution: vi.fn(async () => []) }));
 vi.mock("@/lib/agent-runtime/executions", () => ({
   resolveExecutionById: vi.fn(async () => ({ id: EXECUTION, organizationId: ORG, status: "executing", assignedAgentId: AGENT, ownerUserId: OWNER })),
@@ -126,6 +131,8 @@ type Rows = {
   prospectDecidedInContext?: string | null;
   /** Whether the delivery on the project ever got a preview. */
   deliveryPreviewStatus?: "ready" | "pending";
+  /** An approval already on this execution, as the resumed run reads it. */
+  approvalOnExecution?: { status: "approved" | "pending" | "rejected" };
 };
 
 function makeDb(rows: Rows) {
@@ -139,7 +146,9 @@ function makeDb(rows: Rows) {
         description: `Founder directive\n\n${rows.directive ?? "Find a restaurant and build it a demo."}\n\n${autonomyMarker(autonomyFromDirective(rows.directive ?? ""))}`,
       }];
     }
-    if (table === agentApprovalRequests) return [];
+    if (table === agentApprovalRequests) {
+      return rows.approvalOnExecution ? [{ id: "approval-1", status: rows.approvalOnExecution.status, createdAt: new Date("2026-08-20T11:00:00.000Z"), decisionNote: null }] : [];
+    }
     if (table === projectArtifactLinks) {
       return [{
         title: "Restaurant recommendation",
@@ -244,11 +253,13 @@ beforeEach(() => {
   vi.clearAllMocks();
   stage = "engineering";
   createArtifact.mockImplementation(async (_db: unknown, input: { title: string; content: string }) => ({ id: `artifact-${input.title}`, ...input }));
+  listArtifactsForExecution.mockResolvedValue([]);
   executeEngineeringDelivery.mockResolvedValue(delivery);
   completeExecution.mockResolvedValue({ id: EXECUTION, status: "completed" });
   researchRestaurantProspects.mockResolvedValue(research);
   collectRestaurantBrandPack.mockResolvedValue({ pack: brandPack, failure: null });
   requestApproval.mockImplementation(async () => ({ request: { id: "approval-1" }, execution: { id: EXECUTION, status: "human_approval" } }));
+  decideFounderApproval.mockResolvedValue({ id: "approval-1", executionId: EXECUTION, status: "approved" });
   notifyJarvisRunFinished.mockResolvedValue({ email: "sent", voice: "sent" });
   inspectEngineeringDelivery.mockResolvedValue({ previewUrl: delivery.previewUrl, checks: "all green" });
   listConnectionsForUser.mockResolvedValue([{ id: "conn-1", provider: "resend", integrationType: "email", status: "connected" }]);
@@ -473,10 +484,71 @@ describe("running the whole directive without the founder", () => {
       directive: "Find a restaurant, build the demo and send the email yourself.",
     });
 
-    expect(queueMessageAfterRecordedApproval).toHaveBeenCalledTimes(1);
-    expect(requestApproval).not.toHaveBeenCalled();
+    // The rule that an agent cannot mail anyone without a recorded approval
+    // a person's authority decided is not weakened by the delegation: the
+    // approval is raised exactly as it would be, and then decided through
+    // the founder's own approval path.
+    expect(requestApproval).toHaveBeenCalledTimes(1);
+    expect(decideFounderApproval).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ approvalId: "approval-1", decision: "approve", actorUserId: OWNER }),
+    );
+    expect((decideFounderApproval.mock.calls[0]![1] as { decisionNote: string }).decisionNote).toMatch(/autonomy the founder set/i);
     const decision = autoDecisions().find((item) => item.action === RESTAURANT_OUTREACH_APPROVAL_ACTION);
     expect(decision?.summary).toContain("Sent one email to hello@sumacandstone.example.ca");
+  });
+
+  it("never queues the email on a second path of its own", async () => {
+    stage = "outreach";
+    await run({
+      approved: { fingerprint: APPROVED_FINGERPRINT },
+      projectPack: brandPack,
+      deliveryInContext: true,
+      demoAcceptedInContext: true,
+      directive: "Find a restaurant, build the demo and send the email yourself.",
+    });
+
+    // Deciding the approval resumes the execution, and the resume is the one
+    // and only place an outreach message is ever queued for sending. Queueing
+    // here too would be a second send path — and, because the message would
+    // no longer be pending approval on the resume, it would also throw.
+    expect(queueMessageAfterRecordedApproval).not.toHaveBeenCalled();
+  });
+
+  it("queues the email once the approval covering it is approved, whoever decided it", async () => {
+    stage = "outreach";
+    // The single send path: an outreach message is queued only on a resume
+    // that finds an approved approval on this execution. Both lanes arrive
+    // here — the founder tapping Approve, and Jarvis deciding under a policy
+    // the founder handed over.
+    listArtifactsForExecution.mockResolvedValue([{
+      id: "artifact-outreach",
+      createdAt: new Date("2026-08-20T12:00:00.000Z"),
+      content: restaurantOutreachMarker({ messageId: MESSAGE, recipient: candidate.email!, previewUrl: delivery.previewUrl }),
+    }]);
+    await run({
+      approved: { fingerprint: APPROVED_FINGERPRINT },
+      projectPack: brandPack,
+      deliveryInContext: true,
+      demoAcceptedInContext: true,
+      approvalOnExecution: { status: "approved" },
+    });
+
+    expect(queueMessageAfterRecordedApproval).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ messageId: MESSAGE, actorUserId: OWNER }));
+  });
+
+  it("sends nothing while the approval covering the email is still pending", async () => {
+    stage = "outreach";
+    await run({
+      approved: { fingerprint: APPROVED_FINGERPRINT },
+      projectPack: brandPack,
+      deliveryInContext: true,
+      demoAcceptedInContext: true,
+      approvalOnExecution: { status: "pending" },
+    });
+
+    expect(queueMessageAfterRecordedApproval).not.toHaveBeenCalled();
+    expect(createDraftMessage).not.toHaveBeenCalled();
   });
 
   it("drafts the email and waits, when the founder did not hand outreach over", async () => {

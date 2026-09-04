@@ -7,6 +7,7 @@ import { agentApprovalRequests, agentArtifacts, projectApprovalLinks, projectArt
 import { resolveAgentById } from "@/lib/agents/agents";
 import { createArtifact, listArtifactsForExecution } from "@/lib/agent-runtime/artifacts";
 import { requestApproval } from "@/lib/agent-runtime/approvals";
+import { decideFounderApproval } from "@/lib/founder-os/approval-center";
 import { listCheckpointsForExecution } from "@/lib/agent-runtime/checkpoints";
 import { resolveExecutionById, type AgentExecutionStatus } from "@/lib/agent-runtime/executions";
 import { advanceExecution, completeExecution } from "@/lib/agent-runtime/lifecycle";
@@ -791,21 +792,34 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
     const outreach = parseRestaurantOutreach(artifact.content);
     if (!outreach) throw new Error("outreach message evidence is missing");
     const approvalSummary = `Review the exact restaurant email and preview link for ${projectRow.name}. Approving queues one Resend email; requesting changes rewrites it. Nothing has been sent yet.`;
+    const approval = await requestApproval(db, { organizationId: input.organizationId, executionId: execution.id, requestedAction: RESTAURANT_OUTREACH_APPROVAL_ACTION, summary: approvalSummary, riskLevel: "high", artifactId: artifact.id, proposedActionRef: { projectId: link.projectId, taskId: link.taskId, messageId: outreach.messageId }, actorAgentId: agent.id });
+    await attachMessageToExistingApproval(db, { organizationId: input.organizationId, messageId: outreach.messageId, approvalRequestId: approval.request.id, actorUserId: execution.ownerUserId });
+    await linkApprovalToEntity(db, { organizationId: input.organizationId, projectId: link.projectId, approvalRequestId: approval.request.id, linkedEntityType: "task", linkedEntityId: link.taskId, actorUserId: execution.ownerUserId });
     if (policy.outreach === "auto") {
-      // Exactly one message, to the one verified address, pointing at a
-      // preview that was confirmed to exist. The founder handed this over
-      // deliberately; it is still one email, not a campaign.
-      await queueMessageAfterRecordedApproval(db, { organizationId: input.organizationId, messageId: outreach.messageId, actorUserId: execution.ownerUserId });
+      // A handed-over decision is still a decision, and a message may only
+      // be sent against a recorded approval that a person's authority
+      // decided — that rule is what makes an agent unable to mail anyone on
+      // its own, and it is not weakened here. So the approval is raised the
+      // same way, then decided through the founder's own approval path,
+      // with the delegation written into the decision note.
+      //
+      // Deciding it enqueues the resume that queues the message, which is
+      // the one and only place an outreach email is ever sent from. Doing
+      // it here instead would be a second send path.
       await recordAutoDecision(db, stage, {
         action: RESTAURANT_OUTREACH_APPROVAL_ACTION,
         summary: `Sent one email to ${outreach.recipient}, pointing at ${outreach.previewUrl}.`,
         restaurantName: parseRestaurantResearch(context)?.recommendation.name ?? null,
       });
-      return await finishStage(db, stage);
+      await decideFounderApproval(db, {
+        organizationId: input.organizationId,
+        approvalId: approval.request.id,
+        decision: "approve",
+        decisionNote: `Decided by Jarvis under the autonomy the founder set on this directive: ${policy.reason}`,
+        actorUserId: execution.ownerUserId,
+      });
+      return approval.execution;
     }
-    const approval = await requestApproval(db, { organizationId: input.organizationId, executionId: execution.id, requestedAction: RESTAURANT_OUTREACH_APPROVAL_ACTION, summary: approvalSummary, riskLevel: "high", artifactId: artifact.id, proposedActionRef: { projectId: link.projectId, taskId: link.taskId, messageId: outreach.messageId }, actorAgentId: agent.id });
-    await attachMessageToExistingApproval(db, { organizationId: input.organizationId, messageId: outreach.messageId, approvalRequestId: approval.request.id, actorUserId: execution.ownerUserId });
-    await linkApprovalToEntity(db, { organizationId: input.organizationId, projectId: link.projectId, approvalRequestId: approval.request.id, linkedEntityType: "task", linkedEntityId: link.taskId, actorUserId: execution.ownerUserId });
     await notifyJarvisApprovalNeeded(db, { organizationId: input.organizationId, ownerUserId: execution.ownerUserId, projectId: link.projectId, projectName: projectRow.name, summary: approvalSummary, approvalId: approval.request.id, riskLevel: "high" });
     return approval.execution;
   }
