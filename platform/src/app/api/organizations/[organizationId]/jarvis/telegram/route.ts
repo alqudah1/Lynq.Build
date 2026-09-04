@@ -58,33 +58,32 @@ export async function GET(_request: Request, { params }: RouteParams) {
       throw new PasscodeRateLimitedError();
     }
 
-    const resolution = resolveTelegramConfig();
-    if (!resolution.ok) {
-      return noStoreJson({
-        available: false,
-        reason:
-          resolution.reason === "disabled"
-            ? "Telegram control is switched off for this deployment."
-            : "Telegram control is not finished being set up yet. Ask whoever set up LYNQ to finish it.",
-        code: null,
-        expiresInMs: null,
-        links: [],
-      });
-    }
-    if (resolution.config.organizationId !== organizationId) {
-      return noStoreJson({ available: false, reason: "Telegram control is not set up for this organization.", code: null, expiresInMs: null, links: [] });
-    }
-    if (resolution.config.founderUserId !== user.userId) {
-      return noStoreJson({ available: false, reason: "This code belongs to the founder's account. Sign in as that account to see it.", code: null, expiresInMs: null, links: [] });
-    }
-
-    const { code, expiresInMs } = currentTelegramLinkCode(resolution.config);
+    // Which chats can drive Jarvis is not a credential — a username and a
+    // date — and any admin of this workspace has a reason to see it and a
+    // reason to be able to cut it off. Only the code below is withheld.
     const links = await db
       .select({ id: jarvisTelegramLinks.id, username: jarvisTelegramLinks.telegramUsername, linkedAt: jarvisTelegramLinks.linkedAt, lastSeenAt: jarvisTelegramLinks.lastSeenAt })
       .from(jarvisTelegramLinks)
       .where(and(eq(jarvisTelegramLinks.organizationId, organizationId), eq(jarvisTelegramLinks.status, "active")))
       .orderBy(desc(jarvisTelegramLinks.linkedAt));
+    const withoutCode = (reason: string) => noStoreJson({ available: false, reason, code: null, expiresInMs: null, links });
 
+    const resolution = resolveTelegramConfig();
+    if (!resolution.ok) {
+      return withoutCode(
+        resolution.reason === "disabled"
+          ? "Telegram control is switched off for this deployment."
+          : "Telegram control is not finished being set up yet. Ask whoever set up LYNQ to finish it.",
+      );
+    }
+    if (resolution.config.organizationId !== organizationId) {
+      return withoutCode("Telegram control is not set up for this organization.");
+    }
+    if (resolution.config.founderUserId !== user.userId) {
+      return withoutCode("This code belongs to the founder's account. Sign in as that account to see it.");
+    }
+
+    const { code, expiresInMs } = currentTelegramLinkCode(resolution.config);
     return Response.json({ data: { available: true, reason: null, code, expiresInMs, links } }, { status: 200, headers: NO_STORE_HEADERS });
   } catch (err) {
     return telegramErrorResponse(err);

@@ -88,28 +88,32 @@ export function JarvisTelegramControl({ organizationId }: { organizationId: stri
           <p className="text-xs text-subtle">
             {state.expiresInMs !== null ? `Expires in about ${Math.max(1, Math.round(state.expiresInMs / 1000))} seconds. A new one appears automatically.` : null}
           </p>
-
-          <div className="grid gap-2 border-t border-border pt-4">
-            <p className="text-xs uppercase tracking-[0.14em] text-subtle">Linked chats</p>
-            {state.links.length === 0 ? (
-              <p className="text-sm text-muted">No chat is linked yet.</p>
-            ) : (
-              <ul className="grid gap-1 text-sm text-muted">
-                {state.links.map((link) => (
-                  <li key={link.id}>
-                    {link.username ? `@${link.username}` : "A Telegram chat"} · linked {new Date(link.linkedAt).toLocaleDateString()}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {state.links.length > 0 ? (
-              <button type="button" onClick={() => void revoke()} disabled={busy} className="justify-self-start text-xs text-amber-100 underline disabled:opacity-60">
-                {busy ? "Unlinking…" : "Unlink every chat"}
-              </button>
-            ) : null}
-          </div>
         </>
       ) : null}
+
+      {/*
+        Shown to any admin, whether or not they can read the pairing code:
+        cutting a chat off is exactly what someone who is not the founder
+        needs to be able to do when the founder's phone is in the wrong
+        hands.
+      */}
+      {state && state.links.length > 0 ? (
+        <div className="grid gap-2 border-t border-border pt-4">
+          <p className="text-xs uppercase tracking-[0.14em] text-subtle">Linked chats</p>
+          <ul className="grid gap-1 text-sm text-muted">
+            {state.links.map((link) => (
+              <li key={link.id}>
+                {link.username ? `@${link.username}` : "A Telegram chat"} · linked {new Date(link.linkedAt).toLocaleDateString()}
+              </li>
+            ))}
+          </ul>
+          <button type="button" onClick={() => void revoke()} disabled={busy} className="justify-self-start text-xs text-amber-100 underline disabled:opacity-60">
+            {busy ? "Unlinking…" : "Unlink every chat"}
+          </button>
+        </div>
+      ) : null}
+
+      {state?.available && state.links.length === 0 ? <p className="text-sm text-muted">No chat is linked yet.</p> : null}
     </section>
   );
 }

@@ -53,7 +53,9 @@ const params = (organizationId = ORG) => ({ params: Promise.resolve({ organizati
 const request = () => new Request("https://lynq.build/api/organizations/x/jarvis/telegram");
 
 async function body(response: Response) {
-  return (await response.json()) as { data: { available?: boolean; code: string | null; revoked?: number; reason: string | null } };
+  return (await response.json()) as {
+    data: { available?: boolean; code: string | null; revoked?: number; reason: string | null; links?: { id: string }[] };
+  };
 }
 
 beforeEach(() => {
@@ -81,12 +83,23 @@ describe("reading the pairing code", () => {
     expect(response.headers.get("Cache-Control")).toBe("no-store");
   });
 
-  it("withholds it from another admin of the same workspace", async () => {
+  it("withholds it from another admin of the same workspace, but still shows what is linked", async () => {
     getAuthenticatedUser.mockResolvedValue({ userId: OTHER_ADMIN });
     const { data } = await body(await GET(request(), params()));
 
     expect(data.available).toBe(false);
     expect(data.code).toBeNull();
+    // Which chats can drive Jarvis is not a credential, and this admin is
+    // the one who may need to cut them off.
+    expect(data.links).toHaveLength(1);
+  });
+
+  it("shows what is linked even when the lane has been switched off", async () => {
+    resolveTelegramConfig.mockReturnValue({ ok: false, reason: "disabled", missing: [] });
+    const { data } = await body(await GET(request(), params()));
+
+    expect(data.code).toBeNull();
+    expect(data.links).toHaveLength(1);
   });
 
   it("withholds it for a workspace this deployment does not serve", async () => {
