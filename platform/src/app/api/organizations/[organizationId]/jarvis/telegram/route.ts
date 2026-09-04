@@ -97,6 +97,14 @@ export async function GET(_request: Request, { params }: RouteParams) {
  * The link is the credential, so this is the revocation. It is deliberately
  * one action with no confirmation flow: a founder who thinks his phone is
  * compromised should not have to answer a dialog first.
+ *
+ * Minting a code is held to the founder's own account, because whoever can
+ * mint it holds the credential. Destroying access is not held to anything
+ * beyond being an admin of this workspace — the case that matters is the
+ * founder's phone in someone else's hand, and refusing to help because the
+ * person at the keyboard is the wrong admin, or because the lane has since
+ * been switched off, would be failing closed in the direction that keeps
+ * the attacker in.
  */
 export async function DELETE(_request: Request, { params }: RouteParams) {
   try {
@@ -106,11 +114,6 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
     const db = createDbClient(env);
     const user = await getAuthenticatedUser(db);
     await requireOrganizationAdminOverride(db, organizationId, user.userId);
-
-    const resolution = resolveTelegramConfig();
-    if (!resolution.ok || resolution.config.organizationId !== organizationId || resolution.config.founderUserId !== user.userId) {
-      return noStoreJson({ revoked: 0, reason: "This is not available for your account." });
-    }
 
     const links = await db
       .select({ id: jarvisTelegramLinks.id, organizationId: jarvisTelegramLinks.organizationId, userId: jarvisTelegramLinks.userId, telegramChatId: jarvisTelegramLinks.telegramChatId })
