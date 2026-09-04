@@ -44,14 +44,25 @@ export const DEFAULT_AUTONOMY: AutonomyPolicy = {
   reason: "Jarvis researches, builds and reviews on its own, and asks before contacting a business.",
 };
 
+/**
+ * What counts as handing outreach over.
+ *
+ * This is the one lane where a false positive reaches a stranger, so the
+ * phrase has to be about the whole directive or about contacting the
+ * business — never about some detail inside it. "You decide" was here and
+ * is deliberately gone: a founder writing "you decide which restaurant" is
+ * delegating the choice of restaurant, and reading that as permission to
+ * email one is not a reading he would recognise. The same reason narrows
+ * "don't ask me": followed by an object it is scoped to that object, and
+ * only standing alone does it mean "about any of this".
+ */
 const HAND_OVER_OUTREACH = [
   /\bsend (?:the )?(?:email|emails|outreach|it) (?:yourself|without me|on your own)\b/i,
-  /\b(?:don'?t|do not) (?:ask|wait for) me\b/i,
+  /\b(?:don'?t|do not) (?:ask|wait for) me\b(?!\s+(?:about|which|what|who|where|when|why|how|if|whether|to|for|on|regarding))/i,
   /\bwithout (?:asking|waiting for) me\b/i,
   /\brun (?:it|the whole thing|everything) end[- ]to[- ]end\b/i,
   /\bhandle (?:it|everything|the whole thing) (?:yourself|for me)\b/i,
   /\bfull(?:y)? autonom(?:y|ous)\b/i,
-  /\byou decide\b/i,
   /\breach out (?:to them )?(?:yourself|directly)\b/i,
   /رد بنفسك/,
   /لا\s*تسألني/,

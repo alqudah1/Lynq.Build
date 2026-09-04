@@ -37,7 +37,10 @@ replacement.
 - default — Jarvis researches, builds, deploys the preview and reviews it
   on its own, then asks before contacting anyone;
 - *"and send the email yourself"* / *"don't ask me"* / *"run it end to
-  end"* — it does the outreach too and reports back when it is done;
+  end"* — it does the outreach too and reports back when it is done.
+  Delegating one detail is not this: *"you decide which restaurant"* or
+  *"don't ask me about the photos"* still stops before anyone is
+  contacted;
 - *"check with me first"* — it stops at every gate, as it always did.
 
 ---

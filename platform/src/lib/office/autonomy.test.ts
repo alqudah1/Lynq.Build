@@ -48,6 +48,23 @@ describe("reading the policy out of the directive", () => {
     expect(autonomyFromDirective(instruction)).toMatchObject({ build: "ask", outreach: "ask" });
   });
 
+  it.each([
+    // Delegating one choice inside the directive is not delegating the
+    // decision to contact a business. Getting this wrong sends an email to
+    // a stranger the founder never agreed to contact.
+    "Find somewhere in Little Italy — you decide which restaurant.",
+    "You decide the colours.",
+    "Don't ask me about the menu photos, just pick the good ones.",
+    "Don't ask me which font to use.",
+    "Do not wait for me on the copy.",
+  ])("keeps outreach with the founder when he only delegated a detail: %s", (instruction) => {
+    const policy = autonomyFromDirective(instruction);
+    expect(policy.outreach).toBe("ask");
+    // The build still runs on its own — that is the default, and it touches
+    // nobody outside LYNQ.
+    expect(policy.build).toBe("auto");
+  });
+
   it("does not read a request to be consulted as permission to send email", () => {
     // Both phrasings present: being asked to check in wins, because the
     // cost of over-reading autonomy is a stranger receiving an email.
