@@ -783,7 +783,7 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
     }
     const approval = await requestApproval(db, { organizationId: input.organizationId, executionId: execution.id, requestedAction: RESTAURANT_PROSPECT_APPROVAL_ACTION, summary: approvalSummary.slice(0, 1000), riskLevel: "medium", artifactId: artifact.id, proposedActionRef: { projectId: link.projectId, taskId: link.taskId, brandPackFingerprint: fingerprint }, actorAgentId: agent.id });
     await linkApprovalToEntity(db, { organizationId: input.organizationId, projectId: link.projectId, approvalRequestId: approval.request.id, linkedEntityType: "task", linkedEntityId: link.taskId, actorUserId: execution.ownerUserId });
-    await notifyJarvisApprovalNeeded(db, { organizationId: input.organizationId, ownerUserId: execution.ownerUserId, projectId: link.projectId, projectName: projectRow.name, summary: approvalSummary });
+    await notifyJarvisApprovalNeeded(db, { organizationId: input.organizationId, ownerUserId: execution.ownerUserId, projectId: link.projectId, projectName: projectRow.name, summary: approvalSummary, approvalId: approval.request.id, riskLevel: "medium" });
     return approval.execution;
   }
 
@@ -806,7 +806,7 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
     const approval = await requestApproval(db, { organizationId: input.organizationId, executionId: execution.id, requestedAction: RESTAURANT_OUTREACH_APPROVAL_ACTION, summary: approvalSummary, riskLevel: "high", artifactId: artifact.id, proposedActionRef: { projectId: link.projectId, taskId: link.taskId, messageId: outreach.messageId }, actorAgentId: agent.id });
     await attachMessageToExistingApproval(db, { organizationId: input.organizationId, messageId: outreach.messageId, approvalRequestId: approval.request.id, actorUserId: execution.ownerUserId });
     await linkApprovalToEntity(db, { organizationId: input.organizationId, projectId: link.projectId, approvalRequestId: approval.request.id, linkedEntityType: "task", linkedEntityId: link.taskId, actorUserId: execution.ownerUserId });
-    await notifyJarvisApprovalNeeded(db, { organizationId: input.organizationId, ownerUserId: execution.ownerUserId, projectId: link.projectId, projectName: projectRow.name, summary: approvalSummary });
+    await notifyJarvisApprovalNeeded(db, { organizationId: input.organizationId, ownerUserId: execution.ownerUserId, projectId: link.projectId, projectName: projectRow.name, summary: approvalSummary, approvalId: approval.request.id, riskLevel: "high" });
     return approval.execution;
   }
 
@@ -835,7 +835,7 @@ export async function continueOfficeDirectiveExecution(db: Db, input: { organiza
     }
     const approval = await requestApproval(db, { organizationId: input.organizationId, executionId: execution.id, requestedAction: DEMO_APPROVAL_ACTION, summary: approvalSummary, riskLevel: "high", artifactId: artifact.id, proposedActionRef: { projectId: link.projectId, taskId: link.taskId, commitSha: reviewedDelivery.commitSha, previewPath: reviewedDelivery.previewPath }, actorAgentId: agent.id });
     await linkApprovalToEntity(db, { organizationId: input.organizationId, projectId: link.projectId, approvalRequestId: approval.request.id, linkedEntityType: "task", linkedEntityId: link.taskId, actorUserId: execution.ownerUserId });
-    await notifyJarvisApprovalNeeded(db, { organizationId: input.organizationId, ownerUserId: execution.ownerUserId, projectId: link.projectId, projectName: projectRow.name, summary: approvalSummary });
+    await notifyJarvisApprovalNeeded(db, { organizationId: input.organizationId, ownerUserId: execution.ownerUserId, projectId: link.projectId, projectName: projectRow.name, summary: approvalSummary, approvalId: approval.request.id, riskLevel: "high" });
     return approval.execution;
   }
 

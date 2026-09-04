@@ -5,12 +5,14 @@ import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { organizations, projectExecutionLinks, projects, users } from "@/db/schema";
 import { notifyFounderByVoice } from "@/lib/voice/notifier";
 import type { VoiceDeliveryStatus } from "@/lib/voice/types";
+import { explainJarvisFailure } from "@/lib/office/jarvis-presentation";
+import { notifyTelegramApprovalNeeded, notifyTelegramExecutionStopped, notifyTelegramRunFinished, type TelegramDeliveryStatus } from "@/lib/telegram/notifier";
 import { resolveConfiguredEmailTransport } from "./resend-transport";
 import type { EmailTransport } from "./types";
 
 type Db = NeonHttpDatabase<Record<string, unknown>>;
 type NotificationStatus = "sent" | "not_configured" | "failed";
-type JarvisNotificationOutcome = { email: NotificationStatus; voice: VoiceDeliveryStatus };
+type JarvisNotificationOutcome = { email: NotificationStatus; voice: VoiceDeliveryStatus; telegram: TelegramDeliveryStatus };
 
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char] ?? char);
@@ -19,7 +21,7 @@ function escapeHtml(value: string): string {
 /** Best-effort founder notification. The approval remains authoritative in Agent Runtime/My Work. */
 export async function notifyJarvisApprovalNeeded(
   db: Db,
-  input: { organizationId: string; ownerUserId: string; projectId: string; projectName: string; summary: string },
+  input: { organizationId: string; ownerUserId: string; projectId: string; projectName: string; summary: string; approvalId?: string | null; riskLevel?: string | null },
   transport: EmailTransport | null = resolveConfiguredEmailTransport(),
 ): Promise<JarvisNotificationOutcome> {
   try {
@@ -27,7 +29,7 @@ export async function notifyJarvisApprovalNeeded(
       db.select({ email: users.email, name: users.name }).from(users).where(eq(users.id, input.ownerUserId)),
       db.select({ slug: organizations.slug }).from(organizations).where(eq(organizations.id, input.organizationId)),
     ]);
-    if (!owner?.email || !organization?.slug) return { email: "failed", voice: "failed" };
+    if (!owner?.email || !organization?.slug) return { email: "failed", voice: "failed", telegram: "failed" };
 
     const base = (process.env.APP_BASE_URL || "http://localhost:3000").replace(/\/$/, "");
     const approvalUrl = `${base}/app/${encodeURIComponent(organization.slug)}/my-work`;
@@ -41,6 +43,17 @@ export async function notifyJarvisApprovalNeeded(
       actionUrl: approvalUrl,
       context: { organizationId: input.organizationId, ownerUserId: input.ownerUserId, projectId: input.projectId },
     });
+    // Telegram carries the buttons, so a decision can be made from a bus
+    // rather than from the laptop he is not sitting at.
+    const telegramPromise = input.approvalId
+      ? notifyTelegramApprovalNeeded(db, {
+          organizationId: input.organizationId,
+          projectName: input.projectName,
+          summary: input.summary,
+          approvalId: input.approvalId,
+          riskLevel: input.riskLevel ?? "medium",
+        })
+      : Promise.resolve<TelegramDeliveryStatus>("not_configured");
 
     let email: NotificationStatus = "not_configured";
     if (transport) {
@@ -57,10 +70,10 @@ export async function notifyJarvisApprovalNeeded(
         email = "failed";
       }
     }
-    return { email, voice: await voicePromise };
+    return { email, voice: await voicePromise, telegram: await telegramPromise };
   } catch (error) {
     console.error("[jarvis] approval notification failed:", error instanceof Error ? error.message : "unknown error");
-    return { email: "failed", voice: "failed" };
+    return { email: "failed", voice: "failed", telegram: "failed" };
   }
 }
 
@@ -77,9 +90,9 @@ export async function notifyJarvisExecutionStopped(
       .innerJoin(projects, eq(projects.id, projectExecutionLinks.projectId))
       .innerJoin(organizations, eq(organizations.id, projects.organizationId))
       .where(eq(projectExecutionLinks.executionId, input.executionId));
-    if (!context) return { email: "failed", voice: "failed" };
+    if (!context) return { email: "failed", voice: "failed", telegram: "failed" };
     const [owner] = await db.select({ email: users.email, name: users.name }).from(users).where(eq(users.id, context.ownerUserId));
-    if (!owner?.email) return { email: "failed", voice: "failed" };
+    if (!owner?.email) return { email: "failed", voice: "failed", telegram: "failed" };
 
     const base = (process.env.APP_BASE_URL || "http://localhost:3000").replace(/\/$/, "");
     const projectUrl = `${base}/app/${encodeURIComponent(context.organizationSlug)}/projects/${encodeURIComponent(context.projectId)}`;
@@ -93,6 +106,16 @@ export async function notifyJarvisExecutionStopped(
       summary: `${input.reason}. ${action}`.slice(0, 1000),
       actionUrl: projectUrl,
       context: { organizationId: input.organizationId, ownerUserId: context.ownerUserId, projectId: context.projectId },
+    });
+    // The chat gets the founder-readable version, not the runtime's.
+    const explained = explainJarvisFailure(input.reason);
+    const telegramPromise = notifyTelegramExecutionStopped(db, {
+      organizationId: input.organizationId,
+      projectName: context.projectName,
+      headline: explained?.headline ?? "a step stopped",
+      detail: explained?.detail ?? input.reason,
+      nextStep: explained?.nextStep ?? action,
+      projectUrl,
     });
 
     let email: NotificationStatus = "not_configured";
@@ -110,10 +133,10 @@ export async function notifyJarvisExecutionStopped(
         email = "failed";
       }
     }
-    return { email, voice: await voicePromise };
+    return { email, voice: await voicePromise, telegram: await telegramPromise };
   } catch (error) {
     console.error("[jarvis] failure notification failed:", error instanceof Error ? error.message : "unknown error");
-    return { email: "failed", voice: "failed" };
+    return { email: "failed", voice: "failed", telegram: "failed" };
   }
 }
 
@@ -135,7 +158,7 @@ export async function notifyJarvisRunFinished(
       db.select({ email: users.email, name: users.name }).from(users).where(eq(users.id, input.ownerUserId)),
       db.select({ slug: organizations.slug }).from(organizations).where(eq(organizations.id, input.organizationId)),
     ]);
-    if (!owner?.email || !organization?.slug) return { email: "failed", voice: "failed" };
+    if (!owner?.email || !organization?.slug) return { email: "failed", voice: "failed", telegram: "failed" };
 
     const base = (process.env.APP_BASE_URL || "http://localhost:3000").replace(/\/$/, "");
     const projectUrl = `${base}/app/${encodeURIComponent(organization.slug)}/jarvis/${encodeURIComponent(input.projectId)}`;
@@ -151,6 +174,13 @@ export async function notifyJarvisRunFinished(
       summary: `${input.headline}. ${input.needsFounder.length > 0 ? `${input.needsFounder.length} thing${input.needsFounder.length === 1 ? "" : "s"} still needs you.` : "Nothing is waiting on you."}`.slice(0, 1000),
       actionUrl: projectUrl,
       context: { organizationId: input.organizationId, ownerUserId: input.ownerUserId, projectId: input.projectId },
+    });
+    const telegramPromise = notifyTelegramRunFinished(db, {
+      organizationId: input.organizationId,
+      projectName: input.projectName,
+      headline: input.headline,
+      needsFounder: input.needsFounder,
+      projectUrl,
     });
 
     let email: NotificationStatus = "not_configured";
@@ -168,9 +198,9 @@ export async function notifyJarvisRunFinished(
         email = "failed";
       }
     }
-    return { email, voice: await voicePromise };
+    return { email, voice: await voicePromise, telegram: await telegramPromise };
   } catch (error) {
     console.error("[jarvis] run report notification failed:", error instanceof Error ? error.message : "unknown error");
-    return { email: "failed", voice: "failed" };
+    return { email: "failed", voice: "failed", telegram: "failed" };
   }
 }

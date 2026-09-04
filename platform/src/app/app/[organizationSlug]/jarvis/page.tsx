@@ -10,6 +10,7 @@ import { TenantResourceNotFoundError } from "@/lib/authz/errors";
 import { extractFounderDirective } from "@/lib/office/jarvis-presentation";
 import { OfficeCommandCenter } from "@/components/dashboard/office/OfficeCommandCenter";
 import { JarvisPhoneControl } from "@/components/dashboard/office/JarvisPhoneControl";
+import { JarvisTelegramControl } from "@/components/dashboard/office/JarvisTelegramControl";
 import { Breadcrumbs } from "@/components/dashboard/Breadcrumbs";
 
 export const dynamic = "force-dynamic";
@@ -61,6 +62,7 @@ export default async function JarvisPage({ params }: { params: Promise<{ organiz
       <OfficeCommandCenter organizationId={organization.id} organizationSlug={organizationSlug} workspaceId={workspace?.id ?? null} navigateToDirective />
 
       <JarvisPhoneControl organizationId={organization.id} organizationSlug={organizationSlug} />
+      <JarvisTelegramControl organizationId={organization.id} />
 
       <section aria-labelledby="jarvis-directives-heading">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">

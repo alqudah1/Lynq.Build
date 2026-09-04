@@ -5834,3 +5834,67 @@ export const jarvisVoiceWebhookEvents = pgTable("jarvis_voice_webhook_events", {
   uniqueIndex("jarvis_voice_webhook_events_dedup_unique").on(t.provider, t.externalEventId),
   index("jarvis_voice_webhook_events_call_idx").on(t.providerCallId),
 ]);
+
+/* ============================================================================
+ * Jarvis Telegram control
+ * ============================================================================
+ * The founder is rarely at the laptop. Telegram gives Jarvis a two-way channel
+ * he already has on his phone: he sends a directive, and Jarvis comes back for
+ * a decision there rather than waiting for him to open a browser.
+ *
+ * The security model is the phone lane's, adapted rather than reinvented. A
+ * Telegram chat id is not authentication — it is only stable, not secret — so
+ * a chat becomes trusted exactly once, through a rotating passcode the founder
+ * reads from an authenticated LYNQ session. After that the link IS the second
+ * factor, and it can be revoked from the app at any time.
+ */
+export const jarvisTelegramLinkStatusEnum = pgEnum("jarvis_telegram_link_status", ["active", "revoked"]);
+
+export const jarvisTelegramLinks = pgTable("jarvis_telegram_links", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  /** The LYNQ identity this chat acts as. Every action is attributed to it. */
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  /** Telegram's numeric chat id, as a string — it exceeds 32 bits. */
+  telegramChatId: text("telegram_chat_id").notNull(),
+  telegramUsername: text("telegram_username"),
+  status: jarvisTelegramLinkStatusEnum("status").notNull().default("active"),
+  linkedAt: timestamp("linked_at", { withTimezone: true }).notNull().defaultNow(),
+  lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
+  revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  revokedByUserId: uuid("revoked_by_user_id").references(() => users.id, { onDelete: "set null" }),
+  revision: integer("revision").notNull().default(1),
+  ...timestamps,
+}, (t) => [
+  // One Telegram account controls at most one LYNQ identity at a time. A
+  // revoked row stays for the audit trail and does not block a re-link.
+  uniqueIndex("jarvis_telegram_links_active_chat_unique").on(t.telegramChatId).where(sql`${t.status} = 'active'`),
+  index("jarvis_telegram_links_org_idx").on(t.organizationId, t.status),
+]);
+
+/**
+ * Every inbound update, recorded once.
+ *
+ * Telegram redelivers an update until the webhook answers 200, so "handled
+ * exactly once" has to be a database fact rather than an intention — the same
+ * reasoning as `jarvis_voice_webhook_events`. Failed link attempts are
+ * recorded here too, which is what the pairing attempt budget counts.
+ *
+ * `organization_id` is nullable because an update can arrive from a chat that
+ * belongs to no tenant at all; it is still recorded, and still cannot replay.
+ */
+export const jarvisTelegramEvents = pgTable("jarvis_telegram_events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
+  /** Telegram's own `update_id`, unique per bot. */
+  externalEventId: text("external_event_id").notNull(),
+  chatId: text("chat_id"),
+  kind: text("kind").notNull(),
+  outcome: text("outcome").notNull(),
+  /** Redacted before storage — never a passcode, never a full message body. */
+  detail: text("detail"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex("jarvis_telegram_events_external_unique").on(t.externalEventId),
+  index("jarvis_telegram_events_chat_idx").on(t.chatId, t.createdAt),
+]);
