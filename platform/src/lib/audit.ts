@@ -631,7 +631,14 @@ export type AuditEventType =
   // longer than any call can last. `metadata.reason` says which. Recorded with
   // no actor: nobody asked for it.
   | "jarvis_phone_command_expired"
-  | "jarvis_phone_command_decided";
+  | "jarvis_phone_command_decided"
+  // Telegram control. A chat becomes trusted exactly once, and a founder
+  // decision made from it is attributed to him with the channel recorded,
+  // so "he approved this from his phone" is answerable months later.
+  | "jarvis_telegram_linked"
+  | "jarvis_telegram_revoked"
+  | "jarvis_telegram_directive_created"
+  | "jarvis_telegram_approval_decided";
 
 export interface RecordAuditEventInput {
   eventType: AuditEventType;

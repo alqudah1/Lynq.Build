@@ -24,6 +24,7 @@ const ATTRIBUTE_NAMES: Record<string, string> = {
   htmlFor: "for",
   autoComplete: "autocomplete",
   crossOrigin: "crossorigin",
+  charSet: "charset",
   dateTime: "datetime",
   maxLength: "maxlength",
   minLength: "minlength",
@@ -106,6 +107,11 @@ function renderNode(node: ReactNode): string {
   const tag = element.type;
   const open = `<${tag}${attributes(props)}>`;
   if (VOID_ELEMENTS.has(tag)) return open;
+  // A generated site inlines its own stylesheet, and CSS must not be
+  // HTML-escaped on the way out. React treats this the same way, which is
+  // what keeps the two renderers in agreement.
+  const raw = (props.dangerouslySetInnerHTML as { __html?: string } | undefined)?.__html;
+  if (typeof raw === "string") return `${open}${raw}</${tag}>`;
   return `${open}${renderNode(props.children as ReactNode)}</${tag}>`;
 }
 

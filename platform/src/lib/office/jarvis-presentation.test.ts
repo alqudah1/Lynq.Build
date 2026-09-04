@@ -35,6 +35,11 @@ describe("failures in plain language", () => {
     ["Quality Assurance is waiting for the preview link.", /preview has not appeared yet/i],
     ["Outreach is ready, but a verified Resend email connection is not connected in Communications", /email is not connected/i],
     ["GitHub request failed (404)", /cannot reach the code repository/i],
+    ["Outreach is waiting for the founder to approve the built demo", /never accepted/i],
+    // Not the same sentence as QA's, and it used to fall through to the
+    // generic "this step stopped" — which told the founder nothing about
+    // why no email went out.
+    ["Outreach is waiting for a working preview link. Nothing is sent while the demo the email would point at cannot be opened.", /preview has not appeared yet/i],
   ])("explains %s", (raw, expected) => {
     const failure = explainJarvisFailure(raw)!;
     expect(failure.headline).toMatch(expected);
@@ -97,5 +102,29 @@ describe("whether a demo is actually built", () => {
     expect(summarizeDemoDelivery("# Just a report").built).toBe(false);
     expect(summarizeDemoDelivery(null).commitSha).toBeNull();
     expect(summarizeDemoDelivery("<!-- LYNQ_ENGINEERING_RESULT {not json} -->").commitSha).toBeNull();
+  });
+});
+
+describe("a project that has been revised", () => {
+  const marker = (delivery: Record<string, unknown>) => `<!-- LYNQ_ENGINEERING_RESULT ${JSON.stringify(delivery)} -->`;
+  const rejected = { previewPath: "/demos/x", commitSha: "old111", previewUrl: "https://old.vercel.app/demos/x", previewStatus: "ready", pullRequestUrl: "https://github.com/o/r/pull/1" };
+  const revised = { previewPath: "/demos/x", commitSha: "new222", previewUrl: "https://new.vercel.app/demos/x", previewStatus: "ready", pullRequestUrl: "https://github.com/o/r/pull/2" };
+
+  it("describes the newest delivery, not the one the founder rejected", () => {
+    const context = [marker(rejected), "# Founder review", marker(revised), "# Revised delivery"].join("\n\n");
+    expect(summarizeDemoDelivery(context)).toMatchObject({ commitSha: "new222", previewUrl: "https://new.vercel.app/demos/x", pullRequestUrl: "https://github.com/o/r/pull/2" });
+  });
+
+  it("does not fall back to a superseded build when the newest one has no preview", () => {
+    const context = [marker(rejected), marker({ ...revised, previewUrl: null, previewStatus: "pending" })].join("\n\n");
+    const summary = summarizeDemoDelivery(context);
+    expect(summary.built).toBe(false);
+    expect(summary.commitSha).toBe("new222");
+    expect(summary.previewUrl).toBeNull();
+  });
+
+  it("skips a damaged newest record rather than reporting nothing at all", () => {
+    const context = [marker(rejected), "<!-- LYNQ_ENGINEERING_RESULT {broken -->"].join("\n\n");
+    expect(summarizeDemoDelivery(context).commitSha).toBe("old111");
   });
 });

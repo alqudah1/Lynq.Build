@@ -82,33 +82,54 @@ export const designProposalSchema = z.object({
 });
 export type DesignProposal = z.infer<typeof designProposalSchema>;
 
-export const TYPE_STACKS: Record<TypeSystem, { display: string; body: string }> = {
+/**
+ * Real typefaces, one pairing per type system.
+ *
+ * A generated site used to fall back to whatever a device happened to
+ * have, which is the single loudest tell that something was produced by a
+ * machine rather than designed. Each pairing is a display face with real
+ * character and a body face that stays readable at length; the stacks
+ * still end in a system fallback so a blocked stylesheet degrades rather
+ * than breaks.
+ */
+export const TYPE_STACKS: Record<TypeSystem, { display: string; body: string; webFonts: string[] }> = {
   grotesk: {
-    display: '"Helvetica Neue", Helvetica, Arial, "Segoe UI", system-ui, sans-serif',
-    body: '"Helvetica Neue", Helvetica, Arial, "Segoe UI", system-ui, sans-serif',
+    display: '"Space Grotesk", "Helvetica Neue", Helvetica, Arial, sans-serif',
+    body: '"Inter", "Helvetica Neue", Helvetica, Arial, sans-serif',
+    webFonts: ["Space+Grotesk:wght@400;500;700", "Inter:wght@400;500;600"],
   },
   humanist: {
-    display: '"Optima", "Gill Sans", "Gill Sans MT", Candara, "Segoe UI", system-ui, sans-serif',
-    body: '"Segoe UI", Candara, "Trebuchet MS", system-ui, sans-serif',
+    display: '"Work Sans", "Optima", "Gill Sans", "Segoe UI", sans-serif',
+    body: '"Inter", "Segoe UI", Candara, sans-serif',
+    webFonts: ["Work+Sans:wght@400;500;600", "Inter:wght@400;500"],
   },
   transitional: {
-    display: 'Georgia, "Times New Roman", "Iowan Old Style", "Palatino Linotype", serif',
-    body: '"Iowan Old Style", Georgia, "Times New Roman", serif',
+    display: '"Playfair Display", Georgia, "Times New Roman", serif',
+    body: '"Lora", Georgia, "Times New Roman", serif',
+    webFonts: ["Playfair+Display:ital,wght@0,500;0,700;1,500", "Lora:wght@400;500"],
   },
   slab: {
-    display: '"Rockwell", "Roboto Slab", "Courier New", Georgia, serif',
-    body: 'Georgia, "Rockwell", "Times New Roman", serif',
+    display: '"Zilla Slab", Rockwell, Georgia, serif',
+    body: '"Source Serif 4", Georgia, "Times New Roman", serif',
+    webFonts: ["Zilla+Slab:wght@500;700", "Source+Serif+4:opsz,wght@8..60,400;8..60,600"],
   },
   geometric: {
-    display: '"Futura", "Century Gothic", "Avenir Next", "Trebuchet MS", system-ui, sans-serif',
-    body: '"Avenir Next", "Century Gothic", "Trebuchet MS", system-ui, sans-serif',
+    display: '"Poppins", "Futura", "Century Gothic", sans-serif',
+    body: '"Inter", "Avenir Next", "Segoe UI", sans-serif',
+    webFonts: ["Poppins:wght@400;500;600", "Inter:wght@400;500"],
   },
 };
 
-export const DENSITY_SCALE: Record<Density, { section: string; gap: string; measure: string }> = {
-  airy: { section: "clamp(5rem, 11vw, 10rem)", gap: "2.75rem", measure: "38rem" },
-  balanced: { section: "clamp(4rem, 8vw, 7.5rem)", gap: "2rem", measure: "34rem" },
-  compact: { section: "clamp(3rem, 6vw, 5.5rem)", gap: "1.5rem", measure: "30rem" },
+/** The one stylesheet a generated demo loads, built from its own type system. */
+export function webFontHref(typeSystem: TypeSystem): string {
+  const families = TYPE_STACKS[typeSystem].webFonts.map((family) => `family=${family}`).join("&");
+  return `https://fonts.googleapis.com/css2?${families}&display=swap`;
+}
+
+export const DENSITY_SCALE: Record<Density, { section: string; gap: string; measure: string; display: string; lead: string }> = {
+  airy: { section: "clamp(5.5rem, 12vw, 11rem)", gap: "2.75rem", measure: "38rem", display: "clamp(3.2rem, 8vw, 7.5rem)", lead: "clamp(1.15rem, 1.6vw, 1.5rem)" },
+  balanced: { section: "clamp(4.5rem, 9vw, 8.5rem)", gap: "2rem", measure: "34rem", display: "clamp(2.9rem, 7vw, 6.2rem)", lead: "clamp(1.1rem, 1.4vw, 1.35rem)" },
+  compact: { section: "clamp(3.5rem, 7vw, 6rem)", gap: "1.5rem", measure: "31rem", display: "clamp(2.5rem, 6vw, 5rem)", lead: "1.05rem" },
 };
 
 /* ------------------------------------------------------------------ */
@@ -295,5 +316,11 @@ export function designTokens(direction: DesignDirection): Record<string, string>
     "--demo-section": scale.section,
     "--demo-gap": scale.gap,
     "--demo-measure": scale.measure,
+    "--demo-display-size": scale.display,
+    "--demo-lead-size": scale.lead,
+    // A hairline that reads as drawn rather than as a border artefact.
+    "--demo-rule": `color-mix(in srgb, ${direction.palette.ink} 16%, transparent)`,
+    "--demo-rule-strong": `color-mix(in srgb, ${direction.palette.ink} 32%, transparent)`,
+    "--demo-veil": `color-mix(in srgb, ${direction.palette.background} 72%, transparent)`,
   };
 }

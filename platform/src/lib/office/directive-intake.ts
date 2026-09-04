@@ -11,6 +11,7 @@ import { ensureOfficeDeliveryTeam } from "./team";
 import { formatOfficeTaskDescription } from "./task-metadata";
 import { getAgentOfficeIdentity } from "./view";
 import { getDirectiveDomains, planOfficeDirective } from "./directives";
+import { autonomyFromDirective, autonomyMarker } from "./autonomy";
 
 type Db = NeonHttpDatabase<Record<string, unknown>>;
 
@@ -85,7 +86,7 @@ export interface CreateDirectiveProjectInput {
    * Recorded in the project description so a reader can always tell how a
    * directive entered the Office. Never changes what is created.
    */
-  source?: "command_center" | "founder_phone_call";
+  source?: "command_center" | "founder_phone_call" | "founder_telegram";
   /**
    * What to call the project, when the caller knows better than the planner's
    * heuristics do.
@@ -155,7 +156,17 @@ export function buildProjectKey(name: string): string {
  */
 function formatDirectiveDescription(input: { instruction: string; assistantReply: string; source: CreateDirectiveProjectInput["source"] }): string {
   const base = `Founder directive\n\n${input.instruction}\n\nExecutive Assistant kickoff\n\n${input.assistantReply}`;
-  return input.source === "founder_phone_call" ? `${base}\n\nCaptured from a verified founder phone call.` : base;
+  const withSource =
+    input.source === "founder_phone_call"
+      ? `${base}\n\nCaptured from a verified founder phone call.`
+      : input.source === "founder_telegram"
+        ? `${base}\n\nSent from the founder's linked Telegram chat.`
+        : base;
+  // How much Jarvis may decide alone, read from what the founder just said
+  // and stored with the directive so the policy travels with the work. The
+  // marker goes last so `extractFounderDirective`, which stops at the
+  // kickoff section, keeps returning exactly what it always did.
+  return `${withSource}\n\n${autonomyMarker(autonomyFromDirective(input.instruction))}`;
 }
 
 export async function createDirectiveProject(db: Db, input: CreateDirectiveProjectInput): Promise<CreateDirectiveProjectResult> {

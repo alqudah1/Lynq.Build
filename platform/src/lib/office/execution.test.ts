@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { agentApprovalRequests, projectApprovalLinks, projectArtifactLinks, projectExecutionLinks, projects } from "@/db/schema";
 import { brandPack, candidate, collectedBrandPack, packFrom } from "../../../test/support/website-fixtures";
-import { RESTAURANT_PROSPECT_APPROVAL_ACTION } from "./approvals";
+import { DEMO_APPROVAL_ACTION, RESTAURANT_OUTREACH_APPROVAL_ACTION, RESTAURANT_PROSPECT_APPROVAL_ACTION } from "./approvals";
 import { formatOfficeTaskDescription, type OfficeDeliveryStage } from "./task-metadata";
 import { brandPackMarker, fingerprintBrandPack } from "./website/brand-pack";
+import { autoDecisionMarker, autonomyFromDirective, autonomyMarker, parseAutoDecisions, parseIncompleteOutcomes } from "./autonomy";
+import { restaurantOutreachMarker } from "./restaurant-outreach";
 
 /**
  * The founder approval gates are the whole reason this workflow is safe to
@@ -19,6 +21,7 @@ const AGENT = "33333333-3333-4333-8333-333333333333";
 const PROJECT = "44444444-4444-4444-8444-444444444444";
 const TASK = "55555555-5555-4555-8555-555555555555";
 const OWNER = "66666666-6666-4666-8666-666666666666";
+const MESSAGE = "7f1b3d2e-8a4c-4f11-9a0e-2b6d5c8e9f01";
 
 const executeEngineeringDelivery = vi.hoisted(() => vi.fn());
 const createArtifact = vi.hoisted(() => vi.fn());
@@ -27,20 +30,35 @@ const completeExecution = vi.hoisted(() => vi.fn());
 const requestApproval = vi.hoisted(() => vi.fn());
 const researchRestaurantProspects = vi.hoisted(() => vi.fn());
 const collectRestaurantBrandPack = vi.hoisted(() => vi.fn());
+const notifyJarvisRunFinished = vi.hoisted(() => vi.fn());
+const draftRestaurantOutreach = vi.hoisted(() => vi.fn());
+const queueMessageAfterRecordedApproval = vi.hoisted(() => vi.fn());
+const createDraftMessage = vi.hoisted(() => vi.fn());
+const listConnectionsForUser = vi.hoisted(() => vi.fn());
+const findOrCreateConversation = vi.hoisted(() => vi.fn());
+const inspectEngineeringDelivery = vi.hoisted(() => vi.fn());
+const decideFounderApproval = vi.hoisted(() => vi.fn());
+const listArtifactsForExecution = vi.hoisted(() => vi.fn());
+const transitionProjectStatus = vi.hoisted(() => vi.fn());
 
 vi.mock("./engineering", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./engineering")>()),
   executeEngineeringDelivery,
-  inspectEngineeringDelivery: vi.fn(),
+  inspectEngineeringDelivery,
 }));
 vi.mock("./restaurant-research", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./restaurant-research")>()),
   researchRestaurantProspects,
 }));
 vi.mock("./restaurant-brand-collection", () => ({ collectRestaurantBrandPack }));
+vi.mock("./restaurant-outreach", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./restaurant-outreach")>()),
+  draftRestaurantOutreach,
+}));
 vi.mock("@/lib/agents/agents", () => ({ resolveAgentById: vi.fn(async () => ({ id: AGENT, organizationId: ORG, name: "Engineering Lead", role: "engineering" })) }));
-vi.mock("@/lib/agent-runtime/artifacts", () => ({ createArtifact, listArtifactsForExecution: vi.fn(async () => []) }));
+vi.mock("@/lib/agent-runtime/artifacts", () => ({ createArtifact, listArtifactsForExecution }));
 vi.mock("@/lib/agent-runtime/approvals", () => ({ requestApproval }));
+vi.mock("@/lib/founder-os/approval-center", () => ({ decideFounderApproval }));
 vi.mock("@/lib/agent-runtime/checkpoints", () => ({ listCheckpointsForExecution: vi.fn(async () => []) }));
 vi.mock("@/lib/agent-runtime/executions", () => ({
   resolveExecutionById: vi.fn(async () => ({ id: EXECUTION, organizationId: ORG, status: "executing", assignedAgentId: AGENT, ownerUserId: OWNER })),
@@ -60,17 +78,17 @@ vi.mock("@/lib/projects/links", () => ({
 }));
 vi.mock("@/lib/projects/projects", () => ({
   resolveProjectById: vi.fn(async () => ({ id: PROJECT, status: "active", revision: 1 })),
-  transitionProjectStatus: vi.fn(),
+  transitionProjectStatus,
 }));
 vi.mock("@/lib/projects/tasks", () => ({
   listTasks: vi.fn(async () => []),
   resolveTaskById: vi.fn(async () => ({ id: TASK, status: "in_progress", revision: 1, description: taskDescriptionFor(stage) })),
   transitionTaskStatus: vi.fn(async () => ({ id: TASK, status: "review", revision: 2 })),
 }));
-vi.mock("@/lib/email/jarvis-notifier", () => ({ notifyJarvisApprovalNeeded: vi.fn() }));
-vi.mock("@/lib/communications-os/connections", () => ({ ensureEnvironmentManagedResendConnection: vi.fn(), listConnectionsForUser: vi.fn(async () => []) }));
-vi.mock("@/lib/communications-os/conversations", () => ({ findOrCreateConversation: vi.fn() }));
-vi.mock("@/lib/communications-os/messages", () => ({ attachMessageToExistingApproval: vi.fn(), createDraftMessage: vi.fn(), queueMessageAfterRecordedApproval: vi.fn() }));
+vi.mock("@/lib/email/jarvis-notifier", () => ({ notifyJarvisApprovalNeeded: vi.fn(), notifyJarvisRunFinished }));
+vi.mock("@/lib/communications-os/connections", () => ({ ensureEnvironmentManagedResendConnection: vi.fn(), listConnectionsForUser }));
+vi.mock("@/lib/communications-os/conversations", () => ({ findOrCreateConversation }));
+vi.mock("@/lib/communications-os/messages", () => ({ attachMessageToExistingApproval: vi.fn(), createDraftMessage, queueMessageAfterRecordedApproval }));
 vi.mock("ai", () => ({ generateText: vi.fn(async () => ({ text: "review" })) }));
 vi.mock("./models", () => ({ getOfficeGenerationConfig: () => ({ model: "test" }) }));
 
@@ -121,18 +139,56 @@ type Rows = {
   approved: { candidate?: Partial<typeof candidate>; fingerprint: string | null } | null;
   /** The evidence currently attached to the project. */
   projectPack: typeof brandPack | null;
+  /** The directive text, which is where the autonomy policy comes from. */
+  directive?: string;
+  /** Put a finished engineering delivery on the project, as the later stages see it. */
+  deliveryInContext?: boolean;
+  /** Record that Jarvis already accepted the demo on the founder's behalf. */
+  demoAcceptedInContext?: boolean;
+  /** Record that Jarvis already chose the prospect on the founder's behalf. */
+  prospectDecidedInContext?: string | null;
+  /** Whether the delivery on the project ever got a preview. */
+  deliveryPreviewStatus?: "ready" | "pending";
+  /** An approval already on this execution, as the resumed run reads it. */
+  approvalOnExecution?: { status: "approved" | "pending" | "rejected" };
 };
 
 function makeDb(rows: Rows) {
   const result = (table: unknown) => {
     if (table === projectExecutionLinks) return [{ projectId: PROJECT, taskId: TASK }];
-    if (table === projects) return [{ name: "Sumac & Stone demo", projectKey: "SUMAC", objective: "Show the kitchen a site that reads on a phone.", description: "Prospect demo" }];
-    if (table === agentApprovalRequests) return [];
+    if (table === projects) {
+      return [{
+        name: "Sumac & Stone demo",
+        projectKey: "SUMAC",
+        objective: "Show the kitchen a site that reads on a phone.",
+        description: `Founder directive\n\n${rows.directive ?? "Find a restaurant and build it a demo."}\n\n${autonomyMarker(autonomyFromDirective(rows.directive ?? ""))}`,
+      }];
+    }
+    if (table === agentApprovalRequests) {
+      return rows.approvalOnExecution ? [{ id: "approval-1", status: rows.approvalOnExecution.status, createdAt: new Date("2026-08-20T11:00:00.000Z"), decisionNote: null }] : [];
+    }
     if (table === projectArtifactLinks) {
       return [{
         title: "Restaurant recommendation",
         artifactType: "report",
-        content: [researchMarkerFor(), rows.projectPack ? brandPackMarker(rows.projectPack) : ""].filter(Boolean).join("\n\n"),
+        content: [
+          researchMarkerFor(),
+          rows.projectPack ? brandPackMarker(rows.projectPack) : "",
+          rows.deliveryInContext
+            ? `<!-- LYNQ_ENGINEERING_RESULT ${JSON.stringify({
+                ...delivery,
+                website: undefined,
+                previewStatus: rows.deliveryPreviewStatus ?? "ready",
+                previewUrl: (rows.deliveryPreviewStatus ?? "ready") === "ready" ? delivery.previewUrl : null,
+              })} -->`
+            : "",
+          rows.demoAcceptedInContext
+            ? autoDecisionMarker({ action: DEMO_APPROVAL_ACTION, decidedAt: "2026-08-20T10:00:00.000Z", policyReason: "handed over", summary: "Accepted the demo.", restaurantName: candidate.name, brandPackFingerprint: null, commitSha: delivery.commitSha })
+            : "",
+          rows.prospectDecidedInContext !== undefined
+            ? autoDecisionMarker({ action: RESTAURANT_PROSPECT_APPROVAL_ACTION, decidedAt: "2026-08-20T09:00:00.000Z", policyReason: "handed over", summary: "Went ahead.", restaurantName: candidate.name, brandPackFingerprint: rows.prospectDecidedInContext, commitSha: null })
+            : "",
+        ].filter(Boolean).join("\n\n"),
       }];
     }
     if (table === projectApprovalLinks) {
@@ -158,6 +214,9 @@ function makeDb(rows: Rows) {
 }
 
 const APPROVED_FINGERPRINT = fingerprintBrandPack(brandPack);
+
+/** A directive that asks Jarvis to stop at every gate, the way it always used to. */
+const SUPERVISED = "Find a restaurant, but check with me first before you build anything.";
 
 const delivery = {
   repository: "alqudah1/lynq.build",
@@ -189,6 +248,18 @@ async function run(rows: Rows) {
   return continueOfficeDirectiveExecution(makeDb(rows), { organizationId: ORG, executionId: EXECUTION });
 }
 
+function allArtifactContent(): string {
+  return createArtifact.mock.calls.map((call) => (call[1] as { content: string }).content).join("\n\n");
+}
+
+function autoDecisions() {
+  return parseAutoDecisions(allArtifactContent());
+}
+
+function incompleteOutcomes() {
+  return parseIncompleteOutcomes(allArtifactContent());
+}
+
 function artifactsByTitle() {
   return new Map(createArtifact.mock.calls.map((call) => {
     const input = call[1] as { title: string; content: string };
@@ -200,11 +271,21 @@ beforeEach(() => {
   vi.clearAllMocks();
   stage = "engineering";
   createArtifact.mockImplementation(async (_db: unknown, input: { title: string; content: string }) => ({ id: `artifact-${input.title}`, ...input }));
+  listArtifactsForExecution.mockResolvedValue([]);
+  transitionProjectStatus.mockResolvedValue({ id: PROJECT, status: "completed", revision: 2 });
   executeEngineeringDelivery.mockResolvedValue(delivery);
   completeExecution.mockResolvedValue({ id: EXECUTION, status: "completed" });
   researchRestaurantProspects.mockResolvedValue(research);
   collectRestaurantBrandPack.mockResolvedValue({ pack: brandPack, failure: null });
   requestApproval.mockImplementation(async () => ({ request: { id: "approval-1" }, execution: { id: EXECUTION, status: "human_approval" } }));
+  decideFounderApproval.mockResolvedValue({ id: "approval-1", executionId: EXECUTION, status: "approved" });
+  notifyJarvisRunFinished.mockResolvedValue({ email: "sent", voice: "sent" });
+  inspectEngineeringDelivery.mockResolvedValue({ previewUrl: delivery.previewUrl, checks: "all green" });
+  listConnectionsForUser.mockResolvedValue([{ id: "conn-1", provider: "resend", integrationType: "email", status: "connected" }]);
+  findOrCreateConversation.mockResolvedValue({ id: "conv-1" });
+  draftRestaurantOutreach.mockResolvedValue({ subject: "A concept site for Sumac & Stone", body: "Hello — we built you a concept." });
+  createDraftMessage.mockResolvedValue({ id: "7f1b3d2e-8a4c-4f11-9a0e-2b6d5c8e9f01" });
+  queueMessageAfterRecordedApproval.mockResolvedValue(undefined);
 });
 
 describe("research stage — gathering evidence and putting it to the founder", () => {
@@ -234,8 +315,8 @@ describe("research stage — gathering evidence and putting it to the founder", 
     expect(approvalArtifact.content).toContain("## Recommended design direction");
   });
 
-  it("binds the approval it requests to that exact evidence version", async () => {
-    await run({ approved: null, projectPack: brandPack });
+  it("binds the approval it requests to that exact evidence version when the founder asked to be consulted", async () => {
+    await run({ approved: null, projectPack: brandPack, directive: SUPERVISED });
     const approval = requestApproval.mock.calls[0]![1] as { requestedAction: string; summary: string; proposedActionRef: Record<string, unknown> };
     expect(approval.requestedAction).toBe(RESTAURANT_PROSPECT_APPROVAL_ACTION);
     expect(approval.proposedActionRef.brandPackFingerprint).toBe(APPROVED_FINGERPRINT);
@@ -296,14 +377,22 @@ describe("engineering stage — founder approval enforcement", () => {
       expect(executeEngineeringDelivery).not.toHaveBeenCalled();
     });
 
-    it("stops when the approval recorded no evidence version at all", async () => {
-      await expect(run({ approved: { fingerprint: null }, projectPack: brandPack }))
-        .rejects.toThrow(/no approved evidence version recorded/i);
+    it("stops the build, but not the run, when no evidence version was approved", async () => {
+      await run({ approved: { fingerprint: null }, projectPack: brandPack });
       expect(executeEngineeringDelivery).not.toHaveBeenCalled();
+      const recorded = incompleteOutcomes();
+      expect(recorded[0]?.headline).toMatch(/no approved evidence to build from/i);
+      expect(recorded[0]?.stage).toBe("engineering");
     });
 
-    it("stops when the approved evidence is gone from the project", async () => {
-      await expect(run({ approved: { fingerprint: APPROVED_FINGERPRINT }, projectPack: null }))
+    it("stops the build, but not the run, when the approved evidence is gone", async () => {
+      await run({ approved: { fingerprint: APPROVED_FINGERPRINT }, projectPack: null });
+      expect(executeEngineeringDelivery).not.toHaveBeenCalled();
+      expect(incompleteOutcomes()).toHaveLength(1);
+    });
+
+    it("still refuses outright when the founder asked to be consulted", async () => {
+      await expect(run({ approved: { fingerprint: null }, projectPack: brandPack, directive: SUPERVISED }))
         .rejects.toThrow(/no approved evidence version recorded/i);
       expect(executeEngineeringDelivery).not.toHaveBeenCalled();
     });
@@ -348,5 +437,236 @@ describe("engineering stage — founder approval enforcement", () => {
 
   it("names the approval action it is waiting for", () => {
     expect(RESTAURANT_PROSPECT_APPROVAL_ACTION).toBe("restaurant_prospect_selection");
+  });
+});
+
+describe("running the whole directive without the founder", () => {
+  it("decides the prospect itself and moves on, instead of waiting", async () => {
+    stage = "research";
+    await run({ approved: null, projectPack: brandPack });
+
+    expect(requestApproval).not.toHaveBeenCalled();
+    const [decision] = autoDecisions();
+    expect(decision?.action).toBe(RESTAURANT_PROSPECT_APPROVAL_ACTION);
+    expect(decision?.restaurantName).toBe("Sumac & Stone");
+    expect(decision?.brandPackFingerprint).toBe(APPROVED_FINGERPRINT);
+    expect(decision?.summary).toContain("Went ahead with Sumac & Stone");
+  });
+
+  it("treats its own decision as the licence to build, bound to that evidence version", async () => {
+    stage = "engineering";
+    // No founder approval anywhere — only the decision Jarvis recorded.
+    await run({ approved: null, projectPack: brandPack, prospectDecidedInContext: APPROVED_FINGERPRINT });
+
+    expect(executeEngineeringDelivery).toHaveBeenCalledTimes(1);
+    const passed = executeEngineeringDelivery.mock.calls[0]![0] as { approvedBrandPackFingerprint: string | null };
+    expect(passed.approvedBrandPackFingerprint).toBe(APPROVED_FINGERPRINT);
+  });
+
+  it("will not build on its own decision once the evidence underneath it has changed", async () => {
+    stage = "engineering";
+    const changed = packFrom({ ...collectedBrandPack, images: collectedBrandPack.images.slice(0, 1) });
+    await expect(run({ approved: null, projectPack: changed, prospectDecidedInContext: APPROVED_FINGERPRINT }))
+      .rejects.toThrow(/evidence on this project has changed/i);
+    expect(executeEngineeringDelivery).not.toHaveBeenCalled();
+  });
+
+  it("accepts a finished demo on the founder's behalf", async () => {
+    stage = "qa";
+    await run({ approved: { fingerprint: APPROVED_FINGERPRINT }, projectPack: brandPack, deliveryInContext: true });
+
+    expect(requestApproval).not.toHaveBeenCalled();
+    const decision = autoDecisions().find((item) => item.action === DEMO_APPROVAL_ACTION);
+    expect(decision?.commitSha).toBe(delivery.commitSha);
+    expect(decision?.summary).toContain(delivery.previewUrl);
+  });
+
+  it("refuses to accept a demo that was never finished, and says so", async () => {
+    stage = "qa";
+    // A commit exists and QA could review it, but the deployment never came
+    // up — not when the branch was pushed, and not when QA looked again.
+    inspectEngineeringDelivery.mockResolvedValue({ previewUrl: null, checks: "no deployment" });
+    await run({ approved: { fingerprint: APPROVED_FINGERPRINT }, projectPack: brandPack, deliveryInContext: true, deliveryPreviewStatus: "pending" });
+
+    expect(autoDecisions().some((item) => item.action === DEMO_APPROVAL_ACTION)).toBe(false);
+    const recorded = incompleteOutcomes();
+    expect(recorded[0]?.headline).toMatch(/did not accept it/i);
+    expect(recorded[0]?.detail).toContain("a working preview link");
+  });
+
+  it("accepts the demo when the preview came up after the push", async () => {
+    stage = "qa";
+    // The recorded status is a snapshot from the moment of the push, and a
+    // Vercel preview usually finishes a minute or two later. Judging on the
+    // snapshot would tell the founder his site was never built while it is
+    // sitting there working.
+    await run({ approved: { fingerprint: APPROVED_FINGERPRINT }, projectPack: brandPack, deliveryInContext: true, deliveryPreviewStatus: "pending" });
+
+    expect(incompleteOutcomes()).toEqual([]);
+    const decision = autoDecisions().find((item) => item.action === DEMO_APPROVAL_ACTION);
+    expect(decision?.commitSha).toBe(delivery.commitSha);
+    expect(decision?.summary).toContain(delivery.previewUrl);
+  });
+
+  it("writes the confirmed preview back, so the run report does not still call it unfinished", async () => {
+    stage = "qa";
+    await run({ approved: { fingerprint: APPROVED_FINGERPRINT }, projectPack: brandPack, deliveryInContext: true, deliveryPreviewStatus: "pending" });
+
+    // Everything downstream reads the newest delivery on the project, so the
+    // correction has to be recorded rather than kept in this pass's memory.
+    const confirmation = artifactsByTitle().get("Preview confirmed — SUMAC");
+    expect(confirmation).toBeTruthy();
+    expect(confirmation!.content).toContain('"previewStatus":"ready"');
+    expect(confirmation!.content).toContain(delivery.previewUrl);
+  });
+
+  it("leaves the delivery alone when GitHub cannot be asked", async () => {
+    stage = "qa";
+    // A resume, so QA's review already exists and the only call left is the
+    // second look at the preview. Not being able to look is not evidence
+    // that no preview exists, so the delivery keeps the status it had.
+    listArtifactsForExecution.mockResolvedValue([{ id: "artifact-qa", createdAt: new Date("2026-08-20T12:00:00.000Z"), content: "# Founder review" }]);
+    inspectEngineeringDelivery.mockRejectedValue(new Error("GitHub request failed (502)"));
+    await run({ approved: { fingerprint: APPROVED_FINGERPRINT }, projectPack: brandPack, deliveryInContext: true, deliveryPreviewStatus: "pending" });
+
+    expect(artifactsByTitle().has("Preview confirmed — SUMAC")).toBe(false);
+    expect(incompleteOutcomes()[0]?.headline).toMatch(/did not accept it/i);
+  });
+
+  it("does not record the same decision twice when a stage runs again", async () => {
+    stage = "qa";
+    // A retry after a transient fault re-enters a stage that already decided.
+    // Deciding again decides nothing new; it only puts the same line in the
+    // founder's report twice, which reads as if Jarvis did it twice.
+    await run({ approved: { fingerprint: APPROVED_FINGERPRINT }, projectPack: brandPack, deliveryInContext: true, demoAcceptedInContext: true });
+
+    expect(autoDecisions().some((item) => item.action === DEMO_APPROVAL_ACTION)).toBe(false);
+  });
+
+  it("still records a decision covering a different commit", async () => {
+    stage = "qa";
+    await run({ approved: { fingerprint: APPROVED_FINGERPRINT }, projectPack: brandPack, deliveryInContext: true });
+
+    const decision = autoDecisions().find((item) => item.action === DEMO_APPROVAL_ACTION);
+    expect(decision?.commitSha).toBe(delivery.commitSha);
+  });
+
+  it("sends the one email itself when the founder handed outreach over", async () => {
+    stage = "outreach";
+    await run({
+      approved: { fingerprint: APPROVED_FINGERPRINT },
+      projectPack: brandPack,
+      deliveryInContext: true,
+      demoAcceptedInContext: true,
+      directive: "Find a restaurant, build the demo and send the email yourself.",
+    });
+
+    // The rule that an agent cannot mail anyone without a recorded approval
+    // a person's authority decided is not weakened by the delegation: the
+    // approval is raised exactly as it would be, and then decided through
+    // the founder's own approval path.
+    expect(requestApproval).toHaveBeenCalledTimes(1);
+    expect(decideFounderApproval).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ approvalId: "approval-1", decision: "approve", actorUserId: OWNER }),
+    );
+    expect((decideFounderApproval.mock.calls[0]![1] as { decisionNote: string }).decisionNote).toMatch(/autonomy the founder set/i);
+    const decision = autoDecisions().find((item) => item.action === RESTAURANT_OUTREACH_APPROVAL_ACTION);
+    expect(decision?.summary).toContain("Sent one email to hello@sumacandstone.example.ca");
+  });
+
+  it("never queues the email on a second path of its own", async () => {
+    stage = "outreach";
+    await run({
+      approved: { fingerprint: APPROVED_FINGERPRINT },
+      projectPack: brandPack,
+      deliveryInContext: true,
+      demoAcceptedInContext: true,
+      directive: "Find a restaurant, build the demo and send the email yourself.",
+    });
+
+    // Deciding the approval resumes the execution, and the resume is the one
+    // and only place an outreach message is ever queued for sending. Queueing
+    // here too would be a second send path — and, because the message would
+    // no longer be pending approval on the resume, it would also throw.
+    expect(queueMessageAfterRecordedApproval).not.toHaveBeenCalled();
+  });
+
+  it("queues the email once the approval covering it is approved, whoever decided it", async () => {
+    stage = "outreach";
+    // The single send path: an outreach message is queued only on a resume
+    // that finds an approved approval on this execution. Both lanes arrive
+    // here — the founder tapping Approve, and Jarvis deciding under a policy
+    // the founder handed over.
+    listArtifactsForExecution.mockResolvedValue([{
+      id: "artifact-outreach",
+      createdAt: new Date("2026-08-20T12:00:00.000Z"),
+      content: restaurantOutreachMarker({ messageId: MESSAGE, recipient: candidate.email!, previewUrl: delivery.previewUrl }),
+    }]);
+    await run({
+      approved: { fingerprint: APPROVED_FINGERPRINT },
+      projectPack: brandPack,
+      deliveryInContext: true,
+      demoAcceptedInContext: true,
+      approvalOnExecution: { status: "approved" },
+    });
+
+    expect(queueMessageAfterRecordedApproval).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ messageId: MESSAGE, actorUserId: OWNER }));
+  });
+
+  it("sends nothing while the approval covering the email is still pending", async () => {
+    stage = "outreach";
+    await run({
+      approved: { fingerprint: APPROVED_FINGERPRINT },
+      projectPack: brandPack,
+      deliveryInContext: true,
+      demoAcceptedInContext: true,
+      approvalOnExecution: { status: "pending" },
+    });
+
+    expect(queueMessageAfterRecordedApproval).not.toHaveBeenCalled();
+    expect(createDraftMessage).not.toHaveBeenCalled();
+  });
+
+  it("drafts the email and waits, when the founder did not hand outreach over", async () => {
+    stage = "outreach";
+    await run({
+      approved: { fingerprint: APPROVED_FINGERPRINT },
+      projectPack: brandPack,
+      deliveryInContext: true,
+      demoAcceptedInContext: true,
+    });
+
+    expect(queueMessageAfterRecordedApproval).not.toHaveBeenCalled();
+    expect(requestApproval).toHaveBeenCalledTimes(1);
+    expect((requestApproval.mock.calls[0]![1] as { requestedAction: string }).requestedAction).toBe(RESTAURANT_OUTREACH_APPROVAL_ACTION);
+  });
+
+  it("tells the founder once when two tasks finish at the same moment", async () => {
+    stage = "qa";
+    // The loser of the race to close the project has nothing left to do.
+    // Failing here would fail an execution whose work all succeeded, and
+    // sending anyway would tell the founder the run finished twice.
+    const { InvalidProjectTransitionError } = await import("@/lib/projects/errors");
+    transitionProjectStatus.mockRejectedValue(new InvalidProjectTransitionError("completed", "completed"));
+
+    await run({ approved: { fingerprint: APPROVED_FINGERPRINT }, projectPack: brandPack, deliveryInContext: true });
+
+    expect(notifyJarvisRunFinished).not.toHaveBeenCalled();
+    expect(artifactsByTitle().has("Run report — SUMAC")).toBe(false);
+  });
+
+  it("writes one report at the end and tells the founder once", async () => {
+    stage = "qa";
+    await run({ approved: { fingerprint: APPROVED_FINGERPRINT }, projectPack: brandPack, deliveryInContext: true });
+
+    const report = artifactsByTitle().get("Run report — SUMAC");
+    expect(report).toBeTruthy();
+    expect(report!.content).toContain("what Jarvis did");
+    expect(report!.content).toContain("Sumac & Stone");
+    expect(report!.content).toContain("## What Jarvis decided without you");
+    expect(notifyJarvisRunFinished).toHaveBeenCalledTimes(1);
+    const notified = notifyJarvisRunFinished.mock.calls[0]![1] as { headline: string; needsFounder: string[] };
+    expect(notified.headline).toContain("Sumac & Stone");
   });
 });
