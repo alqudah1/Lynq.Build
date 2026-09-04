@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { revalidatePath } from "next/cache";
+import { notFound, redirect } from "next/navigation";
 import { and, desc, eq } from "drizzle-orm";
 import { projectExecutionLinks, projectTasks, projects, runtimeJobs } from "@/db/schema";
 import { loadEnv } from "@/lib/env";
@@ -12,6 +13,7 @@ import { getExecutionTimeline } from "@/lib/agent-runtime/events";
 import { getLatestPlan, getPlanSteps } from "@/lib/agent-runtime/plans";
 import { resolveAgentById } from "@/lib/agents/agents";
 import { getAgentOfficeIdentity } from "@/lib/office/view";
+import { retryDeadLetteredJob } from "@/lib/runtime/dead-letter";
 import { TenantResourceNotFoundError } from "@/lib/authz/errors";
 import { Badge, type BadgeTone } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
@@ -88,6 +90,7 @@ export default async function AgentExecutionDetailPage({ params }: { params: Pro
         .limit(1),
       db
         .select({
+          id: runtimeJobs.id,
           status: runtimeJobs.status,
           attemptCount: runtimeJobs.attemptCount,
           maxAttempts: runtimeJobs.maxAttempts,
@@ -107,6 +110,23 @@ export default async function AgentExecutionDetailPage({ params }: { params: Pro
   const runtimeJob = runtimeJobRows[0] ?? null;
   const employee = agent ? getAgentOfficeIdentity(agent) : null;
   const hasExternalEvidence = artifacts.some((artifact) => Boolean(externalHttpUrl(artifact.externalRef)) || /https?:\/\//i.test(artifact.content ?? ""));
+
+  async function retryProcessingRun() {
+    "use server";
+
+    const actionEnv = loadEnv();
+    const actionDb = createDbClient(actionEnv);
+    const actionUser = await requireDashboardUser(actionDb, `/app/${organizationSlug}/agent-executions/${executionId}`);
+    const { organization: actionOrganization } = await getOrganizationBySlugForUser(actionDb, organizationSlug, actionUser.userId);
+    await retryDeadLetteredJob(actionDb, {
+      organizationId: actionOrganization.id,
+      jobId: runtimeJob!.id,
+      actorUserId: actionUser.userId,
+    });
+    revalidatePath(`/app/${organizationSlug}/agent-executions/${executionId}`);
+    if (linked) revalidatePath(`/app/${organizationSlug}/jarvis/${linked.projectId}`);
+    redirect(`/app/${organizationSlug}/agent-executions/${executionId}`);
+  }
 
   return (
       <div className="flex flex-col gap-8 px-5 py-7 md:px-8 lg:px-10 lg:py-9">
@@ -163,6 +183,13 @@ export default async function AgentExecutionDetailPage({ params }: { params: Pro
               </div>
             ) : null}
             {runtimeJob.status === "retry_scheduled" ? <p className="mt-3 text-xs text-subtle">Automatic retry scheduled for {runtimeJob.availableAt.toLocaleString()}.</p> : null}
+            {runtimeJob.status === "dead_lettered" ? (
+              <form action={retryProcessingRun} className="mt-4">
+                <button type="submit" className="inline-flex min-h-10 items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+                  Retry this step
+                </button>
+              </form>
+            ) : null}
             <p className="mt-3 text-xs text-subtle">Last updated {runtimeJob.updatedAt.toLocaleString()}.</p>
           </Card>
         ) : null}
