@@ -149,7 +149,12 @@ export const MINI_LUNA: BlockoutSpec = {
   heightRatio: { value: 0.44, grade: "CONFIRMED_FROM_PHOTOS", source: "measured by scripts/measure-products.mjs on orientation-normalized frames (lib-mask.mjs background-model mask); see .blockouts/measurements.json. Body excluding the arch: DSC04870 = 2.62, DSC04874 = 2.34, DSC04875 = 2.48, DSC05774 = 1.98, DSC05775 = 1.88. Median 2.34 : 1 wide. Spread is camera angle, not product variation" },
   topCorner: { value: 0.1, grade: "APPROXIMATION_FOR_BLOCKOUT", source: TRACED },
   bottomCorner: { value: 0.44, grade: "CONFIRMED_FROM_PHOTOS", source: "DSC05774 — the base is strongly rounded, close to a half-round" },
-  depthRatio: { value: 0.3, grade: "UNRESOLVED", source: "DSC05775 is a three-quarter view showing the open top and real interior depth, but no frame gives a measurable side elevation. Qualitatively has depth; quantitatively unresolved" },
+  depthRatio: {
+    value: 0.36,
+    grade: "APPROXIMATION_FOR_BLOCKOUT",
+    source: "derived by scripts/measure-rim-aperture.mjs. The rim aperture is a planar ellipse, so its short axis projects foreshortened by sin(camera tilt) while its long axis does not. DSC05774 and DSC05775 are the only two frames whose darkest connected region is the bag interior rather than the contact shadow; solving them simultaneously (same bag depth seen at two tilts) pins tilt and depth together at 0.334-0.381 across a sweep of the one constant read by eye (the rolled rim wall, 0.10-0.18 W). Midpoint 0.358",
+    note: "NO LONGER UNRESOLVED, but still NOT a measurement: two frames, an uncalibrated camera, and a wall thickness estimated by eye. Promote to CONFIRMED only on a measured side elevation or a tape measurement from Rand. The same solve independently recovers the untilted body at 2.37-2.55 : 1 wide, against the 2.34 : 1 that heightRatio measures by a completely different route (per-frame silhouette medians) — two methods agreeing within 5% is the reason this is trusted as far as it is.",
+  },
   handle: {
     present: { value: true, grade: "CONFIRMED_FROM_PHOTOS", source: "DSC05774 — a large, thick, round arched handle, visually comparable in size to the body itself" },
     style: {

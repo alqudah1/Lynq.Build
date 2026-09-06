@@ -1330,3 +1330,32 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
   .pd-object { width: min(540px, 76vw); }
   .pd-stage:has(.pg-main:not(.is-cut)) .pd-name { transform: translate(-50%, -150%); }
 }
+
+/* ---------- dev: Mini Luna model review (never reachable in production) ---------- */
+.ml-page { max-width: 1240px; margin: 0 auto; padding: 32px 20px 90px; }
+.ml-h1 { font-size: clamp(30px, 5vw, 48px); font-weight: 400; margin: 6px 0 12px; }
+.ml-lead { max-width: 62ch; color: var(--muted); font-size: 14.5px; margin: 0 0 28px; }
+.ml-compare { display: grid; gap: 20px; }
+.ml-compare figure { margin: 0; }
+.ml-compare figcaption { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-top: 10px; }
+.ml-canvas {
+  /* Explicit height, not aspect-ratio: react-three-fiber measures the parent
+     to size its canvas, and an aspect-ratio-only box measures 0 high on the
+     first pass — the canvas then stays at its 300x150 default and the model
+     never appears. */
+  height: min(600px, 74vw);
+  background: var(--surface); border-radius: var(--radius); overflow: hidden;
+}
+.ml-photo { width: 100%; height: auto; border-radius: var(--radius); background: var(--surface); }
+.ml-h2 { font-size: 20px; font-weight: 400; margin: 44px 0 8px; }
+.ml-note { font-size: 13.5px; color: var(--muted); margin: 0 0 18px; max-width: 62ch; }
+.ml-open { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+.ml-open li { border-top: 1px solid var(--line); padding-top: 12px; font-size: 13px; }
+.ml-open strong { font-weight: 600; margin-right: 10px; }
+.ml-grade { font-size: 10.5px; letter-spacing: 0.08em; padding: 3px 8px; border-radius: 999px; }
+.ml-DERIVED_FROM_PHOTOS { background: var(--blush); color: var(--primary-dark); }
+.ml-APPROXIMATION_FOR_BLOCKOUT { background: #f3ece1; color: #7a5b2a; }
+.ml-src { display: block; color: var(--muted); margin-top: 7px; line-height: 1.55; }
+@media (min-width: 900px) { .ml-compare { grid-template-columns: 1fr 1fr; gap: 28px; } }
+.ml-note-row { display: block; margin-top: 8px; padding-left: 12px; border-left: 2px solid var(--primary); color: var(--ink); line-height: 1.55; }
+.ml-CONFIRMED_FROM_PHOTOS { background: #e8f0e4; color: #35502c; }

@@ -392,7 +392,7 @@ Vault reference.
 | 9 | Strap attachment | **UNRESOLVED** |
 | 10 | Chain attachment | **UNRESOLVED** |
 | 11 | Fringe | N/A — Vault has no fringe. **CONFIRMED FROM PHOTOS** that no reviewed image of any round shows fringe on Vault |
-| 12 | Unseen / back geometry | **UNRESOLVED** — no back/side/base view reviewed |
+| 12 | Unseen / back geometry | **PARTIALLY RESOLVED** — still no back, side or base view. Front-to-back **depth is now derived rather than guessed**: `scripts/measure-rim-aperture.mjs` solves `DSC05774` and `DSC05775` simultaneously (the same bag depth seen at two camera tilts) and brackets depth at **0.334–0.381 of body width**, midpoint 0.358. Graded **APPROXIMATION FOR BLOCKOUT**, not CONFIRMED: two frames, an uncalibrated camera, and a rim-wall thickness read by eye. Promote only on a measured side elevation or a tape measurement from Rand. The **back surface itself** — whether it matches the front or carries a different stitch — remains UNRESOLVED |
 | 13 | Remaining photography required | See §9 below |
 
 ### 3. Contradictions found this round
@@ -485,10 +485,10 @@ reference.
 
 | # | Category | Status |
 |---|---|---|
-| 1 | Silhouette | **CONFIRMED FROM PHOTOS** (round 2) — compact **rounded-rectangular** body. This replaces round 1's "small rounded basket / mini bucket," which is a different shape. See Contradiction C7 |
-| 2 | Proportions | **UNRESOLVED** — round 2 establishes "compact" but no width:height ratio. Round 1's "short rounded body with a relatively wide base" is downgraded with the bucket reading it belonged to. What *is* retained: the **handle occupies significant vertical space above the body**, so the model's overall bounding box is materially taller than the body alone. "Mini" in the product name is still **not** a confirmed measurement against the other three products |
-| 3 | Top opening | **CONFIRMED FROM PHOTOS** (round 1, not contradicted by round 2) — open top, visible beneath the arch handle. Its exact aperture shape on a rounded-rectangular body (rather than the bucket round 1 assumed) is **UNRESOLVED** |
-| 4 | Base | **UNRESOLVED** — round 1 recorded a "rounded/oval base," which followed directly from the bucket reading round 2 overturned. A rounded-rectangular body more likely implies a rounded-rectangular base, but that is inference, not evidence. **Do not model an oval base on round 1's authority** |
+| 1 | Silhouette | **CONFIRMED FROM PHOTOS** (round 5) — the round-2 vs round-1 argument was about two different views of the same object, and both readings were half right. **In front elevation** (`DSC05774`) the body is a wide, low rounded rectangle with a strongly rounded base — round 2's reading. **In plan** (`DSC05775`, a high three-quarter view that looks down into the open bag) the rim is a long, narrow ellipse and the body is an elongated oval boat form with a rounded keel — round 1's "rounded basket" reading. It is not a bucket (not circular in plan) and not a box (no flat base). See Contradiction C7, now resolved |
+| 2 | Proportions | **CONFIRMED FROM PHOTOS** (round 4, corroborated round 5) — body **2.34 : 1 wide** excluding the arch, the median of five frames across four colourways (`scripts/measure-products.mjs`). Round 5 recovers the same figure by a wholly independent route: the two-frame rim-aperture solve (`scripts/measure-rim-aperture.mjs`) returns the untilted body at **2.37–2.55 : 1**, agreeing within 5%. The **handle occupies significant vertical space above the body**, so the overall bounding box is materially taller than the body alone. "Mini" in the product name is still **not** a confirmed measurement against the other three products |
+| 3 | Top opening | **CONFIRMED FROM PHOTOS** (round 5) — open top, visible beneath the arch handle. The aperture is a **long narrow ellipse, not a circle**: measured directly in `DSC05775`, where the bag interior is the largest dark region inside the mask, at 625 × 162 px against a 961 px object width. It is bounded by a thick rolled rim band that reads as roughly 0.10–0.18 W thick |
+| 4 | Base | **CONFIRMED FROM PHOTOS** (round 4/5) — **not a flat base.** `DSC05774` shows base corner rounding at 0.44 of body width, close to a half-round, and `DSC05775` shows the same form is elongated front-to-back. The base is a **rounded keel**, not a foot the bag stands on squarely. Round 1's "rounded/oval base" is reinstated on direct measurement, not on round 1's authority |
 | 5 | Handle | **CONFIRMED FROM PHOTOS** (rounds 1 and 2 agree — the strongest-supported finding on this product) — a **large, thick, integrated arched crochet handle.** Required as **its own named node** (`PRODUCT_PART_REQUIREMENTS["mini-luna"].handle = true`), unlike Vault's optional split, because it is large and structurally distinct. Baked into the body construction — not swappable, no `attach_handle`. Round 1's "attached at both sides of the body" is inherent to an arch and is retained. Handle **cross-section thickness and where the arch roots into the body** are UNRESOLVED |
 | 6 | Primary material zone | **CONFIRMED FROM PHOTOS** (round 2) — **shiny metallic crochet yarn on the Red colourway.** Round 1's "dense horizontal crochet rows with strong ribbon-yarn highlights" is corroborated |
 | 7 | Secondary material zone | **UNRESOLVED** — two independent zones stay CONFIRMED BY RAND (Silver & Gold), but the zone boundary must come from confirmed two-tone Luna photography specifically, which has not been reviewed in either round |
@@ -502,10 +502,19 @@ reference.
 ### 3. Contradictions found this round
 - **C7** — round 1 "small rounded basket / mini bucket" vs round 2
   "compact rounded rectangular body." A bucket and a rounded rectangle are
-  not the same silhouette. Resolved in favour of round 2;
-  `mini-luna-spec.md` corrected this round.
-- **C8** — round 1's rounded/oval base was a consequence of the bucket
-  reading and is downgraded with it (row 4).
+  not the same silhouette. **Round 5 closes this, and the round-4 resolution
+  in favour of round 2 was itself only half right.** The two rounds were
+  describing two different views. Front elevation (`DSC05774`) is a wide low
+  rounded rectangle — round 2. Plan (`DSC05775`) is an elongated oval with a
+  rounded keel — round 1. Neither "bucket" (circular in plan) nor "box"
+  (flat base) is correct; the form is a **flattened oval boat**. Row 1
+  updated; `mini-luna-spec.md` needs the same correction.
+- **C8** — round 1's rounded/oval base was downgraded as a consequence of
+  the bucket reading. **Round 5 reinstates it** on direct measurement
+  (base corner rounding 0.44 W in `DSC05774`, elongation confirmed in
+  `DSC05775`) — the base is a rounded keel. Row 4 updated. The lesson is the
+  one C7 teaches: a reading was discarded for guilt by association with a
+  wrong reading rather than because it had been checked.
 - **C9** — **material:** `mini-luna-spec.md` §11 said "regular-yarn preset
   for both body zones and the handle by default," treating metallic as
   applying only to Silver/Gold/two-tone. Round 2 shows the **Red** Mini
@@ -698,7 +707,7 @@ if the archive genuinely cannot establish them.
 | C4 | Vault | "Integrated **horizontal** hand opening at the top" | "Large built-in **rectangular or arched** opening" (round 2) | Aperture shape **and** orientation downgraded to UNRESOLVED; existence and integration stay CONFIRMED |
 | C5 | Vault | `photo-asset-map.md`: "No handle reference needed (not in Vault's confirmed part list)" | Integrated handle/opening confirmed in both rounds | Stale text corrected; handle photography now explicitly requested |
 | C6 | Vault | Original `vault-spec.md`: "no handle" | Confirmed integrated handle | Corrected in a prior round; recorded here so it is not reverted |
-| C7 | **Mini Luna** | "**Small rounded basket / mini bucket** style" | "**Compact rounded rectangular** body" (round 2) | **Different shape.** Corrected in `PRODUCT-GEOMETRY-MAP.md` + `mini-luna-spec.md` |
+| C7 | **Mini Luna** | "**Small rounded basket / mini bucket** style" | "**Compact rounded rectangular** body" (round 2) | **RESOLVED round 5 — both half right.** Two views of one object: rounded rectangle in front elevation, elongated oval with a rounded keel in plan. Form is a **flattened oval boat**. `mini-luna-spec.md` still needs this correction |
 | C8 | Mini Luna | "Rounded / oval base" | Not re-confirmed; followed from the overturned bucket reading | Downgraded to UNRESOLVED |
 | C9 | **Mini Luna** | `mini-luna-spec.md` §11: "**regular-yarn** preset for both body zones and the handle by default"; metallic treated as Silver/Gold/two-tone only | **Red** Mini Luna is **shiny metallic yarn** (round 2) | **Red takes the metallic-yarn preset.** Corrected in `mini-luna-spec.md`. Black's status raised as a new open question |
 | C10 | Mini Luna / Loco | `photo-asset-map.md`: "No handle reference needed" for both | Mini Luna's handle is the package's only *mandatory* separate handle node; Loco's opening is confirmed | Stale text corrected for both |
