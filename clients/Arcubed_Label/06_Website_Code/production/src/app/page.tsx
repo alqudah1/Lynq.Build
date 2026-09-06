@@ -1,48 +1,31 @@
-// Arcubed homepage — editorial art-direction pass.
+// Arcubed homepage — fashion-editorial composition.
 //
-// MEDIA RULE: every bag on this page is REAL client photography, imported by
-// scripts/import-product-media.mjs from clients/Arcubed_Label/03_Images/ and
-// resolved through src/lib/product-media.ts. Where a product has no real
-// frame, it falls back to BagArt (the honest illustrative placeholder) — it is
-// never shown with another product's photo, and no 3D is used anywhere on
-// this page. No approved product geometry exists yet; see
-// docs/3d-production/PRODUCT-GEOMETRY-MAP.md.
+// MEDIA RULE: every bag on this page is REAL client photography resolved
+// through src/lib/product-media.ts. The illustrated BagArt placeholder does
+// not appear on this page at all — it is not the Arcubed identity. No 3D is
+// used anywhere: no approved production geometry exists (see
+// docs/3d-production/PRODUCT-GEOMETRY-MAP.md).
 //
-// WHERE 3D EVENTUALLY GOES: the hero object and each collection object are
-// already isolated as their own layout layer (`.ed-object`), positioned over
-// and under type rather than boxed in a viewer. Swapping a photo for a canvas
-// is a change of what fills that layer, not a change of layout — which is the
-// point of not building around a rectangular <3DViewer>.
+// Objects are positioned as their own layer so a photo can later be swapped
+// for a canvas without touching the layout.
 
 import Link from "next/link";
 import Image from "next/image";
 import { getActiveBags, getActiveColours, getReadyForDeliveryItems, getStoreSettings } from "@/lib/repository";
-import { defaultSelectionFor, toRenderInput } from "@/lib/pricing";
-import { resolveProductMedia, TEXTURES } from "@/lib/product-media";
 import { formatMoney } from "@/lib/site-settings";
-import BagArt from "@/components/BagArt";
+import { framesForColour, resolveMedia, cutSrc, TEXTURES, altFor } from "@/lib/product-media";
 import Reveal from "@/components/Reveal";
+import HeroCollage from "@/components/HeroCollage";
 import type { Bag } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-/** One product object — real photo where we have one, honest fallback where we don't. */
-function BagObject({ bag, priority = false, sizes }: { bag: Bag; priority?: boolean; sizes: string }) {
-  const media = resolveProductMedia(bag);
-  if (!media) {
-    return <BagArt input={toRenderInput(bag, defaultSelectionFor(bag))} />;
-  }
-  return (
-    <Image
-      src={media.src}
-      alt={media.alt}
-      width={1200}
-      height={Math.round(1200 / media.objectRatio)}
-      sizes={sizes}
-      priority={priority}
-      className="ed-object-img"
-    />
-  );
+/** Picks a specific colourway's frame, falling back to the product's first. */
+function frame(bag: Bag | undefined, colour: string) {
+  if (!bag) return null;
+  const exact = framesForColour(bag, colour);
+  if (exact.length) return exact[0];
+  return resolveMedia(bag)?.frame ?? null;
 }
 
 export default async function HomePage() {
@@ -52,178 +35,192 @@ export default async function HomePage() {
     getReadyForDeliveryItems(),
     getStoreSettings(),
   ]);
-  // Confirmed promise: NEXT-DAY DELIVERY IN JORDAN. store_settings holds
-  // "Next day"; the country is appended because the label does not carry it
-  // and the promise is only true inside Jordan.
+
+  const by = (n: string) => bags.find((b) => b.name.trim().toLowerCase() === n);
+  const nova = by("nova");
+  const vault = by("vault");
+  const miniLuna = by("mini luna");
+  const loco = by("loco");
+
+  // Hero cast — one dominant object plus three supporting, chosen for colour
+  // contrast across the archive: gold, red, silver, olive.
+  const heroLead = frame(nova, "Gold");
+  const heroLeft = frame(miniLuna, "Red");
+  const heroRight = frame(nova, "Silver");
+  const heroLow = frame(vault, "Olive Green");
+
   const fulfillmentLabel = settings?.readyForDeliveryFulfillmentLabel ?? "Next day";
   const deliveryPromise = `${fulfillmentLabel.replace(/\s+day$/i, "-day")} delivery in Jordan`;
+  const inStock = rfd.filter((i) => i.quantityAvailable > 0).slice(0, 5);
 
-  const byName = (n: string) => bags.find((b) => b.name.trim().toLowerCase() === n);
-  const nova = byName("nova") ?? bags[0];
-  const vault = byName("vault");
-  const miniLuna = byName("mini luna");
-  const loco = byName("loco");
-  const rest = [vault, miniLuna, loco].filter(Boolean) as Bag[];
-  const inStock = rfd.filter((i) => i.quantityAvailable > 0).slice(0, 6);
+  const collection = [
+    { bag: nova, colour: "Gold", cls: "cx-nova" },
+    { bag: vault, colour: "Brown", cls: "cx-vault" },
+    { bag: miniLuna, colour: "Red", cls: "cx-luna" },
+    { bag: loco, colour: "Brown", cls: "cx-loco" },
+  ].filter((c) => c.bag) as { bag: Bag; colour: string; cls: string }[];
 
   return (
     <>
-      {/* ---------------- 1. HERO ---------------- */}
-      <section className="ed-hero">
-        <div className="ed-hero-type" aria-hidden="true">
-          <span className="ed-hero-line ed-hero-line-a">ARCU</span>
-          <span className="ed-hero-line ed-hero-line-b">BED</span>
-        </div>
-        <h1 className="visually-hidden">Arcubed — hand-crocheted bags, made to order</h1>
-        {nova ? (
-          <div className="ed-hero-object ed-object">
-            <BagObject bag={nova} priority sizes="(max-width: 780px) 86vw, 46vw" />
+      {/* ---------------- HERO ---------------- */}
+      <section className="hero-x">
+        <HeroCollage>
+          <div className="hx-type" aria-hidden="true">
+            <span className="hx-line hx-a">ARCU</span>
+            <span className="hx-line hx-b">BED</span>
           </div>
-        ) : null}
-        <div className="ed-hero-meta">
-          <p className="ed-kicker">Handmade in small batches</p>
-          <Link className="ed-link" href="/shop">
-            Shop the collection
-          </Link>
+          <h1 className="visually-hidden">Arcubed — hand-crocheted bags, made to order in Jordan</h1>
+
+          {heroLead ? (
+            <figure className="hx-obj hx-lead">
+              <Image src={cutSrc(heroLead)} alt={altFor(nova!, "Gold")} width={1200}
+                     height={Math.round(1200 / heroLead.ratio)} priority sizes="(max-width:780px) 78vw, 40vw" />
+            </figure>
+          ) : null}
+          {heroLeft ? (
+            <figure className="hx-obj hx-left">
+              <Image src={cutSrc(heroLeft, true)} alt={altFor(miniLuna!, "Red")} width={600}
+                     height={Math.round(600 / heroLeft.ratio)} sizes="(max-width:780px) 42vw, 20vw" />
+            </figure>
+          ) : null}
+          {heroRight ? (
+            <figure className="hx-obj hx-right">
+              <Image src={cutSrc(heroRight, true)} alt={altFor(nova!, "Silver")} width={600}
+                     height={Math.round(600 / heroRight.ratio)} sizes="(max-width:780px) 38vw, 18vw" />
+            </figure>
+          ) : null}
+          {heroLow ? (
+            <figure className="hx-obj hx-low">
+              <Image src={cutSrc(heroLow, true)} alt={altFor(vault!, "Olive Green")} width={600}
+                     height={Math.round(600 / heroLow.ratio)} sizes="(max-width:780px) 40vw, 17vw" />
+            </figure>
+          ) : null}
+        </HeroCollage>
+
+        <div className="hx-meta">
+          <p className="ed-kicker">Hand-crocheted · Made to order</p>
+          <Link className="ed-link" href="/shop">Shop the collection</Link>
         </div>
       </section>
 
-      {/* ---------------- 2. BRAND STATEMENT ---------------- */}
-      <Reveal as="section" className="ed-statement">
-        <p className="ed-statement-line">MADE BY HAND.</p>
-        <p className="ed-statement-line ed-statement-line-2">MADE YOURS.</p>
-        <p className="ed-statement-note">
-          Every bag is crocheted one stitch at a time, to your colour and your fittings. Nothing is
-          made before you choose it.
-        </p>
-      </Reveal>
+      {/* ---------------- STATEMENT ---------------- */}
+      <section className="st">
+        <Reveal className="st-a">
+          <p className="st-line">MADE</p>
+          <p className="st-line">BY HAND.</p>
+        </Reveal>
+        <Reveal className="st-img" delay={90}>
+          <Image src={TEXTURES.metallic.src} alt="Close detail of metallic ribbon yarn, hand-crocheted"
+                 width={1100} height={Math.round(1100 / TEXTURES.metallic.ratio)} sizes="(max-width:860px) 90vw, 46vw" />
+        </Reveal>
+        <Reveal className="st-b" delay={140}>
+          <p className="st-line st-line-out">MADE YOURS.</p>
+          <p className="st-note">
+            Every piece is crocheted one stitch at a time, in your colour and your fittings.
+            Nothing is made before you choose it.
+          </p>
+        </Reveal>
+      </section>
 
-      {/* ---------------- 3. COLLECTION ---------------- */}
-      <section className="ed-collection">
-        <Reveal className="ed-section-head">
+      {/* ---------------- COLLECTION ---------------- */}
+      <section className="cx">
+        <Reveal className="cx-head">
           <p className="ed-kicker">The collection</p>
+          <h2 className="cx-title">Four shapes.<br />Yours in any colour.</h2>
         </Reveal>
 
-        {nova ? (
-          <Reveal as="article" className="ed-piece ed-piece-lead">
-            <Link href={`/product/${nova.slug}`} className="ed-piece-link">
-              <span className="ed-piece-name">{nova.name}</span>
-              <span className="ed-object ed-piece-object">
-                <BagObject bag={nova} sizes="(max-width: 780px) 78vw, 40vw" />
-              </span>
-              <span className="ed-piece-meta">
-                <span>{nova.tagline}</span>
-                <span className="ed-price">{formatMoney(nova.basePrice, "JOD")}</span>
-              </span>
-            </Link>
-          </Reveal>
-        ) : null}
-
-        <div className="ed-piece-row">
-          {rest.map((bag, i) => (
-            <Reveal as="article" key={bag.id} className={`ed-piece ed-piece-${i + 1}`} delay={i * 90}>
-              <Link href={`/product/${bag.slug}`} className="ed-piece-link">
-                <span className="ed-piece-name">{bag.name}</span>
-                <span className="ed-object ed-piece-object">
-                  <BagObject bag={bag} sizes="(max-width: 780px) 62vw, 26vw" />
-                </span>
-                <span className="ed-piece-meta">
-                  <span>{bag.tagline}</span>
-                  <span className="ed-price">{formatMoney(bag.basePrice, "JOD")}</span>
-                </span>
-              </Link>
-            </Reveal>
-          ))}
+        <div className="cx-grid">
+          {collection.map(({ bag, colour, cls }, i) => {
+            const f = frame(bag, colour);
+            return (
+              <Reveal as="article" key={bag.id} className={`cx-item ${cls}`} delay={i * 70}>
+                <Link href={`/product/${bag.slug}`} className="cx-link">
+                  <span className={`cx-media${f?.cutOk ? " cx-media-cut" : ""}`}>
+                    {f ? (
+                      <Image src={f.cutOk ? cutSrc(f) : f.photo} alt={altFor(bag, colour)} width={1600}
+                             height={Math.round(1600 / f.ratio)} sizes="(max-width:860px) 92vw, 46vw" />
+                    ) : null}
+                  </span>
+                  <span className="cx-name">{bag.name}</span>
+                  <span className="cx-meta">
+                    <span>{bag.tagline}</span>
+                    <span className="cx-price">{formatMoney(bag.basePrice, "JOD")}</span>
+                  </span>
+                </Link>
+              </Reveal>
+            );
+          })}
         </div>
       </section>
 
-      {/* ---------------- 4. CUSTOMIZE ---------------- */}
-      <Reveal as="section" className="ed-customize">
-        <div className="ed-customize-copy">
+      {/* ---------------- CUSTOMIZE ---------------- */}
+      <section className="cz">
+        <Reveal className="cz-media">
+          {heroLeft ? (
+            <Image src={cutSrc(heroLeft)} alt={altFor(miniLuna!, "Red")} width={1200}
+                   height={Math.round(1200 / heroLeft.ratio)} sizes="(max-width:860px) 80vw, 42vw" />
+          ) : null}
+        </Reveal>
+        <Reveal className="cz-copy" delay={80}>
           <p className="ed-kicker ed-kicker-pink">Customize yours</p>
-          <h2 className="ed-h2">
-            Choose the colour.
-            <br />
-            Choose the fittings.
-            <br />
-            We make it after.
-          </h2>
-          <Link className="ed-link ed-link-pink" href="/shop">
-            Start customizing
-          </Link>
-        </div>
-        {colours.length ? (
-          <ul className="ed-swatches" aria-label="Available colours">
+          <h2 className="cz-title">MAKE IT<br />YOURS.</h2>
+          <p className="cz-note">Choose the colour, the strap, the chain. Then we make it.</p>
+          <ul className="cz-swatches" aria-label="Available colours">
             {colours.map((c) => (
-              <li key={c.id} className="ed-swatch">
-                {/* No hex is confirmed for any real colourway yet, so a swatch
-                    shows the NAME rather than an invented colour chip. */}
-                <span
-                  className={c.hex ? "ed-swatch-dot" : "ed-swatch-dot ed-swatch-dot-named"}
-                  style={c.hex ? { background: c.hex } : undefined}
-                  aria-hidden="true"
-                />
-                {c.name}
-              </li>
+              <li key={c.id}>{c.name}</li>
             ))}
           </ul>
-        ) : null}
-      </Reveal>
-
-      {/* ---------------- 5. READY FOR DELIVERY ---------------- */}
-      <section className="ed-ready">
-        <Reveal className="ed-ready-head">
-          <h2 className="ed-ready-title">
-            READY FOR
-            <br />
-            DELIVERY
-          </h2>
-          <p className="ed-ready-sub">Already made. {deliveryPromise}.</p>
+          <Link className="ed-link ed-link-pink" href="/shop">Customize your bag</Link>
         </Reveal>
+      </section>
 
+      {/* ---------------- READY FOR DELIVERY ---------------- */}
+      <section className="rd">
+        <Reveal className="rd-head">
+          <p className="ed-kicker">Ready for delivery</p>
+          <h2 className="rd-title">READY<br />NOW</h2>
+          <p className="rd-promise">{deliveryPromise}.</p>
+        </Reveal>
         {inStock.length ? (
-          <Reveal as="ul" className="ed-ready-list">
+          <Reveal as="ul" className="rd-list" delay={80}>
             {inStock.map((item, i) => (
-              <li key={item.id} className="ed-ready-item" style={{ "--i": i } as React.CSSProperties}>
+              <li key={item.id} style={{ "--i": i } as React.CSSProperties}>
                 <Link href={`/ready-for-delivery/${item.id}`}>
-                  <span className="ed-ready-product">{item.productName}</span>
-                  <span className="ed-ready-config">
-                    {item.colourName ?? item.configurationDescription ?? item.title}
-                  </span>
-                  <span className="ed-ready-qty">{item.quantityAvailable}</span>
+                  <span className="rd-product">{item.productName}</span>
+                  <span className="rd-config">{item.colourName ?? item.configurationDescription ?? item.title}</span>
+                  <span className="rd-qty">{item.quantityAvailable}</span>
                 </Link>
               </li>
             ))}
           </Reveal>
         ) : (
-          <Reveal className="ed-ready-empty">
+          <Reveal className="rd-empty" delay={80}>
             <p>Nothing finished and waiting right now — every piece is being made to order.</p>
-            <Link className="ed-link ed-link-pink" href="/shop">
-              Make one yours
-            </Link>
+            <Link className="ed-link" href="/ready-for-delivery">See how it works</Link>
           </Reveal>
         )}
       </section>
 
-      {/* ---------------- 6. CRAFT ---------------- */}
-      <section className="ed-craft">
-        <Reveal className="ed-craft-big">
-          <Image src={TEXTURES.fringe.src} alt={TEXTURES.fringe.alt} width={1100} height={880} sizes="(max-width: 780px) 100vw, 54vw" className="ed-craft-img" />
+      {/* ---------------- CRAFT ---------------- */}
+      <section className="cf">
+        <Reveal className="cf-big">
+          <Image src={TEXTURES.fringe.src} alt="Close detail of hand-knotted fringe" width={1100}
+                 height={Math.round(1100 / TEXTURES.fringe.ratio)} sizes="(max-width:860px) 100vw, 56vw" />
         </Reveal>
-        <Reveal className="ed-craft-words" delay={80}>
-          <p className="ed-craft-line">
-            One stitch<br />at a time.
-          </p>
-          <p className="ed-craft-note">
+        <Reveal className="cf-words" delay={70}>
+          <p className="cf-line">One stitch<br />at a time.</p>
+          <p className="cf-note">
             No two Arcubed bags are identical. The yarn, the tension, the hand — all of it shows,
             and that is the point.
           </p>
         </Reveal>
-        <Reveal className="ed-craft-small ed-craft-small-1" delay={140}>
-          <Image src={TEXTURES.metallic.src} alt={TEXTURES.metallic.alt} width={900} height={700} sizes="(max-width: 780px) 46vw, 22vw" className="ed-craft-img" />
+        <Reveal className="cf-s1" delay={120}>
+          <Image src={TEXTURES.gold.src} alt="Close detail of metallic gold crochet" width={900}
+                 height={Math.round(900 / TEXTURES.gold.ratio)} sizes="(max-width:860px) 48vw, 26vw" />
         </Reveal>
-        <Reveal className="ed-craft-small ed-craft-small-2" delay={200}>
-          <Image src={TEXTURES.chunky.src} alt={TEXTURES.chunky.alt} width={900} height={600} sizes="(max-width: 780px) 46vw, 22vw" className="ed-craft-img" />
+        <Reveal className="cf-s2" delay={170}>
+          <Image src={TEXTURES.twotone.src} alt="Close detail of two-tone silver and gold crochet" width={900}
+                 height={Math.round(900 / TEXTURES.twotone.ratio)} sizes="(max-width:860px) 48vw, 26vw" />
         </Reveal>
       </section>
     </>

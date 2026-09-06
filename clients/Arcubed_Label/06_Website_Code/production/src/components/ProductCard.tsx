@@ -1,36 +1,31 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { Bag } from "@/lib/types";
-import { defaultSelectionFor, toRenderInput, resolveProductImages, money } from "@/lib/pricing";
-import BagArt from "./BagArt";
+import { money } from "@/lib/pricing";
+import { resolveMedia, altFor } from "@/lib/product-media";
 
-// REAL-PHOTO FALLBACK RULE: real photography beats BagArt whenever it
-// exists for the bag's own default colourway — see
-// motion-and-art-direction.md. Second-image hover reveal only activates
-// when a real second (gallery) shot actually exists for that colourway;
-// it never simulates one.
-export default function ProductCard({ bag }: { bag: Bag }) {
-  const sel = defaultSelectionFor(bag);
-  const images = resolveProductImages(bag, sel);
-  const [primary, secondary] = images;
-
+// Real photography only. The illustrated placeholder is not the Arcubed
+// identity and must never represent a product that has been photographed.
+export default function ProductCard({ bag, colour }: { bag: Bag; colour?: string }) {
+  const media = resolveMedia(bag, colour ?? bag.colours[0]?.name);
   return (
-    <Link className="card" href={`/product/${bag.slug}`}>
-      <div className="card-art">
-        {primary ? (
-          <>
-            {/* eslint-disable-next-line @next/next/no-img-element -- real photo host isn't fixed yet, see CartLineItem.tsx's note */}
-            <img className="card-art-primary" src={primary.url} alt={bag.name} loading="lazy" decoding="async" />
-            {secondary ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img className="card-art-secondary" src={secondary.url} alt="" aria-hidden="true" loading="lazy" decoding="async" />
-            ) : null}
-          </>
-        ) : (
-          <BagArt input={toRenderInput(bag, sel)} />
-        )}
-      </div>
-      <p className="card-name">{bag.name}</p>
-      <p className="card-price">From {money(bag.basePrice)}</p>
+    <Link className="pcard" href={`/product/${bag.slug}`}>
+      <span className="pcard-media">
+        {media ? (
+          <Image
+            src={media.frame.photo}
+            alt={altFor(bag, media.shownColour, media.exactColour)}
+            width={1600}
+            height={Math.round(1600 / media.frame.ratio)}
+            sizes="(max-width: 860px) 92vw, 44vw"
+          />
+        ) : null}
+      </span>
+      <span className="pcard-name">{bag.name}</span>
+      <span className="pcard-meta">
+        <span>{bag.tagline}</span>
+        <span className="pcard-price">From {money(bag.basePrice)}</span>
+      </span>
     </Link>
   );
 }

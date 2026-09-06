@@ -1,58 +1,39 @@
-"use client";
+// Contact — brand continuation, not a boxed form.
+import Image from "next/image";
+import { getActiveBags } from "@/lib/repository";
+import { framesForColour, resolveMedia, altFor } from "@/lib/product-media";
+import ContactForm from "./ContactForm";
 
-// UI only — no backend wired yet (no Supabase, per project scope). Submitting
-// shows a confirmation toast and resets the form; nothing is actually sent
-// anywhere yet, and nothing here claims otherwise. No phone/email is shown
-// since none has been confirmed by the client — only the Instagram handle
-// already established in the approved design direction.
+export const dynamic = "force-dynamic";
 
-import { useState } from "react";
-import { showToast } from "@/lib/toast";
+export const metadata = {
+  title: "Contact — Arcubed Label",
+  description: "Questions about a custom order, colours, shipping or an existing order.",
+};
 
-export default function ContactPage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    showToast("Thank you. We'll be in touch shortly.");
-    setName("");
-    setEmail("");
-    setMessage("");
-  }
+export default async function ContactPage() {
+  const bags = await getActiveBags();
+  const loco = bags.find((b) => b.name.trim().toLowerCase() === "loco");
+  const shot = loco ? framesForColour(loco, "Burgundy")[0] ?? resolveMedia(loco)?.frame : null;
 
   return (
-    <section className="section">
-      <div className="page-head">
-        <p className="eyebrow">Contact</p>
-        <h1>Say hello.</h1>
+    <section className="ct">
+      <div className="ct-copy">
+        <p className="ed-kicker">Contact</p>
+        <h1 className="ct-title">
+          LET&rsquo;S MAKE<br />SOMETHING<br />YOURS.
+        </h1>
+        <p className="ct-topics">
+          Custom orders · Colours &amp; yarns · Shipping · Ready for Delivery · An existing order
+        </p>
+        <ContactForm />
       </div>
-      <p className="page-copy" style={{ marginBottom: 32 }}>
-        Questions about a custom order, or something else on your mind? Send a
-        message below, or find us on Instagram{" "}
-        <a href="https://instagram.com/arcubedlabel" target="_blank" rel="noreferrer">
-          @arcubedlabel
-        </a>
-        .
-      </p>
-      <form className="contact-form" onSubmit={handleSubmit}>
-        <div className="form-field">
-          <label htmlFor="name">Name</label>
-          <input id="name" required value={name} onChange={(e) => setName(e.target.value)} />
-        </div>
-        <div className="form-field">
-          <label htmlFor="email">Email</label>
-          <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-        </div>
-        <div className="form-field">
-          <label htmlFor="message">Message</label>
-          <textarea id="message" required value={message} onChange={(e) => setMessage(e.target.value)} />
-        </div>
-        <button className="btn btn-primary" type="submit">
-          Send Message
-        </button>
-      </form>
+      <div className="ct-media">
+        {shot ? (
+          <Image src={shot.photo} alt={altFor(loco!, "Burgundy")} width={1600}
+                 height={Math.round(1600 / shot.ratio)} sizes="(max-width:860px) 100vw, 44vw" priority />
+        ) : null}
+      </div>
     </section>
   );
 }

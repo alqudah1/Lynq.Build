@@ -17,7 +17,7 @@ const VIEWPORTS = [
   { name: "768", width: 768, height: 1024, mobile: true },
   { name: "1440", width: 1440, height: 900, mobile: false },
 ];
-const ROUTES = ["/", "/shop", "/product/nova", "/product/loco", "/ready-for-delivery", "/cart", "/faq", "/about", "/contact"];
+const ROUTES = ["/", "/shop", "/product/nova", "/product/vault", "/product/mini-luna", "/product/loco", "/ready-for-delivery", "/cart", "/faq", "/about", "/contact"];
 
 async function session(fn) {
   const target = await (await fetch(`${CDP}/json/new?about:blank`, { method: "PUT" })).json();
@@ -109,7 +109,7 @@ for (const vp of VIEWPORTS) {
         .filter(Boolean);
       results.push({ vp: vp.name, route, ...result.value, errors: errs.slice(0, 3), errorCount: errs.length });
 
-      if (["/", "/product/nova", "/ready-for-delivery"].includes(route)) {
+      if (["/", "/shop", "/product/nova", "/ready-for-delivery", "/about", "/contact"].includes(route)) {
         const shot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: true });
         if (shot.data) writeFileSync(`${OUT}/${route.replace(/\W+/g, "_") || "home"}-${vp.name}.png`, Buffer.from(shot.data, "base64"));
       }
