@@ -1,0 +1,10 @@
+# Raw DSLR originals from Rand's shoot — 45 frames, ~230MB.
+#
+# Deliberately NOT committed: this repo pushes to GitHub, and 230MB of source
+# JPEGs would live in its history permanently and can't easily be removed.
+# The files remain on disk here, and Rand holds the originals in the Drive
+# archive. The web-optimised derivatives the site actually serves ARE
+# committed, under 06_Website_Code/production/public/media/.
+#
+# To include them after all, delete this file and re-add.
+03_Images/
