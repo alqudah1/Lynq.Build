@@ -1,0 +1,431 @@
+/* ============================================================
+   ARCUBED HOMEPAGE — hero, scroll story, collection reveal
+   ============================================================
+   Brand structure is navy #143562 on pale pink #FFE0FD. Product colour
+   (red, gold, olive, burgundy...) belongs to the bags and to the collection
+   fields, never to the brand furniture.
+
+   All motion is driven by custom properties written once per frame by
+   src/components/home/ScrollStory.tsx: --p globally, and --b-* per phase.
+   Nothing here animates on its own. */
+
+.home { --navy: #143562; --pink: #ffe0fd; }
+
+/* The site header is a sticky translucent bar everywhere else. On this page
+   it has to read as part of the poster, so it sits ON the pink with no
+   background and scrolls away with the composition. Scoped by :has() so no
+   other route is touched. */
+body:has(.home) .site-header {
+  /* left/right pinned: an absolutely positioned flex row with no width
+     collapses to its content, which pulled the nav on top of the wordmark. */
+  position: absolute; left: 0; right: 0; background: none;
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+body:has(.home) .site-header .nav a,
+body:has(.home) .site-header .cart-icon,
+body:has(.home) .site-header .menu-toggle { color: var(--navy); }
+body:has(.home) .site-header .nav a::after { background: var(--navy); }
+body:has(.home) main { padding-top: 0; }
+
+/* ---------------- scroll container ---------------- */
+.story { position: relative; height: 460vh; background: var(--pink); }
+.story-stage {
+  position: sticky; top: 0; height: 100vh; overflow: hidden;
+  background: var(--pink);
+  /* Fallback values so the very first paint (and a no-JS page) is the hero,
+     not a blank stage. */
+  --p: 0; --b-hero: 0; --b-enter: 0; --b-mat: 0; --b-shape: 0; --b-cust: 0; --b-final: 0;
+}
+.phase { position: absolute; inset: 0; }
+
+/* ---------------- HERO ---------------- */
+.hero-type {
+  /* z-index: auto ON PURPOSE. Giving this wrapper a stacking index put every
+     line inside its own context, so line 3 could never rise above the bag no
+     matter what index it carried — it came out behind and got clipped. The
+     lines carry their own indices instead. */
+  position: absolute; inset: 0; z-index: auto; pointer-events: none;
+  font-family: var(--font-head); font-weight: 600; color: var(--navy);
+  text-transform: uppercase; letter-spacing: -0.045em; line-height: 0.8;
+  font-size: clamp(56px, 15.5vw, 232px);
+}
+.hero-type p { position: absolute; margin: 0; white-space: nowrap; }
+/* Three different travel speeds — this is the whole parallax system. The
+   ranges are small on purpose: depth, not a ride. */
+/* Deliberately unequal: three lines at one size and one left edge is a
+   heading, not a composition. */
+.hero-l1 { top: 8vh;  left: -0.6vw; font-size: 1em;    z-index: 2;    transform: translateY(calc(var(--b-enter) * -52vh)); }
+.hero-l2 { top: 30vh; left: 12vw;   font-size: 0.78em; z-index: 2; transform: translateY(calc(var(--b-enter) * -68vh)); }
+/* The line that crosses the object, so it is the largest and runs furthest
+   right — it has to reach the bag to sit in front of it. */
+.hero-l3 { top: 50vh; left: 0.4vw;  font-size: 1.22em; z-index: 5; transform: translateY(calc(var(--b-enter) * -34vh)); }
+.hero-type p { opacity: calc(1 - var(--b-enter) * 1.5); }
+
+/* The dominant object. Crosses lines 1 and 2, sits behind line 3, and leaves
+   the viewport on the right. */
+.hero-bag {
+  /* Far enough left that lines 2 and 3 genuinely run under and across it —
+     the first pass left the bag in clear space beside the type, which is a
+     product shot next to a heading, not a composition. */
+  position: absolute; z-index: 3; top: 9vh; right: -2vw; width: 66vw;
+  transform:
+    translateY(calc(var(--b-hero) * -1.6vh + var(--b-enter) * 4vh))
+    /* Keeps growing under the mask through the material band, so the macro
+       opens onto an object still moving toward the viewer. */
+    scale(calc(1 + var(--b-enter) * 1.28 + var(--b-mat) * 0.85));
+  transform-origin: 62% 46%;
+}
+.hero-bag img { width: 100%; height: auto; }
+
+/* Secondary object: cropped by the bottom edge, deliberately small. */
+.hero-second {
+  /* Clear of the navy band, which was covering it entirely. Cropped by the
+     left edge so it reads as a deliberate second object rather than a small
+     item marooned in the corner. */
+  position: absolute; z-index: 4; left: -3.5vw; bottom: 10vh; width: 21vw;
+  transform: translateY(calc(var(--b-enter) * 34vh));
+  opacity: calc(1 - var(--b-enter) * 1.6);
+}
+.hero-second img { width: 100%; height: auto; }
+
+/* Editorial interruption: a navy poster footer carrying the factual labels
+   and one macro of the hero bag's own yarn. Also the page's first navy
+   anchor, so the hero is not a wash of pink. */
+.hero-band {
+  position: absolute; z-index: 6; left: 0; right: 0; bottom: 0;
+  height: 8.4vh; min-height: 54px; background: var(--navy); color: var(--pink);
+  display: flex; align-items: center; gap: clamp(18px, 4vw, 64px);
+  padding-left: clamp(20px, 4vw, 52px);
+  transform: translateY(calc(var(--b-enter) * 12vh));
+}
+.hero-band span {
+  font-size: clamp(9px, 0.78vw, 12px); font-weight: 600;
+  letter-spacing: 0.22em; text-transform: uppercase; white-space: nowrap;
+}
+/* Sits flush in the band: align-self stretch plus a fixed width, because a
+   percentage height on a flex child with an aspect-ratio broke out of the
+   band and left a white notch. */
+.hero-band figure {
+  margin: 0 0 0 auto; align-self: stretch; width: clamp(120px, 15vw, 260px);
+  overflow: hidden; flex: none;
+}
+/* This macro carries a strip of studio seamless down its LEFT edge (about
+   16% of the frame). object-position cannot remove it: the band is far wider
+   than the source is, so `cover` scales to width and never crops
+   horizontally at all. Over-widening the image and pulling it left is what
+   actually drops the strip out of view. */
+.hero-band figure img {
+  width: 126%; margin-left: -26%; height: 100%;
+  object-fit: cover; object-position: center; display: block;
+}
+
+/* ---------------- 01 THE MATERIAL ----------------
+   A circle opening from roughly where the hero bag's body sits, so the move
+   reads as going into that object's surface rather than as a cut. The radius
+   overshoots 100% well before the band ends, which gives the macro a beat of
+   stillness instead of arriving exactly as it leaves. */
+.phase-mat {
+  z-index: 8;
+  clip-path: circle(calc(var(--b-mat) * 190%) at 62% 46%);
+}
+/* Pulled left and over-wide so the studio seamless down this frame's left
+   edge lands off-screen. object-position cannot do it: the viewport is wider
+   than the source's aspect, so `cover` scales to width and never crops
+   horizontally. */
+.mat-img { position: absolute; top: 0; bottom: 0; left: -19%; width: 119%; overflow: hidden; }
+.mat-img img {
+  width: 100%; height: 100%; object-fit: cover;
+  transform: scale(calc(1.2 - var(--b-mat) * 0.2));
+  transform-origin: 62% 46%;
+}
+
+.story-label {
+  position: absolute; z-index: 3; top: 7vh; left: clamp(20px, 4vw, 52px); margin: 0;
+  font-size: clamp(10px, 0.82vw, 13px); font-weight: 600; letter-spacing: 0.22em;
+  /* Pink, not navy: by the time this fades in, the field behind it is the
+     red macro. Navy on red was unreadable. */
+  text-transform: uppercase; color: var(--pink);
+  opacity: calc(min(1, var(--b-mat) * 3) - var(--b-shape) * 2);
+}
+.story-label span { display: block; margin-bottom: 6px; opacity: 0.55; }
+.story-label-pink { color: var(--pink); opacity: calc(min(1, var(--b-shape) * 3) - var(--b-cust) * 2); }
+
+.mat-note {
+  position: absolute; z-index: 3; bottom: 8vh; left: clamp(20px, 4vw, 52px); margin: 0;
+  max-width: 22ch; color: var(--pink);
+  font-family: var(--font-head); font-size: clamp(20px, 2.6vw, 40px); line-height: 1.12;
+  opacity: calc(min(1, var(--b-mat) * 2.4) - var(--b-shape) * 2.4);
+  transform: translateY(calc((1 - var(--b-mat)) * 3vh));
+}
+
+/* ---------------- 02 THE SHAPE ----------------
+   The navy field wipes up over the macro; the forms rise into it. */
+.phase-shape {
+  z-index: 9; background: var(--navy);
+  /* Completes at ~62% of the band rather than exactly at its end, so the
+     four forms get a beat of stillness before the next phase takes over.
+     Running the wipe across the whole band meant it was still finishing when
+     customisation began — the section never actually resolved, and the "02"
+     label stayed clipped outside the revealed area the whole time. */
+  clip-path: inset(calc(100% - min(1, var(--b-shape) * 2.8) * 100%) 0 0 0);
+}
+.shape-row {
+  position: absolute; z-index: 2; left: 0; right: 0; top: 50%;
+  display: flex; align-items: flex-end; justify-content: center;
+  gap: clamp(14px, 3.2vw, 58px); margin: 0; padding: 0 clamp(20px, 3vw, 40px);
+  list-style: none; transform: translateY(-46%);
+}
+/* Each form arrives on its own beat, so the row assembles rather than
+   appearing at once — and all four settle together, in line, by the time the
+   wipe finishes. */
+.shape-item {
+  display: flex; flex-direction: column; align-items: center; gap: 18px;
+  --settle: calc(1 - min(1, var(--b-shape) * 2.9));
+  transform: translateY(calc(var(--settle) * 14vh));
+}
+.shape-nova     { transform: translateY(calc(var(--settle) * 22vh)); }
+.shape-vault    { transform: translateY(calc(var(--settle) * 16vh)); }
+.shape-mini-luna{ transform: translateY(calc(var(--settle) * 10vh)); }
+.shape-loco     { transform: translateY(calc(var(--settle) * 18vh)); }
+
+/* Alpha mask filled with brand pink — the asset carries no colour of its own. */
+.sil {
+  /* 26vh overflowed the viewport: four forms whose widths sum by their own
+     ratios, and Nova is nearly 1.9:1. The row has to hold all four whole —
+     a cropped silhouette is the one thing this section cannot show. */
+  display: block; height: clamp(88px, 20.5vh, 196px);
+  width: calc(clamp(88px, 20.5vh, 196px) * var(--ratio));
+  background: var(--pink);
+  -webkit-mask-image: var(--sil); mask-image: var(--sil);
+  -webkit-mask-size: contain; mask-size: contain;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  -webkit-mask-position: center bottom; mask-position: center bottom;
+}
+.shape-item em {
+  font-style: normal; color: var(--pink); font-size: clamp(10px, 0.82vw, 13px);
+  font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase;
+}
+.shape-note {
+  position: absolute; z-index: 3; bottom: 8vh; left: clamp(20px, 4vw, 52px); margin: 0;
+  max-width: 26ch; color: var(--pink); font-family: var(--font-head);
+  font-size: clamp(18px, 2.2vw, 34px); line-height: 1.14;
+  opacity: calc(min(1, (var(--b-shape) - 0.35) * 3) - var(--b-cust) * 2.4);
+}
+
+/* ---------------- 03 MAKE IT YOURS ----------------
+   Back to the pink field. The object holds still and its colour changes. */
+.phase-cust {
+  z-index: 10; background: var(--pink);
+  clip-path: inset(0 0 calc(100% - min(1, var(--b-cust) * 3) * 100%) 0);
+}
+.story-label-navy { color: var(--navy); opacity: calc(min(1, var(--b-cust) * 3) - var(--b-final) * 2); }
+
+.cust-bag {
+  position: absolute; z-index: 2; left: 4vw; top: 50%; width: 46vw;
+  transform: translateY(-52%);
+}
+.cust-bag img {
+  /* All five stacked in one cell; exactly one is opaque at a time. Each
+     carries its own window as --w0/--w1 from the component, so the sequence
+     is data rather than a hand-written keyframe per colour.
+     The switch is FAST on purpose. These five frames are five separate
+     photographs at slightly different camera positions, so a slow crossfade
+     put two mis-registered bags on screen at once and read as a double
+     exposure. A quick cut reads as the same bag changing colour. */
+  grid-area: 1 / 1; width: 100%; height: auto;
+  opacity: clamp(0, min(calc((var(--b-cust) - var(--w0)) * 70), calc((var(--w1) - var(--b-cust)) * 70)), 1);
+}
+.cust-bag { display: grid; }
+/* The last colour holds for the rest of the phase instead of fading out, so
+   the bag is still there while the details and size beats play. */
+.cust-bag img:last-child { opacity: clamp(0, calc((var(--b-cust) - 0.36) * 70), 1); }
+
+/* Steps and the colour name are separate rows, not one stack: overlapping
+   percentage offsets put the colour name straight through the step text. */
+.cust-steps { position: absolute; z-index: 3; right: 5vw; top: 40%; text-align: right; }
+.cust-step {
+  margin: 0; font-family: var(--font-head); color: var(--navy);
+  font-size: clamp(24px, 3.6vw, 58px); line-height: 1.06; letter-spacing: -0.02em;
+}
+.cust-step-1 { opacity: clamp(0, min(calc((var(--b-cust) - 0.02) * 12), calc((0.48 - var(--b-cust)) * 12)), 1); }
+.cust-step-2 { opacity: clamp(0, min(calc((var(--b-cust) - 0.46) * 12), calc((0.76 - var(--b-cust)) * 12)), 1); }
+.cust-step-3 { opacity: clamp(0, calc((var(--b-cust) - 0.74) * 12), 1); }
+.cust-step-2, .cust-step-3 { position: absolute; right: 0; top: 0; }
+
+.cust-names {
+  position: absolute; z-index: 3; right: 5vw; top: 58%; margin: 0; padding: 0; list-style: none;
+  text-align: right;
+}
+.cust-names li {
+  position: absolute; right: 0; top: 0; white-space: nowrap;
+  font-size: clamp(10px, 0.82vw, 13px); font-weight: 600; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--navy); opacity: clamp(0, min(calc((var(--b-cust) - var(--w0)) * 70), calc((var(--w1) - var(--b-cust)) * 70)), 1);
+}
+
+.cust-honest {
+  position: absolute; z-index: 3; right: 5vw; bottom: 9vh; margin: 0; max-width: 34ch;
+  text-align: right; font-size: 12.5px; line-height: 1.6; color: var(--navy); opacity: 0.62;
+}
+
+/* ---------------- 04 THE FINISHED OBJECT ---------------- */
+.phase-final {
+  z-index: 11; background: var(--pink);
+  clip-path: inset(0 0 calc(100% - min(1, var(--b-final) * 3) * 100%) 0);
+}
+.final-line {
+  position: absolute; z-index: 3; margin: 0; color: var(--navy);
+  font-family: var(--font-head); font-weight: 600; text-transform: uppercase;
+  letter-spacing: -0.04em; line-height: 0.84; font-size: clamp(40px, 8.4vw, 128px);
+}
+.final-a { top: 16vh; left: 5vw; }
+.final-b { bottom: 16vh; right: 5vw; }
+.final-bag {
+  position: absolute; z-index: 2; left: 50%; top: 50%; width: 30vw; margin: 0;
+  transform: translate(-50%, -50%) scale(calc(0.94 + var(--b-final) * 0.06));
+}
+.final-bag img { width: 100%; height: auto; }
+
+/* ---------------- COLLECTION ----------------
+   Released from the sticky stage. The tile is the design: a colour field, the
+   object, and its name — no card shell, no border, no shadow. */
+.grid-wrap { background: var(--pink); padding: clamp(60px, 11vh, 130px) clamp(16px, 3vw, 40px) clamp(70px, 12vh, 150px); }
+.grid-head { padding: 0 clamp(4px, 1vw, 12px) clamp(34px, 5vh, 60px); }
+.grid-kicker { margin: 0 0 14px; font-size: clamp(10px, 0.82vw, 13px); font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--navy); opacity: 0.6; }
+.grid-title { font-family: var(--font-head); color: var(--navy); font-weight: 600; text-transform: uppercase; letter-spacing: -0.035em; line-height: 0.88; font-size: clamp(34px, 6.4vw, 96px); }
+
+.col-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(10px, 1.4vw, 20px); }
+.col-tile a { display: block; }
+.ct-field {
+  position: relative; display: block; aspect-ratio: 1 / 1; overflow: hidden;
+}
+.ct-field img {
+  position: absolute; inset: 0; margin: auto; display: block;
+  transition: transform 0.5s var(--ease-ui);
+}
+/* A cut-out sits ON the field with breathing room; a full photograph fills
+   the tile edge to edge, because its own studio background IS its field. */
+.ct-cut { width: 78%; height: auto; max-height: 82%; object-fit: contain; }
+.ct-photo { width: 100%; height: 100%; object-fit: cover; }
+.col-tile a:hover .ct-field img { transform: scale(1.045); }
+
+.ct-view {
+  position: absolute; left: 14px; bottom: 12px; z-index: 2;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+  color: #fff; opacity: 0; transform: translateY(4px);
+  transition: opacity 0.24s var(--ease-ui), transform 0.24s var(--ease-ui);
+  mix-blend-mode: difference;
+}
+.col-tile a:hover .ct-view { opacity: 1; transform: translateY(0); }
+
+.ct-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; padding: 12px 2px 0; color: var(--navy); }
+.ct-name { font-weight: 600; font-size: 13.5px; }
+.ct-colour { font-size: 12.5px; opacity: 0.62; }
+.ct-price { margin-left: auto; font-family: var(--font-head); font-size: 13.5px; }
+
+/* On a narrow tile the single meta row overflows — "Vault Olive Green JOD 50"
+   does not fit, and the auto-margined price wrapped onto its own line only on
+   the tiles that were too long, so the grid lost its baseline. Two explicit
+   rows instead. */
+@media (max-width: 699px) {
+  .ct-meta { display: grid; grid-template-columns: 1fr auto; gap: 0 8px; }
+  .ct-name { grid-column: 1; grid-row: 1; }
+  .ct-price { grid-column: 2; grid-row: 1; margin-left: 0; }
+  .ct-colour { grid-column: 1 / -1; grid-row: 2; }
+}
+@media (min-width: 700px) { .col-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 1080px) { .col-grid { grid-template-columns: repeat(4, 1fr); } }
+
+@media (max-width: 860px) {
+  .story { height: 320vh; }
+  .hero-type { font-size: clamp(48px, 19.5vw, 120px); }
+  .hero-l1 { top: 12vh; left: -0.5vw; }
+  .hero-l2 { top: 24vh; left: 4vw; }
+  .hero-l3 { top: 36vh; left: 0.5vw; }
+  /* The bag must still cross the type on a phone. Sitting it BELOW the
+     headline — the first attempt — left the type in one box and the product
+     in another, plus a dead band of pink between them. It now runs up into
+     the last two lines and off both the right and bottom edges. */
+  .hero-bag { top: 31vh; right: -32vw; width: 122vw; }
+  .hero-second { display: none; }
+  .hero-band { gap: 16px; padding-left: 18px; height: 7vh; }
+  .hero-band span:nth-child(3) { display: none; }
+  .hero-band figure { aspect-ratio: 1.6 / 1; }
+  /* Two rows of two on a phone — four forms in one row would be thumbnails. */
+  .shape-row { flex-wrap: wrap; gap: 14px 20px; transform: translateY(-50%); }
+  .shape-item { gap: 10px; width: calc(50% - 12px); }
+  .sil { height: clamp(64px, 13vh, 130px); width: calc(clamp(64px, 13vh, 130px) * var(--ratio)); }
+  .mat-note, .shape-note { bottom: 6vh; font-size: clamp(18px, 5.4vw, 28px); max-width: 16ch; }
+  .story-label { top: 11vh; }
+  /* Customisation stacks on a phone: object above, words below. */
+  .cust-bag { left: 50%; top: 34vh; width: 84vw; transform: translate(-50%, -50%); }
+  .cust-steps { right: auto; left: 6vw; top: 58vh; text-align: left; }
+  .cust-step { font-size: clamp(24px, 8vw, 40px); }
+  .cust-step-2, .cust-step-3 { right: auto; left: 0; }
+  .cust-names { right: auto; left: 6vw; top: 72vh; text-align: left; }
+  .cust-names li { right: auto; left: 0; }
+  .cust-honest { right: auto; left: 6vw; bottom: 6vh; max-width: 30ch; text-align: left; font-size: 11.5px; }
+  .final-a { top: 20vh; left: 6vw; }
+  .final-b { bottom: 20vh; right: 6vw; }
+  .final-bag { width: 62vw; }
+}
+
+/* ---------------- reduced motion ----------------
+   The story stops being a timeline and becomes an ordinary document: every
+   phase lays out in flow, one after another, with nothing transformed and
+   nothing hidden behind a progress value. The first attempt only un-stuck the
+   container, which left four of the five phases at zero height because their
+   contents are absolutely positioned — the page silently lost most of its
+   content for exactly the users who need it plainly. */
+@media (prefers-reduced-motion: reduce) {
+  .story { height: auto; }
+  .story-stage { position: static; height: auto; overflow: visible; }
+
+  .phase {
+    position: relative; inset: auto;
+    clip-path: none !important;
+    padding: clamp(48px, 9vh, 110px) clamp(20px, 5vw, 64px);
+  }
+  /* Kills every parallax offset, scale and scroll-driven fade at once. */
+  .story-stage *, .story-stage *::before, .story-stage *::after {
+    transform: none !important; opacity: 1 !important;
+  }
+
+  /* Anything positioned into the composition returns to normal flow. */
+  .hero-type, .hero-type p, .hero-bag, .hero-second, .hero-band,
+  .mat-img, .story-label, .mat-note, .shape-row, .shape-note,
+  .cust-bag, .cust-steps, .cust-step, .cust-names, .cust-names li,
+  .cust-honest, .final-line, .final-bag {
+    position: relative; top: auto; right: auto; bottom: auto; left: auto;
+    margin-left: 0; margin-right: 0; text-align: left;
+  }
+
+  .hero-type { height: auto; font-size: clamp(44px, 11vw, 116px); }
+  .hero-type p { white-space: normal; }
+  .hero-bag { width: min(560px, 78%); margin: 28px 0; }
+  .hero-second { width: min(220px, 34%); }
+  .hero-band { height: auto; min-height: 0; padding: 14px 18px; flex-wrap: wrap; gap: 14px; }
+  .hero-band figure { width: 140px; height: 52px; margin-left: 0; }
+  .hero-band figure img { width: 100%; margin-left: 0; }
+
+  .phase-mat { background: var(--navy); }
+  .mat-img { width: 100%; height: auto; }
+  .mat-img img { height: auto; }
+  .mat-note, .shape-note { max-width: 34ch; margin-top: 20px; }
+  .story-label { margin-bottom: 22px; }
+  .story-label-navy { color: var(--pink); }
+  .phase-cust, .phase-final { background: var(--pink); }
+  .story-label-navy, .cust-step, .cust-names li, .cust-honest, .final-line { color: var(--navy); }
+  .phase-cust .story-label-navy { color: var(--navy); }
+
+  .shape-row { display: flex; flex-wrap: wrap; gap: 28px; justify-content: flex-start; }
+
+  /* All five colourways side by side instead of stacked in one cell — with
+     the crossfade gone they would otherwise sit on top of one another. */
+  .cust-bag { display: flex; flex-wrap: wrap; gap: 14px; width: 100%; }
+  .cust-bag img { width: calc(20% - 12px); height: auto; }
+  .cust-steps { margin-top: 26px; }
+  .cust-step { font-size: clamp(22px, 4vw, 40px); }
+  .cust-names { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 18px; }
+  .cust-honest { max-width: 60ch; margin-top: 20px; }
+  .final-bag { width: min(300px, 46%); margin: 26px 0; }
+}
