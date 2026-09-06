@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
-import { snapshotSummary, snapshotToRenderInput, money } from "@/lib/pricing";
+import { snapshotSummary, money } from "@/lib/pricing";
 import type { CartLine } from "@/lib/types";
-import BagArt from "./BagArt";
+import CartThumb from "./CartThumb";
 
 function DrawerLine({ line }: { line: CartLine }) {
   if (line.kind === "ready_for_delivery") {
@@ -12,12 +12,7 @@ function DrawerLine({ line }: { line: CartLine }) {
     return (
       <div className="drawer-line">
         <div className="drawer-thumb">
-          {snapshot.imageUrl ? (
-            // Plain <img>, not next/image — see CartLineItem.tsx's note.
-            <img src={snapshot.imageUrl} alt={snapshot.itemTitle} />
-          ) : (
-            <div className="cart-thumb-placeholder" aria-hidden="true" />
-          )}
+          <CartThumb line={line} />
         </div>
         <div className="drawer-line-body">
           <p className="drawer-line-name">{snapshot.itemTitle}</p>
@@ -32,7 +27,7 @@ function DrawerLine({ line }: { line: CartLine }) {
   return (
     <div className="drawer-line">
       <div className="drawer-thumb">
-        <BagArt input={snapshotToRenderInput(snapshot)} />
+        <CartThumb line={line} />
       </div>
       <div className="drawer-line-body">
         <p className="drawer-line-name">{snapshot.bagName}</p>

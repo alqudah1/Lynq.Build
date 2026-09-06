@@ -109,6 +109,8 @@ interface CartContextValue {
   addOrUpdateLine: (line: CartLine, editingLineId?: string | null) => void;
   removeLine: (lineId: string) => void;
   setQty: (lineId: string, qty: number) => void;
+  /** Empties the cart after an order is successfully placed. */
+  clearCart: () => void;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -132,6 +134,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     },
     []
   );
+
+  const clearCart = useCallback(() => {
+    writeCart([]);
+  }, []);
 
   const removeLine = useCallback((lineId: string) => {
     const current = parseCart(getSnapshot());
@@ -158,6 +164,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     addOrUpdateLine,
     removeLine,
     setQty,
+    clearCart,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

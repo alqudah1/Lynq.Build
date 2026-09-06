@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import type { CartLine, ReadyForDeliverySnapshot } from "@/lib/types";
-import { snapshotSummary, snapshotToRenderInput, money } from "@/lib/pricing";
+import { snapshotSummary, money } from "@/lib/pricing";
 import { useCart } from "@/lib/cart-context";
 import { showToast } from "@/lib/toast";
-import BagArt from "./BagArt";
+import CartThumb from "./CartThumb";
 
 function readyForDeliverySummary(snapshot: ReadyForDeliverySnapshot): string[] {
   if (snapshot.configurationDescription) return [snapshot.configurationDescription];
@@ -50,15 +50,7 @@ export default function CartLineItem({ line }: { line: CartLine }) {
     return (
       <div className="cart-line">
         <div className="cart-thumb">
-          {snapshot.imageUrl ? (
-            // Plain <img>, not next/image: real photos are hosted wherever
-            // Rand's uploads end up (not yet decided), so next/image's
-            // required host allowlisting can't be set up ahead of time; a
-            // plain <img> works with any host.
-            <img src={snapshot.imageUrl} alt={snapshot.itemTitle} width={200} height={200} />
-          ) : (
-            <div className="cart-thumb-placeholder" aria-hidden="true" />
-          )}
+          <CartThumb line={line} />
         </div>
         <div className="cart-line-body">
           <p className="cart-line-name">{snapshot.itemTitle}</p>
@@ -84,7 +76,7 @@ export default function CartLineItem({ line }: { line: CartLine }) {
   return (
     <div className="cart-line">
       <div className="cart-thumb">
-        <BagArt input={snapshotToRenderInput(snapshot)} />
+        <CartThumb line={line} />
       </div>
       <div className="cart-line-body">
         <p className="cart-line-name">{snapshot.bagName}</p>

@@ -6,7 +6,6 @@ import { money } from "@/lib/pricing";
 import { formatMoney } from "@/lib/site-settings";
 import type { ShippingRule } from "@/lib/types";
 import CartLineItem from "@/components/CartLineItem";
-import { showToast } from "@/lib/toast";
 
 export default function CartPageClient({
   shippingRules,
@@ -83,13 +82,9 @@ export default function CartPageClient({
             Ready for Delivery items ship {(readyForDeliveryFulfillmentLabel ?? "next day").toLowerCase()}.
           </p>
         ) : null}
-        <button
-          className="btn btn-primary btn-block"
-          type="button"
-          onClick={() => showToast("Checkout is on its way — thank you for your patience.")}
-        >
+        <Link className="btn btn-primary btn-block" href="/checkout">
           Checkout
-        </button>
+        </Link>
       </div>
     </section>
   );

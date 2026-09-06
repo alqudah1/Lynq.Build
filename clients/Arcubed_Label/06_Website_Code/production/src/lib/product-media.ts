@@ -97,3 +97,24 @@ export function altFor(bag: Pick<Bag, "name">, colour: string | null, exact = tr
   const base = `${bag.name}, hand-crocheted by Arcubed`;
   return colour && exact ? `${base} — ${colour}` : base;
 }
+
+/**
+ * Thumbnail for a cart/order line, from the SAME canonical map the storefront
+ * uses — there is deliberately no second mapping system.
+ *
+ * Cart snapshots carry bagSlug + colourName, which is exactly the key
+ * COLOUR_MEDIA is built on, so "Nova Black" in the cart shows the black Nova
+ * and never a generic or wrong-colour thumbnail.
+ */
+export function mediaForSnapshot(
+  bagSlug: string | null | undefined,
+  bagName: string | null | undefined,
+  colourName: string | null | undefined
+): Frame | null {
+  if (!bagSlug && !bagName) return null;
+  const bag = { slug: bagSlug ?? "", name: bagName ?? "" };
+  const exact = framesForColour(bag, colourName);
+  if (exact.length) return exact[0];
+  const any = allFramesFor(bag);
+  return any[0] ?? null;
+}

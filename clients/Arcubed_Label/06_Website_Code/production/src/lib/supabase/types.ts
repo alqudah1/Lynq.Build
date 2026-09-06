@@ -201,6 +201,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          confirmation_token: string
           created_at: string
           currency: string
           customer_email: string
@@ -208,16 +209,19 @@ export type Database = {
           customer_phone: string | null
           id: string
           notes: string | null
+          idempotency_key: string | null
           order_number: string
           payment_status: string
           shipping_address: Json | null
           shipping_amount: number
+          shipping_quote_required: boolean
           status: string
           subtotal: number
           total: number
           updated_at: string
         }
         Insert: {
+          confirmation_token?: string
           created_at?: string
           currency?: string
           customer_email: string
@@ -225,16 +229,19 @@ export type Database = {
           customer_phone?: string | null
           id?: string
           notes?: string | null
+          idempotency_key?: string | null
           order_number: string
           payment_status?: string
           shipping_address?: Json | null
           shipping_amount?: number
+          shipping_quote_required?: boolean
           status?: string
           subtotal: number
           total: number
           updated_at?: string
         }
         Update: {
+          confirmation_token?: string
           created_at?: string
           currency?: string
           customer_email?: string
@@ -242,14 +249,46 @@ export type Database = {
           customer_phone?: string | null
           id?: string
           notes?: string | null
+          idempotency_key?: string | null
           order_number?: string
           payment_status?: string
           shipping_address?: Json | null
           shipping_amount?: number
+          shipping_quote_required?: boolean
           status?: string
           subtotal?: number
           total?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      contact_inquiries: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          status: string
+          topic: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          status?: string
+          topic: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          status?: string
+          topic?: string
         }
         Relationships: []
       }

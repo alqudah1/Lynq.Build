@@ -57,11 +57,30 @@ export interface CreateOrderInput {
   shippingAddress?: Record<string, unknown>;
   notes?: string;
   items: OrderInputLine[];
+  /**
+   * Per-attempt token from the client. Two submissions carrying the same key
+   * produce ONE order: the unique index on orders.idempotency_key is the real
+   * guarantee, so a double-click or a browser retry after a slow response
+   * cannot bill a customer twice.
+   */
+  idempotencyKey?: string;
 }
 
 export type CreateOrderResult =
-  | { ok: true; orderId: string; orderNumber: string; subtotal: number; total: number }
-  | { ok: false; errors: string[] };
+  | {
+      ok: true;
+      orderId: string;
+      orderNumber: string;
+      /** Unguessable key for the confirmation page — order_number is not. */
+      confirmationToken: string;
+      subtotal: number;
+      total: number;
+      shippingAmount: number;
+      shippingQuoteRequired: boolean;
+      /** True when an existing order was returned instead of a new one. */
+      duplicate: boolean;
+    }
+  | { ok: false; errors: string[]; soldOut?: boolean };
 
 function generateOrderNumber(): string {
   const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, "");
@@ -353,16 +372,35 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
   if (!shippingRule) {
     return { ok: false, errors: ["Shipping is temporarily unavailable. Please try again shortly."] };
   }
-  if (shippingRule.isQuoteRequired || shippingRule.amount === null) {
-    return {
-      ok: false,
-      errors: [
-        "International shipping is calculated based on destination and isn't automatic yet — please contact us directly for a quote before this order can be completed.",
-      ],
-    };
-  }
+  // International: the rate genuinely depends on destination country and no
+  // rate is confirmed, so none is invented. The order is still recorded, with
+  // shipping_quote_required = true, shipping_amount 0, and a total that is the
+  // goods subtotal only — never presented to the customer as a final amount.
+  const quoteRequired = shippingRule.isQuoteRequired || shippingRule.amount === null;
 
   const admin = createAdminClient();
+
+  // Idempotency: if this attempt already produced an order, return that one.
+  if (input.idempotencyKey) {
+    const { data: existing } = await admin
+      .from("orders")
+      .select("id, order_number, confirmation_token, subtotal, total, shipping_amount, shipping_quote_required")
+      .eq("idempotency_key", input.idempotencyKey)
+      .maybeSingle();
+    if (existing) {
+      return {
+        ok: true,
+        orderId: existing.id,
+        orderNumber: existing.order_number,
+        confirmationToken: existing.confirmation_token,
+        subtotal: Number(existing.subtotal),
+        total: Number(existing.total),
+        shippingAmount: Number(existing.shipping_amount),
+        shippingQuoteRequired: existing.shipping_quote_required,
+        duplicate: true,
+      };
+    }
+  }
 
   const priced = await Promise.all(
     input.items.map((line) => (line.kind === "ready_for_delivery" ? priceReadyForDeliveryLine(admin, line) : priceMadeToOrderLine(admin, line)))
@@ -383,12 +421,12 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
   const claimResult = await claimReadyStock(admin, stockClaims);
   if (!claimResult.ok) {
     await releaseReadyStock(admin, claimResult.claimed);
-    return { ok: false, errors: claimResult.errors };
+    return { ok: false, errors: claimResult.errors, soldOut: true };
   }
 
   const subtotal = items.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
 
-  const shippingAmount = shippingRule.amount;
+  const shippingAmount = quoteRequired ? 0 : (shippingRule.amount as number);
   const total = subtotal + shippingAmount;
   const orderNumber = generateOrderNumber();
 
@@ -412,11 +450,37 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
       ...(currency ? { currency } : {}),
       shipping_address: (input.shippingAddress as Json | undefined) ?? null,
       notes: input.notes ?? null,
+      shipping_quote_required: quoteRequired,
+      ...(input.idempotencyKey ? { idempotency_key: input.idempotencyKey } : {}),
     })
     .select()
     .single();
 
   if (orderError || !order) {
+    // Unique violation on idempotency_key means a concurrent request with the
+    // same token won the race. That is success, not failure: return ITS order
+    // and hand back the stock this attempt claimed, or the item is double-counted.
+    if (orderError?.code === "23505" && input.idempotencyKey) {
+      await releaseReadyStock(admin, claimResult.claimed);
+      const { data: winner } = await admin
+        .from("orders")
+        .select("id, order_number, confirmation_token, subtotal, total, shipping_amount, shipping_quote_required")
+        .eq("idempotency_key", input.idempotencyKey)
+        .maybeSingle();
+      if (winner) {
+        return {
+          ok: true,
+          orderId: winner.id,
+          orderNumber: winner.order_number,
+          confirmationToken: winner.confirmation_token,
+          subtotal: Number(winner.subtotal),
+          total: Number(winner.total),
+          shippingAmount: Number(winner.shipping_amount),
+          shippingQuoteRequired: winner.shipping_quote_required,
+          duplicate: true,
+        };
+      }
+    }
     logOrderError(orderError?.message ?? "Failed to create order.", { operation: "insert_order" });
     await releaseReadyStock(admin, claimResult.claimed);
     return { ok: false, errors: [orderError?.message ?? "Failed to create order."] };
@@ -439,5 +503,108 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     return { ok: false, errors: [itemsError.message] };
   }
 
-  return { ok: true, orderId: order.id, orderNumber, subtotal, total };
+  return {
+    ok: true,
+    orderId: order.id,
+    orderNumber,
+    confirmationToken: order.confirmation_token,
+    subtotal,
+    total,
+    shippingAmount,
+    shippingQuoteRequired: quoteRequired,
+    duplicate: false,
+  };
+}
+
+export interface OrderConfirmationLine {
+  kind: "made_to_order" | "ready_for_delivery";
+  name: string;
+  configuration: string[];
+  quantity: number;
+  unitPrice: number;
+  bagSlug: string | null;
+  colourName: string | null;
+}
+
+export interface OrderConfirmation {
+  orderNumber: string;
+  createdAt: string;
+  status: string;
+  paymentStatus: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string | null;
+  shippingAddress: Record<string, unknown> | null;
+  subtotal: number;
+  shippingAmount: number;
+  total: number;
+  currency: string;
+  shippingQuoteRequired: boolean;
+  lines: OrderConfirmationLine[];
+}
+
+/**
+ * Loads one order for its confirmation page.
+ *
+ * Addressed by confirmation_token (a UUID), never by order_number — the
+ * number is AR-YYYYMMDD-XXXX, only four random characters, and would be
+ * enumerable. orders/order_items carry no anon or authenticated grant at all,
+ * so this service-role read is the only path to the data and it can return
+ * exactly one order.
+ */
+export async function getOrderByConfirmationToken(token: string): Promise<OrderConfirmation | null> {
+  // Reject anything that isn't a UUID before it reaches the database.
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token)) return null;
+
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("orders")
+    .select(
+      "order_number, created_at, status, payment_status, customer_name, customer_email, customer_phone, shipping_address, subtotal, shipping_amount, total, currency, shipping_quote_required, order_items ( item_kind, product_name_snapshot, quantity, unit_price, configuration_snapshot )"
+    )
+    .eq("confirmation_token", token)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  const lines: OrderConfirmationLine[] = (data.order_items ?? []).map((it) => {
+    const snap = (it.configuration_snapshot ?? {}) as Record<string, unknown>;
+    const str = (k: string) => (typeof snap[k] === "string" ? (snap[k] as string) : null);
+    const configuration =
+      it.item_kind === "ready_for_delivery"
+        ? [str("colourName"), str("secondaryColourName"), str("sizeLabel"), str("strapLabel"), str("chainLabel")]
+        : [
+            str("colourName"),
+            str("secondaryColourName") ? `${str("secondaryColourName")} two-tone` : null,
+            str("sizeLabel") && str("sizeLabel") !== "Regular" ? str("sizeLabel") : null,
+            str("strapLabel"),
+            str("chainLabel"),
+          ];
+    return {
+      kind: it.item_kind === "ready_for_delivery" ? "ready_for_delivery" : "made_to_order",
+      name: it.product_name_snapshot,
+      configuration: configuration.filter((v): v is string => Boolean(v)),
+      quantity: it.quantity,
+      unitPrice: Number(it.unit_price),
+      bagSlug: str("bagSlug"),
+      colourName: str("colourName"),
+    };
+  });
+
+  return {
+    orderNumber: data.order_number,
+    createdAt: data.created_at,
+    status: data.status,
+    paymentStatus: data.payment_status,
+    customerName: data.customer_name,
+    customerEmail: data.customer_email,
+    customerPhone: data.customer_phone,
+    shippingAddress: (data.shipping_address as Record<string, unknown> | null) ?? null,
+    subtotal: Number(data.subtotal),
+    shippingAmount: Number(data.shipping_amount),
+    total: Number(data.total),
+    currency: (data.currency ?? "jod").toUpperCase(),
+    shippingQuoteRequired: data.shipping_quote_required,
+    lines,
+  };
 }
