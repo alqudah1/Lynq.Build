@@ -3,10 +3,89 @@ document.addEventListener('partials:ready', function () {
   initMobileMenu();
   initActiveNav();
   initFooterYear();
+  initFooterSocial();
+  initFooterOffices();
 });
 
 // Reveal-on-scroll works on static content already in the DOM, independent of partials.
 document.addEventListener('DOMContentLoaded', initScrollReveal);
+
+// What We Build (Custom Homes) — hover/focus swaps the desktop image panel. No-op on
+// mobile, where build-panel is display:none and each row carries its own inline image.
+document.addEventListener('DOMContentLoaded', initBuildShowcase);
+function initBuildShowcase() {
+  var index = document.getElementById('build-index');
+  if (!index) return;
+  var rows = index.querySelectorAll('.build-row');
+  var panels = document.querySelectorAll('.bp-image');
+  if (!rows.length || !panels.length) return;
+
+  function activate(key) {
+    rows.forEach(function (r) {
+      var active = r.getAttribute('data-target') === key;
+      r.classList.toggle('is-active', active);
+      r.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    panels.forEach(function (p) {
+      p.classList.toggle('is-active', p.getAttribute('data-key') === key);
+    });
+  }
+
+  rows.forEach(function (row) {
+    var key = row.getAttribute('data-target');
+    row.addEventListener('mouseenter', function () { activate(key); });
+    row.addEventListener('focus', function () { activate(key); });
+    row.addEventListener('click', function (e) { e.preventDefault(); activate(key); });
+  });
+}
+
+// Delegated on document, so it works before/after partials inject the nav — no need to
+// wait for partials:ready.
+document.addEventListener('DOMContentLoaded', initFastAnchorScroll);
+
+/* Same-page anchor links (nav -> #custom-homes, #property-management, #about) get a short,
+   fixed-duration scroll instead of the browser's native smooth-scroll, whose duration scales
+   with distance and felt slow on a long page. Also compensates for the fixed header, which
+   otherwise covers the top of the target section. */
+function initFastAnchorScroll() {
+  var DURATION = 280;
+  var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href*="#"]');
+    if (!a) return;
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    var url;
+    try { url = new URL(a.getAttribute('href'), window.location.href); } catch (err) { return; }
+    if (url.pathname !== window.location.pathname || !url.hash) return;
+    var target = document.getElementById(url.hash.slice(1));
+    if (!target) return;
+
+    e.preventDefault();
+    var header = document.getElementById('site-header');
+    var offset = header ? header.getBoundingClientRect().height + 16 : 0;
+    var startY = window.scrollY;
+    var endY = Math.max(0, target.getBoundingClientRect().top + window.scrollY - offset);
+
+    if (REDUCED) {
+      window.scrollTo(0, endY);
+      history.pushState(null, '', url.hash);
+      return;
+    }
+
+    var distance = endY - startY;
+    var startTime = null;
+    function step(ts) {
+      if (!startTime) startTime = ts;
+      var progress = Math.min((ts - startTime) / DURATION, 1);
+      var eased = 1 - Math.pow(1 - progress, 3);
+      window.scrollTo(0, startY + distance * eased);
+      if (progress < 1) requestAnimationFrame(step);
+      else history.pushState(null, '', url.hash);
+    }
+    requestAnimationFrame(step);
+  });
+}
 
 function initHeaderScroll() {
   var header = document.getElementById('site-header');
@@ -42,6 +121,25 @@ function initActiveNav() {
 function initFooterYear() {
   var el = document.getElementById('footer-year');
   if (el) el.textContent = new Date().getFullYear();
+}
+
+// Renders only if real links exist in KB_CONFIG.social (assets/js/site-config.js) — an empty
+// footer row is preferable to placeholder icons pointing nowhere.
+function initFooterSocial() {
+  var el = document.getElementById('footer-social');
+  if (!el || typeof KB_CONFIG === 'undefined' || !KB_CONFIG.social || !KB_CONFIG.social.length) return;
+  el.innerHTML = KB_CONFIG.social.map(function (s) {
+    return '<a href="' + s.url + '" target="_blank" rel="noopener">' + s.label + '</a>';
+  }).join('');
+}
+
+// Office locations, shown subtly in the footer once confirmed (assets/js/site-config.js).
+function initFooterOffices() {
+  var el = document.getElementById('footer-offices');
+  if (!el || typeof KB_CONFIG === 'undefined' || !KB_CONFIG.offices || !KB_CONFIG.offices.length) return;
+  el.innerHTML = KB_CONFIG.offices.map(function (o) {
+    return '<span>' + o.label + '</span>';
+  }).join('');
 }
 
 function initScrollReveal() {

@@ -109,7 +109,7 @@ for (const vp of VIEWPORTS) {
         .filter(Boolean);
       results.push({ vp: vp.name, route, ...result.value, errors: errs.slice(0, 3), errorCount: errs.length });
 
-      if (["/", "/shop", "/product/nova", "/ready-for-delivery", "/about", "/contact"].includes(route)) {
+      if (!["/cart", "/faq"].includes(route)) {
         const shot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: true });
         if (shot.data) writeFileSync(`${OUT}/${route.replace(/\W+/g, "_") || "home"}-${vp.name}.png`, Buffer.from(shot.data, "base64"));
       }

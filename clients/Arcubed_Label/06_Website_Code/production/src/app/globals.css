@@ -1225,3 +1225,108 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
   .hx-meta { grid-template-columns: 1fr; gap: 10px; }
   .hx-cta { grid-column: 1; grid-row: auto; }
 }
+
+/* ================= PRODUCT PAGE — EDITORIAL STAGE =================
+   The object leads. Product name is set oversized and sits BEHIND the bag as
+   composition, not as a label — the readable <h1> lives in the buy strip
+   below, so this one is aria-hidden. Controls are a lower strip rather than a
+   sidebar form: nothing about choosing a colour should look like data entry. */
+
+.pd-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 68vh;
+  padding: 40px 20px 24px;
+  overflow: hidden;
+}
+
+.pd-index {
+  position: absolute; top: 18px; left: 20px; z-index: 2;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.16em;
+  color: var(--muted); margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.pd-name {
+  position: absolute; top: 50%; left: 50%; z-index: 0;
+  transform: translate(-50%, -58%);
+  margin: 0; pointer-events: none; user-select: none; white-space: nowrap;
+  font-family: var(--font-head); font-weight: 500;
+  font-size: clamp(58px, 17vw, 230px);
+  line-height: 0.82; letter-spacing: -0.045em; text-transform: uppercase;
+  /* Tinted, not grey: the name should feel printed on the page, not disabled. */
+  color: color-mix(in srgb, var(--ink) 9%, var(--bg));
+}
+
+.pd-object { position: relative; z-index: 1; width: min(540px, 82vw); }
+/* The gallery keeps its own markup; the stage just removes the studio frame. */
+.pd-object .product-media { padding: 0; }
+.pd-object .pg-main.is-cut { background: transparent; box-shadow: none; }
+
+.pd-caption {
+  position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%);
+  z-index: 2; margin: 0; max-width: 30ch; text-align: center;
+  font-size: 12.5px; color: var(--muted);
+}
+
+/* ---------- buy strip ---------- */
+.pd-buy {
+  border-top: 1px solid var(--line);
+  padding: 34px 20px 120px;
+  max-width: 1180px; margin: 0 auto;
+}
+.pd-buy-head { display: flex; align-items: baseline; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+.pd-h1 { font-size: clamp(26px, 4.4vw, 40px); font-weight: 400; letter-spacing: -0.02em; }
+.pd-price { font-family: var(--font-head); font-size: clamp(20px, 3vw, 28px); font-weight: 500; }
+.pd-price.pulse { animation: pulse 0.38s var(--ease-lively); }
+.pd-timing { font-size: 12.5px; color: var(--muted); margin: 8px 0 0; }
+
+.pd-opts { margin-top: 34px; display: grid; gap: 34px; }
+.pd-opt-head {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink); margin: 0 0 4px; padding-bottom: 12px; border-bottom: 1px solid var(--line);
+}
+.pd-opt-note { font-size: 12.5px; color: var(--muted); margin: 12px 0 22px; max-width: 46ch; }
+.pd-opt-block > .opt-group:first-of-type { margin-top: 20px; }
+
+.pd-facts { margin-top: 40px; display: grid; gap: 22px; border-top: 1px solid var(--line); padding-top: 26px; }
+.pd-facts p { margin: 0; font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+.pd-fact-h { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink); margin-bottom: 6px; }
+
+@media (min-width: 900px) {
+  .pd-stage { min-height: 76vh; padding: 56px 44px 32px; }
+  .pd-index { top: 30px; left: 44px; }
+  .pd-caption { bottom: 30px; left: auto; right: 44px; transform: none; text-align: right; }
+  .pd-buy { padding: 44px 44px 90px; }
+  .pd-opts { grid-template-columns: 1fr 1.25fr; gap: 56px; align-items: start; }
+  .pd-facts { grid-template-columns: 1fr 1fr; gap: 44px; }
+  /* .sticky-bar is hidden at this breakpoint by the shared rule above. */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pd-price.pulse { animation: none; }
+}
+
+/* Frames without an approved cut-out (Loco's fringe defeats the matte) keep
+   the full studio photograph. A hard grey rectangle bisecting the oversized
+   name reads as a paste-up, so those frames become a deliberate plate — soft
+   corners, lifted off the page — and the name rises to slip behind its top
+   edge instead of being cut in half by it. */
+.pd-object .pg-main:not(.is-cut) {
+  border-radius: var(--radius);
+  box-shadow: 0 26px 60px -34px rgba(46, 42, 38, 0.5);
+}
+.pd-stage:has(.pg-main:not(.is-cut)) .pd-name { transform: translate(-50%, -168%); }
+
+/* On a phone the object is nearly the full width, so at 17vw the name was a
+   faint smudge peeking out either side. Larger and a touch stronger, it reads
+   as type again. */
+@media (max-width: 899px) {
+  .pd-name {
+    font-size: clamp(52px, 21vw, 110px);
+    color: color-mix(in srgb, var(--ink) 13%, var(--bg));
+  }
+  .pd-object { width: min(540px, 76vw); }
+  .pd-stage:has(.pg-main:not(.is-cut)) .pd-name { transform: translate(-50%, -150%); }
+}

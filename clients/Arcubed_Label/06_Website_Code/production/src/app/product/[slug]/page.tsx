@@ -17,7 +17,16 @@ export async function generateMetadata(props: PageProps<"/product/[slug]">): Pro
   if (!bag) return { title: "Arcubed Label" };
   return {
     title: `${bag.name} — Arcubed Label`,
-    description: `${bag.tagline} Hand-crocheted to order, from ${formatMoney(bag.basePrice, "JOD")}.`,
+    // tagline is empty for every product in the catalogue today, which left
+    // each description starting with a stray space and carrying no product
+    // detail at all. Falls back to the material/production facts already
+    // published in the FAQ rather than to invented marketing copy.
+    description: [
+      bag.tagline,
+      `${bag.name} — hand-crocheted to order in 100% cotton yarn, from ${formatMoney(bag.basePrice, "JOD")}.`,
+    ]
+      .filter(Boolean)
+      .join(" "),
   };
 }
 

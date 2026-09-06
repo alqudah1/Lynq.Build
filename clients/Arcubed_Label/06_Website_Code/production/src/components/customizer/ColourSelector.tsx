@@ -1,17 +1,22 @@
 import type { Colour } from "@/lib/types";
 
 export default function ColourSelector({
+  showLabel = true,
   colours,
   selectedId,
   onSelect,
 }: {
+  // The editorial product page already sets a section rule reading
+  // "Colour", so the inner label is suppressed there to avoid printing it
+  // twice; every other caller keeps it.
+  showLabel?: boolean;
   colours: Colour[];
   selectedId: string;
   onSelect: (id: string) => void;
 }) {
   return (
     <div className="opt-group">
-      <p className="opt-label">Colour</p>
+      {showLabel ? <p className="opt-label">Colour</p> : null}
       <div className="swatch-row">
         {colours.map((c) =>
           c.hex ? (

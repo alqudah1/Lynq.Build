@@ -173,6 +173,8 @@ export async function analyzeFrame(file, { probeWidth = PROBE, dev = DEV, __noGa
     const fill = runs.reduce((a, [s, e]) => a + (e - s + 1), 0);
     rows.push({
       yPx: y,
+      /** Merged run boundaries in probe pixels — used for silhouette tracing. */
+      runList: runs,
       runs: runs.length,
       fill: fill / w,
       widest: runs.length ? Math.max(...runs.map(([s, e]) => (e - s + 1) / w)) : 0,

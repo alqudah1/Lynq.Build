@@ -1,7 +1,10 @@
-// Kingsbridge Group — cinematic experience layer: intro sequence, page
-// transitions, the pinned Create/Build/Manage gallery, parallax, and
-// portfolio prev/next. Every effect here checks prefers-reduced-motion and
-// degrades to instant/static — nothing here gates access to content.
+// Kingsbridge Group — restrained experience layer: a one-time intro mark, page
+// transitions, gentle image parallax, and a desktop cursor accent. The
+// scroll-driven hero sequence and the pinned Design/Build/Property
+// Management gallery are gone — the client asked for a stationary hero (see
+// 06_Website_Code/development-plan.md) and a static editorial layout, not
+// scroll-hijacking. Every remaining effect here checks prefers-reduced-motion
+// and degrades to instant/static — nothing here gates access to content.
 
 var KB_REDUCED_MOTION = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -9,8 +12,6 @@ document.addEventListener('DOMContentLoaded', function () {
   initIntroSequence();
   initPageTransitions();
   initHeroParallax();
-  initHeroStory();
-  initCbmCinema();
   initCustomCursor();
 });
 
@@ -27,11 +28,10 @@ function initIntroSequence() {
     return;
   }
   sessionStorage.setItem('kb-intro-seen', '1');
-  requestAnimationFrame(function () { veil.classList.add('draw-bp'); });
-  setTimeout(function () { veil.classList.add('show'); }, 650);
-  setTimeout(function () { veil.classList.add('draw'); }, 1050);
-  setTimeout(function () { veil.classList.add('hide'); }, 1950);
-  setTimeout(function () { veil.remove(); }, 2700);
+  setTimeout(function () { veil.classList.add('show'); }, 200);
+  setTimeout(function () { veil.classList.add('draw'); }, 600);
+  setTimeout(function () { veil.classList.add('hide'); }, 1500);
+  setTimeout(function () { veil.remove(); }, 2200);
 }
 
 /* ---------------- PAGE TRANSITION VEIL ---------------- */
@@ -47,10 +47,15 @@ function initPageTransitions() {
     if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     if (a.target === '_blank' || a.hasAttribute('download')) return;
     var href = a.getAttribute('href');
-    if (!href || href === window.location.pathname) return;
+    if (!href) return;
+    var url = new URL(href, window.location.href);
+    // Same-page anchor (e.g. nav links to /#custom-homes while already on /): let the browser
+    // handle it natively. This must never be intercepted — there is no page to transition to.
+    if (url.pathname === window.location.pathname && url.hash) return;
+    if (href === window.location.pathname) return;
     e.preventDefault();
     veil.classList.add('active');
-    setTimeout(function () { window.location.href = href; }, 420);
+    setTimeout(function () { window.location.href = href; }, 200);
   });
 }
 
@@ -73,50 +78,6 @@ function initHeroParallax() {
     if (!ticking) { requestAnimationFrame(update); ticking = true; }
   }, { passive: true });
   update();
-}
-
-/* ---------------- HERO STORY — VISION / DESIGN / BUILD / MANAGEMENT (GSAP ScrollTrigger) ---------------- */
-function initHeroStory() {
-  var section = document.getElementById('hero-story');
-  if (!section) return;
-  // Mobile / reduced-motion: CSS fallback already shows a single static frame — no JS needed.
-  if (KB_REDUCED_MOTION) return;
-  if (!window.matchMedia || !window.matchMedia('(min-width: 900px)').matches) return;
-  if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
-  gsap.registerPlugin(ScrollTrigger);
-
-  var blueprintWrap = section.querySelector('.hs-blueprint');
-  var elevation = section.querySelector('.hs-bp-elevation');
-  var plan = section.querySelector('.hs-bp-plan');
-  var photoStages = section.querySelectorAll('.hs-stage[data-stage]:not(.hs-blueprint)');
-  var label = document.getElementById('hs-stage-label');
-  var dots = document.querySelectorAll('#hs-progress span');
-  var labelText = ['Vision', 'Vision', 'Design', 'Build', 'Completion', 'Management'];
-  var dotIndex = [0, 0, 1, 2, 3, 4];
-
-  var tl = gsap.timeline({
-    scrollTrigger: { trigger: section, start: 'top top', end: 'bottom bottom', scrub: 0.6 }
-  });
-
-  tl.to(elevation, { opacity: 0, duration: 0.8, ease: 'none' }, 0.6)
-    .fromTo(plan, { opacity: 0 }, { opacity: 1, duration: 0.8, ease: 'none' }, 0.6)
-    .to(blueprintWrap, { opacity: 0, duration: 0.8, ease: 'none' }, 1.6)
-    .fromTo(photoStages[0], { opacity: 0, scale: 1.05 }, { opacity: 1, scale: 1, duration: 0.8, ease: 'none' }, 1.6)
-    .to(photoStages[0], { opacity: 0, duration: 0.8, ease: 'none' }, 2.6)
-    .fromTo(photoStages[1], { opacity: 0, scale: 1.05 }, { opacity: 1, scale: 1, duration: 0.8, ease: 'none' }, 2.6)
-    .to(photoStages[1], { opacity: 0, duration: 0.8, ease: 'none' }, 3.6)
-    .fromTo(photoStages[2], { opacity: 0, scale: 1.05 }, { opacity: 1, scale: 1, duration: 0.8, ease: 'none' }, 3.6)
-    .to(photoStages[2], { opacity: 0, duration: 0.8, ease: 'none' }, 4.6)
-    .fromTo(photoStages[3], { opacity: 0, scale: 1.05 }, { opacity: 1, scale: 1, duration: 0.8, ease: 'none' }, 4.6);
-
-  ScrollTrigger.create({
-    trigger: section, start: 'top top', end: 'bottom bottom', scrub: true,
-    onUpdate: function (self) {
-      var seg = Math.min(5, Math.floor(self.progress * 6));
-      if (label) label.textContent = labelText[seg];
-      dots.forEach(function (d, i) { d.classList.toggle('current', i === dotIndex[seg]); });
-    }
-  });
 }
 
 /* ---------------- CUSTOM CURSOR ACCENT (desktop pointer only) ---------------- */
@@ -148,33 +109,3 @@ function initCustomCursor() {
   });
 }
 
-/* ---------------- CREATE / BUILD / MANAGE — PINNED HORIZONTAL GALLERY ---------------- */
-function initCbmCinema() {
-  var cinema = document.getElementById('cbm-cinema');
-  var track = document.getElementById('cbm-track');
-  if (!cinema || !track) return;
-  var slides = track.querySelectorAll('.cbm-slide');
-  var dots = document.querySelectorAll('.cbm-progress span');
-
-  function enabled() {
-    return !KB_REDUCED_MOTION && window.matchMedia('(min-width: 900px)').matches;
-  }
-  if (!enabled()) return; // CSS fallback already stacks slides vertically
-  cinema.classList.add('pinned');
-
-  var ticking = false;
-  function update() {
-    var rect = cinema.getBoundingClientRect();
-    var total = rect.height - window.innerHeight;
-    var progress = total > 0 ? Math.max(0, Math.min(1, -rect.top / total)) : 0;
-    track.style.transform = 'translateX(' + (-progress * (slides.length - 1) * 100) + '%)';
-    cinema.classList.toggle('active', rect.top < window.innerHeight && rect.bottom > 0);
-    var idx = Math.round(progress * (slides.length - 1));
-    dots.forEach(function (d, i) { d.classList.toggle('current', i === idx); });
-    ticking = false;
-  }
-  window.addEventListener('scroll', function () {
-    if (!ticking) { requestAnimationFrame(update); ticking = true; }
-  }, { passive: true });
-  update();
-}

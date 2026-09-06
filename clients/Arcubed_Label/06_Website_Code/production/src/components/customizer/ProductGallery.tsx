@@ -51,12 +51,17 @@ function Photos({ bag, selection }: { bag: Bag; selection: Selection }) {
   if (!frames.length) return <BagArt input={toRenderInput(bag, selection)} />;
 
   const current = frames[Math.min(active, frames.length - 1)];
+  // Prefer the QA-passed alpha cut-out on the product stage: the bag floats on
+  // the page instead of sitting inside a grey studio rectangle. Frames whose
+  // cut-out failed QA (REJECTED_CUTOUTS) and DB-imported images keep the full
+  // photograph — a bad matte is worse than a visible seamless.
+  const useCut = current.cutOk;
   return (
     <div className="pg">
-      <div className="pg-main">
+      <div className={`pg-main${useCut ? " is-cut" : ""}`}>
         <Image
           key={current.frameId}
-          src={current.photo}
+          src={useCut ? current.cut : current.photo}
           alt={altFor(bag, shown, exact)}
           width={1600}
           height={Math.round(1600 / current.ratio)}

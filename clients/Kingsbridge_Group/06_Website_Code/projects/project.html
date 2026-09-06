@@ -3,96 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title id="doc-title">Concept — Kingsbridge Group</title>
-<meta name="description" id="doc-description" content="A Kingsbridge concept — a design direction from the Concept Collection, not a completed project.">
-<link rel="canonical" href="https://www.kingsbridgegroup.ca/projects/">
-<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/assets/img/favicon-16.png">
-<link rel="shortcut icon" href="/assets/img/favicon.ico">
-<link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
-<meta name="theme-color" content="#0E0E0E">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Kingsbridge Group">
-<meta property="og:title" content="Concept Collection | Kingsbridge Group">
-<meta property="og:description" content="A Kingsbridge concept — a design direction from the Concept Collection, not a completed project.">
-<meta property="og:url" content="https://www.kingsbridgegroup.ca/projects/">
-<meta property="og:image" content="https://www.kingsbridgegroup.ca/assets/img/og-image.jpg">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://www.kingsbridgegroup.ca/assets/img/og-image.jpg">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/css/tokens.css">
-<link rel="stylesheet" href="/assets/css/base.css">
-<link rel="stylesheet" href="/assets/css/components.css">
-<link rel="stylesheet" href="/assets/css/experience.css">
+<title>Kingsbridge Group</title>
+<meta name="robots" content="noindex">
+<link rel="canonical" href="https://www.kingsbridgegroup.ca/custom-homes/">
+<meta http-equiv="refresh" content="0; url=/custom-homes/">
+<script>location.replace('/custom-homes/');</script>
 </head>
-<body data-page="projects">
-<div class="page-veil" id="page-veil"><div class="pv-inner"><img class="pv-mark" src="/assets/img/logo/kingsbridge-icon.png" alt=""><span class="pv-line"></span></div></div>
-
-
-<div id="header-root"></div>
-
-<div class="cinema-panel concept-hero" id="p-hero-panel" style="min-height:80vh">
-  <span class="cinema-index" id="p-index"></span>
-  <div class="ph-photo" id="p-hero"></div>
-  <div class="cinema-copy">
-    <span class="eyebrow" id="p-category">Concept</span>
-    <h3 id="p-title">Loading…</h3>
-  </div>
-</div>
-
-<section class="section tight">
-  <div class="container" style="max-width:640px">
-    <p style="font-size:16px;line-height:1.85;color:var(--text-muted-on-ivory)" id="p-description"></p>
-    <div class="concept-features" id="p-features"></div>
-    <p class="concept-notice">This is a Kingsbridge concept &mdash; a design
-      direction, not a completed project. Real project profiles will appear
-      here as they&rsquo;re confirmed, using this same format.</p>
-    <div class="concept-nav" id="p-nav"></div>
-    <div style="margin-top:20px">
-      <a class="text-link" href="/projects/">← Back to the Concept Collection</a>
-    </div>
-  </div>
-</section>
-
-<div id="footer-root"></div>
-
-<script src="/assets/js/projects-data.js"></script>
-<script src="/assets/js/include.js"></script>
-<script src="/assets/js/main.js"></script>
-<script src="/assets/js/experience.js"></script>
-<script>
-  document.addEventListener('partials:ready', function () {
-    var slug = new URLSearchParams(location.search).get('slug');
-    var idx = (typeof KB_PROJECTS !== 'undefined') ? KB_PROJECTS.findIndex(function (x) { return x.slug === slug; }) : -1;
-    var p = idx > -1 ? KB_PROJECTS[idx] : null;
-    if (!p) {
-      document.getElementById('p-title').textContent = 'Concept not found';
-      document.getElementById('p-description').textContent = 'This concept may have moved. Return to the full Concept Collection to keep browsing.';
-      document.getElementById('p-hero-panel').querySelector('.ph-photo').setAttribute('data-label', '');
-      return;
-    }
-    document.title = p.title + ' — Kingsbridge Group';
-    var descTag = document.getElementById('doc-description');
-    if (descTag) descTag.setAttribute('content', p.description);
-    document.getElementById('p-index').textContent = String(idx + 1).padStart(2, '0') + ' / ' + String(KB_PROJECTS.length).padStart(2, '0');
-    document.getElementById('p-category').textContent = p.category;
-    document.getElementById('p-title').textContent = p.title;
-    var heroPhoto = document.getElementById('p-hero');
-    heroPhoto.setAttribute('data-label', p.photoLabel);
-    heroPhoto.innerHTML = '<img src="' + p.image + '" alt="' + p.title + '">';
-    document.getElementById('p-description').textContent = p.description;
-    document.getElementById('p-features').innerHTML = p.features.map(function (f) { return '<span>' + f + '</span>'; }).join('');
-
-    var prev = KB_PROJECTS[(idx - 1 + KB_PROJECTS.length) % KB_PROJECTS.length];
-    var next = KB_PROJECTS[(idx + 1) % KB_PROJECTS.length];
-    document.getElementById('p-nav').innerHTML =
-      '<a class="prev" href="/projects/project.html?slug=' + prev.slug + '">' +
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Previous Concept</a>' +
-      '<a class="next" href="/projects/project.html?slug=' + next.slug + '">Next Concept' +
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>';
-  });
-</script>
+<body>
+<!-- Individual concept detail pages are removed; concepts live on the dedicated Custom Homes page. -->
+<p><a href="/custom-homes/">Continue to Kingsbridge Custom Homes</a></p>
 </body>
 </html>

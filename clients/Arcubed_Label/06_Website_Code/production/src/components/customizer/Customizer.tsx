@@ -76,106 +76,107 @@ export default function Customizer({
     });
   }
 
+  // Position in the collection, for the editorial index mark.
+  const ORDER = ["nova", "vault", "mini-luna", "loco"];
+  const idx = ORDER.indexOf(bag.slug);
+  const indexMark = idx >= 0 ? `${String(idx + 1).padStart(2, "0")} / ${String(ORDER.length).padStart(2, "0")}` : null;
+
+  // Colour is the one control with a real visual response today; size, strap
+  // and chain configure the ORDER but cannot yet change the picture. Grouping
+  // them separately, and saying so once, is more honest than letting a
+  // customer wait for a preview that will never come.
+  const hasConfigOnly = Boolean(bag.sizes?.length || bag.straps?.length || bag.chains?.length || bag.handles?.length);
+
   return (
-    <section className="product">
-      <ProductGallery bag={bag} selection={selection} />
+    <>
+      <section className="pd-stage">
+        {indexMark ? <p className="pd-index">{indexMark}</p> : null}
+        {/* Product name as composition: oversized, sitting behind the object. */}
+        <p className="pd-name" aria-hidden="true">{bag.name}</p>
+        <div className="pd-object">
+          <ProductGallery bag={bag} selection={selection} />
+        </div>
+        {bag.tagline ? <p className="pd-caption">{bag.tagline}</p> : null}
+      </section>
 
-      <div className="product-panel">
-        <p className="eyebrow">{bag.tagline}</p>
-        <h1>{bag.name}</h1>
-        <PriceDisplay price={price} className="price-inline" />
-        {productionTimeLabel ? (
-          <p className="production-note">Handmade to order · Ships in {productionTimeLabel}</p>
-        ) : null}
+      <section className="pd-buy">
+        <div className="pd-buy-head">
+          <h1 className="pd-h1">{bag.name}</h1>
+          <PriceDisplay price={price} className="pd-price" />
+        </div>
+        <p className="pd-timing">
+          Handmade to order{productionTimeLabel ? ` · ${productionTimeLabel}` : ""}
+        </p>
 
-        <ColourSelector
-          colours={bag.colours}
-          selectedId={selection.colourId}
-          onSelect={(colourId) => setSelection((prev) => ({ ...prev, colourId }))}
-        />
+        <div className="pd-opts">
+          <div className="pd-opt-block">
+            <p className="pd-opt-head">Colour</p>
+            <ColourSelector
+              showLabel={false}
+              colours={bag.colours}
+              selectedId={selection.colourId}
+              onSelect={(colourId) => setSelection((prev) => ({ ...prev, colourId }))}
+            />
+            {bag.colours.some((c) => c.isTwoTone) ? (
+              <TwoToneSelector
+                colours={bag.colours.filter((c) => c.isTwoTone)}
+                selectedId={selection.secondaryColourId}
+                onSelect={(secondaryColourId) => setSelection((prev) => ({ ...prev, secondaryColourId }))}
+              />
+            ) : null}
+          </div>
 
-        {bag.colours.some((c) => c.isTwoTone) ? (
-          <TwoToneSelector
-            colours={bag.colours.filter((c) => c.isTwoTone)}
-            selectedId={selection.secondaryColourId}
-            onSelect={(secondaryColourId) => setSelection((prev) => ({ ...prev, secondaryColourId }))}
-          />
-        ) : null}
-
-        {bag.sizes ? (
-          <SizeSelector
-            sizes={bag.sizes}
-            selectedId={selection.sizeId}
-            onSelect={(sizeId) => setSelection((prev) => ({ ...prev, sizeId }))}
-          />
-        ) : null}
-
-        {bag.straps ? (
-          <StrapHandleSelector
-            label="Strap"
-            kind="strap"
-            bag={bag}
-            options={bag.straps}
-            selectedId={selection.strapId}
-            colourId={selection.colourId}
-            onSelect={(strapId) => setSelection((prev) => ({ ...prev, strapId }))}
-          />
-        ) : null}
-
-        {bag.handles ? (
-          <StrapHandleSelector
-            label="Handle"
-            kind="handle"
-            bag={bag}
-            options={bag.handles}
-            selectedId={selection.handleId}
-            colourId={selection.colourId}
-            onSelect={(handleId) => setSelection((prev) => ({ ...prev, handleId }))}
-          />
-        ) : null}
-
-        {bag.chains ? (
-          <StrapHandleSelector
-            label="Chain"
-            kind="chain"
-            bag={bag}
-            options={bag.chains}
-            selectedId={selection.chainId}
-            colourId={selection.colourId}
-            onSelect={(chainId) => setSelection((prev) => ({ ...prev, chainId }))}
-          />
-        ) : null}
-
-        {bag.addons ? (
-          <AddonSelector
-            addons={bag.addons}
-            selectedIds={selection.addonIds}
-            colourId={selection.colourId}
-            onToggle={toggleAddon}
-          />
-        ) : null}
+          {hasConfigOnly ? (
+            <div className="pd-opt-block">
+              <p className="pd-opt-head">Details</p>
+              <p className="pd-opt-note">
+                These set what we make. The photograph above shows the colour you picked.
+              </p>
+              {bag.sizes ? (
+                <SizeSelector
+                  sizes={bag.sizes}
+                  selectedId={selection.sizeId}
+                  onSelect={(sizeId) => setSelection((prev) => ({ ...prev, sizeId }))}
+                />
+              ) : null}
+              {bag.straps ? (
+                <StrapHandleSelector label="Strap" kind="strap" bag={bag} options={bag.straps}
+                  selectedId={selection.strapId} colourId={selection.colourId}
+                  onSelect={(strapId) => setSelection((prev) => ({ ...prev, strapId }))} />
+              ) : null}
+              {bag.handles ? (
+                <StrapHandleSelector label="Handle" kind="handle" bag={bag} options={bag.handles}
+                  selectedId={selection.handleId} colourId={selection.colourId}
+                  onSelect={(handleId) => setSelection((prev) => ({ ...prev, handleId }))} />
+              ) : null}
+              {bag.chains ? (
+                <StrapHandleSelector label="Chain" kind="chain" bag={bag} options={bag.chains}
+                  selectedId={selection.chainId} colourId={selection.colourId}
+                  onSelect={(chainId) => setSelection((prev) => ({ ...prev, chainId }))} />
+              ) : null}
+              {bag.addons ? (
+                <AddonSelector addons={bag.addons} selectedIds={selection.addonIds}
+                  colourId={selection.colourId} onToggle={toggleAddon} />
+              ) : null}
+            </div>
+          ) : null}
+        </div>
 
         <AddToCartInline label={actionLabel} onClick={handleAdd} />
 
-        <div className="accordion-group">
-          <details>
-            <summary>Materials &amp; Care</summary>
+        <div className="pd-facts">
+          <div>
+            <p className="pd-fact-h">Material</p>
             <p>100% cotton yarn, hand-crocheted. Spot clean, air dry.</p>
-          </details>
-          {bag.sizes ? (
-            <details>
-              <summary>Sizing</summary>
-              <p>See dimensions under each size option above.</p>
-            </details>
-          ) : null}
-          <details>
-            <summary>Production time</summary>
-            <p>{productionTimeLabel ?? "Handmade to order — exact timing available on request."}</p>
-          </details>
+          </div>
+          <div>
+            <p className="pd-fact-h">Made to order</p>
+            <p>{productionTimeLabel ?? "Handmade to order — timing on request."}</p>
+          </div>
         </div>
-      </div>
+      </section>
 
       <AddToCartStickyBar price={price} label={actionLabel} onClick={handleAdd} />
-    </section>
+    </>
   );
 }

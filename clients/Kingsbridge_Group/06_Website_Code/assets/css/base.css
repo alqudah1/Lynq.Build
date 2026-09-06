@@ -1,5 +1,9 @@
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+/* Anchor scrolling is handled by a short, fixed-duration JS scroll (see main.js
+   initFastAnchorScroll) so it stays quick regardless of distance — native
+   scroll-behavior:smooth scales its duration with distance, which felt slow
+   on a long page. Kept as plain 'auto' here so the two never fight. */
+html { scroll-behavior: auto; }
 body {
   font-family: var(--font-body);
   background: var(--ivory);
@@ -49,7 +53,8 @@ h1, h2, h3 {
 .rule-top { border-top: 1px solid var(--line-on-ivory); }
 .section-on-ink.rule-top { border-top-color: var(--line-on-ink); }
 
-.section-head { max-width: 620px; margin-bottom: 56px; }
+.section-head { max-width: 680px; margin-bottom: 64px; }
+.section-head h2 { font-size: clamp(30px, 4.4vw, 54px); margin-top: 10px; line-height: 1.06; text-wrap: balance; }
 .section-head p.intro { font-size: 17px; line-height: 1.7; color: var(--text-muted-on-ivory); margin-top: 18px; }
 .section-on-ink .section-head p.intro { color: var(--text-muted-on-ink); }
 

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Contact Kingsbridge Group</title>
-<meta name="description" content="Start a conversation about building a custom home, renovating, or managing a residential, commercial, or mixed-use property with Kingsbridge Group.">
+<meta name="description" content="Start a conversation about building a custom home or managing your commercial property with Kingsbridge Group.">
 <link rel="canonical" href="https://www.kingsbridgegroup.ca/contact/">
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/assets/img/favicon-16.png">
@@ -14,12 +14,12 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Kingsbridge Group">
 <meta property="og:title" content="Contact Kingsbridge Group">
-<meta property="og:description" content="Start a conversation about building a custom home, renovating, or managing a residential, commercial, or mixed-use property.">
+<meta property="og:description" content="Start a conversation about building a custom home or managing your commercial property.">
 <meta property="og:url" content="https://www.kingsbridgegroup.ca/contact/">
 <meta property="og:image" content="https://www.kingsbridgegroup.ca/assets/img/og-image.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Contact Kingsbridge Group">
-<meta name="twitter:description" content="Start a conversation about building a custom home, renovating, or managing a residential, commercial, or mixed-use property.">
+<meta name="twitter:description" content="Start a conversation about building a custom home or managing your commercial property.">
 <meta name="twitter:image" content="https://www.kingsbridgegroup.ca/assets/img/og-image.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,226 +28,124 @@
 <link rel="stylesheet" href="/assets/css/base.css">
 <link rel="stylesheet" href="/assets/css/components.css">
 <link rel="stylesheet" href="/assets/css/experience.css">
+<link rel="preload" href="/partials/header.html" as="fetch" crossorigin>
+<link rel="preload" href="/partials/footer.html" as="fetch" crossorigin>
 </head>
 <body data-page="contact">
 <div class="page-veil" id="page-veil"><div class="pv-inner"><img class="pv-mark" src="/assets/img/logo/kingsbridge-icon.png" alt=""><span class="pv-line"></span></div></div>
-
 
 <div id="header-root"></div>
 
 <section class="page-header">
   <div class="container">
-    <span class="eyebrow">Start a Project</span>
-    <h1>Tell us what you&rsquo;re building, transforming, or managing.</h1>
+    <span class="eyebrow">Start a Conversation</span>
+    <h1>Tell us what you&rsquo;re building, or what you need managed.</h1>
     <p>Choose the path that fits, and a member of the Kingsbridge team will follow up directly.</p>
   </div>
 </section>
 
 <section class="section">
-  <div class="container">
-    <div class="path-pills" id="path-pills">
-      <button class="path-pill" data-path="build-home">Build My Dream Home</button>
-      <button class="path-pill" data-path="renovate">Renovate My Property</button>
-      <button class="path-pill" data-path="residential-management">Residential Property Management</button>
-      <button class="path-pill" data-path="commercial-management">Commercial Property Management</button>
-      <button class="path-pill" data-path="mixed-use">Mixed-Use Properties</button>
-      <button class="path-pill" data-path="development">Development Inquiry</button>
-      <button class="path-pill" data-path="general">General Inquiry</button>
+  <div class="container contact-layout">
+    <div class="contact-layout-main">
+      <div class="path-pills" id="path-pills">
+        <button class="path-pill" data-path="custom-home">Custom Home Inquiry</button>
+        <button class="path-pill" data-path="commercial-management">Commercial Property Management Inquiry</button>
+        <button class="path-pill" data-path="general">General Inquiry</button>
+      </div>
+
+      <p class="form-intro" id="form-intro"></p>
+
+      <form class="inquiry-form" id="inquiry-form">
+        <div class="row-2">
+          <div class="field"><label for="name">Full Name</label><input id="name" name="name" required></div>
+          <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" required></div>
+        </div>
+        <div class="row-2">
+          <div class="field"><label for="phone">Phone</label><input id="phone" name="phone" type="tel"></div>
+          <div class="field dyn-fields" data-group="commercial-management">
+            <label for="cm-company">Company (if applicable)</label><input id="cm-company" name="cm-company">
+          </div>
+        </div>
+
+        <!-- ===== Custom Home Inquiry ===== -->
+        <div class="dyn-fields" data-group="custom-home">
+          <div class="row-2">
+            <div class="field"><label for="ch-location">Project Location</label><input id="ch-location" name="ch-location"></div>
+            <div class="field"><label for="ch-type">Project Type</label>
+              <select id="ch-type" name="ch-type"><option value="">Select one</option>
+                <option>New Custom Home</option><option>Teardown &amp; Rebuild</option><option>Full Renovation</option><option>Vacant Lot Build</option>
+              </select>
+            </div>
+          </div>
+          <div class="row-2">
+            <div class="field"><label for="ch-timing">Timeline</label>
+              <select id="ch-timing" name="ch-timing"><option value="">Select one</option>
+                <option>Just Exploring</option><option>0 to 6 Months</option><option>6 to 12 Months</option><option>12+ Months</option>
+              </select>
+            </div>
+            <div></div>
+          </div>
+        </div>
+
+        <!-- ===== Commercial Property Management Inquiry ===== -->
+        <div class="dyn-fields" data-group="commercial-management">
+          <div class="row-2">
+            <div class="field"><label for="cm-location">Property Location</label><input id="cm-location" name="cm-location"></div>
+            <div class="field"><label for="cm-type">Property Type</label>
+              <select id="cm-type" name="cm-type"><option value="">Select one</option>
+                <option>Commercial Plaza</option><option>Retail</option><option>Office</option><option>Other Commercial</option>
+              </select>
+            </div>
+          </div>
+          <div class="row-2">
+            <div class="field"><label for="cm-size">Approximate Size / Units</label><input id="cm-size" name="cm-size" placeholder="e.g. 12,000 sq ft, or number of units"></div>
+            <div class="field"><label for="cm-needs">Support Needed</label>
+              <select id="cm-needs" name="cm-needs"><option value="">Select one</option>
+                <option>Full Property Management</option><option>Maintenance Coordination Only</option><option>Tenant Communication Only</option><option>Not Sure Yet</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="message">Tell us more</label>
+          <textarea id="message" name="message" required></textarea>
+        </div>
+        <div>
+          <button class="btn btn-solid" type="submit">Send Inquiry
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+      </form>
     </div>
 
-    <p class="form-intro" id="form-intro"></p>
-
-    <form class="inquiry-form" id="inquiry-form">
-      <div class="row-2">
-        <div class="field"><label for="name">Full Name</label><input id="name" name="name" required></div>
-        <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" required></div>
-      </div>
-      <div class="row-2">
-        <div class="field"><label for="phone">Phone</label><input id="phone" name="phone" type="tel"></div>
-        <div></div>
-      </div>
-
-      <!-- ===== Build My Dream Home ===== -->
-      <div class="dyn-fields" data-group="build-home">
-        <div class="row-2">
-          <div class="field"><label for="bh-location">Location</label><input id="bh-location" name="bh-location"></div>
-          <div class="field"><label for="bh-type">Property Type</label>
-            <select id="bh-type" name="bh-type"><option value="">Select one</option>
-              <option>New Custom Home</option><option>Teardown &amp; Rebuild</option><option>Vacant Lot Build</option>
-            </select>
-          </div>
-        </div>
-        <div class="row-2">
-          <div class="field"><label for="bh-timeline">Project Timeline</label>
-            <select id="bh-timeline" name="bh-timeline"><option value="">Select one</option>
-              <option>Just Exploring</option><option>0–6 Months</option><option>6–12 Months</option><option>12+ Months</option>
-            </select>
-          </div>
-          <div class="field"><label for="bh-budget">Budget Range</label>
-            <select id="bh-budget" name="bh-budget"><option value="">Select one</option>
-              <option>Under $1M</option><option>$1M–$2M</option><option>$2M–$3M</option><option>$3M+</option><option>Prefer Not to Say</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== Renovate My Property ===== -->
-      <div class="dyn-fields" data-group="renovate">
-        <div class="row-2">
-          <div class="field"><label for="rn-location">Location</label><input id="rn-location" name="rn-location"></div>
-          <div class="field"><label for="rn-type">Property Type</label>
-            <select id="rn-type" name="rn-type"><option value="">Select one</option>
-              <option>Detached House</option><option>Townhouse</option><option>Condo</option><option>Other</option>
-            </select>
-          </div>
-        </div>
-        <div class="row-2">
-          <div class="field"><label for="rn-scope">Renovation Scope</label>
-            <select id="rn-scope" name="rn-scope"><option value="">Select one</option>
-              <option>Kitchen</option><option>Bathroom</option><option>Whole Home</option><option>Addition</option><option>Other</option>
-            </select>
-          </div>
-          <div class="field"><label for="rn-timeline">Project Timeline</label>
-            <select id="rn-timeline" name="rn-timeline"><option value="">Select one</option>
-              <option>Just Exploring</option><option>0–6 Months</option><option>6–12 Months</option><option>12+ Months</option>
-            </select>
-          </div>
-        </div>
-        <div class="row-2">
-          <div class="field"><label for="rn-budget">Budget Range</label>
-            <select id="rn-budget" name="rn-budget"><option value="">Select one</option>
-              <option>Under $100K</option><option>$100K–$250K</option><option>$250K–$500K</option><option>$500K+</option><option>Prefer Not to Say</option>
-            </select>
-          </div>
-          <div></div>
-        </div>
-      </div>
-
-      <!-- ===== Residential Property Management ===== -->
-      <div class="dyn-fields" data-group="residential-management">
-        <div class="row-2">
-          <div class="field"><label for="rm-type">Property Type</label>
-            <select id="rm-type" name="rm-type"><option value="">Select one</option>
-              <option>Single Residential</option><option>Condo</option><option>Multi-Unit Residential</option><option>Other</option>
-            </select>
-          </div>
-          <div class="field"><label for="rm-location">Location</label><input id="rm-location" name="rm-location"></div>
-        </div>
-        <div class="row-2">
-          <div class="field"><label for="rm-units">Number of Units</label><input id="rm-units" name="rm-units" inputmode="numeric"></div>
-          <div class="field"><label for="rm-situation">Current Situation</label>
-            <select id="rm-situation" name="rm-situation"><option value="">Select one</option>
-              <option>Self-Managed</option><option>With Another Management Company</option><option>Newly Acquired</option><option>Other</option>
-            </select>
-          </div>
-        </div>
-        <div class="row-2">
-          <div class="field"><label for="rm-needs">Management Needs</label>
-            <select id="rm-needs" name="rm-needs"><option value="">Select one</option>
-              <option>Full-Service Management</option><option>Maintenance Only</option><option>Tenant Coordination Only</option><option>Not Sure Yet</option>
-            </select>
-          </div>
-          <div></div>
-        </div>
-      </div>
-
-      <!-- ===== Commercial Property Management ===== -->
-      <div class="dyn-fields" data-group="commercial-management">
-        <div class="row-2">
-          <div class="field"><label for="cm-type">Property Type</label>
-            <select id="cm-type" name="cm-type"><option value="">Select one</option>
-              <option>Office</option><option>Retail</option><option>Industrial</option><option>Other</option>
-            </select>
-          </div>
-          <div class="field"><label for="cm-location">Location</label><input id="cm-location" name="cm-location"></div>
-        </div>
-        <div class="row-2">
-          <div class="field"><label for="cm-size">Building Size</label><input id="cm-size" name="cm-size" placeholder="e.g. 12,000 sq ft"></div>
-          <div class="field"><label for="cm-situation">Current Management Situation</label>
-            <select id="cm-situation" name="cm-situation"><option value="">Select one</option>
-              <option>Self-Managed</option><option>With Another Management Company</option><option>Newly Acquired</option><option>Other</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== Mixed-Use Properties ===== -->
-      <div class="dyn-fields" data-group="mixed-use">
-        <div class="row-2">
-          <div class="field"><label for="mu-type">Property Type</label>
-            <select id="mu-type" name="mu-type"><option value="">Select one</option>
-              <option>Residential + Retail</option><option>Residential + Office</option><option>Other Mixed-Use</option>
-            </select>
-          </div>
-          <div class="field"><label for="mu-ratio">Residential / Commercial Ratio</label><input id="mu-ratio" name="mu-ratio" placeholder="e.g. 70 / 30"></div>
-        </div>
-        <div class="row-2">
-          <div class="field"><label for="mu-location">Location</label><input id="mu-location" name="mu-location"></div>
-          <div class="field"><label for="mu-requirements">Management Requirements</label>
-            <select id="mu-requirements" name="mu-requirements"><option value="">Select one</option>
-              <option>Full-Service Management</option><option>Maintenance Only</option><option>Tenant Coordination Only</option><option>Not Sure Yet</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== Development Inquiry ===== -->
-      <div class="dyn-fields" data-group="development">
-        <div class="row-2">
-          <div class="field"><label for="dv-type">Project Type</label>
-            <select id="dv-type" name="dv-type"><option value="">Select one</option>
-              <option>New Development</option><option>Land Acquisition</option><option>Redevelopment</option><option>Other</option>
-            </select>
-          </div>
-          <div class="field"><label for="dv-location">Location</label><input id="dv-location" name="dv-location"></div>
-        </div>
-        <div class="row-2">
-          <div class="field"><label for="dv-timeline">Timeline</label>
-            <select id="dv-timeline" name="dv-timeline"><option value="">Select one</option>
-              <option>Just Exploring</option><option>0–12 Months</option><option>1–2 Years</option><option>2+ Years</option>
-            </select>
-          </div>
-          <div></div>
-        </div>
-      </div>
-
-      <div class="field">
-        <label for="message">Tell us more</label>
-        <textarea id="message" name="message" required></textarea>
-      </div>
-      <div>
-        <button class="btn btn-solid" type="submit">Send Inquiry
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </button>
-      </div>
-    </form>
+    <aside class="contact-layout-aside">
+      <span class="contact-aside-label">Our Offices</span>
+      <div class="contact-details on-ivory" id="contact-page-details"></div>
+    </aside>
   </div>
 </section>
 
 <div id="footer-root"></div>
 
-<script src="/assets/js/include.js"></script>
-<script src="/assets/js/main.js"></script>
-<script src="/assets/js/experience.js"></script>
+<script src="/assets/js/site-config.js" defer></script>
+<script src="/assets/js/include.js" defer></script>
+<script src="/assets/js/main.js" defer></script>
+<script src="/assets/js/experience.js" defer></script>
 <script>
-  // Inquiry routing structure only — no CRM connected yet. Field names map
-  // directly to the categories LYNQ Office will use once integrated
-  // (see 06_Website_Code/development-plan.md §10).
+  // Inquiry routing structure only — no CRM/backend connected yet (see
+  // 06_Website_Code/development-plan.md). Field names map directly to the
+  // three confirmed inquiry types so a future integration needs no markup
+  // changes.
   var PATH_LABELS = {
-    'build-home': 'Build My Dream Home', 'renovate': 'Renovate My Property',
-    'residential-management': 'Residential Property Management',
-    'commercial-management': 'Commercial Property Management',
-    'mixed-use': 'Mixed-Use Properties', 'development': 'Development Inquiry',
+    'custom-home': 'Custom Home Inquiry',
+    'commercial-management': 'Commercial Property Management Inquiry',
     'general': 'General Inquiry'
   };
   var PATH_INTROS = {
-    'build-home': 'Tell us about the home you want to build — the more detail, the faster we can help.',
-    'renovate': 'Tell us about the renovation you have in mind.',
-    'residential-management': 'Tell us about the residential property you&rsquo;d like managed.',
+    'custom-home': 'Tell us about the home you want to build. More detail helps us respond faster.',
     'commercial-management': 'Tell us about the commercial property you&rsquo;d like managed.',
-    'mixed-use': 'Tell us about the mixed-use property you&rsquo;d like managed.',
-    'development': 'Tell us about the development you have in mind.',
-    'general': 'Tell us what&rsquo;s on your mind — we&rsquo;ll route it to the right person.'
+    'general': 'Tell us what&rsquo;s on your mind, and we&rsquo;ll route it to the right person.'
   };
 
   function setPath(selected) {
@@ -262,25 +160,41 @@
 
   document.addEventListener('partials:ready', function () {
     var requested = new URLSearchParams(location.search).get('path');
-    var normalized = requested === 'build' ? 'build-home'
-      : requested === 'manage' ? 'residential-management'
-      : requested === 'manage-property' ? 'residential-management'
-      : requested === 'commercial' ? 'commercial-management'
-      : requested;
+    // Legacy links from before the August 20, 2026 direction (build-home, renovate,
+    // residential-management, mixed-use, development) fold into the closest of the
+    // three current paths rather than breaking.
+    var legacyMap = {
+      'build': 'custom-home', 'build-home': 'custom-home', 'renovate': 'custom-home',
+      'manage': 'commercial-management', 'manage-property': 'commercial-management',
+      'commercial': 'commercial-management', 'residential-management': 'general',
+      'mixed-use': 'general', 'development': 'general'
+    };
+    var normalized = legacyMap[requested] || requested;
     var selected = PATH_LABELS[normalized] ? normalized : 'general';
     setPath(selected);
     document.querySelectorAll('.path-pill').forEach(function (p) {
       p.addEventListener('click', function () { setPath(p.getAttribute('data-path')); });
     });
+
+    // Real contact details render only once confirmed (assets/js/site-config.js) — never fabricated.
+    var details = document.getElementById('contact-page-details');
+    if (details && typeof KB_CONFIG !== 'undefined') {
+      var rows = [];
+      if (KB_CONFIG.phone) rows.push('<a href="tel:' + KB_CONFIG.phone.replace(/[^\d+]/g, '') + '">' + KB_CONFIG.phone + '</a>');
+      if (KB_CONFIG.email) rows.push('<a href="mailto:' + KB_CONFIG.email + '">' + KB_CONFIG.email + '</a>');
+      (KB_CONFIG.offices || []).forEach(function (o) { if (o.address) rows.push('<span class="office"><span class="office-label">' + o.label + '</span><span class="office-address">' + o.address + '</span></span>'); });
+      if (rows.length) details.innerHTML = rows.join('');
+    }
   });
 
   document.getElementById('inquiry-form').addEventListener('submit', function (e) {
     e.preventDefault();
-    // No backend wired yet — see development-plan.md §10 for the planned
-    // api/ + CRM integration path. This confirms receipt for the demo only.
+    // No backend wired yet — see development-plan.md for the planned
+    // api/ + CRM integration path. This confirms receipt only; nothing is
+    // sent anywhere yet, and this message never claims otherwise.
     var toast = document.createElement('div');
     toast.className = 'toast';
-    toast.textContent = 'Thank you — a member of our team will be in touch shortly.';
+    toast.textContent = 'Thank you. A member of our team will be in touch shortly.';
     document.body.appendChild(toast);
     requestAnimationFrame(function () { toast.classList.add('show'); });
     setTimeout(function () { toast.classList.remove('show'); setTimeout(function () { toast.remove(); }, 300); }, 2600);
