@@ -4,7 +4,9 @@
 // card is one fixed physical item.
 
 import Link from "next/link";
-import { getReadyForDeliveryItems, getStoreSettings } from "@/lib/repository";
+import Image from "next/image";
+import { getReadyForDeliveryItems, getStoreSettings, getActiveBags } from "@/lib/repository";
+import { framesForColour, tileSrc, altFor } from "@/lib/product-media";
 import ReadyForDeliveryCard from "@/components/ReadyForDeliveryCard";
 
 // Live catalog data should never be prerendered — see app/page.tsx for why
@@ -12,7 +14,15 @@ import ReadyForDeliveryCard from "@/components/ReadyForDeliveryCard";
 export const dynamic = "force-dynamic";
 
 export default async function ReadyForDeliveryPage() {
-  const [items, settings] = await Promise.all([getReadyForDeliveryItems(), getStoreSettings()]);
+  const [items, settings, bags] = await Promise.all([
+    getReadyForDeliveryItems(),
+    getStoreSettings(),
+    getActiveBags(),
+  ]);
+  // Real product media for the empty state — an empty page should still show
+  // what Arcubed makes.
+  const emptyBag = bags.find((b) => b.name.trim().toLowerCase() === "mini luna");
+  const emptyFrame = emptyBag ? framesForColour(emptyBag, "Red")[0] : undefined;
   const fulfillmentLabel = settings?.readyForDeliveryFulfillmentLabel ?? "Next day";
   // The confirmed promise is "NEXT-DAY DELIVERY IN JORDAN". store_settings
   // holds "Next day"; hyphenate it into its adjectival form and append the
@@ -41,24 +51,41 @@ export default async function ReadyForDeliveryPage() {
       </section>
       <section className="ed-rfd-body">
         {items.length === 0 ? (
+          /* An intentional frame, not a blank page. Inventory really is zero
+             here — the data reads fine, there is simply nothing finished and
+             waiting — so this states that plainly, on the brand pink, with a
+             real bag and one way forward. */
           <div className="rfd-empty">
-            <p className="rfd-empty-statement">The next edit is being prepared.</p>
-            <p className="page-copy center rfd-empty-copy">
-              Nothing is finished and waiting right now. Every piece is being made to order — which
-              is the other half of how Arcubed works.
-            </p>
-            <p className="rfd-empty-meta">
-              <span>{deliveryPromise}</span>
-              <span aria-hidden="true">·</span>
-              <span>Real photography</span>
-              <span aria-hidden="true">·</span>
-              <span>Exact configuration</span>
-              <span aria-hidden="true">·</span>
-              <span>Fixed price &amp; quantity</span>
-            </p>
-            <Link className="rfd-empty-link" href="/shop">
-              Explore Made to Order
-            </Link>
+            <div className="rfd-empty-copy-col">
+              <p className="rfd-empty-kicker">Nothing ready today</p>
+              <p className="rfd-empty-statement">
+                Every piece<br />is being made<br />to order.
+              </p>
+              <p className="rfd-empty-note">
+                Ready for Delivery is finished stock, photographed exactly as it ships. There is
+                none right now — the next edit is being made.
+              </p>
+              <Link className="rfd-empty-link" href="/shop">
+                See the collection <span aria-hidden="true">&rarr;</span>
+              </Link>
+              <p className="rfd-empty-meta">
+                <span>{deliveryPromise}</span>
+                <span aria-hidden="true">·</span>
+                <span>Made to order in 3&ndash;5 business days</span>
+              </p>
+            </div>
+            {emptyFrame && emptyBag ? (
+              <figure className="rfd-empty-art">
+                <Image
+                  src={tileSrc(emptyFrame)}
+                  alt={altFor(emptyBag, "Red")}
+                  width={1100}
+                  height={Math.round(1100 / emptyFrame.ratio)}
+                  sizes="(max-width: 860px) 78vw, 40vw"
+                  priority
+                />
+              </figure>
+            ) : null}
           </div>
         ) : (
           <div className="rfd-grid">

@@ -78,6 +78,28 @@ const COLLECTION: { slug: string; product: string; colour: string; field: string
  */
 const CUSTOM_COLOURS = ["Red", "Gold", "Silver", "Black", "Silver & Gold"];
 
+/**
+ * Per-frame alignment for the customisation sequence.
+ *
+ * These five are five separate photographs and they do NOT agree: Black's
+ * frame is portrait (1200x1347) where the others are landscape, and its bag
+ * fills 61% of the image height against 88-89% for the rest — which is why it
+ * sat visibly lower and smaller than every other colourway.
+ *
+ * Each object's box was measured inside its own cut-out, then these were
+ * solved so all five render at the same object height, on the same baseline,
+ * horizontally centred on the object rather than on the image. Scale is
+ * about the bottom centre; the translations are percentages of the image's
+ * own untransformed box. Nothing is cropped — handles and rims are untouched.
+ */
+const FRAME_FIT: Record<string, { s: number; tx: number; ty: number }> = {
+  "Red": { s: 0.892, tx: -3.03, ty: 1.46 },
+  "Gold": { s: 0.968, tx: 5.13, ty: 1.44 },
+  "Silver": { s: 0.986, tx: 6.61, ty: 2.07 },
+  "Black": { s: 1.005, tx: 2.11, ty: 3.08 },
+  "Silver & Gold": { s: 1.021, tx: 8.99, ty: 2.27 },
+};
+
 /** The four forms, with the measured aspect ratio of each silhouette asset
  *  so the row can size them by their real proportions rather than by a box. */
 /**
@@ -92,10 +114,10 @@ const CUSTOM_COLOURS = ["Red", "Gold", "Silver", "Black", "Silver & Gold"];
  * baseline, so they read as four objects on a shelf rather than four icons.
  */
 const SHAPES = [
-  { slug: "nova", name: "Nova", ratio: 2.0783, width: 1.0, note: "Soft, closed, low" },
-  { slug: "vault", name: "Vault", ratio: 1.3877, width: 0.9, note: "Wide, structured" },
-  { slug: "mini-luna", name: "Mini Luna", ratio: 1.0755, width: 0.76, note: "Arch handle" },
-  { slug: "loco", name: "Loco", ratio: 1.5453, width: 0.94, note: "Fringed" },
+  { slug: "nova", name: "Nova", ratio: 2.0783, width: 1.0, note: "Soft, closed, low", fill: "#9a9aa0" },
+  { slug: "vault", name: "Vault", ratio: 1.3877, width: 0.9, note: "Wide, structured", fill: "#a99a63" },
+  { slug: "mini-luna", name: "Mini Luna", ratio: 1.0755, width: 0.76, note: "Arch handle", fill: "#c9564a" },
+  { slug: "loco", name: "Loco", ratio: 1.5453, width: 0.94, note: "Fringed", fill: "#a2646c" },
 ];
 
 /** A specific colourway's first frame, falling back to the product's best. */
@@ -215,10 +237,14 @@ export default async function HomePage() {
         <div className="phase phase-mat">
           <div className="mat-img">
             <Image
-              src={TEXTURES.metallic.src}
+              // A dedicated wide close crop taken from the full-resolution
+              // original (scripts/build-textures.mjs). The shared macro was a
+              // ~430px crop out of a 1600px proxy, upscaled — which is what
+              // was visibly pixelated when drawn full-bleed.
+              src="/media/macro-metallic.webp"
               alt="Metallic ribbon yarn, hand-crocheted — detail of the Red Mini Luna"
-              width={1600}
-              height={Math.round(1600 / TEXTURES.metallic.ratio)}
+              width={1937}
+              height={1005}
               sizes="100vw"
             />
           </div>
@@ -245,6 +271,7 @@ export default async function HomePage() {
                     ["--sil" as string]: `url(/media/silhouette-${sh.slug}.webp)`,
                     ["--ratio" as string]: sh.ratio,
                     ["--w" as string]: sh.width,
+                    ["--fill" as string]: sh.fill,
                   }}
                 />
                 <em>{sh.name}</em>
@@ -301,6 +328,9 @@ export default async function HomePage() {
                   // before the "details" line takes over.
                   ["--w0" as string]: (0.17 + i * 0.06).toFixed(3),
                   ["--w1" as string]: (0.17 + i * 0.06 + 0.06).toFixed(3),
+                  ["--s" as string]: FRAME_FIT[cf.colour]?.s ?? 1,
+                  ["--tx" as string]: `${FRAME_FIT[cf.colour]?.tx ?? 0}%`,
+                  ["--ty" as string]: `${FRAME_FIT[cf.colour]?.ty ?? 0}%`,
                 }}
               />
             ))}
@@ -312,10 +342,6 @@ export default async function HomePage() {
             <p className="cust-step cust-step-3">Make it<br />yours.</p>
           </div>
 
-          <p className="cust-honest">
-            Straps, chains and sizes are chosen on the product page. We don&rsquo;t picture them
-            here — no photograph of a fitted strap exists yet, and we won&rsquo;t fake one.
-          </p>
         </div>
 
         {/* ---------------- 04 THE FINISHED OBJECT ---------------- */}
@@ -327,9 +353,9 @@ export default async function HomePage() {
               <Image
                 src={cutSrc(heroBag)}
                 alt={altFor(miniLuna, "Red")}
-                width={900}
-                height={Math.round(900 / heroBag.ratio)}
-                sizes="(max-width: 860px) 60vw, 30vw"
+                width={1100}
+                height={Math.round(1100 / heroBag.ratio)}
+                sizes="(max-width: 860px) 88vw, 46vw"
               />
             </figure>
           ) : null}

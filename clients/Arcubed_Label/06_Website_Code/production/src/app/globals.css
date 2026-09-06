@@ -65,8 +65,11 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
   background: rgba(250, 246, 241, 0.86); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
 }
 .logo { display: block; }
-.logo img { height: 22px; width: auto; }
-@media (min-width: 760px) { .logo img { height: 26px; } }
+/* The wordmark is a hairline logotype; at 22px its strokes fell below a
+   pixel and it read as a faint smudge. The asset is 1116x298, so this is
+   still a ~9x downsample — nothing is upscaled. */
+.logo img { height: 28px; width: auto; }
+@media (min-width: 760px) { .logo img { height: 34px; } }
 .nav { display: none; gap: 30px; font-size: 13.5px; font-weight: 500; }
 .nav a { position: relative; padding-bottom: 2px; }
 .nav a::after { content: ""; position: absolute; left: 0; right: 100%; bottom: 0; height: 1px; background: var(--ink); transition: right 0.22s var(--ease); }
@@ -334,10 +337,7 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 /* Editorial "curated drop" treatment — no boxed card, no pill/chip tags
    (see clients/Arcubed_Label/05_Design_Inspiration/motion-and-art-direction.md).
    A quiet typographic moment, not a SaaS empty-state card. */
-.rfd-empty {
-  max-width: 640px; margin: 56px auto 0; text-align: center;
-  animation: fadeUp 0.45s var(--ease-gentle) both;
-}
+/* Superseded by the editorial empty state at the end of this file. */
 .rfd-empty-statement {
   font-family: var(--font-head); font-style: italic; font-weight: 400;
   font-size: clamp(26px, 4.4vw, 40px); line-height: 1.25; margin: 0 auto;
@@ -630,7 +630,7 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 .ed-rfd-body { padding: clamp(40px, 6vw, 84px) clamp(16px, 4vw, 54px); }
 
 /* The empty state is a deliberate editorial moment, not an error. */
-.rfd-empty { max-width: 640px; margin: 0 auto; text-align: center; }
+/* Superseded by the editorial empty state at the end of this file. */
 .rfd-empty-statement {
   font-family: var(--font-head); font-weight: 400;
   font-size: clamp(26px, 5vw, 52px); line-height: 1.05; letter-spacing: -0.03em;
@@ -862,21 +862,31 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 }
 .sx-price { color: var(--primary); font-weight: 600; white-space: nowrap; }
 /* Distinct field + crop per product. */
-.sx-a .sx-media { background: #E8E2D6; aspect-ratio: 16 / 11; }
-.sx-b .sx-media { background: #C7D0C2; aspect-ratio: 4 / 5; }
-.sx-c .sx-media { background: var(--blush); aspect-ratio: 1 / 1; }
-.sx-d .sx-media { background: #D9C7C0; aspect-ratio: 5 / 6; }
+/* square / portrait / square / wide — a repeating rhythm, in that order. */
+.sx-square .sx-media { aspect-ratio: 1 / 1; }
+.sx-portrait .sx-media { aspect-ratio: 4 / 5; }
+.sx-wide .sx-media { aspect-ratio: 16 / 10; }
+/* Fields are per product, chosen against each bag's own colour. The wide
+   frame carries no field: it is a full photograph edge to edge. */
+.sx-item:nth-child(1) .sx-media { background: #8fa5b8; }
+.sx-item:nth-child(2) .sx-media { background: #d9d3cc; }
+.sx-item:nth-child(3) .sx-media { background: #8d9b7a; }
+.sx-item:nth-child(4) .sx-media { background: #c9b8a4; }
 @media (min-width: 860px) {
   .sx-grid { grid-template-columns: repeat(12, 1fr); align-items: start; }
-  .sx-a { grid-column: 1 / span 7; }
-  .sx-b { grid-column: 9 / span 4; margin-top: clamp(40px, 7vw, 110px); }
-  .sx-c { grid-column: 2 / span 4; }
-  .sx-d { grid-column: 7 / span 5; margin-top: clamp(-40px, -4vw, 0px); }
+  /* Placement follows the frame rhythm, not the product: square, portrait,
+     square, wide, staggered so the page reads as a spread. Renaming the
+     classes to the rhythm left these targeting names that no longer existed,
+     which collapsed every item to its intrinsic width. */
+  .sx-item:nth-child(1) { grid-column: 1 / span 5; }
+  .sx-item:nth-child(2) { grid-column: 8 / span 4; margin-top: clamp(40px, 7vw, 110px); }
+  .sx-item:nth-child(3) { grid-column: 2 / span 5; }
+  .sx-item:nth-child(4) { grid-column: 8 / span 5; margin-top: clamp(-60px, -6vw, 0px); }
 }
 @media (max-width: 859px) {
   .sx-title { font-size: 24vw; }
-  .sx-b { margin-left: 12%; }
-  .sx-d { margin-right: 10%; }
+  .sx-item:nth-child(2) { margin-left: 8%; }
+  .sx-item:nth-child(4) { margin-right: 6%; }
 }
 
 /* ==========================================================================
@@ -1359,3 +1369,41 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 @media (min-width: 900px) { .ml-compare { grid-template-columns: 1fr 1fr; gap: 28px; } }
 .ml-note-row { display: block; margin-top: 8px; padding-left: 12px; border-left: 2px solid var(--primary); color: var(--ink); line-height: 1.55; }
 .ml-CONFIRMED_FROM_PHOTOS { background: #e8f0e4; color: #35502c; }
+
+/* ---------- Ready for Delivery — empty state ----------
+   Inventory genuinely reads zero here. The page used to answer that with a
+   centred paragraph on cream, which looked like a page that had failed to
+   load rather than a deliberate state. */
+.rfd-empty {
+  background: #ffe0fd; color: #143562;
+  display: grid; gap: clamp(28px, 5vw, 60px);
+  padding: clamp(44px, 8vh, 96px) clamp(20px, 5vw, 64px) clamp(48px, 9vh, 104px);
+  align-items: center;
+  /* Overrides the older centred-column rules above: this state is a full
+     bleed editorial frame, not a paragraph in the middle of the page. */
+  max-width: none; margin: 0; text-align: left;
+}
+/* The section around it carried the page's own padding, which inset the pink
+   field into a floating block. */
+.ed-rfd-body:has(.rfd-empty) { padding: 0; }
+.rfd-empty-kicker { margin: 0 0 18px; font-size: 11px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; }
+.rfd-empty-statement {
+  margin: 0 0 22px; font-family: var(--font-head); font-weight: 600;
+  text-transform: uppercase; letter-spacing: -0.035em; line-height: 0.86;
+  font-size: clamp(34px, 5.6vw, 78px); color: #143562;
+}
+.rfd-empty-note { margin: 0 0 26px; max-width: 38ch; font-size: 14.5px; line-height: 1.6; opacity: 0.72; }
+.rfd-empty-link {
+  display: inline-block; font-size: 13px; font-weight: 600; letter-spacing: 0.14em;
+  text-transform: uppercase; border-bottom: 1.5px solid currentColor; padding-bottom: 5px;
+}
+.rfd-empty-meta {
+  display: flex; flex-wrap: wrap; gap: 10px 22px; margin: 30px 0 0; justify-content: flex-start;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; opacity: 0.6;
+}
+.rfd-empty-art { margin: 0; }
+.rfd-empty-art img { width: 100%; height: auto; display: block; }
+@media (min-width: 860px) {
+  .rfd-empty { grid-template-columns: 1fr 0.9fr; }
+  .rfd-empty-art { justify-self: end; width: min(460px, 100%); }
+}

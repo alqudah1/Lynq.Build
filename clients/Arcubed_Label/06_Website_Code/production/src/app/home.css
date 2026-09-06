@@ -39,7 +39,8 @@ body:has(.home) .site-header .nav a::after { background: var(--navy); }
 body:has(.home) main { padding-top: 0; }
 
 /* ---------------- scroll container ---------------- */
-.story { position: relative; height: 460vh; background: var(--pink); }
+/* 380vh, down from 460vh: the timeline is the same, the dead scroll is not. */
+.story { position: relative; height: 380vh; background: var(--pink); }
 .story-stage {
   position: sticky; top: 0; height: 100vh; overflow: hidden;
   background: var(--pink);
@@ -65,11 +66,11 @@ body:has(.home) main { padding-top: 0; }
    ranges are small on purpose: depth, not a ride. */
 /* Deliberately unequal: three lines at one size and one left edge is a
    heading, not a composition. */
-.hero-l1 { top: 8vh;  left: -0.6vw; font-size: 1em;    z-index: 2;    transform: translateY(calc(var(--b-enter) * -52vh)); }
-.hero-l2 { top: 30vh; left: 12vw;   font-size: 0.78em; z-index: 2; transform: translateY(calc(var(--b-enter) * -68vh)); }
+.hero-l1 { top: 8vh;  left: -0.6vw; font-size: 1em;    z-index: 2;    transform: translateY(calc(var(--b-hero) * -1.4vh + var(--b-enter) * -52vh)); }
+.hero-l2 { top: 30vh; left: 12vw;   font-size: 0.78em; z-index: 2; transform: translateY(calc(var(--b-hero) * -2.6vh + var(--b-enter) * -68vh)); }
 /* The line that crosses the object, so it is the largest and runs furthest
    right — it has to reach the bag to sit in front of it. */
-.hero-l3 { top: 50vh; left: 0.4vw;  font-size: 1.22em; z-index: 5; transform: translateY(calc(var(--b-enter) * -34vh)); }
+.hero-l3 { top: 50vh; left: 0.4vw;  font-size: 1.22em; z-index: 5; transform: translateY(calc(var(--b-hero) * -0.7vh + var(--b-enter) * -34vh)); }
 .hero-type p { opacity: calc(1 - var(--b-enter) * 1.5); }
 
 /* The dominant object. Crosses lines 1 and 2, sits behind line 3, and leaves
@@ -80,7 +81,7 @@ body:has(.home) main { padding-top: 0; }
      product shot next to a heading, not a composition. */
   position: absolute; z-index: 3; top: 9vh; right: -2vw; width: 66vw;
   transform:
-    translateY(calc(var(--b-hero) * -1.6vh + var(--b-enter) * 4vh))
+    translateY(calc(var(--b-hero) * -3.2vh + var(--b-enter) * 4vh))
     /* Keeps growing under the mask through the material band, so the macro
        opens onto an object still moving toward the viewer. */
     scale(calc(1 + var(--b-enter) * 1.28 + var(--b-mat) * 0.85));
@@ -208,7 +209,10 @@ body:has(.home) main { padding-top: 0; }
 .sil {
   display: block; width: calc(var(--base) * var(--w)); aspect-ratio: var(--ratio);
   margin-bottom: 20px;
-  background: var(--pink);
+  /* Flat fills drawn from each product's own colour family, lightened enough
+     to separate from the navy field — charcoal at its true value disappears
+     into it. Flat on purpose: no gradient, no simulated crochet. */
+  background: var(--fill, var(--pink));
   -webkit-mask-image: var(--sil); mask-image: var(--sil);
   -webkit-mask-size: contain; mask-size: contain;
   -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
@@ -266,7 +270,9 @@ body:has(.home) main { padding-top: 0; }
   /* Pushed off the right edge so the colour name reads as a whole
      phrase before the object takes over the rest of it. */
   position: absolute; z-index: 2; right: -5vw; top: 15vh; width: 52vw;
-  display: grid;
+  /* A fixed-aspect stage rather than a stack of differently shaped images:
+     the five frames disagree on shape, so the box has to be the constant. */
+  aspect-ratio: 1.25 / 1;
 }
 .cust-bag img {
   /* All five stacked in one cell; exactly one is opaque at a time. Each
@@ -276,7 +282,10 @@ body:has(.home) main { padding-top: 0; }
      photographs at slightly different camera positions, so a slow crossfade
      put two mis-registered bags on screen at once and read as a double
      exposure. A quick cut reads as the same bag changing colour. */
-  grid-area: 1 / 1; width: 100%; height: auto;
+  position: absolute; left: 0; bottom: 0; width: 100%; height: auto;
+  /* Scaled about the bottom centre so the baseline is what stays put. */
+  transform-origin: 50% 100%;
+  transform: translate(var(--tx, 0), var(--ty, 0)) scale(var(--s, 1));
   opacity: clamp(0, min(calc((var(--b-cust) - var(--w0)) * 70), calc((var(--w1) - var(--b-cust)) * 70)), 1);
 }
 /* The last colour holds for the rest of the phase instead of fading out, so
@@ -310,16 +319,18 @@ body:has(.home) main { padding-top: 0; }
   z-index: 11; background: var(--pink);
   clip-path: inset(0 0 calc(100% - min(1, var(--b-final) * 3) * 100%) 0);
 }
+/* A campaign frame, not a text block: the object dominates, one line runs
+   behind it and one crosses in front, and both bleed off the edges. */
 .final-line {
-  position: absolute; z-index: 3; margin: 0; color: var(--navy);
+  position: absolute; margin: 0; color: var(--navy); white-space: nowrap;
   font-family: var(--font-head); font-weight: 600; text-transform: uppercase;
-  letter-spacing: -0.04em; line-height: 0.84; font-size: clamp(40px, 8.4vw, 128px);
+  letter-spacing: -0.045em; line-height: 0.82; font-size: clamp(46px, 11.5vw, 176px);
 }
-.final-a { top: 16vh; left: 5vw; }
-.final-b { bottom: 16vh; right: 5vw; }
+.final-a { z-index: 1; top: 13vh; left: -1.5vw; }
+.final-b { z-index: 3; bottom: 13vh; left: 4vw; }
 .final-bag {
-  position: absolute; z-index: 2; left: 50%; top: 50%; width: 30vw; margin: 0;
-  transform: translate(-50%, -50%) scale(calc(0.94 + var(--b-final) * 0.06));
+  position: absolute; z-index: 2; left: 46%; top: 46%; width: 46vw; margin: 0;
+  transform: translate(-50%, -50%) scale(calc(0.96 + var(--b-final) * 0.04));
 }
 .final-bag img { width: 100%; height: auto; }
 
@@ -377,7 +388,7 @@ body:has(.home) main { padding-top: 0; }
 @media (min-width: 1080px) { .col-grid { grid-template-columns: repeat(4, 1fr); } }
 
 @media (max-width: 860px) {
-  .story { height: 320vh; }
+  .story { height: 300vh; }
   .hero-type { font-size: clamp(48px, 19.5vw, 120px); }
   .hero-l1 { top: 10vh; left: -0.5vw; }
   .hero-l2 { top: 21vh; left: 4vw; }
@@ -413,11 +424,15 @@ body:has(.home) main { padding-top: 0; }
   .cust-step { font-size: clamp(26px, 9.5vw, 46px); }
   .cust-word { left: 4vw; top: 40vh; }
   .cust-word li { font-size: clamp(40px, 16vw, 110px); max-width: 88vw; }
-  .cust-bag { right: -14vw; top: 44vh; width: 96vw; }
+  .cust-bag { right: -14vw; top: 40vh; width: 96vw; }
   .cust-honest { left: 5vw; bottom: 5vh; max-width: 28ch; font-size: 11.5px; }
-  .final-a { top: 20vh; left: 6vw; }
-  .final-b { bottom: 20vh; right: 6vw; }
-  .final-bag { width: 62vw; }
+  /* Sized to FIT on a phone. At 15vw both lines overran both edges, so each
+     was clipped at the start and the end — that is not intentional cropping,
+     it is unreadable. The desktop bleed stays. */
+  .final-line { font-size: clamp(32px, 11.5vw, 96px); }
+  .final-a { top: 15vh; left: 2vw; }
+  .final-b { bottom: 12vh; left: 2vw; }
+  .final-bag { width: 88vw; left: 52%; top: 48%; }
 }
 
 /* ---------------- tablet portrait ----------------
@@ -441,7 +456,8 @@ body:has(.home) main { padding-top: 0; }
   .cust-word { top: 44vh; }
   .cust-word li { font-size: clamp(48px, 13vw, 120px); max-width: 66vw; }
   .cust-bag { right: -6vw; top: 20vh; width: 62vw; }
-  .final-bag { width: 44vw; }
+  .final-bag { width: 62vw; }
+  .final-line { font-size: clamp(44px, 12vw, 120px); }
 }
 
 /* ---------------- reduced motion ----------------

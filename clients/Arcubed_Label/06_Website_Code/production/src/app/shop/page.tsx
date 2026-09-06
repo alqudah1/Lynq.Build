@@ -3,7 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getActiveBags } from "@/lib/repository";
 import { money } from "@/lib/pricing";
-import { resolveMedia, framesForColour, altFor, photographedColours, cutSrc } from "@/lib/product-media";
+import { resolveMedia, framesForColour, altFor, photographedColours, tileSrc } from "@/lib/product-media";
 import Reveal from "@/components/Reveal";
 
 export const dynamic = "force-dynamic";
@@ -13,13 +13,24 @@ export const metadata = {
   description: "Four hand-crocheted shapes, made to order in your colour.",
 };
 
-// Deliberate per-product rhythm: different field, crop and scale, so the page
-// reads as a catalogue rather than four identical cards.
+/**
+ * A controlled repeating frame rhythm — square, portrait, square, wide — not
+ * four identical cards and not random masonry.
+ *
+ * Treatment follows the media, not the slot: an isolated object on a colour
+ * field where the cut-out is strong, the full photograph where the
+ * photography is stronger. Loco is the wide frame precisely because it has no
+ * usable cut-out (its fringe defeats a matte) and its own photograph is the
+ * best thing in the catalogue.
+ *
+ * Vault shows Olive Green rather than Brown: Brown's cut-out traps a patch of
+ * seamless inside the hand slot (see scripts/build-tile-cutouts.mjs).
+ */
 const LAYOUT: Record<string, { cls: string; colour: string }> = {
-  nova: { cls: "sx-a", colour: "Gold" },
-  vault: { cls: "sx-b", colour: "Brown" },
-  "mini-luna": { cls: "sx-c", colour: "Red" },
-  loco: { cls: "sx-d", colour: "Brown" },
+  nova: { cls: "sx-square", colour: "Gold" },
+  vault: { cls: "sx-portrait", colour: "Olive Green" },
+  "mini-luna": { cls: "sx-square", colour: "Red" },
+  loco: { cls: "sx-wide", colour: "Brown" },
 };
 
 export default async function ShopPage() {
@@ -53,7 +64,7 @@ export default async function ShopPage() {
                   {media ? (
                     <Image
                       className="sx-img sx-img-1"
-                      src={media.frame.cutOk ? cutSrc(media.frame) : media.frame.photo}
+                      src={media.frame.cutOk ? tileSrc(media.frame) : media.frame.photo}
                       alt={altFor(bag, media.shownColour, media.exactColour)}
                       width={1600}
                       height={Math.round(1600 / media.frame.ratio)}
@@ -66,7 +77,7 @@ export default async function ShopPage() {
                   {alt ? (
                     <Image
                       className="sx-img sx-img-2"
-                      src={alt.cutOk ? cutSrc(alt) : alt.photo}
+                      src={alt.cutOk ? tileSrc(alt) : alt.photo}
                       alt=""
                       aria-hidden="true"
                       width={1600}

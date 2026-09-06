@@ -18,13 +18,18 @@
 import { useEffect, useRef, type ReactNode } from "react";
 
 /** [custom property, start, end] over global progress. */
+// The hero band is short on purpose. It used to run to 18% of a 460vh
+// container — about 700px of scrolling before anything moved much, which
+// read as an unresponsive page rather than as a held frame. The first
+// gesture now visibly moves the composition and the enter sequence starts
+// almost immediately after it.
 const BANDS: [string, number, number][] = [
-  ["--b-hero", 0.0, 0.18],
-  ["--b-enter", 0.18, 0.38],
-  ["--b-mat", 0.38, 0.55],
-  ["--b-shape", 0.55, 0.7],
-  ["--b-cust", 0.7, 0.88],
-  ["--b-final", 0.88, 1.0],
+  ["--b-hero", 0.0, 0.06],
+  ["--b-enter", 0.06, 0.3],
+  ["--b-mat", 0.3, 0.48],
+  ["--b-shape", 0.48, 0.64],
+  ["--b-cust", 0.64, 0.86],
+  ["--b-final", 0.86, 1.0],
 ];
 
 function band(p: number, a: number, b: number) {
