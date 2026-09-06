@@ -16,6 +16,7 @@ import { formatMoney } from "@/lib/site-settings";
 import { framesForColour, resolveMedia, cutSrc, TEXTURES, altFor } from "@/lib/product-media";
 import Reveal from "@/components/Reveal";
 import HeroCollage from "@/components/HeroCollage";
+import MaskReveal from "@/components/editorial/MaskReveal";
 import type { Bag } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -44,10 +45,9 @@ export default async function HomePage() {
 
   // Hero cast — one dominant object plus three supporting, chosen for colour
   // contrast across the archive: gold, red, silver, olive.
-  const heroLead = frame(nova, "Gold");
+  const heroLead = frame(nova, "Black");
   const heroLeft = frame(miniLuna, "Red");
   const heroRight = frame(nova, "Silver");
-  const heroLow = frame(vault, "Olive Green");
 
   const fulfillmentLabel = settings?.readyForDeliveryFulfillmentLabel ?? "Next day";
   const deliveryPromise = `${fulfillmentLabel.replace(/\s+day$/i, "-day")} delivery in Jordan`;
@@ -62,44 +62,52 @@ export default async function HomePage() {
 
   return (
     <>
-      {/* ---------------- HERO ---------------- */}
-      <section className="hero-x">
+      {/* ---------------- HERO ----------------
+          Statement-led, not product-promo-led: the headline occupies most of
+          the viewport and the products cross THROUGH it (line 1 behind the
+          dominant object, line 2 in front). Cream field, not pink — the
+          products carry the colour. */}
+      <section className="hx">
         <HeroCollage>
-          <div className="hx-type" aria-hidden="true">
-            <span className="hx-line hx-a">ARCU</span>
-            <span className="hx-line hx-b">BED</span>
-          </div>
-          <h1 className="visually-hidden">Arcubed — hand-crocheted bags, made to order in Jordan</h1>
+          <div className="hx-stage">
+            <h1 className="hx-h">
+              <MaskReveal as="span" className="hx-line hx-l1">MORE THAN</MaskReveal>
+              <MaskReveal as="span" className="hx-line hx-l2" delay={140}>A BAG.</MaskReveal>
+            </h1>
 
-          {heroLead ? (
-            <figure className="hx-obj hx-lead">
-              <Image src={cutSrc(heroLead)} alt={altFor(nova!, "Gold")} width={1200}
-                     height={Math.round(1200 / heroLead.ratio)} priority sizes="(max-width:780px) 78vw, 40vw" />
+            {heroLead ? (
+              <figure className="hx-obj hx-lead">
+                <Image src={cutSrc(heroLead)} alt={altFor(nova!, "Black")} width={1200}
+                       height={Math.round(1200 / heroLead.ratio)} priority
+                       sizes="(max-width:780px) 74vw, 42vw" />
+              </figure>
+            ) : null}
+            {heroLeft ? (
+              <figure className="hx-obj hx-left">
+                <Image src={cutSrc(heroLeft, true)} alt={altFor(miniLuna!, "Red")} width={600}
+                       height={Math.round(600 / heroLeft.ratio)} sizes="(max-width:780px) 40vw, 19vw" />
+              </figure>
+            ) : null}
+            {heroRight ? (
+              <figure className="hx-obj hx-right">
+                <Image src={cutSrc(heroRight, true)} alt={altFor(nova!, "Silver")} width={600}
+                       height={Math.round(600 / heroRight.ratio)} sizes="(max-width:780px) 34vw, 16vw" />
+              </figure>
+            ) : null}
+            {/* Texture layer, not a fourth bag — depth without a fourth PNG. */}
+            <figure className="hx-obj hx-tex" aria-hidden="true">
+              <Image src={TEXTURES.metallic.src} alt="" width={600}
+                     height={Math.round(600 / TEXTURES.metallic.ratio)} sizes="20vw" />
             </figure>
-          ) : null}
-          {heroLeft ? (
-            <figure className="hx-obj hx-left">
-              <Image src={cutSrc(heroLeft, true)} alt={altFor(miniLuna!, "Red")} width={600}
-                     height={Math.round(600 / heroLeft.ratio)} sizes="(max-width:780px) 42vw, 20vw" />
-            </figure>
-          ) : null}
-          {heroRight ? (
-            <figure className="hx-obj hx-right">
-              <Image src={cutSrc(heroRight, true)} alt={altFor(nova!, "Silver")} width={600}
-                     height={Math.round(600 / heroRight.ratio)} sizes="(max-width:780px) 38vw, 18vw" />
-            </figure>
-          ) : null}
-          {heroLow ? (
-            <figure className="hx-obj hx-low">
-              <Image src={cutSrc(heroLow, true)} alt={altFor(vault!, "Olive Green")} width={600}
-                     height={Math.round(600 / heroLow.ratio)} sizes="(max-width:780px) 40vw, 17vw" />
-            </figure>
-          ) : null}
+          </div>
         </HeroCollage>
 
         <div className="hx-meta">
-          <p className="ed-kicker">Hand-crocheted · Made to order</p>
-          <Link className="ed-link" href="/shop">Shop the collection</Link>
+          <p className="hx-eyebrow">Handmade in small batches</p>
+          <p className="hx-sub">Objects shaped by colour, texture and individuality.</p>
+          <Link className="hx-cta" href="/shop">
+            Explore the collection <span aria-hidden="true">→</span>
+          </Link>
         </div>
       </section>
 

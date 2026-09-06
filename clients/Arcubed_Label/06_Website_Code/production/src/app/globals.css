@@ -674,59 +674,12 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
    ========================================================================== */
 
 /* ---------- hero collage ---------- */
-.hero-x { position: relative; background: var(--blush); overflow: hidden; }
-.hero-collage {
-  --p: 0;
-  position: relative;
-  height: clamp(560px, 88vh, 940px);
-  display: flex; align-items: center; justify-content: center;
-}
-.hx-type {
-  display: flex; flex-direction: column; align-items: center;
-  line-height: 0.76; text-align: center; pointer-events: none;
-  /* Wordmark lifts very slightly slower than the objects — parallax depth. */
-  transform: translateY(calc(var(--p) * -3%));
-}
-.hx-line {
-  position: relative;
-  font-family: var(--font-head); font-weight: 400;
-  font-size: clamp(72px, 19vw, 250px); letter-spacing: -0.05em; color: var(--primary);
-}
 /* The composition: ARCU sits behind the lead object, BED in front of it. */
-.hx-a { z-index: 1; }
-.hx-b { z-index: 3; }
 
-.hx-obj { position: absolute; margin: 0; }
-.hx-obj img { width: 100%; height: auto; display: block; }
 
 /* Dominant piece — centred, between the two lines. */
-.hx-lead {
-  z-index: 2; width: min(40vw, 500px);
-  left: 50%; top: 50%;
-  transform: translate(-50%, calc(-46% + var(--p) * -8%)) rotate(-1deg);
-}
 /* Supporting pieces: smaller, cropped by the edges, drifting at their own
    rates and directions so the composition has depth rather than motion. */
-.hx-left {
-  z-index: 4; width: min(21vw, 260px);
-  left: -3%; bottom: 12%;
-  transform: translateY(calc(var(--p) * 14%)) rotate(3deg);
-}
-.hx-right {
-  z-index: 0; width: min(19vw, 240px);
-  right: 2%; top: 9%;
-  transform: translateY(calc(var(--p) * -16%)) rotate(-4deg);
-}
-.hx-low {
-  z-index: 4; width: min(17vw, 210px);
-  right: 16%; bottom: -6%;
-  transform: translateY(calc(var(--p) * 10%)) rotate(2deg);
-}
-.hx-meta {
-  position: absolute; z-index: 5; left: 0; right: 0; bottom: 26px;
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 16px; padding: 0 clamp(16px, 4vw, 54px);
-}
 
 /* ---------- statement ---------- */
 .st {
@@ -859,13 +812,6 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
    Not a stack: type grows relative to the viewport, the lead object overlaps
    it harder, and supporting pieces crop off both edges. */
 @media (max-width: 859px) {
-  .hero-collage { height: 74vh; }
-  .hx-line { font-size: 25vw; }
-  .hx-lead { width: 62vw; transform: translate(-50%, calc(-46% + var(--p) * -6%)) rotate(-1deg); }
-  .hx-left { width: 36vw; left: -8%; bottom: 14%; }
-  .hx-right { width: 32vw; right: -7%; top: 11%; }
-  .hx-low { width: 30vw; right: 8%; bottom: -4%; }
-  .hx-meta { flex-direction: column; align-items: flex-start; gap: 10px; bottom: 18px; }
 
   .st-line { font-size: 16vw; }
   .st-line-out { margin-left: 10%; }
@@ -916,10 +862,10 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 }
 .sx-price { color: var(--primary); font-weight: 600; white-space: nowrap; }
 /* Distinct field + crop per product. */
-.sx-a .sx-media { background: #f2ece3; aspect-ratio: 16 / 11; }
-.sx-b .sx-media { background: #e6ded2; aspect-ratio: 4 / 5; }
+.sx-a .sx-media { background: #E8E2D6; aspect-ratio: 16 / 11; }
+.sx-b .sx-media { background: #C7D0C2; aspect-ratio: 4 / 5; }
 .sx-c .sx-media { background: var(--blush); aspect-ratio: 1 / 1; }
-.sx-d .sx-media { background: #ece5da; aspect-ratio: 5 / 6; }
+.sx-d .sx-media { background: #D9C7C0; aspect-ratio: 5 / 6; }
 @media (min-width: 860px) {
   .sx-grid { grid-template-columns: repeat(12, 1fr); align-items: start; }
   .sx-a { grid-column: 1 / span 7; }
@@ -1169,3 +1115,113 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 .ct-sent-line { font-family: var(--font-head); font-size: clamp(24px, 3.4vw, 38px); color: var(--primary); margin: 0 0 12px; }
 .ct-sent-note { margin: 0; font-size: 15px; line-height: 1.6; color: var(--muted); max-width: 40ch; }
 .ct-sent-note a { color: var(--primary); border-bottom: 1px solid var(--primary); }
+
+/* ==========================================================================
+   HERO — brand statement
+   Reference-1 principles translated to Arcubed: enormous type, products
+   crossing through it, asymmetric composition, strong negative space, small
+   secondary copy carrying hierarchy. Cream ground so the PRODUCTS supply the
+   colour — the site must not read as "pink background everywhere".
+   ========================================================================== */
+.hx { position: relative; background: var(--bg); overflow: hidden; }
+.hero-collage { --p: 0; position: relative; }
+.hx-stage {
+  position: relative;
+  height: clamp(540px, 88vh, 940px);
+  display: flex; flex-direction: column; justify-content: center;
+  padding: clamp(20px, 6vh, 70px) clamp(16px, 5vw, 90px) clamp(120px, 17vh, 190px);
+}
+.hx-h { margin: 0; display: flex; flex-direction: column; align-items: flex-start; line-height: 0.8; }
+.hx-line {
+  display: block; position: relative;
+  font-family: var(--font-head); font-weight: 400;
+  font-size: clamp(50px, 11.4vw, 176px); letter-spacing: -0.045em;
+  color: var(--primary);
+}
+/* The composition: line 1 sits BEHIND the dominant object, line 2 in front. */
+.hx-l1 { z-index: 1; }
+.hx-l2 { z-index: 3; margin-left: clamp(0px, 9vw, 170px); }
+
+.hx-obj { position: absolute; margin: 0; }
+.hx-obj img { width: 100%; height: auto; display: block; }
+/* Dominant piece — crosses the headline, slightly right of centre so the
+   composition is asymmetric rather than balanced. */
+.hx-lead {
+  z-index: 2; width: min(38vw, 500px);
+  right: clamp(2%, 6vw, 9%); top: 46%;
+  transform: translateY(calc(-50% + var(--p) * -7%));
+}
+/* Cropped by the left edge — a fragment, not a floating PNG. */
+.hx-left {
+  z-index: 4; width: min(19vw, 250px);
+  left: -4%; bottom: 13%;
+  transform: translateY(calc(var(--p) * 13%));
+}
+/* Entering from the opposite edge, small, behind everything. */
+.hx-right {
+  z-index: 0; width: min(16vw, 205px);
+  right: 8%; top: 13%;
+  transform: translateY(calc(var(--p) * -18%));
+}
+/* Texture layer rather than a fourth bag. */
+.hx-tex {
+  z-index: 0; width: min(13vw, 168px);
+  left: clamp(1%, 4vw, 6%); top: -10%;
+  height: clamp(150px, 26vh, 250px); overflow: hidden;
+  transform: translateY(calc(var(--p) * -12%));
+}
+.hx-tex img { height: 100%; width: 100%; object-fit: cover; }
+.hx-meta {
+  position: absolute; z-index: 5; left: 0; right: 0; bottom: clamp(20px, 4vh, 44px);
+  display: grid; gap: 6px;
+  padding: 0 clamp(16px, 5vw, 90px);
+  grid-template-columns: 1fr auto; align-items: end;
+}
+.hx-eyebrow {
+  grid-column: 1; margin: 0;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--primary); opacity: 0.62;
+}
+.hx-sub {
+  grid-column: 1; margin: 0; max-width: 30ch;
+  font-size: 14.5px; line-height: 1.5; color: var(--primary); opacity: 0.78;
+}
+.hx-cta {
+  grid-column: 2; grid-row: 1 / span 2; align-self: end;
+  display: inline-flex; align-items: center; gap: 9px; min-height: 44px;
+  font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--primary); border-bottom: 1.5px solid var(--primary); padding-bottom: 5px;
+  transition: gap 0.3s var(--ease-ui);
+}
+.hx-cta:hover { gap: 15px; }
+
+/* ---------- mask reveal primitive ---------- */
+.mr { display: block; }
+.mr-inner { display: block; }
+.js .mr { overflow: hidden; }
+.js .mr .mr-inner {
+  display: block;
+  transform: translateY(102%);
+  transition: transform 0.95s var(--ease-gentle);
+  transition-delay: var(--mr-delay, 0ms);
+}
+.js .mr.is-in .mr-inner { transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) {
+  .js .mr { overflow: visible; }
+  .js .mr .mr-inner, .js .mr.is-in .mr-inner { transform: none; transition: none; }
+}
+
+@media (max-width: 859px) {
+  /* Mobile is recomposed, not shrunk: fewer objects, harder cropping, the
+     headline dominating. */
+  /* Headline pinned toward the lower third so the top isn't a void, and the
+     supporting object moved clear of the caption it was sitting behind. */
+  .hx-stage { height: 72vh; padding: 0 16px clamp(120px, 17vh, 165px); justify-content: flex-end; }
+  .hx-line { font-size: 17.5vw; letter-spacing: -0.05em; }
+  .hx-l2 { margin-left: 14%; }
+  .hx-lead { width: 78vw; right: -16%; top: 34%; }
+  .hx-left { width: 30vw; left: auto; right: 4%; bottom: 20%; }
+  .hx-right, .hx-tex { display: none; }
+  .hx-meta { grid-template-columns: 1fr; gap: 10px; }
+  .hx-cta { grid-column: 1; grid-row: auto; }
+}
