@@ -12,7 +12,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getActiveBags } from "@/lib/repository";
 import { formatMoney } from "@/lib/site-settings";
-import { framesForColour, resolveMedia, cutSrc, TEXTURES, altFor } from "@/lib/product-media";
+import { framesForColour, resolveMedia, cutSrc, tileSrc, TEXTURES, altFor } from "@/lib/product-media";
 import ScrollStory from "@/components/home/ScrollStory";
 import type { Bag } from "@/lib/types";
 import "./home.css";
@@ -31,22 +31,40 @@ export const dynamic = "force-dynamic";
  * compositing them before this list was written, which is also why nothing
  * here sits on navy.
  */
-const COLLECTION: { slug: string; product: string; colour: string; field: string }[] = [
+const COLLECTION: { slug: string; product: string; colour: string; field: string; forcePhoto?: true }[] = [
+  // Sequenced as a 4-column grid, not listed. Each row alternates warm and
+  // cool, no two neighbours share a hue family in either direction, no
+  // product clumps, and each field is picked against its own bag's colour —
+  // cool grounds under the golds, warm grounds under the silvers and blacks.
+  // The two Loco tiles are photographic (their fringe defeats a matte) so
+  // they carry the studio grey; they are placed diagonally rather than in the
+  // same column, which was reading as a grey block.
   { slug: "nova", product: "Nova", colour: "Gold", field: "#8fa5b8" },
   { slug: "mini-luna", product: "Mini Luna", colour: "Red", field: "#8d9b7a" },
   { slug: "vault", product: "Vault", colour: "Olive Green", field: "#d9d3cc" },
-  { slug: "nova", product: "Nova", colour: "Black", field: "#e3c98a" },
-  { slug: "mini-luna", product: "Mini Luna", colour: "Silver", field: "#d89a7a" },
-  { slug: "vault", product: "Vault", colour: "Brown", field: "#9db4c8" },
-  { slug: "nova", product: "Nova", colour: "Rose Gold", field: "#7e8f6f" },
-  { slug: "loco", product: "Loco", colour: "Brown", field: "#c9b8a4" },
-  { slug: "mini-luna", product: "Mini Luna", colour: "Gold", field: "#7e93a8" },
-  { slug: "nova", product: "Nova", colour: "Silver", field: "#c98f95" },
-  { slug: "vault", product: "Vault", colour: "Light Brown", field: "#a9b89a" },
-  { slug: "loco", product: "Loco", colour: "Burgundy", field: "#bfae9a" },
-  { slug: "mini-luna", product: "Mini Luna", colour: "Black", field: "#e0c07f" },
+  { slug: "nova", product: "Nova", colour: "Black", field: "#d6b06a" },
+
+  { slug: "mini-luna", product: "Mini Luna", colour: "Silver", field: "#c07f5f" },
+  // Full photograph, not a cut-out. Its matte traps a patch of seamless
+  // inside the hand slot that is connected to the region running round the
+  // bag, so it cannot be lifted as an enclosed patch — and the threshold
+  // that would catch it also starts erasing the silver bags, whose bodies
+  // sit within about 29 RGB of the cream backdrop. An honest photographic
+  // tile beats a cut-out with a white hole in its handle.
+  { slug: "vault", product: "Vault", colour: "Brown", field: "#7e93a8", forcePhoto: true },
   { slug: "nova", product: "Nova", colour: "Champagne", field: "#b8a0c0" },
-  { slug: "mini-luna", product: "Mini Luna", colour: "Silver & Gold", field: "#c98f95" },
+  { slug: "loco", product: "Loco", colour: "Brown", field: "#c9b8a4" },
+
+  { slug: "mini-luna", product: "Mini Luna", colour: "Gold", field: "#6f8496" },
+  // Deeper rose: Nova Silver is the palest object in the grid and washed out
+  // against the lighter dusty pink the rhythm originally gave it.
+  { slug: "nova", product: "Nova", colour: "Silver", field: "#a8747c" },
+  { slug: "loco", product: "Loco", colour: "Burgundy", field: "#bfae9a" },
+  { slug: "vault", product: "Vault", colour: "Light Brown", field: "#a9b89a" },
+
+  { slug: "mini-luna", product: "Mini Luna", colour: "Black", field: "#e3c98a" },
+  { slug: "nova", product: "Nova", colour: "Rose Gold", field: "#7e8f6f" },
+  { slug: "mini-luna", product: "Mini Luna", colour: "Silver & Gold", field: "#d89a7a" },
   { slug: "nova", product: "Nova", colour: "Silver & Gold", field: "#96a8bd" },
 ];
 
@@ -62,11 +80,22 @@ const CUSTOM_COLOURS = ["Red", "Gold", "Silver", "Black", "Silver & Gold"];
 
 /** The four forms, with the measured aspect ratio of each silhouette asset
  *  so the row can size them by their real proportions rather than by a box. */
+/**
+ * The four forms. `ratio` is each silhouette asset's measured aspect; `width`
+ * is its share of the row.
+ *
+ * Sizing by WIDTH and letting height fall out of the real ratio is the whole
+ * point of this section: matching them all to one height (the first version)
+ * flattened exactly the differences the section exists to show, and made
+ * Nova — the widest, lowest form — the biggest object on screen. Now Mini
+ * Luna stands tallest, Nova sits lowest and widest, and they share a
+ * baseline, so they read as four objects on a shelf rather than four icons.
+ */
 const SHAPES = [
-  { slug: "nova", name: "Nova", ratio: 1.8688 },
-  { slug: "vault", name: "Vault", ratio: 1.3877 },
-  { slug: "mini-luna", name: "Mini Luna", ratio: 1.0755 },
-  { slug: "loco", name: "Loco", ratio: 1.5453 },
+  { slug: "nova", name: "Nova", ratio: 2.0783, width: 1.0, note: "Soft, closed, low" },
+  { slug: "vault", name: "Vault", ratio: 1.3877, width: 0.9, note: "Wide, structured" },
+  { slug: "mini-luna", name: "Mini Luna", ratio: 1.0755, width: 0.76, note: "Arch handle" },
+  { slug: "loco", name: "Loco", ratio: 1.5453, width: 0.94, note: "Fringed" },
 ];
 
 /** A specific colourway's first frame, falling back to the product's best. */
@@ -107,10 +136,12 @@ export default async function HomePage() {
     if (!bag || !f) return null;
     return {
       ...item,
-      // Loco's cut-outs failed QA (its fringe defeats a clean matte), so those
-      // tiles show the full photograph instead of a forced extraction.
-      cut: cutSrc(f),
-      isCut: f.cutOk,
+      // The tile variant, not the storefront cut-out: on a coloured field the
+      // ordinary matte shows as a pale halo. Loco has no tile asset (its
+      // fringe defeats a clean matte) and falls back to the full photograph,
+      // which is the honest option for it anyway.
+      cut: item.forcePhoto ? f.photo : tileSrc(f),
+      isCut: f.cutOk && !item.forcePhoto,
       ratio: f.ratio,
       alt: altFor(bag, item.colour),
       price: formatMoney(bag.basePrice, "JOD"),
@@ -213,9 +244,11 @@ export default async function HomePage() {
                   style={{
                     ["--sil" as string]: `url(/media/silhouette-${sh.slug}.webp)`,
                     ["--ratio" as string]: sh.ratio,
+                    ["--w" as string]: sh.width,
                   }}
                 />
                 <em>{sh.name}</em>
+                <i>{sh.note}</i>
               </li>
             ))}
           </ul>
@@ -229,42 +262,55 @@ export default async function HomePage() {
         <div className="phase phase-cust">
           <p className="story-label story-label-navy"><span>03</span> Make it yours</p>
 
-          <div className="cust-bag">
-            {customFrames.map((cf, i) => (
-              <Image
-                key={cf.colour}
-                src={cutSrc(cf.frame)}
-                alt={miniLuna ? altFor(miniLuna, cf.colour) : cf.colour}
-                width={1100}
-                height={Math.round(1100 / cf.frame.ratio)}
-                sizes="(max-width: 860px) 86vw, 42vw"
-                style={{
-                  ["--w0" as string]: (i * 0.09).toFixed(3),
-                  ["--w1" as string]: (i * 0.09 + 0.09).toFixed(3),
-                }}
-              />
-            ))}
-          </div>
-
-          <div className="cust-steps">
-            <p className="cust-step cust-step-1">Choose a colour.</p>
-            <p className="cust-step cust-step-2">Choose the details.</p>
-            <p className="cust-step cust-step-3">Choose the size.</p>
-          </div>
-
-          <ul className="cust-names">
+          {/* The colour name set oversized and running BEHIND the object — the
+              same device as the hero. It is what gives this phase something
+              to look at besides a bag on an empty field, and it makes the
+              colour change a compositional event rather than a swap. */}
+          <ul className="cust-word">
             {customFrames.map((cf, i) => (
               <li
                 key={cf.colour}
                 style={{
-                  ["--w0" as string]: (i * 0.09).toFixed(3),
-                  ["--w1" as string]: (i * 0.09 + 0.09).toFixed(3),
+                  // Starts after the field has finished wiping in, and ends
+                  // before the "details" line takes over.
+                  ["--w0" as string]: (0.17 + i * 0.06).toFixed(3),
+                  ["--w1" as string]: (0.17 + i * 0.06 + 0.06).toFixed(3),
                 }}
               >
                 {cf.colour}
               </li>
             ))}
           </ul>
+
+          <div className="cust-bag">
+            {customFrames.map((cf, i) => (
+              <Image
+                key={cf.colour}
+                // The ORDINARY cut-out here, not the tile variant. The tile
+                // assets exist to stop a pale halo on mid-tone fields; on
+                // this pale pink field there is no halo to stop, and their
+                // harder shadow cut shows as a ragged grey edge at this
+                // scale. Right asset, right field.
+                src={cutSrc(cf.frame)}
+                alt={miniLuna ? altFor(miniLuna, cf.colour) : cf.colour}
+                width={1200}
+                height={Math.round(1200 / cf.frame.ratio)}
+                sizes="(max-width: 860px) 88vw, 50vw"
+                style={{
+                  // Starts after the field has finished wiping in, and ends
+                  // before the "details" line takes over.
+                  ["--w0" as string]: (0.17 + i * 0.06).toFixed(3),
+                  ["--w1" as string]: (0.17 + i * 0.06 + 0.06).toFixed(3),
+                }}
+              />
+            ))}
+          </div>
+
+          <div className="cust-steps">
+            <p className="cust-step cust-step-1">Choose<br />a colour.</p>
+            <p className="cust-step cust-step-2">Choose<br />the details.</p>
+            <p className="cust-step cust-step-3">Make it<br />yours.</p>
+          </div>
 
           <p className="cust-honest">
             Straps, chains and sizes are chosen on the product page. We don&rsquo;t picture them
@@ -295,9 +341,12 @@ export default async function HomePage() {
           colourway at once, each on its own field. The tile IS the design —
           no card, no border, no shadow, no button over the image. */}
       <section className="grid-wrap" id="collection">
+        {/* One line, not an introduction. The jump from the quiet pink frame
+            to a wall of colour is the transition; a big heading in between
+            only delays it. */}
         <div className="grid-head">
-          <p className="grid-kicker">The collection</p>
-          <h2 className="grid-title">Every colour<br />we have made.</h2>
+          <h2 className="grid-kicker">The collection</h2>
+          <p className="grid-title">Every colour we have made.</p>
         </div>
         <ul className="col-grid">
           {collection.map((item) => (

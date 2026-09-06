@@ -48,6 +48,16 @@ export default function ScrollStory({ children }: { children: ReactNode }) {
       const p = travel <= 0 ? 0 : Math.min(1, Math.max(0, -el.getBoundingClientRect().top / travel));
       st.style.setProperty("--p", p.toFixed(4));
       for (const [name, a, b] of BANDS) st.style.setProperty(name, band(p, a, b).toFixed(4));
+
+      // Drives the header, which lives outside this component. It belongs to
+      // the hero composition at the top, gets out of the way while the story
+      // is playing, and comes back as a minimal bar once the story releases
+      // into the collection — where a visitor actually needs to navigate
+      // again.
+      const named = p >= 0.995 ? "done" : p > 0.04 ? "running" : "hero";
+      if (document.documentElement.dataset.story !== named) {
+        document.documentElement.dataset.story = named;
+      }
     };
 
     const onScroll = () => {
@@ -63,6 +73,7 @@ export default function ScrollStory({ children }: { children: ReactNode }) {
       window.addEventListener("resize", onScroll);
     };
     const stop = () => {
+      delete document.documentElement.dataset.story;
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
       if (raf) cancelAnimationFrame(raf);

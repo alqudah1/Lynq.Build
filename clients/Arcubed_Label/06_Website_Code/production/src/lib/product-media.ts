@@ -84,6 +84,23 @@ export function cutSrc(frame: Frame, small = false): string {
   return small ? frame.cutSmall : frame.cut;
 }
 
+/**
+ * Field-safe cut-out for placing a bag on a COLOURED background.
+ *
+ * The ordinary cut-out is matted against the light studio seamless, so its
+ * anti-aliased rim still carries that background's colour and its contact
+ * shadow survives as a broad pale region. Both are invisible on cream and
+ * both read as a milky halo on a mid-tone field. The tile asset
+ * (scripts/build-tile-cutouts.mjs) unmixes the rim and drops the shadow.
+ *
+ * Frames whose cut-out failed QA have no tile asset and fall back to the full
+ * photograph, which is the honest option for them anyway.
+ */
+export function tileSrc(frame: Frame, small = false): string {
+  if (!frame.cutOk) return small ? frame.photoSmall : frame.photo;
+  return `/media/${frame.frameId}-tile-${small ? 600 : 1200}.webp`;
+}
+
 export function hasCleanCut(frame: Frame | undefined | null): boolean {
   return Boolean(frame?.cutOk);
 }

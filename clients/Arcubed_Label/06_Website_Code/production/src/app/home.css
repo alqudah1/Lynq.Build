@@ -15,11 +15,22 @@
    it has to read as part of the poster, so it sits ON the pink with no
    background and scrolls away with the composition. Scoped by :has() so no
    other route is touched. */
+/* The header is part of the hero composition, not a bar sitting on top of it:
+   no background, no blur, no border. It is FIXED rather than absolute so it
+   can leave and come back without shifting the layout — left/right pinned
+   because a fixed flex row with no width collapses onto its own wordmark. */
 body:has(.home) .site-header {
-  /* left/right pinned: an absolutely positioned flex row with no width
-     collapses to its content, which pulled the nav on top of the wordmark. */
-  position: absolute; left: 0; right: 0; background: none;
+  position: fixed; left: 0; right: 0; top: 0; background: none;
   backdrop-filter: none; -webkit-backdrop-filter: none;
+  transition: transform 0.4s var(--ease-ui), background-color 0.4s var(--ease-ui), padding 0.4s var(--ease-ui);
+}
+/* Out of the way while the story plays — it would otherwise sit over the
+   macro and the navy field with nothing to do. */
+html[data-story="running"] body:has(.home) .site-header { transform: translateY(-110%); }
+/* Back once the story releases into the collection, where navigating is the
+   point again. Minimal: brand pink, tighter, still no border or shadow. */
+html[data-story="done"] body:has(.home) .site-header {
+  background: var(--pink); padding-top: 12px; padding-bottom: 12px;
 }
 body:has(.home) .site-header .nav a,
 body:has(.home) .site-header .cart-icon,
@@ -170,16 +181,21 @@ body:has(.home) main { padding-top: 0; }
   clip-path: inset(calc(100% - min(1, var(--b-shape) * 2.8) * 100%) 0 0 0);
 }
 .shape-row {
-  position: absolute; z-index: 2; left: 0; right: 0; top: 50%;
+  position: absolute; z-index: 2; left: 0; right: 0; top: 54%;
   display: flex; align-items: flex-end; justify-content: center;
-  gap: clamp(14px, 3.2vw, 58px); margin: 0; padding: 0 clamp(20px, 3vw, 40px);
-  list-style: none; transform: translateY(-46%);
+  gap: clamp(14px, 3.4vw, 62px); margin: 0; padding: 0 clamp(20px, 3vw, 40px);
+  list-style: none; transform: translateY(-50%);
+  /* One row width drives every form's size, so the proportions between them
+     stay true at any viewport. */
+  --base: clamp(104px, 22.5vw, 330px);
 }
 /* Each form arrives on its own beat, so the row assembles rather than
    appearing at once — and all four settle together, in line, by the time the
    wipe finishes. */
 .shape-item {
-  display: flex; flex-direction: column; align-items: center; gap: 18px;
+  /* Names sit under the shared baseline, not under each object, so the row
+     keeps one clean type line while the forms sit at their real heights. */
+  display: flex; flex-direction: column; align-items: flex-start; gap: 0;
   --settle: calc(1 - min(1, var(--b-shape) * 2.9));
   transform: translateY(calc(var(--settle) * 14vh));
 }
@@ -190,11 +206,8 @@ body:has(.home) main { padding-top: 0; }
 
 /* Alpha mask filled with brand pink — the asset carries no colour of its own. */
 .sil {
-  /* 26vh overflowed the viewport: four forms whose widths sum by their own
-     ratios, and Nova is nearly 1.9:1. The row has to hold all four whole —
-     a cropped silhouette is the one thing this section cannot show. */
-  display: block; height: clamp(88px, 20.5vh, 196px);
-  width: calc(clamp(88px, 20.5vh, 196px) * var(--ratio));
+  display: block; width: calc(var(--base) * var(--w)); aspect-ratio: var(--ratio);
+  margin-bottom: 20px;
   background: var(--pink);
   -webkit-mask-image: var(--sil); mask-image: var(--sil);
   -webkit-mask-size: contain; mask-size: contain;
@@ -202,8 +215,13 @@ body:has(.home) main { padding-top: 0; }
   -webkit-mask-position: center bottom; mask-position: center bottom;
 }
 .shape-item em {
-  font-style: normal; color: var(--pink); font-size: clamp(10px, 0.82vw, 13px);
-  font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase;
+  font-style: normal; color: var(--pink); font-family: var(--font-head);
+  font-size: clamp(15px, 1.5vw, 25px); letter-spacing: -0.01em; line-height: 1.1;
+}
+.shape-item i {
+  font-style: normal; color: var(--pink); opacity: 0.55; margin-top: 5px;
+  font-size: clamp(9px, 0.72vw, 11.5px); font-weight: 600; letter-spacing: 0.18em;
+  text-transform: uppercase;
 }
 .shape-note {
   position: absolute; z-index: 3; bottom: 8vh; left: clamp(20px, 4vw, 52px); margin: 0;
@@ -216,13 +234,39 @@ body:has(.home) main { padding-top: 0; }
    Back to the pink field. The object holds still and its colour changes. */
 .phase-cust {
   z-index: 10; background: var(--pink);
-  clip-path: inset(0 0 calc(100% - min(1, var(--b-cust) * 3) * 100%) 0);
+  /* Finishes early: the colour sequence begins right after it, and at the
+   slower rate the first two colourways played while the field was still
+   arriving — only the last two were ever seen on a settled composition. */
+  clip-path: inset(0 0 calc(100% - min(1, var(--b-cust) * 6.5) * 100%) 0);
 }
 .story-label-navy { color: var(--navy); opacity: calc(min(1, var(--b-cust) * 3) - var(--b-final) * 2); }
 
+/* The oversized colour name, behind the object. */
+.cust-word {
+  position: absolute; z-index: 1; left: 3vw; top: 46vh; margin: 0; padding: 0;
+  list-style: none; width: 94vw; height: 0;
+}
+.cust-word li {
+  /* Clipped well inside the object's left edge, so a long name ends behind
+     the bag rather than reappearing through the transparent gaps in its
+     cut-out — "SILVER & GOLD" was leaving a stray navy sliver visible in the
+     gap beside the handle. */
+  position: absolute; top: 0; left: 0; white-space: nowrap;
+  max-width: 60vw; overflow: hidden;
+  font-family: var(--font-head); font-weight: 600; color: var(--navy);
+  text-transform: uppercase; letter-spacing: -0.045em; line-height: 0.82;
+  font-size: clamp(56px, 12.5vw, 186px);
+  opacity: clamp(0, min(calc((var(--b-cust) - var(--w0)) * 70), calc((var(--w1) - var(--b-cust)) * 70)), 1);
+}
+
 .cust-bag {
-  position: absolute; z-index: 2; left: 4vw; top: 50%; width: 46vw;
-  transform: translateY(-52%);
+  /* Large, off-centre and cropped by the bottom edge. The first version sat
+     it small and centred with the copy opposite, which left a dead middle and
+     no tension between the two. */
+  /* Pushed off the right edge so the colour name reads as a whole
+     phrase before the object takes over the rest of it. */
+  position: absolute; z-index: 2; right: -5vw; top: 15vh; width: 52vw;
+  display: grid;
 }
 .cust-bag img {
   /* All five stacked in one cell; exactly one is opaque at a time. Each
@@ -235,36 +279,30 @@ body:has(.home) main { padding-top: 0; }
   grid-area: 1 / 1; width: 100%; height: auto;
   opacity: clamp(0, min(calc((var(--b-cust) - var(--w0)) * 70), calc((var(--w1) - var(--b-cust)) * 70)), 1);
 }
-.cust-bag { display: grid; }
 /* The last colour holds for the rest of the phase instead of fading out, so
    the bag is still there while the details and size beats play. */
-.cust-bag img:last-child { opacity: clamp(0, calc((var(--b-cust) - 0.36) * 70), 1); }
+.cust-bag img:last-child { opacity: clamp(0, calc((var(--b-cust) - 0.41) * 70), 1); }
+/* The final colour name HOLDS for the rest of the phase rather than fading
+   with its window. The bag on screen is still Silver & Gold through the
+   details and size beats, so the word is still true — and without it the
+   left half of those two beats was an empty pink field, which is the void
+   this whole phase was rebuilt to remove. */
+.cust-word li:last-child { opacity: clamp(0, calc((var(--b-cust) - 0.41) * 70), 1); }
 
-/* Steps and the colour name are separate rows, not one stack: overlapping
-   percentage offsets put the colour name straight through the step text. */
-.cust-steps { position: absolute; z-index: 3; right: 5vw; top: 40%; text-align: right; }
+.cust-steps { position: absolute; z-index: 3; left: 3vw; top: 15vh; }
 .cust-step {
-  margin: 0; font-family: var(--font-head); color: var(--navy);
-  font-size: clamp(24px, 3.6vw, 58px); line-height: 1.06; letter-spacing: -0.02em;
+  margin: 0; font-family: var(--font-head); color: var(--navy); font-weight: 600;
+  font-size: clamp(26px, 4.6vw, 74px); line-height: 0.92; letter-spacing: -0.035em;
+  text-transform: uppercase;
 }
-.cust-step-1 { opacity: clamp(0, min(calc((var(--b-cust) - 0.02) * 12), calc((0.48 - var(--b-cust)) * 12)), 1); }
-.cust-step-2 { opacity: clamp(0, min(calc((var(--b-cust) - 0.46) * 12), calc((0.76 - var(--b-cust)) * 12)), 1); }
-.cust-step-3 { opacity: clamp(0, calc((var(--b-cust) - 0.74) * 12), 1); }
-.cust-step-2, .cust-step-3 { position: absolute; right: 0; top: 0; }
-
-.cust-names {
-  position: absolute; z-index: 3; right: 5vw; top: 58%; margin: 0; padding: 0; list-style: none;
-  text-align: right;
-}
-.cust-names li {
-  position: absolute; right: 0; top: 0; white-space: nowrap;
-  font-size: clamp(10px, 0.82vw, 13px); font-weight: 600; letter-spacing: 0.22em;
-  text-transform: uppercase; color: var(--navy); opacity: clamp(0, min(calc((var(--b-cust) - var(--w0)) * 70), calc((var(--w1) - var(--b-cust)) * 70)), 1);
-}
+.cust-step-1 { opacity: clamp(0, min(calc((var(--b-cust) - 0.02) * 26), calc((0.47 - var(--b-cust)) * 26)), 1); }
+.cust-step-2 { opacity: clamp(0, min(calc((var(--b-cust) - 0.47) * 26), calc((0.75 - var(--b-cust)) * 26)), 1); }
+.cust-step-3 { opacity: clamp(0, calc((var(--b-cust) - 0.75) * 26), 1); }
+.cust-step-2, .cust-step-3 { position: absolute; left: 0; top: 0; }
 
 .cust-honest {
-  position: absolute; z-index: 3; right: 5vw; bottom: 9vh; margin: 0; max-width: 34ch;
-  text-align: right; font-size: 12.5px; line-height: 1.6; color: var(--navy); opacity: 0.62;
+  position: absolute; z-index: 3; left: 3vw; bottom: 8vh; margin: 0; max-width: 32ch;
+  font-size: 12.5px; line-height: 1.6; color: var(--navy); opacity: 0.6;
 }
 
 /* ---------------- 04 THE FINISHED OBJECT ---------------- */
@@ -288,10 +326,13 @@ body:has(.home) main { padding-top: 0; }
 /* ---------------- COLLECTION ----------------
    Released from the sticky stage. The tile is the design: a colour field, the
    object, and its name — no card shell, no border, no shadow. */
-.grid-wrap { background: var(--pink); padding: clamp(60px, 11vh, 130px) clamp(16px, 3vw, 40px) clamp(70px, 12vh, 150px); }
-.grid-head { padding: 0 clamp(4px, 1vw, 12px) clamp(34px, 5vh, 60px); }
-.grid-kicker { margin: 0 0 14px; font-size: clamp(10px, 0.82vw, 13px); font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--navy); opacity: 0.6; }
-.grid-title { font-family: var(--font-head); color: var(--navy); font-weight: 600; text-transform: uppercase; letter-spacing: -0.035em; line-height: 0.88; font-size: clamp(34px, 6.4vw, 96px); }
+/* Short lead-in on purpose: the contrast between the quiet final frame and
+   the colour wall IS the transition, so the products should arrive almost
+   immediately rather than after another introduction. */
+.grid-wrap { background: var(--pink); padding: clamp(34px, 6vh, 76px) clamp(16px, 3vw, 40px) clamp(70px, 12vh, 150px); }
+.grid-head { display: flex; align-items: baseline; justify-content: space-between; gap: 20px; padding: 0 clamp(4px, 1vw, 12px) clamp(18px, 2.6vh, 30px); }
+.grid-kicker { margin: 0; font-size: clamp(10px, 0.82vw, 13px); font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--navy); }
+.grid-title { font-family: var(--font-head); color: var(--navy); font-weight: 400; font-size: clamp(14px, 1.5vw, 20px); opacity: 0.62; }
 
 .col-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(10px, 1.4vw, 20px); }
 .col-tile a { display: block; }
@@ -338,35 +379,69 @@ body:has(.home) main { padding-top: 0; }
 @media (max-width: 860px) {
   .story { height: 320vh; }
   .hero-type { font-size: clamp(48px, 19.5vw, 120px); }
-  .hero-l1 { top: 12vh; left: -0.5vw; }
-  .hero-l2 { top: 24vh; left: 4vw; }
-  .hero-l3 { top: 36vh; left: 0.5vw; }
+  .hero-l1 { top: 10vh; left: -0.5vw; }
+  .hero-l2 { top: 21vh; left: 4vw; }
+  .hero-l3 { top: 32vh; left: 0.5vw; }
   /* The bag must still cross the type on a phone. Sitting it BELOW the
      headline — the first attempt — left the type in one box and the product
      in another, plus a dead band of pink between them. It now runs up into
      the last two lines and off both the right and bottom edges. */
-  .hero-bag { top: 31vh; right: -32vw; width: 122vw; }
+  /* Packed against the band, and still crossing the type. Two things had to
+     be accounted for: the cut-out carries transparent margin below the bag,
+     so the image box bottom is well under the visible base — and moving the
+     object down far enough to close the gap on its own pulled it clear of
+     the headline, which is the one thing the mobile hero must not do. The
+     band came up to meet it instead. */
+  .hero-bag { top: 34.5vh; right: -36vw; width: 130vw; }
   .hero-second { display: none; }
-  .hero-band { gap: 16px; padding-left: 18px; height: 7vh; }
+  /* Taller band on a phone: it is the graphic that closes the composition,
+     and raising it is what removes the gap under the bag without having to
+     inflate the object past the type. */
+  .hero-band { gap: 16px; padding-left: 18px; height: 12vh; }
   .hero-band span:nth-child(3) { display: none; }
   .hero-band figure { aspect-ratio: 1.6 / 1; }
   /* Two rows of two on a phone — four forms in one row would be thumbnails. */
   .shape-row { flex-wrap: wrap; gap: 14px 20px; transform: translateY(-50%); }
   .shape-item { gap: 10px; width: calc(50% - 12px); }
-  .sil { height: clamp(64px, 13vh, 130px); width: calc(clamp(64px, 13vh, 130px) * var(--ratio)); }
+  .shape-row { --base: 38vw; top: 50%; }
+  .sil { margin-bottom: 12px; }
   .mat-note, .shape-note { bottom: 6vh; font-size: clamp(18px, 5.4vw, 28px); max-width: 16ch; }
   .story-label { top: 11vh; }
   /* Customisation stacks on a phone: object above, words below. */
-  .cust-bag { left: 50%; top: 34vh; width: 84vw; transform: translate(-50%, -50%); }
-  .cust-steps { right: auto; left: 6vw; top: 58vh; text-align: left; }
-  .cust-step { font-size: clamp(24px, 8vw, 40px); }
-  .cust-step-2, .cust-step-3 { right: auto; left: 0; }
-  .cust-names { right: auto; left: 6vw; top: 72vh; text-align: left; }
-  .cust-names li { right: auto; left: 0; }
-  .cust-honest { right: auto; left: 6vw; bottom: 6vh; max-width: 30ch; text-align: left; font-size: 11.5px; }
+  /* Clear of the phase label, which sits at 11vh on a phone. */
+  .cust-steps { left: 5vw; top: 18vh; }
+  .cust-step { font-size: clamp(26px, 9.5vw, 46px); }
+  .cust-word { left: 4vw; top: 40vh; }
+  .cust-word li { font-size: clamp(40px, 16vw, 110px); max-width: 88vw; }
+  .cust-bag { right: -14vw; top: 44vh; width: 96vw; }
+  .cust-honest { left: 5vw; bottom: 5vh; max-width: 28ch; font-size: 11.5px; }
   .final-a { top: 20vh; left: 6vw; }
   .final-b { bottom: 20vh; right: 6vw; }
   .final-bag { width: 62vw; }
+}
+
+/* ---------------- tablet portrait ----------------
+   Between the phone and the desktop compositions. The phone rules run up to
+   860px, and at 768 they crop the bag so hard that only the handle and rim
+   are left — the object stops being readable as a bag. Wider viewport, so
+   the object can be whole again. */
+@media (min-width: 700px) and (max-width: 860px) {
+  .hero-type { font-size: clamp(64px, 14vw, 130px); }
+  .hero-l1 { top: 11vh; }
+  .hero-l2 { top: 23vh; left: 8vw; }
+  .hero-l3 { top: 35vh; }
+  .hero-bag { top: 33vh; right: -14vw; width: 92vw; }
+  .hero-second { display: block; left: -4vw; bottom: 14vh; width: 26vw; }
+  .hero-band { height: 9vh; }
+  .hero-band span:nth-child(3) { display: inline; }
+  .shape-row { --base: 21vw; }
+  .shape-row { flex-wrap: nowrap; }
+  .shape-item { width: auto; }
+  .cust-steps { top: 15vh; }
+  .cust-word { top: 44vh; }
+  .cust-word li { font-size: clamp(48px, 13vw, 120px); max-width: 66vw; }
+  .cust-bag { right: -6vw; top: 20vh; width: 62vw; }
+  .final-bag { width: 44vw; }
 }
 
 /* ---------------- reduced motion ----------------
@@ -377,6 +452,8 @@ body:has(.home) main { padding-top: 0; }
    contents are absolutely positioned — the page silently lost most of its
    content for exactly the users who need it plainly. */
 @media (prefers-reduced-motion: reduce) {
+  /* No timeline, so the header simply behaves normally and never hides. */
+  body:has(.home) .site-header { position: sticky; background: var(--pink); transform: none; }
   .story { height: auto; }
   .story-stage { position: static; height: auto; overflow: visible; }
 
@@ -393,7 +470,7 @@ body:has(.home) main { padding-top: 0; }
   /* Anything positioned into the composition returns to normal flow. */
   .hero-type, .hero-type p, .hero-bag, .hero-second, .hero-band,
   .mat-img, .story-label, .mat-note, .shape-row, .shape-note,
-  .cust-bag, .cust-steps, .cust-step, .cust-names, .cust-names li,
+  .cust-bag, .cust-steps, .cust-step, .cust-word, .cust-word li,
   .cust-honest, .final-line, .final-bag {
     position: relative; top: auto; right: auto; bottom: auto; left: auto;
     margin-left: 0; margin-right: 0; text-align: left;
@@ -414,7 +491,7 @@ body:has(.home) main { padding-top: 0; }
   .story-label { margin-bottom: 22px; }
   .story-label-navy { color: var(--pink); }
   .phase-cust, .phase-final { background: var(--pink); }
-  .story-label-navy, .cust-step, .cust-names li, .cust-honest, .final-line { color: var(--navy); }
+  .story-label-navy, .cust-step, .cust-word li, .cust-honest, .final-line { color: var(--navy); }
   .phase-cust .story-label-navy { color: var(--navy); }
 
   .shape-row { display: flex; flex-wrap: wrap; gap: 28px; justify-content: flex-start; }
@@ -425,7 +502,10 @@ body:has(.home) main { padding-top: 0; }
   .cust-bag img { width: calc(20% - 12px); height: auto; }
   .cust-steps { margin-top: 26px; }
   .cust-step { font-size: clamp(22px, 4vw, 40px); }
-  .cust-names { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 18px; }
+  /* The oversized colour names become a plain list once the object is no
+     longer sitting on top of them. */
+  .cust-word { display: flex; flex-wrap: wrap; gap: 4px 22px; width: auto; height: auto; margin-top: 16px; }
+  .cust-word li { font-size: clamp(20px, 3vw, 30px); }
   .cust-honest { max-width: 60ch; margin-top: 20px; }
   .final-bag { width: min(300px, 46%); margin: 26px 0; }
 }

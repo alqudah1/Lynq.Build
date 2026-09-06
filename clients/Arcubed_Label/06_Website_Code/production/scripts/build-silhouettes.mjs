@@ -23,7 +23,13 @@ import sharp from "sharp";
 const THRESHOLD = 200;
 const SOURCES = {
   "mini-luna": "DSC05774",
-  "nova": "DSC05786",
+  // Black Nova, not Gold: the metallic golds matte poorly against a light
+  // seamless and their silhouettes break into stipple at this threshold.
+  // DSC05776/05777 would read far better — they show a handle, and its
+  // through-opening gives Nova a real form — but Nova's handle status is
+  // UNRESOLVED (PRODUCT-GEOMETRY-MAP.md row 5) and is one of the two open
+  // questions for Rand. Using them here would silently answer it.
+  "nova": "DSC05780",
   "vault": "DSC05792",
   "loco": "DSC05765",
 };
