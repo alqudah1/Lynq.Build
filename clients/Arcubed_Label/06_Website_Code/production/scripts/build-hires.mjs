@@ -23,7 +23,18 @@ const SRC = "../../03_Images";
 const OUT = "public/media";
 /** Must match build-media.mjs, so the object box lands in the same space. */
 const MATTE_W = 1600;
-const TARGET = 2400;
+/**
+ * Target width of the BAG, not of the frame.
+ *
+ * Sizing the frame to 2400 meant the extracted object was only whatever
+ * fraction of the frame it happened to fill: the hero cut-out came out at
+ * 1775px, and the homepage draws it at 1022 CSS px, which is under 2x for a
+ * retina display and read as soft. Scaling so the OBJECT lands on the target
+ * makes the number mean what it says.
+ */
+const TARGET = 2600;
+/** Guard on the intermediate full-frame resize, which is what costs memory. */
+const MAX_FRAME_W = 7000;
 const force = process.argv.includes("--force");
 
 let built = 0, skipped = 0;
@@ -42,8 +53,12 @@ for (const frame of allFrames()) {
   const { width: pw, height: ph, channels } = probe.info;
   const alpha = await objectMatte(src, pw, ph, probe.data, channels);
 
-  // Full-resolution colour, downsampled once to the target.
-  const rgbBuf = await sharp(src).rotate().resize({ width: TARGET }).removeAlpha().png().toBuffer();
+  // Scale the frame so the OBJECT lands on TARGET, then extract. Never
+  // enlarged past the original: the frame is 6000px wide, so a bag filling a
+  // third of it can still reach 2600 without inventing detail.
+  const objectFractionOfFrame = a.box.width / pw;
+  const frameW = Math.min(MAX_FRAME_W, Math.round(TARGET / objectFractionOfFrame));
+  const rgbBuf = await sharp(src).rotate().resize({ width: frameW, withoutEnlargement: true }).removeAlpha().png().toBuffer();
   const rm = await sharp(rgbBuf).metadata();
 
   // Matte up to meet it. Blur is applied at probe scale first so the edge
@@ -67,6 +82,6 @@ for (const frame of allFrames()) {
   await sharp(cut).extract(region).webp({ quality: 86, alphaQuality: 92 }).toFile(dst);
   const om = await sharp(dst).metadata();
   built++;
-  console.log(`${frame}  ${om.width}x${om.height}  (was 1200px wide)`);
+  console.log(`${frame}  object ${om.width}x${om.height}  (frame scaled to ${frameW}px)`);
 }
 console.log(`\nbuilt ${built}, skipped ${skipped}`);

@@ -60,78 +60,118 @@ body:has(.home) main { padding-top: 0; }
   transform: translateY(calc(var(--b-enter) * 22vh));
 }
 
-/* ---------------- HERO ---------------- */
+/* ---------------- HERO ----------------
+   Pale pink above, white product ground below, navy for type and one rule.
+   The bag stands on the light. No information bar, no second product. */
+
+.hero-floor {
+  position: absolute; z-index: 0; left: 0; right: 0; bottom: 0; height: 46%;
+  background: var(--paper);
+  transform: translateY(calc(var(--b-enter) * 24vh));
+}
+
 .hero-type {
   /* z-index: auto ON PURPOSE. Giving this wrapper a stacking index put every
-     line inside its own context, so line 3 could never rise above the bag no
-     matter what index it carried — it came out behind and got clipped. The
-     lines carry their own indices instead. */
+     line inside its own context, so the anchor line could never rise above
+     the bag no matter what index it carried. */
   position: absolute; inset: 0; z-index: auto; pointer-events: none;
-  font-family: var(--font-head); font-weight: 600; color: var(--navy);
-  /* Display optical size — the whole point of loading the axis. */
-  font-variation-settings: "opsz" 144, "SOFT" 0;
-  text-transform: uppercase; letter-spacing: -0.055em; line-height: 0.78;
-  font-size: clamp(56px, 15.5vw, 232px);
+  margin: 0; color: var(--navy);
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(50px, 11.1vw, 164px);
 }
-/* Targets the line elements by role, not by tag: these were <p> and became
-   <span> inside a real <h1>, at which point a `p` selector silently stopped
-   matching and all three lines collapsed onto one inline row across the nav. */
 .hero-type > span { position: absolute; display: block; margin: 0; white-space: nowrap; }
-/* Three different travel speeds — this is the whole parallax system. The
-   ranges are small on purpose: depth, not a ride. */
-/* Deliberately unequal: three lines at one size and one left edge is a
-   heading, not a composition. */
-.hero-l1 { top: 12vh;  left: -0.6vw; font-size: 1em;    z-index: 2;    transform: translateY(calc(var(--b-hero) * -1.4vh + var(--b-enter) * -52vh)); }
-.hero-l2 { top: 33vh; left: 13vw;   font-size: 0.6em;  z-index: 2; transform: translateY(calc(var(--b-hero) * -2.6vh + var(--b-enter) * -68vh)); }
-/* The line that crosses the object, so it is the largest and runs furthest
-   right — it has to reach the bag to sit in front of it. */
-.hero-l3 { top: 52vh; left: 0.4vw;  font-size: 1.16em; z-index: 5; transform: translateY(calc(var(--b-hero) * -0.7vh + var(--b-enter) * -34vh)); }
 .hero-type > span { opacity: calc(1 - var(--b-enter) * 1.5); }
 
-/* The dominant object. Crosses lines 1 and 2, sits behind line 3, and leaves
-   the viewport on the right. */
+/* Three deliberately different treatments, not one face at three sizes.
+   Restrained and tracked, then expressive italic, then the heavy anchor. */
+.hero-l1 {
+  top: 12vh; left: 0.5vw; z-index: 2; font-size: 0.74em;
+  font-weight: 400; text-transform: uppercase; letter-spacing: 0.03em; line-height: 0.9;
+  font-variation-settings: "opsz" 96;
+  transform: translateY(calc(var(--b-hero) * -1.4vh + var(--b-enter) * -52vh));
+}
+.hero-l2 {
+  top: 28vh; left: 3.6vw; z-index: 2; font-size: 1.0em;
+  font-weight: 500; font-style: italic; letter-spacing: -0.015em; line-height: 0.86;
+  font-variation-settings: "opsz" 96;
+  transform: translateY(calc(var(--b-hero) * -2.6vh + var(--b-enter) * -68vh));
+}
+.hero-l3 {
+  top: 51vh; left: 0.2vw; z-index: 5; font-size: 1.3em;
+  font-weight: 900; text-transform: uppercase; letter-spacing: -0.035em; line-height: 0.82;
+  font-variation-settings: "opsz" 96;
+  transform: translateY(calc(var(--b-hero) * -0.7vh + var(--b-enter) * -34vh));
+}
+
+/* The object. Crosses the first two lines, sits behind the anchor, and leaves
+   the frame on the right. */
 .hero-bag {
-  /* Far enough left that lines 2 and 3 genuinely run under and across it —
-     the first pass left the bag in clear space beside the type, which is a
-     product shot next to a heading, not a composition. */
-  position: absolute; z-index: 3; top: 11vh; right: -3vw; width: 71vw;
+  position: absolute; z-index: 3; top: 7vh; right: -5vw; width: 74vw; margin: 0;
   transform:
     translateY(calc(var(--b-hero) * -3.2vh + var(--b-enter) * 4vh))
-    /* Keeps growing under the mask through the material band, so the macro
-       opens onto an object still moving toward the viewer. */
     scale(calc(1 + var(--b-enter) * 1.28 + var(--b-mat) * 0.85));
   transform-origin: 62% 46%;
 }
 .hero-bag img { width: 100%; height: auto; }
 
-/* Secondary object: cropped by the bottom edge, deliberately small. */
-.hero-second {
-  /* Clear of the navy band, which was covering it entirely. Cropped by the
-     left edge so it reads as a deliberate second object rather than a small
-     item marooned in the corner. */
-  position: absolute; z-index: 4; left: -3.5vw; bottom: 10vh; width: 21vw;
-  transform: translateY(calc(var(--b-enter) * 34vh));
+/* Two short lines, set once, in the white. */
+.hero-note {
+  position: absolute; z-index: 6; left: 0.6vw; bottom: 12vh; margin: 0;
+  transform: translateY(calc(var(--b-enter) * 14vh));
   opacity: calc(1 - var(--b-enter) * 1.6);
 }
-.hero-second img { width: 100%; height: auto; }
+.hero-note p {
+  margin: 0 0 5px; color: var(--navy);
+  font-size: clamp(10px, 0.78vw, 12.5px); font-weight: 600;
+  letter-spacing: 0.22em; text-transform: uppercase;
+}
 
-/* Editorial interruption: a navy poster footer carrying the factual labels
-   and one macro of the hero bag's own yarn. Also the page's first navy
-   anchor, so the hero is not a wash of pink. */
-.hero-band {
-  position: absolute; z-index: 6; left: 0; right: 0; bottom: 0;
-  height: 8.4vh; min-height: 54px; background: var(--navy); color: var(--pink);
-  display: flex; align-items: center; gap: clamp(18px, 4vw, 64px);
-  padding-left: clamp(20px, 4vw, 52px);
-  transform: translateY(calc(var(--b-enter) * 12vh));
+/* One action, and the site's single controlled graphic element: a navy rule
+   that draws itself across on hover. Not a pill, not a filled button. */
+.hero-cta {
+  position: absolute; z-index: 6; left: 0.7vw; bottom: 6vh;
+  color: var(--navy); font-size: clamp(11px, 0.82vw, 13px); font-weight: 600;
+  letter-spacing: 0.2em; text-transform: uppercase; padding-bottom: 9px;
+  transform: translateY(calc(var(--b-enter) * 14vh));
+  opacity: calc(1 - var(--b-enter) * 1.6);
 }
-.hero-band span {
-  font-size: clamp(9px, 0.78vw, 12px); font-weight: 600;
-  letter-spacing: 0.22em; text-transform: uppercase; white-space: nowrap;
+.hero-cta::before {
+  content: ""; position: absolute; left: 0; bottom: 0; height: 1.5px;
+  width: 100%; background: var(--navy); opacity: 0.28;
 }
-/* The band used to end in a hard-cut block of the red macro. With no frame
-   and no caption it read as a rendering artefact rather than a detail, which
-   is exactly what it was reported as. The band is now purely typographic. */
+.hero-cta::after {
+  content: ""; position: absolute; left: 0; bottom: 0; height: 1.5px;
+  width: 0; background: var(--navy); transition: width 0.42s var(--ease-ui);
+}
+.hero-cta:hover::after { width: 100%; }
+
+@media (max-width: 860px) {
+  .story { height: 300vh; }
+  .hero-floor { height: 42%; }
+  .hero-type { font-size: clamp(48px, 18.5vw, 122px); }
+  .hero-l1 { top: 12vh; left: 1vw; }
+  .hero-l2 { top: 22.5vh; left: 5vw; }
+  .hero-l3 { top: 35vh; left: 0.5vw; }
+  /* The bag must still cross the type on a phone. It runs up into the last
+     two lines and off both the right and bottom edges. */
+  .hero-bag { top: 29vh; right: -26vw; width: 128vw; }
+  .hero-note { left: 5vw; bottom: 11vh; }
+  .hero-cta { left: 5vw; bottom: 5vh; }
+}
+
+
+/* Between the phone and desktop compositions. At 768 the phone rules leave
+   the object floating small with an empty band beneath the headline. */
+@media (min-width: 700px) and (max-width: 860px) {
+  .hero-type { font-size: clamp(66px, 13.4vw, 118px); }
+  .hero-l1 { top: 12vh; left: 1vw; }
+  .hero-l2 { top: 25vh; left: 5vw; }
+  .hero-l3 { top: 41vh; left: 0.5vw; }
+  .hero-bag { top: 16vh; right: -12vw; width: 96vw; }
+  .hero-floor { height: 44%; }
+  .hero-note { bottom: 13vh; }
+  .hero-cta { bottom: 6vh; }
+}
 
 /* ---------------- 01 THE MATERIAL ----------------
    A circle opening from roughly where the hero bag's body sits, so the move
@@ -394,6 +434,19 @@ body:has(.home) main { padding-top: 0; }
 }
 @media (min-width: 700px) { .col-grid { grid-template-columns: repeat(3, 1fr); } }
 @media (min-width: 1080px) { .col-grid { grid-template-columns: repeat(4, 1fr); } }
+
+/* Between the phone and desktop compositions. At 768 the phone rules leave
+   the object floating small with an empty band beneath the headline. */
+@media (min-width: 700px) and (max-width: 860px) {
+  .hero-type { font-size: clamp(66px, 13.4vw, 118px); }
+  .hero-l1 { top: 12vh; left: 1vw; }
+  .hero-l2 { top: 25vh; left: 5vw; }
+  .hero-l3 { top: 41vh; left: 0.5vw; }
+  .hero-bag { top: 16vh; right: -12vw; width: 96vw; }
+  .hero-floor { height: 44%; }
+  .hero-note { bottom: 13vh; }
+  .hero-cta { bottom: 6vh; }
+}
 
 @media (max-width: 860px) {
   .story { height: 300vh; }

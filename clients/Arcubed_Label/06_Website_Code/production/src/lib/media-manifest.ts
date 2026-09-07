@@ -21,7 +21,7 @@ function f(id: string, ratio: number, cutOk = true): Frame {
   return {
     photo: `/media/${id}-1600.webp`,
     photoSmall: `/media/${id}-800.webp`,
-    cut: `/media/${id}-cut-2400.webp`,
+    cut: `/media/${id}-cut-2600.webp`,
     cutSmall: `/media/${id}-cut-600.webp`,
     ratio,
     frameId: id,

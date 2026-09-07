@@ -123,7 +123,7 @@ lines.push("function f(id: string, ratio: number, cutOk = true): Frame {");
 lines.push("  return {");
 lines.push("    photo: `/media/${id}-1600.webp`,");
 lines.push("    photoSmall: `/media/${id}-800.webp`,");
-lines.push("    cut: `/media/${id}-cut-2400.webp`,");
+lines.push("    cut: `/media/${id}-cut-2600.webp`,");
 lines.push("    cutSmall: `/media/${id}-cut-600.webp`,");
 lines.push("    ratio,");
 lines.push("    frameId: id,");

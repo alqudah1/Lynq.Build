@@ -98,7 +98,7 @@ export function cutSrc(frame: Frame, small = false): string {
  */
 export function tileSrc(frame: Frame, small = false): string {
   if (!frame.cutOk) return small ? frame.photoSmall : frame.photo;
-  return `/media/${frame.frameId}-tile-${small ? 600 : 2400}.webp`;
+  return `/media/${frame.frameId}-tile-${small ? 600 : 2600}.webp`;
 }
 
 export function hasCleanCut(frame: Frame | undefined | null): boolean {

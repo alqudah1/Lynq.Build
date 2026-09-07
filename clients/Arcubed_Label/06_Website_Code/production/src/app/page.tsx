@@ -178,14 +178,14 @@ export default async function HomePage() {
       <ScrollStory>
         {/* ---------------- HERO ---------------- */}
         <div className="phase phase-hero">
-          {/* A white lower field. The hero was a single pink wash from the
-              nav to the navy band, which read heavy; white gives the object a
-              ground to stand on and the composition some light. Pink, white
-              and navy stacked — none of them decoration. */}
+          {/* White product ground. The hero used to be one pink block from the
+              nav to a navy information bar; the bag now stands on light and
+              the field change is the composition, not decoration. */}
           <div className="hero-floor" aria-hidden="true" />
 
-          {/* A real h1. These lines were decorative <p>s inside a div, which
-              left the homepage with no h1 at all. */}
+          {/* A real h1, art-directed rather than one face at three sizes:
+              MADE restrained and letter-spaced, YOUR expressive in italic,
+              WAY. the heavy anchor. */}
           <h1 className="hero-type">
             <span className="hero-l1">Made</span>
             <span className="hero-l2">Your</span>
@@ -197,34 +197,27 @@ export default async function HomePage() {
               <Image
                 src={cutSrc(heroBag)}
                 alt={altFor(miniLuna, "Red")}
-                width={1200}
-                height={Math.round(1200 / heroBag.ratio)}
-                sizes="(max-width: 860px) 130vw, 66vw"
+                width={1600}
+                height={Math.round(1600 / heroBag.ratio)}
+                // Declared above the element's resting width on purpose: the hero bag
+                // scales up past 2x during the enter sequence, and `sizes` cannot
+                // express a transform, so a resting-width budget left it soft
+                // exactly while it is largest on screen.
+                sizes="(max-width: 860px) 210vw, 110vw"
                 priority
               />
             </figure>
           ) : null}
 
-          {heroSecond && nova ? (
-            <figure className="hero-second">
-              <Image
-                src={cutSrc(heroSecond)}
-                alt={altFor(nova, "Black")}
-                width={700}
-                height={Math.round(700 / heroSecond.ratio)}
-                sizes="(max-width: 860px) 30vw, 22vw"
-              />
-            </figure>
-          ) : null}
-
-          {/* Factual labels only. Each one is already established elsewhere on
-              the site: hand-crocheted and made-to-order are the product
-              model; Amman is in the footer. Nothing invented. */}
-          <div className="hero-band">
-            <span>Hand-crocheted</span>
-            <span>Made to order</span>
-            <span>Amman, Jordan</span>
+          {/* Two short lines in one place, not a row of floating labels. */}
+          <div className="hero-note">
+            <p>Hand crocheted bags</p>
+            <p>Made to order in Jordan</p>
           </div>
+
+          <Link className="hero-cta" href="/shop">
+            Explore the collection
+          </Link>
         </div>
 
         {/* ---------------- 01 THE MATERIAL ----------------

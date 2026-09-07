@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Inter } from "next/font/google";
+import { Fraunces, Inter, Bodoni_Moda } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/lib/cart-context";
 import Header from "@/components/Header";
@@ -16,6 +16,19 @@ const fraunces = Fraunces({
   variable: "--font-head",
   display: "swap",
   axes: ["opsz", "SOFT"],
+});
+
+// Display face for the hero. Bodoni Moda is a true fashion masthead cut: very
+// high stroke contrast, a real italic, and an optical-size axis. Fraunces is a
+// soft serif built for text and stays for body headings; using one family at
+// three sizes was most of why the hero read as unresolved rather than
+// art-directed. OFL licensed, self-hosted by next/font, so it ships legally.
+const bodoni = Bodoni_Moda({
+  subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
+  style: ["normal", "italic"],
+  axes: ["opsz"],
 });
 
 const inter = Inter({
@@ -64,7 +77,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${inter.variable}`}>
+    <html lang="en" className={`${fraunces.variable} ${bodoni.variable} ${inter.variable}`}>
       <head>
         {/* Marks the document as JS-capable BEFORE first paint. Scroll-reveal
             CSS hides content only under `.js`, so if JavaScript fails or is
