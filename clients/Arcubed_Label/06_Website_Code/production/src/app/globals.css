@@ -1596,3 +1596,17 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 .adm-update select { min-width: 190px; }
 .adm-update button { margin-top: 8px; }
 @media (min-width: 900px) { .adm-order-body { grid-template-columns: 1fr 1.3fr auto; gap: 32px; } }
+
+/* ---------- dev: hero type comparison (never reachable in production) ---------- */
+.tt { border-bottom: 1px solid #e6e0d8; }
+.tt-label { margin: 0; padding: 14px 40px; font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #143562; background: #f6f3ef; }
+.tt-label em { font-style: normal; font-weight: 400; opacity: 0.6; text-transform: none; letter-spacing: 0; margin-left: 12px; }
+.tt-stage { position: relative; height: 560px; background: #ffe0fd; overflow: hidden; }
+.tt-stage::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 42%; background: #fff; }
+.tt-h { position: absolute; inset: 0; margin: 0; z-index: 2; color: #143562; font-family: var(--d), Georgia, serif; font-size: 118px; }
+.tt-h span { position: absolute; display: block; white-space: nowrap; }
+.tt-1 { top: 44px; left: 40px; font-size: 0.74em; font-weight: 400; text-transform: uppercase; letter-spacing: 0.03em; line-height: 0.9; }
+.tt-2 { top: 150px; left: 78px; font-size: 1em; font-style: italic; font-weight: 500; letter-spacing: -0.015em; line-height: 0.86; }
+.tt-3 { top: 288px; left: 36px; font-size: 1.3em; font-weight: 900; text-transform: uppercase; letter-spacing: -0.035em; line-height: 0.82; }
+.tt-note { position: absolute; z-index: 3; left: 40px; bottom: 84px; margin: 0; color: #143562; font-family: var(--s), sans-serif; font-size: 11.5px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; line-height: 1.9; }
+.tt-cta { position: absolute; z-index: 3; left: 40px; bottom: 40px; color: #143562; font-family: var(--s), sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; border-bottom: 1.5px solid currentColor; padding-bottom: 8px; }

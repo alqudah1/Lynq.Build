@@ -195,7 +195,10 @@ export default async function HomePage() {
           {heroBag && miniLuna ? (
             <figure className="hero-bag">
               <Image
-                src={cutSrc(heroBag)}
+                // The de-haloed variant. The ordinary cut-out carries the
+                // studio contact shadow, which on the white product floor
+                // reads as a grey smear beside the bag rather than grounding.
+                src={tileSrc(heroBag)}
                 alt={altFor(miniLuna, "Red")}
                 width={1600}
                 height={Math.round(1600 / heroBag.ratio)}
@@ -203,7 +206,7 @@ export default async function HomePage() {
                 // scales up past 2x during the enter sequence, and `sizes` cannot
                 // express a transform, so a resting-width budget left it soft
                 // exactly while it is largest on screen.
-                sizes="(max-width: 860px) 210vw, 110vw"
+                sizes="(max-width: 860px) 200vw, 92vw"
                 priority
               />
             </figure>

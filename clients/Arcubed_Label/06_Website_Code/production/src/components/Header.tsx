@@ -16,7 +16,6 @@ export default function Header() {
         <Image src="/brand/arcubed-wordmark-navy.png" alt="Arcubed Label" width={1116} height={298} priority />
       </Link>
       <nav className="nav">
-        <Link href="/">Home</Link>
         <Link href="/shop">Shop</Link>
         <Link href="/ready-for-delivery">Ready for Delivery</Link>
         <Link href="/about">About</Link>

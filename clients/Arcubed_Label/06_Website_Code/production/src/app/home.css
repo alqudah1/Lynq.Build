@@ -61,54 +61,57 @@ body:has(.home) main { padding-top: 0; }
 }
 
 /* ---------------- HERO ----------------
-   Pale pink above, white product ground below, navy for type and one rule.
-   The bag stands on the light. No information bar, no second product. */
+   The ENTRANCE to the store, not the closing campaign frame. The product is
+   the hero; the headline is art direction around it, not a text wall. Pink
+   editorial field above, white product floor below, and the bag grounded
+   across the join rather than floating. Navy carries the type and one rule. */
 
 .hero-floor {
-  position: absolute; z-index: 0; left: 0; right: 0; bottom: 0; height: 46%;
+  position: absolute; z-index: 0; left: 0; right: 0; bottom: 0; height: 42%;
   background: var(--paper);
   transform: translateY(calc(var(--b-enter) * 24vh));
 }
 
 .hero-type {
-  /* z-index: auto ON PURPOSE. Giving this wrapper a stacking index put every
-     line inside its own context, so the anchor line could never rise above
-     the bag no matter what index it carried. */
+  /* z-index: auto ON PURPOSE. An index here puts every line in its own
+     stacking context, so the anchor line can never rise above the object. */
   position: absolute; inset: 0; z-index: auto; pointer-events: none;
   margin: 0; color: var(--navy);
   font-family: var(--font-display), Georgia, serif;
-  font-size: clamp(50px, 11.1vw, 164px);
+  /* Deliberately well below the previous 11vw. At poster scale the headline
+     WAS the page and the bag became wallpaper behind it. */
+  font-size: clamp(42px, 8.2vw, 120px);
 }
 .hero-type > span { position: absolute; display: block; margin: 0; white-space: nowrap; }
 .hero-type > span { opacity: calc(1 - var(--b-enter) * 1.5); }
 
-/* Three deliberately different treatments, not one face at three sizes.
-   Restrained and tracked, then expressive italic, then the heavy anchor. */
+/* Three different treatments, not one face at three sizes. */
 .hero-l1 {
-  top: 12vh; left: 0.5vw; z-index: 2; font-size: 0.74em;
-  font-weight: 400; text-transform: uppercase; letter-spacing: 0.03em; line-height: 0.9;
-  font-variation-settings: "opsz" 96;
+  top: 21vh; left: 4.5vw; z-index: 2; font-size: 0.76em;
+  font-weight: 400; text-transform: uppercase; letter-spacing: 0.055em; line-height: 0.92;
+  font-variation-settings: "opsz" 72;
   transform: translateY(calc(var(--b-hero) * -1.4vh + var(--b-enter) * -52vh));
 }
 .hero-l2 {
-  top: 28vh; left: 3.6vw; z-index: 2; font-size: 1.0em;
-  font-weight: 500; font-style: italic; letter-spacing: -0.015em; line-height: 0.86;
-  font-variation-settings: "opsz" 96;
+  top: 32vh; left: 7.2vw; z-index: 2; font-size: 1em;
+  font-weight: 500; font-style: italic; letter-spacing: -0.015em; line-height: 0.88;
+  font-variation-settings: "opsz" 72;
   transform: translateY(calc(var(--b-hero) * -2.6vh + var(--b-enter) * -68vh));
 }
 .hero-l3 {
-  top: 51vh; left: 0.2vw; z-index: 5; font-size: 1.3em;
-  font-weight: 900; text-transform: uppercase; letter-spacing: -0.035em; line-height: 0.82;
-  font-variation-settings: "opsz" 96;
+  top: 45vh; left: 4vw; z-index: 5; font-size: 1.24em;
+  font-weight: 900; text-transform: uppercase; letter-spacing: -0.03em; line-height: 0.84;
+  font-variation-settings: "opsz" 72;
   transform: translateY(calc(var(--b-hero) * -0.7vh + var(--b-enter) * -34vh));
 }
 
-/* The object. Crosses the first two lines, sits behind the anchor, and leaves
-   the frame on the right. */
+/* The object: centre right, large, and GROUNDED. Its base sits inside the
+   white floor rather than being cropped by the viewport, so it reads as a
+   product standing on a surface instead of a cut-out floating on colour. */
 .hero-bag {
-  position: absolute; z-index: 3; top: 7vh; right: -5vw; width: 74vw; margin: 0;
+  position: absolute; z-index: 3; top: 17vh; right: 5vw; width: 46vw; margin: 0;
   transform:
-    translateY(calc(var(--b-hero) * -3.2vh + var(--b-enter) * 4vh))
+    translateY(calc(var(--b-hero) * -2.2vh + var(--b-enter) * 4vh))
     scale(calc(1 + var(--b-enter) * 1.28 + var(--b-mat) * 0.85));
   transform-origin: 62% 46%;
 }
@@ -116,28 +119,27 @@ body:has(.home) main { padding-top: 0; }
 
 /* Two short lines, set once, in the white. */
 .hero-note {
-  position: absolute; z-index: 6; left: 0.6vw; bottom: 12vh; margin: 0;
+  position: absolute; z-index: 6; left: 4.5vw; bottom: 19vh; margin: 0;
   transform: translateY(calc(var(--b-enter) * 14vh));
   opacity: calc(1 - var(--b-enter) * 1.6);
 }
 .hero-note p {
-  margin: 0 0 5px; color: var(--navy);
-  font-size: clamp(10px, 0.78vw, 12.5px); font-weight: 600;
-  letter-spacing: 0.22em; text-transform: uppercase;
+  margin: 0 0 6px; color: var(--navy);
+  font-size: clamp(10px, 0.76vw, 12px); font-weight: 600;
+  letter-spacing: 0.24em; text-transform: uppercase;
 }
 
-/* One action, and the site's single controlled graphic element: a navy rule
-   that draws itself across on hover. Not a pill, not a filled button. */
+/* One action. An editorial rule that draws itself across, not a filled pill. */
 .hero-cta {
-  position: absolute; z-index: 6; left: 0.7vw; bottom: 6vh;
+  position: absolute; z-index: 6; left: 4.5vw; bottom: 11vh;
   color: var(--navy); font-size: clamp(11px, 0.82vw, 13px); font-weight: 600;
-  letter-spacing: 0.2em; text-transform: uppercase; padding-bottom: 9px;
+  letter-spacing: 0.2em; text-transform: uppercase; padding-bottom: 10px;
   transform: translateY(calc(var(--b-enter) * 14vh));
   opacity: calc(1 - var(--b-enter) * 1.6);
 }
 .hero-cta::before {
   content: ""; position: absolute; left: 0; bottom: 0; height: 1.5px;
-  width: 100%; background: var(--navy); opacity: 0.28;
+  width: 100%; background: var(--navy); opacity: 0.26;
 }
 .hero-cta::after {
   content: ""; position: absolute; left: 0; bottom: 0; height: 1.5px;
@@ -147,30 +149,27 @@ body:has(.home) main { padding-top: 0; }
 
 @media (max-width: 860px) {
   .story { height: 300vh; }
-  .hero-floor { height: 42%; }
-  .hero-type { font-size: clamp(48px, 18.5vw, 122px); }
-  .hero-l1 { top: 12vh; left: 1vw; }
-  .hero-l2 { top: 22.5vh; left: 5vw; }
-  .hero-l3 { top: 35vh; left: 0.5vw; }
-  /* The bag must still cross the type on a phone. It runs up into the last
-     two lines and off both the right and bottom edges. */
-  .hero-bag { top: 29vh; right: -26vw; width: 128vw; }
-  .hero-note { left: 5vw; bottom: 11vh; }
-  .hero-cta { left: 5vw; bottom: 5vh; }
+  .hero-floor { height: 46%; }
+  .hero-type { font-size: clamp(40px, 13vw, 92px); }
+  .hero-l1 { top: 14vh; left: 6vw; }
+  .hero-l2 { top: 21.5vh; left: 9vw; }
+  .hero-l3 { top: 30vh; left: 5.6vw; }
+  /* Dominant and grounded, and WHOLE: running it off the right edge at 92vw
+     cut the arch, and the arch is what makes this bag recognisable. */
+  .hero-bag { top: 41vh; right: 5vw; width: 88vw; }
+  .hero-note { left: 6vw; bottom: 13vh; }
+  .hero-cta { left: 6vw; bottom: 5.5vh; }
 }
 
-
-/* Between the phone and desktop compositions. At 768 the phone rules leave
-   the object floating small with an empty band beneath the headline. */
 @media (min-width: 700px) and (max-width: 860px) {
-  .hero-type { font-size: clamp(66px, 13.4vw, 118px); }
-  .hero-l1 { top: 12vh; left: 1vw; }
-  .hero-l2 { top: 25vh; left: 5vw; }
-  .hero-l3 { top: 41vh; left: 0.5vw; }
-  .hero-bag { top: 16vh; right: -12vw; width: 96vw; }
+  .hero-type { font-size: clamp(52px, 9vw, 82px); }
+  .hero-l1 { top: 16vh; left: 6vw; }
+  .hero-l2 { top: 25vh; left: 9vw; }
+  .hero-l3 { top: 35vh; left: 5.6vw; }
+  .hero-bag { top: 33vh; right: 5vw; width: 62vw; }
   .hero-floor { height: 44%; }
-  .hero-note { bottom: 13vh; }
-  .hero-cta { bottom: 6vh; }
+  .hero-note { bottom: 15vh; }
+  .hero-cta { bottom: 7vh; }
 }
 
 /* ---------------- 01 THE MATERIAL ----------------

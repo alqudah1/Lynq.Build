@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Inter, Bodoni_Moda } from "next/font/google";
+import { Fraunces, Inter, Bodoni_Moda, Instrument_Serif, Playfair_Display, Archivo } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/lib/cart-context";
 import Header from "@/components/Header";
@@ -29,6 +29,20 @@ const bodoni = Bodoni_Moda({
   display: "swap",
   style: ["normal", "italic"],
   axes: ["opsz"],
+});
+
+// Candidates for the hero headline, compared on screen at /dev/type rather
+// than chosen in code. All OFL, self-hosted by next/font, so all ship legally.
+const instrument = Instrument_Serif({
+  subsets: ["latin"], weight: ["400"], style: ["normal", "italic"],
+  variable: "--font-instrument", display: "swap",
+});
+const playfair = Playfair_Display({
+  subsets: ["latin"], style: ["normal", "italic"],
+  variable: "--font-playfair", display: "swap",
+});
+const archivo = Archivo({
+  subsets: ["latin"], variable: "--font-archivo", display: "swap",
 });
 
 const inter = Inter({
@@ -77,7 +91,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${bodoni.variable} ${inter.variable}`}>
+    <html lang="en" className={`${fraunces.variable} ${bodoni.variable} ${instrument.variable} ${playfair.variable} ${archivo.variable} ${inter.variable}`}>
       <head>
         {/* Marks the document as JS-capable BEFORE first paint. Scroll-reveal
             CSS hides content only under `.js`, so if JavaScript fails or is
