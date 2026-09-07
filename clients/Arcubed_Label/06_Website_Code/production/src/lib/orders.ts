@@ -570,16 +570,10 @@ export async function getOrderByConfirmationToken(token: string): Promise<OrderC
   const lines: OrderConfirmationLine[] = (data.order_items ?? []).map((it) => {
     const snap = (it.configuration_snapshot ?? {}) as Record<string, unknown>;
     const str = (k: string) => (typeof snap[k] === "string" ? (snap[k] as string) : null);
-    const configuration =
-      it.item_kind === "ready_for_delivery"
-        ? [str("colourName"), str("secondaryColourName"), str("sizeLabel"), str("strapLabel"), str("chainLabel")]
-        : [
-            str("colourName"),
-            str("secondaryColourName") ? `${str("secondaryColourName")} two-tone` : null,
-            str("sizeLabel") && str("sizeLabel") !== "Regular" ? str("sizeLabel") : null,
-            str("strapLabel"),
-            str("chainLabel"),
-          ];
+    const configuration = configurationFromSnapshot(
+      it.configuration_snapshot,
+      it.item_kind === "ready_for_delivery" ? "ready_for_delivery" : "made_to_order"
+    );
     return {
       kind: it.item_kind === "ready_for_delivery" ? "ready_for_delivery" : "made_to_order",
       name: it.product_name_snapshot,
@@ -609,6 +603,34 @@ export async function getOrderByConfirmationToken(token: string): Promise<OrderC
   };
 }
 
+
+
+/**
+ * Human-readable configuration from a stored line snapshot.
+ *
+ * Shared by the customer's confirmation page and the order-management screen
+ * so the two can never describe the same order differently. The admin screen
+ * originally read a `configuration` array that the snapshot does not contain,
+ * and silently showed nothing.
+ */
+export function configurationFromSnapshot(
+  snapshot: unknown,
+  kind: "made_to_order" | "ready_for_delivery"
+): string[] {
+  const snap = (snapshot ?? {}) as Record<string, unknown>;
+  const str = (k: string) => (typeof snap[k] === "string" ? (snap[k] as string) : null);
+  const parts =
+    kind === "ready_for_delivery"
+      ? [str("colourName"), str("secondaryColourName"), str("sizeLabel"), str("strapLabel"), str("chainLabel")]
+      : [
+          str("colourName"),
+          str("secondaryColourName") ? `${str("secondaryColourName")} two-tone` : null,
+          str("sizeLabel") && str("sizeLabel") !== "Regular" ? str("sizeLabel") : null,
+          str("strapLabel"),
+          str("chainLabel"),
+        ];
+  return parts.filter((v): v is string => Boolean(v));
+}
 
 /* ------------------------------------------------------------------ */
 /* Order management (Rand-facing). Server-only, service-role, and only  */
@@ -673,12 +695,11 @@ export async function listOrders(limit = 100): Promise<AdminOrder[]> {
       currency: String(r.currency ?? "JOD"),
       shippingQuoteRequired: Boolean(r.shipping_quote_required),
       lines: items.map((it) => {
-        const snap = (it.configuration_snapshot as Record<string, unknown> | null) ?? {};
-        const cfg = Array.isArray(snap.configuration) ? (snap.configuration as string[]) : [];
+        const kind = (it.item_kind === "ready_for_delivery" ? "ready_for_delivery" : "made_to_order") as AdminOrderLine["kind"];
         return {
-          kind: (it.item_kind === "ready_for_delivery" ? "ready_for_delivery" : "made_to_order") as AdminOrderLine["kind"],
+          kind,
           name: String(it.product_name_snapshot ?? ""),
-          configuration: cfg,
+          configuration: configurationFromSnapshot(it.configuration_snapshot, kind),
           quantity: Number(it.quantity ?? 1),
           unitPrice: Number(it.unit_price ?? 0),
         };

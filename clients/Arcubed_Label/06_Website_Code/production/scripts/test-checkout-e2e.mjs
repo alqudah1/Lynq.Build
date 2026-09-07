@@ -23,14 +23,26 @@ await session(async (send, events) => {
   await send("Runtime.enable"); await send("Page.enable"); await send("Log.enable");
   await send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 950, deviceScaleFactor: 1, mobile: false });
 
+  // Start from an empty cart. Without this the suite inherited whatever a
+  // previous run left in localStorage and then asserted against the wrong
+  // line, which produced six failures that had nothing to do with the code.
+  await go(send, `${BASE}/`, 1500);
+  await ev(send, `(()=>{try{localStorage.clear()}catch(e){} return 'ok'})()`);
+
   // ---- 1. product page: pick a colour, add to bag
   await go(send, `${BASE}/product/nova`, 3000);
-  const price0 = await ev(send, `(document.querySelector('.price-inline')||{}).textContent`);
+  const price0 = await ev(send, `(document.querySelector('.pd-price')||{}).textContent`);
   t("nova opens at base price (no pre-added extras)", /55/.test(price0 || ""), price0);
 
+  // Targets the swatch by its accessible name rather than by a heading and an
+  // index. The colour group's visible "Colour" label was removed when the
+  // product page started carrying that as a section rule, and locating the
+  // group by that label silently stopped clicking anything.
   await ev(send, `(() => {
-    const g=[...document.querySelectorAll('.opt-group')].find(x=>/^colour/i.test((x.querySelector('.opt-label')||{}).textContent||''));
-    g.querySelectorAll('button')[1].click();   // Black
+    const b=[...document.querySelectorAll('.swatch-row button')]
+      .find(x=>((x.getAttribute('aria-label')||x.textContent||'').trim()==='Black'));
+    if(!b) return 'no-black-swatch';
+    b.click(); return 'ok';
   })()`);
   await new Promise(r => setTimeout(r, 600));
   const blackFrame = await ev(send, `decodeURIComponent((document.querySelector('.pg-img')||{}).currentSrc||'').match(/DSC\\d+/)?.[0]`);
@@ -42,7 +54,7 @@ await session(async (send, events) => {
     g.querySelectorAll('button')[1].click();
   })()`);
   await new Promise(r => setTimeout(r, 500));
-  const price1 = await ev(send, `(document.querySelector('.price-inline')||{}).textContent`);
+  const price1 = await ev(send, `(document.querySelector('.pd-price')||{}).textContent`);
   t("adding a chain adds +5 (55 -> 60)", /60/.test(price1 || ""), price1);
 
   await ev(send, `[...document.querySelectorAll('button')].find(b=>/add to bag/i.test(b.textContent))?.click()`);
