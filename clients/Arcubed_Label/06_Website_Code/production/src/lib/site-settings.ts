@@ -34,3 +34,20 @@ export function formatMoney(amount: number, currencyCode: string = DEFAULT_CURRE
     maximumFractionDigits: 0,
   }).format(amount);
 }
+
+
+/**
+ * Arcubed's customer-facing copy uses no dashes as separators or ranges.
+ *
+ * Store settings are business data edited in the database, so a value like
+ * "3\u20135 business days" is normalised at RENDER time rather than by
+ * rewriting the row: the label stays whatever Rand set, and the storefront
+ * still reads the way the brand does. Hyphens inside real compound words
+ * ("hand-crocheted") are grammar and are left alone.
+ */
+export function plainText(value: string): string {
+  return value
+    .replace(/(\d)\s*[\u2013\u2014]\s*(\d)/g, "$1 to $2")
+    .replace(/\s+[\u2013\u2014]\s+/g, ". ")
+    .replace(/[\u2013\u2014]/g, " ");
+}

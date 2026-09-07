@@ -9,7 +9,7 @@ import Reveal from "@/components/Reveal";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "About — Arcubed Label",
+  title: "About",
   description: "Hand-crocheted bags made to order, one stitch at a time.",
 };
 
@@ -34,9 +34,9 @@ export default async function AboutPage() {
       </section>
 
       <Reveal className="ab-wide">
-        <Image src={TEXTURES.chunky.src} alt="Close detail of chunky hand-crocheted stitchwork"
-               width={1100} height={Math.round(1100 / TEXTURES.chunky.ratio)}
-               sizes="100vw" className="ab-wide-img" />
+        <Image src="/media/macro-chunky.webp" alt="Close detail of chunky hand-crocheted stitchwork"
+               width={2600} height={801}
+               sizes="110vw" className="ab-wide-img" />
       </Reveal>
 
       <section className="ab-two">
@@ -44,10 +44,10 @@ export default async function AboutPage() {
           <h2 className="ab-h2">Made to order,<br />not made in advance.</h2>
           <p className="ab-p">
             Every Arcubed bag starts after you choose it. You pick the shape, the colour and the
-            fittings, and it&rsquo;s crocheted for you in 3–5 business days.
+            fittings, and it&rsquo;s crocheted for you in 3 to 5 business days.
           </p>
           <p className="ab-p">
-            That&rsquo;s why the colours run the way they do — metallic ribbon yarn that catches
+            That&rsquo;s why the colours run the way they do. Metallic ribbon yarn that catches
             light, matte cotton that holds a chunky stitch, and a fringe that only works because
             someone knotted it by hand.
           </p>

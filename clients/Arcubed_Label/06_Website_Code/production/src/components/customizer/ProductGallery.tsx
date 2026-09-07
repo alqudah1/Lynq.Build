@@ -65,7 +65,7 @@ function Photos({ bag, selection }: { bag: Bag; selection: Selection }) {
           alt={altFor(bag, shown, exact)}
           width={1600}
           height={Math.round(1600 / current.ratio)}
-          sizes="(max-width: 860px) 100vw, 52vw"
+          sizes="(max-width: 860px) 92vw, 46vw"
           priority
           className="pg-img"
         />
@@ -73,7 +73,7 @@ function Photos({ bag, selection }: { bag: Bag; selection: Selection }) {
 
       {!exact && shown ? (
         <p className="pg-note">
-          Pictured in <strong>{shown}</strong>. Photography of this colourway is coming — the bag
+          Pictured in <strong>{shown}</strong>. Photography of this colourway is coming. The bag
           shape and construction are identical.
         </p>
       ) : null}

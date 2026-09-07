@@ -5,7 +5,7 @@ export default function ShopLoading() {
     <>
       <section className="section shop-head">
         <p className="eyebrow center">The Collection</p>
-        <h1 className="center">Every bag, made to order.</h1>
+        <p className="center skeleton-title">Every bag, made to order.</p>
       </section>
       <section className="section">
         <ShopGridSkeleton />

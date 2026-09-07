@@ -7,6 +7,7 @@
 // (status 'pending', payment_status 'unpaid').
 
 import { notFound } from "next/navigation";
+import { plainText } from "@/lib/site-settings";
 import Link from "next/link";
 import Image from "next/image";
 import { getOrderByConfirmationToken } from "@/lib/orders";
@@ -17,7 +18,7 @@ import { mediaForSnapshot } from "@/lib/product-media";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Your order — Arcubed Label",
+  title: "Your order",
   robots: { index: false, follow: false },
 };
 
@@ -31,7 +32,7 @@ export default async function OrderConfirmationPage(props: { params: Promise<{ t
 
   const fulfillmentLabel = settings?.readyForDeliveryFulfillmentLabel ?? "Next day";
   const deliveryPromise = `${fulfillmentLabel.replace(/\s+day$/i, "-day")} delivery in Jordan`;
-  const productionTimeLabel = settings?.productionTimeLabel ?? "3–5 business days";
+  const productionTimeLabel = plainText(settings?.productionTimeLabel ?? "3 to 5 business days");
   const hasMade = order.lines.some((l) => l.kind === "made_to_order");
   const hasReady = order.lines.some((l) => l.kind === "ready_for_delivery");
   const addr = order.shippingAddress ?? {};
@@ -97,7 +98,7 @@ export default async function OrderConfirmationPage(props: { params: Promise<{ t
           {order.shippingQuoteRequired ? (
             <p className="co-quote">
               Shipping outside Jordan is quoted by destination. The amount above covers the bags
-              only — we&rsquo;ll confirm shipping before anything is finalised.
+              only. We&rsquo;ll confirm shipping before anything is finalised.
             </p>
           ) : null}
         </div>
@@ -113,7 +114,7 @@ export default async function OrderConfirmationPage(props: { params: Promise<{ t
 
           <p className="co-legend">Status</p>
           <p className="oc-block">
-            Order received — awaiting confirmation from Arcubed.<br />
+            Order received. Awaiting confirmation from Arcubed.<br />
             <span className="oc-muted">No payment has been taken.</span>
           </p>
 

@@ -250,7 +250,7 @@ export default function CheckoutClient({
           {quoteRequired ? (
             <p className="co-quote">
               We ship worldwide. Shipping is quoted by destination, so the amount above covers the
-              bags only — Arcubed confirms the shipping cost with you before anything is finalised.
+              bags only. Arcubed confirms the shipping cost with you before anything is finalised.
             </p>
           ) : null}
 
@@ -259,7 +259,7 @@ export default function CheckoutClient({
             {hasReady ? <p><strong>Ready now</strong> · {deliveryPromise}</p> : null}
             {hasMade && hasReady ? (
               <p className="co-timing-split">
-                These arrive separately — your ready piece ships first, the made-to-order pieces
+                These arrive separately. Your ready piece ships first, the made-to-order pieces
                 follow once they&rsquo;re finished.
               </p>
             ) : null}

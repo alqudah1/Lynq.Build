@@ -56,7 +56,7 @@ export default function CartDrawer() {
           </button>
         </div>
         {cart.length === 0 ? (
-          <p className="drawer-empty">Nothing here yet — go find your bag.</p>
+          <p className="drawer-empty">Nothing here yet. Go find your bag.</p>
         ) : (
           <>
             <div className="drawer-lines">

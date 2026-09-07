@@ -9,7 +9,9 @@
    src/components/home/ScrollStory.tsx: --p globally, and --b-* per phase.
    Nothing here animates on its own. */
 
-.home { --navy: #143562; --pink: #ffe0fd; }
+/* Pink and navy are the brand. White is the third value: light and
+   breathing space, never a replacement for either. */
+.home { --navy: #143562; --pink: #ffe0fd; --paper: #ffffff; }
 
 /* The site header is a sticky translucent bar everywhere else. On this page
    it has to read as part of the poster, so it sits ON the pink with no
@@ -50,6 +52,14 @@ body:has(.home) main { padding-top: 0; }
 }
 .phase { position: absolute; inset: 0; }
 
+/* The white lower field. Sits under everything, moves with the enter band so
+   the horizon leaves with the rest of the composition. */
+.hero-floor {
+  position: absolute; z-index: 0; left: 0; right: 0; bottom: 0; height: 38%;
+  background: var(--paper);
+  transform: translateY(calc(var(--b-enter) * 22vh));
+}
+
 /* ---------------- HERO ---------------- */
 .hero-type {
   /* z-index: auto ON PURPOSE. Giving this wrapper a stacking index put every
@@ -58,20 +68,25 @@ body:has(.home) main { padding-top: 0; }
      lines carry their own indices instead. */
   position: absolute; inset: 0; z-index: auto; pointer-events: none;
   font-family: var(--font-head); font-weight: 600; color: var(--navy);
-  text-transform: uppercase; letter-spacing: -0.045em; line-height: 0.8;
+  /* Display optical size — the whole point of loading the axis. */
+  font-variation-settings: "opsz" 144, "SOFT" 0;
+  text-transform: uppercase; letter-spacing: -0.055em; line-height: 0.78;
   font-size: clamp(56px, 15.5vw, 232px);
 }
-.hero-type p { position: absolute; margin: 0; white-space: nowrap; }
+/* Targets the line elements by role, not by tag: these were <p> and became
+   <span> inside a real <h1>, at which point a `p` selector silently stopped
+   matching and all three lines collapsed onto one inline row across the nav. */
+.hero-type > span { position: absolute; display: block; margin: 0; white-space: nowrap; }
 /* Three different travel speeds — this is the whole parallax system. The
    ranges are small on purpose: depth, not a ride. */
 /* Deliberately unequal: three lines at one size and one left edge is a
    heading, not a composition. */
-.hero-l1 { top: 8vh;  left: -0.6vw; font-size: 1em;    z-index: 2;    transform: translateY(calc(var(--b-hero) * -1.4vh + var(--b-enter) * -52vh)); }
-.hero-l2 { top: 30vh; left: 12vw;   font-size: 0.78em; z-index: 2; transform: translateY(calc(var(--b-hero) * -2.6vh + var(--b-enter) * -68vh)); }
+.hero-l1 { top: 12vh;  left: -0.6vw; font-size: 1em;    z-index: 2;    transform: translateY(calc(var(--b-hero) * -1.4vh + var(--b-enter) * -52vh)); }
+.hero-l2 { top: 33vh; left: 13vw;   font-size: 0.6em;  z-index: 2; transform: translateY(calc(var(--b-hero) * -2.6vh + var(--b-enter) * -68vh)); }
 /* The line that crosses the object, so it is the largest and runs furthest
    right — it has to reach the bag to sit in front of it. */
-.hero-l3 { top: 50vh; left: 0.4vw;  font-size: 1.22em; z-index: 5; transform: translateY(calc(var(--b-hero) * -0.7vh + var(--b-enter) * -34vh)); }
-.hero-type p { opacity: calc(1 - var(--b-enter) * 1.5); }
+.hero-l3 { top: 52vh; left: 0.4vw;  font-size: 1.16em; z-index: 5; transform: translateY(calc(var(--b-hero) * -0.7vh + var(--b-enter) * -34vh)); }
+.hero-type > span { opacity: calc(1 - var(--b-enter) * 1.5); }
 
 /* The dominant object. Crosses lines 1 and 2, sits behind line 3, and leaves
    the viewport on the right. */
@@ -79,7 +94,7 @@ body:has(.home) main { padding-top: 0; }
   /* Far enough left that lines 2 and 3 genuinely run under and across it —
      the first pass left the bag in clear space beside the type, which is a
      product shot next to a heading, not a composition. */
-  position: absolute; z-index: 3; top: 9vh; right: -2vw; width: 66vw;
+  position: absolute; z-index: 3; top: 11vh; right: -3vw; width: 71vw;
   transform:
     translateY(calc(var(--b-hero) * -3.2vh + var(--b-enter) * 4vh))
     /* Keeps growing under the mask through the material band, so the macro
@@ -114,22 +129,9 @@ body:has(.home) main { padding-top: 0; }
   font-size: clamp(9px, 0.78vw, 12px); font-weight: 600;
   letter-spacing: 0.22em; text-transform: uppercase; white-space: nowrap;
 }
-/* Sits flush in the band: align-self stretch plus a fixed width, because a
-   percentage height on a flex child with an aspect-ratio broke out of the
-   band and left a white notch. */
-.hero-band figure {
-  margin: 0 0 0 auto; align-self: stretch; width: clamp(120px, 15vw, 260px);
-  overflow: hidden; flex: none;
-}
-/* This macro carries a strip of studio seamless down its LEFT edge (about
-   16% of the frame). object-position cannot remove it: the band is far wider
-   than the source is, so `cover` scales to width and never crops
-   horizontally at all. Over-widening the image and pulling it left is what
-   actually drops the strip out of view. */
-.hero-band figure img {
-  width: 126%; margin-left: -26%; height: 100%;
-  object-fit: cover; object-position: center; display: block;
-}
+/* The band used to end in a hard-cut block of the red macro. With no frame
+   and no caption it read as a rendering artefact rather than a detail, which
+   is exactly what it was reported as. The band is now purely typographic. */
 
 /* ---------------- 01 THE MATERIAL ----------------
    A circle opening from roughly where the hero bag's body sits, so the move
@@ -144,10 +146,14 @@ body:has(.home) main { padding-top: 0; }
    edge lands off-screen. object-position cannot do it: the viewport is wider
    than the source's aspect, so `cover` scales to width and never crops
    horizontally. */
-.mat-img { position: absolute; top: 0; bottom: 0; left: -19%; width: 119%; overflow: hidden; }
+/* Only an 8% inset now, not 19%: the rebuilt crop starts inside the bag, so
+   only about 6% of its left edge still catches seamless. Less overhang plus
+   far less zoom means the macro is drawn at or under its true resolution
+   instead of being enlarged into mush. */
+.mat-img { position: absolute; top: 0; bottom: 0; left: -8%; width: 108%; overflow: hidden; }
 .mat-img img {
   width: 100%; height: 100%; object-fit: cover;
-  transform: scale(calc(1.2 - var(--b-mat) * 0.2));
+  transform: scale(calc(1.07 - var(--b-mat) * 0.07));
   transform-origin: 62% 46%;
 }
 
@@ -251,6 +257,7 @@ body:has(.home) main { padding-top: 0; }
   list-style: none; width: 94vw; height: 0;
 }
 .cust-word li {
+  font-variation-settings: "opsz" 144, "SOFT" 0;
   /* Clipped well inside the object's left edge, so a long name ends behind
      the bag rather than reappearing through the transparent gaps in its
      cut-out — "SILVER & GOLD" was leaving a stray navy sliver visible in the
@@ -324,6 +331,7 @@ body:has(.home) main { padding-top: 0; }
 .final-line {
   position: absolute; margin: 0; color: var(--navy); white-space: nowrap;
   font-family: var(--font-head); font-weight: 600; text-transform: uppercase;
+  font-variation-settings: "opsz" 144, "SOFT" 0;
   letter-spacing: -0.045em; line-height: 0.82; font-size: clamp(46px, 11.5vw, 176px);
 }
 .final-a { z-index: 1; top: 13vh; left: -1.5vw; }
@@ -410,7 +418,6 @@ body:has(.home) main { padding-top: 0; }
      inflate the object past the type. */
   .hero-band { gap: 16px; padding-left: 18px; height: 12vh; }
   .hero-band span:nth-child(3) { display: none; }
-  .hero-band figure { aspect-ratio: 1.6 / 1; }
   /* Two rows of two on a phone — four forms in one row would be thumbnails. */
   .shape-row { flex-wrap: wrap; gap: 14px 20px; transform: translateY(-50%); }
   .shape-item { gap: 10px; width: calc(50% - 12px); }
@@ -423,7 +430,8 @@ body:has(.home) main { padding-top: 0; }
   .cust-steps { left: 5vw; top: 18vh; }
   .cust-step { font-size: clamp(26px, 9.5vw, 46px); }
   .cust-word { left: 4vw; top: 40vh; }
-  .cust-word li { font-size: clamp(40px, 16vw, 110px); max-width: 88vw; }
+  .cust-word li {
+  font-variation-settings: "opsz" 144, "SOFT" 0; font-size: clamp(40px, 16vw, 110px); max-width: 88vw; }
   .cust-bag { right: -14vw; top: 40vh; width: 96vw; }
   .cust-honest { left: 5vw; bottom: 5vh; max-width: 28ch; font-size: 11.5px; }
   /* Sized to FIT on a phone. At 15vw both lines overran both edges, so each
@@ -454,7 +462,8 @@ body:has(.home) main { padding-top: 0; }
   .shape-item { width: auto; }
   .cust-steps { top: 15vh; }
   .cust-word { top: 44vh; }
-  .cust-word li { font-size: clamp(48px, 13vw, 120px); max-width: 66vw; }
+  .cust-word li {
+  font-variation-settings: "opsz" 144, "SOFT" 0; font-size: clamp(48px, 13vw, 120px); max-width: 66vw; }
   .cust-bag { right: -6vw; top: 20vh; width: 62vw; }
   .final-bag { width: 62vw; }
   .final-line { font-size: clamp(44px, 12vw, 120px); }
@@ -493,12 +502,10 @@ body:has(.home) main { padding-top: 0; }
   }
 
   .hero-type { height: auto; font-size: clamp(44px, 11vw, 116px); }
-  .hero-type p { white-space: normal; }
+  .hero-type > span { white-space: normal; }
   .hero-bag { width: min(560px, 78%); margin: 28px 0; }
   .hero-second { width: min(220px, 34%); }
   .hero-band { height: auto; min-height: 0; padding: 14px 18px; flex-wrap: wrap; gap: 14px; }
-  .hero-band figure { width: 140px; height: 52px; margin-left: 0; }
-  .hero-band figure img { width: 100%; margin-left: 0; }
 
   .phase-mat { background: var(--navy); }
   .mat-img { width: 100%; height: auto; }
@@ -521,7 +528,8 @@ body:has(.home) main { padding-top: 0; }
   /* The oversized colour names become a plain list once the object is no
      longer sitting on top of them. */
   .cust-word { display: flex; flex-wrap: wrap; gap: 4px 22px; width: auto; height: auto; margin-top: 16px; }
-  .cust-word li { font-size: clamp(20px, 3vw, 30px); }
+  .cust-word li {
+  font-variation-settings: "opsz" 144, "SOFT" 0; font-size: clamp(20px, 3vw, 30px); }
   .cust-honest { max-width: 60ch; margin-top: 20px; }
   .final-bag { width: min(300px, 46%); margin: 26px 0; }
 }

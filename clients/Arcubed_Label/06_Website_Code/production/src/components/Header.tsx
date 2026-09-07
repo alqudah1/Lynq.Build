@@ -12,7 +12,7 @@ export default function Header() {
     <header className="site-header">
       {/* Light background (--bg) → navy wordmark, per the client's official
           logo usage rule (navy bg gets the pale-pink treatment instead). */}
-      <Link className="logo" href="/" aria-label="Arcubed Label — home">
+      <Link className="logo" href="/" aria-label="Arcubed Label, home">
         <Image src="/brand/arcubed-wordmark-navy.png" alt="Arcubed Label" width={1116} height={298} priority />
       </Link>
       <nav className="nav">

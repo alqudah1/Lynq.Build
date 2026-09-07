@@ -7,7 +7,7 @@ import ContactForm from "./ContactForm";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Contact — Arcubed Label",
+  title: "Contact",
   description: "Questions about a custom order, colours, shipping or an existing order.",
 };
 

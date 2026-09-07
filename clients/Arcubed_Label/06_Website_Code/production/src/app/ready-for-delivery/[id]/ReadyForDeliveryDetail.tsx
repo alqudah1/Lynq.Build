@@ -90,7 +90,7 @@ export default function ReadyForDeliveryDetail({
           <details>
             <summary>What is Ready for Delivery?</summary>
             <p>
-              This is one exact bag Rand already has in stock — the photos above are the real item, not a
+              This is one exact bag Rand already has in stock. The photos above are the real item, not a
               representation. Because it&rsquo;s already made, it skips the made-to-order production time.
             </p>
           </details>

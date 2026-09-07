@@ -12,7 +12,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getActiveBags } from "@/lib/repository";
 import { formatMoney } from "@/lib/site-settings";
-import { framesForColour, resolveMedia, cutSrc, tileSrc, TEXTURES, altFor } from "@/lib/product-media";
+import { framesForColour, resolveMedia, cutSrc, tileSrc, altFor } from "@/lib/product-media";
 import ScrollStory from "@/components/home/ScrollStory";
 import type { Bag } from "@/lib/types";
 import "./home.css";
@@ -178,11 +178,19 @@ export default async function HomePage() {
       <ScrollStory>
         {/* ---------------- HERO ---------------- */}
         <div className="phase phase-hero">
-          <div className="hero-type">
-            <p className="hero-l1">Made</p>
-            <p className="hero-l2">Your</p>
-            <p className="hero-l3">Way.</p>
-          </div>
+          {/* A white lower field. The hero was a single pink wash from the
+              nav to the navy band, which read heavy; white gives the object a
+              ground to stand on and the composition some light. Pink, white
+              and navy stacked — none of them decoration. */}
+          <div className="hero-floor" aria-hidden="true" />
+
+          {/* A real h1. These lines were decorative <p>s inside a div, which
+              left the homepage with no h1 at all. */}
+          <h1 className="hero-type">
+            <span className="hero-l1">Made</span>
+            <span className="hero-l2">Your</span>
+            <span className="hero-l3">Way.</span>
+          </h1>
 
           {heroBag && miniLuna ? (
             <figure className="hero-bag">
@@ -191,7 +199,7 @@ export default async function HomePage() {
                 alt={altFor(miniLuna, "Red")}
                 width={1200}
                 height={Math.round(1200 / heroBag.ratio)}
-                sizes="(max-width: 860px) 104vw, 56vw"
+                sizes="(max-width: 860px) 130vw, 66vw"
                 priority
               />
             </figure>
@@ -204,7 +212,7 @@ export default async function HomePage() {
                 alt={altFor(nova, "Black")}
                 width={700}
                 height={Math.round(700 / heroSecond.ratio)}
-                sizes="17vw"
+                sizes="(max-width: 860px) 30vw, 22vw"
               />
             </figure>
           ) : null}
@@ -216,15 +224,6 @@ export default async function HomePage() {
             <span>Hand-crocheted</span>
             <span>Made to order</span>
             <span>Amman, Jordan</span>
-            <figure>
-              <Image
-                src={TEXTURES.metallic.src}
-                alt=""
-                width={600}
-                height={Math.round(600 / TEXTURES.metallic.ratio)}
-                sizes="24vw"
-              />
-            </figure>
           </div>
         </div>
 
@@ -245,7 +244,7 @@ export default async function HomePage() {
               alt="Metallic ribbon yarn, hand-crocheted — detail of the Red Mini Luna"
               width={1937}
               height={1005}
-              sizes="100vw"
+              sizes="125vw"
             />
           </div>
           <p className="story-label"><span>01</span> The material</p>

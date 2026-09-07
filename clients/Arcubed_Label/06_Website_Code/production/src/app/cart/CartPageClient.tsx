@@ -58,7 +58,7 @@ export default function CartPageClient({
                 <span>{r.label}</span>
                 <span>
                   {r.isQuoteRequired || r.amount === null
-                    ? "Calculated based on destination — contact us for a quote"
+                    ? "Calculated by destination. Contact us for a quote"
                     : formatMoney(r.amount, r.currencyCode)}
                 </span>
               </div>

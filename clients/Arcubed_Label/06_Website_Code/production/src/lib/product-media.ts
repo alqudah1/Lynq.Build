@@ -98,7 +98,7 @@ export function cutSrc(frame: Frame, small = false): string {
  */
 export function tileSrc(frame: Frame, small = false): string {
   if (!frame.cutOk) return small ? frame.photoSmall : frame.photo;
-  return `/media/${frame.frameId}-tile-${small ? 600 : 1200}.webp`;
+  return `/media/${frame.frameId}-tile-${small ? 600 : 2400}.webp`;
 }
 
 export function hasCleanCut(frame: Frame | undefined | null): boolean {
@@ -112,7 +112,7 @@ export function editorialFrames(slug: string): Frame[] {
 
 export function altFor(bag: Pick<Bag, "name">, colour: string | null, exact = true): string {
   const base = `${bag.name}, hand-crocheted by Arcubed`;
-  return colour && exact ? `${base} — ${colour}` : base;
+  return colour && exact ? `${base} in ${colour}` : base;
 }
 
 /**

@@ -8,7 +8,6 @@ import { useCart, uid } from "@/lib/cart-context";
 import { showToast } from "@/lib/toast";
 import ProductGallery from "./ProductGallery";
 import ColourSelector from "./ColourSelector";
-import TwoToneSelector from "./TwoToneSelector";
 import SizeSelector from "./SizeSelector";
 import StrapHandleSelector from "./StrapHandleSelector";
 import AddonSelector from "./AddonSelector";
@@ -17,10 +16,13 @@ import { AddToCartInline, AddToCartStickyBar } from "./AddToCartControls";
 
 export default function Customizer({
   bag,
+  initialColourId,
   editingLine,
   productionTimeLabel,
 }: {
   bag: Bag;
+  /** Colourway from the URL, resolved server-side. See src/lib/variant.ts. */
+  initialColourId?: string | null;
   editingLine: CartItem | null;
   // Passed down from the Server Component page (see product/[slug]/page.tsx)
   // rather than imported as a static constant — production time is a real
@@ -42,7 +44,7 @@ export default function Customizer({
           chainId: editingLine.chainId,
           addonIds: [...editingLine.addonIds],
         }
-      : defaultSelectionFor(bag)
+      : defaultSelectionFor(bag, initialColourId)
   );
 
   const price = computeUnitPrice(bag, selection);
@@ -96,7 +98,12 @@ export default function Customizer({
         <div className="pd-object">
           <ProductGallery bag={bag} selection={selection} />
         </div>
-        {bag.tagline ? <p className="pd-caption">{bag.tagline}</p> : null}
+        {/* Names exactly what the photograph shows. Colour is the one choice
+            with a photographic answer, so saying so plainly is what keeps the
+            image honest without a disclaimer. */}
+        <p className="pd-caption">
+          Pictured in {bag.colours.find((c) => c.id === selection.colourId)?.name ?? ""}
+        </p>
       </section>
 
       <section className="pd-buy">
@@ -115,22 +122,23 @@ export default function Customizer({
               showLabel={false}
               colours={bag.colours}
               selectedId={selection.colourId}
-              onSelect={(colourId) => setSelection((prev) => ({ ...prev, colourId }))}
+              onSelect={(colourId) =>
+                setSelection((prev) => ({
+                  ...prev,
+                  colourId,
+                  // Two-tone is the colourway itself, so the secondary zone
+                  // follows the choice instead of being a separate control.
+                  secondaryColourId: bag.colours.find((c) => c.id === colourId)?.isTwoTone ? colourId : null,
+                }))
+              }
             />
-            {bag.colours.some((c) => c.isTwoTone) ? (
-              <TwoToneSelector
-                colours={bag.colours.filter((c) => c.isTwoTone)}
-                selectedId={selection.secondaryColourId}
-                onSelect={(secondaryColourId) => setSelection((prev) => ({ ...prev, secondaryColourId }))}
-              />
-            ) : null}
           </div>
 
           {hasConfigOnly ? (
             <div className="pd-opt-block">
               <p className="pd-opt-head">Details</p>
               <p className="pd-opt-note">
-                These set what we make. The photograph above shows the colour you picked.
+                Chosen for you and crocheted in. The photograph shows the colour.
               </p>
               {bag.sizes ? (
                 <SizeSelector
@@ -171,7 +179,7 @@ export default function Customizer({
           </div>
           <div>
             <p className="pd-fact-h">Made to order</p>
-            <p>{productionTimeLabel ?? "Handmade to order — timing on request."}</p>
+            <p>{productionTimeLabel ?? "Handmade to order. Timing on request."}</p>
           </div>
         </div>
       </section>

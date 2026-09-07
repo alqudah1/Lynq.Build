@@ -15,6 +15,8 @@ import sharp from "sharp";
 import { mkdirSync, writeFileSync, existsSync } from "node:fs";
 import { analyzeFrame } from "./lib-mask.mjs";
 import { PRODUCT_MEDIA, TEXTURE_CROPS, allFrames, REJECTED_CUTOUTS } from "./media-manifest.mjs";
+import { objectMatte } from "./lib-matte.mjs";
+import { buildTextures } from "./build-textures.mjs";
 
 const SRC = "../../03_Images";
 const OUT = "public/media";
@@ -29,37 +31,6 @@ function geomFor(a, w, h) {
   const width = Math.max(1, Math.min(a.box.width + pad * 2, w - left));
   const height = Math.max(1, Math.min(a.box.height + pad * 2, h - top));
   return { ratio: +(width / height).toFixed(4), objectRatio: +(a.box.width / a.box.height).toFixed(4) };
-}
-
-async function objectMatte(file, w, h, data, channels) {
-  const alpha = Buffer.alloc(w * h);
-  const m = Math.max(4, Math.round(w * 0.06));
-  const med = (a) => a.slice().sort((p, q) => p - q)[a.length >> 1];
-  const lum = (r, g, b) => 0.299 * r + 0.587 * g + 0.114 * b;
-  const sat = (r, g, b) => Math.max(r, g, b) - Math.min(r, g, b);
-  for (let y = 0; y < h; y++) {
-    const L = [[], [], []], R = [[], [], []];
-    for (let x = 0; x < m; x++) {
-      const li = (y * w + x) * channels, ri = (y * w + (w - 1 - x)) * channels;
-      for (let c = 0; c < 3; c++) { L[c].push(data[li + c]); R[c].push(data[ri + c]); }
-    }
-    const lbg = [med(L[0]), med(L[1]), med(L[2])];
-    const rbg = [med(R[0]), med(R[1]), med(R[2])];
-    for (let x = 0; x < w; x++) {
-      const i = (y * w + x) * channels;
-      const f = x / (w - 1);
-      const b0 = lbg[0] + (rbg[0] - lbg[0]) * f;
-      const b1 = lbg[1] + (rbg[1] - lbg[1]) * f;
-      const b2 = lbg[2] + (rbg[2] - lbg[2]) * f;
-      // Directional: objects are darker and/or more saturated than the lit
-      // seamless, never brighter. An absolute deviation keeps backdrop
-      // highlights and leaves a pale box behind the bag.
-      const d = Math.max(lum(b0, b1, b2) - lum(data[i], data[i+1], data[i+2]),
-                         (sat(data[i], data[i+1], data[i+2]) - sat(b0, b1, b2)) * 1.25);
-      alpha[y * w + x] = d <= 10 ? 0 : d >= 28 ? 255 : Math.round(((d - 10) / 18) * 255);
-    }
-  }
-  return alpha;
 }
 
 for (const frame of allFrames()) {
@@ -121,24 +92,11 @@ for (const frame of allFrames()) {
 }
 console.log("");
 
-for (const t of TEXTURE_CROPS) {
-  const a = await analyzeFrame(`${SRC}/${t.frame}.JPG`, { probeWidth: MATTE_W, dev: 20 });
-  const r = {
-    left: Math.round(a.box.x0 + a.box.width * t.rel.l), top: Math.round(a.box.y0 + a.box.height * t.rel.t),
-    width: Math.round(a.box.width * t.rel.w), height: Math.round(a.box.height * t.rel.h),
-  };
-  // One resize per pipeline — resizing after .extract() invalidates the
-  // region, same failure the framed/cut paths hit.
-  const tBuf = await sharp(`${SRC}/${t.frame}.JPG`).rotate().resize({ width: MATTE_W }).png().toBuffer();
-  const tm = await sharp(tBuf).metadata();
-  r.left = Math.max(0, Math.min(r.left, tm.width - 1));
-  r.top = Math.max(0, Math.min(r.top, tm.height - 1));
-  r.width = Math.max(1, Math.min(r.width, tm.width - r.left));
-  r.height = Math.max(1, Math.min(r.height, tm.height - r.top));
-  await sharp(tBuf).extract(r).resize({ width: 1100 }).webp({ quality: 84 }).toFile(`${OUT}/${t.id}.webp`);
-  geom[t.id] = { ratio: +(r.width / r.height).toFixed(4) };
-  console.log(`${t.id.padEnd(18)} ${t.frame}  ${r.width}x${r.height}`);
-}
+// Textures come from scripts/build-textures.mjs, which crops the FULL
+// resolution originals. Doing it here used to crop an already-downscaled
+// 1600px proxy and then upscale the result — running this file would silently
+// undo the macro fix, so it delegates instead of duplicating.
+Object.assign(geom, await buildTextures());
 
 // Emit the typed manifest the app imports.
 const lines = [];
@@ -165,7 +123,7 @@ lines.push("function f(id: string, ratio: number, cutOk = true): Frame {");
 lines.push("  return {");
 lines.push("    photo: `/media/${id}-1600.webp`,");
 lines.push("    photoSmall: `/media/${id}-800.webp`,");
-lines.push("    cut: `/media/${id}-cut-1200.webp`,");
+lines.push("    cut: `/media/${id}-cut-2400.webp`,");
 lines.push("    cutSmall: `/media/${id}-cut-600.webp`,");
 lines.push("    ratio,");
 lines.push("    frameId: id,");

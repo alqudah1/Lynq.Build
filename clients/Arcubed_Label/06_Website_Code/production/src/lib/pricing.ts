@@ -27,12 +27,18 @@ export function buildReadyForDeliverySnapshot(
   };
 }
 
-export function defaultSelectionFor(bag: Bag): Selection {
+export function defaultSelectionFor(bag: Bag, initialColourId?: string | null): Selection {
+  // A colour carried in the URL wins. Without this every Shop tile opened on
+  // colours[0]: clicking Silver Mini Luna opened Red.
+  const colour = bag.colours.find((c) => c.id === initialColourId) ?? bag.colours[0];
   return {
-    colourId: bag.colours[0].id,
-    // No secondary colour pre-selected by default, even on a two-tone
-    // product — the customer opts in.
-    secondaryColourId: null,
+    colourId: colour.id,
+    // Two-tone is a COLOURWAY, chosen in the colour row and backed by its own
+    // photography (Mini Luna Silver & Gold is DSC04870). The secondary id is
+    // derived from that choice rather than being a second control the
+    // customer has to find — there used to be an "optional two-tone" selector
+    // that set this and changed nothing on screen.
+    secondaryColourId: colour.isTwoTone ? colour.id : null,
     // Size is a required choice, so the first (Regular, +0) is pre-selected.
     sizeId: bag.sizes && bag.sizes.length ? bag.sizes[0].id : null,
     // Straps, handles and chains are PAID UPGRADES (+5 JOD each), so none is
@@ -72,7 +78,10 @@ export function computeUnitPrice(bag: Bag, sel: Selection): number {
 // independent of whatever the live product looks like later.
 export function buildCartSnapshot(bag: Bag, sel: Selection): CartItemSnapshot {
   const colour = bag.colours.find((c) => c.id === sel.colourId) ?? bag.colours[0];
-  const secondaryColour = sel.secondaryColourId
+  // Only a DIFFERENT secondary colour is worth recording. Two-tone is now the
+  // colourway itself, so primary and secondary are the same row and printing
+  // both gave lines like "Silver & Gold · Silver & Gold two-tone".
+  const secondaryColour = sel.secondaryColourId && sel.secondaryColourId !== sel.colourId
     ? bag.colours.find((c) => c.id === sel.secondaryColourId)
     : undefined;
   const size = bag.sizes?.find((s) => s.id === sel.sizeId);

@@ -45,7 +45,7 @@ export default async function ReadyForDeliveryPage() {
             and the promise is only true inside Jordan. */}
         <p className="ed-rfd-promise">{deliveryPromise}.</p>
         <p className="ed-rfd-sub">
-          Already made, photographed exactly as it ships. Choose it as it is — these pieces don&rsquo;t
+          Already made, photographed exactly as it ships. Choose it as it is. These pieces don&rsquo;t
           go through the customizer.
         </p>
       </section>
@@ -63,7 +63,7 @@ export default async function ReadyForDeliveryPage() {
               </p>
               <p className="rfd-empty-note">
                 Ready for Delivery is finished stock, photographed exactly as it ships. There is
-                none right now — the next edit is being made.
+                none right now. The next edit is being made.
               </p>
               <Link className="rfd-empty-link" href="/shop">
                 See the collection <span aria-hidden="true">&rarr;</span>
@@ -71,7 +71,7 @@ export default async function ReadyForDeliveryPage() {
               <p className="rfd-empty-meta">
                 <span>{deliveryPromise}</span>
                 <span aria-hidden="true">·</span>
-                <span>Made to order in 3&ndash;5 business days</span>
+                <span>Made to order in 3 to 5 business days</span>
               </p>
             </div>
             {emptyFrame && emptyBag ? (

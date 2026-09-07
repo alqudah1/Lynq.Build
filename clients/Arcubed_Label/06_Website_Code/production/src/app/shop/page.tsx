@@ -1,100 +1,107 @@
-// Shop — editorial catalogue, real photography only.
+// Shop — the colourway wall.
+//
+// Every verified product/colour pairing, each tile carrying its own colour in
+// the link (src/lib/variant.ts) so the product page opens on the colourway the
+// customer actually clicked. Frame proportions follow a fixed catalogue
+// rhythm (SHOP_RHYTHM), never masonry.
+
 import Link from "next/link";
 import Image from "next/image";
 import { getActiveBags } from "@/lib/repository";
 import { money } from "@/lib/pricing";
-import { resolveMedia, framesForColour, altFor, photographedColours, tileSrc } from "@/lib/product-media";
-import Reveal from "@/components/Reveal";
+import { framesForColour, tileSrc, altFor } from "@/lib/product-media";
+import { COLLECTION, SHOP_RHYTHM } from "@/lib/collection";
+import { variantHref } from "@/lib/variant";
+import type { Bag } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Shop — Arcubed Label",
-  description: "Four hand-crocheted shapes, made to order in your colour.",
-};
-
-/**
- * A controlled repeating frame rhythm — square, portrait, square, wide — not
- * four identical cards and not random masonry.
- *
- * Treatment follows the media, not the slot: an isolated object on a colour
- * field where the cut-out is strong, the full photograph where the
- * photography is stronger. Loco is the wide frame precisely because it has no
- * usable cut-out (its fringe defeats a matte) and its own photograph is the
- * best thing in the catalogue.
- *
- * Vault shows Olive Green rather than Brown: Brown's cut-out traps a patch of
- * seamless inside the hand slot (see scripts/build-tile-cutouts.mjs).
- */
-const LAYOUT: Record<string, { cls: string; colour: string }> = {
-  nova: { cls: "sx-square", colour: "Gold" },
-  vault: { cls: "sx-portrait", colour: "Olive Green" },
-  "mini-luna": { cls: "sx-square", colour: "Red" },
-  loco: { cls: "sx-wide", colour: "Brown" },
+  title: "Shop",
+  description: "Every Arcubed colourway. Four hand-crocheted shapes, made to order in Jordan.",
 };
 
 export default async function ShopPage() {
   const bags = await getActiveBags();
+  const bySlug = new Map<string, Bag>(bags.map((b) => [b.slug, b]));
+
+  interface Tile {
+    key: string; href: string; product: string; colour: string; field: string;
+    src: string; asPhoto: boolean; ratio: number; alt: string; price: string;
+    rhythm: { span: number; ratio: string; feature?: true };
+  }
+
+  const tiles = COLLECTION.map<Tile | null>((entry, i) => {
+    const bag = bySlug.get(entry.slug);
+    const frame = bag ? framesForColour(bag, entry.colour)[0] : undefined;
+    if (!bag || !frame) return null;
+    const rhythm = SHOP_RHYTHM[i % SHOP_RHYTHM.length];
+    const asPhoto = entry.forcePhoto || !frame.cutOk;
+    return {
+      key: `${entry.slug}-${entry.colour}`,
+      href: variantHref(bag.slug, entry.colour),
+      product: entry.product,
+      colour: entry.colour,
+      field: entry.field,
+      src: asPhoto ? frame.photo : tileSrc(frame),
+      asPhoto,
+      ratio: frame.ratio,
+      alt: altFor(bag, entry.colour),
+      price: money(bag.basePrice),
+      rhythm,
+    };
+  }).filter((t): t is Tile => t !== null);
 
   return (
     <>
-      <section className="sx-head">
-        <p className="ed-kicker">The collection</p>
-        <h1 className="sx-title">SHOP</h1>
-        <p className="sx-sub">
-          Four shapes, hand-crocheted to order. Choose your colour and your fittings — nothing is
-          made before you pick it.
+      <section className="shopx-head">
+        <p className="shopx-kicker">Shop</p>
+        <h1 className="shopx-title">
+          Every colour
+          <br />
+          we have made.
+        </h1>
+        <p className="shopx-sub">
+          {tiles.length} colourways. Four shapes. Each one crocheted by hand once you choose it.
         </p>
       </section>
 
-      <section className="sx-grid">
-        {bags.map((bag, i) => {
-          const cfg = LAYOUT[bag.slug] ?? { cls: "sx-a", colour: bag.colours[0]?.name ?? "" };
-          const media = resolveMedia(bag, cfg.colour);
-          const shots = framesForColour(bag, cfg.colour);
-          const alt = shots[1];
-          const colourCount = photographedColours(bag).length;
-          return (
-            <Reveal as="article" key={bag.id} className={`sx-item ${cfg.cls}`} delay={i * 80}>
-              <Link href={`/product/${bag.slug}`} className="sx-link">
-                {/* Cut-outs float on the colour field so the field is part of
-                    the composition. Loco's cut-out failed QA (backdrop between
-                    fringe strands), so it keeps its framed photograph. */}
-                <span className={`sx-media${media?.frame.cutOk ? " sx-media-cut" : ""}`}>
-                  {media ? (
-                    <Image
-                      className="sx-img sx-img-1"
-                      src={media.frame.cutOk ? tileSrc(media.frame) : media.frame.photo}
-                      alt={altFor(bag, media.shownColour, media.exactColour)}
-                      width={1600}
-                      height={Math.round(1600 / media.frame.ratio)}
-                      sizes="(max-width: 860px) 92vw, 46vw"
-                      priority={i < 2}
-                    />
-                  ) : null}
-                  {/* Hover reveal uses a REAL second photograph of the same
-                      colourway, never a simulated one. */}
-                  {alt ? (
-                    <Image
-                      className="sx-img sx-img-2"
-                      src={alt.cutOk ? tileSrc(alt) : alt.photo}
-                      alt=""
-                      aria-hidden="true"
-                      width={1600}
-                      height={Math.round(1600 / alt.ratio)}
-                      sizes="(max-width: 860px) 92vw, 46vw"
-                    />
-                  ) : null}
+      <section className="shopx">
+        <ul className="shopx-grid">
+          {tiles.map((t) => (
+            <li
+              key={t.key}
+              className={`shopx-cell${t.rhythm.feature ? " is-feature" : ""}`}
+              style={{ ["--span" as string]: t.rhythm.span, ["--ar" as string]: t.rhythm.ratio }}
+            >
+              <Link href={t.href} className="shopx-link">
+                <span className="shopx-field" style={{ background: t.asPhoto ? undefined : t.field }}>
+                  <Image
+                    src={t.src}
+                    alt={t.alt}
+                    width={1600}
+                    height={Math.round(1600 / t.ratio)}
+                    // Declared from the tile's actual span. The wide feature
+                    // spans BOTH mobile columns, so a flat 50vw made Next
+                    // serve a 256px derivative for a 363px slot.
+                    sizes={
+                      t.rhythm.feature
+                        ? "(max-width: 1080px) 100vw, 62vw"
+                        : "(max-width: 760px) 58vw, 42vw"
+                    }
+                    className={t.asPhoto ? "shopx-photo" : "shopx-cut"}
+                  />
+                  <span className="shopx-view">View</span>
                 </span>
-                <span className="sx-name">{bag.name}</span>
-                <span className="sx-meta">
-                  <span>{colourCount} colourway{colourCount === 1 ? "" : "s"}</span>
-                  <span className="sx-price">From {money(bag.basePrice)}</span>
+                <span className="shopx-meta">
+                  <span className="shopx-name">{t.product}</span>
+                  <span className="shopx-colour">{t.colour}</span>
+                  <span className="shopx-price">{t.price}</span>
                 </span>
               </Link>
-            </Reveal>
-          );
-        })}
+            </li>
+          ))}
+        </ul>
       </section>
     </>
   );

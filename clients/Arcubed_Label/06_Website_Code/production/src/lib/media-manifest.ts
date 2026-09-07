@@ -21,7 +21,7 @@ function f(id: string, ratio: number, cutOk = true): Frame {
   return {
     photo: `/media/${id}-1600.webp`,
     photoSmall: `/media/${id}-800.webp`,
-    cut: `/media/${id}-cut-1200.webp`,
+    cut: `/media/${id}-cut-2400.webp`,
     cutSmall: `/media/${id}-cut-600.webp`,
     ratio,
     frameId: id,
@@ -63,9 +63,9 @@ export const EDITORIAL_ONLY: Record<string, Frame[]> = {
 };
 
 export const TEXTURES = {
-  "fringe": { src: "/media/texture-fringe.webp", ratio: 1.2495 },
-  "metallic": { src: "/media/texture-metallic.webp", ratio: 1.3826 },
-  "chunky": { src: "/media/texture-chunky.webp", ratio: 1.8048 },
-  "gold": { src: "/media/texture-gold.webp", ratio: 2.3991 },
-  "twotone": { src: "/media/texture-twotone.webp", ratio: 2.8725 },
+  "fringe": { src: "/media/texture-fringe.webp", ratio: 1.2496 },
+  "metallic": { src: "/media/texture-metallic.webp", ratio: 1.3848 },
+  "chunky": { src: "/media/texture-chunky.webp", ratio: 1.803 },
+  "gold": { src: "/media/texture-gold.webp", ratio: 2.4042 },
+  "twotone": { src: "/media/texture-twotone.webp", ratio: 2.8669 },
 } as const;

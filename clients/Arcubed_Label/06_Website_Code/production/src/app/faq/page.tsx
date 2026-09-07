@@ -5,6 +5,7 @@
 // hardcode a specific lead time, rate, or return rule in this file again.
 
 import { getStoreSettings, getShippingRules, getReturnPolicies } from "@/lib/repository";
+import { plainText } from "@/lib/site-settings";
 import { formatMoney } from "@/lib/site-settings";
 import type { ReturnPolicy } from "@/lib/types";
 
@@ -18,7 +19,7 @@ function shippingSentence(rules: Awaited<ReturnType<typeof getShippingRules>>): 
   }
   const parts = rules.map((r) =>
     r.isQuoteRequired || r.amount === null
-      ? `${r.label}: calculated based on destination — contact us for a quote`
+      ? `${r.label}: calculated by destination. Contact us for a quote`
       : `${r.label}: ${formatMoney(r.amount, r.currencyCode)}`
   );
   return parts.join(". ") + ".";
@@ -43,7 +44,7 @@ export default async function FaqPage() {
   ]);
 
   const productionAnswer = settings
-    ? `Made-to-order bags: production takes ${settings.productionTimeLabel}. Ready for Delivery items (already in stock): ${settings.readyForDeliveryFulfillmentLabel.toLowerCase()} delivery.`
+    ? `Made-to-order bags: production takes ${plainText(settings.productionTimeLabel)}. Ready for Delivery items (already in stock): ${settings.readyForDeliveryFulfillmentLabel.toLowerCase()} delivery.`
     : "Made-to-order bags have a lead time; Ready for Delivery items (already in stock) ship faster. Exact timing will be published here once confirmed.";
 
   const shippingAnswer = shippingSentence(shippingRules);
@@ -52,7 +53,7 @@ export default async function FaqPage() {
     { q: "How long does it take to receive my bag?", a: productionAnswer },
     {
       q: "Can I customize any bag?",
-      a: "Most styles offer colour, size, and — where relevant — strap, chain and two-tone choices in the customizer. Ready for Delivery items are already finished and don't go through the customizer — what you see is exactly what ships.",
+      a: "Most styles offer colour, size, and, where relevant, strap, chain and two-tone choices in the customizer. Ready for Delivery items are already finished and don't go through the customizer — what you see is exactly what ships.",
     },
     {
       q: "What are your bags made from?",

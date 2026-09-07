@@ -90,7 +90,7 @@ export default function ContactForm() {
         </button>
       </form>
       <p className="ct-ig">
-        Fastest reply is on Instagram —{" "}
+        Fastest reply is on Instagram.{" "}
         <a href="https://instagram.com/arcubedlabel" target="_blank" rel="noreferrer">@arcubedlabel</a>
       </p>
     </>

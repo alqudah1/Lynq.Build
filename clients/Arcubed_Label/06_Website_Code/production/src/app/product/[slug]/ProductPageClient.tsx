@@ -12,7 +12,7 @@ import type { Bag } from "@/lib/types";
 import { useCart } from "@/lib/cart-context";
 import Customizer from "@/components/customizer/Customizer";
 
-function ProductPageInner({ bag, productionTimeLabel }: { bag: Bag; productionTimeLabel: string | null }) {
+function ProductPageInner({ bag, initialColourId, productionTimeLabel }: { bag: Bag; initialColourId: string | null; productionTimeLabel: string | null }) {
   const searchParams = useSearchParams();
   const { cart, hydrated } = useCart();
 
@@ -30,8 +30,9 @@ function ProductPageInner({ bag, productionTimeLabel }: { bag: Bag; productionTi
 
   return (
     <Customizer
-      key={editingLine?.lineId ?? bag.id}
+      key={`${editingLine?.lineId ?? bag.id}:${initialColourId ?? ""}`}
       bag={bag}
+      initialColourId={initialColourId}
       editingLine={editingLine}
       productionTimeLabel={productionTimeLabel}
     />
@@ -40,14 +41,16 @@ function ProductPageInner({ bag, productionTimeLabel }: { bag: Bag; productionTi
 
 export default function ProductPageClient({
   bag,
+  initialColourId,
   productionTimeLabel,
 }: {
   bag: Bag;
+  initialColourId: string | null;
   productionTimeLabel: string | null;
 }) {
   return (
     <Suspense fallback={null}>
-      <ProductPageInner bag={bag} productionTimeLabel={productionTimeLabel} />
+      <ProductPageInner bag={bag} initialColourId={initialColourId} productionTimeLabel={productionTimeLabel} />
     </Suspense>
   );
 }

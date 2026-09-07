@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { verifySession, ADMIN_COOKIE } from "@/lib/admin-session";
 
 // Belt-and-braces on top of each route's own notFound() call, which renders
 // correct not-found content but — being thrown from inside an async Server
@@ -15,6 +16,16 @@ export function proxy(request: NextRequest) {
   // content at status 200.
   if (process.env.NODE_ENV === "production" && pathname.startsWith("/dev/")) {
     return new NextResponse(null, { status: 404 });
+  }
+
+  // Order management. Refused before any render, so an unauthenticated
+  // request never reaches a page that would query orders. The sign-in page
+  // itself must stay reachable. Each admin page and Server Action re-checks
+  // independently — this is defence in depth, not the only gate.
+  if (pathname.startsWith("/admin") && pathname !== "/admin") {
+    if (!verifySession(request.cookies.get(ADMIN_COOKIE)?.value)) {
+      return NextResponse.redirect(new URL("/admin", request.url));
+    }
   }
 
   // Order confirmations are addressed by an unguessable UUID. Anything that
@@ -33,5 +44,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dev/:path*", "/order/:path*"],
+  matcher: ["/dev/:path*", "/order/:path*", "/admin/:path*"],
 };

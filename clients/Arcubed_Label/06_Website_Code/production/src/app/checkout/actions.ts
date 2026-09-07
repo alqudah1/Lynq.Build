@@ -80,9 +80,9 @@ export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult>
 
   if (!fullName) errors.push("Please enter your full name.");
   if (!phone) errors.push("Please enter a phone number so we can reach you about delivery.");
-  else if (!phoneLooksReal(phone)) errors.push("That phone number doesn't look complete — please check it.");
+  else if (!phoneLooksReal(phone)) errors.push("That phone number doesn't look complete. Please check it.");
   if (!email) errors.push("Please enter an email address for your order confirmation.");
-  else if (!emailLooksReal(email)) errors.push("That email address doesn't look right — please check it.");
+  else if (!emailLooksReal(email)) errors.push("That email address doesn't look right. Please check it.");
   if (!input.zoneKey) errors.push("Please choose where we're delivering to.");
   if (!address) errors.push("Please enter a delivery address.");
   if (!Array.isArray(input.items) || input.items.length === 0) errors.push("Your bag is empty.");

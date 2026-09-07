@@ -39,6 +39,9 @@ const OUT_W = 2600;
  */
 const HOMEPAGE_MACROS = [
   { id: "macro-metallic", frame: "DSC05774", rel: { l: 0.12, t: 0.44, w: 0.72, h: 0.44 } },
+  // About draws its texture full-bleed at 1440. The shared chunky crop is
+  // 1318px, so it was being enlarged by more than half again.
+  { id: "macro-chunky", frame: "DSC05790", rel: { l: 0.08, t: 0.30, w: 0.84, h: 0.40 } },
 ];
 
 export async function buildTextures(log = console.log) {

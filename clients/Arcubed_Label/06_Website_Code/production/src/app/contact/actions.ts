@@ -36,7 +36,7 @@ export async function submitInquiry(input: {
   if (!email) errors.push("Please enter an email address so we can reply.");
   else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push("That email address doesn't look right.");
   if (!message) errors.push("Please write a message.");
-  else if (message.length > 4000) errors.push("That message is too long — please shorten it.");
+  else if (message.length > 4000) errors.push("That message is too long. Please shorten it.");
   if (!TOPICS.includes(topic)) errors.push("Please choose a topic.");
   if (errors.length) return { ok: false, errors };
 

@@ -22,7 +22,7 @@ export const MOCK_COLOURS: Colour[] = [
 // invented, just a local copy so `npm run dev` works without a live DB.
 export const MOCK_STORE_SETTINGS: StoreSettings = {
   currencyCode: "JOD",
-  productionTimeLabel: "3–5 business days",
+  productionTimeLabel: "3 to 5 business days",
   productionTimeMinDays: 3,
   productionTimeMaxDays: 5,
   readyForDeliveryFulfillmentLabel: "Next day",
@@ -40,7 +40,7 @@ export const MOCK_RETURN_POLICIES: ReturnPolicy[] = [
     isReturnable: false,
     returnWindowDays: null,
     policySummary:
-      "Custom, made-to-order bags are final sale — we don't offer change-of-mind returns or exchanges once an order is placed.",
+      "Custom, made-to-order bags are final sale. We don't offer change-of-mind returns or exchanges once an order is placed.",
     exceptionsSummary:
       "This doesn't apply to a defective item, a damaged item, an incorrect item, or any rights you have under applicable consumer law — those are always honoured regardless of order type.",
   },
@@ -48,7 +48,7 @@ export const MOCK_RETURN_POLICIES: ReturnPolicy[] = [
     orderType: "ready_for_delivery",
     isReturnable: null,
     returnWindowDays: null,
-    policySummary: "Return/exchange terms for Ready for Delivery items are still being finalized — check back soon, or contact us directly.",
+    policySummary: "Return/exchange terms for Ready for Delivery items are still being finalized. Check back soon, or contact us directly.",
     exceptionsSummary:
       "This doesn't apply to a defective item, a damaged item, an incorrect item, or any rights you have under applicable consumer law — those are always honoured regardless of order type.",
   },

@@ -31,3 +31,6 @@ next-env.d.ts
 
 # Dev-only browser-verification screenshots (scripts/browser-check.mjs)
 .screens/
+
+# Machine-readable output of scripts/audit-site.mjs (regenerated on demand)
+.audit/

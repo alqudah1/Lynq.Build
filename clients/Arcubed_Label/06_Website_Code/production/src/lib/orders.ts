@@ -328,7 +328,7 @@ async function claimReadyStock(
       // Someone took it between pricing and claiming, or it was unpublished.
       return {
         ok: false,
-        errors: ["Sorry — one of the ready-to-ship pieces in your cart just sold. Please review your cart and try again."],
+        errors: ["Sorry, one of the ready-to-ship pieces in your cart just sold. Please review your cart and try again."],
         claimed,
       };
     }
@@ -607,4 +607,112 @@ export async function getOrderByConfirmationToken(token: string): Promise<OrderC
     shippingQuoteRequired: data.shipping_quote_required,
     lines,
   };
+}
+
+
+/* ------------------------------------------------------------------ */
+/* Order management (Rand-facing). Server-only, service-role, and only  */
+/* ever called from an /admin page that has already passed isAdmin().   */
+/* ------------------------------------------------------------------ */
+
+export interface AdminOrderLine {
+  kind: "made_to_order" | "ready_for_delivery";
+  name: string;
+  configuration: string[];
+  quantity: number;
+  unitPrice: number;
+}
+
+export interface AdminOrder {
+  id: string;
+  orderNumber: string;
+  createdAt: string;
+  status: string;
+  paymentStatus: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string | null;
+  shippingAddress: Record<string, unknown> | null;
+  subtotal: number;
+  shippingAmount: number;
+  total: number;
+  currency: string;
+  shippingQuoteRequired: boolean;
+  lines: AdminOrderLine[];
+}
+
+/** Newest first. `limit` is clamped so a bad value cannot ask for everything. */
+export async function listOrders(limit = 100): Promise<AdminOrder[]> {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("orders")
+    .select(
+      "id, order_number, created_at, status, payment_status, customer_name, customer_email, customer_phone, shipping_address, subtotal, shipping_amount, total, currency, shipping_quote_required, order_items ( item_kind, product_name_snapshot, quantity, unit_price, configuration_snapshot )"
+    )
+    .order("created_at", { ascending: false })
+    .limit(Math.max(1, Math.min(limit, 200)));
+
+  if (error || !data) return [];
+
+  return data.map((row) => {
+    const r = row as Record<string, unknown>;
+    const items = (r.order_items as Record<string, unknown>[] | null) ?? [];
+    return {
+      id: String(r.id),
+      orderNumber: String(r.order_number),
+      createdAt: String(r.created_at),
+      status: String(r.status),
+      paymentStatus: String(r.payment_status),
+      customerName: String(r.customer_name ?? ""),
+      customerEmail: String(r.customer_email ?? ""),
+      customerPhone: (r.customer_phone as string | null) ?? null,
+      shippingAddress: (r.shipping_address as Record<string, unknown> | null) ?? null,
+      subtotal: Number(r.subtotal ?? 0),
+      shippingAmount: Number(r.shipping_amount ?? 0),
+      total: Number(r.total ?? 0),
+      currency: String(r.currency ?? "JOD"),
+      shippingQuoteRequired: Boolean(r.shipping_quote_required),
+      lines: items.map((it) => {
+        const snap = (it.configuration_snapshot as Record<string, unknown> | null) ?? {};
+        const cfg = Array.isArray(snap.configuration) ? (snap.configuration as string[]) : [];
+        return {
+          kind: (it.item_kind === "ready_for_delivery" ? "ready_for_delivery" : "made_to_order") as AdminOrderLine["kind"],
+          name: String(it.product_name_snapshot ?? ""),
+          configuration: cfg,
+          quantity: Number(it.quantity ?? 1),
+          unitPrice: Number(it.unit_price ?? 0),
+        };
+      }),
+    };
+  });
+}
+
+/** The only values an order may be moved between from the admin screen. */
+export const ORDER_STATUSES = ["pending", "confirmed", "in_production", "ready", "shipped", "completed", "cancelled"] as const;
+export const PAYMENT_STATUSES = ["unpaid", "paid", "refunded"] as const;
+
+export async function updateOrderStatus(
+  orderId: string,
+  status: string | null,
+  paymentStatus: string | null
+): Promise<{ ok: boolean; error?: string }> {
+  // Whitelisted, so a crafted form post cannot write an arbitrary status.
+  // Typed against the generated row shape rather than Record<string,string>,
+  // so the column names are checked at build time too.
+  const patch: { status?: string; payment_status?: string } = {};
+  if (status) {
+    if (!(ORDER_STATUSES as readonly string[]).includes(status)) return { ok: false, error: "Unknown status." };
+    patch.status = status;
+  }
+  if (paymentStatus) {
+    if (!(PAYMENT_STATUSES as readonly string[]).includes(paymentStatus)) return { ok: false, error: "Unknown payment status." };
+    patch.payment_status = paymentStatus;
+  }
+  if (!Object.keys(patch).length) return { ok: false, error: "Nothing to update." };
+  if (!/^[0-9a-f-]{36}$/i.test(orderId)) return { ok: false, error: "Bad order id." };
+
+  const supabase = createAdminClient();
+  const { error } = await supabase.from("orders").update(patch).eq("id", orderId);
+  if (error) return { ok: false, error: "Could not update that order." };
+  return { ok: true };
 }

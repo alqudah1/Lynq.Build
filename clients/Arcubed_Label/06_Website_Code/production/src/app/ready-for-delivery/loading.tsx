@@ -5,7 +5,7 @@ export default function ReadyForDeliveryLoading() {
     <>
       <section className="section shop-head">
         <p className="eyebrow center">Ready for Delivery</p>
-        <h1 className="center">Already made.</h1>
+        <p className="center skeleton-title">Already made.</p>
       </section>
       <section className="section">
         <ShopGridSkeleton />

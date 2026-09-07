@@ -66,7 +66,9 @@ async function backgroundColour(id) {
 }
 
 for (const id of SOURCES) {
-  const src = `public/media/${id}-cut-1200.webp`;
+  // Sources the high-resolution cut-out (scripts/build-hires.mjs) so the
+  // de-haloed tiles carry the same real detail as everything else.
+  const src = `public/media/${id}-cut-2400.webp`;
   const { data, info } = await sharp(src).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   const { width: W, height: H, channels: C } = info;
   const bg = await backgroundColour(id);
@@ -183,7 +185,7 @@ for (const id of SOURCES) {
     out[o + 3] = a;
   }
 
-  const dst = `public/media/${id}-tile-1200.webp`;
+  const dst = `public/media/${id}-tile-2400.webp`;
   await sharp(out, { raw: { width: W, height: H, channels: 4 } })
     .webp({ quality: 92, alphaQuality: 100 }).toFile(dst);
   const small = `public/media/${id}-tile-600.webp`;
