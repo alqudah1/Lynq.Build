@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Inter, Bodoni_Moda, Instrument_Serif, Playfair_Display, Archivo } from "next/font/google";
+import { Inter, Bodoni_Moda, Instrument_Serif, Playfair_Display, Archivo } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/lib/cart-context";
 import Header from "@/components/Header";
@@ -11,12 +11,6 @@ import Toaster from "@/components/Toaster";
 // optical size is drawn for text; the homepage sets it at 200px+, where the
 // display cut has finer joins and tighter apertures. That is most of why the
 // headline read as unresolved rather than as art-directed.
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-head",
-  display: "swap",
-  axes: ["opsz", "SOFT"],
-});
 
 // Display face for the hero. Bodoni Moda is a true fashion masthead cut: very
 // high stroke contrast, a real italic, and an optical-size axis. Fraunces is a
@@ -91,7 +85,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${bodoni.variable} ${instrument.variable} ${playfair.variable} ${archivo.variable} ${inter.variable}`}>
+    <html lang="en" className={`${bodoni.variable} ${instrument.variable} ${playfair.variable} ${archivo.variable} ${inter.variable}`}>
       <head>
         {/* Marks the document as JS-capable BEFORE first paint. Scroll-reveal
             CSS hides content only under `.js`, so if JavaScript fails or is

@@ -56,7 +56,7 @@ for (const c of CASES) {
     // 1. product page via the exact Shop link
     await go(`${BASE}/product/${c.slug}?colour=${colourSlug(c.colour)}`);
     const p = await evalp(`(()=>{const img=document.querySelector('.pg-img');
-      const sel=[...document.querySelectorAll('.swatch-row button')].find(b=>b.className.includes('selected'));
+      const sel=[...document.querySelectorAll('.swatch-row button')].find(b=>b.getAttribute('aria-pressed')==='true');
       return {h1:(document.querySelector('.pd-h1')||{}).textContent,
               swatch:(sel?(sel.getAttribute('aria-label')||sel.textContent):'').trim(),
               frame:(decodeURIComponent(img?img.currentSrc:'').match(/DSC\\d+/)||[])[0]};})()`);
@@ -75,8 +75,19 @@ for (const c of CASES) {
     await evalp(`(()=>{const b=[...document.querySelectorAll('button')].find(x=>/add to bag/i.test(x.textContent));if(!b)return 'no-btn';b.click();return 'ok';})()`);
     await new Promise((r) => setTimeout(r, 1400));
 
-    // 4. cart
+    // 4. cart. Wait for the lines and their images to actually be in the DOM
+    // rather than for a fixed delay: on the first (cold) case the page had not
+    // finished rendering when the assertions ran, which failed a journey that
+    // is not actually broken.
     await go(`${BASE}/cart`);
+    for (let i = 0; i < 40; i++) {
+      const ready = await evalp(`(()=>{const l=document.querySelectorAll('.cart-line');
+        if(!l.length) return false;
+        const im=[...document.images].filter(x=>/media/.test(x.currentSrc||x.src));
+        return im.length>0 && im.every(x=>x.complete);})()`);
+      if (ready) break;
+      await new Promise((r) => setTimeout(r, 250));
+    }
     const cart = await evalp(`(()=>{
       const txt=document.body.innerText;
       const img=[...document.images].find(i=>/media/.test(i.currentSrc||i.src));

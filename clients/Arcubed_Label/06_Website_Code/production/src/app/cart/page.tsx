@@ -4,6 +4,7 @@
 // itself is localStorage-backed client state — see CartPageClient.tsx.
 
 import { getShippingRules, getStoreSettings } from "@/lib/repository";
+import { plainText } from "@/lib/site-settings";
 import CartPageClient from "./CartPageClient";
 
 // Live shipping/settings data should never be prerendered — same reasoning
@@ -16,7 +17,7 @@ export default async function CartPage() {
   return (
     <CartPageClient
       shippingRules={shippingRules}
-      productionTimeLabel={storeSettings?.productionTimeLabel ?? null}
+      productionTimeLabel={storeSettings?.productionTimeLabel ? plainText(storeSettings.productionTimeLabel) : null}
       readyForDeliveryFulfillmentLabel={storeSettings?.readyForDeliveryFulfillmentLabel ?? null}
     />
   );

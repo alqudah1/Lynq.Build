@@ -1,9 +1,16 @@
 import Link from "next/link";
+import Image from "next/image";
+import { TEXTURES } from "@/lib/product-media";
 
 // Editorial footer: the wordmark is the graphic, links are typographic.
 export default function Footer() {
   return (
     <footer className="ft">
+      {/* One real material crop, so the last thing on every page is the thing
+          the brand actually makes. */}
+      <figure className="ft-crop" aria-hidden="true">
+        <Image src={TEXTURES.gold.src} alt="" width={1368} height={569} sizes="(max-width: 860px) 100vw, 34vw" />
+      </figure>
       <p className="ft-mark" aria-hidden="true">ARCUBED</p>
       <div className="ft-cols">
         <nav className="ft-col" aria-label="Shop">

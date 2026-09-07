@@ -1,15 +1,28 @@
-import type { Colour } from "@/lib/types";
+import Image from "next/image";
+import type { Bag, Colour } from "@/lib/types";
+import { framesForColour, tileSrc } from "@/lib/product-media";
 
+/**
+ * Colourway selector.
+ *
+ * The swatch is a crop of THAT COLOURWAY'S OWN PHOTOGRAPH, not a colour chip.
+ * Most Arcubed colours have no confirmed hex (see Colour.hex), and the ones
+ * that could be sampled are metallic yarns whose character is the sheen, not
+ * a flat value. A named box told the customer nothing about the colour; a
+ * guessed hex would have been worse. The real bag is both honest and more
+ * useful, and it costs nothing because the photography already exists.
+ *
+ * Falls back to the name when a colourway has no photography yet.
+ */
 export default function ColourSelector({
   showLabel = true,
+  bag,
   colours,
   selectedId,
   onSelect,
 }: {
-  // The editorial product page already sets a section rule reading
-  // "Colour", so the inner label is suppressed there to avoid printing it
-  // twice; every other caller keeps it.
   showLabel?: boolean;
+  bag: Pick<Bag, "slug" | "name">;
   colours: Colour[];
   selectedId: string;
   onSelect: (id: string) => void;
@@ -18,31 +31,33 @@ export default function ColourSelector({
     <div className="opt-group">
       {showLabel ? <p className="opt-label">Colour</p> : null}
       <div className="swatch-row">
-        {colours.map((c) =>
-          c.hex ? (
+        {colours.map((c) => {
+          const frame = framesForColour(bag, c.name)[0];
+          const on = c.id === selectedId;
+          return (
             <button
               key={c.id}
               type="button"
-              className={`swatch${c.id === selectedId ? " selected" : ""}`}
-              style={{ background: c.hex }}
+              className={`csw${on ? " is-on" : ""}${frame ? "" : " csw-named"}`}
               aria-label={c.name}
-              aria-pressed={c.id === selectedId}
-              onClick={() => onSelect(c.id)}
-            />
-          ) : (
-            // No confirmed hex yet for this colourway — a named chip rather
-            // than a filled swatch, so we never guess at the real colour.
-            <button
-              key={c.id}
-              type="button"
-              className={`swatch swatch-named${c.id === selectedId ? " selected" : ""}`}
-              aria-pressed={c.id === selectedId}
+              aria-pressed={on}
               onClick={() => onSelect(c.id)}
             >
-              {c.name}
+              {frame ? (
+                <span className="csw-img">
+                  <Image
+                    src={tileSrc(frame, true)}
+                    alt=""
+                    width={200}
+                    height={Math.round(200 / frame.ratio)}
+                    sizes="72px"
+                  />
+                </span>
+              ) : null}
+              <span className="csw-name">{c.name}</span>
             </button>
-          )
-        )}
+          );
+        })}
       </div>
     </div>
   );

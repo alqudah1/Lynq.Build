@@ -49,21 +49,31 @@ export const COLLECTION: CollectionEntry[] = [
 ];
 
 /**
- * Frame rhythm for the Shop, on a 12-column grid. Eight entries covering three
- * rows (4+4+4, 7+5, 5+3+4), so sixteen colourways lay out as two complete
- * cycles with no orphan row. A catalogue rhythm, not masonry: the sequence is
- * fixed, so the page composes the same way every time.
+ * Frame rhythm for the Shop, on a 12-column grid.
+ *
+ * Every row sums to 12 AND every tile in a row resolves to the same height,
+ * because span and ratio are chosen together: a 7-wide at 8:5 and a 5-wide at
+ * 8:7 are both 4.375 column-units tall. Heights then vary BETWEEN rows (4,
+ * 4.375, 4, 5), which is where the rhythm comes from.
+ *
+ * The previous set matched row widths but not row heights, so short tiles
+ * left dead white beneath them and the wall read as masonry rather than as a
+ * composed catalogue.
  */
 export const SHOP_RHYTHM: { span: number; ratio: string; feature?: true }[] = [
+  // Row 1 — three squares, 4 column-units tall each.
   { span: 4, ratio: "1 / 1" },
-  { span: 4, ratio: "4 / 5" },
   { span: 4, ratio: "1 / 1" },
-  // The wide feature is paired with a SQUARE, not a portrait: at 7 columns and
-  // 16:10 it is 4.4 column-units tall, and a 5-column portrait beside it is
-  // 6.25 — a 40% mismatch that left a void under the feature.
-  { span: 7, ratio: "16 / 10", feature: true },
-  { span: 5, ratio: "1 / 1" },
-  { span: 5, ratio: "4 / 5" },
-  { span: 3, ratio: "1 / 1" },
-  { span: 4, ratio: "3 / 4" },
+  { span: 4, ratio: "1 / 1" },
+  // Row 2 — a wide feature beside a near-square. Both 4.375 units tall.
+  { span: 7, ratio: "8 / 5", feature: true },
+  { span: 5, ratio: "8 / 7" },
+  // Row 3 — three different widths, all 4 units tall, including a narrow
+  // detail frame.
+  { span: 5, ratio: "5 / 4" },
+  { span: 3, ratio: "3 / 4" },
+  { span: 4, ratio: "1 / 1" },
+  // Row 4 — two large frames, 5 units tall.
+  { span: 6, ratio: "6 / 5" },
+  { span: 6, ratio: "6 / 5" },
 ];

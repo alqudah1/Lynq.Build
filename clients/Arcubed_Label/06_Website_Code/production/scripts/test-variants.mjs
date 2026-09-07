@@ -36,7 +36,9 @@ for (const e of COLLECTION) {
     while (Date.now() - t0 < 15000 && !events.some((x) => x.method === "Page.loadEventFired")) await new Promise((r) => setTimeout(r, 100));
     await new Promise((r) => setTimeout(r, 900));
     const res = await send("Runtime.evaluate", { returnByValue: true, expression: `(()=>{
-      const sel=[...document.querySelectorAll('.swatch-row button, .swatch-row [role=button]')].find(b=>b.className.includes('selected'));
+      // Read the SEMANTIC selected state, not a CSS class: the swatch has been
+      // restyled more than once and a class name is not a contract.
+      const sel=[...document.querySelectorAll('.swatch-row button')].find(b=>b.getAttribute('aria-pressed')==='true');
       const img=document.querySelector('.pg-img');
       const src=img?decodeURIComponent(img.currentSrc):'';
       const m=src.match(/DSC\\d+/);

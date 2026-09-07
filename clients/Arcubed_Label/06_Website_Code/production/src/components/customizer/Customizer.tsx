@@ -120,6 +120,7 @@ export default function Customizer({
             <p className="pd-opt-head">Colour</p>
             <ColourSelector
               showLabel={false}
+              bag={bag}
               colours={bag.colours}
               selectedId={selection.colourId}
               onSelect={(colourId) =>

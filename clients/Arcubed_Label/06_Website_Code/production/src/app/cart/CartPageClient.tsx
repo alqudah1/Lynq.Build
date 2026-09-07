@@ -40,12 +40,15 @@ export default function CartPageClient({
     <section className="section cart-page">
       <p className="eyebrow">Your Bag</p>
       <p className="cart-lede">Made exactly the way you designed it.</p>
-      <div className="cart-lines">
-        {cart.map((line) => (
-          <CartLineItem line={line} key={line.lineId} />
-        ))}
-      </div>
-      <div className="cart-summary">
+      {/* Two zones on desktop: the bag on the left, the summary beside it,
+          rather than a narrow column with the page's right half empty. */}
+      <div className="cart-grid">
+        <div className="cart-lines">
+          {cart.map((line) => (
+            <CartLineItem line={line} key={line.lineId} />
+          ))}
+        </div>
+        <div className="cart-summary">
         <div className="row">
           <span>Subtotal</span>
           <strong>{money(cartSubtotal)}</strong>
@@ -85,6 +88,7 @@ export default function CartPageClient({
         <Link className="btn btn-primary btn-block" href="/checkout">
           Checkout
         </Link>
+      </div>
       </div>
     </section>
   );

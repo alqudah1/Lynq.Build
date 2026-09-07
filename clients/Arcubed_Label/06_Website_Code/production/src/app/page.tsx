@@ -14,6 +14,7 @@ import { getActiveBags } from "@/lib/repository";
 import { formatMoney } from "@/lib/site-settings";
 import { framesForColour, resolveMedia, cutSrc, tileSrc, altFor } from "@/lib/product-media";
 import ScrollStory from "@/components/home/ScrollStory";
+import CollectionGrid from "@/components/CollectionGrid";
 import type { Bag } from "@/lib/types";
 import "./home.css";
 
@@ -361,39 +362,17 @@ export default async function HomePage() {
           The story releases and the product floor arrives: every photographed
           colourway at once, each on its own field. The tile IS the design —
           no card, no border, no shadow, no button over the image. */}
-      <section className="grid-wrap" id="collection">
-        {/* One line, not an introduction. The jump from the quiet pink frame
-            to a wall of colour is the transition; a big heading in between
-            only delays it. */}
-        <div className="grid-head">
-          <h2 className="grid-kicker">The collection</h2>
-          <p className="grid-title">Every colour we have made.</p>
+      {/* Collection preview. Same component as /shop, so the catalogue
+          language is identical by construction and the tiles carry their
+          colourway in the link exactly as the Shop's do. */}
+      <section className="shopx" id="collection">
+        <div className="shopx-preview-head">
+          <h2 className="shopx-kicker">The collection</h2>
+          <Link className="shopx-all" href="/shop">
+            All sixteen colourways
+          </Link>
         </div>
-        <ul className="col-grid">
-          {collection.map((item) => (
-            <li key={`${item.slug}-${item.colour}`} className="col-tile">
-              <Link href={`/product/${item.slug}`}>
-                <span className="ct-field" style={{ background: item.field }}>
-                  <Image
-                    src={item.cut}
-                    alt={item.alt}
-                    width={900}
-                    height={Math.round(900 / item.ratio)}
-                    sizes="(max-width: 700px) 46vw, 23vw"
-                    loading="lazy"
-                    className={item.isCut ? "ct-cut" : "ct-photo"}
-                  />
-                  <span className="ct-view">View</span>
-                </span>
-                <span className="ct-meta">
-                  <span className="ct-name">{item.product}</span>
-                  <span className="ct-colour">{item.colour}</span>
-                  <span className="ct-price">{item.price}</span>
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <CollectionGrid bags={bags} limit={8} />
       </section>
     </div>
   );
