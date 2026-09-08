@@ -64,6 +64,13 @@ await session(async (send, events) => {
 
   // ---- 2. cart
   await go(send, `${BASE}/cart`, 2200);
+  // The thumbnail is lazy-loaded, so a fixed sleep raced it and reported a
+  // null src for an image that was in fact correct. Wait for the decode.
+  for (let i = 0; i < 20; i++) {
+    const ready = await ev(send, `(()=>{const i=document.querySelector('.cart-line img');return !!(i&&i.complete&&i.naturalWidth>0)})()`);
+    if (ready) break;
+    await new Promise(r => setTimeout(r, 250));
+  }
   const cart = await ev(send, `(() => ({
     lines: document.querySelectorAll('.cart-line').length,
     img: !!document.querySelector('.cart-line img'),

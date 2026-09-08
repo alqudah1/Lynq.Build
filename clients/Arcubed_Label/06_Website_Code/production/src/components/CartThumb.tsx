@@ -8,7 +8,10 @@ import { mediaForSnapshot } from "@/lib/product-media";
 // uses (src/lib/media-manifest.ts) — there is no second mapping system, so
 // "Nova Black" in the cart is the black Nova and never a generic thumbnail.
 // The illustrated BagArt placeholder is not used here at all.
-export default function CartThumb({ line }: { line: CartLine }) {
+// `sizes` must describe the box this thumb actually renders into. The cart
+// page draws it at up to 160 CSS px, the drawer at 68, so a single hardcoded
+// value under-served one of them and the photograph came back soft.
+export default function CartThumb({ line, sizes = "88px" }: { line: CartLine; sizes?: string }) {
   const frame =
     line.kind === "made_to_order"
       ? mediaForSnapshot(line.snapshot.bagSlug, line.snapshot.bagName, line.snapshot.colourName)
@@ -25,6 +28,6 @@ export default function CartThumb({ line }: { line: CartLine }) {
   if (!frame) return <div className="cart-thumb-placeholder" aria-hidden="true" />;
   return (
     <Image src={frame.photoSmall} alt="" width={200}
-           height={Math.round(200 / frame.ratio)} sizes="88px" />
+           height={Math.round(200 / frame.ratio)} sizes={sizes} />
   );
 }

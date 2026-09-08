@@ -50,7 +50,7 @@ export default function CartLineItem({ line }: { line: CartLine }) {
     return (
       <div className="cart-line">
         <div className="cart-thumb">
-          <CartThumb line={line} />
+          <CartThumb line={line} sizes="160px" />
         </div>
         <div className="cart-line-body">
           <p className="cart-line-name">{snapshot.itemTitle}</p>
@@ -76,7 +76,7 @@ export default function CartLineItem({ line }: { line: CartLine }) {
   return (
     <div className="cart-line">
       <div className="cart-thumb">
-        <CartThumb line={line} />
+        <CartThumb line={line} sizes="160px" />
       </div>
       <div className="cart-line-body">
         <p className="cart-line-name">{snapshot.bagName}</p>

@@ -38,6 +38,23 @@ const OUT_W = 2600;
  * is that exact object's own yarn.
  */
 const HOMEPAGE_MACROS = [
+  // DSC05774 (the red hero bag) is the WORST frame in the archive for a macro:
+  // its object box covers only 67% of the sensor, against 90-95% for others,
+  // so every crop taken from it has the fewest real pixels available. That is
+  // why the material moment stayed soft no matter how the output was sized.
+  //
+  // These two come from the frames with the most sensor coverage, and they are
+  // different PRODUCTS from the hero, so the story stops repeating one bag.
+  // PORTRAIT-ish on purpose. The material panel is roughly 892x900, and a
+  // 2.5:1 crop placed in it with object-fit:cover is scaled to fill the
+  // HEIGHT, which upscaled a 373px-tall derivative by 2.4x. `sizes` only ever
+  // describes width, so it cannot prevent that: the crop's aspect has to be
+  // close to the box's.
+  { id: "macro-ribbon", frame: "DSC04874", rel: { l: 0.26, t: 0.46, w: 0.44, h: 0.50 } },
+  // Two-tone banding rather than the fringe: DSC05765's fringe is dark brown
+  // on dark and reads as a muddy rectangle at detail size, whereas the silver
+  // and gold bands are legible small and add a third colourway to the story.
+  { id: "macro-twotone", frame: "DSC04866", rel: { l: 0.22, t: 0.40, w: 0.44, h: 0.36 } },
   { id: "macro-metallic", frame: "DSC05774", rel: { l: 0.12, t: 0.44, w: 0.72, h: 0.44 } },
   // About draws its texture full-bleed at 1440. The shared chunky crop is
   // 1318px, so it was being enlarged by more than half again.

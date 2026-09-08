@@ -19,7 +19,9 @@ export interface Frame {
 
 function f(id: string, ratio: number, cutOk = true): Frame {
   return {
-    photo: `/media/${id}-1600.webp`,
+    // A rejected cut-out means the framed photo IS the hero image, so it
+    // is built at 2600px. Every other frame is shown as a cut-out.
+    photo: cutOk ? `/media/${id}-1600.webp` : `/media/${id}-2600.webp`,
     photoSmall: `/media/${id}-800.webp`,
     cut: `/media/${id}-cut-2600.webp`,
     cutSmall: `/media/${id}-cut-600.webp`,

@@ -65,6 +65,10 @@ for (const vp of VIEWPORTS) {
   for (const route of ROUTES) {
     const res = await session(async (send, events) => {
       await send("Runtime.enable"); await send("Log.enable"); await send("Page.enable");
+      // Cache OFF. A stale browser derivative once made this audit report an
+      // image as correctly sized while the page actually rendered an older,
+      // smaller one — the audit disagreed with the screen.
+      await send("Network.enable"); await send("Network.setCacheDisabled", { cacheDisabled: true });
       await send("Emulation.setDeviceMetricsOverride", { width: vp.w, height: vp.h, deviceScaleFactor: 1, mobile: vp.w < 900 });
       await send("Page.navigate", { url: BASE + route });
       const t0 = Date.now();

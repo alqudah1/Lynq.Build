@@ -31,7 +31,7 @@ export default async function ContactPage() {
       <div className="ct-media">
         {shot ? (
           <Image src={shot.photo} alt={altFor(loco!, "Burgundy")} width={1600}
-                 height={Math.round(1600 / shot.ratio)} sizes="(max-width:860px) 100vw, 44vw" priority />
+                 height={Math.round(1600 / shot.ratio)} sizes="(max-width:860px) 100vw, 44vw" loading="eager" fetchPriority="high" />
         ) : null}
       </div>
     </section>

@@ -6,7 +6,10 @@
 // existed every tile opened on colours[0], so Silver opened Red.
 //
 // Usage: node scripts/test-variants.mjs
-const BASE = process.env.BASE || "http://127.0.0.1:4311";
+// Base URL: an explicit argument wins, then $BASE, then the default.
+// This used to read $BASE only, so `node <script> http://localhost:3000`
+// silently tested whatever stale server was on the default port.
+const BASE = process.argv[2]?.startsWith("http") ? process.argv[2] : (process.env.BASE || "http://127.0.0.1:4311");
 const CDP = "http://127.0.0.1:9222";
 import { COLLECTION } from "../src/lib/collection.ts";
 import { COLOUR_MEDIA } from "../src/lib/media-manifest.ts";
@@ -35,6 +38,15 @@ for (const e of COLLECTION) {
     const t0 = Date.now();
     while (Date.now() - t0 < 15000 && !events.some((x) => x.method === "Page.loadEventFired")) await new Promise((r) => setTimeout(r, 100));
     await new Promise((r) => setTimeout(r, 900));
+    // Wait for the photograph this test asserts on to actually decode. A flat
+    // 900ms was enough against a warm image cache and not enough when Next has
+    // to generate the derivative, which reported every frame as null.
+    for (let i = 0; i < 24; i++) {
+      const ready = await send("Runtime.evaluate", { returnByValue: true, expression:
+        `(()=>{const i=document.querySelector('.pg-img');return !!(i&&i.complete&&i.naturalWidth>0)})()` });
+      if (ready.result?.value) break;
+      await new Promise((r) => setTimeout(r, 250));
+    }
     const res = await send("Runtime.evaluate", { returnByValue: true, expression: `(()=>{
       // Read the SEMANTIC selected state, not a CSS class: the swatch has been
       // restyled more than once and a class name is not a contract.

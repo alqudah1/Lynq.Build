@@ -758,10 +758,6 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 }
 .cx-price { color: var(--primary); font-weight: 600; white-space: nowrap; }
 /* Each product gets its own field and crop — not four equal cards. */
-.cx-nova .cx-media { background: #f2ece3; aspect-ratio: 16 / 10; }
-.cx-vault .cx-media { background: #e6ded2; aspect-ratio: 4 / 5; }
-.cx-luna .cx-media { background: var(--blush); aspect-ratio: 1 / 1; }
-.cx-loco .cx-media { background: #efe9e0; aspect-ratio: 3 / 4; }
 .cx-vault .cx-media img { mix-blend-mode: normal; }
 @media (min-width: 860px) {
   .cx-grid { grid-template-columns: repeat(12, 1fr); align-items: start; }
@@ -843,9 +839,7 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
   .st-line { font-size: 16vw; }
   .st-line-out { margin-left: 10%; }
   .cx-name { font-size: 12vw; }
-  .cx-nova .cx-media { aspect-ratio: 4 / 3; }
-  .cx-vault .cx-media, .cx-loco .cx-media { aspect-ratio: 3 / 4; }
-  .cx-item + .cx-item { margin-top: 6px; }
+    .cx-vault .cx-media,   .cx-item + .cx-item { margin-top: 6px; }
   .cx-vault { margin-left: 14%; }
   .cx-loco { margin-right: 12%; }
   .cz-title { font-size: 15vw; }
@@ -895,10 +889,6 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 .sx-wide .sx-media { aspect-ratio: 16 / 10; }
 /* Fields are per product, chosen against each bag's own colour. The wide
    frame carries no field: it is a full photograph edge to edge. */
-.sx-item:nth-child(1) .sx-media { background: #8fa5b8; }
-.sx-item:nth-child(2) .sx-media { background: #d9d3cc; }
-.sx-item:nth-child(3) .sx-media { background: #8d9b7a; }
-.sx-item:nth-child(4) .sx-media { background: #c9b8a4; }
 @media (min-width: 860px) {
   .sx-grid { grid-template-columns: repeat(12, 1fr); align-items: start; }
   /* Placement follows the frame rhythm, not the product: square, portrait,
@@ -920,7 +910,11 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
    PRODUCT GALLERY
    ========================================================================== */
 .pg { display: block; }
-.pg-main { background: #f4efe8; overflow: hidden; }
+/* Was #f4efe8 — a hardcoded cream that bypassed the token system entirely and
+   rendered as a large beige rectangle behind every product photograph. This
+   is what made the Loco page read as a warm ecommerce template while the
+   tokens claimed navy/pink/white. */
+.pg-main { background: var(--pink); overflow: hidden; }
 .pg-img { width: 100%; height: auto; display: block; }
 /* Honest labelling when the photo is of a different colourway. */
 .pg-note {
@@ -930,7 +924,7 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 .pg-note strong { font-weight: 600; }
 .pg-thumbs { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 .pg-thumb {
-  width: 74px; height: 62px; overflow: hidden; background: #f4efe8;
+  width: 92px; height: 92px; overflow: hidden; background: var(--pink);
   border: 1px solid transparent; opacity: 0.62;
   transition: opacity 0.25s var(--ease-ui), border-color 0.25s var(--ease-ui);
 }
@@ -1120,7 +1114,7 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 .co-quote { margin: 14px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--primary); opacity: 0.78; }
 .co-timing { margin: 18px 0 0; padding-top: 14px; border-top: 1px solid rgba(20, 53, 98, 0.16); }
 .co-timing p { margin: 0 0 5px; font-size: 12.5px; color: var(--primary); opacity: 0.8; }
-.co-timing-split { opacity: 1 !important; color: #7d4a12 !important; }
+.co-timing-split { opacity: 1 !important; color: var(--navy) !important; font-weight: 600; }
 .co-empty { padding: clamp(70px, 14vw, 160px) clamp(16px, 4vw, 54px); text-align: center; }
 .co-empty-line { font-family: var(--font-head); font-size: clamp(26px, 4vw, 44px); color: var(--primary); margin: 0 0 22px; }
 @media (min-width: 940px) {
@@ -1372,7 +1366,7 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 .shopx-cell { grid-column: span 1; }
 .shopx-cell.is-feature { grid-column: span 2; }
 .shopx-link { display: block; }
-.shopx-field { position: relative; display: block; aspect-ratio: var(--ar, 1 / 1); overflow: hidden; background: #f4f1ec; }
+.shopx-field { position: relative; display: block; aspect-ratio: var(--ar, 1 / 1); overflow: hidden; background: var(--pink); }
 .shopx-field img { position: absolute; inset: 0; margin: auto; display: block; transition: transform 0.55s var(--ease-ui); }
 .shopx-cut { width: 76%; height: auto; max-height: 80%; object-fit: contain; }
 .shopx-photo { width: 100%; height: 100%; object-fit: cover; }
@@ -1641,3 +1635,127 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
   .cart-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 0.62fr); gap: clamp(40px, 5vw, 80px); align-items: start; }
   .cart-summary { position: sticky; top: 96px; }
 }
+
+/* ================= PRODUCT SELECTORS =================
+   An Arcubed selector language: editorial rows separated by rules, with a
+   small filled square marking the live choice. Every option used to be a
+   capsule, which is the default ecommerce control and read as generic no
+   matter what colour it was. Scoped to the buy band so no other surface
+   changes. */
+.pd-buy .chip-row,
+.pd-buy .pill-row {
+  display: grid; gap: 0; margin-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.pd-buy .opt-chip,
+.pd-buy .pill {
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px;
+  width: 100%; padding: 15px 0 15px 24px; min-height: 0;
+  border: 0; border-bottom: 1px solid var(--line); border-radius: 0;
+  background: none; color: var(--muted); text-align: left; position: relative;
+  font-size: 11.5px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase;
+  transition: color 0.18s var(--ease-ui);
+}
+.pd-buy .opt-chip::before,
+.pd-buy .pill::before {
+  content: ""; position: absolute; left: 0; top: 50%; width: 9px; height: 9px;
+  transform: translateY(-50%); box-shadow: inset 0 0 0 1px var(--line);
+  transition: background 0.18s var(--ease-ui), box-shadow 0.18s var(--ease-ui);
+}
+.pd-buy .opt-chip:hover:not(:disabled),
+.pd-buy .pill:hover { color: var(--navy); }
+.pd-buy .opt-chip.selected,
+.pd-buy .pill.selected { color: var(--navy); background: none; }
+.pd-buy .opt-chip.selected::before,
+.pd-buy .pill.selected::before { background: var(--navy); box-shadow: inset 0 0 0 1px var(--navy); }
+.pd-buy .opt-chip-delta { font-size: 10.5px; letter-spacing: 0.12em; opacity: 0.8; }
+
+/* ---------- Add to Bag: an action, not a SaaS bar ---------- */
+.pd-buy .add-to-bag {
+  margin: clamp(30px, 5vh, 50px) 0 0;
+  display: grid; grid-template-columns: 1fr auto; align-items: center;
+  width: 100%; padding: 22px 26px; border-radius: 0;
+  background: var(--navy); color: var(--pink);
+  font-size: 12.5px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase;
+  transition: background 0.2s var(--ease-ui), color 0.2s var(--ease-ui), box-shadow 0.2s var(--ease-ui);
+}
+.add-to-bag-price { font-family: var(--font-head); font-size: 17px; letter-spacing: 0; }
+.pd-buy .add-to-bag:hover { background: var(--pink); color: var(--navy); box-shadow: inset 0 0 0 1px var(--navy); }
+
+/* ---------- products with no usable cut-out ----------
+   Loco's fringe defeats a clean matte, so it is shown as a photograph. It
+   should then read as PHOTOGRAPHY, edge to edge, rather than as a small
+   studio rectangle floating on a pink field inside a rounded frame. */
+/* A photographic (uncut) main runs edge to edge. At 92vw the photograph's own
+   studio ground read as a rectangle floating on the pink field; full-bleed
+   makes that ground the frame itself, which is what "art-direct the real
+   photograph" means when a clean cutout does not exist. The stage's side
+   padding is cancelled for this case only. */
+.pd-stage:has(.pg-main:not(.is-cut)) {
+  padding-left: 0; padding-right: 0;
+}
+.pd-stage:has(.pg-main:not(.is-cut)) .pd-object { width: 100%; max-width: none; }
+.pd-object .pg-main:not(.is-cut) { box-shadow: none; border-radius: 0; }
+.pd-object .pg-main:not(.is-cut) .pg-img { width: 100%; height: auto; }
+
+/* ---------- gallery thumbnails ---------- */
+.pg-thumbs { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.pg-thumb { border-radius: 0; box-shadow: inset 0 0 0 1px transparent; opacity: 0.5; transition: opacity 0.18s var(--ease-ui), box-shadow 0.18s var(--ease-ui); }
+.pg-thumb:hover { opacity: 0.85; }
+.pg-thumb.is-on { opacity: 1; box-shadow: inset 0 0 0 2px var(--navy); }
+
+/* Thumbnails carry the real frame's proportion and are legible at rest. At
+   92x92 with a wide studio photograph most of the tile was backdrop, which is
+   why the inactive ones read as empty lilac rectangles. */
+.pg-thumb { width: 108px; height: 76px; padding: 0; background: var(--pink); opacity: 0.62; }
+.pg-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pg-thumb:hover { opacity: 0.9; }
+.pg-thumb.is-on { opacity: 1; }
+/* Bring the commercial information up: the stage was tall enough that name and
+   price sat well past the first screen. */
+.pd-stage { min-height: 66vh; }
+@media (min-width: 900px) { .pd-stage { min-height: 70vh; } }
+
+
+/* ================= SHOP DISCOVERY =================
+   Two rails derived from the real colourway list. Filtering hides cells with
+   CSS rather than re-rendering, so the whole collection stays in the DOM and
+   nothing is fetched again. Rules are generated per category because CSS
+   cannot compare one attribute against another. */
+.disc {
+  display: grid; gap: clamp(18px, 2.6vh, 28px);
+  padding: 0 clamp(12px, 2.4vw, 34px) clamp(24px, 4vh, 40px);
+  max-width: 1400px; margin: 0 auto;
+}
+.disc-rail { display: grid; grid-template-columns: 1fr; gap: 10px; }
+.disc-label { margin: 0; font-size: 10px; font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase; color: var(--muted); }
+.disc-opts { display: flex; flex-wrap: wrap; gap: 0 clamp(16px, 2.2vw, 32px); }
+.disc-opt {
+  position: relative; padding: 6px 0 9px; background: none; border: 0; cursor: pointer;
+  font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--muted); transition: color 0.18s var(--ease-ui);
+}
+.disc-opt i { font-style: normal; font-size: 9.5px; opacity: 0.55; margin-left: 5px; vertical-align: super; }
+.disc-opt::after {
+  content: ""; position: absolute; left: 0; right: 100%; bottom: 0; height: 1.5px;
+  background: var(--navy); transition: right 0.28s var(--ease-ui);
+}
+.disc-opt:hover { color: var(--navy); }
+.disc-opt.is-on { color: var(--navy); }
+.disc-opt.is-on::after { right: 0; }
+.disc-count { margin: 0; font-size: 11px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+@media (min-width: 760px) {
+  .disc-rail { grid-template-columns: 92px 1fr; align-items: baseline; gap: clamp(18px, 3vw, 40px); }
+}
+
+.disc-grid[data-shape="Nova"] .shopx-cell:not([data-product="Nova"]) { display: none; }
+.disc-grid[data-shape="Vault"] .shopx-cell:not([data-product="Vault"]) { display: none; }
+.disc-grid[data-shape="Mini Luna"] .shopx-cell:not([data-product="Mini Luna"]) { display: none; }
+.disc-grid[data-shape="Loco"] .shopx-cell:not([data-product="Loco"]) { display: none; }
+.disc-grid[data-colour="Gold"] .shopx-cell:not([data-colour*="Gold"]) { display: none; }
+.disc-grid[data-colour="Silver"] .shopx-cell:not([data-colour*="Silver"]) { display: none; }
+.disc-grid[data-colour="Black"] .shopx-cell:not([data-colour*="Black"]) { display: none; }
+.disc-grid[data-colour="Brown"] .shopx-cell:not([data-colour*="Brown"]) { display: none; }
+.disc-grid[data-colour="Red"] .shopx-cell:not([data-colour*="Red"]) { display: none; }
+.disc-grid[data-colour="Burgundy"] .shopx-cell:not([data-colour*="Burgundy"]) { display: none; }
+.disc-grid[data-colour="Olive"] .shopx-cell:not([data-colour*="Olive"]) { display: none; }

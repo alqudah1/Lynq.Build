@@ -36,7 +36,10 @@ export default async function AboutPage() {
       <Reveal className="ab-wide">
         <Image src="/media/macro-chunky.webp" alt="Close detail of chunky hand-crocheted stitchwork"
                width={2600} height={801}
-               sizes="110vw" className="ab-wide-img" />
+               sizes="110vw" className="ab-wide-img"
+               // This is the LCP element on /about and was loading at default
+               // priority behind everything else on the page.
+               preload />
       </Reveal>
 
       <section className="ab-two">

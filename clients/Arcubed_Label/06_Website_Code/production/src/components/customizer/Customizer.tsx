@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Bag, CartItem, Selection } from "@/lib/types";
-import { computeUnitPrice, defaultSelectionFor, buildCartSnapshot } from "@/lib/pricing";
+import { computeUnitPrice, defaultSelectionFor, buildCartSnapshot, money } from "@/lib/pricing";
 import { useCart, uid } from "@/lib/cart-context";
 import { showToast } from "@/lib/toast";
 import ProductGallery from "./ProductGallery";
@@ -138,8 +138,13 @@ export default function Customizer({
           {hasConfigOnly ? (
             <div className="pd-opt-block">
               <p className="pd-opt-head">Details</p>
+              {/* This read "crocheted in. The photograph shows the colour." —
+                  a sentence with its subject missing, on every product page.
+                  It names the chosen colourway now. */}
               <p className="pd-opt-note">
-                Chosen for you and crocheted in. The photograph shows the colour.
+                Crocheted to order in{" "}
+                {bag.colours.find((c) => c.id === selection.colourId)?.name ?? "your chosen colour"}.
+                The photograph shows the colour you will receive.
               </p>
               {bag.sizes ? (
                 <SizeSelector
@@ -171,7 +176,7 @@ export default function Customizer({
           ) : null}
         </div>
 
-        <AddToCartInline label={actionLabel} onClick={handleAdd} />
+        <AddToCartInline label={actionLabel} price={money(price)} onClick={handleAdd} />
 
         <div className="pd-facts">
           <div>

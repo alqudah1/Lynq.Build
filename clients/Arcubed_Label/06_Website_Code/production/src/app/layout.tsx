@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Bodoni_Moda, Instrument_Serif, Playfair_Display, Archivo } from "next/font/google";
+import { Inter, Bodoni_Moda } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/lib/cart-context";
 import Header from "@/components/Header";
@@ -25,19 +25,10 @@ const bodoni = Bodoni_Moda({
   axes: ["opsz"],
 });
 
-// Candidates for the hero headline, compared on screen at /dev/type rather
-// than chosen in code. All OFL, self-hosted by next/font, so all ship legally.
-const instrument = Instrument_Serif({
-  subsets: ["latin"], weight: ["400"], style: ["normal", "italic"],
-  variable: "--font-instrument", display: "swap",
-});
-const playfair = Playfair_Display({
-  subsets: ["latin"], style: ["normal", "italic"],
-  variable: "--font-playfair", display: "swap",
-});
-const archivo = Archivo({
-  subsets: ["latin"], variable: "--font-archivo", display: "swap",
-});
+// The headline candidates that lost the comparison (Instrument Serif, Playfair
+// Display, Archivo) now live in /dev/type, the only page that renders them.
+// Declaring them here put three unused webfont families on every customer
+// route for the sake of one internal specimen page.
 
 const inter = Inter({
   subsets: ["latin"],
@@ -80,12 +71,16 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#FAF6F1",
+  themeColor: "#FFFFFF",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${bodoni.variable} ${instrument.variable} ${playfair.variable} ${archivo.variable} ${inter.variable}`}>
+    // suppressHydrationWarning: the inline script below adds `js` to this
+    // element before React hydrates, so the server and client className can
+    // never match. Without this every page logged a hydration error.
+    <html lang="en" suppressHydrationWarning
+          className={`${bodoni.variable} ${inter.variable}`}>
       <head>
         {/* Marks the document as JS-capable BEFORE first paint. Scroll-reveal
             CSS hides content only under `.js`, so if JavaScript fails or is

@@ -81,8 +81,13 @@ export default async function ReadyForDeliveryPage() {
                   alt={altFor(emptyBag, "Red")}
                   width={1100}
                   height={Math.round(1100 / emptyFrame.ratio)}
-                  sizes="(max-width: 860px) 78vw, 40vw"
-                  priority
+                  // .rfd-empty-art carries no width rule, so this renders at
+                  // the element's intrinsic 1100px. The old 40vw budget
+                  // described a box half that size and Next handed back a
+                  // 576px file for an 1100px slot — a 1.9x upscale.
+                  sizes="(max-width: 860px) 94vw, 1100px"
+                  loading="eager"
+                  fetchPriority="high"
                 />
               </figure>
             ) : null}

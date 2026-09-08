@@ -65,8 +65,13 @@ function Photos({ bag, selection }: { bag: Bag; selection: Selection }) {
           alt={altFor(bag, shown, exact)}
           width={1600}
           height={Math.round(1600 / current.ratio)}
-          sizes="(max-width: 860px) 92vw, 46vw"
-          priority
+          // Two different stages share this element, so one budget cannot serve
+          // both: a cut-out sits on the 62vw object stage, while a photograph
+          // now runs full-bleed. Declaring the photograph at 100vw is what
+          // stops Next handing back a 1200px derivative for a 1440px box.
+          sizes={useCut ? "(max-width: 860px) 96vw, 62vw" : "100vw"}
+          loading="eager"
+          fetchPriority="high"
           className="pg-img"
         />
       </div>
@@ -90,7 +95,7 @@ function Photos({ bag, selection }: { bag: Bag; selection: Selection }) {
               className={`pg-thumb${i === active ? " is-on" : ""}`}
               onClick={() => setActive(i)}
             >
-              <Image src={f.photoSmall} alt="" width={200} height={Math.round(200 / f.ratio)} sizes="90px" />
+              <Image src={f.photoSmall} alt="" width={320} height={Math.round(320 / f.ratio)} sizes="128px" />
             </button>
           ))}
         </div>

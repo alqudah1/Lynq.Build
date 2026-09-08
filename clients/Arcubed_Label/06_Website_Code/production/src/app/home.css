@@ -41,8 +41,10 @@ body:has(.home) .site-header .nav a::after { background: var(--navy); }
 body:has(.home) main { padding-top: 0; }
 
 /* ---------------- scroll container ---------------- */
-/* 380vh, down from 460vh: the timeline is the same, the dead scroll is not. */
-.story { position: relative; height: 380vh; background: var(--pink); }
+/* 240vh. At 380vh a single idea took roughly three wheel gestures to clear,
+   which reads as being trapped in a frame rather than as a story. Same six
+   phases, far less dead travel. */
+.story { position: relative; height: 240vh; background: var(--pink); }
 .story-stage {
   position: sticky; top: 0; height: 100vh; overflow: hidden;
   background: var(--pink);
@@ -148,7 +150,7 @@ body:has(.home) main { padding-top: 0; }
 .hero-cta:hover::after { width: 100%; }
 
 @media (max-width: 860px) {
-  .story { height: 300vh; }
+  .story { height: 210vh; }
   .hero-floor { height: 46%; }
   .hero-type { font-size: clamp(40px, 13vw, 92px); }
   .hero-l1 { top: 14vh; left: 6vw; }
@@ -173,46 +175,52 @@ body:has(.home) main { padding-top: 0; }
 }
 
 /* ---------------- 01 THE MATERIAL ----------------
-   A circle opening from roughly where the hero bag's body sits, so the move
-   reads as going into that object's surface rather than as a cut. The radius
-   overshoots 100% well before the band ends, which gives the macro a beat of
-   stillness instead of arriving exactly as it leaves. */
+   A 60/40 editorial spread. The image occupies the left, white breathing
+   space and the copy the right. Previously this was a full-bleed macro drawn
+   at 1555 CSS px from a 1937px crop, which is only 1.24 source pixels per CSS
+   pixel and therefore soft on any 2x screen. At 62vw the same kind of crop is
+   now drawn at ~890px from a 2242px source: 2.5x, sharp. */
 .phase-mat {
-  z-index: 8;
-  clip-path: circle(calc(var(--b-mat) * 190%) at 62% 46%);
+  z-index: 8; background: var(--paper);
+  display: grid; grid-template-columns: 1fr;
+  clip-path: inset(0 0 0 calc(100% - min(1, var(--b-mat) * 2.6) * 100%));
 }
-/* Pulled left and over-wide so the studio seamless down this frame's left
-   edge lands off-screen. object-position cannot do it: the viewport is wider
-   than the source's aspect, so `cover` scales to width and never crops
-   horizontally. */
-/* Only an 8% inset now, not 19%: the rebuilt crop starts inside the bag, so
-   only about 6% of its left edge still catches seamless. Less overhang plus
-   far less zoom means the macro is drawn at or under its true resolution
-   instead of being enlarged into mush. */
-.mat-img { position: absolute; top: 0; bottom: 0; left: -8%; width: 108%; overflow: hidden; }
-.mat-img img {
-  width: 100%; height: 100%; object-fit: cover;
-  transform: scale(calc(1.07 - var(--b-mat) * 0.07));
-  transform-origin: 62% 46%;
+.mat-img { position: relative; overflow: hidden; }
+.mat-img img { width: 100%; height: 100%; object-fit: cover; }
+.mat-side {
+  display: flex; flex-direction: column; justify-content: center;
+  padding: clamp(28px, 5vw, 68px);
+  background: var(--paper);
 }
-
 .story-label {
-  position: absolute; z-index: 3; top: 7vh; left: clamp(20px, 4vw, 52px); margin: 0;
-  font-size: clamp(10px, 0.82vw, 13px); font-weight: 600; letter-spacing: 0.22em;
-  /* Pink, not navy: by the time this fades in, the field behind it is the
-     red macro. Navy on red was unreadable. */
-  text-transform: uppercase; color: var(--pink);
-  opacity: calc(min(1, var(--b-mat) * 3) - var(--b-shape) * 2);
+  position: static; margin: 0 0 auto;
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.24em;
+  text-transform: uppercase; color: var(--navy);
 }
-.story-label span { display: block; margin-bottom: 6px; opacity: 0.55; }
-.story-label-pink { color: var(--pink); opacity: calc(min(1, var(--b-shape) * 3) - var(--b-cust) * 2); }
+.story-label span { display: block; margin-bottom: 6px; opacity: 0.5; }
+.story-label-pink { color: var(--pink); opacity: calc(min(1, (var(--b-shape) - 0.5) * 4) - var(--b-cust) * 2); }
+.story-label-navy { color: var(--navy); opacity: calc(min(1, var(--b-cust) * 3) - var(--b-final) * 2); }
 
 .mat-note {
-  position: absolute; z-index: 3; bottom: 8vh; left: clamp(20px, 4vw, 52px); margin: 0;
-  max-width: 22ch; color: var(--pink);
-  font-family: var(--font-head); font-size: clamp(20px, 2.6vw, 40px); line-height: 1.12;
-  opacity: calc(min(1, var(--b-mat) * 2.4) - var(--b-shape) * 2.4);
-  transform: translateY(calc((1 - var(--b-mat)) * 3vh));
+  margin: clamp(18px, 3vh, 30px) 0 0; color: var(--navy);
+  font-family: var(--font-head); font-weight: 600; font-variation-settings: "opsz" 96;
+  font-size: clamp(28px, 3.6vw, 56px); line-height: 0.98; letter-spacing: -0.03em;
+}
+.mat-detail {
+  margin: clamp(22px, 4vh, 40px) 0 0; width: min(280px, 100%); overflow: hidden;
+}
+.mat-detail img { width: 100%; height: auto; display: block; }
+.mat-fact {
+  margin: clamp(14px, 2vh, 22px) 0 auto; max-width: 30ch;
+  font-size: 12.5px; line-height: 1.65; color: var(--muted);
+}
+
+@media (min-width: 860px) {
+  .phase-mat { grid-template-columns: 62fr 38fr; }
+}
+@media (max-width: 859px) {
+  .phase-mat { grid-template-rows: 52fr 48fr; }
+  .mat-detail { width: min(200px, 46%); }
 }
 
 /* ---------------- 02 THE SHAPE ----------------
@@ -280,84 +288,60 @@ body:has(.home) main { padding-top: 0; }
 }
 
 /* ---------------- 03 MAKE IT YOURS ----------------
-   Back to the pink field. The object holds still and its colour changes. */
+   Two zones: the control on the left, the object on the right. The previous
+   version set the colour name at 12.5vw behind the bag, where a long name
+   like "Silver & Gold" ran out of the frame and read as broken rather than
+   as cropped. */
 .phase-cust {
   z-index: 10; background: var(--pink);
-  /* Finishes early: the colour sequence begins right after it, and at the
-   slower rate the first two colourways played while the field was still
-   arriving — only the last two were ever seen on a settled composition. */
-  clip-path: inset(0 0 calc(100% - min(1, var(--b-cust) * 6.5) * 100%) 0);
+  display: grid; grid-template-columns: 1fr;
+  align-items: center;
+  clip-path: inset(0 0 calc(100% - min(1, var(--b-cust) * 5) * 100%) 0);
 }
-.story-label-navy { color: var(--navy); opacity: calc(min(1, var(--b-cust) * 3) - var(--b-final) * 2); }
+.cust-copy {
+  display: flex; flex-direction: column; justify-content: center;
+  padding: clamp(28px, 5vw, 76px); gap: clamp(14px, 2vh, 22px);
+}
+.cust-head {
+  margin: 0; color: var(--navy);
+  font-family: var(--font-head); font-weight: 600; font-variation-settings: "opsz" 96;
+  font-size: clamp(30px, 4vw, 60px); line-height: 0.98; letter-spacing: -0.03em;
+}
+/* The live rail. Each name lights as its window comes up, so the section
+   reads as a configurator running rather than as a caption. */
+.cust-rail { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.cust-rail li {
+  position: relative; padding: 9px 0 9px 0;
+  border-top: 1px solid rgba(20, 53, 98, 0.16);
+  font-size: clamp(12px, 1.05vw, 15px); font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--navy);
+  opacity: calc(0.34 + 0.66 * clamp(0, min(calc((var(--b-cust) - var(--w0)) * 70), calc((var(--w1) - var(--b-cust)) * 70)), 1));
+}
+.cust-rail li:last-child { border-bottom: 1px solid rgba(20, 53, 98, 0.16); }
+/* A navy rule draws across the active name. */
+.cust-rail li::after {
+  content: ""; position: absolute; left: 0; bottom: -1px; height: 2px; background: var(--navy);
+  width: calc(100% * clamp(0, min(calc((var(--b-cust) - var(--w0)) * 70), calc((var(--w1) - var(--b-cust)) * 70)), 1));
+}
+.cust-rail li:last-child { opacity: calc(0.34 + 0.66 * clamp(0, calc((var(--b-cust) - 0.41) * 70), 1)); }
+.cust-rail li:last-child::after { width: calc(100% * clamp(0, calc((var(--b-cust) - 0.41) * 70), 1)); }
+.cust-foot { margin: 0; max-width: 30ch; font-size: 12.5px; line-height: 1.65; color: var(--navy); opacity: 0.62; }
 
-/* The oversized colour name, behind the object. */
-.cust-word {
-  position: absolute; z-index: 1; left: 3vw; top: 46vh; margin: 0; padding: 0;
-  list-style: none; width: 94vw; height: 0;
-}
-.cust-word li {
-  font-variation-settings: "opsz" 144, "SOFT" 0;
-  /* Clipped well inside the object's left edge, so a long name ends behind
-     the bag rather than reappearing through the transparent gaps in its
-     cut-out — "SILVER & GOLD" was leaving a stray navy sliver visible in the
-     gap beside the handle. */
-  position: absolute; top: 0; left: 0; white-space: nowrap;
-  max-width: 60vw; overflow: hidden;
-  font-family: var(--font-head); font-weight: 600; color: var(--navy);
-  text-transform: uppercase; letter-spacing: -0.045em; line-height: 0.82;
-  font-size: clamp(56px, 12.5vw, 186px);
-  opacity: clamp(0, min(calc((var(--b-cust) - var(--w0)) * 70), calc((var(--w1) - var(--b-cust)) * 70)), 1);
-}
-
-.cust-bag {
-  /* Large, off-centre and cropped by the bottom edge. The first version sat
-     it small and centred with the copy opposite, which left a dead middle and
-     no tension between the two. */
-  /* Pushed off the right edge so the colour name reads as a whole
-     phrase before the object takes over the rest of it. */
-  position: absolute; z-index: 2; right: -5vw; top: 15vh; width: 52vw;
-  /* A fixed-aspect stage rather than a stack of differently shaped images:
-     the five frames disagree on shape, so the box has to be the constant. */
-  aspect-ratio: 1.25 / 1;
-}
+.cust-bag { position: relative; aspect-ratio: 1.2 / 1; }
 .cust-bag img {
-  /* All five stacked in one cell; exactly one is opaque at a time. Each
-     carries its own window as --w0/--w1 from the component, so the sequence
-     is data rather than a hand-written keyframe per colour.
-     The switch is FAST on purpose. These five frames are five separate
-     photographs at slightly different camera positions, so a slow crossfade
-     put two mis-registered bags on screen at once and read as a double
-     exposure. A quick cut reads as the same bag changing colour. */
   position: absolute; left: 0; bottom: 0; width: 100%; height: auto;
-  /* Scaled about the bottom centre so the baseline is what stays put. */
   transform-origin: 50% 100%;
   transform: translate(var(--tx, 0), var(--ty, 0)) scale(var(--s, 1));
   opacity: clamp(0, min(calc((var(--b-cust) - var(--w0)) * 70), calc((var(--w1) - var(--b-cust)) * 70)), 1);
 }
-/* The last colour holds for the rest of the phase instead of fading out, so
-   the bag is still there while the details and size beats play. */
 .cust-bag img:last-child { opacity: clamp(0, calc((var(--b-cust) - 0.41) * 70), 1); }
-/* The final colour name HOLDS for the rest of the phase rather than fading
-   with its window. The bag on screen is still Silver & Gold through the
-   details and size beats, so the word is still true — and without it the
-   left half of those two beats was an empty pink field, which is the void
-   this whole phase was rebuilt to remove. */
-.cust-word li:last-child { opacity: clamp(0, calc((var(--b-cust) - 0.41) * 70), 1); }
 
-.cust-steps { position: absolute; z-index: 3; left: 3vw; top: 15vh; }
-.cust-step {
-  margin: 0; font-family: var(--font-head); color: var(--navy); font-weight: 600;
-  font-size: clamp(26px, 4.6vw, 74px); line-height: 0.92; letter-spacing: -0.035em;
-  text-transform: uppercase;
+@media (min-width: 860px) {
+  .phase-cust { grid-template-columns: 38fr 62fr; }
 }
-.cust-step-1 { opacity: clamp(0, min(calc((var(--b-cust) - 0.02) * 26), calc((0.47 - var(--b-cust)) * 26)), 1); }
-.cust-step-2 { opacity: clamp(0, min(calc((var(--b-cust) - 0.47) * 26), calc((0.75 - var(--b-cust)) * 26)), 1); }
-.cust-step-3 { opacity: clamp(0, calc((var(--b-cust) - 0.75) * 26), 1); }
-.cust-step-2, .cust-step-3 { position: absolute; left: 0; top: 0; }
-
-.cust-honest {
-  position: absolute; z-index: 3; left: 3vw; bottom: 8vh; margin: 0; max-width: 32ch;
-  font-size: 12.5px; line-height: 1.6; color: var(--navy); opacity: 0.6;
+@media (max-width: 859px) {
+  .phase-cust { grid-template-rows: auto 1fr; align-items: start; }
+  .cust-bag { aspect-ratio: 1.1 / 1; }
 }
 
 /* ---------------- 04 THE FINISHED OBJECT ---------------- */
@@ -366,15 +350,20 @@ body:has(.home) main { padding-top: 0; }
   clip-path: inset(0 0 calc(100% - min(1, var(--b-final) * 3) * 100%) 0);
 }
 /* A campaign frame, not a text block: the object dominates, one line runs
-   behind it and one crosses in front, and both bleed off the edges. */
+   behind it and one crosses in front.
+   The lines used to bleed off the left edge, but the bleed was asymmetric —
+   "MADE BY HAND." lost its M while 220px of the right edge sat empty, which
+   reads as a broken layout rather than a deliberate crop. Both lines now
+   start inside the frame, and the display size came down so the longer line
+   resolves at every desktop width instead of only the widest. */
 .final-line {
   position: absolute; margin: 0; color: var(--navy); white-space: nowrap;
   font-family: var(--font-head); font-weight: 600; text-transform: uppercase;
   font-variation-settings: "opsz" 144, "SOFT" 0;
-  letter-spacing: -0.045em; line-height: 0.82; font-size: clamp(46px, 11.5vw, 176px);
+  letter-spacing: -0.045em; line-height: 0.82; font-size: clamp(42px, 10.2vw, 148px);
 }
-.final-a { z-index: 1; top: 13vh; left: -1.5vw; }
-.final-b { z-index: 3; bottom: 13vh; left: 4vw; }
+.final-a { z-index: 1; top: 14vh; left: 4vw; }
+.final-b { z-index: 3; bottom: 14vh; left: 11vw; }
 .final-bag {
   position: absolute; z-index: 2; left: 46%; top: 46%; width: 46vw; margin: 0;
   transform: translate(-50%, -50%) scale(calc(0.96 + var(--b-final) * 0.04));
@@ -448,7 +437,7 @@ body:has(.home) main { padding-top: 0; }
 }
 
 @media (max-width: 860px) {
-  .story { height: 300vh; }
+  .story { height: 210vh; }
   .hero-type { font-size: clamp(48px, 19.5vw, 120px); }
   .hero-l1 { top: 10vh; left: -0.5vw; }
   .hero-l2 { top: 21vh; left: 4vw; }

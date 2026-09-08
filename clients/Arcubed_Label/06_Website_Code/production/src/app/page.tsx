@@ -11,7 +11,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getActiveBags } from "@/lib/repository";
-import { formatMoney } from "@/lib/site-settings";
 import { framesForColour, resolveMedia, cutSrc, tileSrc, altFor } from "@/lib/product-media";
 import ScrollStory from "@/components/home/ScrollStory";
 import CollectionGrid from "@/components/CollectionGrid";
@@ -20,54 +19,6 @@ import "./home.css";
 
 export const dynamic = "force-dynamic";
 
-/**
- * COLLECTION — every purchasable colourway that has its own photography, from
- * src/lib/media-manifest.ts. Nothing here is a guess: a pairing appears only
- * if that product/colour has real frames in the manifest.
- *
- * The field colours are NOT the brand palette, on purpose — the brand is the
- * navy and pink furniture around the grid, and each bag gets a field chosen
- * to set its own colour off. They are all light-to-mid: the cut-outs carry a
- * soft studio matte that reads as a white glow on a dark ground, verified by
- * compositing them before this list was written, which is also why nothing
- * here sits on navy.
- */
-const COLLECTION: { slug: string; product: string; colour: string; field: string; forcePhoto?: true }[] = [
-  // Sequenced as a 4-column grid, not listed. Each row alternates warm and
-  // cool, no two neighbours share a hue family in either direction, no
-  // product clumps, and each field is picked against its own bag's colour —
-  // cool grounds under the golds, warm grounds under the silvers and blacks.
-  // The two Loco tiles are photographic (their fringe defeats a matte) so
-  // they carry the studio grey; they are placed diagonally rather than in the
-  // same column, which was reading as a grey block.
-  { slug: "nova", product: "Nova", colour: "Gold", field: "#8fa5b8" },
-  { slug: "mini-luna", product: "Mini Luna", colour: "Red", field: "#8d9b7a" },
-  { slug: "vault", product: "Vault", colour: "Olive Green", field: "#d9d3cc" },
-  { slug: "nova", product: "Nova", colour: "Black", field: "#d6b06a" },
-
-  { slug: "mini-luna", product: "Mini Luna", colour: "Silver", field: "#c07f5f" },
-  // Full photograph, not a cut-out. Its matte traps a patch of seamless
-  // inside the hand slot that is connected to the region running round the
-  // bag, so it cannot be lifted as an enclosed patch — and the threshold
-  // that would catch it also starts erasing the silver bags, whose bodies
-  // sit within about 29 RGB of the cream backdrop. An honest photographic
-  // tile beats a cut-out with a white hole in its handle.
-  { slug: "vault", product: "Vault", colour: "Brown", field: "#7e93a8", forcePhoto: true },
-  { slug: "nova", product: "Nova", colour: "Champagne", field: "#b8a0c0" },
-  { slug: "loco", product: "Loco", colour: "Brown", field: "#c9b8a4" },
-
-  { slug: "mini-luna", product: "Mini Luna", colour: "Gold", field: "#6f8496" },
-  // Deeper rose: Nova Silver is the palest object in the grid and washed out
-  // against the lighter dusty pink the rhythm originally gave it.
-  { slug: "nova", product: "Nova", colour: "Silver", field: "#a8747c" },
-  { slug: "loco", product: "Loco", colour: "Burgundy", field: "#bfae9a" },
-  { slug: "vault", product: "Vault", colour: "Light Brown", field: "#a9b89a" },
-
-  { slug: "mini-luna", product: "Mini Luna", colour: "Black", field: "#e3c98a" },
-  { slug: "nova", product: "Nova", colour: "Rose Gold", field: "#7e8f6f" },
-  { slug: "mini-luna", product: "Mini Luna", colour: "Silver & Gold", field: "#d89a7a" },
-  { slug: "nova", product: "Nova", colour: "Silver & Gold", field: "#96a8bd" },
-];
 
 /**
  * CUSTOMISATION BEAT — the one control with a truthful visual answer today.
@@ -132,7 +83,6 @@ function frame(bag: Bag | undefined, colour: string) {
 export default async function HomePage() {
   const bags = await getActiveBags();
   const by = (n: string) => bags.find((b) => b.name.trim().toLowerCase() === n);
-  const nova = by("nova");
   const miniLuna = by("mini luna");
 
   // HERO CAST — chosen by compositing every candidate against the actual pink
@@ -145,34 +95,19 @@ export default async function HomePage() {
   //     what lets the material moment later be the same physical object
   //     rather than a cut to an unrelated picture.
   const heroBag = frame(miniLuna, "Red");
-  const heroSecond = frame(nova, "Black");
+  // The closing frame deliberately uses a DIFFERENT product. The story
+  // previously opened and closed on the same Red Mini Luna, which made the
+  // range look like one bag. Vault Olive is the strongest contrast available:
+  // another silhouette, another colour family, and its frame covers 83% of
+  // the sensor so it holds at size.
+  const vault = by("vault");
+  const closingBag = frame(vault, "Olive Green");
 
   // Only colourways that actually resolved to a frame survive — a colour with
   // no photography simply does not appear rather than falling back to another
   // bag's picture.
   const customFrames = CUSTOM_COLOURS.map((colour) => ({ colour, frame: frame(miniLuna, colour) }))
     .filter((c): c is { colour: string; frame: NonNullable<ReturnType<typeof frame>> } => Boolean(c.frame));
-
-  const collection = COLLECTION.map((item) => {
-    const bag = bags.find((b) => b.slug === item.slug);
-    const f = bag ? frame(bag, item.colour) : null;
-    if (!bag || !f) return null;
-    return {
-      ...item,
-      // The tile variant, not the storefront cut-out: on a coloured field the
-      // ordinary matte shows as a pale halo. Loco has no tile asset (its
-      // fringe defeats a clean matte) and falls back to the full photograph,
-      // which is the honest option for it anyway.
-      cut: item.forcePhoto ? f.photo : tileSrc(f),
-      isCut: f.cutOk && !item.forcePhoto,
-      ratio: f.ratio,
-      alt: altFor(bag, item.colour),
-      price: formatMoney(bag.basePrice, "JOD"),
-    };
-  }).filter(Boolean) as {
-    slug: string; product: string; colour: string; field: string;
-    cut: string; isCut: boolean; ratio: number; alt: string; price: string;
-  }[];
 
   return (
     <div className="home">
@@ -208,7 +143,13 @@ export default async function HomePage() {
                 // express a transform, so a resting-width budget left it soft
                 // exactly while it is largest on screen.
                 sizes="(max-width: 860px) 200vw, 92vw"
-                priority
+                // Next 16 deprecated `priority` and it emitted nothing, so the
+                // hero — the LCP element — was being fetched at default
+                // priority and the browser warned about it on every load.
+                // `preload` is the documented replacement and also puts a
+                // <link rel="preload"> in the head, which `loading="eager"`
+                // alone does not. The docs say not to combine the two.
+                preload
               />
             </figure>
           ) : null}
@@ -225,27 +166,40 @@ export default async function HomePage() {
         </div>
 
         {/* ---------------- 01 THE MATERIAL ----------------
-            Not a cut to a new section: a circle mask opens from the point the
-            hero bag is scaling through, so the viewer goes INTO the surface
-            of the object they were just looking at. The macro is that exact
-            bag's own yarn, which is what makes the move honest rather than a
-            stock texture standing in for one. */}
+            An editorial material spread, not a full-screen wallpaper. The
+            macro comes from DSC04874, whose object box covers 88% of the
+            sensor: the previous crop came from the hero frame, which covers
+            only 67% and therefore had the fewest real pixels of any frame in
+            the archive. Different product from the hero as well, so the story
+            stops repeating one bag. */}
         <div className="phase phase-mat">
           <div className="mat-img">
             <Image
-              // A dedicated wide close crop taken from the full-resolution
-              // original (scripts/build-textures.mjs). The shared macro was a
-              // ~430px crop out of a 1600px proxy, upscaled — which is what
-              // was visibly pixelated when drawn full-bleed.
-              src="/media/macro-metallic.webp"
-              alt="Metallic ribbon yarn, hand-crocheted — detail of the Red Mini Luna"
-              width={1937}
-              height={1005}
-              sizes="125vw"
+              src="/media/macro-ribbon.webp"
+              alt="Metallic ribbon yarn, hand-crocheted"
+              width={2312}
+              height={1954}
+              sizes="(max-width: 860px) 100vw, 75vw"
             />
           </div>
-          <p className="story-label"><span>01</span> The material</p>
-          <p className="mat-note">Metallic ribbon yarn, worked one stitch at a time.</p>
+          <div className="mat-side">
+            <p className="story-label"><span>01</span> The material</p>
+            <p className="mat-note">
+              Made one stitch
+              <br />
+              at a time.
+            </p>
+            <figure className="mat-detail">
+              <Image
+                src="/media/macro-twotone.webp"
+                alt="Silver and gold two-tone crochet detail"
+                width={1680}
+                height={811}
+                sizes="(max-width: 860px) 44vw, 22vw"
+              />
+            </figure>
+            <p className="mat-fact">Metallic ribbon yarn and cotton, worked by hand in Amman.</p>
+          </div>
         </div>
 
         {/* ---------------- 02 THE SHAPE ----------------
@@ -279,49 +233,48 @@ export default async function HomePage() {
         </div>
 
         {/* ---------------- 03 MAKE IT YOURS ----------------
-            The bag holds its position and its colour changes underneath the
-            viewer. Only colour moves, because only colour has real
-            photography behind it. */}
+            A configurator, not a slogan. The oversized colour word ran off
+            the frame ("SILVER & G...") and fought the object; a rail of
+            colour names with the live one marked says the same thing, reads
+            as a control, and leaves the bag as the subject. */}
         <div className="phase phase-cust">
-          <p className="story-label story-label-navy"><span>03</span> Make it yours</p>
-
-          {/* The colour name set oversized and running BEHIND the object — the
-              same device as the hero. It is what gives this phase something
-              to look at besides a bag on an empty field, and it makes the
-              colour change a compositional event rather than a swap. */}
-          <ul className="cust-word">
-            {customFrames.map((cf, i) => (
-              <li
-                key={cf.colour}
-                style={{
-                  // Starts after the field has finished wiping in, and ends
-                  // before the "details" line takes over.
-                  ["--w0" as string]: (0.17 + i * 0.06).toFixed(3),
-                  ["--w1" as string]: (0.17 + i * 0.06 + 0.06).toFixed(3),
-                }}
-              >
-                {cf.colour}
-              </li>
-            ))}
-          </ul>
+          <div className="cust-copy">
+            <p className="story-label story-label-navy"><span>03</span> Make it yours</p>
+            <p className="cust-head">
+              Choose
+              <br />
+              your colour.
+            </p>
+            <ul className="cust-rail">
+              {customFrames.map((cf, i) => (
+                <li
+                  key={cf.colour}
+                  style={{
+                    ["--w0" as string]: (0.17 + i * 0.06).toFixed(3),
+                    ["--w1" as string]: (0.17 + i * 0.06 + 0.06).toFixed(3),
+                  }}
+                >
+                  <span>{cf.colour}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="cust-foot">Then the size, the strap, the chain. Yours before it is made.</p>
+          </div>
 
           <div className="cust-bag">
             {customFrames.map((cf, i) => (
               <Image
                 key={cf.colour}
-                // The ORDINARY cut-out here, not the tile variant. The tile
-                // assets exist to stop a pale halo on mid-tone fields; on
-                // this pale pink field there is no halo to stop, and their
-                // harder shadow cut shows as a ragged grey edge at this
-                // scale. Right asset, right field.
                 src={cutSrc(cf.frame)}
                 alt={miniLuna ? altFor(miniLuna, cf.colour) : cf.colour}
                 width={1200}
                 height={Math.round(1200 / cf.frame.ratio)}
-                sizes="(max-width: 860px) 88vw, 50vw"
+                // Each colourway carries its own `--s` scale so the objects
+                // match optically, which pushes the widest of them to 63vw
+                // while resting width is 52vw. `sizes` cannot express a
+                // transform, so it is declared above the resting width.
+                sizes="(max-width: 860px) 96vw, 66vw"
                 style={{
-                  // Starts after the field has finished wiping in, and ends
-                  // before the "details" line takes over.
                   ["--w0" as string]: (0.17 + i * 0.06).toFixed(3),
                   ["--w1" as string]: (0.17 + i * 0.06 + 0.06).toFixed(3),
                   ["--s" as string]: FRAME_FIT[cf.colour]?.s ?? 1,
@@ -331,27 +284,20 @@ export default async function HomePage() {
               />
             ))}
           </div>
-
-          <div className="cust-steps">
-            <p className="cust-step cust-step-1">Choose<br />a colour.</p>
-            <p className="cust-step cust-step-2">Choose<br />the details.</p>
-            <p className="cust-step cust-step-3">Make it<br />yours.</p>
-          </div>
-
         </div>
 
         {/* ---------------- 04 THE FINISHED OBJECT ---------------- */}
         <div className="phase phase-final">
           <p className="final-line final-a">Made by hand.</p>
           <p className="final-line final-b">Made yours.</p>
-          {heroBag && miniLuna ? (
+          {closingBag && vault ? (
             <figure className="final-bag">
               <Image
-                src={cutSrc(heroBag)}
-                alt={altFor(miniLuna, "Red")}
-                width={1100}
-                height={Math.round(1100 / heroBag.ratio)}
-                sizes="(max-width: 860px) 88vw, 46vw"
+                src={tileSrc(closingBag)}
+                alt={altFor(vault, "Olive Green")}
+                width={1400}
+                height={Math.round(1400 / closingBag.ratio)}
+                sizes="(max-width: 860px) 78vw, 42vw"
               />
             </figure>
           ) : null}

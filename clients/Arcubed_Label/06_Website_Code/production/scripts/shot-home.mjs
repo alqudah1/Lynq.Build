@@ -8,7 +8,10 @@
 // Usage: node scripts/shot-home.mjs <width> <height> <p> [p...]
 //        node scripts/shot-home.mjs 1440 900 0 0.28 0.46 0.62 0.8 0.95
 //        node scripts/shot-home.mjs 1440 900 below     (past the story)
-const BASE = process.env.BASE || "http://127.0.0.1:4311";
+// Base URL: an explicit argument wins, then $BASE, then the default.
+// This used to read $BASE only, so `node <script> http://localhost:3000`
+// silently tested whatever stale server was on the default port.
+const BASE = process.argv[2]?.startsWith("http") ? process.argv[2] : (process.env.BASE || "http://127.0.0.1:4311");
 const CDP = process.env.CDP || "http://127.0.0.1:9222";
 import { writeFileSync, mkdirSync } from "node:fs";
 mkdirSync(".screens", { recursive: true });

@@ -3,7 +3,7 @@
 // earlier import-product-media.mjs / make-cutouts.mjs pair.
 //
 // Per frame it produces:
-//   <frame>-{1600,800}.webp      framed photo, cropped to the object + margin
+//   <frame>-{2600,1600,800}.webp framed photo, cropped to the object + margin
 //   <frame>-cut-{1200,600}.webp  alpha cut-out for editorial composition
 //
 // The framed photo is the honest default for galleries (it is the client's
@@ -21,6 +21,9 @@ import { buildTextures } from "./build-textures.mjs";
 const SRC = "../../03_Images";
 const OUT = "public/media";
 const MATTE_W = 1600;
+// Proxy width for the framed-photo crop. Must be a whole multiple of MATTE_W
+// so the analysed region maps onto it exactly.
+const HIRES_W = 3200;
 mkdirSync(OUT, { recursive: true });
 
 const geom = {};
@@ -38,7 +41,9 @@ for (const frame of allFrames()) {
   const a = await analyzeFrame(src, { probeWidth: MATTE_W, dev: 20 });
   if (!a) { console.log(`${frame}: NO OBJECT — skipped`); continue; }
 
+  const needsHiRes = REJECTED_CUTOUTS.has(frame);
   const done = [1600, 800].every((x) => existsSync(`${OUT}/${frame}-${x}.webp`))
+    && (!needsHiRes || existsSync(`${OUT}/${frame}-2600.webp`))
     && [1200, 600].every((x) => existsSync(`${OUT}/${frame}-cut-${x}.webp`));
 
   const { data, info } = await sharp(src).rotate().resize({ width: MATTE_W }).raw().toBuffer({ resolveWithObject: true });
@@ -75,6 +80,29 @@ for (const frame of allFrames()) {
   for (const width of [1600, 800]) {
     await sharp(baseBuf).extract(region).resize({ width, withoutEnlargement: true })
       .webp({ quality: 84 }).toFile(`${OUT}/${frame}-${width}.webp`);
+  }
+
+  // The framed photo used to top out at 1600px because it was cropped out of
+  // the 1600px matte proxy, which throws away the 6000px original before the
+  // crop ever happens. Products with no usable cut-out (Loco) show this framed
+  // photo as a full-bleed main image, where 1600px is under half the device
+  // pixels a 1440px-wide retina viewport asks for. This re-does the same crop
+  // against a HIRES_W proxy, so the region has real pixels behind it.
+  // Only products with no usable cut-out show this framed photo as a large
+  // full-bleed main, so only those frames earn a 2600px file. Generating it
+  // for all 53 added 68MB of images that nothing renders at that size.
+  if (needsHiRes) {
+  const scale = HIRES_W / MATTE_W;
+  const hiRegion = {
+    left: Math.round(region.left * scale), top: Math.round(region.top * scale),
+    width: Math.round(region.width * scale), height: Math.round(region.height * scale),
+  };
+  const hiBuf = await sharp(src).rotate().resize({ width: HIRES_W }).png().toBuffer();
+  const hiMeta = await sharp(hiBuf).metadata();
+  hiRegion.width = Math.min(hiRegion.width, hiMeta.width - hiRegion.left);
+  hiRegion.height = Math.min(hiRegion.height, hiMeta.height - hiRegion.top);
+  await sharp(hiBuf).extract(hiRegion).resize({ width: 2600, withoutEnlargement: true })
+    .webp({ quality: 82 }).toFile(`${OUT}/${frame}-2600.webp`);
   }
 
   // Alpha cut-out.
@@ -121,7 +149,9 @@ lines.push("}");
 lines.push("");
 lines.push("function f(id: string, ratio: number, cutOk = true): Frame {");
 lines.push("  return {");
-lines.push("    photo: `/media/${id}-1600.webp`,");
+lines.push("    // A rejected cut-out means the framed photo IS the hero image, so it");
+lines.push("    // is built at 2600px. Every other frame is shown as a cut-out.");
+lines.push("    photo: cutOk ? `/media/${id}-1600.webp` : `/media/${id}-2600.webp`,");
 lines.push("    photoSmall: `/media/${id}-800.webp`,");
 lines.push("    cut: `/media/${id}-cut-2600.webp`,");
 lines.push("    cutSmall: `/media/${id}-cut-600.webp`,");

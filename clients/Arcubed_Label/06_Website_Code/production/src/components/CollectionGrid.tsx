@@ -56,6 +56,8 @@ export default function CollectionGrid({
         <li
           key={t.key}
           className={`shopx-cell${t.rhythm.feature ? " is-feature" : ""}`}
+          data-product={t.product}
+          data-colour={t.colour}
           style={{ ["--span" as string]: t.rhythm.span, ["--ar" as string]: t.rhythm.ratio }}
         >
           <Link href={t.href} className="shopx-link">

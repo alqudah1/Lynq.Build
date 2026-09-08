@@ -3,7 +3,10 @@
 // hop and that the image shown always belongs to the chosen colour.
 //
 // Usage: node scripts/test-journey.mjs
-const BASE = process.env.BASE || "http://127.0.0.1:4311";
+// Base URL: an explicit argument wins, then $BASE, then the default.
+// This used to read $BASE only, so `node <script> http://localhost:3000`
+// silently tested whatever stale server was on the default port.
+const BASE = process.argv[2]?.startsWith("http") ? process.argv[2] : (process.env.BASE || "http://127.0.0.1:4311");
 const CDP = "http://127.0.0.1:9222";
 import { colourSlug } from "../src/lib/variant.ts";
 

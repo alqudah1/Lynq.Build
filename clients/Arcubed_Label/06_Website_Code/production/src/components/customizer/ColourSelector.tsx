@@ -50,7 +50,7 @@ export default function ColourSelector({
                     alt=""
                     width={200}
                     height={Math.round(200 / frame.ratio)}
-                    sizes="72px"
+                    sizes="112px"
                   />
                 </span>
               ) : null}

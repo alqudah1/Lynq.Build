@@ -23,13 +23,17 @@ import { useEffect, useRef, type ReactNode } from "react";
 // read as an unresponsive page rather than as a held frame. The first
 // gesture now visibly moves the composition and the enter sequence starts
 // almost immediately after it.
+// Re-spaced for a 240vh container. Every band is now short enough that one
+// wheel gesture moves the composition into the next idea; the closing frame in
+// particular resolves fast so the customer is not scrolling to escape the
+// story before the collection arrives.
 const BANDS: [string, number, number][] = [
-  ["--b-hero", 0.0, 0.06],
-  ["--b-enter", 0.06, 0.3],
-  ["--b-mat", 0.3, 0.48],
-  ["--b-shape", 0.48, 0.64],
-  ["--b-cust", 0.64, 0.86],
-  ["--b-final", 0.86, 1.0],
+  ["--b-hero", 0.0, 0.05],
+  ["--b-enter", 0.05, 0.24],
+  ["--b-mat", 0.24, 0.45],
+  ["--b-shape", 0.45, 0.63],
+  ["--b-cust", 0.63, 0.87],
+  ["--b-final", 0.87, 1.0],
 ];
 
 function band(p: number, a: number, b: number) {

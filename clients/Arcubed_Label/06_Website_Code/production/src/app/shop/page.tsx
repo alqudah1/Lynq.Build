@@ -7,6 +7,7 @@
 
 import { getActiveBags } from "@/lib/repository";
 import CollectionGrid from "@/components/CollectionGrid";
+import ShopDiscovery from "@/components/ShopDiscovery";
 
 export const dynamic = "force-dynamic";
 
@@ -27,13 +28,13 @@ export default async function ShopPage() {
           <br />
           we have made.
         </h1>
-        <p className="shopx-sub">
-          Sixteen colourways. Four shapes. Each one crocheted by hand once you choose it.
-        </p>
+        <p className="shopx-sub">Find yours.</p>
       </section>
 
       <section className="shopx">
-        <CollectionGrid bags={bags} />
+        <ShopDiscovery>
+          <CollectionGrid bags={bags} />
+        </ShopDiscovery>
       </section>
     </>
   );
