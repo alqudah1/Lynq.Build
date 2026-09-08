@@ -1,5 +1,5 @@
 import type { Bag, StrapOption, HandleOption, ChainOption } from "@/lib/types";
-import { money } from "@/lib/pricing";
+import { money, isOptIn } from "@/lib/pricing";
 
 type Option = StrapOption | HandleOption | ChainOption;
 
@@ -34,16 +34,21 @@ export default function StrapHandleSelector({
     <div className="opt-group">
       <p className="opt-label">{label}</p>
       <div className="chip-row">
-        {/* Optional paid upgrades, so "None" must be reachable — without it the
-            only way out of a +5 JOD extra was to reload the page. */}
-        <button
-          type="button"
-          className={`opt-chip${selectedId === null ? " selected" : ""}`}
-          aria-pressed={selectedId === null}
-          onClick={() => onSelect(null)}
-        >
-          None
-        </button>
+        {/* "None" belongs to opt-in groups only — without it the only way out
+            of a +5 JOD extra was to reload the page. It is wrong for a group
+            whose options are all free, such as Nova's With Handle / Without
+            Handle: there "None" and "Without Handle" say the same thing, and
+            offering both reads as a broken control rather than a choice. */}
+        {isOptIn(options) ? (
+          <button
+            type="button"
+            className={`opt-chip${selectedId === null ? " selected" : ""}`}
+            aria-pressed={selectedId === null}
+            onClick={() => onSelect(null)}
+          >
+            None
+          </button>
+        ) : null}
         {options.map((o) => {
           const available = !o.compatibleWith || o.compatibleWith.includes(colourId);
           return (

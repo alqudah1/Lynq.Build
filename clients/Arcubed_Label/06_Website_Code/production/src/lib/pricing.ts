@@ -27,6 +27,17 @@ export function buildReadyForDeliverySnapshot(
   };
 }
 
+/** An option group is opt-in when choosing something costs extra. A group
+ *  whose options are all free is an exhaustive choice and must start resolved.
+ *  Shared with StrapHandleSelector so the "None" chip and the default agree. */
+export function isOptIn(options?: { priceDelta: number }[] | null): boolean {
+  return !options || options.length === 0 || options.some((o) => o.priceDelta > 0);
+}
+
+function firstId(options?: { id: string }[] | null): string | null {
+  return options && options.length ? options[0].id : null;
+}
+
 export function defaultSelectionFor(bag: Bag, initialColourId?: string | null): Selection {
   // A colour carried in the URL wins. Without this every Shop tile opened on
   // colours[0]: clicking Silver Mini Luna opened Red.
@@ -49,9 +60,14 @@ export function defaultSelectionFor(bag: Bag, initialColourId?: string | null): 
     // JOD 55 base price, and a customer who pressed "Add to Bag" straight away
     // was charged for two extras they never chose. Caught by loading the real
     // page, not by any type or build check.
-    strapId: null,
-    handleId: null,
-    chainId: null,
+    strapId: isOptIn(bag.straps) ? null : firstId(bag.straps),
+    // Nova's handle is a CHOICE, not an upgrade: With Handle and Without
+    // Handle are both JOD 55 (confirmed 2026-09-08). A group whose every
+    // option is free is exhaustive, so leaving it unselected would mean the
+    // customer ordered a bag without saying which one they wanted. Groups
+    // that carry a surcharge keep the opt-in rule above.
+    handleId: isOptIn(bag.handles) ? null : firstId(bag.handles),
+    chainId: isOptIn(bag.chains) ? null : firstId(bag.chains),
     addonIds: [],
   };
 }

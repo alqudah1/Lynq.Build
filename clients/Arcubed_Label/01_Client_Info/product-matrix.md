@@ -58,6 +58,14 @@ Ask Rand before inventing any of them.
   Chain, +5 JOD**, both offered on all four products. Rand does not
   currently have dedicated product photography for the chains — no chain
   imagery has been invented or sourced elsewhere.
+  The missing piece is **photographic evidence, not product definition**:
+  the commerce options are confirmed and live. Client reaffirmed 2026-09-08.
+- **Nova handle:** ✅ confirmed 2026-09-08 — **With Handle** and **Without
+  Handle**, both at the JOD 55 base price, `price_delta = 0`. A choice, not
+  an upgrade. Applied to the database 2026-09-08 (migration
+  `20260908120000_nova_handle_choice.sql`). **No handle photography exists
+  for either option** — the selector is typographic and must stay that way
+  until Rand supplies images of both.
 
 ---
 
