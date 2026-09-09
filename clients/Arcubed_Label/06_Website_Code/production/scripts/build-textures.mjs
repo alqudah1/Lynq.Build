@@ -50,11 +50,31 @@ const HOMEPAGE_MACROS = [
   // HEIGHT, which upscaled a 373px-tall derivative by 2.4x. `sizes` only ever
   // describes width, so it cannot prevent that: the crop's aspect has to be
   // close to the box's.
-  { id: "macro-ribbon", frame: "DSC04874", rel: { l: 0.26, t: 0.46, w: 0.44, h: 0.50 } },
+  // `rel` is a fraction of the DETECTED OBJECT BOX, not of the sensor, so
+  // w:0.44 meant "44% of the bag's width" — about six stitch rows blown
+  // across a 890px panel. That is why the material moment still read as
+  // pixelated wallpaper after the resolution work: the fault was the crop
+  // window, not the pixel count. At 0.72 x 0.74 the frame keeps the top edge
+  // and the handle join, so it reads as a crocheted OBJECT with loops,
+  // ribbon and shine rather than as an abstract gold pattern.
+  { id: "macro-ribbon", frame: "DSC04874", rel: { l: 0.14, t: 0.10, w: 0.72, h: 0.74 } },
   // Two-tone banding rather than the fringe: DSC05765's fringe is dark brown
   // on dark and reads as a muddy rectangle at detail size, whereas the silver
   // and gold bands are legible small and add a third colourway to the story.
-  { id: "macro-twotone", frame: "DSC04866", rel: { l: 0.22, t: 0.40, w: 0.44, h: 0.36 } },
+  // Squarer than before: at 2.98:1 it was a letterboxed sliver.
+  { id: "macro-twotone", frame: "DSC04866", rel: { l: 0.30, t: 0.18, w: 0.40, h: 0.62 } },
+  // A narrow band of ribbon for the MATERIAL -> FORM handoff. Carries the
+  // real texture into the section that introduces the four silhouettes, so
+  // the two moments read as one transition instead of texture, then a poster.
+  // NOTE the id changed from `macro-thread`: Next's image optimizer keys its
+  // derivatives on the URL, and overwriting a file in place kept serving the
+  // previous crop even after clearing .next/cache/images and restarting the
+  // dev server. A rebuilt crop needs a new name to be certain it ships.
+  // Kept inside the object across its FULL width: at l:0.16 w:0.68 the window
+  // ran off the bag at t:0.30 (where the body narrows toward the handle) and
+  // the band faded into studio white, which read as a gradient rather than as
+  // yarn. Mid body, where the form is at its widest.
+  { id: "macro-ribbon-band", frame: "DSC04870", rel: { l: 0.09, t: 0.56, w: 0.64, h: 0.20 } },
   { id: "macro-metallic", frame: "DSC05774", rel: { l: 0.12, t: 0.44, w: 0.72, h: 0.44 } },
   // About draws its texture full-bleed at 1440. The shared chunky crop is
   // 1318px, so it was being enlarged by more than half again.

@@ -8,7 +8,7 @@
 const BASE = process.argv[2]?.startsWith("http") ? process.argv[2] : (process.env.BASE || "http://127.0.0.1:4311");
 const CDP = process.env.CDP || "http://127.0.0.1:9222";
 const WIDTHS = (process.env.WIDTHS || "1280,1440,1600,1920").split(",").map(Number);
-const POINTS = [0.02, 0.15, 0.34, 0.54, 0.75, 0.94];
+const POINTS = [0.02, 0.15, 0.32, 0.48, 0.70, 0.92];
 const SEL = ".final-line, .cust-word li, .cust-head, .mat-note, .shape-item, .story-lede, .hero-line";
 
 const target = await (await fetch(`${CDP}/json/new?about:blank`, { method: "PUT" })).json();

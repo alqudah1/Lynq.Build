@@ -182,15 +182,31 @@ body:has(.home) main { padding-top: 0; }
    now drawn at ~890px from a 2242px source: 2.5x, sharp. */
 .phase-mat {
   z-index: 8; background: var(--paper);
-  display: grid; grid-template-columns: 1fr;
+  display: grid; grid-template-columns: 1fr; align-content: center;
+  /* Padding is the whole point: it leaves white on every side of the
+     photograph. Edge to edge, the same crop reads as a background texture. */
+  padding: clamp(26px, 6vh, 74px) clamp(20px, 4vw, 64px);
+  gap: clamp(22px, 4vw, 68px);
   clip-path: inset(0 0 0 calc(100% - min(1, var(--b-mat) * 2.6) * 100%));
 }
-.mat-img { position: relative; overflow: hidden; }
-.mat-img img { width: 100%; height: 100%; object-fit: cover; }
+.mat-img {
+  position: relative; overflow: hidden; margin: 0; width: 100%;
+  /* Matches macro-ribbon's 2522x1928 exactly, so object-fit: cover never
+     scales the image to fill a taller box. That height-driven upscale, which
+     `sizes` cannot describe, was the original softness. */
+  aspect-ratio: 2522 / 1928;
+}
+.mat-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .mat-side {
-  display: flex; flex-direction: column; justify-content: center;
-  padding: clamp(28px, 5vw, 68px);
+  /* Top aligned with the photograph's top edge rather than floating at its
+     centre, so the two columns share a baseline and read as one spread. */
+  display: flex; flex-direction: column; justify-content: flex-start;
+  padding: 0;
   background: var(--paper);
+}
+.mat-rule {
+  display: block; width: 54px; height: 1px; background: var(--navy);
+  opacity: 0.34; margin: clamp(18px, 3vh, 28px) 0 0;
 }
 .story-label {
   position: static; margin: 0 0 auto;
@@ -204,23 +220,36 @@ body:has(.home) main { padding-top: 0; }
 .mat-note {
   margin: clamp(18px, 3vh, 30px) 0 0; color: var(--navy);
   font-family: var(--font-head); font-weight: 600; font-variation-settings: "opsz" 96;
-  font-size: clamp(28px, 3.6vw, 56px); line-height: 0.98; letter-spacing: -0.03em;
+  font-size: clamp(26px, 3vw, 46px); line-height: 1.02; letter-spacing: -0.028em;
 }
 .mat-detail {
-  margin: clamp(22px, 4vh, 40px) 0 0; width: min(280px, 100%); overflow: hidden;
+  margin: clamp(20px, 3.4vh, 34px) 0 0; width: min(232px, 76%); overflow: hidden;
 }
 .mat-detail img { width: 100%; height: auto; display: block; }
 .mat-fact {
-  margin: clamp(14px, 2vh, 22px) 0 auto; max-width: 30ch;
+  /* `auto` bottom margin here fought the label's `auto` bottom margin and left
+     the caption floating in the middle of the column. The label holds the top
+     edge; this group settles on the photograph's bottom edge. */
+  margin: clamp(14px, 2vh, 22px) 0 0; max-width: 30ch;
   font-size: 12.5px; line-height: 1.65; color: var(--muted);
 }
 
 @media (min-width: 860px) {
-  .phase-mat { grid-template-columns: 62fr 38fr; }
+  /* ~60/40: image, then breathing space. */
+  .phase-mat { grid-template-columns: 59fr 41fr; align-items: stretch; }
 }
 @media (max-width: 859px) {
-  .phase-mat { grid-template-rows: 52fr 48fr; }
-  .mat-detail { width: min(200px, 46%); }
+  /* A real mobile composition rather than the desktop columns stacked: the
+     photograph keeps its shape and its white margin, and the type sits under
+     it at readable sizes instead of being pushed off the screen. */
+  .phase-mat {
+    grid-template-columns: 1fr; grid-template-rows: auto auto;
+    align-content: center; gap: clamp(18px, 3.4vh, 30px);
+    padding: clamp(20px, 3vh, 34px) clamp(18px, 5vw, 30px);
+  }
+  .mat-img { aspect-ratio: 2522 / 1928; }
+  .mat-detail { width: min(150px, 42%); margin-top: clamp(14px, 2.4vh, 22px); }
+  .mat-fact { font-size: 12px; }
 }
 
 /* ---------------- 02 THE SHAPE ----------------
@@ -234,14 +263,40 @@ body:has(.home) main { padding-top: 0; }
      label stayed clipped outside the revealed area the whole time. */
   clip-path: inset(calc(100% - min(1, var(--b-shape) * 2.8) * 100%) 0 0 0);
 }
+/* The transition copy, top left. Deliberately NOT a full-screen Bodoni
+   sentence: a small Inter label, a restrained serif line, a strip of the real
+   ribbon, then one small factual line. The forms occupy the lower half. */
+/* Spans the frame so the ribbon band can bleed off the right edge; the text
+   inside it stays on the left margin. */
+.shape-lead {
+  position: absolute; z-index: 3; left: 0; right: 0;
+  top: clamp(40px, 8.5vh, 84px); padding-left: clamp(20px, 4vw, 56px);
+  opacity: calc(min(1, var(--b-shape) * 4) - var(--b-cust) * 2.4);
+}
+.shape-head {
+  margin: clamp(10px, 1.8vh, 18px) 0 0; max-width: 16ch; color: var(--pink);
+  font-family: var(--font-head); font-weight: 600; font-variation-settings: "opsz" 96;
+  font-size: clamp(30px, 3.2vw, 48px); line-height: 1.0; letter-spacing: -0.03em;
+}
+.shape-thread {
+  /* A block child of the padded container, so it runs from the left margin to
+     the right edge of the viewport without any width arithmetic. */
+  margin: clamp(26px, 7vh, 68px) 0 0; height: clamp(54px, 7.6vh, 86px);
+  overflow: hidden; width: auto;
+}
+.shape-thread img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
 .shape-row {
-  position: absolute; z-index: 2; left: 0; right: 0; top: 54%;
+  /* Anchored to the bottom edge so the forms are already entering from below
+     while the transition copy is still being read. Nobody scrolls past a
+     blank frame waiting for the bags to arrive. */
+  position: absolute; z-index: 2; left: 0; right: 0; bottom: clamp(20px, 3.4vh, 40px);
   display: flex; align-items: flex-end; justify-content: center;
   gap: clamp(14px, 3.4vw, 62px); margin: 0; padding: 0 clamp(20px, 3vw, 40px);
-  list-style: none; transform: translateY(-50%);
+  list-style: none; transform: none;
   /* One row width drives every form's size, so the proportions between them
      stay true at any viewport. */
-  --base: clamp(104px, 22.5vw, 330px);
+  --base: clamp(104px, 20.5vw, 300px);
 }
 /* Each form arrives on its own beat, so the row assembles rather than
    appearing at once — and all four settle together, in line, by the time the
@@ -250,13 +305,13 @@ body:has(.home) main { padding-top: 0; }
   /* Names sit under the shared baseline, not under each object, so the row
      keeps one clean type line while the forms sit at their real heights. */
   display: flex; flex-direction: column; align-items: flex-start; gap: 0;
-  --settle: calc(1 - min(1, var(--b-shape) * 2.9));
-  transform: translateY(calc(var(--settle) * 14vh));
+  --settle: calc(1 - min(1, var(--b-shape) * 2.2));
+  transform: translateY(calc(var(--settle) * 34vh));
 }
-.shape-nova     { transform: translateY(calc(var(--settle) * 22vh)); }
-.shape-vault    { transform: translateY(calc(var(--settle) * 16vh)); }
-.shape-mini-luna{ transform: translateY(calc(var(--settle) * 10vh)); }
-.shape-loco     { transform: translateY(calc(var(--settle) * 18vh)); }
+.shape-nova     { transform: translateY(calc(var(--settle) * 52vh)); }
+.shape-vault    { transform: translateY(calc(var(--settle) * 40vh)); }
+.shape-mini-luna{ transform: translateY(calc(var(--settle) * 30vh)); }
+.shape-loco     { transform: translateY(calc(var(--settle) * 46vh)); }
 
 /* Alpha mask filled with brand pink — the asset carries no colour of its own. */
 .sil {
@@ -281,10 +336,12 @@ body:has(.home) main { padding-top: 0; }
   text-transform: uppercase;
 }
 .shape-note {
-  position: absolute; z-index: 3; bottom: 8vh; left: clamp(20px, 4vw, 52px); margin: 0;
-  max-width: 26ch; color: var(--pink); font-family: var(--font-head);
-  font-size: clamp(18px, 2.2vw, 34px); line-height: 1.14;
-  opacity: calc(min(1, (var(--b-shape) - 0.35) * 3) - var(--b-cust) * 2.4);
+  /* Was a second large serif line at the bottom of the frame, which made this
+     moment read as a text poster. Small Inter now: the scale contrast is what
+     keeps one serif line from having to compete with another. */
+  position: static; margin: clamp(12px, 1.8vh, 18px) 0 0; max-width: 30ch;
+  color: var(--pink); opacity: 0.62;
+  font-size: 12.5px; line-height: 1.6; letter-spacing: 0;
 }
 
 /* ---------------- 03 MAKE IT YOURS ----------------
@@ -459,12 +516,28 @@ body:has(.home) main { padding-top: 0; }
      inflate the object past the type. */
   .hero-band { gap: 16px; padding-left: 18px; height: 12vh; }
   .hero-band span:nth-child(3) { display: none; }
-  /* Two rows of two on a phone — four forms in one row would be thumbnails. */
-  .shape-row { flex-wrap: wrap; gap: 14px 20px; transform: translateY(-50%); }
-  .shape-item { gap: 10px; width: calc(50% - 12px); }
-  .shape-row { --base: 38vw; top: 50%; }
-  .sil { margin-bottom: 12px; }
-  .mat-note, .shape-note { bottom: 6vh; font-size: clamp(18px, 5.4vw, 28px); max-width: 16ch; }
+  /* Four forms in one phone-width row would be thumbnails, so two rows of
+     two — still anchored to the bottom, so they rise into frame under the
+     transition copy exactly as they do on desktop. */
+  .shape-row {
+    flex-wrap: wrap; gap: 10px 14px; transform: none;
+    --base: 37vw; bottom: clamp(14px, 2.6vh, 26px); justify-content: flex-start;
+    padding: 0 clamp(18px, 5vw, 30px);
+  }
+  .shape-item { gap: 10px; width: calc(50% - 8px); }
+  .sil { margin-bottom: 10px; }
+  .shape-lead {
+    /* Padded on the left only, so the ribbon band runs off the right edge on
+       a phone exactly as it does on desktop. The text keeps its measure from
+       its own max-width rather than from the container. */
+    left: 0; right: 0; padding-left: clamp(18px, 5vw, 30px); padding-right: 0;
+    top: clamp(34px, 7vh, 62px); max-width: none;
+  }
+  .shape-head { font-size: clamp(26px, 8vw, 40px); max-width: 12ch; }
+  .shape-thread {
+    width: auto; height: clamp(46px, 6.4vh, 64px); margin-top: clamp(18px, 3.4vh, 30px);
+  }
+  .shape-note { font-size: 11.5px; margin-top: clamp(12px, 2vh, 18px); max-width: 30ch; }
   .story-label { top: 11vh; }
   /* Customisation stacks on a phone: object above, words below. */
   /* Clear of the phase label, which sits at 11vh on a phone. */
@@ -535,7 +608,7 @@ body:has(.home) main { padding-top: 0; }
 
   /* Anything positioned into the composition returns to normal flow. */
   .hero-type, .hero-type p, .hero-bag, .hero-second, .hero-band,
-  .mat-img, .story-label, .mat-note, .shape-row, .shape-note,
+  .mat-img, .story-label, .mat-note, .shape-row, .shape-note, .shape-lead,
   .cust-bag, .cust-steps, .cust-step, .cust-word, .cust-word li,
   .cust-honest, .final-line, .final-bag {
     position: relative; top: auto; right: auto; bottom: auto; left: auto;
@@ -548,10 +621,12 @@ body:has(.home) main { padding-top: 0; }
   .hero-second { width: min(220px, 34%); }
   .hero-band { height: auto; min-height: 0; padding: 14px 18px; flex-wrap: wrap; gap: 14px; }
 
-  .phase-mat { background: var(--navy); }
-  .mat-img { width: 100%; height: auto; }
+  .phase-mat { background: var(--paper); padding: 24px 18px; }
+  .mat-img { width: 100%; height: auto; aspect-ratio: auto; }
   .mat-img img { height: auto; }
-  .mat-note, .shape-note { max-width: 34ch; margin-top: 20px; }
+  .mat-note { max-width: 34ch; margin-top: 20px; }
+  .shape-note { max-width: 40ch; margin-top: 14px; }
+  .shape-lead { max-width: none; }
   .story-label { margin-bottom: 22px; }
   .story-label-navy { color: var(--pink); }
   .phase-cust, .phase-final { background: var(--pink); }

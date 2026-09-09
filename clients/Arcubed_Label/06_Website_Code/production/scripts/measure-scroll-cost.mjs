@@ -25,7 +25,9 @@ const g = JSON.parse(geom);
 console.log(`story height ${g.h}px = ${(g.h / g.vh * 100).toFixed(0)}vh | scrollable travel ${g.travel}px`);
 
 await ev(`scrollTo(0,${g.top});`); await new Promise((r) => setTimeout(r, 400));
-const PHASES = [["hero",0.05],["enter",0.24],["material",0.45],["shape",0.63],["custom",0.87],["final",1.0]];
+// Must match BANDS in src/components/home/ScrollStory.tsx. Hardcoding these
+// meant the report kept describing the old boundaries after they moved.
+const PHASES = [["hero",0.05],["enter",0.24],["material",0.40],["shape",0.56],["custom",0.84],["final",1.0]];
 let gestures = 0, prev = 0, pi = 0;
 for (let i = 0; i < 400; i++) {
   await send("Input.dispatchMouseEvent", { type: "mouseWheel", x: W/2, y: H/2, deltaX: 0, deltaY: DELTA });

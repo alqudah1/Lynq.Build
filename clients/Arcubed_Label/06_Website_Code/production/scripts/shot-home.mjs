@@ -33,6 +33,10 @@ const send = (method, params = {}) =>
 
 await send("Page.enable");
 await send("Runtime.enable");
+// Without this the screenshot can show a derivative generated from an older
+// version of the same filename, so a rebuilt crop appears not to have landed.
+await send("Network.enable");
+await send("Network.setCacheDisabled", { cacheDisabled: true });
 await send("Emulation.setDeviceMetricsOverride", { width: +w, height: +h, deviceScaleFactor: 1, mobile: +w < 900 });
 await send("Page.navigate", { url: BASE + "/" });
 const t0 = Date.now();

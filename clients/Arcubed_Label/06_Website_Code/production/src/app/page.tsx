@@ -68,8 +68,14 @@ const FRAME_FIT: Record<string, { s: number; tx: number; ty: number }> = {
 const SHAPES = [
   { slug: "nova", name: "Nova", ratio: 2.0783, width: 1.0, note: "Soft, closed, low", fill: "#9a9aa0" },
   { slug: "vault", name: "Vault", ratio: 1.3877, width: 0.9, note: "Wide, structured", fill: "#a99a63" },
-  { slug: "mini-luna", name: "Mini Luna", ratio: 1.0755, width: 0.76, note: "Arch handle", fill: "#c9564a" },
-  { slug: "loco", name: "Loco", ratio: 1.5453, width: 0.94, note: "Fringed", fill: "#a2646c" },
+  // Gold, not red. The material moment immediately above IS this bag's gold
+  // ribbon (DSC04874 is the Gold Mini Luna), so the form arrives in the
+  // colour the customer has just been looking at. The red fill also made a
+  // fourth red object on a homepage that already opens with a red bag.
+  { slug: "mini-luna", name: "Mini Luna", ratio: 1.0755, width: 0.76, note: "Arch handle", fill: "#c9a24e" },
+  // Burgundy at a value that actually separates from navy; the old dusty rose
+  // read as a muddy blob rather than as the fringed form.
+  { slug: "loco", name: "Loco", ratio: 1.5453, width: 0.94, note: "Fringed", fill: "#b06a72" },
 ];
 
 /** A specific colourway's first frame, falling back to the product's best. */
@@ -173,15 +179,19 @@ export default async function HomePage() {
             the archive. Different product from the hero as well, so the story
             stops repeating one bag. */}
         <div className="phase phase-mat">
-          <div className="mat-img">
+          {/* A placed photograph, not a background. The page padding leaves
+              white on every side of it, which is the difference between an
+              editorial spread and wallpaper. Its aspect matches the crop so
+              object-fit has nothing to scale. */}
+          <figure className="mat-img">
             <Image
               src="/media/macro-ribbon.webp"
-              alt="Metallic ribbon yarn, hand-crocheted"
-              width={2312}
-              height={1954}
-              sizes="(max-width: 860px) 100vw, 75vw"
+              alt="Gold metallic ribbon yarn crocheted by hand, showing the handle join and stitch rows"
+              width={2522}
+              height={1928}
+              sizes="(max-width: 860px) 92vw, 56vw"
             />
-          </div>
+          </figure>
           <div className="mat-side">
             <p className="story-label"><span>01</span> The material</p>
             <p className="mat-note">
@@ -189,16 +199,17 @@ export default async function HomePage() {
               <br />
               at a time.
             </p>
+            <span className="mat-rule" aria-hidden="true" />
             <figure className="mat-detail">
               <Image
                 src="/media/macro-twotone.webp"
                 alt="Silver and gold two-tone crochet detail"
-                width={1680}
-                height={811}
-                sizes="(max-width: 860px) 44vw, 22vw"
+                width={1465}
+                height={932}
+                sizes="(max-width: 860px) 42vw, 17vw"
               />
             </figure>
-            <p className="mat-fact">Metallic ribbon yarn and cotton, worked by hand in Amman.</p>
+            <p className="mat-fact">Metallic ribbon yarn, crocheted by hand.</p>
           </div>
         </div>
 
@@ -209,7 +220,31 @@ export default async function HomePage() {
             to put these bags on navy at all: the photographic cut-outs carry
             a soft studio matte that glows against a dark field. */}
         <div className="phase phase-shape">
-          <p className="story-label story-label-pink"><span>02</span> The shape</p>
+          {/* The handoff from MATERIAL to FORM. A strip of the same ribbon
+              carries the texture across, so the two moments read as one
+              transition rather than "texture, then a poster". The forms rise
+              from below while this copy is still on screen. */}
+          <div className="shape-lead">
+            <p className="story-label story-label-pink"><span>02</span> The shape</p>
+            <p className="shape-head">
+              One material.
+              <br />
+              Four forms.
+            </p>
+            {/* A band of the real ribbon running off the right edge. It does
+                the job a rule would do, but in the material itself, which is
+                what makes "one material" an image rather than a claim. */}
+            <figure className="shape-thread">
+              <Image
+                src="/media/macro-ribbon-band.webp"
+                alt="Silver and gold ribbon yarn"
+                width={2070}
+                height={457}
+                sizes="100vw"
+              />
+            </figure>
+            <p className="shape-note">Each one its own form. None of them a version of another.</p>
+          </div>
           <ul className="shape-row">
             {SHAPES.map((sh) => (
               <li key={sh.slug} className={`shape-item shape-${sh.slug}`}>
@@ -229,7 +264,6 @@ export default async function HomePage() {
               </li>
             ))}
           </ul>
-          <p className="shape-note">Each one its own form. None of them a version of another.</p>
         </div>
 
         {/* ---------------- 03 MAKE IT YOURS ----------------

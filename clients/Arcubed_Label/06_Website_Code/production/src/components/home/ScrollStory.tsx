@@ -30,10 +30,14 @@ import { useEffect, useRef, type ReactNode } from "react";
 const BANDS: [string, number, number][] = [
   ["--b-hero", 0.0, 0.05],
   ["--b-enter", 0.05, 0.24],
-  ["--b-mat", 0.24, 0.45],
-  ["--b-shape", 0.45, 0.63],
-  ["--b-cust", 0.63, 0.87],
-  ["--b-final", 0.87, 1.0],
+  // Material and shape were 2 wheel gestures each, so the handoff from the
+  // material into the four forms cost 4. Tightened to land it at 3 without
+  // changing the story's overall height; the room goes to customisation,
+  // which is the one phase that genuinely needs dwell.
+  ["--b-mat", 0.24, 0.40],
+  ["--b-shape", 0.40, 0.56],
+  ["--b-cust", 0.56, 0.84],
+  ["--b-final", 0.84, 1.0],
 ];
 
 function band(p: number, a: number, b: number) {
