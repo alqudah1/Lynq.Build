@@ -588,9 +588,11 @@ body:has(.home) main { padding-top: 0; }
   .hero-band span:nth-child(3) { display: inline; }
   /* Two rows of two rather than four in a line. At 21vw the forms were 161px
      wide at the bottom of a 1024px viewport, which left 471px of empty navy
-     above them — the largest gap at any width. */
+     above them — the largest gap at any width.
+
+     Short tablets are handled in a separate height gated block below, so
+     everything from 960px of height upwards keeps 40vw exactly as composed. */
   .shape-row { --base: 40vw; flex-wrap: wrap; gap: 12px 18px; }
-  .shape-item { width: calc(50% - 9px); }
   /* Two rows of forms already fill this viewport, so the copy stays high. */
   .shape-lead { top: clamp(40px, 7vh, 84px); }
   .shape-item { width: auto; }
@@ -601,6 +603,24 @@ body:has(.home) main { padding-top: 0; }
   .cust-bag { right: -6vw; top: 20vh; width: 62vw; }
   .final-bag { width: 62vw; }
   .final-line { font-size: clamp(44px, 12vw, 120px); }
+}
+
+/* ---------------- short tablet ----------------
+   DEFENSIVE, not a redesign. Two rows of forms sized only from the WIDTH keep
+   their full height on a short viewport, and because the band, caption and
+   forms are anchored to the bottom edge, that group pushes the ribbon up into
+   the headline. Measured on the composed layout: head to band was -86px at
+   768x800, -166px at 768x700 and -211px at 820x680, with the band itself off
+   the top of the frame.
+   Gated at 960px so 768x1024, the composed case, never matches. */
+@media (min-width: 700px) and (max-width: 860px) and (max-height: 960px) {
+  .shape-row { --base: min(40vw, 26vh); }
+  .shape-lead { top: clamp(22px, 4vh, 52px); }
+  .shape-head { font-size: clamp(24px, 4.6vw, 36px); }
+  /* Once the forms are height capped they are small enough to fit four in a
+     line, which drops the two by two rhythm and reopens a gap. Holding them
+     to two per row keeps the short tablet reading like the composed one. */
+  .shape-item { width: calc(50% - 9px); }
 }
 
 /* ---------------- reduced motion ----------------
