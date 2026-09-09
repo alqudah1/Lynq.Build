@@ -231,6 +231,17 @@ export default async function HomePage() {
               <br />
               Four forms.
             </p>
+          </div>
+
+          {/* Band, caption and forms are ONE bottom-anchored group. Anchoring
+              the forms to the viewport and the band to the copy left a gap
+              between them that grew with the viewport: 185px at 1440 and
+              471px at 768. Grouped, the spacing between them is fixed and the
+              slack collects above the band, where it reads as breathing room
+              under the headline instead of a hole in the middle of the frame.
+              The band sits above the forms in z order, so they rise behind it
+              rather than beside it. */}
+          <div className="shape-close">
             {/* A band of the real ribbon running off the right edge. It does
                 the job a rule would do, but in the material itself, which is
                 what makes "one material" an image rather than a claim. */}
@@ -244,7 +255,6 @@ export default async function HomePage() {
               />
             </figure>
             <p className="shape-note">Each one its own form. None of them a version of another.</p>
-          </div>
           <ul className="shape-row">
             {SHAPES.map((sh) => (
               <li key={sh.slug} className={`shape-item shape-${sh.slug}`}>
@@ -264,6 +274,7 @@ export default async function HomePage() {
               </li>
             ))}
           </ul>
+          </div>
         </div>
 
         {/* ---------------- 03 MAKE IT YOURS ----------------
