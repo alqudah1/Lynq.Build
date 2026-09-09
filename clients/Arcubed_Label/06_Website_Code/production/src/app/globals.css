@@ -1402,26 +1402,22 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 .ft {
   position: relative;
   background: var(--navy); color: var(--pink);
-  padding: clamp(56px, 10vh, 120px) clamp(20px, 4vw, 56px) clamp(28px, 4vh, 44px);
+  padding: clamp(56px, 10vh, 120px) clamp(20px, 4vw, 56px) clamp(30px, 4.4vh, 52px);
   overflow: hidden;
 }
-/* A material crop set into the top-right corner, cropped by the field edge.
-   The footer was a wordmark over three link columns; this makes it read as
-   the last spread of the editorial rather than a sitemap. */
-.ft-crop {
-  position: absolute; top: 0; right: 0; margin: 0; z-index: 0;
-  width: clamp(150px, 25vw, 400px); aspect-ratio: 4 / 5; overflow: hidden;
-}
-.ft-crop img { width: 100%; height: 100%; object-fit: cover; }
 .ft-mark, .ft-cols, .ft-legal { position: relative; z-index: 1; }
+/* The wordmark is the only graphic. With the material crop gone it has the
+   full width to itself, so it is sized to SPAN that width rather than sitting
+   at 60% of it with a hole where the image used to be. 15.6vw lands ARCUBED
+   at about 96% of the content measure at 1440, measured rather than guessed. */
 .ft-mark {
-  margin: 0 0 clamp(28px, 5vh, 64px); color: #ffe0fd; user-select: none;
+  margin: 0 0 clamp(24px, 4vh, 52px); color: #ffe0fd; user-select: none;
   font-family: var(--font-head); font-weight: 600;
   font-variation-settings: "opsz" 144, "SOFT" 0;
-  font-size: clamp(52px, 13vw, 196px); line-height: 0.78;
+  font-size: clamp(46px, 15.6vw, 250px); line-height: 0.78;
   letter-spacing: -0.055em; text-transform: uppercase;
-  /* Bleeds past the left edge so it reads as a printed mark rather than a
-     centred logo in a box. */
+  /* Optically flush with the column rules below rather than inset by the
+     glyph's own side bearing. */
   margin-left: -0.045em;
 }
 .ft-cols {
@@ -1441,7 +1437,11 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 }
 .ft-col a:hover::after { right: 0; }
 .ft-legal {
-  margin: clamp(30px, 5vh, 56px) 0 0; font-size: 11px; letter-spacing: 0.05em;
+  /* Its own hairline, so the footer closes on a deliberate line rather than
+     the legal text drifting toward the bottom edge. */
+  margin: clamp(32px, 5vh, 60px) 0 0; padding-top: clamp(15px, 2.2vh, 22px);
+  border-top: 1px solid rgba(255, 224, 253, 0.16);
+  font-size: 11px; letter-spacing: 0.05em;
   color: #ffe0fd; opacity: 0.5;
 }
 @media (min-width: 700px) { .ft-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

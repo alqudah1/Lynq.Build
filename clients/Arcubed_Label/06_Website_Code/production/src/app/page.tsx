@@ -106,8 +106,33 @@ export default async function HomePage() {
   // range look like one bag. Vault Olive is the strongest contrast available:
   // another silhouette, another colour family, and its frame covers 83% of
   // the sensor so it holds at size.
+  // CLOSING CAST — the range, not one bag on a pink field.
+  //
+  // Every candidate cut-out was composited on the actual #FFE0FD field before
+  // any of this was written. Loco is excluded on evidence, not taste: all six
+  // of its frames are cutOk:false because the fringe will not matte cleanly,
+  // and a forced extraction would read as a torn edge at this size.
+  //
+  // Four objects, three products, four colour families, and no red — the Red
+  // Mini Luna already owns the hero, and repeating it here is what made the
+  // range look like one bag in the first place.
   const vault = by("vault");
-  const closingBag = frame(vault, "Olive Green");
+  const nova = by("nova");
+  const closingCast = [
+    // Focal point. Largest, in front of the type, slightly right of centre.
+    { key: "vault", cls: "fc-vault", bag: vault, colour: "Olive Green", w: 1400 },
+    // Behind the first line, upper left. The arch reads against the type.
+    { key: "luna", cls: "fc-luna", bag: miniLuna, colour: "Silver", w: 900 },
+    // Wide, low, cropped by the right edge. Adds a second silhouette family.
+    { key: "novasg", cls: "fc-novasg", bag: nova, colour: "Silver & Gold", w: 1100 },
+    // Dark anchor, cropped by the left edge, smallest. Gives the frame depth
+    // instead of four objects sitting on one plane.
+    { key: "novablack", cls: "fc-black", bag: nova, colour: "Black", w: 760 },
+  ]
+    .map((c) => ({ ...c, frame: frame(c.bag, c.colour) }))
+    // A colourway with no frame simply does not appear; nothing falls back to
+    // another bag's photograph.
+    .filter((c) => c.bag && c.frame);
 
   // Only colourways that actually resolved to a frame survive — a colour with
   // no photography simply does not appear rather than falling back to another
@@ -233,27 +258,11 @@ export default async function HomePage() {
             </p>
           </div>
 
-          {/* Band, caption and forms are ONE bottom-anchored group. Anchoring
-              the forms to the viewport and the band to the copy left a gap
-              between them that grew with the viewport: 185px at 1440 and
-              471px at 768. Grouped, the spacing between them is fixed and the
-              slack collects above the band, where it reads as breathing room
-              under the headline instead of a hole in the middle of the frame.
-              The band sits above the forms in z order, so they rise behind it
-              rather than beside it. */}
+          {/* One composition, no divider: label, headline, copy, forms. The
+              ribbon strip that used to sit here read as decoration cutting the
+              section in half, so the whole block is now a single flow and the
+              forms sit directly under the copy they belong to. */}
           <div className="shape-close">
-            {/* A band of the real ribbon running off the right edge. It does
-                the job a rule would do, but in the material itself, which is
-                what makes "one material" an image rather than a claim. */}
-            <figure className="shape-thread">
-              <Image
-                src="/media/macro-ribbon-band.webp"
-                alt="Silver and gold ribbon yarn"
-                width={2070}
-                height={457}
-                sizes="100vw"
-              />
-            </figure>
             <p className="shape-note">Each one its own form. None of them a version of another.</p>
           <ul className="shape-row">
             {SHAPES.map((sh) => (
@@ -335,17 +344,17 @@ export default async function HomePage() {
         <div className="phase phase-final">
           <p className="final-line final-a">Made by hand.</p>
           <p className="final-line final-b">Made yours.</p>
-          {closingBag && vault ? (
-            <figure className="final-bag">
+          {closingCast.map((c) => (
+            <figure className={`final-bag ${c.cls}`} key={c.key}>
               <Image
-                src={tileSrc(closingBag)}
-                alt={altFor(vault, "Olive Green")}
-                width={1400}
-                height={Math.round(1400 / closingBag.ratio)}
-                sizes="(max-width: 860px) 78vw, 42vw"
+                src={tileSrc(c.frame!)}
+                alt={altFor(c.bag!, c.colour)}
+                width={c.w}
+                height={Math.round(c.w / c.frame!.ratio)}
+                sizes="(max-width: 860px) 62vw, 34vw"
               />
             </figure>
-          ) : null}
+          ))}
         </div>
       </ScrollStory>
 

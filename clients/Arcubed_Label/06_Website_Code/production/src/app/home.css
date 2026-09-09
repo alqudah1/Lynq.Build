@@ -256,6 +256,8 @@ body:has(.home) main { padding-top: 0; }
    The navy field wipes up over the macro; the forms rise into it. */
 .phase-shape {
   z-index: 9; background: var(--navy);
+  display: flex; flex-direction: column; justify-content: center;
+  padding: clamp(36px, 6vh, 84px) 0 clamp(28px, 5vh, 64px);
   /* Completes at ~62% of the band rather than exactly at its end, so the
      four forms get a beat of stillness before the next phase takes over.
      Running the wipe across the whole band meant it was still finishing when
@@ -266,45 +268,25 @@ body:has(.home) main { padding-top: 0; }
 /* The transition copy, top left. Deliberately NOT a full-screen Bodoni
    sentence: a small Inter label, a restrained serif line, a strip of the real
    ribbon, then one small factual line. The forms occupy the lower half. */
-/* Label and headline only; the band, caption and forms are grouped below. */
-.shape-lead {
-  position: absolute; z-index: 3; left: 0; right: 0;
-  /* Sits low enough that the headline and the ribbon read as one column. At
-     8.5vh the copy was pinned to the top and left 223px of navy above the
-     band, which is the same hole the grouping below just closed, only moved. */
-  top: clamp(56px, 20vh, 210px); padding-left: clamp(20px, 4vw, 56px);
+/* Copy and forms are one centred column now that no strip divides them.
+   Absolute blocks anchored to opposite edges are what produced a hole in the
+   middle; a single flow block cannot have one. */
+.shape-lead, .shape-close {
+  position: relative; z-index: 3; padding-left: clamp(20px, 4vw, 56px);
   opacity: calc(min(1, var(--b-shape) * 4) - var(--b-cust) * 2.4);
 }
-/* The lower group. Fixed internal spacing, anchored to the bottom, so the
-   distance from the ribbon to the forms no longer scales with the viewport. */
-.shape-close {
-  position: absolute; z-index: 2; left: 0; right: 0;
-  bottom: clamp(16px, 2.8vh, 36px); padding-left: clamp(20px, 4vw, 56px);
-  opacity: calc(min(1, var(--b-shape) * 4) - var(--b-cust) * 2.4);
-}
+.shape-close { z-index: 2; margin-top: clamp(18px, 3vh, 34px); }
 .shape-head {
   margin: clamp(10px, 1.8vh, 18px) 0 0; max-width: 16ch; color: var(--pink);
   font-family: var(--font-head); font-weight: 600; font-variation-settings: "opsz" 96;
   font-size: clamp(30px, 3.2vw, 48px); line-height: 1.0; letter-spacing: -0.03em;
 }
-.shape-thread {
-  /* A block child of the padded container, so it runs from the left margin to
-     the right edge of the viewport without any width arithmetic. Above the
-     forms in z order: they rise behind it, which is what makes it a boundary
-     between material and form rather than a decorative strip. */
-  position: relative; z-index: 3;
-  margin: 0; height: clamp(52px, 7.2vh, 84px);
-  overflow: hidden; width: auto;
-}
-.shape-thread img { width: 100%; height: 100%; object-fit: cover; display: block; }
-
 .shape-row {
-  /* In flow inside .shape-close, directly under the ribbon, so the forms are
-     already entering from below while the transition copy is still being
-     read. Nobody scrolls past a blank frame waiting for the bags to arrive. */
+  /* Directly under the copy it belongs to, so the section reads as one
+     statement rather than copy, divider, then unrelated objects. */
   position: relative; z-index: 2;
   display: flex; align-items: flex-end; justify-content: center;
-  gap: clamp(14px, 3.4vw, 62px); margin: clamp(14px, 2.4vh, 30px) 0 0;
+  gap: clamp(14px, 3.4vw, 62px); margin: clamp(20px, 3.6vh, 44px) 0 0;
   padding: 0 clamp(20px, 3vw, 40px) 0 0;
   list-style: none; transform: none;
   /* One row width drives every form's size, so the proportions between them
@@ -434,13 +416,39 @@ body:has(.home) main { padding-top: 0; }
   font-variation-settings: "opsz" 144, "SOFT" 0;
   letter-spacing: -0.045em; line-height: 0.82; font-size: clamp(42px, 10.2vw, 148px);
 }
-.final-a { z-index: 1; top: 14vh; left: 4vw; }
-.final-b { z-index: 3; bottom: 14vh; left: 11vw; }
+.final-a { z-index: 3; top: 13vh; left: 4vw; }
+.final-b { z-index: 3; bottom: 12vh; left: 11vw; }
+/* A still life, not a collage. Four objects, one focal point, three depth
+   planes, and the type woven between them:
+
+     z1  Nova Silver & Gold and Mini Luna Silver sit BEHIND both lines
+     z3  the type
+     z4  Vault Olive, the focal object, sits IN FRONT of "Made by hand."
+     z2  Nova Black is cropped by the left edge, behind the type, smallest
+
+   Scale runs 1 : 0.62 : 0.55 : 0.38 so the eye has an order to follow, and
+   two objects are cropped by the frame edge so the arrangement reads as a
+   crop of something larger rather than four pictures placed on a slide. No
+   rotation, no shadows, no cards. */
 .final-bag {
-  position: absolute; z-index: 2; left: 46%; top: 46%; width: 46vw; margin: 0;
-  transform: translate(-50%, -50%) scale(calc(0.96 + var(--b-final) * 0.04));
+  position: absolute; margin: 0;
+  transform: scale(calc(0.97 + var(--b-final) * 0.03));
+  transform-origin: center;
 }
-.final-bag img { width: 100%; height: auto; }
+.final-bag img { width: 100%; height: auto; display: block; }
+
+/* Focal: largest, interrupting the first line from below so the type has to
+   pass behind it. Right of centre, never centred. */
+.fc-vault  { z-index: 4; width: 35vw; left: 44%; top: 19%; }
+/* Behind the type, upper left, its arch reading through the words. */
+.fc-luna   { z-index: 1; width: 16vw; left: 12%; top: 16%; }
+/* Wide and low, cropped by the right edge and riding the second line, so the
+   lower half of the frame carries weight instead of being empty pink. */
+.fc-novasg { z-index: 1; width: 24vw; right: -6vw; left: auto; top: 63%; }
+/* Dark anchor, cropped by the bottom left corner. Smallest, and deliberately
+   NOT at the same height as the object on the opposite edge — level with it
+   the pair read as symmetric bookends rather than as an arrangement. */
+.fc-black  { z-index: 2; width: 14vw; left: -3vw; top: 70%; }
 
 /* ---------------- COLLECTION ----------------
    Released from the sticky stage. The tile is the design: a colour field, the
@@ -538,20 +546,14 @@ body:has(.home) main { padding-top: 0; }
     flex-wrap: wrap; gap: 10px 14px; transform: none;
     --base: 39vw; justify-content: flex-start;
     padding: 0 clamp(18px, 5vw, 30px) 0 0;
+    margin-top: clamp(16px, 2.6vh, 28px);
   }
   .shape-item { gap: 10px; width: calc(50% - 8px); }
   .sil { margin-bottom: 10px; }
   .shape-lead, .shape-close {
-    /* Padded on the left only, so the ribbon band runs off the right edge on
-       a phone exactly as it does on desktop. The text keeps its measure from
-       its own max-width rather than from the container. */
-    left: 0; right: 0; padding-left: clamp(18px, 5vw, 30px); padding-right: 0;
-    max-width: none;
+    padding-left: clamp(18px, 5vw, 30px); padding-right: 0; max-width: none;
   }
-  .shape-lead { top: clamp(40px, 13vh, 120px); }
-  .shape-close { bottom: clamp(12px, 2.2vh, 24px); }
   .shape-head { font-size: clamp(26px, 8vw, 40px); max-width: 12ch; }
-  .shape-thread { width: auto; height: clamp(44px, 6vh, 60px); margin-top: 0; }
   .shape-note { font-size: 11.5px; margin-top: clamp(12px, 2vh, 18px); max-width: 30ch; }
   .story-label { top: 11vh; }
   /* Customisation stacks on a phone: object above, words below. */
@@ -567,9 +569,14 @@ body:has(.home) main { padding-top: 0; }
      was clipped at the start and the end — that is not intentional cropping,
      it is unreadable. The desktop bleed stays. */
   .final-line { font-size: clamp(32px, 11.5vw, 96px); }
-  .final-a { top: 15vh; left: 2vw; }
-  .final-b { bottom: 12vh; left: 2vw; }
-  .final-bag { width: 88vw; left: 52%; top: 48%; }
+  .final-a { top: 11vh; left: 2vw; }
+  .final-b { bottom: 16vh; left: 2vw; }
+  /* Two objects on a phone, not four. At 375 the full cast collapsed into one
+     unreadable pile in the lower right; the frame is too narrow to hold four
+     overlapping silhouettes and still say anything. Focal plus one. */
+  .fc-novasg, .fc-black { display: none; }
+  .fc-vault { width: 66vw; left: 30%; top: 38%; }
+  .fc-luna  { width: 33vw; left: 2%; top: 26%; }
 }
 
 /* ---------------- tablet portrait ----------------
@@ -593,15 +600,20 @@ body:has(.home) main { padding-top: 0; }
      Short tablets are handled in a separate height gated block below, so
      everything from 960px of height upwards keeps 40vw exactly as composed. */
   .shape-row { --base: 40vw; flex-wrap: wrap; gap: 12px 18px; }
-  /* Two rows of forms already fill this viewport, so the copy stays high. */
-  .shape-lead { top: clamp(40px, 7vh, 84px); }
   .shape-item { width: auto; }
   .cust-steps { top: 15vh; }
   .cust-word { top: 44vh; }
   .cust-word li {
   font-variation-settings: "opsz" 144, "SOFT" 0; font-size: clamp(48px, 13vw, 120px); max-width: 66vw; }
   .cust-bag { right: -6vw; top: 20vh; width: 62vw; }
-  .final-bag { width: 62vw; }
+  /* Three at tablet width: the dark anchor is the one that crowds the second
+     line once the frame narrows. */
+  .fc-black { display: none; }
+  /* The phone rules above hide both edge objects; this one comes back at
+     tablet width, so `display` has to be restored explicitly. */
+  .fc-novasg { display: block; width: 34vw; right: -8vw; left: auto; top: 58%; }
+  .fc-vault { width: 50vw; left: 38%; top: 24%; }
+  .fc-luna  { width: 25vw; left: 5%; top: 16%; }
   .final-line { font-size: clamp(44px, 12vw, 120px); }
 }
 
@@ -615,7 +627,6 @@ body:has(.home) main { padding-top: 0; }
    Gated at 960px so 768x1024, the composed case, never matches. */
 @media (min-width: 700px) and (max-width: 860px) and (max-height: 960px) {
   .shape-row { --base: min(40vw, 26vh); }
-  .shape-lead { top: clamp(22px, 4vh, 52px); }
   .shape-head { font-size: clamp(24px, 4.6vw, 36px); }
   /* Once the forms are height capped they are small enough to fit four in a
      line, which drops the two by two rhythm and reopens a gap. Holding them
@@ -687,5 +698,5 @@ body:has(.home) main { padding-top: 0; }
   .cust-word li {
   font-variation-settings: "opsz" 144, "SOFT" 0; font-size: clamp(20px, 3vw, 30px); }
   .cust-honest { max-width: 60ch; margin-top: 20px; }
-  .final-bag { width: min(300px, 46%); margin: 26px 0; }
+  .final-bag { width: min(260px, 42%); margin: 20px 18px 20px 0; display: inline-block; }
 }
