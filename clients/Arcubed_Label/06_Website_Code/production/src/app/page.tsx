@@ -13,7 +13,7 @@ import Image from "next/image";
 import { getActiveBags } from "@/lib/repository";
 import { framesForColour, resolveMedia, cutSrc, tileSrc, altFor } from "@/lib/product-media";
 import ScrollStory from "@/components/home/ScrollStory";
-import CollectionGrid from "@/components/CollectionGrid";
+import ModelCollection from "@/components/ModelCollection";
 import type { Bag } from "@/lib/types";
 import "./home.css";
 
@@ -210,7 +210,7 @@ export default async function HomePage() {
               object-fit has nothing to scale. */}
           <figure className="mat-img">
             <Image
-              src="/media/macro-ribbon.webp"
+              src="/media/macro-material.webp"
               alt="Gold metallic ribbon yarn crocheted by hand, showing the handle join and stitch rows"
               width={2522}
               height={1928}
@@ -372,7 +372,11 @@ export default async function HomePage() {
             All sixteen colourways
           </Link>
         </div>
-        <CollectionGrid bags={bags} limit={8} />
+        {/* Model first. The eight tile wall here read as eight products, so
+            "Nova / Gold" looked like Nova only exists in gold. It also ended
+            ragged by over a thousand pixels at 1440, which is what made the
+            footer appear to intrude on the collection. */}
+        <ModelCollection bags={bags} />
       </section>
     </div>
   );

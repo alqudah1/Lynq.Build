@@ -7,6 +7,7 @@
 
 import { getActiveBags } from "@/lib/repository";
 import CollectionGrid from "@/components/CollectionGrid";
+import ModelCollection from "@/components/ModelCollection";
 import ShopDiscovery from "@/components/ShopDiscovery";
 
 export const dynamic = "force-dynamic";
@@ -28,10 +29,27 @@ export default async function ShopPage() {
           <br />
           we have made.
         </h1>
-        <p className="shopx-sub">Find yours.</p>
+        <p className="shopx-sub">
+          Pick your shape.
+          <br />
+          Choose your colour.
+          <br />
+          Make it yours.
+        </p>
       </section>
 
+      {/* Shapes first, so the relationship between model and colour is the
+          first thing the page states. */}
+      <section className="shopx shopx-models">
+        <ModelCollection bags={bags} />
+      </section>
+
+      {/* Then the full wall, which is the colour of this brand and stays.
+          Grouping alone would have turned the store into four category boxes. */}
       <section className="shopx">
+        <div className="shopx-preview-head">
+          <h2 className="shopx-kicker">Every colourway</h2>
+        </div>
         <ShopDiscovery>
           <CollectionGrid bags={bags} />
         </ShopDiscovery>

@@ -91,7 +91,13 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
      shared, so a warm ground here undid the locked palette on every route. */
   background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
 }
-.logo { display: block; }
+.logo { display: block; position: relative; }
+/* Two wordmarks are rendered so the homepage story can swap to the pale pink
+   one over its navy frame (see home.css). This default must live HERE, in the
+   stylesheet every route loads: while it sat in home.css, which only the
+   homepage imports, Shop, Product, Cart and Checkout all painted both marks
+   on top of each other. */
+.logo .logo-pink { display: none; }
 /* The wordmark is a hairline logotype; at 22px its strokes fell below a
    pixel and it read as a faint smudge. The asset is 1116x298, so this is
    still a ~9x downsample — nothing is upscaled. */
@@ -1759,3 +1765,86 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 .disc-grid[data-colour="Red"] .shopx-cell:not([data-colour*="Red"]) { display: none; }
 .disc-grid[data-colour="Burgundy"] .shopx-cell:not([data-colour*="Burgundy"]) { display: none; }
 .disc-grid[data-colour="Olive"] .shopx-cell:not([data-colour*="Olive"]) { display: none; }
+
+/* ==========================================================================
+   MODEL FIRST COLLECTION
+   The shape is the product; colour is a property of it. Editorial, not a
+   catalogue: square edges, hairlines, photographic swatches, typographic
+   links. No cards, no pills, no rounded chips, no filled CTA blocks.
+   ========================================================================== */
+.mc {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: 1fr;
+  gap: clamp(46px, 7vw, 96px) clamp(24px, 3.4vw, 56px);
+}
+@media (min-width: 760px) { .mc { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.mc-block { display: flex; flex-direction: column; margin: 0; }
+/* Every block is the same shape, so four of them end on one line and the
+   footer arrives against a straight edge. The old wall ended ragged by over a
+   thousand pixels at 1440, which is what made the footer read as intruding. */
+.mc-stage {
+  display: grid; place-items: center; aspect-ratio: 4 / 3;
+  padding: clamp(18px, 3vw, 42px); background: var(--pink);
+  overflow: hidden; border-radius: 0;
+}
+.mc-stage img { width: 100%; height: 100%; object-fit: contain; display: block; }
+/* A full photograph carries its own studio ground, so padding it inside the
+   pink stage drew a pink frame around a white box. It bleeds instead; only
+   cut-outs get breathing room. */
+.mc-stage:has(.mc-photo) { padding: 0; }
+.mc-stage .mc-photo { object-fit: cover; }
+
+.mc-meta {
+  display: grid; grid-template-columns: 1fr auto; align-items: baseline;
+  gap: 4px 14px; margin: clamp(14px, 2vw, 20px) 0 0;
+  border-bottom: 1px solid var(--line); padding-bottom: 12px;
+}
+.mc-name {
+  grid-column: 1; margin: 0; color: var(--navy);
+  font-family: var(--font-head); font-weight: 600; font-variation-settings: "opsz" 72;
+  font-size: clamp(26px, 3vw, 40px); line-height: 1; letter-spacing: -0.025em;
+}
+/* Louder than the colour name on purpose. This single line is what tells a
+   customer the shape is not locked to the colour they happen to be seeing. */
+.mc-count {
+  grid-column: 1; margin: 6px 0 0; color: var(--navy);
+  font-size: 11.5px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase;
+}
+.mc-price {
+  grid-column: 2; grid-row: 1 / span 2; margin: 0; color: var(--navy);
+  font-family: var(--font-head); font-size: clamp(16px, 1.5vw, 21px); font-weight: 600;
+}
+
+/* Six across without wrapping on the narrowest phone: Nova has the most
+   colourways, and one orphan swatch on a second row made the strip read as an
+   overflow rather than as a set. */
+.mc-ways { display: flex; flex-wrap: wrap; gap: 7px; margin: 14px 0 0; }
+/* Square photographic swatches. A flat hex dot cannot describe a metallic. */
+.mc-way {
+  width: clamp(45px, 6vw, 72px); aspect-ratio: 1 / 1; padding: 4px;
+  border: 0; border-radius: 0; background: var(--pink);
+  box-shadow: inset 0 0 0 1px var(--line);
+  transition: box-shadow 0.18s var(--ease-ui);
+  overflow: hidden; cursor: pointer;
+}
+.mc-way img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.mc-way.is-on { box-shadow: inset 0 0 0 2px var(--navy); }
+.mc-way:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+
+.mc-foot {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 16px; margin: 14px 0 0;
+}
+.mc-shown { font-size: 12px; color: var(--muted); }
+/* A typographic link with a rule, not a button. */
+.mc-view {
+  position: relative; color: var(--navy);
+  font-size: 11.5px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+  padding-bottom: 3px; border-bottom: 1px solid var(--navy);
+}
+.mc-view:hover { opacity: 0.66; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mc-way { transition: none; }
+}

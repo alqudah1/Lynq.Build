@@ -60,11 +60,15 @@ const MOBILE_BANDS: [string, number, number][] = [
   // transition beginning, it is the hero being destroyed by one gesture.
   ["--b-enter", 0.05, 0.26],
   ["--b-mat", 0.26, 0.45],
-  ["--b-shape", 0.45, 0.62],
-  // The largest share on a phone. This is the only frame where the customer
-  // sees a colour being chosen, and it was previously one swipe.
-  ["--b-cust", 0.62, 0.86],
-  ["--b-final", 0.86, 1.0],
+  // Shorter than material. Four forms arriving is a simpler idea than the
+  // material spread, and the band no longer carries a dead tail (see the
+  // mobile overrides in home.css), so it reads faster at the same length.
+  ["--b-shape", 0.45, 0.58],
+  // The largest share on a phone by a clear margin. This is the only frame
+  // where the customer sees a colour being chosen, and the sequence now runs
+  // across the whole band rather than finishing in its first third.
+  ["--b-cust", 0.58, 0.88],
+  ["--b-final", 0.88, 1.0],
 ];
 
 /** Must match the breakpoint the mobile story height is set at in home.css. */

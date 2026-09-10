@@ -76,10 +76,39 @@ body:has(.home) main { padding-top: 0; }
   .phase-cust .cust-copy { padding-top: calc(66px + env(safe-area-inset-top, 0px)); }
 }
 
-/* The pink wordmark never shows anywhere by default; only the phone rule
-   below swaps to it, and only over the navy frame. */
-.logo { position: relative; display: block; }
-.logo .logo-pink { display: none; }
+/* ---------------- phone: spread the motion across the band ----------------
+   Both of these phases finished their animation in the first third of their
+   band and then sat completely still, which is the "sticky and glitchy"
+   feeling: you swipe and nothing moves. Measured on the composed timeline,
+   Shape was static for 65% of its band and Customisation for 53% of its.
+
+   Nothing here changes a band BOUNDARY. It changes how much of the band the
+   motion uses, so every swipe produces visible change. Desktop keeps its
+   existing distribution untouched. */
+@media (max-width: 860px) {
+  /* The navy field wipes up across 53% of the band instead of 36%. */
+  .phase-shape { clip-path: inset(calc(100% - min(1, var(--b-shape) * 1.9) * 100%) 0 0 0); }
+  /* The forms keep arriving until 62% of the band rather than 35%. */
+  .shape-item { --settle: calc(1 - min(1, var(--b-shape) * 1.6)); }
+
+  /* The colour sequence spans 0.12 to 0.87 of the band instead of 0.17 to
+     0.47, so the customer sees each colourway land instead of the whole rail
+     resolving before they have finished the first swipe. Inline custom
+     properties set in page.tsx carry the desktop windows, which is why these
+     need `!important` to win. */
+  .cust-rail li:nth-child(1), .cust-bag img:nth-child(1) { --w0: 0.12 !important; --w1: 0.27 !important; }
+  .cust-rail li:nth-child(2), .cust-bag img:nth-child(2) { --w0: 0.27 !important; --w1: 0.42 !important; }
+  .cust-rail li:nth-child(3), .cust-bag img:nth-child(3) { --w0: 0.42 !important; --w1: 0.57 !important; }
+  .cust-rail li:nth-child(4), .cust-bag img:nth-child(4) { --w0: 0.57 !important; --w1: 0.72 !important; }
+  /* The last colourway holds to the end of the band rather than from 0.41. */
+  .cust-rail li:last-child { opacity: calc(0.34 + 0.66 * clamp(0, calc((var(--b-cust) - 0.72) * 14), 1)); }
+  .cust-rail li:last-child::after { width: calc(100% * clamp(0, calc((var(--b-cust) - 0.72) * 14), 1)); }
+  .cust-bag img:last-child { opacity: clamp(0, calc((var(--b-cust) - 0.72) * 14), 1); }
+}
+
+/* The default that hides the pink wordmark lives in globals.css, because
+   home.css is imported by the homepage ONLY — leaving it here rendered both
+   wordmarks stacked on every other route. */
 
 /* Scoped to the phone on purpose. Desktop and tablet still translate the
    header away during the story, so they never sit over the navy frame and
@@ -474,14 +503,28 @@ body:has(.home) main { padding-top: 0; }
    reads as a broken layout rather than a deliberate crop. Both lines now
    start inside the frame, and the display size came down so the longer line
    resolves at every desktop width instead of only the widest. */
+/* HIERARCHY, not two matching slabs.
+   Both lines set at the same size made the frame a caption in two halves with
+   the objects filling the gap. "Made by hand." is the quiet statement of fact
+   that opens the frame; "Made yours." is the payoff and carries the scale. */
 .final-line {
   position: absolute; margin: 0; color: var(--navy); white-space: nowrap;
   font-family: var(--font-head); font-weight: 600; text-transform: uppercase;
   font-variation-settings: "opsz" 144, "SOFT" 0;
-  letter-spacing: -0.045em; line-height: 0.82; font-size: clamp(42px, 10.2vw, 148px);
+  letter-spacing: -0.045em; line-height: 0.82;
 }
-.final-a { z-index: 3; top: 13vh; left: 4vw; }
-.final-b { z-index: 3; bottom: 12vh; left: 11vw; }
+/* Quiet. Utility scale, wide tracking, sitting on the top margin like a
+   caption rather than a headline. */
+.final-a {
+  z-index: 3; top: 11vh; left: 4vw;
+  font-size: clamp(12px, 1.15vw, 17px); font-weight: 600;
+  letter-spacing: 0.32em; line-height: 1; opacity: 0.72;
+}
+/* The payoff. */
+.final-b {
+  z-index: 3; bottom: 11vh; left: 4vw;
+  font-size: clamp(52px, 13vw, 196px);
+}
 /* A still life, not a collage. Four objects, one focal point, three depth
    planes, and the type woven between them:
 
@@ -503,16 +546,16 @@ body:has(.home) main { padding-top: 0; }
 
 /* Focal: largest, interrupting the first line from below so the type has to
    pass behind it. Right of centre, never centred. */
-.fc-vault  { z-index: 4; width: 35vw; left: 44%; top: 19%; }
+.fc-vault  { z-index: 4; width: 34vw; left: 36%; top: 44%; }
 /* Behind the type, upper left, its arch reading through the words. */
-.fc-luna   { z-index: 1; width: 16vw; left: 12%; top: 16%; }
+.fc-luna   { z-index: 1; width: 17vw; left: 13%; top: 15%; }
 /* Wide and low, cropped by the right edge and riding the second line, so the
    lower half of the frame carries weight instead of being empty pink. */
-.fc-novasg { z-index: 1; width: 24vw; right: -6vw; left: auto; top: 63%; }
+.fc-novasg { z-index: 1; width: 22vw; right: -4vw; left: auto; top: 58%; }
 /* Dark anchor, cropped by the bottom left corner. Smallest, and deliberately
    NOT at the same height as the object on the opposite edge — level with it
    the pair read as symmetric bookends rather than as an arrangement. */
-.fc-black  { z-index: 2; width: 14vw; left: -3vw; top: 70%; }
+.fc-black  { z-index: 2; width: 13vw; left: -2vw; top: 66%; }
 
 /* ---------------- COLLECTION ----------------
    Released from the sticky stage. The tile is the design: a colour field, the
@@ -631,9 +674,10 @@ body:has(.home) main { padding-top: 0; }
   /* Sized to FIT on a phone. At 15vw both lines overran both edges, so each
      was clipped at the start and the end — that is not intentional cropping,
      it is unreadable. The desktop bleed stays. */
-  .final-line { font-size: clamp(32px, 11.5vw, 96px); }
-  .final-a { top: 11vh; left: 2vw; }
-  .final-b { bottom: 16vh; left: 2vw; }
+  /* Same hierarchy on a phone: quiet caption, loud payoff. A single
+     font-size here would have put both lines back at one weight. */
+  .final-a { top: 9vh; left: 5vw; font-size: 11px; letter-spacing: 0.28em; }
+  .final-b { bottom: 13vh; left: 5vw; font-size: clamp(38px, 13.5vw, 74px); }
   /* Two objects on a phone, not four. At 375 the full cast collapsed into one
      unreadable pile in the lower right; the frame is too narrow to hold four
      overlapping silhouettes and still say anything. Focal plus one. */
@@ -678,10 +722,14 @@ body:has(.home) main { padding-top: 0; }
   .fc-black { display: none; }
   /* The phone rules above hide both edge objects; this one comes back at
      tablet width, so `display` has to be restored explicitly. */
-  .fc-novasg { display: block; width: 34vw; right: -8vw; left: auto; top: 58%; }
-  .fc-vault { width: 50vw; left: 38%; top: 24%; }
-  .fc-luna  { width: 25vw; left: 5%; top: 16%; }
-  .final-line { font-size: clamp(44px, 12vw, 120px); }
+  .fc-novasg { display: block; width: 34vw; right: -8vw; left: auto; top: 56%; }
+  .fc-vault { width: 50vw; left: 38%; top: 30%; }
+  .fc-luna  { width: 25vw; left: 5%; top: 17%; }
+  /* Explicitly per line. A single `.final-line` size here sat AFTER the phone
+     block and put the quiet caption back at headline scale, which ran "MADE
+     BY HAND." straight off the right edge at 768. */
+  .final-a { font-size: 12px; letter-spacing: 0.3em; top: 8vh; left: 5vw; }
+  .final-b { font-size: clamp(44px, 11vw, 104px); bottom: 12vh; left: 5vw; }
 }
 
 /* ---------------- short tablet ----------------

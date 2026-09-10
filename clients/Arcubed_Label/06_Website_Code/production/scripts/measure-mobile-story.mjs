@@ -19,7 +19,7 @@ import { writeFileSync, mkdirSync } from "node:fs";
 
 // Must mirror MOBILE_BANDS in src/components/home/ScrollStory.tsx.
 const PHASES = [["hero", 0, 0.05], ["enter", 0.05, 0.26], ["material", 0.26, 0.45],
-                ["shape", 0.45, 0.62], ["custom", 0.62, 0.86], ["closing", 0.86, 1.0]];
+                ["shape", 0.45, 0.58], ["custom", 0.58, 0.88], ["closing", 0.88, 1.0]];
 const phaseAt = (p) => (PHASES.find(([, a, b]) => p >= a && p < b) || PHASES[PHASES.length - 1])[0];
 
 const t = await (await fetch(`${CDP}/json/new?about:blank`, { method: "PUT" })).json();

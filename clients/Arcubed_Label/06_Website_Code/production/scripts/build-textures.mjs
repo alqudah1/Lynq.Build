@@ -57,7 +57,17 @@ const HOMEPAGE_MACROS = [
   // window, not the pixel count. At 0.72 x 0.74 the frame keeps the top edge
   // and the handle join, so it reads as a crocheted OBJECT with loops,
   // ribbon and shine rather than as an abstract gold pattern.
-  { id: "macro-ribbon", frame: "DSC04874", rel: { l: 0.14, t: 0.10, w: 0.72, h: 0.74 } },
+  // NOTE the id: renamed from `macro-ribbon` because Next's optimizer keys
+  // derivatives on the URL and kept serving the old crop after an in-place
+  // rebuild, even across a dev restart and a cleared image cache.
+  //
+  // `t` is NEGATIVE on purpose. It is a fraction of the object box, so 0.10
+  // started the window a tenth of the way DOWN the bag, below the apex of the
+  // handle, and the arch was sliced flat by the top edge of the frame at every
+  // width. Starting 6% above the box includes the studio ground over the
+  // handle, so the arch reads as a complete object. Width and height are
+  // unchanged, so the output ratio the CSS box matches is unchanged too.
+  { id: "macro-material", frame: "DSC04874", rel: { l: 0.14, t: -0.06, w: 0.72, h: 0.74 } },
   // Two-tone banding rather than the fringe: DSC05765's fringe is dark brown
   // on dark and reads as a muddy rectangle at detail size, whereas the silver
   // and gold bands are legible small and add a third colourway to the story.
