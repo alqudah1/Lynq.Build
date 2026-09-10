@@ -11,9 +11,14 @@ export default function Header() {
   return (
     <header className="site-header">
       {/* Light background (--bg) → navy wordmark, per the client's official
-          logo usage rule (navy bg gets the pale-pink treatment instead). */}
+          logo usage rule (navy bg gets the pale-pink treatment instead).
+          Both are rendered and CSS picks one from html[data-ground], because
+          the homepage story runs the header over a navy frame where the navy
+          wordmark would be invisible. Swapping the asset rather than filtering
+          it keeps the client's own approved artwork in both cases. */}
       <Link className="logo" href="/" aria-label="Arcubed Label, home">
-        <Image src="/brand/arcubed-wordmark-navy.png" alt="Arcubed Label" width={1116} height={298} loading="eager" fetchPriority="high" />
+        <Image className="logo-navy" src="/brand/arcubed-wordmark-navy.png" alt="Arcubed Label" width={1116} height={298} loading="eager" fetchPriority="high" />
+        <Image className="logo-pink" src="/brand/arcubed-wordmark-pink.png" alt="" aria-hidden="true" width={1106} height={287} loading="eager" />
       </Link>
       <nav className="nav">
         <Link href="/shop">Shop</Link>

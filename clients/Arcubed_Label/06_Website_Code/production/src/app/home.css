@@ -40,6 +40,59 @@ body:has(.home) .site-header .menu-toggle { color: var(--navy); }
 body:has(.home) .site-header .nav a::after { background: var(--navy); }
 body:has(.home) main { padding-top: 0; }
 
+/* ---------------- phone: the header does not leave ----------------
+   On a phone the story is 8 to 10 swipes, so translating the header away for
+   all of it means the cart and the menu are unreachable for the whole
+   experience. That is a fair trade on a desktop wheel, where the story is
+   over in a few seconds; it is not on a thumb.
+
+   It stays, and it stays LIGHT: no bar, no blur, no pill. The nav links are
+   already display:none at this width, so what remains is exactly the wordmark,
+   the cart and the menu. Tablet and desktop keep the existing behaviour. */
+@media (max-width: 699px) {
+  html[data-story="running"] body:has(.home) .site-header { transform: none; }
+  /* Never a filled bar over the composition. `done` re-applies the pink
+     ground from the shared rule, which is correct once the story releases. */
+  html[data-story="running"] body:has(.home) .site-header {
+    background: none; backdrop-filter: none; -webkit-backdrop-filter: none;
+  }
+  /* Clear of the notch and of Safari's top bar. */
+  body:has(.home) .site-header {
+    padding-top: calc(14px + env(safe-area-inset-top, 0px));
+    padding-bottom: 12px;
+  }
+  /* Simplifies while the story runs: the mark steps down, the controls do
+     not, because those are the reason it is still here. */
+  html[data-story="running"] body:has(.home) .site-header {
+    padding-top: calc(9px + env(safe-area-inset-top, 0px)); padding-bottom: 9px;
+  }
+  html[data-story="running"] body:has(.home) .logo img { height: 21px; }
+  /* The header is now permanent here, so the one phase whose copy starts at
+     the very top of the stage has to clear it. Measured: the "03 Make it
+     yours" label sat at y=28..67 under a header ending at y=49. This is the
+     only content that collided; every other phase already began lower. */
+  /* `.phase-cust .cust-copy` on purpose: the base rule sets `padding`
+     as a shorthand further down the file and would otherwise win on order. */
+  .phase-cust .cust-copy { padding-top: calc(66px + env(safe-area-inset-top, 0px)); }
+}
+
+/* The pink wordmark never shows anywhere by default; only the phone rule
+   below swaps to it, and only over the navy frame. */
+.logo { position: relative; display: block; }
+.logo .logo-pink { display: none; }
+
+/* Scoped to the phone on purpose. Desktop and tablet still translate the
+   header away during the story, so they never sit over the navy frame and
+   nothing about them changes. */
+@media (max-width: 699px) {
+  /* The one frame the header runs over that is navy. Pink wordmark, pink
+     controls — the client's own rule for a navy ground. */
+  html[data-ground="navy"] body:has(.home) .site-header .cart-icon,
+  html[data-ground="navy"] body:has(.home) .site-header .menu-toggle { color: var(--pink); }
+  html[data-ground="navy"] body:has(.home) .logo .logo-navy { display: none; }
+  html[data-ground="navy"] body:has(.home) .logo .logo-pink { display: block; }
+}
+
 /* ---------------- scroll container ---------------- */
 /* 240vh. At 380vh a single idea took roughly three wheel gestures to clear,
    which reads as being trapped in a frame rather than as a story. Same six

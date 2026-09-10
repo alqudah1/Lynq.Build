@@ -92,7 +92,27 @@ export default function ScrollStory({ children }: { children: ReactNode }) {
       const travel = el.offsetHeight - window.innerHeight;
       const p = travel <= 0 ? 0 : Math.min(1, Math.max(0, -el.getBoundingClientRect().top / travel));
       st.style.setProperty("--p", p.toFixed(4));
-      for (const [name, a, b] of bands) st.style.setProperty(name, band(p, a, b).toFixed(4));
+      const v: Record<string, number> = {};
+      for (const [name, a, b] of bands) {
+        v[name] = band(p, a, b);
+        st.style.setProperty(name, v[name].toFixed(4));
+      }
+
+      // Which ground is under the HEADER, which is only ever at the top of the
+      // screen. Derived from the same two clip-paths the phases animate with,
+      // rather than from hardcoded progress values, so it stays correct if the
+      // bands move:
+      //   .phase-shape is navy and wipes UP  — it reaches the top only once
+      //     min(1, --b-shape * 2.8) saturates.
+      //   .phase-cust is pink and wipes DOWN — it covers the top almost as
+      //     soon as it starts.
+      // Everything else the header sits over is pink or white, and navy type
+      // reads on both, so this is the one window that needs inverting.
+      const darkTop = v["--b-shape"] * 2.8 >= 1 && v["--b-cust"] < 0.02;
+      const ground = darkTop ? "navy" : "light";
+      if (document.documentElement.dataset.ground !== ground) {
+        document.documentElement.dataset.ground = ground;
+      }
 
       // Drives the header, which lives outside this component. It belongs to
       // the hero composition at the top, gets out of the way while the story
@@ -119,6 +139,7 @@ export default function ScrollStory({ children }: { children: ReactNode }) {
     };
     const stop = () => {
       delete document.documentElement.dataset.story;
+      delete document.documentElement.dataset.ground;
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
       if (raf) cancelAnimationFrame(raf);
