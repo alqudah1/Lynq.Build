@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Bodoni_Moda } from "next/font/google";
 import "./globals.css";
+import ScrollReset from "@/components/ScrollReset";
 import { CartProvider } from "@/lib/cart-context";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -137,6 +138,42 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             setTimeout, no delay, no polling, and no hiding the page. It only
             ever runs when scrollY is already non-zero on a navigation we
             classified as reload-or-fresh, so Back is never touched. */}
+        {/* CRITICAL SHELL GEOMETRY, inline and first.
+            The homepage is force-dynamic, so App Router flushes the shell —
+            header, the loading.tsx fallback, footer — and streams `main`
+            afterwards. Whatever styles that fallback is entirely decides
+            whether the footer sits below the fold during that window.
+
+            This lived in globals.css, which IS the layout chunk and does load
+            before the page chunk. That was still the wrong place: it makes the
+            single most important rule on the site depend on an external
+            stylesheet arriving and being applied before paint. A cache miss, a
+            dropped chunk, or an engine that paints earlier than Chromium does
+            and the fallback has no height — which is precisely the failure
+            being chased, and precisely the thing that is hard to reproduce on
+            a desktop.
+
+            Inline in <head> it is in the first bytes of the response, ahead of
+            every <link>, and cannot fail independently of the document.
+            Literal colours rather than custom properties for the same reason:
+            :root is declared in that same external stylesheet.
+
+            Result: header + shell is always taller than one phone viewport, so
+            the footer physically starts below it. */}
+        <style
+          id="shell-critical"
+          dangerouslySetInnerHTML={{
+            __html:
+              ".ed-hero{position:relative;min-height:100vh;min-height:100svh;background:#ffe0fd;overflow:hidden}" +
+              ".ed-skel-block{position:absolute;left:0;right:0;bottom:0;height:42%;background:#fff}" +
+              ".ed-skel-type{position:absolute;left:5vw;top:22vh;width:58%;max-width:520px;height:26vh;" +
+              "background:#143562;opacity:.06;border-radius:2px}" +
+              ".ed-skel-object{position:absolute;right:-6vw;top:30vh;width:52vw;height:34vh;" +
+              "background:#143562;opacity:.05;border-radius:44% 44% 38% 38%}" +
+              "@media(max-width:860px){.ed-skel-type{top:18vh;width:78%;height:22vh}" +
+              ".ed-skel-object{right:-10vw;top:44vh;width:96vw;height:30vh}}",
+          }}
+        />
         <script
           dangerouslySetInnerHTML={{
             __html:
@@ -154,6 +191,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
+        <ScrollReset />
         <CartProvider>
           <Header />
           <main>{children}</main>

@@ -786,7 +786,20 @@ body:has(.home) main { padding-top: 0; }
      the headline, which is the one thing the mobile hero must not do. The
      band came up to meet it instead. */
   .hero-bag { top: 34.5vh; right: -36vw; width: 130vw; }
-  .hero-second { display: none; }
+  /* PASS A — the phone hero's second layer.
+     The frame was one object on a field: a very large Red Mini Luna, the
+     headline, and the bottom row of utilities. Everything else was pink.
+     Black Mini Luna enters from the LEFT edge on the same white floor,
+     behind the main bag, at about a quarter of its width — enough to read as
+     an object, far too small to compete. Cropped by the edge rather than
+     placed inside it, and sitting higher up the floor than the main bag so
+     the pair reads as near and far. */
+  .hero-second {
+    display: block; z-index: 2;
+    left: -10vw; right: auto; top: auto; bottom: 24vh; width: 40vw;
+    transform: translateY(calc(var(--b-enter) * 10vh));
+    opacity: calc(1 - var(--b-enter) * 1.7);
+  }
   /* Taller band on a phone: it is the graphic that closes the composition,
      and raising it is what removes the gap under the bag without having to
      inflate the object past the type. */

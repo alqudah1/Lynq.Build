@@ -287,7 +287,7 @@ export default async function HomePage() {
                 // the narrowest derivative instead of a 44vw one; the desktop
                 // branch is declared just above the 20vw it actually renders
                 // at, so it never resolves to a candidate it has to upscale.
-                sizes="(max-width: 860px) 64px, 21vw"
+                sizes="(max-width: 699px) 36vw, (max-width: 860px) 64px, 21vw"
               />
             </figure>
           ) : null}
