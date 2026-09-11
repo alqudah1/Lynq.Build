@@ -120,7 +120,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             intermittent: the same reload landed at scrollY 0 or at 4205
             depending on which finished first. `pagehide` is after every
             restore attempt for this document and before the entry is left, so
-            Back still restores normally on the way in. */}
+            Back still restores normally on the way in.
+
+            THE `z()` GUARD. `manual` is the fix; this is the belt. Measured on
+            a throttled production build, a reload from the bottom still landed
+            at scrollY 725 (1440), 865 (375) and 907 (430) — mid-story, on the
+            customisation and material phases — with the document already at
+            full height, `history.scrollRestoration` reading `manual`, and NO
+            scroll event ever firing. An offset applied at document creation
+            with no event is the browser positioning the document itself, and
+            on that path `manual` did not suppress it.
+
+            So on the navigations we have already decided must start at the
+            top, the position is asserted once at DOMContentLoaded and once at
+            load. Both are real lifecycle events, not timers — there is no
+            setTimeout, no delay, no polling, and no hiding the page. It only
+            ever runs when scrollY is already non-zero on a navigation we
+            classified as reload-or-fresh, so Back is never touched. */}
         <script
           dangerouslySetInnerHTML={{
             __html:
@@ -129,6 +145,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               "var n=performance.getEntriesByType&&performance.getEntriesByType('navigation')[0];" +
               "var t=n?n.type:(performance.navigation&&performance.navigation.type===2?'back_forward':'navigate');" +
               "if(t!=='back_forward'){history.scrollRestoration='manual';" +
+              "var z=function(){if(window.scrollY>0)window.scrollTo(0,0)};" +
+              "addEventListener('DOMContentLoaded',z,{once:true});" +
+              "addEventListener('load',z,{once:true});" +
               "addEventListener('pagehide',function(){try{history.scrollRestoration='auto'}catch(e){}},{once:true});" +
               "}}}catch(e){}",
           }}

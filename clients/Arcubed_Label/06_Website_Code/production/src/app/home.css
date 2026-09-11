@@ -13,17 +13,9 @@
    breathing space, never a replacement for either. */
 .home { --navy: #143562; --pink: #ffe0fd; --paper: #ffffff; }
 
-/* Scroll anchoring off, homepage only.
-   The document is ~865px tall in the first frames and ~6485px once the
-   stylesheet applies and the 440vh story resolves. Chrome's scroll anchoring
-   reacts to a height change that large by adjusting the offset to keep an
-   anchor node in place, and on a phone that landed the page at scrollY 53
-   (375x812) and 32 (390x844) on every reload — measured, repeatable, and the
-   only reason a reload did not begin at exactly the top once restoration was
-   fixed. Anchoring has nothing useful to do here anyway: the first four
-   viewports are one sticky stage whose content does not reflow. Scoped with
-   :has() so ordinary pages keep it. */
-body:has(.home) { overflow-anchor: none; }
+/* Scroll anchoring is disabled in globals.css — see the note there. It cannot
+   live here behind :has(.home), because .home does not exist until the page
+   streams in, which is exactly the window it needs to cover. */
 
 /* The site header is a sticky translucent bar everywhere else. On this page
    it has to read as part of the poster, so it sits ON the pink with no

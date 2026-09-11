@@ -677,6 +677,25 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 }
 
 @keyframes edSkel { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+/* Scroll anchoring off, document-wide.
+   Chrome adjusts the scroll offset to keep an anchor node in place when
+   content above the viewport changes size. On this site the document grows
+   enormously during load — the homepage goes from ~865px to ~6485px as the
+   streamed content and the 240/330/440vh story arrive — and anchoring reacted
+   to that by moving the page: measured, repeatable phone reloads landing at
+   scrollY 53 (375x812) and 32 (390x844) instead of 0.
+
+   This was first scoped with :has(.home), which was wrong — `.home` is inside
+   the streamed `main`, so the rule could not apply until after the window it
+   needed to cover. It has to be unconditional to be true at first paint.
+
+   Nothing here depends on anchoring: every image carries width/height, the
+   measured CLS is 0 on mobile and 0.054 on desktop, and the first four
+   viewports of the homepage are one sticky stage that never reflows.
+
+   ========================================================================== */
+html { overflow-anchor: none; }
+
 /* ==========================================================================
    STREAMING PLACEHOLDER — the reason the footer used to load first
    ==========================================================================
