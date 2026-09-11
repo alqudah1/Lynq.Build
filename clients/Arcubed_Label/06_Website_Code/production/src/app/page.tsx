@@ -181,16 +181,39 @@ export default async function HomePage() {
     heroBlackFrames[0] ??
     frame(vault, "Brown");
 
+  /**
+   * CLOSING CAST — two objects, not a scatter.
+   *
+   * The previous frame put three bags of similar size on an unbroken pink
+   * field with no ground under any of them, and it read as three cut-outs
+   * placed on a canvas rather than as a photograph. Rebuilt around one
+   * dominant object and one supporting object:
+   *
+   *   FOCAL      Vault Olive — the widest, heaviest silhouette in the
+   *              archive, and the only one whose own studio shadow survives
+   *              the matte, so it can actually sit on a floor.
+   *   SECONDARY  Nova Silver & Gold — a different shape family (low, closed,
+   *              wide against Vault's structured body), a different colour
+   *              family, and a metallic against a matte cotton. Contrast on
+   *              silhouette, scale, colour AND texture.
+   *
+   * Mini Luna Silver and Nova Black are both gone: at the size this
+   * composition wants them they were accessories to nothing.
+   */
   const closingCast = [
-    // Focal point. Largest, in front of the type, slightly right of centre.
-    { key: "vault", cls: "fc-vault", bag: vault, colour: "Olive Green", w: 1400 },
-    // Behind the first line, upper left. The arch reads against the type.
-    { key: "luna", cls: "fc-luna", bag: miniLuna, colour: "Silver", w: 900 },
-    // Wide, low, cropped by the right edge. Adds a second silhouette family.
-    { key: "novasg", cls: "fc-novasg", bag: nova, colour: "Silver & Gold", w: 1100 },
-    // Dark anchor, cropped by the left edge, smallest. Gives the frame depth
-    // instead of four objects sitting on one plane.
-    { key: "novablack", cls: "fc-black", bag: nova, colour: "Black", w: 760 },
+    // `sizes` is per object, not shared: the two are very different widths at
+    // every breakpoint, and one attribute covering both either starves the
+    // focal or over-fetches the secondary. Each string tracks the widths in
+    // home.css with a little headroom, and the secondary is pinned to the
+    // narrowest derivative on a phone because it is display:none there.
+    {
+      key: "vault", cls: "fc-vault", bag: vault, colour: "Olive Green", w: 1800,
+      sizes: "(max-width: 699px) 94vw, (max-width: 860px) 64vw, 52vw",
+    },
+    {
+      key: "novasg", cls: "fc-novasg", bag: nova, colour: "Silver & Gold", w: 1100,
+      sizes: "(max-width: 699px) 64px, 32vw",
+    },
   ]
     .map((c) => ({ ...c, frame: frame(c.bag, c.colour) }))
     // A colourway with no frame simply does not appear; nothing falls back to
@@ -454,8 +477,18 @@ export default async function HomePage() {
 
         {/* ---------------- 04 THE FINISHED OBJECT ---------------- */}
         <div className="phase phase-final">
+          {/* The ground. The frame was one flat pink field, so every object in
+              it floated. Pink wall above, white floor below, and the focal
+              object crosses the join — the same architecture the hero opens
+              with, so the story closes on the language it started in. */}
+          <div className="final-floor" aria-hidden="true" />
           <p className="final-line final-a">Made by hand.</p>
           <p className="final-line final-b">Made yours.</p>
+          <p className="final-note">
+            Hand crocheted
+            <br />
+            Amman, Jordan
+          </p>
           {closingCast.map((c) => (
             <figure className={`final-bag ${c.cls}`} key={c.key}>
               <Image
@@ -463,12 +496,7 @@ export default async function HomePage() {
                 alt={altFor(c.bag!, c.colour)}
                 width={c.w}
                 height={Math.round(c.w / c.frame!.ratio)}
-                // Must track the widest object in the cast at each breakpoint,
-                // not the average: the focal Vault is 72vw on a phone and 50vw
-                // on a tablet. Declared at 62vw it resolved to a 256px
-                // candidate for a 270px box — a 1.13 upscale on the closing
-                // frame, which is the last thing the customer looks at.
-                sizes="(max-width: 699px) 74vw, (max-width: 860px) 52vw, 34vw"
+                sizes={c.sizes}
               />
             </figure>
           ))}

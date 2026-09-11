@@ -603,7 +603,13 @@ body:has(.home) main { padding-top: 0; }
 /* ---------------- 04 THE FINISHED OBJECT ---------------- */
 .phase-final {
   z-index: 11; background: var(--pink);
-  clip-path: inset(0 0 calc(100% - min(1, var(--b-final) * 3) * 100%) 0);
+  /* The frame lands in the first fifth of its band rather than the first
+     third. The reveal is a top-down wipe, so while it runs the outgoing
+     customisation frame is still visible underneath and "Made yours." is
+     bisected by the wipe line — at *3 that window was ~67px of scroll at
+     1440, long enough to rest in and read as a glitch rather than a reveal.
+     At *4.5 it is ~45px and the frame is simply there. */
+  clip-path: inset(0 0 calc(100% - min(1, var(--b-final) * 4.5) * 100%) 0);
 }
 /* A campaign frame, not a text block: the object dominates, one line runs
    behind it and one crosses in front.
@@ -635,60 +641,67 @@ body:has(.home) main { padding-top: 0; }
   font-size: clamp(12px, 1.15vw, 17px); font-weight: 600;
   letter-spacing: 0.32em; line-height: 1; opacity: 0.72;
 }
+/* One factual line under the quiet half, at utility scale. It gives the empty
+   upper left something to be besides empty, and it is the only copy added. */
+.final-note {
+  position: absolute; z-index: 3; top: calc(19vh + 30px); left: 4vw; margin: 0;
+  color: var(--navy); opacity: 0.5;
+  font-size: clamp(9.5px, 0.72vw, 11px); font-weight: 600;
+  letter-spacing: 0.24em; text-transform: uppercase; line-height: 1.7;
+}
 /* The payoff. Brought down from 13vw/196px: at that size it was a full-width
    slab that left the objects nowhere to sit, and it was the fourth
    near-identical giant-serif block in one scroll (hero, shop, about, here).
    Still the largest type on the page, no longer the whole page. */
+/* The payoff, sitting ON the white floor in the lower left. It was at
+   bottom:10vh at up to 156px, which put its baseline hard against the frame
+   edge and clipped it. It is smaller, higher, and its cap height just meets
+   the focal object's base, so the type and the object touch rather than
+   ignore each other — and all of it stays readable, none of it behind a bag
+   and none of it against the viewport edge. */
 .final-b {
-  z-index: 3; bottom: 10vh; left: 4vw;
-  font-size: clamp(48px, 10.5vw, 156px);
+  z-index: 2; bottom: 17vh; left: 4vw;
+  font-size: clamp(44px, 7.6vw, 112px);
 }
-/* A still life, not a collage. Four objects, one focal point, three depth
-   planes, and the type woven between them:
+/* ---------------- the ground ----------------
+   Pink wall, white floor, join at 46%. The focal object stands ACROSS it, so
+   it has somewhere to be rather than hovering on a colour. No invented
+   shadow: the weight comes from the crop, the scale and the object's own
+   studio contact shadow, which is the reason Vault is the focal. */
+.final-floor {
+  position: absolute; z-index: 0; left: 0; right: 0; bottom: 0; height: 54%;
+  background: var(--paper);
+}
 
-     z1  Nova Silver & Gold and Mini Luna Silver sit BEHIND both lines
-     z3  the type
-     z4  Vault Olive, the focal object, sits IN FRONT of "Made by hand."
-     z2  Nova Black is cropped by the left edge, behind the type, smallest
+/* A still life, not three stickers.
 
-   Scale runs 1 : 0.62 : 0.55 : 0.38 so the eye has an order to follow, and
-   two objects are cropped by the frame edge so the arrangement reads as a
-   crop of something larger rather than four pictures placed on a slide. No
-   rotation, no shadows, no cards. */
+     z0  the white floor
+     z1  Nova Silver & Gold, behind everything, further back up the floor
+     z2  the type
+     z4  Vault Olive, the focal object, in front of the type
+
+   Scale runs 1 : 0.47. One object dominates and one supports it; there is no
+   third object competing for the same job. */
 .final-bag {
   position: absolute; margin: 0;
   transform: scale(calc(0.97 + var(--b-final) * 0.03));
-  transform-origin: center;
+  transform-origin: 50% 100%;
 }
 .final-bag img { width: 100%; height: auto; display: block; }
 
-/* RECOMPOSED. The previous arrangement put four objects at four corners with
-   two of them cropped so hard (13vw and 22vw, bled -2vw and -4vw) that they
-   stopped reading as bags at all — at 1440 the black Nova was a 187px dark
-   smear on the left edge and the Silver & Gold a partial shape on the right.
-   Four objects, none of them clearly the subject.
-
-   Three objects now, with an actual hierarchy and one real overlap:
-
-     FOCAL      Vault Olive, largest, right of centre, in front of everything
-     SECONDARY  Mini Luna Silver, overlapping the focal from the lower left so
-                the two read as one arrangement with depth rather than two
-                separate pictures
-     ACCENT     Nova Silver & Gold, upper right, cropped by the frame edge but
-                left recognisable as a bag
-
-   Scale runs 1 : 0.61 : 0.55. Nova Black is gone: at the size the composition
-   wanted it, it could only ever be a dark blob. */
-.fc-vault  { z-index: 4; width: 33vw; left: 34%; top: 22%; }
-/* Overlaps the focal's lower left, behind it. The arch's through-opening lets
-   the pink field and the type read straight through the bag. */
-.fc-luna   { z-index: 2; width: 21vw; left: 25%; top: 46%; }
-/* Upper right, cropped by the frame rather than by a guess: at -2vw roughly
-   four fifths of the object survives, so the crop reads as a frame edge
-   instead of a truncated asset. */
-.fc-novasg { z-index: 1; width: 24vw; right: -5vw; left: auto; top: 56%; }
-/* Retired from the desktop composition — see above. */
-.fc-black  { display: none; }
+/* FOCAL. Half the frame wide, standing across the pink/white join with its
+   base inside the white. Right of centre so the type has the left. */
+.fc-vault  { z-index: 4; width: 50vw; left: 38%; bottom: 22%; }
+/* SECONDARY. Behind the focal and higher up the floor, which on a shared
+   ground plane reads as further away, and overlapping its right side so the
+   two are one arrangement rather than two objects on the same page. On the
+   RIGHT because the left half is the type's: it also stops the frame from
+   emptying out past the focal object. Cropped by the right edge at -8vw —
+   about a quarter of the object is outside the frame, decisively enough to
+   read as a crop rather than as a corner accidentally clipped. */
+.fc-novasg { z-index: 1; width: 30vw; right: -8vw; left: auto; bottom: 38%; }
+/* Both retired from this composition. */
+.fc-luna, .fc-black { display: none; }
 
 /* ---------------- COLLECTION ----------------
    Released from the sticky stage. The tile is the design: a colour field, the
@@ -812,6 +825,7 @@ body:has(.home) main { padding-top: 0; }
   /* 9vh landed it at y=32, and 15vh still at y=46, under a 55px persistent
      header — the phase sits up to 76px above the viewport top at 375. */
   .final-a { top: 20vh; left: 5vw; font-size: 11px; letter-spacing: 0.28em; }
+  .final-note { top: calc(20vh + 26px); left: 5vw; font-size: 9.5px; letter-spacing: 0.2em; }
   .final-b { bottom: 13vh; left: 5vw; font-size: clamp(38px, 13.5vw, 74px); }
   /* Two objects on a phone, not four. At 375 the full cast collapsed into one
      unreadable pile in the lower right; the frame is too narrow to hold four
@@ -822,9 +836,14 @@ body:has(.home) main { padding-top: 0; }
      they read as two cut-outs dropped on a field rather than an arrangement.
      Bigger, lower, and genuinely overlapping — the same relationship the
      desktop frame uses, at phone scale. */
-  .fc-novasg, .fc-black { display: none; }
-  .fc-vault { width: 72vw; left: 26%; top: 34%; }
-  .fc-luna  { width: 40vw; left: 4%; top: 49%; }
+  /* A campaign COVER on a phone, not the desktop still life shrunk. One
+     object, standing on the floor, and the two lines. The secondary is gone
+     entirely: at this width it could only be a sliver, and a sliver is the
+     collage the frame was rebuilt to get rid of. Positioned from the BOTTOM
+     like the desktop composition, so the bag sits on the white rather than
+     floating at a `top` offset the way the previous cast did. */
+  .fc-novasg, .fc-black, .fc-luna, .fc-lunablack { display: none; }
+  .fc-vault { width: 92vw; left: 5%; top: auto; bottom: 30%; }
 }
 
 /* ---------------- tablet portrait ----------------
@@ -865,17 +884,20 @@ body:has(.home) main { padding-top: 0; }
   .cust-bag { right: -6vw; top: 20vh; width: 62vw; }
   /* Three at tablet width: the dark anchor is the one that crowds the second
      line once the frame narrows. */
-  .fc-black { display: none; }
-  /* The phone rules above hide both edge objects; this one comes back at
-     tablet width, so `display` has to be restored explicitly. */
-  .fc-novasg { display: block; width: 34vw; right: -8vw; left: auto; top: 56%; }
-  .fc-vault { width: 50vw; left: 38%; top: 30%; }
-  .fc-luna  { width: 25vw; left: 5%; top: 17%; }
+  /* Tablet gets its own composition rather than the desktop one scaled down.
+     There IS room for the secondary here, so it comes back — but anchored to
+     the bottom and overlapping the focal, like the desktop frame. The rule
+     this replaces put it at `top: 56%`, which dropped it into the white well
+     below and to the right of the focal object with a gap between them. */
+  .fc-black, .fc-luna, .fc-lunablack { display: none; }
+  .fc-vault { width: 62vw; left: 30%; top: auto; bottom: 30%; }
+  .fc-novasg { display: block; width: 30vw; right: -8vw; left: auto; top: auto; bottom: 44%; }
   /* Explicitly per line. A single `.final-line` size here sat AFTER the phone
      block and put the quiet caption back at headline scale, which ran "MADE
      BY HAND." straight off the right edge at 768. */
   /* Same header collision as the phone rule above: 8vh is behind the bar. */
   .final-a { font-size: 12px; letter-spacing: 0.3em; top: 17vh; left: 5vw; }
+  .final-note { top: calc(17vh + 28px); left: 5vw; font-size: 10px; }
   .final-b { font-size: clamp(44px, 11vw, 104px); bottom: 12vh; left: 5vw; }
 }
 
