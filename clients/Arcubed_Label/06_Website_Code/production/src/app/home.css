@@ -823,3 +823,19 @@ body:has(.home) main { padding-top: 0; }
   .cust-honest { max-width: 60ch; margin-top: 20px; }
   .final-bag { width: min(260px, 42%); margin: 20px 18px 20px 0; display: inline-block; }
 }
+
+/* ---------------- tall phone: centre the material in the VISIBLE area -------
+   `.phase-mat` centres its content in the full stage, but the header covers
+   the top 49px of that stage, so the composition sits half a header height
+   too high and dumps the difference below. Measured, the imbalance is exactly
+   the header at every phone size: 375 had 61px above and 110px below, 390 had
+   68/117, and 430 had 92/141 — the largest absolute void, which is where it
+   reads as too much white.
+
+   Gated at 880px of height so the approved 375x812 and 390x844 compositions
+   are not touched: neither matches. Adding the header height to the top
+   padding moves the content down by half of it, which is precisely the
+   correction needed. */
+@media (max-width: 699px) and (min-height: 880px) {
+  .phase-mat { padding-top: calc(clamp(20px, 3vh, 34px) + 49px); }
+}

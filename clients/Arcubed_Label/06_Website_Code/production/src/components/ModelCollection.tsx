@@ -14,7 +14,7 @@
 // the link target — so exploring colour happens here rather than after a
 // page load.
 
-import { useState } from "react";
+import { useRef, useState, type KeyboardEvent } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import type { Bag } from "@/lib/types";
@@ -66,6 +66,43 @@ function ModelBlock({ product, bag, ways }: { product: string; bag: Bag; ways: W
   const [i, setI] = useState(0);
   const on = ways[i];
   const n = ways.length;
+  const refs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  // Roving tabindex. Tab reaches the strip once and the arrows move inside it,
+  // rather than every swatch being its own tab stop — with six colourways that
+  // turned a single choice into six stops between the image and the link.
+  // Focus moves, and each button's own onFocus selects it, so keyboard and
+  // pointer end up in exactly the same state and the deep link follows.
+  const move = (next: number) => {
+    const k = (next + n) % n;
+    setI(k);
+    refs.current[k]?.focus();
+  };
+
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    switch (e.key) {
+      case "ArrowRight":
+      case "ArrowDown":
+        e.preventDefault();
+        move(i + 1);
+        break;
+      case "ArrowLeft":
+      case "ArrowUp":
+        e.preventDefault();
+        move(i - 1);
+        break;
+      case "Home":
+        e.preventDefault();
+        move(0);
+        break;
+      case "End":
+        e.preventDefault();
+        move(n - 1);
+        break;
+      default:
+        break;
+    }
+  };
 
   return (
     <li className="mc-block">
@@ -90,15 +127,17 @@ function ModelBlock({ product, bag, ways }: { product: string; bag: Bag; ways: W
         <p className="mc-price">{money(bag.basePrice)}</p>
       </div>
 
-      <div className="mc-ways" role="group" aria-label={`${product} colours`}>
+      <div className="mc-ways" role="group" aria-label={`${product} colours`} onKeyDown={onKeyDown}>
         {ways.map((w, k) => (
           <button
             key={w.colour}
             type="button"
+            ref={(el) => { refs.current[k] = el; }}
             className={`mc-way${k === i ? " is-on" : ""}`}
             style={{ background: w.photo ? undefined : w.field }}
             aria-pressed={k === i}
             aria-label={`${product} in ${w.colour}`}
+            tabIndex={k === i ? 0 : -1}
             onMouseEnter={() => setI(k)}
             onFocus={() => setI(k)}
             onClick={() => setI(k)}
