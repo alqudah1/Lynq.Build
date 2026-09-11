@@ -205,6 +205,50 @@ body:has(.home) main { padding-top: 0; }
 }
 .hero-bag img { width: 100%; height: auto; }
 
+/* ---------------- the secondary layer ----------------
+   ONE object, not a second product card. Black Nova: opposite value to the
+   red, closed and low against the arch.
+
+   The depth comes from two things working together rather than from scale
+   alone. It sits BEHIND the hero object (z2 under z3), so the red bag
+   occludes its right end; and its base sits HIGHER up the white floor than
+   the red bag's base, which on a shared ground plane reads as further away.
+   Either one on its own reads as a sticker; together they read as distance.
+
+   Roughly 38% of the hero's width — inside the 25-40% the brief allows, and
+   far enough below it that the eye is never in doubt about the subject. */
+.hero-second {
+  position: absolute; z-index: 2; left: 46%; bottom: 19vh; width: 20vw; margin: 0;
+  transform:
+    translateY(calc(var(--b-hero) * -1.1vh + var(--b-enter) * 10vh))
+    scale(calc(1 + var(--b-enter) * 0.5));
+  transform-origin: 50% 100%;
+  opacity: calc(1 - var(--b-enter) * 1.7);
+}
+.hero-second img { width: 100%; height: auto; display: block; }
+
+/* ---------------- the product credit ----------------
+   A magazine annotation, not a card: no box, no fill, no radius. One thin
+   navy rule, then the object, the colourway and the price in Inter at
+   utility scale. It sits in the white under the object it names. */
+.hero-credit {
+  position: absolute; z-index: 6; left: 62%; bottom: 7vh; margin: 0;
+  transform: translateY(calc(var(--b-enter) * 14vh));
+  opacity: calc(1 - var(--b-enter) * 1.6);
+}
+.hero-credit-rule {
+  display: block; width: clamp(40px, 4.4vw, 66px); height: 1px;
+  background: var(--navy); opacity: 0.5; margin: 0 0 12px;
+}
+.hero-credit p {
+  margin: 0 0 5px; color: var(--navy);
+  font-size: clamp(10px, 0.74vw, 11.5px); font-weight: 600;
+  letter-spacing: 0.22em; text-transform: uppercase; line-height: 1.2;
+}
+/* The price is the one line allowed to be quieter — it is a fact, not a
+   call to action, and the CTA is already the only action in the frame. */
+.hero-credit p:last-child { margin: 9px 0 0; opacity: 0.6; letter-spacing: 0.16em; }
+
 /* Two short lines, set once, in the white. */
 .hero-note {
   position: absolute; z-index: 6; left: 4.5vw; bottom: 19vh; margin: 0;
@@ -225,14 +269,21 @@ body:has(.home) main { padding-top: 0; }
   transform: translateY(calc(var(--b-enter) * 14vh));
   opacity: calc(1 - var(--b-enter) * 1.6);
 }
+/* The rule runs WELL past the words, out across the empty white, so the lower
+   half of the frame has a horizontal axis instead of a gap. It is the thing
+   that makes the white field read as composed rather than unused: the eye
+   travels the rule from the call to action into the objects. Type and layout
+   only — no decoration, no icon, no graphic. */
 .hero-cta::before {
   content: ""; position: absolute; left: 0; bottom: 0; height: 1.5px;
-  width: 100%; background: var(--navy); opacity: 0.26;
+  width: calc(100% + 21vw); background: var(--navy); opacity: 0.26;
 }
 .hero-cta::after {
   content: ""; position: absolute; left: 0; bottom: 0; height: 1.5px;
   width: 0; background: var(--navy); transition: width 0.42s var(--ease-ui);
 }
+/* Hover draws only under the words; the long rule is composition, not a
+   target, and filling all of it would read as a loading bar. */
 .hero-cta:hover::after { width: 100%; }
 
 @media (max-width: 860px) {
@@ -254,6 +305,13 @@ body:has(.home) main { padding-top: 0; }
   .hero-bag { top: 41vh; right: 5vw; width: 88vw; }
   .hero-note { left: 6vw; bottom: 13vh; }
   .hero-cta { left: 6vw; bottom: 5.5vh; }
+  /* The long rule is a desktop device: it exists to cross a wide empty white
+     field. At 390 it ran straight into the credit block. */
+  .hero-cta::before { width: 100%; }
+  /* Opposite corner from the call to action, right aligned, so the bottom of
+     the frame reads as two deliberate clusters rather than one crowded row. */
+  .hero-credit { left: auto; right: 6vw; bottom: 5.5vh; text-align: right; }
+  .hero-credit-rule { margin-left: auto; }
 }
 
 @media (min-width: 700px) and (max-width: 860px) {
@@ -751,7 +809,12 @@ body:has(.home) main { padding-top: 0; }
   .hero-l2 { top: 23vh; left: 8vw; }
   .hero-l3 { top: 35vh; }
   .hero-bag { top: 33vh; right: -14vw; width: 92vw; }
-  .hero-second { display: block; left: -4vw; bottom: 14vh; width: 26vw; }
+  /* Stays hidden at tablet. The rule this replaces came from an earlier hero
+     and put the object at the left edge, where it rendered directly under
+     "Hand crocheted bags" and made both unreadable. At 768 the hero bag is
+     92vw: there is no clear floor left of it for a second object, so the
+     honest answer is that the secondary layer is desktop-only. */
+  .hero-second { display: none; }
   .hero-band { height: 9vh; }
   .hero-band span:nth-child(3) { display: inline; }
   /* Two rows of two rather than four in a line. At 21vw the forms were 161px
@@ -830,7 +893,7 @@ body:has(.home) main { padding-top: 0; }
      bag, hid Your entirely, and ran the note through the call to action —
      the hero was unreadable for exactly the users this branch exists for. */
   .hero-type, .hero-type p, .hero-type > span, .hero-bag, .hero-second, .hero-band,
-  .hero-note, .hero-cta,
+  .hero-note, .hero-cta, .hero-credit,
   .mat-img, .story-label, .mat-note, .shape-row, .shape-note, .shape-lead, .shape-close,
   .cust-bag, .final-line, .final-bag {
     position: relative; top: auto; right: auto; bottom: auto; left: auto;
@@ -844,6 +907,9 @@ body:has(.home) main { padding-top: 0; }
   .hero-cta { margin: 18px 0 0; display: inline-block; }
   .hero-bag { width: min(560px, 78%); margin: 28px 0; }
   .hero-second { width: min(220px, 34%); }
+  .hero-credit { margin: 20px 0 0; text-align: left; }
+  .hero-credit-rule { margin-left: 0; }
+  .hero-cta::before { width: 100%; }
   .hero-band { height: auto; min-height: 0; padding: 14px 18px; flex-wrap: wrap; gap: 14px; }
 
   .phase-mat { background: var(--paper); padding: 24px 18px; }

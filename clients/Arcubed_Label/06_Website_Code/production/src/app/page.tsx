@@ -11,6 +11,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getActiveBags } from "@/lib/repository";
+import { money } from "@/lib/pricing";
 import { framesForColour, resolveMedia, cutSrc, tileSrc, altFor } from "@/lib/product-media";
 import ScrollStory from "@/components/home/ScrollStory";
 import ModelCollection from "@/components/ModelCollection";
@@ -118,6 +119,44 @@ export default async function HomePage() {
   // range look like one bag in the first place.
   const vault = by("vault");
   const nova = by("nova");
+
+  /**
+   * HERO SECONDARY — one layer, not three.
+   *
+   * The SAME silhouette as the hero in the opposite colourway, which is the
+   * headline stated as a picture: one shape, made your way. Black Nova was
+   * tried first and rejected on sight — a closed, low, wide form at a third
+   * of the hero's width has no handle, no opening and no edge to read, so it
+   * rendered as a dark mass rather than as a bag.
+   *
+   * Mini Luna's arch survives the scale: the through-opening reads at 20vw,
+   * so the object is still unmistakably a bag at a third the size, and black
+   * against red gives the value separation Nova was picked for in the first
+   * place.
+   *
+   * Falls back to the other dark colourways, and if none resolve the hero
+   * renders without a secondary rather than substituting another product.
+   */
+  /*
+   * DSC04873 BY NAME, not framesForColour(...)[0].
+   *
+   * Black has two frames and the first one, DSC04872, does not matte cleanly
+   * inside the arch: a patch of the studio background survives in the handle's
+   * through-opening. At the hero's scale, on white, that is a visible grey
+   * smear in the one part of the object that makes it read as a bag. Both
+   * frames are flagged cutOk, so nothing in the manifest predicts it — it was
+   * found by rendering the composition at 2x and looking at the handle.
+   *
+   * Falls back to whatever Black has, then to another dark object, then to
+   * nothing at all. The hero renders without a secondary rather than
+   * substituting a photograph of a product it does not name.
+   */
+  const heroBlackFrames = miniLuna ? framesForColour(miniLuna, "Black") : [];
+  const heroSecond =
+    heroBlackFrames.find((f) => f.frameId === "DSC04873") ??
+    heroBlackFrames[0] ??
+    frame(vault, "Brown");
+
   const closingCast = [
     // Focal point. Largest, in front of the type, slightly right of centre.
     { key: "vault", cls: "fc-vault", bag: vault, colour: "Olive Green", w: 1400 },
@@ -183,6 +222,40 @@ export default async function HomePage() {
                 preload
               />
             </figure>
+          ) : null}
+
+          {/* The secondary layer. Cropped by the bottom edge, on the same
+              white floor as the hero object so the two share a ground plane
+              and the size difference reads as distance. */}
+          {heroSecond && miniLuna ? (
+            <figure className="hero-second" aria-hidden="true">
+              <Image
+                src={tileSrc(heroSecond)}
+                alt=""
+                width={900}
+                height={Math.round(900 / heroSecond.ratio)}
+                // Desktop-only by design (hidden at 860 and below), but a
+                // display:none image is still fetched, so a phone was paying
+                // for a picture it never shows. The small branch pins it to
+                // the narrowest derivative instead of a 44vw one; the desktop
+                // branch is declared just above the 20vw it actually renders
+                // at, so it never resolves to a candidate it has to upscale.
+                sizes="(max-width: 860px) 64px, 21vw"
+              />
+            </figure>
+          ) : null}
+
+          {/* A magazine product credit, not a card: the object in the frame,
+              named, in the colourway shown, at its real price. The price is
+              read from the product rather than typed, so it cannot drift from
+              the database the rest of the store prices from. */}
+          {miniLuna ? (
+            <div className="hero-credit">
+              <span className="hero-credit-rule" aria-hidden="true" />
+              <p>Mini Luna</p>
+              <p>Red</p>
+              <p>{money(miniLuna.basePrice)}</p>
+            </div>
           ) : null}
 
           {/* Two short lines in one place, not a row of floating labels. */}
