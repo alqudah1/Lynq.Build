@@ -127,7 +127,8 @@ export default function CheckoutClient({
           <Link className="es-link" href="/shop">Shop the collection</Link>
         </div>
         <figure className="es-art" aria-hidden="true">
-          <Image src="/media/DSC04874-tile-2600.webp" alt="" width={1400} height={1125} sizes="(max-width: 760px) 88vw, (max-width: 1200px) 44vw, 40vw" />
+          {/* LCP on an empty /checkout — same fix as the cart. */}
+          <Image src="/media/DSC04874-tile-2600.webp" alt="" width={1400} height={1125} sizes="(max-width: 760px) 88vw, (max-width: 1200px) 44vw, 40vw" preload />
         </figure>
       </section>
     );

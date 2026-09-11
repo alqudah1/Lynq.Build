@@ -21,6 +21,7 @@ export default function StrapHandleSelector({
   selectedId,
   colourId,
   onSelect,
+  kind,
 }: {
   label: string;
   bag: Bag;
@@ -30,8 +31,11 @@ export default function StrapHandleSelector({
   onSelect: (id: string | null) => void;
   kind: "strap" | "handle" | "chain";
 }) {
+  // The group carries its kind so the buy band can art-direct one of them.
+  // Nova's handle is a real product decision — two different objects at one
+  // price — and it was rendering as the third of four identical utility rows.
   return (
-    <div className="opt-group">
+    <div className={`opt-group opt-group-${kind}`}>
       <p className="opt-label">{label}</p>
       <div className="chip-row">
         {/* "None" belongs to opt-in groups only — without it the only way out

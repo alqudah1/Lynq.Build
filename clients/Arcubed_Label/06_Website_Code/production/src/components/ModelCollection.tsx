@@ -104,8 +104,12 @@ function ModelBlock({ product, bag, ways }: { product: string; bag: Bag; ways: W
     }
   };
 
+  // The block carries its slug so the stylesheet can art-direct each model
+  // rather than repeating one component four times. Frame proportion varies
+  // by ROW (so the two blocks beside each other still align and the footer
+  // meets a straight edge) and object scale varies by MODEL.
   return (
-    <li className="mc-block">
+    <li className={`mc-block mc-${bag.slug}`}>
       <Link href={on.href} className="mc-stage" style={{ background: on.photo ? undefined : on.field }}>
         <Image
           key={on.colour}
@@ -113,7 +117,10 @@ function ModelBlock({ product, bag, ways }: { product: string; bag: Bag; ways: W
           alt={on.alt}
           width={1400}
           height={Math.round(1400 / on.ratio)}
-          sizes="(max-width: 700px) 92vw, (max-width: 1080px) 46vw, 44vw"
+          // 92vw on a phone was resolving to a candidate narrower than the
+          // rendered box once the per-model padding changed, which pushed the
+          // Vault tile to a 1.13 upscale. 100vw picks the next candidate up.
+          sizes="(max-width: 700px) 100vw, (max-width: 1080px) 48vw, 46vw"
           className={on.photo ? "mc-photo" : "mc-cut"}
         />
       </Link>

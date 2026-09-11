@@ -308,6 +308,21 @@ export default async function HomePage() {
                     ["--w1" as string]: (0.17 + i * 0.06 + 0.06).toFixed(3),
                   }}
                 >
+                  {/* The same photographic swatch the shop and the product
+                      pages use. A colour name on its own is not a colour, and
+                      this is the one beat on the homepage whose whole subject
+                      is choosing one — it was the only place in the system
+                      showing colour as a word and nothing else. Decorative
+                      here: the name beside it already carries the meaning. */}
+                  <span className="cust-sw" aria-hidden="true">
+                    <Image
+                      src={tileSrc(cf.frame, true)}
+                      alt=""
+                      width={140}
+                      height={Math.round(140 / cf.frame.ratio)}
+                      sizes="46px"
+                    />
+                  </span>
                   <span>{cf.colour}</span>
                 </li>
               ))}
@@ -351,7 +366,12 @@ export default async function HomePage() {
                 alt={altFor(c.bag!, c.colour)}
                 width={c.w}
                 height={Math.round(c.w / c.frame!.ratio)}
-                sizes="(max-width: 860px) 62vw, 34vw"
+                // Must track the widest object in the cast at each breakpoint,
+                // not the average: the focal Vault is 72vw on a phone and 50vw
+                // on a tablet. Declared at 62vw it resolved to a 256px
+                // candidate for a 270px box — a 1.13 upscale on the closing
+                // frame, which is the last thing the customer looks at.
+                sizes="(max-width: 699px) 74vw, (max-width: 860px) 52vw, 34vw"
               />
             </figure>
           ))}

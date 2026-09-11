@@ -30,7 +30,11 @@ export default function ColourSelector({
   return (
     <div className="opt-group">
       {showLabel ? <p className="opt-label">Colour</p> : null}
-      <div className="swatch-row">
+      {/* The row is sized by its own count so six colourways resolve as one
+          line instead of five plus a lone sixth on a second row. On a phone
+          it falls to a three-up grid, which splits 6 as 3+3 rather than
+          orphaning one. */}
+      <div className="swatch-row" style={{ ["--n" as string]: colours.length }}>
         {colours.map((c) => {
           const frame = framesForColour(bag, c.name)[0];
           const on = c.id === selectedId;

@@ -101,7 +101,7 @@ body:has(.home) main { padding-top: 0; }
   .cust-rail li:nth-child(3), .cust-bag img:nth-child(3) { --w0: 0.42 !important; --w1: 0.57 !important; }
   .cust-rail li:nth-child(4), .cust-bag img:nth-child(4) { --w0: 0.57 !important; --w1: 0.72 !important; }
   /* The last colourway holds to the end of the band rather than from 0.41. */
-  .cust-rail li:last-child { opacity: calc(0.34 + 0.66 * clamp(0, calc((var(--b-cust) - 0.72) * 14), 1)); }
+  .cust-rail li:last-child { opacity: calc(0.58 + 0.42 * clamp(0, calc((var(--b-cust) - 0.72) * 14), 1)); }
   .cust-rail li:last-child::after { width: calc(100% * clamp(0, calc((var(--b-cust) - 0.72) * 14), 1)); }
   .cust-bag img:last-child { opacity: clamp(0, calc((var(--b-cust) - 0.72) * 14), 1); }
 }
@@ -457,12 +457,30 @@ body:has(.home) main { padding-top: 0; }
 /* The live rail. Each name lights as its window comes up, so the section
    reads as a configurator running rather than as a caption. */
 .cust-rail { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+/* The floor was 0.34, which is navy at a third strength on pale pink: the
+   four colourways that were not live read as barely-there grey and the rail
+   looked broken rather than quiet. 0.58 keeps the live one clearly dominant
+   and leaves the rest legible. */
 .cust-rail li {
-  position: relative; padding: 9px 0 9px 0;
+  position: relative; display: flex; align-items: center; gap: clamp(10px, 1vw, 14px);
+  padding: 7px 0;
   border-top: 1px solid rgba(20, 53, 98, 0.16);
   font-size: clamp(12px, 1.05vw, 15px); font-weight: 600;
   letter-spacing: 0.14em; text-transform: uppercase; color: var(--navy);
-  opacity: calc(0.34 + 0.66 * clamp(0, min(calc((var(--b-cust) - var(--w0)) * 70), calc((var(--w1) - var(--b-cust)) * 70)), 1));
+  opacity: calc(0.58 + 0.42 * clamp(0, min(calc((var(--b-cust) - var(--w0)) * 70), calc((var(--w1) - var(--b-cust)) * 70)), 1));
+}
+/* The swatch itself does the choosing: it sits flat and slightly inset while
+   the colourway is idle, and comes up to full size and a navy edge as its
+   window opens. */
+.cust-sw {
+  flex: none; display: block; width: clamp(30px, 2.9vw, 42px); aspect-ratio: 1 / 1;
+  background: rgba(255, 255, 255, 0.55); overflow: hidden; position: relative;
+  box-shadow: inset 0 0 0 1px rgba(20, 53, 98, 0.18);
+  transform: scale(calc(0.9 + 0.1 * clamp(0, min(calc((var(--b-cust) - var(--w0)) * 70), calc((var(--w1) - var(--b-cust)) * 70)), 1)));
+}
+.cust-sw img { position: absolute; inset: 0; margin: auto; width: 88%; height: auto; }
+.cust-rail li:last-child .cust-sw {
+  transform: scale(calc(0.9 + 0.1 * clamp(0, calc((var(--b-cust) - 0.41) * 70), 1)));
 }
 .cust-rail li:last-child { border-bottom: 1px solid rgba(20, 53, 98, 0.16); }
 /* A navy rule draws across the active name. */
@@ -470,7 +488,7 @@ body:has(.home) main { padding-top: 0; }
   content: ""; position: absolute; left: 0; bottom: -1px; height: 2px; background: var(--navy);
   width: calc(100% * clamp(0, min(calc((var(--b-cust) - var(--w0)) * 70), calc((var(--w1) - var(--b-cust)) * 70)), 1));
 }
-.cust-rail li:last-child { opacity: calc(0.34 + 0.66 * clamp(0, calc((var(--b-cust) - 0.41) * 70), 1)); }
+.cust-rail li:last-child { opacity: calc(0.58 + 0.42 * clamp(0, calc((var(--b-cust) - 0.41) * 70), 1)); }
 .cust-rail li:last-child::after { width: calc(100% * clamp(0, calc((var(--b-cust) - 0.41) * 70), 1)); }
 .cust-foot { margin: 0; max-width: 30ch; font-size: 12.5px; line-height: 1.65; color: var(--navy); opacity: 0.62; }
 
@@ -515,15 +533,24 @@ body:has(.home) main { padding-top: 0; }
 }
 /* Quiet. Utility scale, wide tracking, sitting on the top margin like a
    caption rather than a headline. */
+/* The phase is pinned UNDER the sticky header, and how far under varies with
+   viewport and scroll position — measured at -58px (1440), -44px (390) and
+   -76px (375). At 11vh the quiet half of the campaign line landed at y=41 and
+   sat behind the nav on every width, so it never actually read. These values
+   clear the worst measured offset plus the 55px header at each breakpoint,
+   and were re-verified at 375, 390, 430, 768 and 1440. */
 .final-a {
-  z-index: 3; top: 11vh; left: 4vw;
+  z-index: 3; top: 19vh; left: 4vw;
   font-size: clamp(12px, 1.15vw, 17px); font-weight: 600;
   letter-spacing: 0.32em; line-height: 1; opacity: 0.72;
 }
-/* The payoff. */
+/* The payoff. Brought down from 13vw/196px: at that size it was a full-width
+   slab that left the objects nowhere to sit, and it was the fourth
+   near-identical giant-serif block in one scroll (hero, shop, about, here).
+   Still the largest type on the page, no longer the whole page. */
 .final-b {
-  z-index: 3; bottom: 11vh; left: 4vw;
-  font-size: clamp(52px, 13vw, 196px);
+  z-index: 3; bottom: 10vh; left: 4vw;
+  font-size: clamp(48px, 10.5vw, 156px);
 }
 /* A still life, not a collage. Four objects, one focal point, three depth
    planes, and the type woven between them:
@@ -544,18 +571,33 @@ body:has(.home) main { padding-top: 0; }
 }
 .final-bag img { width: 100%; height: auto; display: block; }
 
-/* Focal: largest, interrupting the first line from below so the type has to
-   pass behind it. Right of centre, never centred. */
-.fc-vault  { z-index: 4; width: 34vw; left: 36%; top: 44%; }
-/* Behind the type, upper left, its arch reading through the words. */
-.fc-luna   { z-index: 1; width: 17vw; left: 13%; top: 15%; }
-/* Wide and low, cropped by the right edge and riding the second line, so the
-   lower half of the frame carries weight instead of being empty pink. */
-.fc-novasg { z-index: 1; width: 22vw; right: -4vw; left: auto; top: 58%; }
-/* Dark anchor, cropped by the bottom left corner. Smallest, and deliberately
-   NOT at the same height as the object on the opposite edge — level with it
-   the pair read as symmetric bookends rather than as an arrangement. */
-.fc-black  { z-index: 2; width: 13vw; left: -2vw; top: 66%; }
+/* RECOMPOSED. The previous arrangement put four objects at four corners with
+   two of them cropped so hard (13vw and 22vw, bled -2vw and -4vw) that they
+   stopped reading as bags at all — at 1440 the black Nova was a 187px dark
+   smear on the left edge and the Silver & Gold a partial shape on the right.
+   Four objects, none of them clearly the subject.
+
+   Three objects now, with an actual hierarchy and one real overlap:
+
+     FOCAL      Vault Olive, largest, right of centre, in front of everything
+     SECONDARY  Mini Luna Silver, overlapping the focal from the lower left so
+                the two read as one arrangement with depth rather than two
+                separate pictures
+     ACCENT     Nova Silver & Gold, upper right, cropped by the frame edge but
+                left recognisable as a bag
+
+   Scale runs 1 : 0.61 : 0.55. Nova Black is gone: at the size the composition
+   wanted it, it could only ever be a dark blob. */
+.fc-vault  { z-index: 4; width: 33vw; left: 34%; top: 22%; }
+/* Overlaps the focal's lower left, behind it. The arch's through-opening lets
+   the pink field and the type read straight through the bag. */
+.fc-luna   { z-index: 2; width: 21vw; left: 25%; top: 46%; }
+/* Upper right, cropped by the frame rather than by a guess: at -2vw roughly
+   four fifths of the object survives, so the crop reads as a frame edge
+   instead of a truncated asset. */
+.fc-novasg { z-index: 1; width: 24vw; right: -5vw; left: auto; top: 56%; }
+/* Retired from the desktop composition — see above. */
+.fc-black  { display: none; }
 
 /* ---------------- COLLECTION ----------------
    Released from the sticky stage. The tile is the design: a colour field, the
@@ -676,14 +718,22 @@ body:has(.home) main { padding-top: 0; }
      it is unreadable. The desktop bleed stays. */
   /* Same hierarchy on a phone: quiet caption, loud payoff. A single
      font-size here would have put both lines back at one weight. */
-  .final-a { top: 9vh; left: 5vw; font-size: 11px; letter-spacing: 0.28em; }
+  /* 9vh landed it at y=32, and 15vh still at y=46, under a 55px persistent
+     header — the phase sits up to 76px above the viewport top at 375. */
+  .final-a { top: 20vh; left: 5vw; font-size: 11px; letter-spacing: 0.28em; }
   .final-b { bottom: 13vh; left: 5vw; font-size: clamp(38px, 13.5vw, 74px); }
   /* Two objects on a phone, not four. At 375 the full cast collapsed into one
      unreadable pile in the lower right; the frame is too narrow to hold four
-     overlapping silhouettes and still say anything. Focal plus one. */
+     overlapping silhouettes and still say anything. Focal plus one.
+
+     They were also floating: a 202px band of empty pink sat between the lower
+     object and the headline, and the pair touched only at a 20px corner, so
+     they read as two cut-outs dropped on a field rather than an arrangement.
+     Bigger, lower, and genuinely overlapping — the same relationship the
+     desktop frame uses, at phone scale. */
   .fc-novasg, .fc-black { display: none; }
-  .fc-vault { width: 66vw; left: 30%; top: 38%; }
-  .fc-luna  { width: 33vw; left: 2%; top: 26%; }
+  .fc-vault { width: 72vw; left: 26%; top: 34%; }
+  .fc-luna  { width: 40vw; left: 4%; top: 49%; }
 }
 
 /* ---------------- tablet portrait ----------------
@@ -728,7 +778,8 @@ body:has(.home) main { padding-top: 0; }
   /* Explicitly per line. A single `.final-line` size here sat AFTER the phone
      block and put the quiet caption back at headline scale, which ran "MADE
      BY HAND." straight off the right edge at 768. */
-  .final-a { font-size: 12px; letter-spacing: 0.3em; top: 8vh; left: 5vw; }
+  /* Same header collision as the phone rule above: 8vh is behind the bar. */
+  .final-a { font-size: 12px; letter-spacing: 0.3em; top: 17vh; left: 5vw; }
   .final-b { font-size: clamp(44px, 11vw, 104px); bottom: 12vh; left: 5vw; }
 }
 

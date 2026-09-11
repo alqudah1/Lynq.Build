@@ -23,14 +23,29 @@ export default async function AboutPage() {
 
   return (
     <>
+      {/* The opening was a single giant slab on the left with the entire right
+          half of the screen empty — the fourth near-identical Bodoni poster in
+          the journey. It is a composition now: the subject holds the left, and
+          the right carries the lede and the two plain facts the homepage hero
+          already states, so the space is filled with information rather than
+          decoration. No founder story, no mission statement, nothing invented. */}
       <section className="ab-open">
-        <p className="ed-kicker">Arcubed Label</p>
-        <h1 className="ab-title">
-          HAND<br />MADE.
-        </h1>
-        <p className="ab-lede">
-          Crochet bags built around colour, texture and the fact that no two are ever quite the same.
-        </p>
+        <div className="ab-open-l">
+          <p className="ed-kicker">Arcubed Label</p>
+          <h1 className="ab-title">
+            HAND<br />MADE.
+          </h1>
+        </div>
+        <div className="ab-open-r">
+          <p className="ab-lede">
+            Crochet bags built around colour, texture and the fact that no two are ever quite the same.
+          </p>
+          <ul className="ab-facts">
+            <li>Hand crocheted</li>
+            <li>Made to order</li>
+            <li>Amman, Jordan</li>
+          </ul>
+        </div>
       </section>
 
       <Reveal className="ab-wide">

@@ -36,7 +36,9 @@ export default function CartPageClient({
           <Link className="es-link" href="/shop">Shop the collection</Link>
         </div>
         <figure className="es-art" aria-hidden="true">
-          <Image src="/media/DSC05792-tile-2600.webp" alt="" width={1400} height={916} sizes="(max-width: 760px) 88vw, (max-width: 1200px) 44vw, 40vw" />
+          {/* LCP on an empty /cart: it was being fetched at default priority
+              behind everything else and the browser warned on every load. */}
+          <Image src="/media/DSC05792-tile-2600.webp" alt="" width={1400} height={916} sizes="(max-width: 760px) 88vw, (max-width: 1200px) 44vw, 40vw" preload />
         </figure>
       </section>
     );

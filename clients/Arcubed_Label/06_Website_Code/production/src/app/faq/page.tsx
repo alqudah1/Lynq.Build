@@ -93,8 +93,9 @@ export default async function FaqPage() {
           to know.
         </h1>
         <figure className="fq-crop">
+          {/* LCP on /faq at every width measured. */}
           <Image src="/media/macro-twotone.webp" alt="Close detail of silver and gold metallic ribbon yarn"
-                 width={1465} height={932} sizes="(max-width: 860px) 92vw, 34vw" />
+                 width={1465} height={932} sizes="(max-width: 860px) 92vw, 34vw" preload />
         </figure>
         <p className="fq-note">Hand crocheted to order in Amman.</p>
       </div>

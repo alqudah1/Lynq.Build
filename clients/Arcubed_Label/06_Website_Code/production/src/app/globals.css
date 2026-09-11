@@ -21,6 +21,10 @@
   --ink: var(--navy);
   /* Navy at reduced presence, never a warm grey. */
   --muted: #6d7e99;
+  /* Unchosen options and quiet labels. --muted is 4.1:1 on white, which is
+     under AA at the 11–12px the selectors use and made every option that was
+     not selected look disabled. This is navy at 72% over white: 5.2:1. */
+  --opt-idle: #566e8e;
   --line: #dfe3ea;
 
   /* Legacy aliases kept so existing rules resolve to the locked system
@@ -114,7 +118,16 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
   background: var(--primary); color: #fff; font-size: 10px; font-weight: 600; min-width: 16px; height: 16px;
   border-radius: 999px; display: flex; align-items: center; justify-content: center; padding: 0 3px;
 }
-.icon-btn { line-height: 1; }
+/* The icon itself stays exactly the size it was — the mobile header is
+   frozen — but a 20x20 (and, for the cart, a 9x20) tap target is under the
+   24px minimum and hard to hit with a thumb. A centred pseudo-element
+   enlarges the HIT AREA to 40px without changing the layout or the look.
+   40 rather than 44 so the two controls' areas do not overlap. */
+.icon-btn { line-height: 1; position: relative; }
+.icon-btn::after {
+  content: ""; position: absolute; left: 50%; top: 50%;
+  width: 40px; height: 40px; transform: translate(-50%, -50%);
+}
 
 .header-actions { display: flex; align-items: center; gap: 14px; }
 
@@ -209,7 +222,9 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 .card-sold-out .card-art { opacity: 0.5; }
 .card-badge {
   position: absolute; top: 12px; left: 12px; background: var(--ink); color: #fff;
-  font-size: 10.5px; font-weight: 600; letter-spacing: 0.03em; padding: 5px 11px; border-radius: 999px;
+  /* Square: the only pill left on a customer-facing surface. */
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+  padding: 6px 11px; border-radius: 0;
 }
 .card-art { position: relative; }
 .card .cart-line-sub { margin: 14px 0 2px; }
@@ -334,6 +349,16 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
   .sticky-bar { display: none; }
 }
 
+/* The bar is fixed to the bottom of the viewport with nothing reserving room
+   for it, so on a phone it sat permanently over the last ~72px of the page —
+   the final row of footer links on every product page could not be tapped at
+   any scroll position. Found by hit-testing the controls rather than by
+   measuring their boxes, which all looked fine. Scoped with :has() so only
+   the pages that actually render a sticky bar pay the padding. */
+@media (max-width: 899px) {
+  body:has(.sticky-bar) .ft { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+}
+
 /* ================= CART ================= */
 .cart-page { max-width: 920px; }
 .cart-lede { font-family: var(--font-head); font-size: clamp(20px, 3vw, 26px); font-weight: 400; margin: 0 0 36px; }
@@ -351,9 +376,21 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 .cart-line-actions { display: flex; gap: 18px; align-items: center; }
 .link-btn { font-size: 12px; font-weight: 600; color: var(--muted); transition: color 0.15s ease; }
 .link-btn:hover { color: var(--ink); }
-.qty-stepper { display: flex; align-items: center; gap: 10px; font-size: 13px; }
-.qty-stepper button { width: 22px; height: 22px; border-radius: 50%; box-shadow: 0 0 0 1px var(--line); display: flex; align-items: center; justify-content: center; }
-.qty-stepper button:hover { box-shadow: 0 0 0 1px var(--ink); }
+/* Square, like every other control on the site. These were 22px circles —
+   the last rounded controls on a customer-facing page, and under the 24px
+   minimum target size as well. */
+.qty-stepper { display: flex; align-items: center; gap: 4px; font-size: 13px; }
+.qty-stepper button {
+  width: 32px; height: 32px; border-radius: 0;
+  box-shadow: inset 0 0 0 1px var(--line); color: var(--navy);
+  display: flex; align-items: center; justify-content: center;
+  transition: box-shadow 0.18s var(--ease-ui), background 0.18s var(--ease-ui), color 0.18s var(--ease-ui);
+}
+.qty-stepper button:hover:not(:disabled) { background: var(--navy); color: var(--pink); box-shadow: inset 0 0 0 1px var(--navy); }
+.qty-stepper > span, .qty-stepper output {
+  min-width: 30px; text-align: center;
+  font-family: var(--font-head); font-weight: 600; font-size: 15px; color: var(--navy);
+}
 
 .cart-summary { background: var(--surface); border-radius: var(--radius); padding: 26px; max-width: 420px; }
 .cart-summary .row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 12px; gap: 16px; }
@@ -933,27 +970,55 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 .pg-thumbs { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 .pg-thumb {
   width: 92px; height: 92px; overflow: hidden; background: var(--pink);
-  border: 1px solid transparent; opacity: 0.62;
+  border: 1px solid transparent;
+  /* 0.62 washed every alternate view out to a grey-lilac smear on the pink
+     bar — on Loco, where all four frames are the dark brown fringe, the strip
+     read as four empty tiles. */
+  opacity: 0.82;
   transition: opacity 0.25s var(--ease-ui), border-color 0.25s var(--ease-ui);
 }
 .pg-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.pg-thumb:hover { opacity: 0.9; }
+.pg-thumb:hover { opacity: 1; }
 .pg-thumb.is-on { opacity: 1; border-color: var(--primary); }
+/* A full-bleed photographic hero cancels the stage's side padding, which also
+   dragged the thumbnail strip out to x=0 while the caption stayed on the page
+   gutter — the row read as misaligned rather than as a bleed. The image keeps
+   the bleed; its controls come back onto the gutter. */
+.pd-stage:has(.pg-main:not(.is-cut)) .pg-thumbs {
+  padding-left: clamp(16px, 4vw, 54px); padding-right: clamp(16px, 4vw, 54px);
+}
 
 /* ==========================================================================
    ABOUT
    ========================================================================== */
-.ab-open { padding: clamp(48px, 8vw, 110px) clamp(16px, 4vw, 54px) clamp(28px, 4vw, 54px); }
+.ab-open {
+  padding: clamp(48px, 8vw, 110px) clamp(16px, 4vw, 54px) clamp(28px, 4vw, 54px);
+  display: grid; gap: clamp(22px, 3vw, 48px); align-items: end;
+}
+@media (min-width: 860px) { .ab-open { grid-template-columns: 58fr 42fr; } }
 .ab-title {
   font-family: var(--font-head); font-weight: 400;
-  font-size: clamp(58px, 15vw, 190px); line-height: 0.82; letter-spacing: -0.05em;
+  /* Was 15vw/190px — a slab that filled the width and forced the rest of the
+     opening off the composition entirely. */
+  font-size: clamp(54px, 11vw, 148px); line-height: 0.82; letter-spacing: -0.05em;
   color: var(--primary); margin: 10px 0 0;
 }
-.ab-lede { margin: clamp(20px, 3vw, 34px) 0 0; max-width: 42ch; font-size: 16px; line-height: 1.6; color: #5c5751; }
+/* Plain statements of fact, set as utility type so they read as a caption to
+   the subject rather than as a second headline. */
+.ab-facts {
+  list-style: none; margin: clamp(20px, 2.6vw, 30px) 0 0; padding: 0;
+  display: grid; gap: 7px;
+}
+.ab-facts li {
+  color: var(--navy); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  padding-bottom: 7px; border-bottom: 1px solid var(--line);
+}
+.ab-lede { margin: clamp(20px, 3vw, 34px) 0 0; max-width: 42ch; font-size: 16px; line-height: 1.6; color: var(--muted); }
 .ab-wide-img { width: 100%; height: clamp(220px, 34vw, 460px); object-fit: cover; display: block; }
 .ab-two { padding: clamp(48px, 7vw, 100px) clamp(16px, 4vw, 54px); display: grid; gap: clamp(24px, 4vw, 54px); align-items: center; }
 .ab-h2 { font-family: var(--font-head); font-weight: 400; font-size: clamp(28px, 4.4vw, 56px); line-height: 1.02; letter-spacing: -0.03em; color: var(--primary); margin: 0; }
-.ab-p { margin: 18px 0 0; font-size: 15.5px; line-height: 1.65; color: #4a453f; max-width: 44ch; }
+.ab-p { margin: 18px 0 0; font-size: 15.5px; line-height: 1.65; color: var(--muted); max-width: 44ch; }
 .ab-two-img img { width: 100%; height: auto; display: block; }
 .ab-three { padding: 0 clamp(16px, 4vw, 54px) clamp(48px, 7vw, 100px); display: grid; gap: clamp(16px, 2.5vw, 32px); align-items: center; }
 .ab-three img { width: 100%; height: auto; display: block; }
@@ -1027,8 +1092,22 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
   width: 7px; height: 7px; border-right: 1px solid var(--navy); border-bottom: 1px solid var(--navy);
   transform: rotate(45deg);
 }
-.ct-ig { margin: 22px 0 0; font-size: 14px; color: var(--muted); }
-.ct-ig a { color: var(--primary); border-bottom: 1px solid var(--primary); }
+/* Instagram is where this brand's work actually lives, and it was a 14px
+   muted sentence under the send button — quieter than the form labels. It
+   reads as a destination now, without becoming a second call to action
+   competing with Send. */
+.ct-ig {
+  margin: clamp(26px, 3.4vh, 38px) 0 0; padding-top: clamp(20px, 2.6vh, 28px);
+  border-top: 1px solid var(--line);
+  font-size: 13px; color: var(--opt-idle);
+}
+.ct-ig a {
+  display: inline-block; margin-top: 6px; color: var(--navy);
+  font-size: 15px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+  padding-bottom: 4px; border-bottom: 1.5px solid var(--navy);
+  transition: opacity 0.18s var(--ease-ui);
+}
+.ct-ig a:hover { opacity: 0.65; }
 @media (min-width: 860px) { .ct { grid-template-columns: 1.1fr 0.9fr; gap: 0; } }
 
 /* ==========================================================================
@@ -1099,9 +1178,23 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 }
 .co-opt { font-weight: 400; opacity: 0.5; }
 .co-row input, .co-row select, .co-row textarea {
-  width: 100%; padding: 12px 13px; font: inherit; font-size: 15px; color: var(--ink);
-  background: var(--surface); border: 1px solid var(--line); border-radius: 3px;
+  width: 100%; padding: 13px 14px; font: inherit; font-size: 15px; color: var(--ink);
+  /* Square, like every other edge on the site. Checkout keeps BOXED fields
+     rather than the contact page's underlines — a bordered target is the
+     clearer affordance when someone is typing an address, and clarity wins
+     here — but the 3px radius was the last soft corner on the journey. */
+  background: var(--surface); border: 1px solid var(--line); border-radius: 0;
   transition: border-color 0.2s var(--ease-ui);
+}
+/* The delivery select was rendering the native browser chevron — the same
+   piece of default chrome that was removed from the contact form, left behind
+   on the one control that decides the shipping rate. */
+.co-row:has(select) { position: relative; }
+.co-row select { appearance: none; -webkit-appearance: none; padding-right: 34px; background-image: none; }
+.co-row:has(select)::after {
+  content: ""; position: absolute; right: 15px; bottom: 20px; pointer-events: none;
+  width: 7px; height: 7px; border-right: 1px solid var(--navy); border-bottom: 1px solid var(--navy);
+  transform: rotate(45deg);
 }
 .co-row input:focus, .co-row select:focus, .co-row textarea:focus {
   outline: 2px solid var(--primary); outline-offset: 1px; border-color: var(--primary);
@@ -1159,7 +1252,7 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 }
 .oc-ref { margin: clamp(18px, 3vw, 28px) 0 0; font-size: 16px; color: var(--primary); }
 .oc-ref strong { font-family: var(--font-head); font-size: 21px; letter-spacing: 0.02em; }
-.oc-lede { margin: 12px 0 0; max-width: 46ch; font-size: 15px; line-height: 1.6; color: #5c5751; }
+.oc-lede { margin: 12px 0 0; max-width: 46ch; font-size: 15px; line-height: 1.6; color: var(--muted); }
 .oc-grid { display: grid; gap: clamp(24px, 4vw, 48px); margin-top: clamp(30px, 5vw, 54px); align-items: start; }
 .oc-lines { list-style: none; margin: 0; padding: 0; }
 .oc-line { display: grid; grid-template-columns: 72px 1fr auto; gap: 13px; align-items: start; padding: 13px 0; border-bottom: 1px solid var(--line); }
@@ -1362,6 +1455,12 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 @media (min-width: 900px) {
   .pd-stage { min-height: 80vh; }
   .pd-opts { grid-template-columns: 1fr 1.15fr; gap: clamp(48px, 6vw, 96px); align-items: start; }
+  /* Colour is a short block beside a long one, so the left column used to end
+     at the swatches and leave ~540px of empty white beside Size/Strap/Handle/
+     Chain. Sticking it turns that into a rail and means the colourway stays
+     changeable while the rest of the configuration is being made, instead of
+     scrolling away the moment you start. */
+  .pd-opts > .pd-opt-block:first-child { position: sticky; top: clamp(88px, 12vh, 128px); }
   .pd-facts { grid-template-columns: 1fr 1fr; gap: 56px; }
 }
 
@@ -1379,15 +1478,46 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
    and proportion come from SHOP_RHYTHM, so the page composes identically every
    time. Pink and navy frame the experience; the product fields carry the
    colour. */
-.shopx-head { background: #ffe0fd; padding: clamp(64px, 12vh, 150px) clamp(20px, 4vw, 54px) clamp(34px, 6vh, 70px); }
+.shopx-head {
+  position: relative; background: #ffe0fd; overflow: hidden;
+  padding: clamp(56px, 10vh, 124px) clamp(20px, 4vw, 54px) clamp(34px, 6vh, 70px);
+}
 .shopx-kicker { margin: 0 0 20px; font-size: 11px; font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase; color: #143562; }
 .shopx-title {
   margin: 0; color: #143562; font-family: var(--font-head); font-weight: 600;
   font-variation-settings: "opsz" 144, "SOFT" 0;
   text-transform: uppercase; letter-spacing: -0.05em; line-height: 0.82;
-  font-size: clamp(40px, 8.5vw, 128px);
+  /* Was 8.5vw/128px, which filled the frame edge to edge and left the entry
+     with nowhere to put a product. It is still the largest thing here. */
+  font-size: clamp(38px, 6.4vw, 92px);
 }
-.shopx-sub { margin: clamp(20px, 3vh, 34px) 0 0; max-width: 34ch; color: #143562; opacity: 0.66; font-size: 14.5px; line-height: 1.6; }
+.shopx-sub {
+  margin: clamp(20px, 3vh, 34px) 0 0; max-width: 34ch; color: #143562;
+  /* 0.66 on pink is 2.9:1 — this is the line that states what the shop is
+     for, and it was the faintest thing on the page. */
+  opacity: 0.82; font-size: 14.5px; line-height: 1.6;
+}
+
+/* ---------- shop entry: claim left, one real object cropped right ---------- */
+.shopx-head-object { margin: 0; }
+.shopx-head-object img { display: block; width: 100%; height: auto; }
+@media (min-width: 861px) {
+  .shopx-head.has-object {
+    display: grid; grid-template-columns: 54fr 46fr; align-items: center;
+    gap: clamp(24px, 3vw, 56px); min-height: min(74vh, 680px);
+    padding-right: 0;
+  }
+  /* Bleeds past the right edge so the frame crops it, the same language the
+     homepage hero uses — the shop is a continuation of that composition, not
+     a new poster. */
+  .shopx-head-object { margin-right: -6vw; }
+}
+@media (max-width: 860px) {
+  /* On a phone the object sits under the claim at a calm size rather than
+     bleeding: there is no horizontal room to crop into. */
+  .shopx-head.has-object { padding-bottom: 0; }
+  .shopx-head-object { margin: clamp(26px, 4vh, 44px) -4vw -1px 6vw; }
+}
 
 .shopx { background: #ffffff; padding: clamp(26px, 5vh, 60px) clamp(12px, 2.4vw, 34px) clamp(70px, 12vh, 150px); }
 .shopx-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(10px, 1.6vw, 24px) clamp(10px, 1.6vw, 24px); align-items: start; }
@@ -1573,7 +1703,7 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 @media (min-width: 900px) { .adm-order-body { grid-template-columns: 1fr 1.3fr auto; gap: 32px; } }
 
 /* ---------- dev: hero type comparison (never reachable in production) ---------- */
-.tt { border-bottom: 1px solid #e6e0d8; }
+.tt { border-bottom: 1px solid var(--line); }
 .tt-label { margin: 0; padding: 14px 40px; font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #143562; background: #f6f3ef; }
 .tt-label em { font-style: normal; font-weight: 400; opacity: 0.6; text-transform: none; letter-spacing: 0; margin-left: 12px; }
 .tt-stage { position: relative; height: 560px; background: #ffe0fd; overflow: hidden; }
@@ -1587,13 +1717,24 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 .tt-cta { position: absolute; z-index: 3; left: 40px; bottom: 40px; color: #143562; font-family: var(--s), sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; border-bottom: 1.5px solid currentColor; padding-bottom: 8px; }
 
 /* ---------- colour swatches: the real bag, not a colour chip ---------- */
-.swatch-row { display: flex; flex-wrap: wrap; gap: clamp(10px, 1.2vw, 18px); }
+/* Sized by --n (the colourway count, set by ColourSelector) so the strip is
+   one deliberate line rather than whatever flex-wrap happens to produce.
+   Nova's six were wrapping 5 + 1 and the orphan read as a mistake. */
+.swatch-row {
+  display: grid; gap: clamp(10px, 1.2vw, 16px);
+  grid-template-columns: repeat(var(--n, 5), minmax(0, clamp(52px, 5.4vw, 80px)));
+  justify-content: start;
+}
+@media (max-width: 560px) {
+  /* 6 → 3+3, 5 → 3+2. Balanced rows, never a single stranded swatch. */
+  .swatch-row { grid-template-columns: repeat(min(var(--n, 3), 3), minmax(0, 1fr)); max-width: 300px; }
+}
 .csw {
   display: flex; flex-direction: column; align-items: center; gap: 9px;
   padding: 0; background: none; border: 0; cursor: pointer;
 }
 .csw-img {
-  display: block; width: clamp(56px, 5vw, 78px); aspect-ratio: 1 / 1;
+  display: block; width: 100%; aspect-ratio: 1 / 1;
   background: var(--pink); overflow: hidden; position: relative;
   box-shadow: inset 0 0 0 1px var(--line);
   transition: box-shadow 0.18s var(--ease-ui);
@@ -1601,7 +1742,7 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 .csw-img img { position: absolute; inset: 0; margin: auto; width: 84%; height: auto; }
 .csw-name {
   font-size: 10.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--muted); transition: color 0.18s ease;
+  color: var(--opt-idle); transition: color 0.18s ease;
 }
 .csw:hover .csw-img { box-shadow: inset 0 0 0 1px var(--navy); }
 .csw.is-on .csw-img { box-shadow: inset 0 0 0 2px var(--navy); }
@@ -1640,17 +1781,34 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 }
 .cart-line:last-child { border-bottom: 1px solid var(--line); }
 .cart-thumb {
-  width: clamp(110px, 13vw, 190px); height: auto; aspect-ratio: 1 / 1; flex: none;
+  /* The piece the customer just configured is the subject of this row, so it
+     gets the width a product deserves rather than a 110px thumbnail. */
+  width: clamp(130px, 16vw, 232px); height: auto; aspect-ratio: 1 / 1; flex: none;
   background: var(--pink); border-radius: 0;
   display: flex; align-items: center; justify-content: center; overflow: hidden;
 }
-.cart-thumb img { width: 84%; height: auto; object-fit: contain; }
+.cart-thumb img { width: 88%; height: auto; object-fit: contain; }
 .cart-line-name {
   font-family: var(--font-head); font-weight: 600; font-variation-settings: "opsz" 72;
   font-size: clamp(19px, 2vw, 26px); margin: 0 0 10px; color: var(--navy); letter-spacing: -0.02em;
 }
 .cart-line-price { font-family: var(--font-head); font-weight: 600; font-size: clamp(16px, 1.5vw, 21px); color: var(--navy); }
-.cart-line-opt { display: flex; flex-wrap: wrap; gap: 7px; margin: 0 0 14px; }
+
+/* ---------- what the customer chose, read as a spec not as tags ----------
+   Each choice was an outlined box on a grey fill — five of them stacked under
+   a product name is the generic ecommerce chip wall, and this is the one
+   place on the site where the customer's own decisions are read back to
+   them. A typographic spec instead: no boxes, no fills, the values set in
+   navy and separated by space rather than by borders. */
+.cart-line-opt {
+  display: flex; flex-wrap: wrap; column-gap: clamp(14px, 1.6vw, 24px); row-gap: 6px;
+  margin: 0 0 16px; padding: 0;
+}
+.cart-line-opt .tag {
+  background: none; box-shadow: none; padding: 0;
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--navy);
+}
 
 .cart-summary {
   background: var(--pink); color: var(--navy); border-radius: 0;
@@ -1680,23 +1838,55 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
   display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px;
   width: 100%; padding: 15px 0 15px 24px; min-height: 0;
   border: 0; border-bottom: 1px solid var(--line); border-radius: 0;
-  background: none; color: var(--muted); text-align: left; position: relative;
+  /* Was --muted (#6d7e99), which lands at 4.1:1 on white — under AA for
+     11.5px text, and it made every unchosen option look disabled. */
+  background: none; color: var(--opt-idle); text-align: left; position: relative;
   font-size: 11.5px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase;
   transition: color 0.18s var(--ease-ui);
 }
+/* The marker is ABSENT until chosen, rather than an empty outlined box that
+   read as an unticked checkbox on every row. Selection is a filled navy
+   square that scales in; nothing else on the row is a control shape. */
 .pd-buy .opt-chip::before,
 .pd-buy .pill::before {
-  content: ""; position: absolute; left: 0; top: 50%; width: 9px; height: 9px;
-  transform: translateY(-50%); box-shadow: inset 0 0 0 1px var(--line);
-  transition: background 0.18s var(--ease-ui), box-shadow 0.18s var(--ease-ui);
+  content: ""; position: absolute; left: 0; top: 50%; width: 10px; height: 10px;
+  transform: translateY(-50%) scale(0); background: var(--navy);
+  transition: transform 0.24s var(--ease-ui);
 }
 .pd-buy .opt-chip:hover:not(:disabled),
 .pd-buy .pill:hover { color: var(--navy); }
 .pd-buy .opt-chip.selected,
 .pd-buy .pill.selected { color: var(--navy); background: none; }
 .pd-buy .opt-chip.selected::before,
-.pd-buy .pill.selected::before { background: var(--navy); box-shadow: inset 0 0 0 1px var(--navy); }
-.pd-buy .opt-chip-delta { font-size: 10.5px; letter-spacing: 0.12em; opacity: 0.8; }
+.pd-buy .pill.selected::before { transform: translateY(-50%) scale(1); }
+.pd-buy .opt-chip-delta { font-size: 10.5px; letter-spacing: 0.12em; opacity: 0.85; }
+@media (prefers-reduced-motion: reduce) {
+  .pd-buy .opt-chip::before, .pd-buy .pill::before { transition: none; }
+}
+
+/* ---------- HANDLE: a product decision, not a utility row ----------
+   Nova ships as two different objects at one price. As the third of four
+   identical rows that choice was invisible, so it reads as a pair of blocks
+   the customer picks between — the only two-up control in the buy band.
+   Scoped to the handle group, so Strap/Chain/Size keep the quiet row
+   language and the band does not turn into a wall of boxes. */
+.pd-buy .opt-group-handle .chip-row {
+  grid-template-columns: 1fr 1fr; gap: 10px;
+  border-top: 0; margin-top: 12px;
+}
+.pd-buy .opt-group-handle .opt-chip {
+  display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end;
+  gap: 6px; min-height: clamp(72px, 9vh, 92px);
+  padding: 16px 16px 15px; border-bottom: 0;
+  box-shadow: inset 0 0 0 1px var(--line);
+  transition: box-shadow 0.2s var(--ease-ui), color 0.2s var(--ease-ui), background 0.2s var(--ease-ui);
+}
+.pd-buy .opt-group-handle .opt-chip::before { content: none; }
+.pd-buy .opt-group-handle .opt-chip:hover:not(:disabled) { box-shadow: inset 0 0 0 1px var(--navy); }
+.pd-buy .opt-group-handle .opt-chip.selected {
+  background: var(--navy); color: var(--pink); box-shadow: inset 0 0 0 1px var(--navy);
+}
+.pd-buy .opt-group-handle .opt-chip.selected .opt-chip-delta { color: var(--pink); }
 
 /* ---------- Add to Bag: an action, not a SaaS bar ---------- */
 .pd-buy .add-to-bag {
@@ -1737,8 +1927,15 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 .pd-object .pg-main:not(.is-cut) {
   display: block; width: 100%; height: clamp(340px, 64vh, 660px); overflow: hidden;
 }
+/* The crop was landing at 46%, which left a sliver of the handle clipped
+   against the header — a partial dark shape at the top edge that reads as a
+   broken image rather than as a crop. Measured: the source is 1440x983 at
+   this width and the window showed y187..763, cutting the handle mid-loop.
+   It now starts below the handle entirely, so the frame is the rim, the body
+   and the full fringe — one deliberate texture crop, no severed element. The
+   whole bag, handle included, is one thumbnail away directly underneath. */
 .pd-object .pg-main:not(.is-cut) .pg-img {
-  width: 100%; height: 100%; object-fit: cover; object-position: 50% 46%;
+  width: 100%; height: 100%; object-fit: cover; object-position: 50% 62%;
 }
 
 /* ---------- gallery thumbnails ---------- */
@@ -1826,6 +2023,30 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
   overflow: hidden; border-radius: 0;
 }
 .mc-stage img { width: 100%; height: 100%; object-fit: contain; display: block; }
+
+/* ---------- per-model art direction ----------
+   Four blocks that were pixel-identical read as one component repeated, not
+   as a collection. Two axes vary, and neither of them breaks the grid:
+
+   FRAME PROPORTION varies by ROW, never within one, so the two blocks sitting
+   beside each other still share a baseline and the footer keeps meeting a
+   straight edge (the reason they were uniform in the first place).
+
+   OBJECT SCALE varies by MODEL, which is where the personality actually goes:
+     Nova        structured and graphic — sits square in a generous field
+     Mini Luna   compact and sculptural — largest in frame, the arch gets air
+     Vault       quiet and architectural — smallest in frame, most space
+     Loco        movement and texture — the photograph itself, edge to edge
+
+   No copy changes: these are art direction, not customer-facing words. */
+@media (min-width: 760px) {
+  /* Row 2 is squarer than row 1, so the page has a change of rhythm halfway
+     down instead of four identical 4:3 windows. */
+  .mc-vault .mc-stage, .mc-loco .mc-stage { aspect-ratio: 5 / 4; }
+}
+.mc-nova .mc-stage { padding: clamp(22px, 3.6vw, 52px); }
+.mc-mini-luna .mc-stage { padding: clamp(10px, 1.8vw, 26px); }
+.mc-vault .mc-stage { padding: clamp(26px, 4.4vw, 64px); }
 /* A full photograph carries its own studio ground, so padding it inside the
    pink stage drew a pink frame around a white box. It bleeds instead; only
    cut-outs get breathing room. */
@@ -1868,6 +2089,28 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 .mc-way img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .mc-way.is-on { box-shadow: inset 0 0 0 2px var(--navy); }
 .mc-way:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+
+/* Keyboard users got a visible ring on the homepage collection swatches and
+   nowhere else — the product page's colour swatches, the option rows, the
+   quantity stepper and the editorial links all fell back to a UA default
+   that modern Chrome suppresses. One ring, every control. */
+.csw:focus-visible,
+.pd-buy .opt-chip:focus-visible,
+.pd-buy .pill:focus-visible,
+.qty-stepper button:focus-visible,
+.add-to-bag:focus-visible,
+.es-link:focus-visible,
+.ct-send:focus-visible,
+.mc-view:focus-visible,
+.shopx-all:focus-visible,
+.disc-opt:focus-visible,
+.pg-thumb:focus-visible {
+  outline: 2px solid var(--navy); outline-offset: 3px;
+}
+/* On the navy field the ring has to be pink to exist at all. */
+.ft a:focus-visible {
+  outline: 2px solid var(--pink); outline-offset: 3px;
+}
 
 .mc-foot {
   display: flex; align-items: baseline; justify-content: space-between;
