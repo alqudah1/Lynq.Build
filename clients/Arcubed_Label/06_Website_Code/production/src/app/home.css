@@ -13,6 +13,18 @@
    breathing space, never a replacement for either. */
 .home { --navy: #143562; --pink: #ffe0fd; --paper: #ffffff; }
 
+/* Scroll anchoring off, homepage only.
+   The document is ~865px tall in the first frames and ~6485px once the
+   stylesheet applies and the 440vh story resolves. Chrome's scroll anchoring
+   reacts to a height change that large by adjusting the offset to keep an
+   anchor node in place, and on a phone that landed the page at scrollY 53
+   (375x812) and 32 (390x844) on every reload — measured, repeatable, and the
+   only reason a reload did not begin at exactly the top once restoration was
+   fixed. Anchoring has nothing useful to do here anyway: the first four
+   viewports are one sticky stage whose content does not reflow. Scoped with
+   :has() so ordinary pages keep it. */
+body:has(.home) { overflow-anchor: none; }
+
 /* The site header is a sticky translucent bar everywhere else. On this page
    it has to read as part of the poster, so it sits ON the pink with no
    background and scrolls away with the composition. Scoped by :has() so no
@@ -100,10 +112,11 @@ body:has(.home) main { padding-top: 0; }
   .cust-rail li:nth-child(2), .cust-bag img:nth-child(2) { --w0: 0.27 !important; --w1: 0.42 !important; }
   .cust-rail li:nth-child(3), .cust-bag img:nth-child(3) { --w0: 0.42 !important; --w1: 0.57 !important; }
   .cust-rail li:nth-child(4), .cust-bag img:nth-child(4) { --w0: 0.57 !important; --w1: 0.72 !important; }
-  /* The last colourway holds to the end of the band rather than from 0.41. */
-  .cust-rail li:last-child { opacity: calc(0.58 + 0.42 * clamp(0, calc((var(--b-cust) - 0.72) * 14), 1)); }
-  .cust-rail li:last-child::after { width: calc(100% * clamp(0, calc((var(--b-cust) - 0.72) * 14), 1)); }
-  .cust-bag img:last-child { opacity: clamp(0, calc((var(--b-cust) - 0.72) * 14), 1); }
+  /* The fifth gets a window like the rest. The three rules that used to live
+     here restated the hold-to-the-end behaviour with 0.72 written into them;
+     the shared rules read --w0 now, so this one line replaces all of them and
+     there is exactly one place the phone's spacing is defined. */
+  .cust-rail li:nth-child(5), .cust-bag img:nth-child(5) { --w0: 0.72 !important; --w1: 0.87 !important; }
 }
 
 /* The default that hides the pink wordmark lives in globals.css, because
@@ -202,6 +215,13 @@ body:has(.home) main { padding-top: 0; }
     translateY(calc(var(--b-hero) * -2.2vh + var(--b-enter) * 4vh))
     scale(calc(1 + var(--b-enter) * 1.28 + var(--b-mat) * 0.85));
   transform-origin: 62% 46%;
+  /* Dissolves as the material wipes across it. The bag has no opacity of its
+     own during hero and enter — it grows into the material hand-off — but the
+     wipe now takes 69% of the material band rather than 38%, and without this
+     the scaled-up bag sat as a red wall in the un-wiped left third for the
+     whole transition. Gone by 62% of the band, just before the wipe lands, so
+     what the wipe uncovers is the pink stage rather than the outgoing hero. */
+  opacity: calc(1 - var(--b-mat) * 1.6);
 }
 .hero-bag img { width: 100%; height: auto; }
 
@@ -338,7 +358,13 @@ body:has(.home) main { padding-top: 0; }
      photograph. Edge to edge, the same crop reads as a background texture. */
   padding: clamp(26px, 6vh, 74px) clamp(20px, 4vw, 64px);
   gap: clamp(22px, 4vw, 68px);
-  clip-path: inset(0 0 0 calc(100% - min(1, var(--b-mat) * 2.6) * 100%));
+  /* The wipe used to finish at 1/2.6 = 38% of the band and then nothing in
+     this phase moved at all — measured at 44% active, 56% dead hold, on every
+     viewport. That is the "stuck" feeling: you keep scrolling and the frame
+     is already finished. At 1.45 it completes at ~69%, so the spread keeps
+     opening under the gesture, and the tail that remains is the reading beat
+     the section actually needs. */
+  clip-path: inset(0 0 0 calc(100% - min(1, var(--b-mat) * 1.45) * 100%));
 }
 .mat-img {
   position: relative; overflow: hidden; margin: 0; width: 100%;
@@ -347,7 +373,16 @@ body:has(.home) main { padding-top: 0; }
      `sizes` cannot describe, was the original softness. */
   aspect-ratio: 2522 / 1928;
 }
-.mat-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* A very slow push-in across the WHOLE band, so the held tail is still alive
+   rather than a frozen picture. 3% over the full phase — enough that a
+   gesture registers, far too little to read as an effect. Inside an
+   overflow:hidden box at a matched aspect ratio, so nothing reflows. */
+.mat-img img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  transform: scale(calc(1 + var(--b-mat) * 0.03));
+  transform-origin: 50% 50%;
+}
+@media (prefers-reduced-motion: reduce) { .mat-img img { transform: none; } }
 .mat-side {
   /* Top aligned with the photograph's top edge rather than floating at its
      centre, so the two columns share a baseline and read as one spread. */
@@ -537,8 +572,14 @@ body:has(.home) main { padding-top: 0; }
   transform: scale(calc(0.9 + 0.1 * clamp(0, min(calc((var(--b-cust) - var(--w0)) * 70), calc((var(--w1) - var(--b-cust)) * 70)), 1)));
 }
 .cust-sw img { position: absolute; inset: 0; margin: auto; width: 88%; height: auto; }
+/* The final colourway HOLDS to the end of the band instead of fading out, so
+   the frame the customer leaves on is a finished choice rather than an empty
+   stage. These three rules used to hardcode 0.41 — the old desktop start —
+   which silently disagreed with the phone's windows and would have drifted
+   again the moment the sequence was re-spaced. They read the element's own
+   --w0 now, so desktop and phone both follow whatever page.tsx sets. */
 .cust-rail li:last-child .cust-sw {
-  transform: scale(calc(0.9 + 0.1 * clamp(0, calc((var(--b-cust) - 0.41) * 70), 1)));
+  transform: scale(calc(0.9 + 0.1 * clamp(0, calc((var(--b-cust) - var(--w0)) * 70), 1)));
 }
 .cust-rail li:last-child { border-bottom: 1px solid rgba(20, 53, 98, 0.16); }
 /* A navy rule draws across the active name. */
@@ -546,8 +587,8 @@ body:has(.home) main { padding-top: 0; }
   content: ""; position: absolute; left: 0; bottom: -1px; height: 2px; background: var(--navy);
   width: calc(100% * clamp(0, min(calc((var(--b-cust) - var(--w0)) * 70), calc((var(--w1) - var(--b-cust)) * 70)), 1));
 }
-.cust-rail li:last-child { opacity: calc(0.58 + 0.42 * clamp(0, calc((var(--b-cust) - 0.41) * 70), 1)); }
-.cust-rail li:last-child::after { width: calc(100% * clamp(0, calc((var(--b-cust) - 0.41) * 70), 1)); }
+.cust-rail li:last-child { opacity: calc(0.58 + 0.42 * clamp(0, calc((var(--b-cust) - var(--w0)) * 70), 1)); }
+.cust-rail li:last-child::after { width: calc(100% * clamp(0, calc((var(--b-cust) - var(--w0)) * 70), 1)); }
 .cust-foot { margin: 0; max-width: 30ch; font-size: 12.5px; line-height: 1.65; color: var(--navy); opacity: 0.62; }
 
 .cust-bag { position: relative; aspect-ratio: 1.2 / 1; }
@@ -557,7 +598,7 @@ body:has(.home) main { padding-top: 0; }
   transform: translate(var(--tx, 0), var(--ty, 0)) scale(var(--s, 1));
   opacity: clamp(0, min(calc((var(--b-cust) - var(--w0)) * 70), calc((var(--w1) - var(--b-cust)) * 70)), 1);
 }
-.cust-bag img:last-child { opacity: clamp(0, calc((var(--b-cust) - 0.41) * 70), 1); }
+.cust-bag img:last-child { opacity: clamp(0, calc((var(--b-cust) - var(--w0)) * 70), 1); }
 
 @media (min-width: 860px) {
   .phase-cust { grid-template-columns: 38fr 62fr; }

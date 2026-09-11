@@ -86,10 +86,51 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             CSS hides content only under `.js`, so if JavaScript fails or is
             disabled the page renders fully visible instead of blank below the
             hero — which is exactly what happened before this existed. Inline
-            and synchronous on purpose: a deferred script would flash. */}
+            and synchronous on purpose: a deferred script would flash.
+
+            It also sets the scroll-restoration policy for the HOMEPAGE, and it
+            has to happen here rather than in a component: the browser restores
+            scroll during navigation, long before React hydrates, so anything
+            that runs later can only correct the position after it has already
+            been painted — which is the jump this is meant to remove.
+
+            THE BUG THIS FIXES. `history.scrollRestoration` defaults to `auto`,
+            so reloading the homepage put the visitor back where they were.
+            On an ordinary page that is correct and helpful. Here the first
+            240-440vh is a single sticky stage, so a restored offset does not
+            show the content you were reading — it shows one frame of a story
+            you never started, or, past the stage, the footer. Measured on a
+            production build: reloading at the bottom landed at scrollY 5673
+            (375x812) and 3693 (1440x900), phase `final`, hero off screen.
+            Whether it happened at all varied by viewport, which is why it
+            showed up as an intermittent "sometimes the footer loads first".
+
+            Back and Forward are left alone deliberately: restoring position is
+            what those gestures mean, and bfcache restores report the same
+            navigation type. Only `reload` and a fresh `navigate` are pinned to
+            the top. No timers, no scrollTo, no hiding the page: suppressing
+            the restore before it happens means there is nothing to correct
+            afterwards.
+
+            Restoration is handed back on `pagehide`, NOT on `load`. Chrome
+            does not always restore before the load event — when the document
+            is still growing (images, fonts) it retries afterwards, so a
+            handler that re-enabled `auto` at `load` re-armed restoration just
+            in time for that late attempt. That is what made the bug
+            intermittent: the same reload landed at scrollY 0 or at 4205
+            depending on which finished first. `pagehide` is after every
+            restore attempt for this document and before the entry is left, so
+            Back still restores normally on the way in. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: "document.documentElement.classList.add('js')",
+            __html:
+              "document.documentElement.classList.add('js');" +
+              "try{if(location.pathname==='/'&&'scrollRestoration' in history){" +
+              "var n=performance.getEntriesByType&&performance.getEntriesByType('navigation')[0];" +
+              "var t=n?n.type:(performance.navigation&&performance.navigation.type===2?'back_forward':'navigate');" +
+              "if(t!=='back_forward'){history.scrollRestoration='manual';" +
+              "addEventListener('pagehide',function(){try{history.scrollRestoration='auto'}catch(e){}},{once:true});" +
+              "}}}catch(e){}",
           }}
         />
       </head>

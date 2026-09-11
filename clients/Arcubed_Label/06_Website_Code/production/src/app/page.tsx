@@ -32,6 +32,30 @@ export const dynamic = "force-dynamic";
 const CUSTOM_COLOURS = ["Red", "Gold", "Silver", "Black", "Silver & Gold"];
 
 /**
+ * Where each colourway lives inside the customisation band.
+ *
+ * These were 0.17 + i*0.06 with a 0.06 width, which put all five colours
+ * between 0.17 and 0.47 of the band: on a desktop the whole sequence was over
+ * before the band was half done, and the remaining 53% was a static bag.
+ * Measured at 1440 and 1680, customisation animated for 44% of its band. It
+ * also meant a single wheel gesture could cross two colours.
+ *
+ * Spread across 0.08 to 0.94 instead, so each colourway owns roughly a fifth
+ * of the band and every gesture lands on a distinct colour. The phone keeps
+ * its own, wider spacing in home.css (a thumb flick covers more of the band
+ * than a wheel notch); these are the desktop numbers and the fallback.
+ *
+ * The last window's end is never read — the final colourway holds to the end
+ * of the band rather than fading out — but it is emitted for consistency.
+ */
+const CUST_SPAN = [0.08, 0.94] as const;
+function CUST_WINDOW(i: number): [string, string] {
+  const w = (CUST_SPAN[1] - CUST_SPAN[0]) / CUSTOM_COLOURS.length;
+  const a = CUST_SPAN[0] + i * w;
+  return [a.toFixed(3), (a + w).toFixed(3)];
+}
+
+/**
  * Per-frame alignment for the customisation sequence.
  *
  * These five are five separate photographs and they do NOT agree: Black's
@@ -377,8 +401,8 @@ export default async function HomePage() {
                 <li
                   key={cf.colour}
                   style={{
-                    ["--w0" as string]: (0.17 + i * 0.06).toFixed(3),
-                    ["--w1" as string]: (0.17 + i * 0.06 + 0.06).toFixed(3),
+                    ["--w0" as string]: CUST_WINDOW(i)[0],
+                    ["--w1" as string]: CUST_WINDOW(i)[1],
                   }}
                 >
                   {/* The same photographic swatch the shop and the product
@@ -417,8 +441,8 @@ export default async function HomePage() {
                 // transform, so it is declared above the resting width.
                 sizes="(max-width: 860px) 96vw, 66vw"
                 style={{
-                  ["--w0" as string]: (0.17 + i * 0.06).toFixed(3),
-                  ["--w1" as string]: (0.17 + i * 0.06 + 0.06).toFixed(3),
+                  ["--w0" as string]: CUST_WINDOW(i)[0],
+                  ["--w1" as string]: CUST_WINDOW(i)[1],
                   ["--s" as string]: FRAME_FIT[cf.colour]?.s ?? 1,
                   ["--tx" as string]: `${FRAME_FIT[cf.colour]?.tx ?? 0}%`,
                   ["--ty" as string]: `${FRAME_FIT[cf.colour]?.ty ?? 0}%`,

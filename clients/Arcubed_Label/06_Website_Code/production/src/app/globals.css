@@ -677,6 +677,37 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 }
 
 @keyframes edSkel { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+/* ==========================================================================
+   STREAMING PLACEHOLDER — the reason the footer used to load first
+   ==========================================================================
+   The homepage is `force-dynamic` and awaits getActiveBags(), so App Router
+   streams it: the shell (header + footer) is sent immediately and `main`
+   arrives in a later chunk. `loading.tsx` renders .ed-hero as the fallback —
+   and .ed-hero had NO CSS AT ALL, so it occupied zero height.
+
+   Measured on a production build at 1440x900: from 133ms to 623ms the whole
+   document was 900px tall and the footer sat at viewport y=78, directly under
+   the header. That is the "footer appears first" report — for half a second
+   the footer genuinely WAS the page. It also produced the single worst layout
+   shift on the site (CLS 0.7189, one shift, node FOOTER.ft) when the story
+   finally arrived and pushed it down.
+
+   The fallback now reserves a full viewport and carries the hero's actual
+   composition — pink field above, white product floor below, at the same 42%
+   split — so the first paint is the hero's shape rather than white, nothing
+   below the fold can climb into it, and the swap to the real hero is a change
+   of content inside an already-correct frame rather than a reflow. */
+.ed-hero {
+  position: relative; min-height: 100vh; min-height: 100svh;
+  background: var(--pink); overflow: hidden;
+}
+/* The white floor, matching .hero-floor's height so the horizon does not move
+   when the real hero replaces this. */
+.ed-skel-block {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 42%;
+  background: var(--paper);
+}
+
 @media (prefers-reduced-motion: reduce) { .ed-skel-block { animation: none; } }
 
 /* ---------- ready for delivery: editorial drop, not an inventory list ---------- */

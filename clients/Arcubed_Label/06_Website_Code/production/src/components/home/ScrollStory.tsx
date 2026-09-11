@@ -67,8 +67,14 @@ const MOBILE_BANDS: [string, number, number][] = [
   // The largest share on a phone by a clear margin. This is the only frame
   // where the customer sees a colour being chosen, and the sequence now runs
   // across the whole band rather than finishing in its first third.
-  ["--b-cust", 0.58, 0.88],
-  ["--b-final", 0.88, 1.0],
+  ["--b-cust", 0.58, 0.845],
+  // Was 0.88. At 768 (the 330vh tablet story) that left the closing frame
+  // 283px — 0.7 of a tablet gesture — so a single flick could carry the
+  // customer from the colour sequence past the campaign and into the
+  // collection without the frame ever being the thing on screen. 0.845 gives
+  // it 365px at 768 and 437px at 375, and costs customisation 0.3 of a
+  // gesture (2.6 -> 2.3), which is still inside the 2-3 the brief asks for.
+  ["--b-final", 0.845, 1.0],
 ];
 
 /** Must match the breakpoint the mobile story height is set at in home.css. */
