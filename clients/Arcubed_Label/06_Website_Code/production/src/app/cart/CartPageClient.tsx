@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useCart } from "@/lib/cart-context";
 import { money } from "@/lib/pricing";
 import { formatMoney } from "@/lib/site-settings";
@@ -24,14 +25,19 @@ export default function CartPageClient({
 
   if (cart.length === 0) {
     return (
-      <section className="section empty-state">
-        <p className="eyebrow center">Your Bag</p>
-        <h2 className="center">Nothing here yet.</h2>
-        <div className="center">
-          <Link className="btn btn-primary" href="/shop">
-            Shop the Collection
-          </Link>
+      /* An Arcubed moment rather than a dead end: a statement, a real bag on
+         the brand field, and a typographic way back. It used to be one
+         centred sentence on white with the footer filling the rest. */
+      <section className="es">
+        <div className="es-copy">
+          <p className="eyebrow">Your bag</p>
+          <p className="es-line">Nothing here yet.</p>
+          <p className="es-note">Every piece is crocheted after you choose it.</p>
+          <Link className="es-link" href="/shop">Shop the collection</Link>
         </div>
+        <figure className="es-art" aria-hidden="true">
+          <Image src="/media/DSC05792-tile-2600.webp" alt="" width={1400} height={916} sizes="(max-width: 760px) 88vw, (max-width: 1200px) 44vw, 40vw" />
+        </figure>
       </section>
     );
   }

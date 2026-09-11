@@ -197,7 +197,7 @@ body:has(.home) main { padding-top: 0; }
    white floor rather than being cropped by the viewport, so it reads as a
    product standing on a surface instead of a cut-out floating on colour. */
 .hero-bag {
-  position: absolute; z-index: 3; top: 17vh; right: 5vw; width: 46vw; margin: 0;
+  position: absolute; z-index: 3; top: 17vh; right: -7vw; width: 52vw; margin: 0;
   transform:
     translateY(calc(var(--b-hero) * -2.2vh + var(--b-enter) * 4vh))
     scale(calc(1 + var(--b-enter) * 1.28 + var(--b-mat) * 0.85));

@@ -75,7 +75,7 @@ export default function ContactForm() {
           <label htmlFor="c-email">Email</label>
           <input id="c-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
-        <div className="ct-row">
+        <div className="ct-row ct-row-select">
           <label htmlFor="c-topic">Topic</label>
           <select id="c-topic" value={topic} onChange={(e) => setTopic(e.target.value)}>
             {TOPICS.map((t) => <option key={t}>{t}</option>)}

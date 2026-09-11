@@ -449,11 +449,13 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 .page-copy { max-width: 62ch; font-size: 15.5px; line-height: 1.75; color: var(--muted); }
 .page-copy p + p { margin-top: 16px; }
 .faq-list { display: flex; flex-direction: column; max-width: 720px; }
-.faq-list details { border-top: 1px solid var(--line); padding: 20px 0; }
-.faq-list summary { cursor: pointer; font-family: var(--font-head); font-size: 17px; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.faq-list details { border-top: 1px solid var(--line); padding: clamp(20px, 2.4vh, 28px) 0; }
+.faq-list summary { cursor: pointer; font-family: var(--font-head); font-size: clamp(17px, 1.5vw, 21px); list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
 .faq-list summary::-webkit-details-marker { display: none; }
 .faq-list summary::after { content: "+"; font-size: 18px; font-weight: 400; color: var(--muted); flex: none; }
-.faq-list details[open] summary::after { content: "\2013"; }
+/* Minus sign, not an en dash: the brief rules out decorative dashes and
+   this one was rendering as the open state of every question. */
+.faq-list details[open] summary::after { content: "\2212"; }
 .faq-list p { font-size: 14.5px; color: var(--muted); margin: 14px 0 0; line-height: 1.7; max-width: 60ch; }
 
 .contact-form { display: flex; flex-direction: column; gap: 20px; max-width: 480px; }
@@ -998,13 +1000,33 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
   outline: none; border-bottom-color: var(--primary);
 }
 .ct-row textarea { resize: vertical; }
+/* Was the only pill on the site at border-radius 999px. It now speaks the
+   same language as Add to Bag: a square navy block that inverts to pink. */
 .ct-send {
-  margin-top: 8px; padding: 15px 30px; border-radius: 999px;
-  background: var(--primary); color: var(--blush);
-  font-size: 14px; font-weight: 600; letter-spacing: 0.03em; min-height: 44px;
-  transition: opacity 0.2s var(--ease-ui);
+  margin-top: 14px; padding: 18px 30px; border-radius: 0; width: 100%;
+  background: var(--navy); color: var(--pink);
+  font-size: 12px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase;
+  min-height: 52px;
+  transition: background 0.2s var(--ease-ui), color 0.2s var(--ease-ui), box-shadow 0.2s var(--ease-ui);
 }
-.ct-send:hover { opacity: 0.9; }
+.ct-send:hover:not(:disabled) {
+  background: var(--pink); color: var(--navy); box-shadow: inset 0 0 0 1px var(--navy);
+}
+.ct-send:disabled { opacity: 0.5; }
+
+/* The native select chevron was the last piece of default browser chrome on a
+   customer facing page. Square, hairline, with a typographic caret drawn in
+   the brand navy instead. */
+.ct-row.ct-row-select { position: relative; }
+.ct-row select {
+  appearance: none; -webkit-appearance: none;
+  border-radius: 0; padding-right: 28px; background-image: none;
+}
+.ct-row.ct-row-select::after {
+  content: ""; position: absolute; right: 6px; bottom: 18px; pointer-events: none;
+  width: 7px; height: 7px; border-right: 1px solid var(--navy); border-bottom: 1px solid var(--navy);
+  transform: rotate(45deg);
+}
 .ct-ig { margin: 22px 0 0; font-size: 14px; color: var(--muted); }
 .ct-ig a { color: var(--primary); border-bottom: 1px solid var(--primary); }
 @media (min-width: 860px) { .ct { grid-template-columns: 1.1fr 0.9fr; gap: 0; } }
@@ -1702,7 +1724,22 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 }
 .pd-stage:has(.pg-main:not(.is-cut)) .pd-object { width: 100%; max-width: none; }
 .pd-object .pg-main:not(.is-cut) { box-shadow: none; border-radius: 0; }
-.pd-object .pg-main:not(.is-cut) .pg-img { width: 100%; height: auto; }
+
+/* LOCO, and any other product with no usable cut-out, is the one page whose
+   hero is a photograph rather than an object on a field. It was letterboxed:
+   a wide studio frame with the bag small inside it and pink above and below,
+   which threw away the only thing that makes this bag distinctive, the
+   fringe. It now FILLS the stage and is cropped by it, and the crop is biased
+   downward so the fringe, not the empty seamless above the handle, is what
+   the height is spent on. */
+.pd-stage:has(.pg-main:not(.is-cut)) { padding-top: 0; padding-bottom: 0; }
+.pd-stage:has(.pg-main:not(.is-cut)) .product-media { width: 100%; }
+.pd-object .pg-main:not(.is-cut) {
+  display: block; width: 100%; height: clamp(340px, 64vh, 660px); overflow: hidden;
+}
+.pd-object .pg-main:not(.is-cut) .pg-img {
+  width: 100%; height: 100%; object-fit: cover; object-position: 50% 46%;
+}
 
 /* ---------- gallery thumbnails ---------- */
 .pg-thumbs { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
@@ -1848,3 +1885,70 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 @media (prefers-reduced-motion: reduce) {
   .mc-way { transition: none; }
 }
+
+
+/* ==========================================================================
+   FAQ
+   Was a small title over five rules on white, with the footer taking nearly
+   half the page. An editorial spread instead: the subject and one real
+   material photograph hold the left, the answers are grouped on the right.
+   ========================================================================== */
+.fq {
+  display: grid; grid-template-columns: 1fr;
+  gap: clamp(30px, 5vw, 72px);
+  padding: clamp(40px, 7vh, 96px) clamp(20px, 4vw, 56px) clamp(56px, 9vh, 120px);
+  align-items: start;
+}
+@media (min-width: 860px) {
+  .fq { grid-template-columns: 36fr 64fr; }
+  /* Holds while the answers scroll past it. */
+  .fq-side { position: sticky; top: clamp(90px, 12vh, 130px); }
+}
+.fq-title {
+  margin: 8px 0 0; color: var(--navy);
+  font-family: var(--font-head); font-weight: 600; font-variation-settings: "opsz" 96;
+  font-size: clamp(42px, 6vw, 86px); line-height: 0.96; letter-spacing: -0.035em;
+}
+.fq-crop {
+  margin: clamp(22px, 3.4vh, 36px) 0 0; overflow: hidden;
+  aspect-ratio: 1465 / 932;
+}
+.fq-crop img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fq-note { margin: 12px 0 0; font-size: 12px; color: var(--muted); }
+
+.fq-body { display: flex; flex-direction: column; gap: clamp(28px, 4vh, 48px); }
+.fq-group-label {
+  margin: 0 0 4px; color: var(--navy);
+  font-size: 11px; font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase;
+}
+.fq .faq-list { max-width: none; }
+
+/* ==========================================================================
+   EMPTY STATES (cart, checkout)
+   Both were one centred sentence on white with the footer taking the rest of
+   the page, which read as an error rather than as a moment in the store.
+   Pink field, a real bag, a statement, and a typographic way back.
+   ========================================================================== */
+.es {
+  display: grid; grid-template-columns: 1fr; align-items: center;
+  gap: clamp(26px, 4vw, 64px);
+  background: var(--pink); min-height: 76vh;
+  padding: clamp(52px, 10vh, 128px) clamp(20px, 4vw, 56px);
+}
+@media (min-width: 760px) { .es { grid-template-columns: 1fr 1fr; } }
+.es-copy { display: flex; flex-direction: column; align-items: flex-start; }
+.es-line {
+  margin: 10px 0 0; color: var(--navy);
+  font-family: var(--font-head); font-weight: 600; font-variation-settings: "opsz" 96;
+  font-size: clamp(36px, 5.4vw, 76px); line-height: 0.98; letter-spacing: -0.035em;
+}
+.es-note { margin: 14px 0 0; max-width: 40ch; font-size: 13px; color: var(--navy); opacity: 0.7; }
+/* A typographic link with a rule, never a filled button. */
+.es-link {
+  margin: clamp(22px, 3vh, 32px) 0 0; color: var(--navy);
+  font-size: 11.5px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase;
+  padding-bottom: 4px; border-bottom: 1px solid var(--navy);
+}
+.es-link:hover { opacity: 0.65; }
+.es-art { margin: 0; justify-self: center; width: min(520px, 92%); }
+.es-art img { width: 100%; height: auto; display: block; }

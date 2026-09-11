@@ -119,9 +119,16 @@ export default function CheckoutClient({
 
   if (cartCount === 0) {
     return (
-      <section className="co-empty">
-        <p className="co-empty-line">Nothing to check out yet.</p>
-        <Link className="ed-link" href="/shop">Shop the collection</Link>
+      <section className="es">
+        <div className="es-copy">
+          <p className="eyebrow">Checkout</p>
+          <p className="es-line">Nothing to check out yet.</p>
+          <p className="es-note">Pick a shape, choose a colour, and it is made for you.</p>
+          <Link className="es-link" href="/shop">Shop the collection</Link>
+        </div>
+        <figure className="es-art" aria-hidden="true">
+          <Image src="/media/DSC04874-tile-2600.webp" alt="" width={1400} height={1125} sizes="(max-width: 760px) 88vw, (max-width: 1200px) 44vw, 40vw" />
+        </figure>
       </section>
     );
   }

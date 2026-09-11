@@ -4,6 +4,7 @@
 // see getStoreSettings()/getShippingRules()/getReturnPolicies(). Do not
 // hardcode a specific lead time, rate, or return rule in this file again.
 
+import Image from "next/image";
 import { getStoreSettings, getShippingRules, getReturnPolicies } from "@/lib/repository";
 import { plainText } from "@/lib/site-settings";
 import { formatMoney } from "@/lib/site-settings";
@@ -49,32 +50,68 @@ export default async function FaqPage() {
 
   const shippingAnswer = shippingSentence(shippingRules);
 
-  const FAQS = [
-    { q: "How long does it take to receive my bag?", a: productionAnswer },
+  // Grouped so the page reads as three subjects rather than one undifferentiated
+  // list. The answers themselves are untouched and still come from the
+  // database; only their arrangement changed.
+  const GROUPS = [
     {
-      q: "Can I customize any bag?",
-      a: "Most styles offer colour, size, and, where relevant, strap, chain and two-tone choices in the customizer. Ready for Delivery items are already finished and don't go through the customizer — what you see is exactly what ships.",
+      label: "Ordering and making",
+      items: [
+        { q: "How long does it take to receive my bag?", a: productionAnswer },
+        {
+          q: "Can I customize any bag?",
+          a: "Most styles offer colour, size, and, where relevant, strap, chain and two-tone choices in the customizer. Ready for Delivery items are already finished and don't go through the customizer. What you see is exactly what ships.",
+        },
+      ],
     },
     {
-      q: "What are your bags made from?",
-      a: "100% cotton yarn, hand-crocheted. Spot clean and air dry to keep it looking its best.",
+      label: "Shipping",
+      items: [{ q: "What's your shipping policy?", a: shippingAnswer }],
     },
-    { q: "What's your shipping policy?", a: shippingAnswer },
-    { q: "What's your return/exchange policy?", a: returnAnswer(returnPolicies) },
+    {
+      label: "Material, care and returns",
+      items: [
+        {
+          q: "What are your bags made from?",
+          a: "100% cotton yarn, hand-crocheted. Spot clean and air dry to keep it looking its best.",
+        },
+        { q: "What's your return/exchange policy?", a: returnAnswer(returnPolicies) },
+      ],
+    },
   ];
 
   return (
-    <section className="section">
-      <div className="page-head">
+    <section className="fq">
+      {/* One real material photograph rather than decoration: the page was a
+          small title over five rules on white, with the footer taking nearly
+          half of it. */}
+      <div className="fq-side">
         <p className="eyebrow">FAQ</p>
-        <h1>Good to know.</h1>
+        <h1 className="fq-title">
+          Good
+          <br />
+          to know.
+        </h1>
+        <figure className="fq-crop">
+          <Image src="/media/macro-twotone.webp" alt="Close detail of silver and gold metallic ribbon yarn"
+                 width={1465} height={932} sizes="(max-width: 860px) 92vw, 34vw" />
+        </figure>
+        <p className="fq-note">Hand crocheted to order in Amman.</p>
       </div>
-      <div className="faq-list">
-        {FAQS.map((item) => (
-          <details key={item.q}>
-            <summary>{item.q}</summary>
-            <p>{item.a}</p>
-          </details>
+
+      <div className="fq-body">
+        {GROUPS.map((g) => (
+          <section className="fq-group" key={g.label}>
+            <h2 className="fq-group-label">{g.label}</h2>
+            <div className="faq-list">
+              {g.items.map((item) => (
+                <details key={item.q}>
+                  <summary>{item.q}</summary>
+                  <p>{item.a}</p>
+                </details>
+              ))}
+            </div>
+          </section>
         ))}
       </div>
     </section>
