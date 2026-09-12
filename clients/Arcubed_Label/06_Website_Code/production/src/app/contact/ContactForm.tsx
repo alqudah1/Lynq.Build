@@ -1,8 +1,10 @@
 "use client";
 
 // Messages are persisted to public.contact_inquiries via a validated server
-// action. No email provider is configured, so nothing here claims a message
-// was emailed — it says it was received, which is true.
+// action and read in the admin at /admin/inquiries. An email notification is
+// attempted after the row commits, but nothing here claims a message was
+// emailed — the confirmation says it was received, which is true whether or
+// not the notification credential is configured.
 // Instagram is the one confirmed contact channel; no phone or email is shown
 // because none has been confirmed.
 

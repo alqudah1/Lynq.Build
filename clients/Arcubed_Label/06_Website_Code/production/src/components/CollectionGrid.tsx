@@ -50,6 +50,35 @@ export default function CollectionGrid({
     })
     .filter((t): t is NonNullable<typeof t> => t !== null);
 
+  // CLOSE THE LAST ROW.
+  //
+  // SHOP_RHYTHM is a ten-tile cycle whose rows each sum to the full twelve
+  // columns, so it only lands flush when the collection is a multiple of ten.
+  // At sixteen the final tile took span 5 and left seven columns of empty
+  // white beside it, which reads as a missing product rather than as an
+  // ending. The last tile is widened to fill whatever its row has left, so the
+  // wall closes on a deliberate full-width frame at any collection size — and
+  // the ratio widens with it so the image is cropped cinematically rather than
+  // stretched. Only ever the last tile, and only when the row is short.
+  if (tiles.length) {
+    let used = 0;
+    for (const t of tiles) {
+      used = used + t.rhythm.span > 12 ? t.rhythm.span : used + t.rhythm.span;
+    }
+    const last = tiles[tiles.length - 1];
+    const remaining = 12 - (used - last.rhythm.span) - last.rhythm.span;
+    if (remaining > 0) {
+      const span = last.rhythm.span + remaining;
+      last.rhythm = {
+        ...last.rhythm,
+        span,
+        // A full-width closer gets a band; a partial one keeps a calmer crop.
+        ratio: span >= 10 ? "16 / 6" : span >= 8 ? "16 / 8" : last.rhythm.ratio,
+        feature: true,
+      };
+    }
+  }
+
   return (
     <ul className="shopx-grid">
       {tiles.map((t) => (
@@ -67,10 +96,16 @@ export default function CollectionGrid({
                 alt={t.alt}
                 width={1600}
                 height={Math.round(1600 / t.ratio)}
+                // Derived from the tile's own span rather than from the
+                // feature flag. The closing tile is widened at runtime to fill
+                // whatever its row has left, so a fixed 62vw under-declared it
+                // the moment it became a full-width band: measured a 1.17
+                // upscale on Nova Silver & Gold. Below 760 the grid is two
+                // columns, so a feature spans the viewport and everything else
+                // is half of it.
                 sizes={
-                  t.rhythm.feature
-                    ? "(max-width: 1080px) 100vw, 62vw"
-                    : "(max-width: 760px) 58vw, 42vw"
+                  `(max-width: 760px) ${t.rhythm.feature ? 100 : 50}vw, ` +
+                  `${Math.round((t.rhythm.span / 12) * 96)}vw`
                 }
                 className={t.asPhoto ? "shopx-photo" : "shopx-cut"}
               />

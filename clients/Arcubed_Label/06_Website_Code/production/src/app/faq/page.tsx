@@ -66,7 +66,17 @@ export default async function FaqPage() {
     },
     {
       label: "Shipping",
-      items: [{ q: "What's your shipping policy?", a: shippingAnswer }],
+      items: [
+        { q: "What's your shipping policy?", a: shippingAnswer },
+        {
+          // Nothing new is claimed here. Ready for Delivery is described in
+          // exactly these terms on /ready-for-delivery and in the customizer
+          // answer above; it was the one thing a customer had to assemble from
+          // two different answers to understand.
+          q: "What is Ready for Delivery?",
+          a: "Pieces that are already made, photographed exactly as they ship. You choose one as it is: there is no customizer, and no colour, size or fitting to pick. In Jordan they go out for next-day delivery instead of being made to order.",
+        },
+      ],
     },
     {
       label: "Material, care and returns",

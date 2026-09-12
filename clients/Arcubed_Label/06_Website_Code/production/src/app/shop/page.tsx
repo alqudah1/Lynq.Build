@@ -20,22 +20,33 @@ export const metadata = {
 };
 
 /**
- * The one object that opens the shop.
+ * The one image that opens the shop.
  *
- * Nothing is invented: the first colourway in this list that actually resolves
- * to photography is used, and if none of them do the entry simply renders
- * without an object rather than falling back to another bag's picture.
+ * Rose Gold Nova was chosen here earlier for a reason that did not survive
+ * contact with the page: it is a colourway the customer has not seen yet. At
+ * opener scale it is a warm metallic cut-out on a pale pink field, which is
+ * the lowest-contrast pairing in the archive, and the matte artefacts along
+ * the handle and the right edge are plainly visible once the object is 700px
+ * wide.
  *
- * Rose Gold leads because it appears nowhere else in the journey — the hero is
- * Red, the campaign frame is Olive / Silver / Silver & Gold — so arriving at
- * the shop shows a colour the customer has not been shown yet, which is the
- * page's whole claim.
+ * Compared at full size against the alternatives:
+ *   Nova Black      the strongest cut-out pairing, but it is already the
+ *                   feature tile further down this same page
+ *   Vault Olive     clean and well grounded, but it is the focal object of
+ *                   the homepage closing frame
+ *   Mini Luna Red   striking, and it is the homepage hero
+ *   Loco Brown      a PHOTOGRAPH, not a cut-out, so there is no matte to fail
+ *                   at scale; the fringe is the most distinctive texture the
+ *                   brand owns and nothing else on the site is close to it
+ *
+ * Loco. It is the one object that gets better the larger it is printed, and
+ * it opens the collection on something the homepage never shows.
  */
 const ENTRY_CAST: ReadonlyArray<readonly [string, string]> = [
-  ["nova", "Rose Gold"],
-  ["nova", "Champagne"],
-  ["mini luna", "Gold"],
-  ["nova", "Gold"],
+  ["loco", "Brown"],
+  ["vault", "Olive Green"],
+  ["nova", "Black"],
+  ["mini luna", "Red"],
 ];
 
 export default async function ShopPage() {
@@ -80,7 +91,10 @@ export default async function ShopPage() {
               alt={altFor(entry.bag, entry.colour)}
               width={1400}
               height={Math.round(1400 / entry.frame.ratio)}
-              sizes="(max-width: 860px) 86vw, 46vw"
+              // The opener bleeds edge to edge below 861 and fills the
+              // 54fr column above it. 86vw under-declared the mobile band by
+              // a whole gutter: measured a 1.16 upscale at 375 and 768.
+              sizes="(max-width: 860px) 100vw, 56vw"
               preload
             />
           </figure>

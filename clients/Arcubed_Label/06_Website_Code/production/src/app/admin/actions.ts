@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { issueSession, isAdmin, ADMIN_COOKIE, ADMIN_MAX_AGE } from "@/lib/admin-auth";
 import { updateOrderStatus } from "@/lib/orders";
+import { updateInquiryStatus } from "@/lib/inquiries";
 
 export async function signIn(_prev: { error?: string } | undefined, formData: FormData) {
   const pass = String(formData.get("passphrase") ?? "");
@@ -35,4 +36,14 @@ export async function setStatus(formData: FormData) {
   const payment = (formData.get("paymentStatus") as string) || null;
   await updateOrderStatus(id, status, payment);
   redirect("/admin/orders");
+}
+
+export async function setInquiryStatus(formData: FormData) {
+  // Same rule as setStatus: a Server Action is its own endpoint and re-checks
+  // the session itself rather than trusting the proxy that gated the page.
+  if (!(await isAdmin())) redirect("/admin");
+  const id = String(formData.get("inquiryId") ?? "");
+  const status = String(formData.get("status") ?? "");
+  await updateInquiryStatus(id, status);
+  redirect("/admin/inquiries");
 }

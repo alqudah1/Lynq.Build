@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { isAdmin } from "@/lib/admin-auth";
 import { listOrders, ORDER_STATUSES, PAYMENT_STATUSES } from "@/lib/orders";
 import { formatMoney } from "@/lib/site-settings";
@@ -27,6 +28,11 @@ export default async function AdminOrdersPage() {
           <button type="submit" className="adm-signout">Sign out</button>
         </form>
       </header>
+
+      <nav className="adm-tabs" aria-label="Admin sections">
+        <Link href="/admin/orders" aria-current="page">Orders</Link>
+        <Link href="/admin/inquiries">Enquiries</Link>
+      </nav>
 
       {orders.length === 0 ? (
         <p className="adm-note">No orders yet. New orders appear here as soon as a customer places one.</p>

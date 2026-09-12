@@ -6,27 +6,35 @@
  * Shared by the homepage collection and the Shop so the two can never drift
  * apart on which colourways exist or what field each one sits on.
  *
- * FIELDS are the brand pink. Every one of them.
+ * FIELDS are a CONTROLLED four-value system, assigned per product for
+ * contrast. Not one flat colour, and not the sixteen hand-picked hues before
+ * that.
  *
- * They used to be sixteen individually art-directed colours — #8fa5b8,
- * #8d9b7a, #d9d3cc, #c07f5f, #b8a0c0, #e3c98a and so on: blue-greys, olives,
- * terracottas, mauves and tans. They were chosen carefully against each bag
- * and they were still wrong, because this is the largest surface on the site
- * and none of those colours are Arcubed's. The palette is navy, pale pink and
- * white; product photography is allowed to introduce gold, silver, red, olive
- * and burgundy, and several of those fields were exactly the beige the brand
- * is defined against. Stacked full-width on a phone the Shop read as a column
- * of unrelated coloured panels rather than as one label's collection.
+ * The first version of this file gave every tile its own colour — #8fa5b8,
+ * #8d9b7a, #d9d3cc, #c07f5f, #b8a0c0, #e3c98a and so on. Blue-greys, olives,
+ * terracottas, tans. Off-palette, and several of them the beige the brand is
+ * defined against. The correction was to put all sixteen on the brand pink,
+ * which fixed the palette and introduced a new problem: sixteen identical
+ * pink boxes read as flat and repetitive, and pink under a red or a burgundy
+ * bag is nearly the same hue, so the product stopped separating from its own
+ * ground.
  *
- * On one pink field the only colour in the wall is the PRODUCT, which is the
- * point of a colourway grid, and the tiles now match the photographic swatches
- * on the product pages, which have always sat on pink. Navy is still not an
- * option here: the cut-outs carry a soft studio matte that reads as a glow on
- * a dark ground.
+ * Four values, all navy/pink/white derived, chosen so the BAG looks good:
  *
- * Kept as a per-entry field rather than hardcoded in the components so a
- * future art direction can vary it again deliberately.
- */
+ *   PINK   #ffe0fd  the brand field. Under dark objects — black, olive,
+ *                   dark brown — where it gives the most separation.
+ *   BLUSH  #fff2fe  pink at a quarter strength. A warm ground under the cool
+ *                   metallics, silver and silver & gold.
+ *   MIST   #eef1f7  navy at 6%. A cool ground under the warm metallics, gold,
+ *                   champagne and rose gold, which is where a pink field went
+ *                   muddy and a warm field disappeared.
+ *   SNOW   #f8f5f9  near-white with a pink cast. For reds and burgundies,
+ *                   which sit too close to pink in hue to separate from it,
+ *                   and still reads as a tile against the white page.
+ *
+ * Navy is not in the set: the cut-outs carry a soft studio matte that reads as
+ * a glow on a dark ground. No beige, no third hue family, nothing outside
+ * navy/pink/white. */
 export interface CollectionEntry {
   slug: string;
   product: string;
@@ -37,29 +45,29 @@ export interface CollectionEntry {
 }
 
 export const COLLECTION: CollectionEntry[] = [
-  { slug: "nova", product: "Nova", colour: "Gold", field: "#ffe0fd" },
-  { slug: "mini-luna", product: "Mini Luna", colour: "Red", field: "#ffe0fd" },
+  { slug: "nova", product: "Nova", colour: "Gold", field: "#eef1f7" },
+  { slug: "mini-luna", product: "Mini Luna", colour: "Red", field: "#f8f5f9" },
   { slug: "vault", product: "Vault", colour: "Olive Green", field: "#ffe0fd" },
   { slug: "nova", product: "Nova", colour: "Black", field: "#ffe0fd" },
 
-  { slug: "mini-luna", product: "Mini Luna", colour: "Silver", field: "#ffe0fd" },
+  { slug: "mini-luna", product: "Mini Luna", colour: "Silver", field: "#fff2fe" },
   // Full photograph: this matte traps a patch of seamless inside the hand slot
   // that is connected to the region running round the bag, so it cannot be
   // lifted as an enclosed patch, and the threshold that would catch it starts
   // erasing the silver bags. An honest photographic tile beats a white hole.
-  { slug: "vault", product: "Vault", colour: "Brown", field: "#ffe0fd", forcePhoto: true },
-  { slug: "nova", product: "Nova", colour: "Champagne", field: "#ffe0fd" },
+  { slug: "vault", product: "Vault", colour: "Brown", field: "#f8f5f9", forcePhoto: true },
+  { slug: "nova", product: "Nova", colour: "Champagne", field: "#eef1f7" },
   { slug: "loco", product: "Loco", colour: "Brown", field: "#ffe0fd" },
 
-  { slug: "mini-luna", product: "Mini Luna", colour: "Gold", field: "#ffe0fd" },
-  { slug: "nova", product: "Nova", colour: "Silver", field: "#ffe0fd" },
-  { slug: "loco", product: "Loco", colour: "Burgundy", field: "#ffe0fd" },
+  { slug: "mini-luna", product: "Mini Luna", colour: "Gold", field: "#eef1f7" },
+  { slug: "nova", product: "Nova", colour: "Silver", field: "#fff2fe" },
+  { slug: "loco", product: "Loco", colour: "Burgundy", field: "#f8f5f9" },
   { slug: "vault", product: "Vault", colour: "Light Brown", field: "#ffe0fd" },
 
   { slug: "mini-luna", product: "Mini Luna", colour: "Black", field: "#ffe0fd" },
-  { slug: "nova", product: "Nova", colour: "Rose Gold", field: "#ffe0fd" },
-  { slug: "mini-luna", product: "Mini Luna", colour: "Silver & Gold", field: "#ffe0fd" },
-  { slug: "nova", product: "Nova", colour: "Silver & Gold", field: "#ffe0fd" },
+  { slug: "nova", product: "Nova", colour: "Rose Gold", field: "#eef1f7" },
+  { slug: "mini-luna", product: "Mini Luna", colour: "Silver & Gold", field: "#fff2fe" },
+  { slug: "nova", product: "Nova", colour: "Silver & Gold", field: "#eef1f7" },
 ];
 
 /**
