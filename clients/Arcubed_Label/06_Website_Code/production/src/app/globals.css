@@ -1023,10 +1023,40 @@ html { overflow-anchor: none; }
    ABOUT
    ========================================================================== */
 .ab-open {
-  padding: clamp(48px, 8vw, 110px) clamp(16px, 4vw, 54px) clamp(28px, 4vw, 54px);
+  background: var(--pink);
+  padding: clamp(48px, 8vw, 110px) clamp(16px, 4vw, 54px) clamp(30px, 4.5vw, 60px);
   display: grid; gap: clamp(22px, 3vw, 48px); align-items: end;
 }
-@media (min-width: 860px) { .ab-open { grid-template-columns: 58fr 42fr; } }
+@media (min-width: 860px) {
+  .ab-open { grid-template-columns: 58fr 42fr; }
+  /* The band runs the full width of the grid BUT stays inside the section
+     padding, so pink frames it on every side. Bleeding it edge to edge is
+     what made it read as flooring. */
+  .ab-band { grid-column: 1 / -1; }
+}
+.ab-band { margin: clamp(6px, 1.4vw, 18px) 0 0; }
+.ab-band-img {
+  width: 100%; height: clamp(150px, 22vw, 300px); object-fit: cover; display: block;
+  /* Off centre. Dead centre put the crop on the flattest part of the swatch. */
+  object-position: 62% 38%;
+}
+/* Navy, small, letterspaced. A caption, so a photograph reads as something the
+   page placed rather than as a background that leaked in. */
+.ab-cap {
+  margin: 10px 0 0; color: var(--navy); font-size: 10.5px; font-weight: 600;
+  letter-spacing: 0.2em; text-transform: uppercase; opacity: 0.72;
+}
+/* THE PINK PLATE.
+   Every product photograph on this page is shot on a warm seamless. That
+   cream cannot be tinted (it would be a lie about the picture) and it cannot
+   be cut out (that is the floating-PNG look). Setting the photograph on a
+   pink plate, inset unevenly with the deeper margin at the foot, makes the
+   cream read as a chosen inset. */
+.ab-plate {
+  margin: 0; background: var(--pink);
+  padding: clamp(16px, 2.2vw, 30px) clamp(16px, 2.2vw, 30px) clamp(14px, 1.8vw, 22px);
+}
+.ab-plate img { width: 100%; height: auto; display: block; }
 .ab-title {
   font-family: var(--font-head); font-weight: 400;
   /* Was 15vw/190px — a slab that filled the width and forced the rest of the
@@ -1046,19 +1076,25 @@ html { overflow-anchor: none; }
   padding-bottom: 7px; border-bottom: 1px solid var(--line);
 }
 .ab-lede { margin: clamp(20px, 3vw, 34px) 0 0; max-width: 42ch; font-size: 16px; line-height: 1.6; color: var(--muted); }
-.ab-wide-img { width: 100%; height: clamp(220px, 34vw, 460px); object-fit: cover; display: block; }
 .ab-two { padding: clamp(48px, 7vw, 100px) clamp(16px, 4vw, 54px); display: grid; gap: clamp(24px, 4vw, 54px); align-items: center; }
 .ab-h2 { font-family: var(--font-head); font-weight: 400; font-size: clamp(28px, 4.4vw, 56px); line-height: 1.02; letter-spacing: -0.03em; color: var(--primary); margin: 0; }
 .ab-p { margin: 18px 0 0; font-size: 15.5px; line-height: 1.65; color: var(--muted); max-width: 44ch; }
-.ab-two-img img { width: 100%; height: auto; display: block; }
-.ab-three { padding: 0 clamp(16px, 4vw, 54px) clamp(48px, 7vw, 100px); display: grid; gap: clamp(16px, 2.5vw, 32px); align-items: center; }
-.ab-three img { width: 100%; height: auto; display: block; }
+.ab-split {
+  padding: 0 clamp(16px, 4vw, 54px) clamp(48px, 7vw, 100px);
+  display: grid; gap: clamp(24px, 4vw, 60px); align-items: center;
+}
 .ab-big {
   font-family: var(--font-head); font-weight: 400;
   font-size: clamp(28px, 4.6vw, 60px); line-height: 0.95; letter-spacing: -0.035em;
-  color: var(--primary); margin: 0; text-align: center;
+  color: var(--primary); margin: 0;
 }
-.ab-end { padding: 0 clamp(16px, 4vw, 54px) clamp(60px, 9vw, 120px); text-align: center; }
+.ab-split-copy .ab-p { margin-top: clamp(18px, 2.4vw, 26px); }
+.ab-split-copy .ed-link { margin-top: 22px; display: inline-block; }
+.ab-end {
+  background: var(--pink);
+  padding: clamp(56px, 8vw, 104px) clamp(16px, 4vw, 54px);
+  text-align: center;
+}
 /* Centred is right on desktop, where both of these sit in the middle column
    of a three-up. Stacked on a phone they were the only centred blocks on an
    otherwise left-aligned page, which is what made About read as two different
@@ -1066,15 +1102,18 @@ html { overflow-anchor: none; }
 @media (max-width: 859px) {
   .ab-end { text-align: left; }
   .ab-end-line { margin-left: 0; margin-right: 0; }
-  .ab-big { text-align: left; }
 }
 .ab-end-line {
   font-family: var(--font-head); font-size: clamp(24px, 3.6vw, 44px); line-height: 1.1;
   letter-spacing: -0.02em; color: var(--primary); margin: 0 auto 22px; max-width: 20ch;
 }
 @media (min-width: 860px) {
-  .ab-two { grid-template-columns: 1fr 1fr; }
-  .ab-three { grid-template-columns: 1fr 1fr 1fr; }
+  /* Alternating lead. The copy holds the left in ab-two and the picture holds
+     it in ab-split, so the page reads as a composition rather than as the same
+     row twice. Neither is an even split: the side carrying the picture is
+     wider, which is what stops the plate looking like a thumbnail. */
+  .ab-two { grid-template-columns: 47fr 53fr; }
+  .ab-split { grid-template-columns: 54fr 46fr; }
 }
 
 /* ==========================================================================
@@ -1557,10 +1596,15 @@ html { overflow-anchor: none; }
 .shopx-head-object { margin: 0; }
 .shopx-head-object img { display: block; width: 100%; height: 100%; object-fit: cover; }
 @media (min-width: 861px) {
+  /* The panel is shaped to the PHOTOGRAPH. At 54fr and 640px tall it came out
+     nearly square against a 1.465 image, and object-fit cover answered that by
+     throwing away a quarter of the width: the shop opened on a wall of fringe
+     with the bag's silhouette cropped off both sides. Wider column, shorter
+     section, and the crop drops to single figures. */
   .shopx-head.has-object {
-    display: grid; grid-template-columns: 46fr 54fr; align-items: center;
+    display: grid; grid-template-columns: 42fr 58fr; align-items: center;
     gap: clamp(24px, 3vw, 56px);
-    min-height: min(72vh, 640px);
+    min-height: min(66vh, 580px);
     padding-right: 0; padding-top: 0; padding-bottom: 0;
   }
   .shopx-head.has-object .shopx-head-copy { padding: clamp(40px, 6vh, 72px) 0; }
@@ -1580,12 +1624,29 @@ html { overflow-anchor: none; }
 
 .shopx { background: #ffffff; padding: clamp(26px, 5vh, 60px) clamp(12px, 2.4vw, 34px) clamp(70px, 12vh, 150px); }
 .shopx-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(10px, 1.6vw, 24px) clamp(10px, 1.6vw, 24px); align-items: start; }
+/* PHONE FIRST, AND A DIFFERENT COMPOSITION.
+   The twelve-column --ar values belong to the desktop rhythm. Applying them to
+   a two-column phone grid gave every row two different heights and a staircase
+   of half-empty rows. Here every tile is the same shape, and the only cells
+   that break the pair are the ones CollectionGrid promoted, which it only ever
+   does at the start of a row.
+
+   That shape is 4/3, not a square, for the same reason SHOP_RHYTHM has no
+   square left in it: at 1/1 both Loco photographs lost a third of their width
+   and came back as a band of fringe. 4/3 costs them nine percent. */
 .shopx-cell { grid-column: span 1; }
-.shopx-cell.is-feature { grid-column: span 2; }
+.shopx-cell.is-mfull { grid-column: span 2; --ar-m: 16 / 9; }
 .shopx-link { display: block; }
-.shopx-field { position: relative; display: block; aspect-ratio: var(--ar, 1 / 1); overflow: hidden; background: var(--pink); }
+.shopx-field { position: relative; display: block; aspect-ratio: var(--ar-m, 4 / 3); overflow: hidden; background: var(--pink); }
 .shopx-field img { position: absolute; inset: 0; margin: auto; display: block; transition: transform 0.55s var(--ease-ui); }
-.shopx-cut { width: 76%; height: auto; max-height: 80%; object-fit: contain; }
+/* --fs / --fx / --fy come from COLOUR_FIT in src/lib/collection.ts, measured
+   per colourway. The transform is on top of the shared sizing, so the layout
+   box is unchanged and only the rendered object moves. */
+.shopx-cut {
+  width: 76%; height: auto; max-height: 80%; object-fit: contain;
+  transform: translate(var(--fx, 0), var(--fy, 0)) scale(var(--fs, 1));
+  transform-origin: 50% 50%;
+}
 .shopx-photo { width: 100%; height: 100%; object-fit: cover; }
 .shopx-link:hover img { transform: scale(1.04); }
 .shopx-view {
@@ -1605,7 +1666,10 @@ html { overflow-anchor: none; }
 @media (min-width: 760px) {
   .shopx-grid { grid-template-columns: repeat(12, 1fr); }
   .shopx-cell { grid-column: span var(--span); }
-  .shopx-cell.is-feature { grid-column: span var(--span); }
+  .shopx-cell.is-feature,
+  .shopx-cell.is-mfull { grid-column: span var(--span); }
+  /* Back to the composed rhythm, and the phone promotion stops applying. */
+  .shopx-field { aspect-ratio: var(--ar, 1 / 1); }
   .shopx-meta { grid-template-columns: auto 1fr auto; }
   .shopx-name { grid-column: 1; }
   .shopx-colour { grid-column: 2; grid-row: 1; }
@@ -2149,6 +2213,14 @@ html { overflow-anchor: none; }
   overflow: hidden; border-radius: 0;
 }
 .mc-stage img { width: 100%; height: 100%; object-fit: contain; display: block; }
+/* The model block carries the same measured fit as the wall, at a gentler
+   amount: its stage already has generous padding, so the full correction
+   would push the larger bags into the edges. */
+.mc-cut {
+  transform: translate(calc(var(--fx, 0) * 0.6), calc(var(--fy, 0) * 0.6))
+             scale(calc(1 + (var(--fs, 1) - 1) * 0.7));
+  transform-origin: 50% 50%;
+}
 
 /* ---------- per-model art direction ----------
    Four blocks that were pixel-identical read as one component repeated, not

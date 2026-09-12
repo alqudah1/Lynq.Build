@@ -7,7 +7,7 @@
 
 import Image from "next/image";
 import { getActiveBags } from "@/lib/repository";
-import { framesForColour, tileSrc, altFor } from "@/lib/product-media";
+import { framesForColour, altFor } from "@/lib/product-media";
 import CollectionGrid from "@/components/CollectionGrid";
 import ModelCollection from "@/components/ModelCollection";
 import ShopDiscovery from "@/components/ShopDiscovery";
@@ -86,14 +86,21 @@ export default async function ShopPage() {
         </div>
         {entry ? (
           <figure className="shopx-head-object">
+            {/* The PHOTOGRAPH, not the cut-out. The panel is object-fit
+                cover, and a cut-out carries transparent margin, so cover was
+                zooming past the margin and into the bag: the shop opened on a
+                wall of fringe with no product legible in it. The cut-out also
+                sits on the same pink as the copy beside it, which is the
+                floating-PNG look this composition exists to replace. */}
             <Image
-              src={tileSrc(entry.frame)}
+              src={entry.frame.photo}
               alt={altFor(entry.bag, entry.colour)}
               width={1400}
               height={Math.round(1400 / entry.frame.ratio)}
               // The opener bleeds edge to edge below 861 and fills the
-              // 54fr column above it. 86vw under-declared the mobile band by
-              // a whole gutter: measured a 1.16 upscale at 375 and 768.
+              // 58fr column above it, which measures 54vw at 1440. 86vw
+              // under-declared the mobile band by a whole gutter: measured a
+              // 1.16 upscale at 375 and 768.
               sizes="(max-width: 860px) 100vw, 56vw"
               preload
             />

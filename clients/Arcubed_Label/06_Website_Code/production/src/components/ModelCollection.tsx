@@ -20,10 +20,11 @@ import Image from "next/image";
 import type { Bag } from "@/lib/types";
 import { money } from "@/lib/pricing";
 import { framesForColour, tileSrc, altFor } from "@/lib/product-media";
-import { COLLECTION } from "@/lib/collection";
+import { COLLECTION, colourFit } from "@/lib/collection";
 import { variantHref } from "@/lib/variant";
 
-type Way = { colour: string; field: string; src: string; ratio: number; alt: string; href: string; photo: boolean };
+type Way = { colour: string; field: string; src: string; ratio: number; alt: string; href: string; photo: boolean;
+  fit?: { s: number; tx?: number; ty?: number } };
 
 export default function ModelCollection({ bags }: { bags: Bag[] }) {
   const bySlug = new Map(bags.map((b) => [b.slug, b]));
@@ -49,6 +50,9 @@ export default function ModelCollection({ bags }: { bags: Bag[] }) {
       alt: altFor(bag, e.colour),
       href: variantHref(bag.slug, e.colour),
       photo,
+      // Same measured fit the colourway wall uses, so a bag does not change
+      // size between the model block and the tile below it.
+      fit: colourFit(e.slug, e.colour),
     });
   }
 
@@ -122,6 +126,15 @@ function ModelBlock({ product, bag, ways }: { product: string; bag: Bag; ways: W
           // Vault tile to a 1.13 upscale. 100vw picks the next candidate up.
           sizes="(max-width: 700px) 100vw, (max-width: 1080px) 48vw, 46vw"
           className={on.photo ? "mc-photo" : "mc-cut"}
+          style={
+            on.photo || !on.fit
+              ? undefined
+              : {
+                  ["--fs" as string]: on.fit.s,
+                  ["--fx" as string]: `${on.fit.tx ?? 0}%`,
+                  ["--fy" as string]: `${on.fit.ty ?? 0}%`,
+                }
+          }
         />
       </Link>
 
