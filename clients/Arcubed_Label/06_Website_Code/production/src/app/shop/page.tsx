@@ -88,8 +88,18 @@ export default async function ShopPage() {
       </section>
 
       {/* Shapes first, so the relationship between model and colour is the
-          first thing the page states. */}
+          first thing the page states.
+
+          The heading is not decoration. This section had none, so the page ran
+          entry -> four products -> "Every colourway" -> sixteen products, and
+          the second half read as the first half repeated rather than as a
+          different way in. Naming both halves is what makes it two deliberate
+          routes: by shape, or by colour. */}
       <section className="shopx shopx-models">
+        <div className="shopx-preview-head">
+          <h2 className="shopx-kicker">Four shapes</h2>
+          <p className="shopx-headnote">Every colour each one comes in</p>
+        </div>
         <ModelCollection bags={bags} />
       </section>
 

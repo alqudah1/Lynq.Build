@@ -6,12 +6,26 @@
  * Shared by the homepage collection and the Shop so the two can never drift
  * apart on which colourways exist or what field each one sits on.
  *
- * FIELDS are art-directed as a whole, not chosen per tile: each row alternates
- * warm and cool, neighbours never share a hue family in either direction, and
- * every field is picked against its own bag (cool grounds under the golds,
- * warm grounds under the silvers and blacks). They are all light to mid tone —
- * the cut-outs carry a soft studio matte that reads as a glow on a dark
- * ground, which is why nothing here sits on navy.
+ * FIELDS are the brand pink. Every one of them.
+ *
+ * They used to be sixteen individually art-directed colours — #8fa5b8,
+ * #8d9b7a, #d9d3cc, #c07f5f, #b8a0c0, #e3c98a and so on: blue-greys, olives,
+ * terracottas, mauves and tans. They were chosen carefully against each bag
+ * and they were still wrong, because this is the largest surface on the site
+ * and none of those colours are Arcubed's. The palette is navy, pale pink and
+ * white; product photography is allowed to introduce gold, silver, red, olive
+ * and burgundy, and several of those fields were exactly the beige the brand
+ * is defined against. Stacked full-width on a phone the Shop read as a column
+ * of unrelated coloured panels rather than as one label's collection.
+ *
+ * On one pink field the only colour in the wall is the PRODUCT, which is the
+ * point of a colourway grid, and the tiles now match the photographic swatches
+ * on the product pages, which have always sat on pink. Navy is still not an
+ * option here: the cut-outs carry a soft studio matte that reads as a glow on
+ * a dark ground.
+ *
+ * Kept as a per-entry field rather than hardcoded in the components so a
+ * future art direction can vary it again deliberately.
  */
 export interface CollectionEntry {
   slug: string;
@@ -23,29 +37,29 @@ export interface CollectionEntry {
 }
 
 export const COLLECTION: CollectionEntry[] = [
-  { slug: "nova", product: "Nova", colour: "Gold", field: "#8fa5b8" },
-  { slug: "mini-luna", product: "Mini Luna", colour: "Red", field: "#8d9b7a" },
-  { slug: "vault", product: "Vault", colour: "Olive Green", field: "#d9d3cc" },
-  { slug: "nova", product: "Nova", colour: "Black", field: "#d6b06a" },
+  { slug: "nova", product: "Nova", colour: "Gold", field: "#ffe0fd" },
+  { slug: "mini-luna", product: "Mini Luna", colour: "Red", field: "#ffe0fd" },
+  { slug: "vault", product: "Vault", colour: "Olive Green", field: "#ffe0fd" },
+  { slug: "nova", product: "Nova", colour: "Black", field: "#ffe0fd" },
 
-  { slug: "mini-luna", product: "Mini Luna", colour: "Silver", field: "#c07f5f" },
+  { slug: "mini-luna", product: "Mini Luna", colour: "Silver", field: "#ffe0fd" },
   // Full photograph: this matte traps a patch of seamless inside the hand slot
   // that is connected to the region running round the bag, so it cannot be
   // lifted as an enclosed patch, and the threshold that would catch it starts
   // erasing the silver bags. An honest photographic tile beats a white hole.
-  { slug: "vault", product: "Vault", colour: "Brown", field: "#7e93a8", forcePhoto: true },
-  { slug: "nova", product: "Nova", colour: "Champagne", field: "#b8a0c0" },
-  { slug: "loco", product: "Loco", colour: "Brown", field: "#c9b8a4" },
+  { slug: "vault", product: "Vault", colour: "Brown", field: "#ffe0fd", forcePhoto: true },
+  { slug: "nova", product: "Nova", colour: "Champagne", field: "#ffe0fd" },
+  { slug: "loco", product: "Loco", colour: "Brown", field: "#ffe0fd" },
 
-  { slug: "mini-luna", product: "Mini Luna", colour: "Gold", field: "#6f8496" },
-  { slug: "nova", product: "Nova", colour: "Silver", field: "#a8747c" },
-  { slug: "loco", product: "Loco", colour: "Burgundy", field: "#bfae9a" },
-  { slug: "vault", product: "Vault", colour: "Light Brown", field: "#a9b89a" },
+  { slug: "mini-luna", product: "Mini Luna", colour: "Gold", field: "#ffe0fd" },
+  { slug: "nova", product: "Nova", colour: "Silver", field: "#ffe0fd" },
+  { slug: "loco", product: "Loco", colour: "Burgundy", field: "#ffe0fd" },
+  { slug: "vault", product: "Vault", colour: "Light Brown", field: "#ffe0fd" },
 
-  { slug: "mini-luna", product: "Mini Luna", colour: "Black", field: "#e3c98a" },
-  { slug: "nova", product: "Nova", colour: "Rose Gold", field: "#7e8f6f" },
-  { slug: "mini-luna", product: "Mini Luna", colour: "Silver & Gold", field: "#d89a7a" },
-  { slug: "nova", product: "Nova", colour: "Silver & Gold", field: "#96a8bd" },
+  { slug: "mini-luna", product: "Mini Luna", colour: "Black", field: "#ffe0fd" },
+  { slug: "nova", product: "Nova", colour: "Rose Gold", field: "#ffe0fd" },
+  { slug: "mini-luna", product: "Mini Luna", colour: "Silver & Gold", field: "#ffe0fd" },
+  { slug: "nova", product: "Nova", colour: "Silver & Gold", field: "#ffe0fd" },
 ];
 
 /**

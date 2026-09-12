@@ -373,7 +373,10 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 .cart-line-opt { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
 .tag { font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); background: var(--surface); box-shadow: 0 0 0 1px var(--line); padding: 5px 9px; border-radius: 0; }
 .cart-line-price { font-weight: 600; font-size: 14.5px; margin: 0 0 10px; font-family: var(--font-head); }
-.cart-line-actions { display: flex; gap: 18px; align-items: center; }
+/* Wraps rather than running to the edge. At 390 with a fully configured line
+   the row ended 12px from the viewport while the left gutter is 20px, so the
+   actions looked clipped even though they technically fitted. */
+.cart-line-actions { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
 .link-btn { font-size: 12px; font-weight: 600; color: var(--muted); transition: color 0.15s ease; }
 .link-btn:hover { color: var(--ink); }
 /* Square, like every other control on the site. These were 22px circles —
@@ -995,6 +998,8 @@ html { overflow-anchor: none; }
 .pg-note strong { font-weight: 600; }
 .pg-thumbs { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 .pg-thumb {
+  /* Size and opacity are set by the product-page block further down; this is
+     the base shell only. */
   width: 92px; height: 92px; overflow: hidden; background: var(--pink);
   border: 1px solid transparent;
   /* 0.62 washed every alternate view out to a grey-lilac smear on the pink
@@ -1054,6 +1059,15 @@ html { overflow-anchor: none; }
   color: var(--primary); margin: 0; text-align: center;
 }
 .ab-end { padding: 0 clamp(16px, 4vw, 54px) clamp(60px, 9vw, 120px); text-align: center; }
+/* Centred is right on desktop, where both of these sit in the middle column
+   of a three-up. Stacked on a phone they were the only centred blocks on an
+   otherwise left-aligned page, which is what made About read as two different
+   layouts glued together. */
+@media (max-width: 859px) {
+  .ab-end { text-align: left; }
+  .ab-end-line { margin-left: 0; margin-right: 0; }
+  .ab-big { text-align: left; }
+}
 .ab-end-line {
   font-family: var(--font-head); font-size: clamp(24px, 3.6vw, 44px); line-height: 1.1;
   letter-spacing: -0.02em; color: var(--primary); margin: 0 auto 22px; max-width: 20ch;
@@ -1264,6 +1278,19 @@ html { overflow-anchor: none; }
 .co-timing-split { opacity: 1 !important; color: var(--navy) !important; font-weight: 600; }
 .co-empty { padding: clamp(70px, 14vw, 160px) clamp(16px, 4vw, 54px); text-align: center; }
 .co-empty-line { font-family: var(--font-head); font-size: clamp(26px, 4vw, 44px); color: var(--primary); margin: 0 0 22px; }
+/* Below the two-column breakpoint the summary is DOM-after the form, which on
+   a phone meant scrolling past eight fields and the Place your order button
+   before ever seeing what you were buying or what it came to. The bag comes
+   first now; the form follows it. Source order is unchanged, so the form is
+   still what a screen reader and the keyboard reach first after the heading. */
+@media (max-width: 939px) {
+  /* align-items: stretch explicitly: the base rule sets `align-items: start`,
+     which is right for the two-column grid but in a flex COLUMN it is the
+     cross axis, so the summary shrank to its content and sat in a 290px
+     panel with white beside it. */
+  .co { display: flex; flex-direction: column; align-items: stretch; }
+  .co-summary { order: -1; }
+}
 @media (min-width: 940px) {
   .co { grid-template-columns: 1.15fr 0.85fr; }
   .co-summary-inner { position: sticky; top: 92px; }
@@ -1783,6 +1810,23 @@ html { overflow-anchor: none; }
   display: flex; align-items: baseline; justify-content: space-between; gap: 20px;
   padding: 0 clamp(4px, 1vw, 12px) clamp(20px, 3vh, 32px);
 }
+/* The right-hand half of a section head when it is a statement rather than a
+   link, so "Four shapes" and "Every colourway" share one heading system. */
+.shopx-headnote {
+  margin: 0; color: var(--navy); opacity: 0.62;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+}
+/* Side by side, both halves wrap at phone width — "FOUR / SHAPES" against
+   "...COMES / IN". Stacked they each get a full line. */
+@media (max-width: 620px) {
+  .shopx-preview-head { flex-direction: column; align-items: flex-start; gap: 7px; }
+}
+/* The models section runs straight into the colourway wall, and both carry
+   their own generous padding, so ~170px of empty white sat between them at
+   390. They are two halves of one page, not two pages. */
+.shopx-models { padding-bottom: clamp(24px, 4vh, 56px); }
+.shopx-models + .shopx { padding-top: clamp(30px, 5vh, 64px); }
+
 .shopx-all {
   font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
   color: var(--navy); border-bottom: 1.5px solid currentColor; padding-bottom: 5px;
@@ -1808,7 +1852,12 @@ html { overflow-anchor: none; }
 .cart-line:last-child { border-bottom: 1px solid var(--line); }
 .cart-thumb {
   /* The piece the customer just configured is the subject of this row, so it
-     gets the width a product deserves rather than a 110px thumbnail. */
+     gets the width a product deserves rather than a 110px thumbnail.
+     align-self is the important part: the row is a flex container, so the
+     tile was being STRETCHED to the height of the tallest line. Measured at
+     390 with a fully configured Nova, the "square" was 130x183 with a 62px
+     bag adrift inside it. It keeps its own aspect now. */
+  align-self: flex-start;
   width: clamp(130px, 16vw, 232px); height: auto; aspect-ratio: 1 / 1; flex: none;
   background: var(--pink); border-radius: 0;
   display: flex; align-items: center; justify-content: center; overflow: hidden;
@@ -1973,9 +2022,21 @@ html { overflow-anchor: none; }
 /* Thumbnails carry the real frame's proportion and are legible at rest. At
    92x92 with a wide studio photograph most of the tile was backdrop, which is
    why the inactive ones read as empty lilac rectangles. */
-.pg-thumb { width: 108px; height: 76px; padding: 0; background: var(--pink); opacity: 0.62; }
+/* Four thumbs on ONE row at any width. At a fixed 108px they needed 462px
+   including gaps, so on a phone the fourth wrapped onto its own line and
+   collided with the "Pictured in" caption. A quarter of the row minus the
+   gaps, capped at the original 108 on wide screens.
+
+   Opacity 0.82, not 0.62: this rule is the one that actually applies, and at
+   0.62 Loco's four dark-brown frames rendered as four washed-out grey tiles.
+   An earlier pass raised the value on the base rule above, which this had
+   been quietly overriding ever since. */
+.pg-thumb {
+  width: min(108px, calc((100% - 30px) / 4)); height: auto; aspect-ratio: 108 / 76;
+  padding: 0; background: var(--pink); opacity: 0.82;
+}
 .pg-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.pg-thumb:hover { opacity: 0.9; }
+.pg-thumb:hover { opacity: 1; }
 .pg-thumb.is-on { opacity: 1; }
 /* Bring the commercial information up: the stage was tall enough that name and
    price sat well past the first screen. */
@@ -2067,8 +2128,21 @@ html { overflow-anchor: none; }
    No copy changes: these are art direction, not customer-facing words. */
 @media (min-width: 760px) {
   /* Row 2 is squarer than row 1, so the page has a change of rhythm halfway
-     down instead of four identical 4:3 windows. */
+     down instead of four identical 4:3 windows. Paired by ROW so the two
+     blocks beside each other keep a shared baseline. */
   .mc-vault .mc-stage, .mc-loco .mc-stage { aspect-ratio: 5 / 4; }
+}
+/* Single column, so there is no row to align to and each model can have its
+   own frame. Four identical 4:3 windows stacked was the main reason the phone
+   Shop read as one component repeated. Chosen against each silhouette — Nova
+   is wide and low, Mini Luna stands tallest, Vault is square and structured,
+   Loco is a texture that wants a cinematic band — and the four heights sum to
+   within 1% of the four identical ones, so the page does not get longer. */
+@media (max-width: 759px) {
+  .mc-nova .mc-stage { aspect-ratio: 16 / 10; }
+  .mc-mini-luna .mc-stage { aspect-ratio: 1 / 1; }
+  .mc-vault .mc-stage { aspect-ratio: 5 / 4; }
+  .mc-loco .mc-stage { aspect-ratio: 16 / 9; }
 }
 .mc-nova .mc-stage { padding: clamp(22px, 3.6vw, 52px); }
 .mc-mini-luna .mc-stage { padding: clamp(10px, 1.8vw, 26px); }
