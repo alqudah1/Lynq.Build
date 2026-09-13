@@ -47,15 +47,22 @@ export default async function AboutPage() {
           </ul>
         </div>
         <Reveal as="figure" className="ab-band">
-          <Image src="/media/macro-chunky.webp" alt="Close detail of chunky hand-crocheted stitchwork"
-                 width={2600} height={801}
+          {/* macro-chunky is gone. It is the darkest, muddiest asset in the
+              archive — mean luminance 0.36 against 0.55 here — and a brown
+              texture is the wrong first image for a page whose subject is
+              colour. This one is also band-SHAPED, 2070x457, so it fills a
+              wide inset with almost no crop instead of being cover-cropped
+              into one. The homepage already uses macro-material and
+              macro-twotone, so About does not repeat either. */}
+          <Image src="/media/macro-ribbon-band.webp" alt="Close detail of metallic ribbon yarn, hand crocheted"
+                 width={2070} height={457}
                  // The band is inset inside the section padding now rather
                  // than bleeding past it, so it is narrower than the viewport.
                  sizes="(max-width: 860px) 92vw, 92vw" className="ab-band-img"
                  // This is the LCP element on /about and was loading at default
                  // priority behind everything else on the page.
                  preload />
-          <figcaption className="ab-cap">Chunky cotton, worked by hand</figcaption>
+          <figcaption className="ab-cap">Metallic ribbon, crocheted by hand</figcaption>
         </Reveal>
       </section>
 

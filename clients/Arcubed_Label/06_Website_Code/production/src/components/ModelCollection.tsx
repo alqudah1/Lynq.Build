@@ -24,7 +24,7 @@ import { COLLECTION, colourFit, LEAD_COLOUR } from "@/lib/collection";
 import { variantHref } from "@/lib/variant";
 
 type Way = { colour: string; field: string; src: string; ratio: number; alt: string; href: string; photo: boolean;
-  fit?: { s: number; tx?: number; ty?: number } };
+  framed: boolean; fit?: { s: number; tx?: number; ty?: number } };
 
 export default function ModelCollection({ bags }: { bags: Bag[] }) {
   const bySlug = new Map(bags.map((b) => [b.slug, b]));
@@ -50,6 +50,7 @@ export default function ModelCollection({ bags }: { bags: Bag[] }) {
       alt: altFor(bag, e.colour),
       href: variantHref(bag.slug, e.colour),
       photo,
+      framed: Boolean(e.framed),
       // Same measured fit the colourway wall uses, so a bag does not change
       // size between the model block and the tile below it.
       fit: colourFit(e.slug, e.colour),
@@ -119,7 +120,13 @@ function ModelBlock({ product, bag, ways }: { product: string; bag: Bag; ways: W
   // meets a straight edge) and object scale varies by MODEL.
   return (
     <li className={`mc-block mc-${bag.slug}`}>
-      <Link href={on.href} className="mc-stage" style={{ background: on.photo ? undefined : on.field }}>
+      {/* A mounted photograph keeps its field: the colour is the mount the
+          picture is printed on. Only a bleeding photograph hides it. */}
+      <Link
+        href={on.href}
+        className={`mc-stage${on.framed ? " is-framed" : ""}`}
+        style={{ background: on.photo && !on.framed ? undefined : on.field }}
+      >
         <Image
           key={on.colour}
           src={on.src}
@@ -141,7 +148,7 @@ function ModelBlock({ product, bag, ways }: { product: string; bag: Bag; ways: W
               ? "(max-width: 759px) 100vw, 64vw"
               : "(max-width: 759px) 100vw, 32vw"
           }
-          className={on.photo ? "mc-photo" : "mc-cut"}
+          className={on.photo ? (on.framed ? "mc-photo mc-framed" : "mc-photo") : "mc-cut"}
           style={
             on.photo || !on.fit
               ? undefined

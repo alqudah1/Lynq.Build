@@ -153,18 +153,20 @@ export default async function HomePage() {
   const vault = by("vault");
   const nova = by("nova");
   const loco = by("loco");
-  // THE CLOSING FRAME IS A PHOTOGRAPH.
+  // THE CLOSING FRAME IS ONE CLEAN OBJECT.
   //
-  // It used to be two transparent cut-outs arranged on a pink field over a
-  // drawn "floor", and it read as exactly that: a collage. Nothing in it was
-  // a picture of anything, it was two products positioned near each other.
+  // Two rebuilds now. First it was two cut-outs on a drawn floor, which was a
+  // collage. Then it was a 50/50 split with a close crop of Burgundy Loco,
+  // and the crop was the problem: at that size the fringe filled the panel
+  // and the bag stopped being legible as a bag.
   //
-  // Burgundy Loco instead, full bleed against navy. It is the strongest
-  // photograph in the archive on the one measure that matters here — it was
-  // shot on the clean seamless, mean ground luminance 0.936 against 0.75 for
-  // the Brown frames — it is the one product whose silhouette cannot be cut
-  // out anyway, and its fringe is the most distinctive thing the brand owns.
-  const finalShot = frame(loco, "Burgundy");
+  // Measured every photograph in the archive by studio-ground luminance and
+  // by whether the object reads whole. Vault Olive is the strongest thing
+  // Arcubed has for this job: ground 0.92, a structured silhouette that
+  // survives at poster scale, and a clean cut-out, so it can sit on the brand
+  // field with no second background competing. It is also the one shape the
+  // homepage has not already used as a hero.
+  const finalShot = frame(vault, "Olive Green");
 
   /**
    * HERO SECONDARY — one layer, not three.
@@ -293,7 +295,7 @@ export default async function HomePage() {
                 // at, so it never resolves to a candidate it has to upscale.
                 // 36vw was the width before the phone composition grew the
                 // secondary to 40vw; it left a 1.11 upscale at 375.
-                sizes="(max-width: 699px) 42vw, (max-width: 860px) 64px, 21vw"
+                sizes="(max-width: 699px) 62vw, (max-width: 860px) 64px, 21vw"
               />
             </figure>
           ) : null}
@@ -468,7 +470,7 @@ export default async function HomePage() {
                 // match optically, which pushes the widest of them to 63vw
                 // while resting width is 52vw. `sizes` cannot express a
                 // transform, so it is declared above the resting width.
-                sizes="(max-width: 860px) 96vw, 66vw"
+                sizes="(max-width: 860px) 100vw, 66vw"
                 style={{
                   ["--w0" as string]: CUST_WINDOW(i)[0],
                   ["--w1" as string]: CUST_WINDOW(i)[1],
@@ -483,25 +485,26 @@ export default async function HomePage() {
 
         {/* ---------------- 04 THE FINISHED OBJECT ---------------- */}
         <div className="phase phase-final">
-          {/* Half photograph, half navy. No floor, no cut-outs, no collage:
-              one real picture holding one half of the frame and the claim
-              holding the other. */}
-          {finalShot && loco ? (
-            <figure className="fin-shot">
+          {/* One object, the claim behind it. No split screen, no second
+              background: the bag is a cut-out so the brand field IS the
+              ground, which is the same language the hero opens with. */}
+          <p className="fin-kicker">Made by hand</p>
+          <p className="fin-head">Made yours.</p>
+          {finalShot && vault ? (
+            <figure className="fin-obj">
               <Image
-                src={finalShot.photo}
-                alt={altFor(loco, "Burgundy")}
-                width={1800}
-                height={Math.round(1800 / finalShot.ratio)}
-                sizes="(max-width: 759px) 100vw, 50vw"
+                src={cutSrc(finalShot)}
+                alt={altFor(vault, "Olive Green")}
+                width={1700}
+                height={Math.round(1700 / finalShot.ratio)}
+                // 130vw, not 92: on a phone the object is deliberately
+                // scaled past the viewport edge to meet the stacked
+                // headline, and it measures 128vw at 375.
+                sizes="(max-width: 759px) 130vw, 56vw"
               />
             </figure>
           ) : null}
-          <div className="fin-copy">
-            <p className="fin-kicker">Made by hand</p>
-            <p className="fin-head">Made yours.</p>
-            <p className="fin-sub">Four shapes. Sixteen colourways.</p>
-          </div>
+          <p className="fin-sub">Four shapes. Sixteen colourways.</p>
         </div>
       </ScrollStory>
 

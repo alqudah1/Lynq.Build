@@ -48,6 +48,7 @@ export default function CollectionGrid({
         field: entry.field,
         src: asPhoto ? frame.photo : tileSrc(frame),
         asPhoto,
+        framed: Boolean(entry.framed),
         ratio: frame.ratio,
         alt: altFor(bag, entry.colour),
         price: money(bag.basePrice),
@@ -163,7 +164,12 @@ export default function CollectionGrid({
           style={{ ["--span" as string]: t.rhythm.span, ["--ar" as string]: t.rhythm.ratio }}
         >
           <Link href={t.href} className="shopx-link">
-            <span className="shopx-field" style={{ background: t.asPhoto ? undefined : t.field }}>
+            {/* A framed photograph keeps its field: the colour is the mount
+                the picture is printed on, not a background it is hiding. */}
+            <span
+              className={`shopx-field${t.framed ? " is-framed" : ""}`}
+              style={{ background: t.asPhoto && !t.framed ? undefined : t.field }}
+            >
               <Image
                 src={t.src}
                 alt={t.alt}
@@ -180,7 +186,7 @@ export default function CollectionGrid({
                   `(max-width: 760px) ${t.mFull ? 100 : 50}vw, ` +
                   `${Math.round((t.rhythm.span / 12) * 96)}vw`
                 }
-                className={t.asPhoto ? "shopx-photo" : "shopx-cut"}
+                className={t.asPhoto ? (t.framed ? "shopx-photo shopx-framed" : "shopx-photo") : "shopx-cut"}
                 style={
                   t.asPhoto || !t.fit
                     ? undefined

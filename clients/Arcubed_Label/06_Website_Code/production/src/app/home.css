@@ -721,58 +721,55 @@ body:has(.home) main { padding-top: 0; }
 }
 .story-stage[data-phase="final"] .phase-final { clip-path: inset(0 0 0 0); }
 /* ---------------- 05 THE CAMPAIGN ----------------
-   HALF PHOTOGRAPH, HALF NAVY.
+   ONE OBJECT, THE CLAIM BEHIND IT.
 
-   What was here before was a pink field with a drawn white "floor" across it
-   and two transparent cut-outs arranged on top, one scaled down and pushed
-   off the right edge to read as "further away". It was a collage of product
-   shots, not a photograph of anything, and every attempt to refine it was an
-   attempt to make an arrangement of PNGs look like a picture.
+   Third version. The first was two cut-outs on a drawn floor: a collage. The
+   second was a 50/50 split with a close crop of Burgundy Loco, and the crop
+   was the fault, not the photograph: at half-frame the fringe filled the
+   panel and the bag stopped reading as a bag.
 
-   So it is a picture. Burgundy Loco holds one half of the frame edge to edge
-   and the claim holds the other on navy. No floor, no cut-outs, no invented
-   perspective, no third object. The two halves meet on a hard vertical join,
-   which is the only structure the frame needs. */
+   No split now. Pink field, the claim set large, and one clean object sitting
+   across it so the type passes behind the bag. That is the hero's language,
+   which is the point: the story closes the way it opened. */
 .phase-final {
-  display: grid; grid-template-columns: 1fr; grid-template-rows: 1fr auto;
-  background: var(--navy);
-}
-.fin-shot { position: relative; margin: 0; overflow: hidden; min-height: 0; background: var(--navy); }
-/* Weighted to the upper third. Tested against two alternatives at 1440: the
-   one portrait frame in the Loco archive (DSC05770) fills the panel without
-   cropping but the bag sits small inside its own empty ground and reads as a
-   product shot dropped onto navy, not a campaign; a fringe-forward crop is
-   beautiful texture but loses the handle and with it the product. At 30% the
-   arch, the woven body and the fringe are all in frame. */
-.fin-shot img {
-  width: 100%; height: 100%; object-fit: cover; display: block;
-  object-position: 50% 30%;
-}
-.fin-copy {
-  display: flex; flex-direction: column; justify-content: center;
-  gap: clamp(10px, 1.6vh, 18px);
-  padding: clamp(24px, 4vh, 64px) clamp(20px, 4vw, 64px) clamp(28px, 5vh, 72px);
-  color: var(--pink);
+  background: var(--pink);
+  display: block;
 }
 .fin-kicker {
-  margin: 0; font-size: clamp(10px, 0.8vw, 11.5px); font-weight: 600;
-  letter-spacing: 0.3em; text-transform: uppercase; opacity: 0.62;
+  position: absolute; z-index: 3; top: 13vh; left: 5vw; margin: 0; color: var(--navy);
+  font-size: clamp(10px, 0.8vw, 11.5px); font-weight: 600;
+  letter-spacing: 0.3em; text-transform: uppercase; opacity: 0.66;
 }
 .fin-head {
-  margin: 0; color: var(--pink);
+  position: absolute; z-index: 1; top: 20vh; left: 4vw; margin: 0; color: var(--navy);
   font-family: var(--font-head); font-weight: 600;
   font-variation-settings: "opsz" 144, "SOFT" 0;
   text-transform: uppercase; letter-spacing: -0.05em; line-height: 0.82;
-  font-size: clamp(46px, 8.4vw, 132px);
+  font-size: clamp(52px, 11.5vw, 176px);
 }
+/* z-index 2: over the headline, under nothing. The overlap is the whole
+   composition. */
+.fin-obj {
+  position: absolute; z-index: 2; margin: 0;
+  /* Raised until the top of the bag crosses the headline's baseline: at
+     bottom 6vh the two merely touched, which reads as two things placed near
+     each other rather than one composition. */
+  right: -6vw; bottom: 11vh; width: 57vw;
+}
+.fin-obj img { width: 100%; height: auto; display: block; }
 .fin-sub {
-  margin: 0; font-size: clamp(12px, 1vw, 14.5px); letter-spacing: 0.02em;
-  opacity: 0.72;
+  position: absolute; z-index: 3; left: 5vw; bottom: 8vh; margin: 0; color: var(--navy);
+  font-size: clamp(12px, 1vw, 14.5px); letter-spacing: 0.02em; opacity: 0.72;
 }
-@media (min-width: 760px) {
-  /* The photograph takes the larger half. An even split made the picture and
-     the claim argue; 54/46 settles which one is the subject. */
-  .phase-final { grid-template-columns: 54fr 46fr; grid-template-rows: 1fr; }
+@media (max-width: 759px) {
+  /* A wide, low bag cannot fill a tall frame vertically, so on a phone it is
+     scaled past the viewport edge and raised until it meets the stacked
+     headline. At 96vw and bottom 12vh there were 190px of empty pink between
+     the two and the frame read as two separate things. */
+  .fin-kicker { top: 11vh; }
+  .fin-head { top: 16vh; font-size: clamp(46px, 16vw, 96px); }
+  .fin-obj { width: 128vw; right: -22vw; bottom: 19vh; }
+  .fin-sub { bottom: 6vh; }
 }
 
 /* ---------------- COLLECTION ----------------

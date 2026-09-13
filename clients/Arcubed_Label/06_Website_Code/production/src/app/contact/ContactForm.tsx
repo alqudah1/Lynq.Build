@@ -56,45 +56,39 @@ export default function ContactForm() {
   }
 
   return (
-    <>
-      <form className="ct-form" onSubmit={handleSubmit} noValidate>
-        {errors.length ? (
-          <div className="co-errors" role="alert">
-            {errors.map((m) => <p key={m}>{m}</p>)}
-          </div>
-        ) : null}
-        {/* Honeypot — visually hidden, not display:none, so bots still fill it. */}
-        <div className="ct-hp" aria-hidden="true">
-          <label htmlFor="c-website">Website</label>
-          <input id="c-website" tabIndex={-1} autoComplete="off" value={website}
-                 onChange={(e) => setWebsite(e.target.value)} />
+    <form className="ct-form" onSubmit={handleSubmit} noValidate>
+      {errors.length ? (
+        <div className="co-errors" role="alert">
+          {errors.map((m) => <p key={m}>{m}</p>)}
         </div>
-        <div className="ct-row">
-          <label htmlFor="c-name">Name</label>
-          <input id="c-name" required value={name} onChange={(e) => setName(e.target.value)} />
-        </div>
-        <div className="ct-row">
-          <label htmlFor="c-email">Email</label>
-          <input id="c-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-        </div>
-        <div className="ct-row ct-row-select">
-          <label htmlFor="c-topic">Topic</label>
-          <select id="c-topic" value={topic} onChange={(e) => setTopic(e.target.value)}>
-            {TOPICS.map((t) => <option key={t}>{t}</option>)}
-          </select>
-        </div>
-        <div className="ct-row">
-          <label htmlFor="c-msg">Message</label>
-          <textarea id="c-msg" rows={5} required value={message} onChange={(e) => setMessage(e.target.value)} />
-        </div>
-        <button className="ct-send" type="submit" disabled={busy}>
-          {busy ? "Sending…" : "Send message"}
-        </button>
-      </form>
-      <p className="ct-ig">
-        Fastest reply is on Instagram.{" "}
-        <a href="https://instagram.com/arcubedlabel" target="_blank" rel="noreferrer">@arcubedlabel</a>
-      </p>
-    </>
+      ) : null}
+      {/* Honeypot — visually hidden, not display:none, so bots still fill it. */}
+      <div className="ct-hp" aria-hidden="true">
+        <label htmlFor="c-website">Website</label>
+        <input id="c-website" tabIndex={-1} autoComplete="off" value={website}
+               onChange={(e) => setWebsite(e.target.value)} />
+      </div>
+      <div className="ct-row">
+        <label htmlFor="c-name">Name</label>
+        <input id="c-name" required value={name} onChange={(e) => setName(e.target.value)} />
+      </div>
+      <div className="ct-row">
+        <label htmlFor="c-email">Email</label>
+        <input id="c-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+      </div>
+      <div className="ct-row ct-row-select">
+        <label htmlFor="c-topic">Topic</label>
+        <select id="c-topic" value={topic} onChange={(e) => setTopic(e.target.value)}>
+          {TOPICS.map((t) => <option key={t}>{t}</option>)}
+        </select>
+      </div>
+      <div className="ct-row">
+        <label htmlFor="c-msg">Message</label>
+        <textarea id="c-msg" rows={5} required value={message} onChange={(e) => setMessage(e.target.value)} />
+      </div>
+      <button className="ct-send" type="submit" disabled={busy}>
+        {busy ? "Sending…" : "Send message"}
+      </button>
+    </form>
   );
 }

@@ -6,43 +6,42 @@
  * Shared by the homepage collection and the Shop so the two can never drift
  * apart on which colourways exist or what field each one sits on.
  *
- * FIELDS are a CONTROLLED four-value system, assigned per product for
- * contrast. Not one flat colour, and not the sixteen hand-picked hues before
- * that.
+ * ---------------------------------------------------------------------------
+ * DISPLAY FIELDS
+ * ---------------------------------------------------------------------------
+ * Third system. The first gave every tile its own mid-tone hue — #8fa5b8,
+ * #8d9b7a, #d9d3cc, #c07f5f, #b8a0c0, #e3c98a — which had real variety but
+ * included the tans and terracottas that read as the beige luxury palette the
+ * brand is defined against. The correction put all sixteen on brand pink,
+ * which was flat. The correction to THAT was four values so close together
+ * (#eef1f7, #fff2fe, #f8f5f9) that the wall still read as one pale box
+ * repeated sixteen times.
  *
- * The first version of this file gave every tile its own colour — #8fa5b8,
- * #8d9b7a, #d9d3cc, #c07f5f, #b8a0c0, #e3c98a and so on. Blue-greys, olives,
- * terracottas, tans. Off-palette, and several of them the beige the brand is
- * defined against. The correction was to put all sixteen on the brand pink,
- * which fixed the palette and introduced a new problem: sixteen identical
- * pink boxes read as flat and repetitive, and pink under a red or a burgundy
- * bag is nearly the same hue, so the product stopped separating from its own
- * ground.
+ * These are deliberately deeper — roughly 85 to 90% lightness rather than 96
+ * — so the difference between one tile and the next is actually visible at
+ * arm's length, and every one is drawn from a family the brand allows:
  *
- * Four values, all navy/pink/white derived, chosen so the BAG looks good:
+ *   PINK      #ffe0fd  the brand field
+ *   BLUSH     #f6d8de  soft rose
+ *   LAVENDER  #e4daf0  soft lavender
+ *   SKY       #d6e2f0  powder blue
+ *   MIST      #dae3ea  very pale grey-blue
+ *   SAGE      #d6dfcd  muted olive, pale
+ *   OLIVE     #c6d0b9  muted olive, deeper — for the palest objects
+ *   SNOW      #f4f1f4  near-white, where any tint would fight the product
  *
- *   PINK   #ffe0fd  the brand field. Under dark objects — black, olive,
- *                   dark brown — where it gives the most separation.
- *   BLUSH  #fff2fe  pink at a quarter strength. A warm ground under the cool
- *                   metallics, silver and silver & gold.
- *   MIST   #eef1f7  navy at 6%. A cool ground under the warm metallics, gold,
- *                   champagne and rose gold, which is where a pink field went
- *                   muddy and a warm field disappeared.
- *   SNOW   #f8f5f9  near-white with a pink cast. For reds and burgundies,
- *                   which sit too close to pink in hue to separate from it,
- *                   and still reads as a tile against the white page.
+ * No tans, no terracotta, no gold, no brown interface colour. Navy appears
+ * only as a FRAME around a photograph, never behind a cut-out, because the
+ * cut-outs carry a soft studio matte that glows on a dark ground.
  *
- * Navy is not in the set: the cut-outs carry a soft studio matte that reads as
- * a glow on a dark ground. No beige, no third hue family, nothing outside
- * navy/pink/white.
- *
- * Contrast picks the field, and then a second rule overrides it: no two tiles
- * SIDE BY SIDE in a row may share one. Two Mini Luna Golds worth of the same
- * pale grey next to each other reads as one wide tile with a gap in it, not as
- * two products. That is why Mini Luna Gold sits on snow rather than the mist
- * its warm metallic would otherwise take, and Vault Light Brown on mist rather
- * than pink: both are separating from the tile beside them. Rows are set by
- * SHOP_RHYTHM, so this list and that one have to be read together. */
+ * Assignment is per tile and by eye against the object, not algorithmic. The
+ * rule behind each choice is contrast: a warm metallic goes on a cool ground,
+ * a cool metallic on a warm one, a very pale object on the deepest field in
+ * the set, and a red — which is muddy on pink and weak on white — on sage.
+ * The second rule is that no two tiles SIDE BY SIDE in a row may share a
+ * field; rows are set by SHOP_RHYTHM, so this list and that one have to be
+ * read together.
+ */
 export interface CollectionEntry {
   slug: string;
   product: string;
@@ -50,21 +49,38 @@ export interface CollectionEntry {
   field: string;
   /** Force the full photograph instead of a cut-out. */
   forcePhoto?: true;
+  /**
+   * Show the photograph INSET inside the field rather than bleeding to the
+   * tile edge, so the image has a visible boundary and the field reads as a
+   * mount around it.
+   *
+   * EVERY photograph is mounted and every cut-out floats on a field. That is
+   * the whole rule, and it exists because the three photographic tiles carry
+   * their own studio ground: measured, Loco Brown sits at 0.75 luminance and
+   * Vault Brown at 0.85 against 0.92 to 0.94 for the clean frames. Bled to
+   * the tile edge next to bags on brand colour, those grounds read as dirty
+   * boxes. Given a margin they read as photographs someone chose to print.
+   *
+   * Loco Brown is mounted on navy because it is the darkest picture in the
+   * archive and the only one that can hold it; the other two take pink and
+   * blush.
+   */
+  framed?: true;
 }
 
 export const COLLECTION: CollectionEntry[] = [
-  { slug: "nova", product: "Nova", colour: "Gold", field: "#eef1f7" },
-  { slug: "mini-luna", product: "Mini Luna", colour: "Red", field: "#f8f5f9" },
-  { slug: "vault", product: "Vault", colour: "Olive Green", field: "#ffe0fd" },
-  { slug: "nova", product: "Nova", colour: "Black", field: "#ffe0fd" },
+  { slug: "nova", product: "Nova", colour: "Gold", field: "#d6e2f0" },
+  { slug: "mini-luna", product: "Mini Luna", colour: "Red", field: "#d6dfcd" },
+  { slug: "vault", product: "Vault", colour: "Olive Green", field: "#f6d8de" },
+  { slug: "nova", product: "Nova", colour: "Black", field: "#e4daf0" },
 
-  { slug: "mini-luna", product: "Mini Luna", colour: "Silver", field: "#fff2fe" },
+  { slug: "mini-luna", product: "Mini Luna", colour: "Silver", field: "#ffe0fd" },
   // Full photograph: this matte traps a patch of seamless inside the hand slot
   // that is connected to the region running round the bag, so it cannot be
   // lifted as an enclosed patch, and the threshold that would catch it starts
   // erasing the silver bags. An honest photographic tile beats a white hole.
-  { slug: "vault", product: "Vault", colour: "Brown", field: "#f8f5f9", forcePhoto: true },
-  { slug: "nova", product: "Nova", colour: "Champagne", field: "#eef1f7" },
+  { slug: "vault", product: "Vault", colour: "Brown", field: "#f6d8de", forcePhoto: true, framed: true },
+  { slug: "nova", product: "Nova", colour: "Champagne", field: "#c6d0b9" },
   // Mini Luna sits here and Loco below deliberately. Frames are handed out by
   // shape WITHIN a row, so a bag can only ever get the best frame its own row
   // contains, and this row's narrowest is a 6/5. Loco is a photograph, which a
@@ -72,17 +88,17 @@ export const COLLECTION: CollectionEntry[] = [
   // catalogue that fits a 6/5 almost exactly. Swapping the two moves Loco into
   // the 3/2 row below, where it loses two percent of its width instead of
   // eighteen, and costs Mini Luna nothing.
-  { slug: "mini-luna", product: "Mini Luna", colour: "Gold", field: "#f8f5f9" },
+  { slug: "mini-luna", product: "Mini Luna", colour: "Gold", field: "#e4daf0" },
 
-  { slug: "loco", product: "Loco", colour: "Brown", field: "#ffe0fd" },
-  { slug: "nova", product: "Nova", colour: "Silver", field: "#fff2fe" },
-  { slug: "loco", product: "Loco", colour: "Burgundy", field: "#f8f5f9" },
-  { slug: "vault", product: "Vault", colour: "Light Brown", field: "#eef1f7" },
+  { slug: "loco", product: "Loco", colour: "Brown", field: "#143562", framed: true },
+  { slug: "nova", product: "Nova", colour: "Silver", field: "#f6d8de" },
+  { slug: "loco", product: "Loco", colour: "Burgundy", field: "#ffe0fd", framed: true },
+  { slug: "vault", product: "Vault", colour: "Light Brown", field: "#d6e2f0" },
 
-  { slug: "mini-luna", product: "Mini Luna", colour: "Black", field: "#ffe0fd" },
-  { slug: "nova", product: "Nova", colour: "Rose Gold", field: "#eef1f7" },
-  { slug: "mini-luna", product: "Mini Luna", colour: "Silver & Gold", field: "#fff2fe" },
-  { slug: "nova", product: "Nova", colour: "Silver & Gold", field: "#eef1f7" },
+  { slug: "mini-luna", product: "Mini Luna", colour: "Black", field: "#f6d8de" },
+  { slug: "nova", product: "Nova", colour: "Rose Gold", field: "#dae3ea" },
+  { slug: "mini-luna", product: "Mini Luna", colour: "Silver & Gold", field: "#e4daf0" },
+  { slug: "nova", product: "Nova", colour: "Silver & Gold", field: "#d6dfcd" },
 ];
 
 /**
