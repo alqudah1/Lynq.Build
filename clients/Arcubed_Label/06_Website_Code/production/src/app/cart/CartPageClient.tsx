@@ -64,16 +64,23 @@ export default function CartPageClient({
         <div className="shipping-rates">
           <p className="opt-label">Shipping</p>
           {shippingRules.length ? (
-            shippingRules.map((r) => (
-              <div className="row muted" key={r.zoneKey}>
-                <span>{r.label}</span>
-                <span>
-                  {r.isQuoteRequired || r.amount === null
-                    ? "Calculated by destination. Contact us for a quote"
-                    : formatMoney(r.amount, r.currencyCode)}
-                </span>
-              </div>
-            ))
+            shippingRules.map((r) => {
+              // A rate is a word and a number and fits one line. A quote is a
+              // sentence, and right-aligning a sentence opposite a one-word
+              // label wrapped it into a ragged block twice the height of the
+              // rows above it. Those stack instead: label, then the note.
+              const quote = r.isQuoteRequired || r.amount === null;
+              return (
+                <div className={`row muted${quote ? " is-stacked" : ""}`} key={r.zoneKey}>
+                  <span>{r.label}</span>
+                  <span>
+                    {r.isQuoteRequired || r.amount === null
+                      ? "Calculated by destination. Contact us for a quote"
+                      : formatMoney(r.amount, r.currencyCode)}
+                  </span>
+                </div>
+              );
+            })
           ) : (
             <div className="row muted">
               <span>Shipping</span>

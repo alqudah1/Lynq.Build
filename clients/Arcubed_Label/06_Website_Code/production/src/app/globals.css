@@ -402,6 +402,12 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 .shipping-rates .opt-label { margin-bottom: 10px; }
 .shipping-rates .row { text-align: right; }
 .shipping-rates .row span:first-child { text-align: left; }
+/* Two levels, not a wrapped right-aligned paragraph. The first two rates are
+   a word and a number and sit on one line; the worldwide note is a sentence,
+   and right-aligning a sentence against a one-word label produced a ragged
+   two-line block that did not match the rows above it. */
+.shipping-rates .row.is-stacked { display: block; text-align: left; }
+.shipping-rates .row.is-stacked span:last-child { display: block; margin-top: 2px; opacity: 0.8; }
 .reassure { font-size: 12.5px; color: var(--muted); margin: 16px 0 18px; }
 
 .empty-state { padding-top: 80px; }
@@ -1154,7 +1160,7 @@ html { overflow-anchor: none; }
 .ct-shot { margin: clamp(32px, 5vh, 56px) 0 0; align-self: stretch; }
 .ct-shot img { width: 100%; height: auto; display: block; }
 @media (min-width: 900px) { .ct-shot { margin-top: auto; padding-top: clamp(32px, 5vh, 56px); } }
-.ct-form { margin-top: 0; max-width: 520px; }
+.ct-form { margin-top: 0; max-width: 640px; }
 .ct-row { display: block; margin-bottom: 16px; }
 .ct-row label {
   display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em;
@@ -1215,7 +1221,10 @@ html { overflow-anchor: none; }
 .ct-ig a:hover { opacity: 0.65; }
 /* 40 / 60. The form is the larger half because it is the work the customer
    has to do; the brand side is the reason they are doing it. */
-@media (min-width: 900px) { .ct { grid-template-columns: 40fr 60fr; } }
+/* 42/58 and a wider measure. At 40/60 with a 520px form the column left
+   251px of white to the right of every field, which reads as the form having
+   been dropped into the corner of a larger space. */
+@media (min-width: 900px) { .ct { grid-template-columns: 42fr 58fr; } }
 /* More air between fields than a utility form would use: at 16px the rows
    read as a stack of inputs, and the page is trying to read as a letter. */
 @media (min-width: 900px) { .ct-row { margin-bottom: 30px; } }
@@ -1678,7 +1687,11 @@ html { overflow-anchor: none; }
   .shopx-head.has-object { padding-bottom: 0; }
   .shopx-head-object {
     margin: clamp(24px, 4vh, 40px) calc(-1 * clamp(20px, 4vw, 54px)) 0;
-    height: clamp(230px, 38vh, 340px);
+    /* Shaped, not a fixed height. At a flat 340px the band was 2.26 wide on a
+       tablet against a 1.47 photograph, so cover threw away 35% of its HEIGHT
+       and took the handle with it. 16/10 tracks the picture: 92% kept at 768,
+       and the phone loses 8% instead of nothing it can spare. */
+    aspect-ratio: 16 / 10; height: auto; max-height: 52vh;
   }
 }
 
@@ -1731,7 +1744,18 @@ html { overflow-anchor: none; }
    Inset on every side so the field becomes a visible border, and contained
    rather than cropped, because the whole point is that this is a picture with
    edges rather than a product floating on a colour. */
-.shopx-field.is-framed { display: grid; place-items: center; padding: clamp(14px, 2.2vw, 30px); }
+/* THE MOUNT HAS TO BEAT `position: absolute`.
+   .shopx-field img is absolutely positioned with inset:0, and an absolutely
+   positioned box resolves inset against its container's PADDING box — so the
+   padding here was doing nothing at all and the "mounted" photographs were
+   bleeding edge to edge exactly like the unmounted ones. Measured at 390 the
+   inset was 0px on all four sides. Static positioning puts the image back in
+   the grid, where the padding is a real border. */
+.shopx-field.is-framed {
+  display: grid; place-items: center; grid-template-rows: minmax(0, 1fr);
+  padding: clamp(18px, 3vw, 34px);
+}
+.shopx-field.is-framed img { position: static; }
 .shopx-framed {
   width: 100%; height: 100%; object-fit: contain; object-position: 50% 50%;
 }
@@ -2405,23 +2429,15 @@ html { overflow-anchor: none; }
      the whole bag, handle to fringe tips, roughly 870px wide. The band
      quality comes from the width and from the caption sitting beside it, not
      from cutting the product down. */
-  .mc-loco {
-    grid-column: 1 / -1;
-    display: grid; align-items: start;
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-    /* A trailing 1fr as well, so the caption sits on the picture's optical
-       centre instead of being pushed to its foot with all the empty column
-       stacked above it. */
-    grid-template-rows: 1fr auto auto auto 1fr;
-    column-gap: clamp(24px, 3.4vw, 56px);
-  }
-  .mc-loco .mc-stage { grid-column: 1; grid-row: 1 / -1; aspect-ratio: 3 / 2; }
-  /* The 1fr first row pushes all three of these to the foot of the band, so
-     the caption sits on the picture's baseline the way a plate caption does
-     rather than floating at the top of an empty column. */
-  .mc-loco .mc-meta { grid-column: 2; grid-row: 2; margin-top: 0; }
-  .mc-loco .mc-ways { grid-column: 2; grid-row: 3; }
-  .mc-loco .mc-foot { grid-column: 2; grid-row: 4; }
+  /* NO SIDE COLUMN. The caption used to sit in a third of the row beside the
+     picture, vertically centred, which left 195px of empty white above it and
+     195px below: a dead column running the height of the block. The plate
+     takes the whole row now and the caption sits under it, the way it does on
+     every other model block, so there is nothing left to leave empty.
+     5/2 because the photograph is mounted and therefore CONTAINED: a wider
+     band only adds mount around it, it never crops the bag. */
+  .mc-loco { grid-column: 1 / -1; display: flex; flex-direction: column; }
+  .mc-loco .mc-stage { aspect-ratio: 5 / 2; }
 }
 /* Single column, so there is no row to align to and each model can have its
    own frame. Four identical 4:3 windows stacked was the main reason the phone
@@ -2447,8 +2463,22 @@ html { overflow-anchor: none; }
 .mc-stage .mc-photo { object-fit: cover; }
 /* Mounted, not bled: the field becomes a visible border and the whole
    photograph is shown rather than cropped to fill. */
-.mc-stage.is-framed { padding: clamp(16px, 2.4vw, 34px); }
-.mc-stage .mc-framed { object-fit: contain; }
+/* The stage centres its child rather than stretching it, so `height: 100%`
+   from the shared img rule was losing and the picture laid itself out at its
+   intrinsic aspect: measured 1304x863 inside a 549px band, overflowing and
+   getting clipped by the stage. Stated on the mounted image directly so it
+   fills the padding box and `contain` has a box to work inside. */
+/* grid-template-rows is the actual fix. The stage is a grid with a single
+   IMPLICIT row, and an implicit row is auto-sized from its content, so the
+   image's `height: 100%` had no definite containing block to resolve against
+   and fell back to its intrinsic height: measured 863px inside a 549px band,
+   overflowing and being clipped. A 1fr row is definite, so the percentage
+   resolves and `contain` finally has a box to fit inside. */
+.mc-stage.is-framed {
+  padding: clamp(16px, 2.4vw, 34px);
+  grid-template-rows: minmax(0, 1fr);
+}
+.mc-stage.is-framed img { width: 100%; height: 100%; object-fit: contain; }
 /* Only the phone band crops now: 3/2 on desktop matches the photograph, and
    at 3/2 on a narrow screen the bag would be small, so the phone runs a
    shallower frame and takes the difference off the bottom. Weighted upward so

@@ -144,8 +144,10 @@ function ModelBlock({ product, bag, ways }: { product: string; bag: Bag; ways: W
           // rendered box once the per-model padding changed, which pushed the
           // Vault tile to a 1.13 upscale. 100vw picks the next candidate up.
           sizes={
+            // Loco is a full-width plate now, not a two-thirds band: measured
+            // 90vw at 768 and 91vw at 1440, where 64vw was a 1.42 upscale.
             bag.slug === "loco"
-              ? "(max-width: 759px) 100vw, 64vw"
+              ? "(max-width: 759px) 100vw, 94vw"
               : "(max-width: 759px) 100vw, 32vw"
           }
           className={on.photo ? (on.framed ? "mc-photo mc-framed" : "mc-photo") : "mc-cut"}
