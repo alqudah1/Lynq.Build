@@ -1090,9 +1090,15 @@ html { overflow-anchor: none; }
 }
 .ab-split-copy .ab-p { margin-top: clamp(18px, 2.4vw, 26px); }
 .ab-split-copy .ed-link { margin-top: 22px; display: inline-block; }
+/* THE CLOSING FIELD IS SIZED TO ITS TYPE.
+   Measured at 1440 this section was a 490px pink block holding two lines:
+   210px of empty pink above them and 191px below. That is not a pause, it is
+   the page running out of things to say in brand colour. The field is
+   shorter and the statement is nearly half as large again, so the pink is a
+   ground the type sits on rather than a gap it floats in. No copy added. */
 .ab-end {
   background: var(--pink);
-  padding: clamp(56px, 8vw, 104px) clamp(16px, 4vw, 54px);
+  padding: clamp(52px, 6vw, 78px) clamp(16px, 4vw, 54px);
   text-align: center;
 }
 /* Centred is right on desktop, where both of these sit in the middle column
@@ -1104,8 +1110,8 @@ html { overflow-anchor: none; }
   .ab-end-line { margin-left: 0; margin-right: 0; }
 }
 .ab-end-line {
-  font-family: var(--font-head); font-size: clamp(24px, 3.6vw, 44px); line-height: 1.1;
-  letter-spacing: -0.02em; color: var(--primary); margin: 0 auto 22px; max-width: 20ch;
+  font-family: var(--font-head); font-size: clamp(26px, 4.6vw, 62px); line-height: 1.04;
+  letter-spacing: -0.028em; color: var(--primary); margin: 0 auto 26px; max-width: 15ch;
 }
 @media (min-width: 860px) {
   /* Alternating lead. The copy holds the left in ab-two and the picture holds
@@ -1332,6 +1338,13 @@ html { overflow-anchor: none; }
 }
 @media (min-width: 940px) {
   .co { grid-template-columns: 1.15fr 0.85fr; }
+  /* The summary track has to be as tall as the row or the sticky inside it
+     has nowhere to travel. `align-items: start` on .co was collapsing this
+     column to its own 378px, so at 1440 the panel sat at the top with 904px
+     of white under it and the sticky positioning it already had never once
+     engaged. Stretching the track is what turns that dead column into a
+     total that follows the customer down the form. */
+  .co-summary { align-self: stretch; }
   .co-summary-inner { position: sticky; top: 92px; }
 }
 
@@ -1540,20 +1553,43 @@ html { overflow-anchor: none; }
 .pd-opt-note { font-size: 13px; color: var(--muted); margin: 14px 0 24px; max-width: 46ch; line-height: 1.6; }
 .pd-opt-block > .opt-group:first-of-type { margin-top: 22px; }
 
-.pd-facts { margin-top: clamp(40px, 7vh, 68px); display: grid; gap: 26px; border-top: 1px solid var(--line); padding-top: 30px; }
+/* Inside the choose column now, so it stacks in a narrow measure and its
+   rule reads as the end of that column rather than as a band across the page
+   under the Add to Bag bar. */
+.pd-facts { margin-top: clamp(28px, 4vh, 40px); display: grid; gap: 22px; border-top: 1px solid var(--line); padding-top: 24px; }
 .pd-facts p { margin: 0; font-size: 13.5px; color: var(--muted); line-height: 1.65; }
 .pd-fact-h { font-size: 10.5px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--navy); margin-bottom: 8px; }
 
 @media (min-width: 900px) {
   .pd-stage { min-height: 80vh; }
-  .pd-opts { grid-template-columns: 1fr 1.15fr; gap: clamp(48px, 6vw, 96px); align-items: start; }
+  /* STRETCH, not start. Balancing the two columns by content gets Nova,
+     Mini Luna and Vault within about 50px of each other, but Loco has no size
+     group and only two colourways, so its left column still stopped 125px
+     early. Stretching both to the row and letting the facts fall to the foot
+     of the choose column means the two always END together, whatever options
+     a given bag happens to have. */
+  .pd-opts {
+    grid-template-columns: 1fr 1.05fr; column-gap: clamp(48px, 6vw, 96px);
+    row-gap: 0; align-items: start;
+  }
+  .pd-opt-choose { grid-column: 1; grid-row: 1; }
+  /* The options span both rows, so row 2 is exactly the height the choose
+     column is short by. */
+  .pd-opts > .pd-opt-block:not(.pd-opt-choose) { grid-column: 2; grid-row: 1 / span 2; }
+  /* Anchored to the foot of that row, so the two columns finish level
+     whatever options a given bag has. */
+  .pd-opts > .pd-facts { grid-column: 1; grid-row: 2; align-self: end; }
   /* Colour is a short block beside a long one, so the left column used to end
      at the swatches and leave ~540px of empty white beside Size/Strap/Handle/
      Chain. Sticking it turns that into a rail and means the colourway stays
      changeable while the rest of the configuration is being made, instead of
      scrolling away the moment you start. */
-  .pd-opts > .pd-opt-block:first-child { position: sticky; top: clamp(88px, 12vh, 128px); }
-  .pd-facts { grid-template-columns: 1fr 1fr; gap: 56px; }
+  /* The sticky panel is gone with the hole it was hiding. It only ever did
+     anything when the options ran taller than the viewport, and at 596px they
+     no longer do; a sticky element stretched to its own row's height cannot
+     stick to anything in any case. */
+  /* One column: it lives in the narrower half of the configurator now. */
+  .pd-facts { grid-template-columns: 1fr; gap: 22px; }
 }
 
 @media (prefers-reduced-motion: reduce) { .pd-price.pulse { animation: none; } }
@@ -2050,10 +2086,17 @@ html { overflow-anchor: none; }
   display: flex; flex-wrap: wrap; column-gap: clamp(14px, 1.6vw, 24px); row-gap: 6px;
   margin: 0 0 16px; padding: 0;
 }
+/* READABLE, not shouted. A fully configured Nova has five of these, and at
+   10.5px uppercase on 0.14em tracking that is five lines of letterspaced
+   capitals under every line item: the specification ended up louder than the
+   product name above it, and capitals are the hardest setting to scan when
+   what you are checking is whether the chain says gold or silver.
+   Sentence case at 12.5px on normal tracking reads at a glance and still sits
+   clearly below the name. Still no boxes and no fills. */
 .cart-line-opt .tag {
   background: none; box-shadow: none; padding: 0;
-  font-size: 10.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--navy);
+  font-size: 12.5px; font-weight: 500; letter-spacing: 0.01em; text-transform: none;
+  color: var(--navy); opacity: 0.78;
 }
 
 .cart-summary {
@@ -2061,7 +2104,9 @@ html { overflow-anchor: none; }
   padding: clamp(24px, 3vw, 36px); max-width: none;
 }
 .cart-summary .row { color: var(--navy); }
-.cart-summary .muted, .cart-summary .shipping-rates { color: var(--navy); opacity: 0.7; }
+/* 0.7 navy on brand pink measured washed out, and these rows carry the
+   delivery prices: the one thing in the summary a customer reads twice. */
+.cart-summary .muted, .cart-summary .shipping-rates { color: var(--navy); opacity: 0.84; }
 
 @media (min-width: 940px) {
   .cart-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 0.62fr); gap: clamp(40px, 5vw, 80px); align-items: start; }

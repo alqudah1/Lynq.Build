@@ -86,6 +86,29 @@ export default function ScrollStory({ children }: { children: ReactNode }) {
     let bands: readonly Band[] = mobile.matches ? MOBILE_BANDS : DESKTOP_BANDS;
     let raf = 0;
 
+    // GEOMETRY IS CACHED, NOT READ EVERY FRAME.
+    //
+    // The tick used to call getBoundingClientRect() on the container on every
+    // animation frame purely to work out how far through the story we are.
+    // For a statically positioned element that rect is just its document
+    // offset minus the scroll position, so the offset can be measured once and
+    // the scroll position read from window.scrollY, which costs nothing.
+    //
+    // What is NOT cached is innerHeight. On a phone the viewport changes
+    // height as the browser chrome collapses, and travel depends on it, so it
+    // is read live each frame; that is a plain property read and forces no
+    // layout. A ResizeObserver re-measures if the container itself changes
+    // size, which covers fonts landing, images settling and orientation
+    // changes without trusting any single event to fire.
+    let docTop = 0;
+    let storyH = 0;
+    const measure = () => {
+      const el = outer.current;
+      if (!el) return;
+      docTop = el.getBoundingClientRect().top + window.scrollY;
+      storyH = el.offsetHeight;
+    };
+
     // Resolved once, not per frame.
     // [element, distance in vh, last written value]
     let drift: [HTMLElement, number, number][] = [];
@@ -109,11 +132,11 @@ export default function ScrollStory({ children }: { children: ReactNode }) {
       const st = stage.current;
       if (!el || !st) return;
 
-      const travel = el.offsetHeight - window.innerHeight;
+      const travel = storyH - window.innerHeight;
       const p =
         travel <= 0
           ? 0
-          : Math.min(1, Math.max(0, -el.getBoundingClientRect().top / travel));
+          : Math.min(1, Math.max(0, (window.scrollY - docTop) / travel));
 
       // Which composition is on screen.
       let i = 0;
@@ -185,6 +208,7 @@ export default function ScrollStory({ children }: { children: ReactNode }) {
     const apply = () => {
       bands = mobile.matches ? MOBILE_BANDS : DESKTOP_BANDS;
       collect();
+      measure();
       lastPhase = "";
       lastStep = -1;
       lastStory = "";
@@ -208,7 +232,20 @@ export default function ScrollStory({ children }: { children: ReactNode }) {
     }
 
     collect();
+    measure();
     tick();
+
+    // Re-measure whenever the container's own box changes: fonts landing,
+    // images settling, an orientation change, the address bar collapsing.
+    const ro = new ResizeObserver(() => {
+      measure();
+      onScroll();
+    });
+    if (outer.current) ro.observe(outer.current);
+    // One more after load, for anything that settles without resizing the
+    // container itself.
+    const onLoad = () => { measure(); onScroll(); };
+    window.addEventListener("load", onLoad);
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", apply);
     mobile.addEventListener("change", apply);
@@ -216,6 +253,8 @@ export default function ScrollStory({ children }: { children: ReactNode }) {
 
     return () => {
       if (raf) cancelAnimationFrame(raf);
+      ro.disconnect();
+      window.removeEventListener("load", onLoad);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", apply);
       mobile.removeEventListener("change", apply);

@@ -115,11 +115,22 @@ export default function Customizer({
           Handmade to order{productionTimeLabel ? ` · ${productionTimeLabel}` : ""}
         </p>
 
+        {/* TWO COLUMNS THAT BOTH CARRY SOMETHING.
+            The left column held one control and the right held four, so at
+            1440 the left ended after 198px while the right ran on to 804: a
+            606px hole beside the options. It is a sticky panel, which is why
+            it was allowed to be short, but the row fits inside a 900px
+            viewport so the stickiness never engages and all a customer sees
+            is the gap.
+            Colour and Size sit together on the left now, and the two facts
+            that were stranded below the Add to Bag bar come up beside the
+            choice, where they answer the question a customer is actually
+            asking while they configure. Nothing was written for this: both
+            blocks already existed on the page. */}
         <div className="pd-opts">
-          <div className="pd-opt-block">
-            <p className="pd-opt-head">Colour</p>
+          <div className="pd-opt-block pd-opt-choose">
             <ColourSelector
-              showLabel={false}
+              showLabel
               bag={bag}
               colours={bag.colours}
               selectedId={selection.colourId}
@@ -133,6 +144,13 @@ export default function Customizer({
                 }))
               }
             />
+            {bag.sizes ? (
+              <SizeSelector
+                sizes={bag.sizes}
+                selectedId={selection.sizeId}
+                onSelect={(sizeId) => setSelection((prev) => ({ ...prev, sizeId }))}
+              />
+            ) : null}
           </div>
 
           {hasConfigOnly ? (
@@ -146,13 +164,6 @@ export default function Customizer({
                 {bag.colours.find((c) => c.id === selection.colourId)?.name ?? "your chosen colour"}.
                 The photograph shows the colour you will receive.
               </p>
-              {bag.sizes ? (
-                <SizeSelector
-                  sizes={bag.sizes}
-                  selectedId={selection.sizeId}
-                  onSelect={(sizeId) => setSelection((prev) => ({ ...prev, sizeId }))}
-                />
-              ) : null}
               {bag.straps ? (
                 <StrapHandleSelector label="Strap" kind="strap" bag={bag} options={bag.straps}
                   selectedId={selection.strapId} colourId={selection.colourId}
@@ -174,20 +185,24 @@ export default function Customizer({
               ) : null}
             </div>
           ) : null}
+
+          {/* Last in the DOM on purpose. On a phone the configurator is one
+              column, so these read after the options, which is where facts
+              belong; at 900 and up they are grid-placed into the foot of the
+              choose column instead of stranded under the Add to Bag bar. */}
+          <div className="pd-facts">
+            <div>
+              <p className="pd-fact-h">Material</p>
+              <p>100% cotton yarn, hand-crocheted. Spot clean, air dry.</p>
+            </div>
+            <div>
+              <p className="pd-fact-h">Made to order</p>
+              <p>{productionTimeLabel ?? "Handmade to order. Timing on request."}</p>
+            </div>
+          </div>
         </div>
 
         <AddToCartInline label={actionLabel} price={money(price)} onClick={handleAdd} />
-
-        <div className="pd-facts">
-          <div>
-            <p className="pd-fact-h">Material</p>
-            <p>100% cotton yarn, hand-crocheted. Spot clean, air dry.</p>
-          </div>
-          <div>
-            <p className="pd-fact-h">Made to order</p>
-            <p>{productionTimeLabel ?? "Handmade to order. Timing on request."}</p>
-          </div>
-        </div>
       </section>
 
       <AddToCartStickyBar price={price} label={actionLabel} onClick={handleAdd} />
