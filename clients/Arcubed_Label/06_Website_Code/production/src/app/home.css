@@ -95,20 +95,26 @@ body:has(.home) main { padding-top: 0; }
   /* The forms keep arriving until 62% of the band rather than 35%. */
   .shape-item { --settle: calc(1 - min(1, var(--b-shape) * 1.6)); }
 
-  /* The colour sequence spans 0.12 to 0.87 of the band instead of 0.17 to
-     0.47, so the customer sees each colourway land instead of the whole rail
-     resolving before they have finished the first swipe. Inline custom
-     properties set in page.tsx carry the desktop windows, which is why these
-     need `!important` to win. */
-  .cust-rail li:nth-child(1), .cust-bag img:nth-child(1) { --w0: 0.12 !important; --w1: 0.27 !important; }
-  .cust-rail li:nth-child(2), .cust-bag img:nth-child(2) { --w0: 0.27 !important; --w1: 0.42 !important; }
-  .cust-rail li:nth-child(3), .cust-bag img:nth-child(3) { --w0: 0.42 !important; --w1: 0.57 !important; }
-  .cust-rail li:nth-child(4), .cust-bag img:nth-child(4) { --w0: 0.57 !important; --w1: 0.72 !important; }
+  /* The colour sequence spans 0.10 to 0.92 of the band, five colourways on a
+     0.15 step, and each window is 0.186 long so it OVERLAPS its neighbour by
+     0.036 — exactly 1/--xf, the crossfade length. That overlap is the whole
+     point: with the old adjacent windows (0.12-0.27, 0.27-0.42 and so on) one
+     colourway hit zero opacity on precisely the progress value where the next
+     one started from zero, so at the handover there was a frame with NO bag
+     in it. Overlapped, the two envelopes sum to 1 the whole way across and
+     one colour dissolves into the next.
+
+     Inline custom properties set in page.tsx carry the desktop windows, which
+     is why these need `!important` to win. */
+  .cust-rail li:nth-child(1), .cust-bag img:nth-child(1) { --w0: 0.10 !important; --w1: 0.286 !important; }
+  .cust-rail li:nth-child(2), .cust-bag img:nth-child(2) { --w0: 0.25 !important; --w1: 0.436 !important; }
+  .cust-rail li:nth-child(3), .cust-bag img:nth-child(3) { --w0: 0.40 !important; --w1: 0.586 !important; }
+  .cust-rail li:nth-child(4), .cust-bag img:nth-child(4) { --w0: 0.55 !important; --w1: 0.736 !important; }
   /* The fifth gets a window like the rest. The three rules that used to live
      here restated the hold-to-the-end behaviour with 0.72 written into them;
      the shared rules read --w0 now, so this one line replaces all of them and
      there is exactly one place the phone's spacing is defined. */
-  .cust-rail li:nth-child(5), .cust-bag img:nth-child(5) { --w0: 0.72 !important; --w1: 0.87 !important; }
+  .cust-rail li:nth-child(5), .cust-bag img:nth-child(5) { --w0: 0.70 !important; --w1: 0.886 !important; }
 }
 
 /* The default that hides the pink wordmark lives in globals.css, because
@@ -524,7 +530,29 @@ body:has(.home) main { padding-top: 0; }
    version set the colour name at 12.5vw behind the bag, where a long name
    like "Silver & Gold" ran out of the frame and read as broken rather than
    as cropped. */
+/* HOW FAST A COLOURWAY CHANGES.
+   --xf is the crossfade RATE: a colour reaches full strength in 1/--xf of the
+   customisation band. It was hardcoded as 70 in twelve places, which is 1/70
+   of the band, and measured on a 390x844 phone that is ELEVEN PIXELS of
+   scroll. A thumb flick covers that in about nine milliseconds, so a
+   colourway did not fade, it cut. With five colourways sharing 761px, one
+   swipe crossed 2.8 of them: three colours flashing past in a single gesture.
+
+   14 puts the crossfade at 1/14 of the band, 53px, and the windows in
+   page.tsx and below now OVERLAP by exactly that much, so one colour fades
+   out over precisely the span the next fades in. Sum of opacities stays at 1
+   and there is no blank frame between two colourways.
+
+   The scroll geometry alone cannot fix this, because a fast flick compresses
+   any scroll-linked change into a few milliseconds no matter how wide the
+   window. --xf-time is the second half: a real CSS transition, so the switch
+   takes the same time whether the customer eases through it or throws the
+   page. Flick hard now and the intermediate colourways never reach full
+   opacity, so the sequence dissolves toward the one you land on instead of
+   strobing through the ones you passed. */
 .phase-cust {
+  --xf: 28;
+  --xf-time: 560ms;
   z-index: 10; background: var(--pink);
   display: grid; grid-template-columns: 1fr;
   align-items: center;
@@ -552,7 +580,11 @@ body:has(.home) main { padding-top: 0; }
   border-top: 1px solid rgba(20, 53, 98, 0.16);
   font-size: clamp(12px, 1.05vw, 15px); font-weight: 600;
   letter-spacing: 0.14em; text-transform: uppercase; color: var(--navy);
-  opacity: calc(0.58 + 0.42 * clamp(0, min(calc((var(--b-cust) - var(--w0)) * 70), calc((var(--w1) - var(--b-cust)) * 70)), 1));
+  opacity: calc(0.58 + 0.42 * clamp(0, min(calc((var(--b-cust) - var(--w0)) * var(--xf)), calc((var(--w1) - var(--b-cust)) * var(--xf))), 1));
+  /* Same clock as the photograph. Without this the NAME cut to the next
+     colourway while the bag was still dissolving, which read as two different
+     transitions fighting. */
+  transition: opacity var(--xf-time) cubic-bezier(0.4, 0, 0.2, 1);
 }
 /* The swatch itself does the choosing: it sits flat and slightly inset while
    the colourway is idle, and comes up to full size and a navy edge as its
@@ -561,7 +593,8 @@ body:has(.home) main { padding-top: 0; }
   flex: none; display: block; width: clamp(30px, 2.9vw, 42px); aspect-ratio: 1 / 1;
   background: rgba(255, 255, 255, 0.55); overflow: hidden; position: relative;
   box-shadow: inset 0 0 0 1px rgba(20, 53, 98, 0.18);
-  transform: scale(calc(0.9 + 0.1 * clamp(0, min(calc((var(--b-cust) - var(--w0)) * 70), calc((var(--w1) - var(--b-cust)) * 70)), 1)));
+  transform: scale(calc(0.9 + 0.1 * clamp(0, min(calc((var(--b-cust) - var(--w0)) * var(--xf)), calc((var(--w1) - var(--b-cust)) * var(--xf))), 1)));
+  transition: transform var(--xf-time) cubic-bezier(0.4, 0, 0.2, 1);
 }
 .cust-sw img { position: absolute; inset: 0; margin: auto; width: 88%; height: auto; }
 /* The final colourway HOLDS to the end of the band instead of fading out, so
@@ -571,26 +604,36 @@ body:has(.home) main { padding-top: 0; }
    again the moment the sequence was re-spaced. They read the element's own
    --w0 now, so desktop and phone both follow whatever page.tsx sets. */
 .cust-rail li:last-child .cust-sw {
-  transform: scale(calc(0.9 + 0.1 * clamp(0, calc((var(--b-cust) - var(--w0)) * 70), 1)));
+  transform: scale(calc(0.9 + 0.1 * clamp(0, calc((var(--b-cust) - var(--w0)) * var(--xf)), 1)));
 }
 .cust-rail li:last-child { border-bottom: 1px solid rgba(20, 53, 98, 0.16); }
 /* A navy rule draws across the active name. */
 .cust-rail li::after {
   content: ""; position: absolute; left: 0; bottom: -1px; height: 2px; background: var(--navy);
-  width: calc(100% * clamp(0, min(calc((var(--b-cust) - var(--w0)) * 70), calc((var(--w1) - var(--b-cust)) * 70)), 1));
+  width: calc(100% * clamp(0, min(calc((var(--b-cust) - var(--w0)) * var(--xf)), calc((var(--w1) - var(--b-cust)) * var(--xf))), 1));
+  transition: width var(--xf-time) cubic-bezier(0.4, 0, 0.2, 1);
 }
-.cust-rail li:last-child { opacity: calc(0.58 + 0.42 * clamp(0, calc((var(--b-cust) - var(--w0)) * 70), 1)); }
-.cust-rail li:last-child::after { width: calc(100% * clamp(0, calc((var(--b-cust) - var(--w0)) * 70), 1)); }
+.cust-rail li:last-child { opacity: calc(0.58 + 0.42 * clamp(0, calc((var(--b-cust) - var(--w0)) * var(--xf)), 1)); }
+.cust-rail li:last-child::after { width: calc(100% * clamp(0, calc((var(--b-cust) - var(--w0)) * var(--xf)), 1)); }
 .cust-foot { margin: 0; max-width: 30ch; font-size: 12.5px; line-height: 1.65; color: var(--navy); opacity: 0.62; }
 
 .cust-bag { position: relative; aspect-ratio: 1.2 / 1; }
+/* --on is the colourway's own 0-to-1 envelope, named once so opacity and the
+   scale read the SAME number and cannot drift apart. */
 .cust-bag img {
+  --on: clamp(0, min(calc((var(--b-cust) - var(--w0)) * var(--xf)), calc((var(--w1) - var(--b-cust)) * var(--xf))), 1);
   position: absolute; left: 0; bottom: 0; width: 100%; height: auto;
   transform-origin: 50% 100%;
-  transform: translate(var(--tx, 0), var(--ty, 0)) scale(var(--s, 1));
-  opacity: clamp(0, min(calc((var(--b-cust) - var(--w0)) * 70), calc((var(--w1) - var(--b-cust)) * 70)), 1);
+  /* Crossfade plus a very slight rise in scale, 1.5%, on top of whatever
+     per-frame scale the alignment map gave this photograph. Enough to read as
+     the colourway arriving rather than being swapped; not enough to be a
+     zoom. No bounce, no spring, no positional jump. */
+  transform: translate(var(--tx, 0), var(--ty, 0)) scale(calc(var(--s, 1) * (0.985 + 0.015 * var(--on))));
+  opacity: var(--on);
+  transition: opacity var(--xf-time) cubic-bezier(0.4, 0, 0.2, 1),
+              transform var(--xf-time) cubic-bezier(0.4, 0, 0.2, 1);
 }
-.cust-bag img:last-child { opacity: clamp(0, calc((var(--b-cust) - var(--w0)) * 70), 1); }
+.cust-bag img:last-child { --on: clamp(0, calc((var(--b-cust) - var(--w0)) * var(--xf)), 1); }
 
 @media (min-width: 860px) {
   .phase-cust { grid-template-columns: 38fr 62fr; }
@@ -949,9 +992,13 @@ body:has(.home) main { padding-top: 0; }
     clip-path: none !important;
     padding: clamp(48px, 9vh, 110px) clamp(20px, 5vw, 64px);
   }
-  /* Kills every parallax offset, scale and scroll-driven fade at once. */
+  /* Kills every parallax offset, scale and scroll-driven fade at once —
+     including the colourway crossfade, so there is nothing left to time. The
+     transition is removed with it: leaving a 560ms clock on values that no
+     longer change is dead weight, and this branch exists precisely for people
+     who should not be served easing at all. */
   .story-stage *, .story-stage *::before, .story-stage *::after {
-    transform: none !important; opacity: 1 !important;
+    transform: none !important; opacity: 1 !important; transition: none !important;
   }
 
   /* Anything positioned into the composition returns to normal flow.

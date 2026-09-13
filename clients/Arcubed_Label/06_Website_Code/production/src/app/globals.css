@@ -1727,6 +1727,56 @@ html { overflow-anchor: none; }
 }
 @media (min-width: 700px) { .ft-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
+/* ---------- the phone footer is a set of sections to press ----------
+   Above 700 nothing below applies: the heading shows, the panel is a plain
+   column and there is no button in the accessibility tree at all, because
+   nothing up there is collapsible.
+
+   Flat and editorial on purpose. No cards, no radius, no fills: the structure
+   is carried by one hairline per group, the same hairline already under the
+   wordmark, so the footer reads as an index rather than as a stack of
+   widgets. */
+.ft-group { display: flex; flex-direction: column; }
+.ft-toggle { display: none; }
+@media (max-width: 699px) {
+  /* The rules butt against each other, so the gap goes to zero and each
+     group's own border does the spacing. */
+  .ft-cols { gap: 0; }
+  .ft-group { border-bottom: 1px solid rgba(255, 224, 253, 0.18); }
+  /* The button is the heading here, so the <p> would be a second, silent copy
+     of the same words. */
+  .ft-h { display: none; }
+  .ft-toggle {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    width: 100%; min-height: 52px; padding: 0; margin: 0;
+    background: none; border: 0; border-radius: 0; -webkit-appearance: none;
+    color: #ffe0fd; cursor: pointer; text-align: left;
+    font-family: inherit; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.24em; text-transform: uppercase;
+  }
+  .ft-panel { display: none; }
+  .ft-panel[data-open="true"] { display: flex; padding-bottom: 22px; }
+}
+/* Drawn rather than typed. A "+" glyph sits on the font's own baseline and
+   reads low against a letterspaced cap-height label; two rules centre on the
+   row. The vertical stroke collapses to make the minus. */
+.ft-pm { position: relative; flex: none; width: 11px; height: 11px; }
+.ft-pm::before,
+.ft-pm::after {
+  content: ""; position: absolute; left: 50%; top: 50%;
+  background: currentColor; transform: translate(-50%, -50%);
+}
+.ft-pm::before { width: 11px; height: 1.5px; }
+.ft-pm::after {
+  width: 1.5px; height: 11px;
+  transition: transform 0.26s var(--ease-ui), opacity 0.26s var(--ease-ui);
+}
+.ft-pm[data-open="true"]::after { transform: translate(-50%, -50%) scaleY(0); opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .ft-pm::after { transition: none; } }
+/* The FAQ groups are link targets from the footer now, so they must not land
+   under the sticky header. */
+.fq-group { scroll-margin-top: 96px; }
+
 /* ================= CHECKOUT =================
    Pink, navy and white. The form is the larger zone because it is the work
    the customer has to do; the summary is the reassurance beside it. */
@@ -2201,7 +2251,15 @@ html { overflow-anchor: none; }
   display: grid; grid-template-columns: 1fr;
   gap: clamp(46px, 7vw, 96px) clamp(24px, 3.4vw, 56px);
 }
-@media (min-width: 760px) { .mc { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* Three across, then Loco full width beneath them.
+   Two columns and four models put Loco in the bottom right cell, the same
+   size and shape as everything else, which is the one thing it should not
+   be: it is the only product whose subject is TEXTURE, the only one that
+   cannot be cut out (the fringe will not matte), and the only one still
+   carrying its own studio ground. Sized like a Nova it read as the odd tile
+   out. Three-up plus a closing band gives it the width it needs and leaves no
+   empty cell, which spanning it inside a two-column grid would have. */
+@media (min-width: 760px) { .mc { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
 .mc-block { display: flex; flex-direction: column; margin: 0; }
 /* Every block is the same shape, so four of them end on one line and the
@@ -2238,10 +2296,33 @@ html { overflow-anchor: none; }
 
    No copy changes: these are art direction, not customer-facing words. */
 @media (min-width: 760px) {
-  /* Row 2 is squarer than row 1, so the page has a change of rhythm halfway
-     down instead of four identical 4:3 windows. Paired by ROW so the two
-     blocks beside each other keep a shared baseline. */
-  .mc-vault .mc-stage, .mc-loco .mc-stage { aspect-ratio: 5 / 4; }
+  /* The three cut-out models share a frame because they now share a ROW, and
+     a row of three has to sit on one baseline. The rhythm comes from the band
+     below them instead of from a second, slightly different rectangle. */
+  .mc-nova .mc-stage, .mc-mini-luna .mc-stage, .mc-vault .mc-stage { aspect-ratio: 4 / 3; }
+  /* The closing band takes the full row, but the PICTURE only takes two
+     thirds of it and the product information sits in the last third.
+     Stretching the photograph across all three columns forced a 2.6 crop on a
+     1.5 image, which cut the bag's sides off and turned a redesign meant to
+     make Loco legible back into a detail shot. At two thirds the frame can be
+     3/2, which is what the photograph already is, so there is no crop at all:
+     the whole bag, handle to fringe tips, roughly 870px wide. The band
+     quality comes from the width and from the caption sitting beside it, not
+     from cutting the product down. */
+  .mc-loco {
+    grid-column: 1 / -1;
+    display: grid; align-items: start;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    grid-template-rows: 1fr auto auto auto;
+    column-gap: clamp(24px, 3.4vw, 56px);
+  }
+  .mc-loco .mc-stage { grid-column: 1; grid-row: 1 / -1; aspect-ratio: 3 / 2; }
+  /* The 1fr first row pushes all three of these to the foot of the band, so
+     the caption sits on the picture's baseline the way a plate caption does
+     rather than floating at the top of an empty column. */
+  .mc-loco .mc-meta { grid-column: 2; grid-row: 2; margin-top: 0; }
+  .mc-loco .mc-ways { grid-column: 2; grid-row: 3; }
+  .mc-loco .mc-foot { grid-column: 2; grid-row: 4; }
 }
 /* Single column, so there is no row to align to and each model can have its
    own frame. Four identical 4:3 windows stacked was the main reason the phone
@@ -2253,7 +2334,9 @@ html { overflow-anchor: none; }
   .mc-nova .mc-stage { aspect-ratio: 16 / 10; }
   .mc-mini-luna .mc-stage { aspect-ratio: 1 / 1; }
   .mc-vault .mc-stage { aspect-ratio: 5 / 4; }
-  .mc-loco .mc-stage { aspect-ratio: 16 / 9; }
+  /* Already full width in one column; it just needs to stop being as tall as
+     a product tile and start being a band. */
+  .mc-loco .mc-stage { aspect-ratio: 3 / 2; }
 }
 .mc-nova .mc-stage { padding: clamp(22px, 3.6vw, 52px); }
 .mc-mini-luna .mc-stage { padding: clamp(10px, 1.8vw, 26px); }
@@ -2263,6 +2346,12 @@ html { overflow-anchor: none; }
    cut-outs get breathing room. */
 .mc-stage:has(.mc-photo) { padding: 0; }
 .mc-stage .mc-photo { object-fit: cover; }
+/* Only the phone band crops now: 3/2 on desktop matches the photograph, and
+   at 3/2 on a narrow screen the bag would be small, so the phone runs a
+   shallower frame and takes the difference off the bottom. Weighted upward so
+   the handle stays whole and the fringe runs out of the lower edge, rather
+   than centring and losing the top of the arch as well. */
+@media (max-width: 759px) { .mc-loco .mc-photo { object-position: 50% 38%; } }
 
 .mc-meta {
   display: grid; grid-template-columns: 1fr auto; align-items: baseline;
@@ -2289,9 +2378,17 @@ html { overflow-anchor: none; }
    colourways, and one orphan swatch on a second row made the strip read as an
    overflow rather than as a set. */
 .mc-ways { display: flex; flex-wrap: wrap; gap: 7px; margin: 14px 0 0; }
-/* Square photographic swatches. A flat hex dot cannot describe a metallic. */
+/* Square photographic swatches. A flat hex dot cannot describe a metallic.
+   Sized so the LONGEST row in the collection still fits on one line. Nova has
+   six colourways, and at three blocks across, 6vw swatches wrapped its strip
+   onto a second row: that made the Nova block taller than the two beside it
+   and broke the shared baseline the row depends on. The calc is the width six
+   swatches and their five gaps can actually occupy, so the strip stays one
+   line whatever the column measures, and every model's swatches stay the same
+   size as every other model's. */
 .mc-way {
-  width: clamp(45px, 6vw, 72px); aspect-ratio: 1 / 1; padding: 4px;
+  width: min(clamp(45px, 6vw, 72px), calc((100% - 5 * 7px) / 6));
+  aspect-ratio: 1 / 1; padding: 4px;
   border: 0; border-radius: 0; background: var(--pink);
   box-shadow: inset 0 0 0 1px var(--line);
   transition: box-shadow 0.18s var(--ease-ui);

@@ -47,12 +47,21 @@ const CUSTOM_COLOURS = ["Red", "Gold", "Silver", "Black", "Silver & Gold"];
  *
  * The last window's end is never read — the final colourway holds to the end
  * of the band rather than fading out — but it is emitted for consistency.
+ *
+ * Windows OVERLAP by CUST_OVERLAP, and that number is not free: it has to
+ * equal 1/--xf, the crossfade length set in home.css. Adjacent windows meant
+ * a colourway reached zero opacity on exactly the progress value where its
+ * successor started from zero, so the handover contained a frame with no bag
+ * in it. Overlapping by the crossfade length makes the two envelopes sum to 1
+ * across the whole handover: one colour dissolves into the next.
  */
 const CUST_SPAN = [0.08, 0.94] as const;
+/** Must stay equal to 1 / --xf in home.css (--xf: 28). */
+const CUST_OVERLAP = 0.036;
 function CUST_WINDOW(i: number): [string, string] {
   const w = (CUST_SPAN[1] - CUST_SPAN[0]) / CUSTOM_COLOURS.length;
   const a = CUST_SPAN[0] + i * w;
-  return [a.toFixed(3), (a + w).toFixed(3)];
+  return [a.toFixed(3), (a + w + CUST_OVERLAP).toFixed(3)];
 }
 
 /**

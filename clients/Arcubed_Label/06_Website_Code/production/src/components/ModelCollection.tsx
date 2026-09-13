@@ -20,7 +20,7 @@ import Image from "next/image";
 import type { Bag } from "@/lib/types";
 import { money } from "@/lib/pricing";
 import { framesForColour, tileSrc, altFor } from "@/lib/product-media";
-import { COLLECTION, colourFit } from "@/lib/collection";
+import { COLLECTION, colourFit, LEAD_COLOUR } from "@/lib/collection";
 import { variantHref } from "@/lib/variant";
 
 type Way = { colour: string; field: string; src: string; ratio: number; alt: string; href: string; photo: boolean;
@@ -67,7 +67,12 @@ export default function ModelCollection({ bags }: { bags: Bag[] }) {
 }
 
 function ModelBlock({ product, bag, ways }: { product: string; bag: Bag; ways: Way[] }) {
-  const [i, setI] = useState(0);
+  // Which colourway the block OPENS on. Catalogue order decides it for three
+  // of the four models, and that is right: the first colourway is the one the
+  // wall leads with too. Loco is the exception and it is a photographic
+  // problem, not a preference — see LEAD_COLOUR.
+  const lead = Math.max(0, ways.findIndex((w) => w.colour === LEAD_COLOUR[bag.slug]));
+  const [i, setI] = useState(lead);
   const on = ways[i];
   const n = ways.length;
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -121,10 +126,21 @@ function ModelBlock({ product, bag, ways }: { product: string; bag: Bag; ways: W
           alt={on.alt}
           width={1400}
           height={Math.round(1400 / on.ratio)}
+          // Per model, because the blocks are no longer the same width. Three
+          // cut-out models share a row (measured 28.4vw each at both 768 and
+          // 1440) and Loco is the closing band at two thirds of the row
+          // (61.3vw). One shared 46vw declaration left the band asking for a
+          // 662px candidate to fill 882px: a measured 1.33 upscale, and the
+          // largest image on the page was the blurriest.
+          //
           // 92vw on a phone was resolving to a candidate narrower than the
           // rendered box once the per-model padding changed, which pushed the
           // Vault tile to a 1.13 upscale. 100vw picks the next candidate up.
-          sizes="(max-width: 700px) 100vw, (max-width: 1080px) 48vw, 46vw"
+          sizes={
+            bag.slug === "loco"
+              ? "(max-width: 759px) 100vw, 64vw"
+              : "(max-width: 759px) 100vw, 32vw"
+          }
           className={on.photo ? "mc-photo" : "mc-cut"}
           style={
             on.photo || !on.fit

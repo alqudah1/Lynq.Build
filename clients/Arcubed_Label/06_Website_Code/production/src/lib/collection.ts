@@ -155,6 +155,32 @@ export function colourFit(slug: string, colour: string): ColourFit | undefined {
 }
 
 /**
+ * WHICH COLOURWAY A MODEL BLOCK OPENS ON.
+ *
+ * Catalogue order decides this for Nova, Mini Luna and Vault, and it should:
+ * the block then leads with the same colourway the wall does.
+ *
+ * Loco is overridden, and the reason is measurable rather than preferred. All
+ * four Brown frames were shot on a noticeably darker seamless than the rest
+ * of the archive: mean ground luminance 0.75, RGB around 194,192,188, a mid
+ * GREY. Every other product in the collection sits on 0.92 to 0.94, RGB
+ * around 240. Beside Vault on brand pink, the Loco block was the one tile on
+ * the page with a dirty grey ground, which is what the client saw and called
+ * out as not being as nice as the others.
+ *
+ * The Burgundy frames were shot on the clean seamless: ground 0.936, RGB
+ * 240,238,236, in line with everything else. So the block opens on Burgundy.
+ * Brown is not hidden — it is the second swatch, one tap away, and it still
+ * leads the Shop wall and the shop opener where it sits on its own.
+ *
+ * No retouching: nobody has relit or colour-corrected the client's
+ * photography to force a match.
+ */
+export const LEAD_COLOUR: Record<string, string> = {
+  loco: "Burgundy",
+};
+
+/**
  * FRAMES SIZED TO THE CATALOGUE.
  *
  * The first rhythm was composed as abstract proportion — squares, a 3/4

@@ -5,6 +5,7 @@
 // hardcode a specific lead time, rate, or return rule in this file again.
 
 import Image from "next/image";
+import { faqAnchor } from "@/lib/faq-anchors";
 import { getStoreSettings, getShippingRules, getReturnPolicies } from "@/lib/repository";
 import { plainText } from "@/lib/site-settings";
 import { formatMoney } from "@/lib/site-settings";
@@ -111,8 +112,10 @@ export default async function FaqPage() {
       </div>
 
       <div className="fq-body">
+        {/* Each group is slugged so the footer can send someone straight to
+            the group that answers them instead of to the top of the page. */}
         {GROUPS.map((g) => (
-          <section className="fq-group" key={g.label}>
+          <section className="fq-group" key={g.label} id={faqAnchor(g.label)}>
             <h2 className="fq-group-label">{g.label}</h2>
             <div className="faq-list">
               {g.items.map((item) => (
