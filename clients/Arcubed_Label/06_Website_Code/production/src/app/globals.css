@@ -1657,43 +1657,12 @@ html { overflow-anchor: none; }
 }
 
 /* ---------- shop entry ----------
-   The claim on one side, ONE photograph filling the other edge to edge.
-   Before this the section was 660px tall with the content in a band across
-   its middle: ~200px of empty pink above the kicker and ~150px below the
-   copy, with a washed-out cut-out floating in it. The image is now a real
-   panel that reaches three edges of the frame, the type sits against it, and
-   the dead pink is gone. */
-.shopx-head-object { margin: 0; }
-.shopx-head-object img { display: block; width: 100%; height: 100%; object-fit: cover; }
-@media (min-width: 861px) {
-  /* The panel is shaped to the PHOTOGRAPH. At 54fr and 640px tall it came out
-     nearly square against a 1.465 image, and object-fit cover answered that by
-     throwing away a quarter of the width: the shop opened on a wall of fringe
-     with the bag's silhouette cropped off both sides. Wider column, shorter
-     section, and the crop drops to single figures. */
-  .shopx-head.has-object {
-    display: grid; grid-template-columns: 42fr 58fr; align-items: center;
-    gap: clamp(24px, 3vw, 56px);
-    min-height: min(66vh, 580px);
-    padding-right: 0; padding-top: 0; padding-bottom: 0;
-  }
-  .shopx-head.has-object .shopx-head-copy { padding: clamp(40px, 6vh, 72px) 0; }
-  /* Full bleed to the top, right and bottom of the section. */
-  .shopx-head-object { align-self: stretch; position: relative; }
-  .shopx-head-object img { position: absolute; inset: 0; }
-}
-@media (max-width: 860px) {
-  /* A band under the claim, still edge to edge, still cropped. */
-  .shopx-head.has-object { padding-bottom: 0; }
-  .shopx-head-object {
-    margin: clamp(24px, 4vh, 40px) calc(-1 * clamp(20px, 4vw, 54px)) 0;
-    /* Shaped, not a fixed height. At a flat 340px the band was 2.26 wide on a
-       tablet against a 1.47 photograph, so cover threw away 35% of its HEIGHT
-       and took the handle with it. 16/10 tracks the picture: 92% kept at 768,
-       and the phone loses 8% instead of nothing it can spare. */
-    aspect-ratio: 16 / 10; height: auto; max-height: 52vh;
-  }
-}
+   Type only. The photograph that used to fill the other half of this section
+   is gone: three real products sit immediately below it, so the opener was
+   showing a fourth bag within the same screen, and the one it showed was the
+   darkest picture in the archive. Without it the section sizes to its own
+   content — 383px at 1440, 296px at 390 — and reads as an editorial band
+   rather than a half-screen poster. See the note in src/app/shop/page.tsx. */
 
 
 .shopx { background: #ffffff; padding: clamp(26px, 5vh, 60px) clamp(12px, 2.4vw, 34px) clamp(70px, 12vh, 150px); }
