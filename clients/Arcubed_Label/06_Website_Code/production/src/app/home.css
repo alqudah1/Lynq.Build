@@ -80,42 +80,11 @@ body:has(.home) main { padding-top: 0; }
   .phase-cust .cust-copy { padding-top: calc(66px + env(safe-area-inset-top, 0px)); }
 }
 
-/* ---------------- phone: spread the motion across the band ----------------
-   Both of these phases finished their animation in the first third of their
-   band and then sat completely still, which is the "sticky and glitchy"
-   feeling: you swipe and nothing moves. Measured on the composed timeline,
-   Shape was static for 65% of its band and Customisation for 53% of its.
-
-   Nothing here changes a band BOUNDARY. It changes how much of the band the
-   motion uses, so every swipe produces visible change. Desktop keeps its
-   existing distribution untouched. */
-@media (max-width: 860px) {
-  /* The navy field wipes up across 53% of the band instead of 36%. */
-  .phase-shape { clip-path: inset(calc(100% - min(1, var(--b-shape) * 1.9) * 100%) 0 0 0); }
-  /* The forms keep arriving until 62% of the band rather than 35%. */
-  .shape-item { --settle: calc(1 - min(1, var(--b-shape) * 1.6)); }
-
-  /* The colour sequence spans 0.10 to 0.92 of the band, five colourways on a
-     0.15 step, and each window is 0.186 long so it OVERLAPS its neighbour by
-     0.036 — exactly 1/--xf, the crossfade length. That overlap is the whole
-     point: with the old adjacent windows (0.12-0.27, 0.27-0.42 and so on) one
-     colourway hit zero opacity on precisely the progress value where the next
-     one started from zero, so at the handover there was a frame with NO bag
-     in it. Overlapped, the two envelopes sum to 1 the whole way across and
-     one colour dissolves into the next.
-
-     Inline custom properties set in page.tsx carry the desktop windows, which
-     is why these need `!important` to win. */
-  .cust-rail li:nth-child(1), .cust-bag img:nth-child(1) { --w0: 0.10 !important; --w1: 0.286 !important; }
-  .cust-rail li:nth-child(2), .cust-bag img:nth-child(2) { --w0: 0.25 !important; --w1: 0.436 !important; }
-  .cust-rail li:nth-child(3), .cust-bag img:nth-child(3) { --w0: 0.40 !important; --w1: 0.586 !important; }
-  .cust-rail li:nth-child(4), .cust-bag img:nth-child(4) { --w0: 0.55 !important; --w1: 0.736 !important; }
-  /* The fifth gets a window like the rest. The three rules that used to live
-     here restated the hold-to-the-end behaviour with 0.72 written into them;
-     the shared rules read --w0 now, so this one line replaces all of them and
-     there is exactly one place the phone's spacing is defined. */
-  .cust-rail li:nth-child(5), .cust-bag img:nth-child(5) { --w0: 0.70 !important; --w1: 0.886 !important; }
-}
+/* The phone no longer needs its own timing block. The phases are discrete
+   states and the colourways are discrete steps, so "how much of the band the
+   motion uses" is not a thing that can differ between a thumb and a wheel any
+   more: every swipe either changes the state or it does not. What the phone
+   does need is more TRAVEL, and that is set on .story below. */
 
 /* The default that hides the pink wordmark lives in globals.css, because
    home.css is imported by the homepage ONLY — leaving it here rendered both
@@ -137,7 +106,11 @@ body:has(.home) main { padding-top: 0; }
 /* 240vh. At 380vh a single idea took roughly three wheel gestures to clear,
    which reads as being trapped in a frame rather than as a story. Same six
    phases, far less dead travel. */
-.story { position: relative; height: 240vh; background: var(--pink); }
+/* Taller than the old 240vh because the customisation phase needed real
+   room: five colourways on one deliberate swipe each. The extra travel is
+   free now that scrolling changes an attribute instead of recomputing the
+   whole subtree on every frame. */
+.story { position: relative; height: 300vh; background: var(--pink); }
 .story-stage {
   /* `svh` is the SMALLEST viewport (Safari's bars showing), and unlike `dvh`
      it does not change as those bars collapse — so the stage always fits the
@@ -147,16 +120,42 @@ body:has(.home) main { padding-top: 0; }
   background: var(--pink);
   /* Fallback values so the very first paint (and a no-JS page) is the hero,
      not a blank stage. */
-  --p: 0; --b-hero: 0; --b-enter: 0; --b-mat: 0; --b-shape: 0; --b-cust: 0; --b-final: 0;
+  /* One clock for the whole story. Phases cross-dissolve at --t; a colourway
+     changes at --tc, inside the 450-650ms the composition wants. */
+  --t: 620ms; --tc: 520ms; --e: cubic-bezier(0.4, 0, 0.2, 1);
 }
 .phase { position: absolute; inset: 0; }
+
+/* ONE CLOCK, ONE TRANSITION AT A TIME.
+   Everything the story animates is listed here, and everything listed here
+   animates the same two properties the compositor can handle on its own,
+   plus the clip-path each phase is revealed with. Nothing reads scroll
+   position: the driver changes data-phase or data-step, these transition, and
+   the main thread is idle in between.
+
+   Because the states are mutually exclusive, at any moment the only thing
+   moving is the phase arriving and the phase it replaced. */
+.phase-mat, .phase-shape, .phase-cust, .phase-final,
+.hero-floor, .hero-type > span, .hero-l1, .hero-l2, .hero-l3,
+.hero-bag, .hero-second, .hero-credit, .hero-note, .hero-cta,
+.shape-lead, .shape-close, .shape-item,
+.story-label-pink, .story-label-navy,
+.fin-shot, .fin-copy {
+  transition: transform var(--t) var(--e), opacity var(--t) var(--e),
+              clip-path var(--t) var(--e);
+  will-change: auto;
+}
+/* The colourway controls run on their own, shorter clock. */
+.cust-rail li, .cust-sw, .cust-rail li::after {
+  transition: transform var(--tc) var(--e), opacity var(--tc) var(--e);
+}
 
 /* The white lower field. Sits under everything, moves with the enter band so
    the horizon leaves with the rest of the composition. */
 .hero-floor {
   position: absolute; z-index: 0; left: 0; right: 0; bottom: 0; height: 38%;
   background: var(--paper);
-  transform: translateY(calc(var(--b-enter) * 22vh));
+  transform: translateY(0);
 }
 
 /* ---------------- HERO ----------------
@@ -166,10 +165,11 @@ body:has(.home) main { padding-top: 0; }
    across the join rather than floating. Navy carries the type and one rule. */
 
 .hero-floor {
-  position: absolute; z-index: 0; left: 0; right: 0; bottom: 0; height: 42%;
+  position: absolute; z-index: 0; left: 0; right: 0; bottom: 0; height: 34%;
   background: var(--paper);
-  transform: translateY(calc(var(--b-enter) * 24vh));
+  transform: translateY(0);
 }
+.story-stage:not([data-phase="hero"]) .hero-floor { transform: translateY(24vh); }
 
 .hero-type {
   /* z-index: auto ON PURPOSE. An index here puts every line in its own
@@ -179,39 +179,48 @@ body:has(.home) main { padding-top: 0; }
   font-family: var(--font-display), Georgia, serif;
   /* Deliberately well below the previous 11vw. At poster scale the headline
      WAS the page and the bag became wallpaper behind it. */
-  font-size: clamp(42px, 8.2vw, 120px);
+  /* Larger than it was. At 8.2vw the headline stopped well short of the
+     object and the two sat side by side as separate things; at 10.8vw the
+     WAY. runs into the bag's left edge and the frame reads as one
+     composition. */
+  font-size: clamp(46px, 10.8vw, 164px);
 }
 .hero-type > span { position: absolute; display: block; margin: 0; white-space: nowrap; }
-.hero-type > span { opacity: calc(1 - var(--b-enter) * 1.5); }
+.hero-type > span { opacity: 1; }
+.story-stage:not([data-phase="hero"]) .hero-type > span { opacity: 0; }
 
 /* Three different treatments, not one face at three sizes. */
 .hero-l1 {
-  top: 21vh; left: 4.5vw; z-index: 2; font-size: 0.76em;
+  top: 14vh; left: 4.5vw; z-index: 2; font-size: 0.76em;
   font-weight: 400; text-transform: uppercase; letter-spacing: 0.055em; line-height: 0.92;
   font-variation-settings: "opsz" 72;
-  transform: translateY(calc(var(--b-hero) * -1.4vh + var(--b-enter) * -52vh));
+  transform: translateY(0);
 }
+.story-stage:not([data-phase="hero"]) .hero-l1 { transform: translateY(-52vh); }
 .hero-l2 {
-  top: 32vh; left: 7.2vw; z-index: 2; font-size: 1em;
+  top: 28vh; left: 7.2vw; z-index: 2; font-size: 1em;
   font-weight: 500; font-style: italic; letter-spacing: -0.015em; line-height: 0.88;
   font-variation-settings: "opsz" 72;
-  transform: translateY(calc(var(--b-hero) * -2.6vh + var(--b-enter) * -68vh));
+  transform: translateY(0);
 }
+.story-stage:not([data-phase="hero"]) .hero-l2 { transform: translateY(-68vh); }
 .hero-l3 {
-  top: 45vh; left: 4vw; z-index: 5; font-size: 1.24em;
+  /* z-index 1, BEHIND the object. The overlap is the point: the headline
+     passing under the bag is what stops the two reading as a caption beside a
+     photograph. */
+  top: 43vh; left: 4vw; z-index: 1; font-size: 1.24em;
   font-weight: 900; text-transform: uppercase; letter-spacing: -0.03em; line-height: 0.84;
   font-variation-settings: "opsz" 72;
-  transform: translateY(calc(var(--b-hero) * -0.7vh + var(--b-enter) * -34vh));
+  transform: translateY(0);
 }
+.story-stage:not([data-phase="hero"]) .hero-l3 { transform: translateY(-34vh); }
 
 /* The object: centre right, large, and GROUNDED. Its base sits inside the
    white floor rather than being cropped by the viewport, so it reads as a
    product standing on a surface instead of a cut-out floating on colour. */
 .hero-bag {
-  position: absolute; z-index: 3; top: 17vh; right: -7vw; width: 52vw; margin: 0;
-  transform:
-    translateY(calc(var(--b-hero) * -2.2vh + var(--b-enter) * 4vh))
-    scale(calc(1 + var(--b-enter) * 1.28 + var(--b-mat) * 0.85));
+  position: absolute; z-index: 3; top: 6vh; right: -16vw; width: 76vw; margin: 0;
+  transform: translateY(0) scale(1);
   transform-origin: 62% 46%;
   /* Dissolves as the material wipes across it. The bag has no opacity of its
      own during hero and enter — it grows into the material hand-off — but the
@@ -219,9 +228,17 @@ body:has(.home) main { padding-top: 0; }
      the scaled-up bag sat as a red wall in the un-wiped left third for the
      whole transition. Gone by 62% of the band, just before the wipe lands, so
      what the wipe uncovers is the pink stage rather than the outgoing hero. */
-  opacity: calc(1 - var(--b-mat) * 1.6);
+  opacity: 1;
 }
-.hero-bag img { width: 100%; height: auto; }
+/* One state, not two. The bag pushes in and dissolves as the material wipe
+   crosses it, in a single move: at 1.5 it reads as the object coming forward
+   and leaving, where the old 2.3 then 3.1 filled the screen with red first. */
+.story-stage:not([data-phase="hero"]) .hero-bag {
+  transform: translateY(4vh) scale(1.5); opacity: 0;
+}
+/* The drift lives on the IMAGE, not the figure, so a per-frame value never
+   restarts the figure's transition. */
+.hero-bag img { width: 100%; height: auto; transform: translateY(var(--drift, 0)); }
 
 /* ---------------- the secondary layer ----------------
    ONE object, not a second product card. Black Nova: opposite value to the
@@ -236,13 +253,18 @@ body:has(.home) main { padding-top: 0; }
    Roughly 38% of the hero's width — inside the 25-40% the brief allows, and
    far enough below it that the eye is never in doubt about the subject. */
 .hero-second {
+  /* Not in the desktop composition. Tested three ways at 1440: with the
+     secondary at the lower left it collided with the caption block and made
+     both unreadable, and with the bag this size there is no room left for a
+     second object that is not simply clutter. The phone keeps it, where the
+     frame is vertical and there is somewhere for it to go. */
+  display: none;
   position: absolute; z-index: 2; left: 46%; bottom: 19vh; width: 20vw; margin: 0;
-  transform:
-    translateY(calc(var(--b-hero) * -1.1vh + var(--b-enter) * 10vh))
-    scale(calc(1 + var(--b-enter) * 0.5));
+  transform: translateY(0) scale(1);
   transform-origin: 50% 100%;
-  opacity: calc(1 - var(--b-enter) * 1.7);
+  opacity: 1;
 }
+.story-stage:not([data-phase="hero"]) .hero-second { transform: translateY(10vh) scale(1.5); opacity: 0; }
 .hero-second img { width: 100%; height: auto; display: block; }
 
 /* ---------------- the product credit ----------------
@@ -250,10 +272,14 @@ body:has(.home) main { padding-top: 0; }
    navy rule, then the object, the colourway and the price in Inter at
    utility scale. It sits in the white under the object it names. */
 .hero-credit {
-  position: absolute; z-index: 6; left: 62%; bottom: 7vh; margin: 0;
-  transform: translateY(calc(var(--b-enter) * 14vh));
-  opacity: calc(1 - var(--b-enter) * 1.6);
+  /* In the white field with the rest of the copy, not floating over the
+     object. At 62% it sat on the bag, which at this scale means navy 11px
+     type on a red photograph: present in the DOM, unreadable on the page. */
+  position: absolute; z-index: 6; left: 4.5vw; bottom: 3vh; margin: 0;
+  transform: translateY(0);
+  opacity: 1;
 }
+.story-stage:not([data-phase="hero"]) .hero-credit { transform: translateY(14vh); opacity: 0; }
 .hero-credit-rule {
   display: block; width: clamp(40px, 4.4vw, 66px); height: 1px;
   background: var(--navy); opacity: 0.5; margin: 0 0 12px;
@@ -269,10 +295,11 @@ body:has(.home) main { padding-top: 0; }
 
 /* Two short lines, set once, in the white. */
 .hero-note {
-  position: absolute; z-index: 6; left: 4.5vw; bottom: 19vh; margin: 0;
-  transform: translateY(calc(var(--b-enter) * 14vh));
-  opacity: calc(1 - var(--b-enter) * 1.6);
+  position: absolute; z-index: 6; left: 4.5vw; bottom: 15vh; margin: 0;
+  transform: translateY(0);
+  opacity: 1;
 }
+.story-stage:not([data-phase="hero"]) .hero-note { transform: translateY(14vh); opacity: 0; }
 .hero-note p {
   margin: 0 0 6px; color: var(--navy);
   font-size: clamp(10px, 0.76vw, 12px); font-weight: 600;
@@ -281,12 +308,13 @@ body:has(.home) main { padding-top: 0; }
 
 /* One action. An editorial rule that draws itself across, not a filled pill. */
 .hero-cta {
-  position: absolute; z-index: 6; left: 4.5vw; bottom: 11vh;
+  position: absolute; z-index: 6; left: 4.5vw; bottom: 8.5vh;
   color: var(--navy); font-size: clamp(11px, 0.82vw, 13px); font-weight: 600;
   letter-spacing: 0.2em; text-transform: uppercase; padding-bottom: 10px;
-  transform: translateY(calc(var(--b-enter) * 14vh));
-  opacity: calc(1 - var(--b-enter) * 1.6);
+  transform: translateY(0);
+  opacity: 1;
 }
+.story-stage:not([data-phase="hero"]) .hero-cta { transform: translateY(14vh); opacity: 0; }
 /* The rule runs WELL past the words, out across the empty white, so the lower
    half of the frame has a horizontal axis instead of a gap. It is the thing
    that makes the white field read as composed rather than unused: the eye
@@ -307,12 +335,18 @@ body:has(.home) main { padding-top: 0; }
 @media (max-width: 860px) {
   /* MOBILE STORY LENGTH — measured, not guessed.
      At 210vh a 375x812 phone had 893px of travel and one deliberate swipe
-     moves about 320px, so the entire six phase story was 2.8 swipes and
-     enter, shape and closing were never the visible frame after any swipe.
-     440vh gives roughly 2760px of travel, about 8.6 swipes, which is one full
-     swipe per phase with the extra going to the opening, material, shape and
-     customisation. See scripts/measure-mobile-story.mjs. */
-  .story { height: 440vh; }
+     moves about 320px.
+
+     500vh, up from 440, and the reason is the colour sequence. It takes 40%
+     of the travel now, and at 440vh that was 1148px across five colourways:
+     230px each, so a single deliberate swipe still crossed more than one and
+     the client was right that colours went past too fast. At 500vh the same
+     40% is 1418px, about 284px per colourway, which is one swipe each.
+
+     The extra 60vh costs nothing in work: the stage is sticky, so a longer
+     container is more scroll distance, not more page to paint, and scrolling
+     no longer recomputes anything. */
+  .story { height: 500vh; }
   .hero-floor { height: 46%; }
   .hero-type { font-size: clamp(40px, 13vw, 92px); }
   .hero-l1 { top: 14vh; left: 6vw; }
@@ -362,8 +396,12 @@ body:has(.home) main { padding-top: 0; }
      is already finished. At 1.45 it completes at ~69%, so the spread keeps
      opening under the gesture, and the tail that remains is the reading beat
      the section actually needs. */
-  clip-path: inset(0 0 0 calc(100% - min(1, var(--b-mat) * 1.45) * 100%));
+  /* A wipe that RUNS once, instead of a clip rebuilt from scroll position on
+     every frame. It opens when the phase becomes current and stays open;
+     later phases sit above it on z-index and cover it. */
+  clip-path: inset(0 0 0 100%);
 }
+.story-stage:is([data-phase="mat"], [data-phase="shape"], [data-phase="cust"], [data-phase="final"]) .phase-mat { clip-path: inset(0 0 0 0); }
 .mat-img {
   position: relative; overflow: hidden; margin: 0; width: 100%;
   /* Matches macro-ribbon's 2522x1928 exactly, so object-fit: cover never
@@ -377,7 +415,9 @@ body:has(.home) main { padding-top: 0; }
    overflow:hidden box at a matched aspect ratio, so nothing reflows. */
 .mat-img img {
   width: 100%; height: 100%; object-fit: cover; display: block;
-  transform: scale(calc(1 + var(--b-mat) * 0.03));
+  /* Only the drift, and no transition on it: this is the one place motion is
+     still continuous, so the held frame stays alive under the thumb. */
+  transform: translateY(var(--drift, 0)) scale(1.02);
   transform-origin: 50% 50%;
 }
 @media (prefers-reduced-motion: reduce) { .mat-img img { transform: none; } }
@@ -398,8 +438,10 @@ body:has(.home) main { padding-top: 0; }
   text-transform: uppercase; color: var(--navy);
 }
 .story-label span { display: block; margin-bottom: 6px; opacity: 0.5; }
-.story-label-pink { color: var(--pink); opacity: calc(min(1, (var(--b-shape) - 0.5) * 4) - var(--b-cust) * 2); }
-.story-label-navy { color: var(--navy); opacity: calc(min(1, var(--b-cust) * 3) - var(--b-final) * 2); }
+.story-label-pink { color: var(--pink); opacity: 0; }
+.story-label-navy { color: var(--navy); opacity: 0; }
+.story-stage[data-phase="shape"] .story-label-pink { opacity: 1; }
+.story-stage[data-phase="cust"] .story-label-navy { opacity: 1; }
 
 .mat-note {
   margin: clamp(18px, 3vh, 30px) 0 0; color: var(--navy);
@@ -447,8 +489,9 @@ body:has(.home) main { padding-top: 0; }
      Running the wipe across the whole band meant it was still finishing when
      customisation began — the section never actually resolved, and the "02"
      label stayed clipped outside the revealed area the whole time. */
-  clip-path: inset(calc(100% - min(1, var(--b-shape) * 2.8) * 100%) 0 0 0);
+  clip-path: inset(100% 0 0 0);
 }
+.story-stage:is([data-phase="shape"], [data-phase="cust"], [data-phase="final"]) .phase-shape { clip-path: inset(0 0 0 0); }
 /* The transition copy, top left. Deliberately NOT a full-screen Bodoni
    sentence: a small Inter label, a restrained serif line, a strip of the real
    ribbon, then one small factual line. The forms occupy the lower half. */
@@ -457,8 +500,9 @@ body:has(.home) main { padding-top: 0; }
    middle; a single flow block cannot have one. */
 .shape-lead, .shape-close {
   position: relative; z-index: 3; padding-left: clamp(20px, 4vw, 56px);
-  opacity: calc(min(1, var(--b-shape) * 4) - var(--b-cust) * 2.4);
+  opacity: 0;
 }
+.story-stage[data-phase="shape"] :is(.shape-lead, .shape-close) { opacity: 1; }
 .shape-close { z-index: 2; margin-top: clamp(18px, 3vh, 34px); }
 .shape-head {
   margin: clamp(10px, 1.8vh, 18px) 0 0; max-width: 16ch; color: var(--pink);
@@ -486,9 +530,16 @@ body:has(.home) main { padding-top: 0; }
   display: flex; flex-direction: column; align-items: flex-start; gap: 0;
   /* Settle sooner and travel less, so the forms are part of the frame while
      the material is still on screen instead of arriving after it has gone. */
-  --settle: calc(1 - min(1, var(--b-shape) * 2.9));
+  /* --settle is 1 before the row arrives and 0 once it has. Each form keeps
+     its own distance so the row assembles rather than appearing at once, and
+     a small per-form delay staggers them without any per-frame maths. */
+  --settle: 1;
   transform: translateY(calc(var(--settle) * 24vh));
 }
+.story-stage:is([data-phase="shape"], [data-phase="cust"], [data-phase="final"]) .shape-item { --settle: 0; }
+.shape-item:nth-child(2) { transition-delay: 70ms; }
+.shape-item:nth-child(3) { transition-delay: 140ms; }
+.shape-item:nth-child(4) { transition-delay: 210ms; }
 .shape-nova     { transform: translateY(calc(var(--settle) * 36vh)); }
 .shape-vault    { transform: translateY(calc(var(--settle) * 28vh)); }
 .shape-mini-luna{ transform: translateY(calc(var(--settle) * 20vh)); }
@@ -530,34 +581,21 @@ body:has(.home) main { padding-top: 0; }
    version set the colour name at 12.5vw behind the bag, where a long name
    like "Silver & Gold" ran out of the frame and read as broken rather than
    as cropped. */
-/* HOW FAST A COLOURWAY CHANGES.
-   --xf is the crossfade RATE: a colour reaches full strength in 1/--xf of the
-   customisation band. It was hardcoded as 70 in twelve places, which is 1/70
-   of the band, and measured on a 390x844 phone that is ELEVEN PIXELS of
-   scroll. A thumb flick covers that in about nine milliseconds, so a
-   colourway did not fade, it cut. With five colourways sharing 761px, one
-   swipe crossed 2.8 of them: three colours flashing past in a single gesture.
-
-   14 puts the crossfade at 1/14 of the band, 53px, and the windows in
-   page.tsx and below now OVERLAP by exactly that much, so one colour fades
-   out over precisely the span the next fades in. Sum of opacities stays at 1
-   and there is no blank frame between two colourways.
-
-   The scroll geometry alone cannot fix this, because a fast flick compresses
-   any scroll-linked change into a few milliseconds no matter how wide the
-   window. --xf-time is the second half: a real CSS transition, so the switch
-   takes the same time whether the customer eases through it or throws the
-   page. Flick hard now and the intermediate colourways never reach full
-   opacity, so the sequence dissolves toward the one you land on instead of
-   strobing through the ones you passed. */
+/* HOW A COLOURWAY CHANGES.
+   It used to be a rate: a colour reached full strength over some fraction of
+   the band, computed per frame from scroll position. Even tuned, that is the
+   wrong model, because a fast flick compresses any scroll-linked change into
+   a few milliseconds no matter how wide the window is made.
+   It is five discrete resting states now. The driver decides WHICH colourway
+   is chosen and CSS decides how long the change takes, so the dissolve runs
+   at --tc whether the customer eases through it or throws the page. */
 .phase-cust {
-  --xf: 28;
-  --xf-time: 560ms;
   z-index: 10; background: var(--pink);
   display: grid; grid-template-columns: 1fr;
   align-items: center;
-  clip-path: inset(0 0 calc(100% - min(1, var(--b-cust) * 5) * 100%) 0);
+  clip-path: inset(0 0 100% 0);
 }
+.story-stage:is([data-phase="cust"], [data-phase="final"]) .phase-cust { clip-path: inset(0 0 0 0); }
 .cust-copy {
   display: flex; flex-direction: column; justify-content: center;
   padding: clamp(28px, 5vw, 76px); gap: clamp(14px, 2vh, 22px);
@@ -580,11 +618,11 @@ body:has(.home) main { padding-top: 0; }
   border-top: 1px solid rgba(20, 53, 98, 0.16);
   font-size: clamp(12px, 1.05vw, 15px); font-weight: 600;
   letter-spacing: 0.14em; text-transform: uppercase; color: var(--navy);
-  opacity: calc(0.58 + 0.42 * clamp(0, min(calc((var(--b-cust) - var(--w0)) * var(--xf)), calc((var(--w1) - var(--b-cust)) * var(--xf))), 1));
+  opacity: 0.58;
   /* Same clock as the photograph. Without this the NAME cut to the next
      colourway while the bag was still dissolving, which read as two different
      transitions fighting. */
-  transition: opacity var(--xf-time) cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity var(--tc) var(--e);
 }
 /* The swatch itself does the choosing: it sits flat and slightly inset while
    the colourway is idle, and comes up to full size and a navy edge as its
@@ -593,8 +631,8 @@ body:has(.home) main { padding-top: 0; }
   flex: none; display: block; width: clamp(30px, 2.9vw, 42px); aspect-ratio: 1 / 1;
   background: rgba(255, 255, 255, 0.55); overflow: hidden; position: relative;
   box-shadow: inset 0 0 0 1px rgba(20, 53, 98, 0.18);
-  transform: scale(calc(0.9 + 0.1 * clamp(0, min(calc((var(--b-cust) - var(--w0)) * var(--xf)), calc((var(--w1) - var(--b-cust)) * var(--xf))), 1)));
-  transition: transform var(--xf-time) cubic-bezier(0.4, 0, 0.2, 1);
+  transform: scale(0.9);
+  transition: transform var(--tc) var(--e);
 }
 .cust-sw img { position: absolute; inset: 0; margin: auto; width: 88%; height: auto; }
 /* The final colourway HOLDS to the end of the band instead of fading out, so
@@ -604,36 +642,63 @@ body:has(.home) main { padding-top: 0; }
    again the moment the sequence was re-spaced. They read the element's own
    --w0 now, so desktop and phone both follow whatever page.tsx sets. */
 .cust-rail li:last-child .cust-sw {
-  transform: scale(calc(0.9 + 0.1 * clamp(0, calc((var(--b-cust) - var(--w0)) * var(--xf)), 1)));
+  transform: scale(0.9);
 }
 .cust-rail li:last-child { border-bottom: 1px solid rgba(20, 53, 98, 0.16); }
 /* A navy rule draws across the active name. */
 .cust-rail li::after {
   content: ""; position: absolute; left: 0; bottom: -1px; height: 2px; background: var(--navy);
-  width: calc(100% * clamp(0, min(calc((var(--b-cust) - var(--w0)) * var(--xf)), calc((var(--w1) - var(--b-cust)) * var(--xf))), 1));
-  transition: width var(--xf-time) cubic-bezier(0.4, 0, 0.2, 1);
+  /* Scaled, not widened. Animating `width` is the one property in this file
+     that forced layout on every frame; a scaleX on a 2px rule is composited
+     and looks identical. */
+  width: 100%; transform: scaleX(0); transform-origin: 0 50%;
+  transition: transform var(--tc) var(--e);
 }
-.cust-rail li:last-child { opacity: calc(0.58 + 0.42 * clamp(0, calc((var(--b-cust) - var(--w0)) * var(--xf)), 1)); }
-.cust-rail li:last-child::after { width: calc(100% * clamp(0, calc((var(--b-cust) - var(--w0)) * var(--xf)), 1)); }
+
+/* THE FIVE RESTING STATES.
+   One colourway is chosen at a time and it stays chosen until the customer
+   scrolls to the next one. Everything that marks the choice — the name, the
+   swatch, the rule drawn under it and the photograph — reads the same
+   data-step, so they cannot disagree, and each one dissolves over --tc. */
+.story-stage[data-step="0"] .cust-rail li:nth-child(1),
+.story-stage[data-step="1"] .cust-rail li:nth-child(2),
+.story-stage[data-step="2"] .cust-rail li:nth-child(3),
+.story-stage[data-step="3"] .cust-rail li:nth-child(4),
+.story-stage[data-step="4"] .cust-rail li:nth-child(5) { opacity: 1; }
+.story-stage[data-step="0"] .cust-rail li:nth-child(1) .cust-sw,
+.story-stage[data-step="1"] .cust-rail li:nth-child(2) .cust-sw,
+.story-stage[data-step="2"] .cust-rail li:nth-child(3) .cust-sw,
+.story-stage[data-step="3"] .cust-rail li:nth-child(4) .cust-sw,
+.story-stage[data-step="4"] .cust-rail li:nth-child(5) .cust-sw { transform: scale(1); }
+.story-stage[data-step="0"] .cust-rail li:nth-child(1)::after,
+.story-stage[data-step="1"] .cust-rail li:nth-child(2)::after,
+.story-stage[data-step="2"] .cust-rail li:nth-child(3)::after,
+.story-stage[data-step="3"] .cust-rail li:nth-child(4)::after,
+.story-stage[data-step="4"] .cust-rail li:nth-child(5)::after { transform: scaleX(1); }
 .cust-foot { margin: 0; max-width: 30ch; font-size: 12.5px; line-height: 1.65; color: var(--navy); opacity: 0.62; }
 
 .cust-bag { position: relative; aspect-ratio: 1.2 / 1; }
 /* --on is the colourway's own 0-to-1 envelope, named once so opacity and the
    scale read the SAME number and cannot drift apart. */
 .cust-bag img {
-  --on: clamp(0, min(calc((var(--b-cust) - var(--w0)) * var(--xf)), calc((var(--w1) - var(--b-cust)) * var(--xf))), 1);
   position: absolute; left: 0; bottom: 0; width: 100%; height: auto;
   transform-origin: 50% 100%;
   /* Crossfade plus a very slight rise in scale, 1.5%, on top of whatever
      per-frame scale the alignment map gave this photograph. Enough to read as
      the colourway arriving rather than being swapped; not enough to be a
      zoom. No bounce, no spring, no positional jump. */
-  transform: translate(var(--tx, 0), var(--ty, 0)) scale(calc(var(--s, 1) * (0.985 + 0.015 * var(--on))));
-  opacity: var(--on);
-  transition: opacity var(--xf-time) cubic-bezier(0.4, 0, 0.2, 1),
-              transform var(--xf-time) cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translate(var(--tx, 0), var(--ty, 0)) scale(calc(var(--s, 1) * 0.985));
+  opacity: 0;
+  transition: opacity var(--tc) var(--e), transform var(--tc) var(--e);
 }
-.cust-bag img:last-child { --on: clamp(0, calc((var(--b-cust) - var(--w0)) * var(--xf)), 1); }
+.story-stage[data-step="0"] .cust-bag img:nth-child(1),
+.story-stage[data-step="1"] .cust-bag img:nth-child(2),
+.story-stage[data-step="2"] .cust-bag img:nth-child(3),
+.story-stage[data-step="3"] .cust-bag img:nth-child(4),
+.story-stage[data-step="4"] .cust-bag img:nth-child(5) {
+  opacity: 1;
+  transform: translate(var(--tx, 0), var(--ty, 0)) scale(var(--s, 1));
+}
 
 @media (min-width: 860px) {
   .phase-cust { grid-template-columns: 38fr 62fr; }
@@ -652,99 +717,63 @@ body:has(.home) main { padding-top: 0; }
      bisected by the wipe line — at *3 that window was ~67px of scroll at
      1440, long enough to rest in and read as a glitch rather than a reveal.
      At *4.5 it is ~45px and the frame is simply there. */
-  clip-path: inset(0 0 calc(100% - min(1, var(--b-final) * 4.5) * 100%) 0);
+  clip-path: inset(0 0 100% 0);
 }
-/* A campaign frame, not a text block: the object dominates, one line runs
-   behind it and one crosses in front.
-   The lines used to bleed off the left edge, but the bleed was asymmetric —
-   "MADE BY HAND." lost its M while 220px of the right edge sat empty, which
-   reads as a broken layout rather than a deliberate crop. Both lines now
-   start inside the frame, and the display size came down so the longer line
-   resolves at every desktop width instead of only the widest. */
-/* HIERARCHY, not two matching slabs.
-   Both lines set at the same size made the frame a caption in two halves with
-   the objects filling the gap. "Made by hand." is the quiet statement of fact
-   that opens the frame; "Made yours." is the payoff and carries the scale. */
-.final-line {
-  position: absolute; margin: 0; color: var(--navy); white-space: nowrap;
-  font-family: var(--font-head); font-weight: 600; text-transform: uppercase;
+.story-stage[data-phase="final"] .phase-final { clip-path: inset(0 0 0 0); }
+/* ---------------- 05 THE CAMPAIGN ----------------
+   HALF PHOTOGRAPH, HALF NAVY.
+
+   What was here before was a pink field with a drawn white "floor" across it
+   and two transparent cut-outs arranged on top, one scaled down and pushed
+   off the right edge to read as "further away". It was a collage of product
+   shots, not a photograph of anything, and every attempt to refine it was an
+   attempt to make an arrangement of PNGs look like a picture.
+
+   So it is a picture. Burgundy Loco holds one half of the frame edge to edge
+   and the claim holds the other on navy. No floor, no cut-outs, no invented
+   perspective, no third object. The two halves meet on a hard vertical join,
+   which is the only structure the frame needs. */
+.phase-final {
+  display: grid; grid-template-columns: 1fr; grid-template-rows: 1fr auto;
+  background: var(--navy);
+}
+.fin-shot { position: relative; margin: 0; overflow: hidden; min-height: 0; background: var(--navy); }
+/* Weighted to the upper third. Tested against two alternatives at 1440: the
+   one portrait frame in the Loco archive (DSC05770) fills the panel without
+   cropping but the bag sits small inside its own empty ground and reads as a
+   product shot dropped onto navy, not a campaign; a fringe-forward crop is
+   beautiful texture but loses the handle and with it the product. At 30% the
+   arch, the woven body and the fringe are all in frame. */
+.fin-shot img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  object-position: 50% 30%;
+}
+.fin-copy {
+  display: flex; flex-direction: column; justify-content: center;
+  gap: clamp(10px, 1.6vh, 18px);
+  padding: clamp(24px, 4vh, 64px) clamp(20px, 4vw, 64px) clamp(28px, 5vh, 72px);
+  color: var(--pink);
+}
+.fin-kicker {
+  margin: 0; font-size: clamp(10px, 0.8vw, 11.5px); font-weight: 600;
+  letter-spacing: 0.3em; text-transform: uppercase; opacity: 0.62;
+}
+.fin-head {
+  margin: 0; color: var(--pink);
+  font-family: var(--font-head); font-weight: 600;
   font-variation-settings: "opsz" 144, "SOFT" 0;
-  letter-spacing: -0.045em; line-height: 0.82;
+  text-transform: uppercase; letter-spacing: -0.05em; line-height: 0.82;
+  font-size: clamp(46px, 8.4vw, 132px);
 }
-/* Quiet. Utility scale, wide tracking, sitting on the top margin like a
-   caption rather than a headline. */
-/* The phase is pinned UNDER the sticky header, and how far under varies with
-   viewport and scroll position — measured at -58px (1440), -44px (390) and
-   -76px (375). At 11vh the quiet half of the campaign line landed at y=41 and
-   sat behind the nav on every width, so it never actually read. These values
-   clear the worst measured offset plus the 55px header at each breakpoint,
-   and were re-verified at 375, 390, 430, 768 and 1440. */
-.final-a {
-  z-index: 3; top: 19vh; left: 4vw;
-  font-size: clamp(12px, 1.15vw, 17px); font-weight: 600;
-  letter-spacing: 0.32em; line-height: 1; opacity: 0.72;
+.fin-sub {
+  margin: 0; font-size: clamp(12px, 1vw, 14.5px); letter-spacing: 0.02em;
+  opacity: 0.72;
 }
-/* One factual line under the quiet half, at utility scale. It gives the empty
-   upper left something to be besides empty, and it is the only copy added. */
-.final-note {
-  position: absolute; z-index: 3; top: calc(19vh + 30px); left: 4vw; margin: 0;
-  color: var(--navy); opacity: 0.5;
-  font-size: clamp(9.5px, 0.72vw, 11px); font-weight: 600;
-  letter-spacing: 0.24em; text-transform: uppercase; line-height: 1.7;
+@media (min-width: 760px) {
+  /* The photograph takes the larger half. An even split made the picture and
+     the claim argue; 54/46 settles which one is the subject. */
+  .phase-final { grid-template-columns: 54fr 46fr; grid-template-rows: 1fr; }
 }
-/* The payoff. Brought down from 13vw/196px: at that size it was a full-width
-   slab that left the objects nowhere to sit, and it was the fourth
-   near-identical giant-serif block in one scroll (hero, shop, about, here).
-   Still the largest type on the page, no longer the whole page. */
-/* The payoff, sitting ON the white floor in the lower left. It was at
-   bottom:10vh at up to 156px, which put its baseline hard against the frame
-   edge and clipped it. It is smaller, higher, and its cap height just meets
-   the focal object's base, so the type and the object touch rather than
-   ignore each other — and all of it stays readable, none of it behind a bag
-   and none of it against the viewport edge. */
-.final-b {
-  z-index: 2; bottom: 17vh; left: 4vw;
-  font-size: clamp(44px, 7.6vw, 112px);
-}
-/* ---------------- the ground ----------------
-   Pink wall, white floor, join at 46%. The focal object stands ACROSS it, so
-   it has somewhere to be rather than hovering on a colour. No invented
-   shadow: the weight comes from the crop, the scale and the object's own
-   studio contact shadow, which is the reason Vault is the focal. */
-.final-floor {
-  position: absolute; z-index: 0; left: 0; right: 0; bottom: 0; height: 54%;
-  background: var(--paper);
-}
-
-/* A still life, not three stickers.
-
-     z0  the white floor
-     z1  Nova Silver & Gold, behind everything, further back up the floor
-     z2  the type
-     z4  Vault Olive, the focal object, in front of the type
-
-   Scale runs 1 : 0.47. One object dominates and one supports it; there is no
-   third object competing for the same job. */
-.final-bag {
-  position: absolute; margin: 0;
-  transform: scale(calc(0.97 + var(--b-final) * 0.03));
-  transform-origin: 50% 100%;
-}
-.final-bag img { width: 100%; height: auto; display: block; }
-
-/* FOCAL. Half the frame wide, standing across the pink/white join with its
-   base inside the white. Right of centre so the type has the left. */
-.fc-vault  { z-index: 4; width: 50vw; left: 38%; bottom: 22%; }
-/* SECONDARY. Behind the focal and higher up the floor, which on a shared
-   ground plane reads as further away, and overlapping its right side so the
-   two are one arrangement rather than two objects on the same page. On the
-   RIGHT because the left half is the type's: it also stops the frame from
-   emptying out past the focal object. Cropped by the right edge at -8vw —
-   about a quarter of the object is outside the frame, decisively enough to
-   read as a crop rather than as a corner accidentally clipped. */
-.fc-novasg { z-index: 1; width: 30vw; right: -8vw; left: auto; bottom: 38%; }
-/* Both retired from this composition. */
-.fc-luna, .fc-black { display: none; }
 
 /* ---------------- COLLECTION ----------------
    Released from the sticky stage. The tile is the design: a colour field, the
@@ -813,7 +842,7 @@ body:has(.home) main { padding-top: 0; }
 }
 
 @media (max-width: 860px) {
-  .story { height: 440vh; }
+  .story { height: 500vh; }
   .hero-type { font-size: clamp(48px, 19.5vw, 120px); }
   .hero-l1 { top: 10vh; left: -0.5vw; }
   .hero-l2 { top: 21vh; left: 4vw; }
@@ -840,8 +869,8 @@ body:has(.home) main { padding-top: 0; }
   .hero-second {
     display: block; z-index: 2;
     left: -10vw; right: auto; top: auto; bottom: 24vh; width: 40vw;
-    transform: translateY(calc(var(--b-enter) * 10vh));
-    opacity: calc(1 - var(--b-enter) * 1.7);
+    transform: translateY(0);
+    opacity: 1;
   }
   /* Taller band on a phone: it is the graphic that closes the composition,
      and raising it is what removes the gap under the bag without having to
@@ -878,11 +907,9 @@ body:has(.home) main { padding-top: 0; }
      it is unreadable. The desktop bleed stays. */
   /* Same hierarchy on a phone: quiet caption, loud payoff. A single
      font-size here would have put both lines back at one weight. */
-  /* 9vh landed it at y=32, and 15vh still at y=46, under a 55px persistent
-     header — the phase sits up to 76px above the viewport top at 375. */
-  .final-a { top: 20vh; left: 5vw; font-size: 11px; letter-spacing: 0.28em; }
-  .final-note { top: calc(20vh + 26px); left: 5vw; font-size: 9.5px; letter-spacing: 0.2em; }
-  .final-b { bottom: 13vh; left: 5vw; font-size: clamp(38px, 13.5vw, 74px); }
+  /* On a phone the photograph is a band and the claim sits under it, so the
+     picture still leads and the type still has room to be the payoff. */
+  .phase-final { grid-template-rows: 52% auto; }
   /* Two objects on a phone, not four. At 375 the full cast collapsed into one
      unreadable pile in the lower right; the frame is too narrow to hold four
      overlapping silhouettes and still say anything. Focal plus one.
@@ -898,8 +925,6 @@ body:has(.home) main { padding-top: 0; }
      collage the frame was rebuilt to get rid of. Positioned from the BOTTOM
      like the desktop composition, so the bag sits on the white rather than
      floating at a `top` offset the way the previous cast did. */
-  .fc-novasg, .fc-black, .fc-luna, .fc-lunablack { display: none; }
-  .fc-vault { width: 92vw; left: 5%; top: auto; bottom: 30%; }
 }
 
 /* ---------------- tablet portrait ----------------
@@ -908,10 +933,9 @@ body:has(.home) main { padding-top: 0; }
    are left — the object stops being readable as a bag. Wider viewport, so
    the object can be whole again. */
 @media (min-width: 700px) and (max-width: 860px) {
-  /* A tablet is taller than a phone, so the same 416vh buys 10 swipes rather
-     than 8. Shorter here keeps the per phase dwell while losing the two extra
-     gestures at the end. */
-  .story { height: 330vh; }
+  /* A tablet is taller than a phone, so the same travel buys more swipes.
+     Shorter here keeps the per-phase dwell without the extra gestures. */
+  .story { height: 380vh; }
   .hero-type { font-size: clamp(64px, 14vw, 130px); }
   .hero-l1 { top: 11vh; }
   .hero-l2 { top: 23vh; left: 8vw; }
@@ -945,16 +969,6 @@ body:has(.home) main { padding-top: 0; }
      the bottom and overlapping the focal, like the desktop frame. The rule
      this replaces put it at `top: 56%`, which dropped it into the white well
      below and to the right of the focal object with a gap between them. */
-  .fc-black, .fc-luna, .fc-lunablack { display: none; }
-  .fc-vault { width: 62vw; left: 30%; top: auto; bottom: 30%; }
-  .fc-novasg { display: block; width: 30vw; right: -8vw; left: auto; top: auto; bottom: 44%; }
-  /* Explicitly per line. A single `.final-line` size here sat AFTER the phone
-     block and put the quiet caption back at headline scale, which ran "MADE
-     BY HAND." straight off the right edge at 768. */
-  /* Same header collision as the phone rule above: 8vh is behind the bar. */
-  .final-a { font-size: 12px; letter-spacing: 0.3em; top: 17vh; left: 5vw; }
-  .final-note { top: calc(17vh + 28px); left: 5vw; font-size: 10px; }
-  .final-b { font-size: clamp(44px, 11vw, 104px); bottom: 12vh; left: 5vw; }
 }
 
 /* ---------------- short tablet ----------------
@@ -1010,7 +1024,7 @@ body:has(.home) main { padding-top: 0; }
   .hero-type, .hero-type p, .hero-type > span, .hero-bag, .hero-second, .hero-band,
   .hero-note, .hero-cta, .hero-credit,
   .mat-img, .story-label, .mat-note, .shape-row, .shape-note, .shape-lead, .shape-close,
-  .cust-bag, .final-line, .final-bag {
+  .cust-bag {
     position: relative; top: auto; right: auto; bottom: auto; left: auto;
     margin-left: 0; margin-right: 0; text-align: left;
   }
@@ -1036,7 +1050,7 @@ body:has(.home) main { padding-top: 0; }
   .story-label { margin-bottom: 22px; }
   .story-label-navy { color: var(--pink); }
   .phase-cust, .phase-final { background: var(--pink); }
-  .story-label-navy, .cust-step, .cust-word li, .cust-honest, .final-line { color: var(--navy); }
+  .story-label-navy, .cust-step, .cust-word li, .cust-honest { color: var(--navy); }
   .phase-cust .story-label-navy { color: var(--navy); }
 
   .shape-row { display: flex; flex-wrap: wrap; gap: 28px; justify-content: flex-start; }
@@ -1053,7 +1067,7 @@ body:has(.home) main { padding-top: 0; }
   .cust-word li {
   font-variation-settings: "opsz" 144, "SOFT" 0; font-size: clamp(20px, 3vw, 30px); }
   .cust-honest { max-width: 60ch; margin-top: 20px; }
-  .final-bag { width: min(260px, 42%); margin: 20px 18px 20px 0; display: inline-block; }
+  .fin-shot { aspect-ratio: 3 / 2; }
 }
 
 /* ---------------- tall phone: centre the material in the VISIBLE area -------

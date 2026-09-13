@@ -11,6 +11,8 @@ import { framesForColour, altFor } from "@/lib/product-media";
 import CollectionGrid from "@/components/CollectionGrid";
 import ModelCollection from "@/components/ModelCollection";
 import ShopDiscovery from "@/components/ShopDiscovery";
+import ColourwayReveal from "@/components/ColourwayReveal";
+import { COLLECTION } from "@/lib/collection";
 
 export const dynamic = "force-dynamic";
 
@@ -131,7 +133,9 @@ export default async function ShopPage() {
           <h2 className="shopx-kicker">Every colourway</h2>
         </div>
         <ShopDiscovery>
-          <CollectionGrid bags={bags} />
+          <ColourwayReveal total={COLLECTION.length}>
+            <CollectionGrid bags={bags} />
+          </ColourwayReveal>
         </ShopDiscovery>
       </section>
     </>

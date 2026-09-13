@@ -152,6 +152,19 @@ export default async function HomePage() {
   // range look like one bag in the first place.
   const vault = by("vault");
   const nova = by("nova");
+  const loco = by("loco");
+  // THE CLOSING FRAME IS A PHOTOGRAPH.
+  //
+  // It used to be two transparent cut-outs arranged on a pink field over a
+  // drawn "floor", and it read as exactly that: a collage. Nothing in it was
+  // a picture of anything, it was two products positioned near each other.
+  //
+  // Burgundy Loco instead, full bleed against navy. It is the strongest
+  // photograph in the archive on the one measure that matters here — it was
+  // shot on the clean seamless, mean ground luminance 0.936 against 0.75 for
+  // the Brown frames — it is the one product whose silhouette cannot be cut
+  // out anyway, and its fringe is the most distinctive thing the brand owns.
+  const finalShot = frame(loco, "Burgundy");
 
   /**
    * HERO SECONDARY — one layer, not three.
@@ -209,25 +222,7 @@ export default async function HomePage() {
    * Mini Luna Silver and Nova Black are both gone: at the size this
    * composition wants them they were accessories to nothing.
    */
-  const closingCast = [
-    // `sizes` is per object, not shared: the two are very different widths at
-    // every breakpoint, and one attribute covering both either starves the
-    // focal or over-fetches the secondary. Each string tracks the widths in
-    // home.css with a little headroom, and the secondary is pinned to the
-    // narrowest derivative on a phone because it is display:none there.
-    {
-      key: "vault", cls: "fc-vault", bag: vault, colour: "Olive Green", w: 1800,
-      sizes: "(max-width: 699px) 94vw, (max-width: 860px) 64vw, 52vw",
-    },
-    {
-      key: "novasg", cls: "fc-novasg", bag: nova, colour: "Silver & Gold", w: 1100,
-      sizes: "(max-width: 699px) 64px, 32vw",
-    },
-  ]
-    .map((c) => ({ ...c, frame: frame(c.bag, c.colour) }))
-    // A colourway with no frame simply does not appear; nothing falls back to
-    // another bag's photograph.
-    .filter((c) => c.bag && c.frame);
+  // The closing cast is gone with the collage it arranged; see finalShot.
 
   // Only colourways that actually resolved to a frame survive — a colour with
   // no photography simply does not appear rather than falling back to another
@@ -488,29 +483,25 @@ export default async function HomePage() {
 
         {/* ---------------- 04 THE FINISHED OBJECT ---------------- */}
         <div className="phase phase-final">
-          {/* The ground. The frame was one flat pink field, so every object in
-              it floated. Pink wall above, white floor below, and the focal
-              object crosses the join — the same architecture the hero opens
-              with, so the story closes on the language it started in. */}
-          <div className="final-floor" aria-hidden="true" />
-          <p className="final-line final-a">Made by hand.</p>
-          <p className="final-line final-b">Made yours.</p>
-          <p className="final-note">
-            Hand crocheted
-            <br />
-            Amman, Jordan
-          </p>
-          {closingCast.map((c) => (
-            <figure className={`final-bag ${c.cls}`} key={c.key}>
+          {/* Half photograph, half navy. No floor, no cut-outs, no collage:
+              one real picture holding one half of the frame and the claim
+              holding the other. */}
+          {finalShot && loco ? (
+            <figure className="fin-shot">
               <Image
-                src={tileSrc(c.frame!)}
-                alt={altFor(c.bag!, c.colour)}
-                width={c.w}
-                height={Math.round(c.w / c.frame!.ratio)}
-                sizes={c.sizes}
+                src={finalShot.photo}
+                alt={altFor(loco, "Burgundy")}
+                width={1800}
+                height={Math.round(1800 / finalShot.ratio)}
+                sizes="(max-width: 759px) 100vw, 50vw"
               />
             </figure>
-          ))}
+          ) : null}
+          <div className="fin-copy">
+            <p className="fin-kicker">Made by hand</p>
+            <p className="fin-head">Made yours.</p>
+            <p className="fin-sub">Four shapes. Sixteen colourways.</p>
+          </div>
         </div>
       </ScrollStory>
 

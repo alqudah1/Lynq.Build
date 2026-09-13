@@ -1634,6 +1634,24 @@ html { overflow-anchor: none; }
    That shape is 4/3, not a square, for the same reason SHOP_RHYTHM has no
    square left in it: at 1/1 both Loco photographs lost a third of their width
    and came back as a band of fringe. 4/3 costs them nine percent. */
+/* ---------- the phone wall opens on six ----------
+   Sixteen tiles made /shop 5713px at 390 and the wall is the last thing on
+   the page. The rest stay in the markup and are hidden, so nothing is removed
+   from the served HTML; only what is painted changes. */
+.cw-more { display: none; }
+@media (max-width: 759px) {
+  .cw-reveal[data-open="false"] .shopx-cell:nth-child(n + 7) { display: none; }
+  .cw-more {
+    display: block; width: 100%; margin: clamp(18px, 3vh, 28px) 0 0;
+    min-height: 52px; padding: 16px 18px;
+    background: none; border: 1px solid rgba(20, 53, 98, 0.28); border-radius: 0;
+    -webkit-appearance: none; color: #143562; cursor: pointer;
+    font-family: inherit; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.24em; text-transform: uppercase;
+  }
+  .cw-more:hover { background: #ffe0fd; }
+  .cw-more:focus-visible { outline: 2px solid #143562; outline-offset: 2px; }
+}
 .shopx-cell { grid-column: span 1; }
 .shopx-cell.is-mfull { grid-column: span 2; --ar-m: 16 / 9; }
 .shopx-link { display: block; }
