@@ -1028,23 +1028,54 @@ html { overflow-anchor: none; }
 /* ==========================================================================
    ABOUT
    ========================================================================== */
+/* THE OPENING: OBJECT LEFT, TYPE RIGHT, CROSSING THE EDGE.
+   Deliberately the inverse of every other composition on the site. The hero
+   and the closing campaign both run type left with the object entering from
+   the right; Contact runs a pink column left with the form right; the Shop
+   opener is type only. Putting the bag on the LEFT and the words on the
+   RIGHT, and letting the object hang past the bottom of the pink into the
+   white below, gives About a silhouette of its own while still being made of
+   nothing but pink, navy and one real photograph.
+   overflow is visible so the object can actually cross the boundary; the
+   section keeps a z-index so it sits over the white that follows. */
 .ab-open {
+  position: relative; z-index: 1; overflow: visible;
   background: var(--pink);
-  padding: clamp(48px, 8vw, 110px) clamp(16px, 4vw, 54px) clamp(30px, 4.5vw, 60px);
-  display: grid; gap: clamp(22px, 3vw, 48px); align-items: end;
+  padding: clamp(44px, 7vw, 96px) clamp(16px, 4vw, 54px) clamp(28px, 4vw, 52px);
+  display: grid; gap: clamp(20px, 3vw, 44px); align-items: end;
 }
 @media (min-width: 860px) {
-  .ab-open { grid-template-columns: 58fr 42fr; }
-  /* The band runs the full width of the grid BUT stays inside the section
-     padding, so pink frames it on every side. Bleeding it edge to edge is
-     what made it read as flooring. */
-  .ab-band { grid-column: 1 / -1; }
+  /* Object column first, then the words. */
+  .ab-open { grid-template-columns: 46fr 54fr; align-items: end; }
+  .ab-open-head { grid-column: 2; grid-row: 1; align-self: end; }
+  .ab-open-r { grid-column: 2; grid-row: 2; }
+  /* OUT OF FLOW, so it can actually cross. While the object was a grid item
+     it set the row height whenever it was the taller of the two columns, so
+     every attempt to push it past the pink simply made the pink taller and it
+     finished 52px short however large it got. Positioned, it hangs off the
+     section instead of stretching it, and the type column alone decides how
+     tall the pink is. */
+  .ab-open { position: relative; min-height: clamp(400px, 42vw, 600px); }
+  .ab-obj {
+    /* Placed explicitly, because an absolutely positioned grid child is sized
+       against its GRID AREA rather than the section: auto-placed, `46%` came
+       out as 46% of the column and the bag rendered at 273px. */
+    grid-column: 1; grid-row: 1 / span 2;
+    position: absolute; left: -6%; bottom: 0; margin: 0;
+    width: 116%;
+    transform: translateY(15%);
+  }
 }
-.ab-band { margin: clamp(6px, 1.4vw, 18px) 0 0; }
-.ab-band-img {
-  width: 100%; height: clamp(150px, 22vw, 300px); object-fit: cover; display: block;
-  /* Off centre. Dead centre put the crop on the flattest part of the swatch. */
-  object-position: 62% 38%;
+.ab-obj { margin: clamp(18px, 3vw, 30px) 0 0; position: relative; z-index: 2; }
+.ab-obj img { width: 100%; height: auto; display: block; }
+@media (max-width: 859px) {
+  /* On a phone the words come first and the object closes the section,
+     hanging past the pink by a smaller amount so it still reads as crossing
+     without eating the section below. */
+  .ab-obj {
+    width: 86%; margin-left: auto; margin-right: auto;
+    margin-bottom: calc(-1 * clamp(28px, 4vw, 52px) - 40px);
+  }
 }
 /* Navy, small, letterspaced. A caption, so a photograph reads as something the
    page placed rather than as a background that leaked in. */

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getActiveBags } from "@/lib/repository";
-import { resolveMedia, framesForColour, altFor } from "@/lib/product-media";
+import { resolveMedia, framesForColour, tileSrc, altFor } from "@/lib/product-media";
 import Reveal from "@/components/Reveal";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +19,26 @@ export default async function AboutPage() {
   const luna = by("mini luna");
   const nova = by("nova");
   const lunaShot = luna ? framesForColour(luna, "Red")[0] ?? resolveMedia(luna)?.frame : null;
+
+  // THE OPENING OBJECT.
+  //
+  // A metallic ribbon macro used to sit here, and it answered the wrong
+  // question: a page that opens "HAND MADE." should show what Arcubed makes,
+  // not a swatch of what it is made from. It also repeated the kind of image
+  // the homepage already uses twice.
+  //
+  // Mini Luna in Black, compared on the actual pink field against Mini Luna
+  // Gold and Silver & Gold, Nova Black, Nova Gold and Nova Rose Gold. Nova is
+  // a wide flat clutch with a hand slot rather than an arch, so its
+  // silhouette does not read as a bag at a glance; the warm metallics sit too
+  // close to pink in value. Black on pink is the highest-contrast pairing in
+  // the system and the arch is the most legible shape in the catalogue.
+  //
+  // DSC04873 by frameId, not the first frame: DSC04872 carries a matte
+  // artefact inside the arch. Same selection the homepage makes.
+  const blackFrames = luna ? framesForColour(luna, "Black") : [];
+  const openShot =
+    blackFrames.find((f) => f.frameId === "DSC04873") ?? blackFrames[0] ?? null;
   const novaShot = nova ? framesForColour(nova, "Silver & Gold")[0] ?? resolveMedia(nova)?.frame : null;
 
   return (
@@ -46,24 +66,21 @@ export default async function AboutPage() {
             <li>Amman, Jordan</li>
           </ul>
         </div>
-        <Reveal as="figure" className="ab-band">
-          {/* macro-chunky is gone. It is the darkest, muddiest asset in the
-              archive — mean luminance 0.36 against 0.55 here — and a brown
-              texture is the wrong first image for a page whose subject is
-              colour. This one is also band-SHAPED, 2070x457, so it fills a
-              wide inset with almost no crop instead of being cover-cropped
-              into one. The homepage already uses macro-material and
-              macro-twotone, so About does not repeat either. */}
-          <Image src="/media/macro-ribbon-band.webp" alt="Close detail of metallic ribbon yarn, hand crocheted"
-                 width={2070} height={457}
-                 // The band is inset inside the section padding now rather
-                 // than bleeding past it, so it is narrower than the viewport.
-                 sizes="(max-width: 860px) 92vw, 92vw" className="ab-band-img"
-                 // This is the LCP element on /about and was loading at default
-                 // priority behind everything else on the page.
-                 preload />
-          <figcaption className="ab-cap">Metallic ribbon, crocheted by hand</figcaption>
-        </Reveal>
+        {/* No caption. The three facts directly above already say hand
+            crocheted, made to order, Amman — a caption here would repeat them
+            to fill space. */}
+        {openShot && luna ? (
+          <figure className="ab-obj">
+            <Image
+              src={tileSrc(openShot)}
+              alt={altFor(luna, "Black")}
+              width={1500}
+              height={Math.round(1500 / openShot.ratio)}
+              sizes="(max-width: 859px) 88vw, 54vw"
+              preload
+            />
+          </figure>
+        ) : null}
       </section>
 
       {/* THE CREAM HAS TO LOOK CHOSEN.

@@ -104,9 +104,17 @@ export default async function FaqPage() {
           to know.
         </h1>
         <figure className="fq-crop">
-          {/* LCP on /faq at every width measured. */}
-          <Image src="/media/macro-twotone.webp" alt="Close detail of silver and gold metallic ribbon yarn"
-                 width={1465} height={932} sizes="(max-width: 860px) 92vw, 34vw" preload />
+          {/* LCP on /faq at every width measured.
+
+              macro-twotone moved out because the homepage already uses it, in
+              the strip that hands the material phase over to the four forms:
+              the same photograph was carrying a major moment on two different
+              pages. macro-ribbon-band is the same subject shot differently and
+              is used nowhere else now that About opens on a product. It is a
+              4.5 band being cropped to 1.57 here, which costs a texture
+              nothing — there is no silhouette to lose. */}
+          <Image src="/media/macro-ribbon-band.webp" alt="Close detail of silver and gold metallic ribbon yarn"
+                 width={2070} height={457} sizes="(max-width: 860px) 92vw, 34vw" preload />
         </figure>
         <p className="fq-note">Hand crocheted to order in Amman.</p>
       </div>
