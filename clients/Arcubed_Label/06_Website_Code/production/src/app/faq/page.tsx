@@ -14,6 +14,15 @@ import type { ReturnPolicy } from "@/lib/types";
 // app/page.tsx.
 export const dynamic = "force-dynamic";
 
+// Title only. The root layout supplies the "%s | Arcubed Label" template, so
+// this resolves to "FAQ | Arcubed Label"; without it the page fell through to
+// the site-wide default and every FAQ tab read "Arcubed Label | Handmade
+// Crochet Bags". No description here on purpose — the site-wide one still
+// applies, and writing a new one would be new customer-facing copy.
+export const metadata = {
+  title: "FAQ",
+};
+
 function shippingSentence(rules: Awaited<ReturnType<typeof getShippingRules>>): string {
   if (!rules.length) {
     return "Shipping details will be published here once confirmed.";
