@@ -137,6 +137,38 @@ export const HIRES_PHOTOS = new Set([
   "DSC05774", // Mini Luna Red — the About plate
 ]);
 
+/**
+ * FRAMES WHOSE **CUT-OUT** IS DRAWN LARGE.
+ *
+ * The cut-out pipeline composites an alpha matte onto RGB taken from the
+ * 1600px matte proxy, because that is the resolution the matte is computed
+ * at. Every `-cut-*` file therefore inherits the proxy's detail, and the
+ * largest one is named `-cut-2600` — a name that describes its pixel count
+ * and not its information. For DSC05792 the crop out of that proxy is 1452px
+ * wide and the file is 2860px: a 1.97x enlargement, shipped as the largest
+ * object on the homepage.
+ *
+ * That is what the client photographed as "visibly pixelated", and no audit
+ * could have caught it, because 2860px of real header dimensions across
+ * roughly 1500 physical pixels scores 1.28 — comfortably adequate, and
+ * entirely interpolated.
+ *
+ * Listing a frame here rebuilds its `-cut-2600` with RGB taken from the
+ * FULL-RESOLUTION original — the same crop rectangle, scaled up from probe
+ * space to the 6000px frame, so the region has 5445 real pixels behind it
+ * and 2600 is a downsample. The matte is still computed at probe resolution
+ * and enlarged to suit, which costs nothing: it is a blurred edge mask with
+ * no fine detail to lose, and the pixels a viewer looks at are the
+ * photograph's.
+ *
+ * Add a frame only when its CUT-OUT is rendered large. The other cut-outs in
+ * the archive are swatches and tiles at a few hundred pixels, where the proxy
+ * is more resolution than they can show.
+ */
+export const HIRES_CUTS = new Set([
+  "DSC05792", // Vault Olive Green — the "Made yours" campaign object
+]);
+
 /** Macro texture crops, taken relative to the detected object box. */
 export const TEXTURE_CROPS = [
   { id: "texture-fringe",   frame: "DSC05765", rel: { l: 0.04, t: 0.34, w: 0.40, h: 0.52 } },

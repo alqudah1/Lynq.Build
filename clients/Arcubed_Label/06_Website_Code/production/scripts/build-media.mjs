@@ -14,7 +14,7 @@
 import sharp from "sharp";
 import { mkdirSync, writeFileSync, existsSync } from "node:fs";
 import { analyzeFrame } from "./lib-mask.mjs";
-import { PRODUCT_MEDIA, TEXTURE_CROPS, DETAIL_CROPS, allFrames, REJECTED_CUTOUTS, HIRES_PHOTOS } from "./media-manifest.mjs";
+import { PRODUCT_MEDIA, TEXTURE_CROPS, DETAIL_CROPS, allFrames, REJECTED_CUTOUTS, HIRES_PHOTOS, HIRES_CUTS } from "./media-manifest.mjs";
 import { objectMatte } from "./lib-matte.mjs";
 import { buildTextures, buildDetails } from "./build-textures.mjs";
 
@@ -45,8 +45,10 @@ for (const frame of allFrames()) {
   // names the frames whose framed photo is drawn large even though their
   // cut-out is fine. Both need the crop re-cut from the 3200px proxy.
   const needsHiRes = REJECTED_CUTOUTS.has(frame) || HIRES_PHOTOS.has(frame);
+  const needsHiResCut = HIRES_CUTS.has(frame);
   const done = [1600, 800].every((x) => existsSync(`${OUT}/${frame}-${x}.webp`))
     && (!needsHiRes || existsSync(`${OUT}/${frame}-2600.webp`))
+    && (!needsHiResCut || existsSync(`${OUT}/${frame}-cut-2600.webp`))
     && [1200, 600].every((x) => existsSync(`${OUT}/${frame}-cut-${x}.webp`));
 
   const { data, info } = await sharp(src).rotate().resize({ width: MATTE_W }).raw().toBuffer({ resolveWithObject: true });
@@ -116,6 +118,41 @@ for (const frame of allFrames()) {
   for (const width of [1200, 600]) {
     await sharp(cutBuf).extract(region).resize({ width, withoutEnlargement: true })
       .webp({ quality: 86, alphaQuality: 90 }).toFile(`${OUT}/${frame}-cut-${width}.webp`);
+  }
+
+  // THE LARGE CUT-OUT COMES FROM THE ORIGINAL, NOT FROM THE PROXY.
+  //
+  // Everything above composites onto RGB from the 1600px matte proxy, which
+  // is right for a swatch and wrong for the biggest object on the homepage:
+  // DSC05792's crop out of that proxy is 1452px and the file it was written
+  // to is 2860px, a 1.97x enlargement sold as a 2600-class asset.
+  //
+  // Here the SAME crop rectangle is scaled from probe space onto the
+  // 6000x4000 original, so the region carries 5445 real pixels and 2600 is a
+  // downsample. Only the matte is enlarged — a blurred edge mask has no fine
+  // detail to lose, and every pixel the viewer actually looks at is the
+  // photograph's.
+  if (needsHiResCut) {
+    const fullRgb = await sharp(src).rotate().removeAlpha().png().toBuffer();
+    const fm = await sharp(fullRgb).metadata();
+    const k = fm.width / MATTE_W;
+    const hiRegion = {
+      left: Math.max(0, Math.round(region.left * k)),
+      top: Math.max(0, Math.round(region.top * k)),
+      width: Math.round(region.width * k),
+      height: Math.round(region.height * k),
+    };
+    hiRegion.width = Math.max(1, Math.min(hiRegion.width, fm.width - hiRegion.left));
+    hiRegion.height = Math.max(1, Math.min(hiRegion.height, fm.height - hiRegion.top));
+    const hiMatte = await sharp(matte)
+      .resize({ width: fm.width, height: fm.height, fit: "fill" }).toBuffer();
+    const hiCut = await sharp(fullRgb).joinChannel(hiMatte).png().toBuffer();
+    await sharp(hiCut).extract(hiRegion).resize({ width: 2600, withoutEnlargement: true })
+      // 90/92 rather than 86/90: this one is drawn at poster scale and its
+      // whole subject is crochet texture, which is the first thing a lower
+      // setting destroys.
+      .webp({ quality: 90, alphaQuality: 92 }).toFile(`${OUT}/${frame}-cut-2600.webp`);
+    console.log(`\n${frame}: hi-res cut-out ${hiRegion.width}x${hiRegion.height} -> 2600px (was a ${region.width}px crop enlarged)`);
   }
 
   geom[frame] = { ratio: +(region.width / region.height).toFixed(4), objectRatio: +(a.box.width / a.box.height).toFixed(4) };
