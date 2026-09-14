@@ -186,6 +186,16 @@ console.log("\n=== prefers-reduced-motion ===");
 await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });
 await send("Page.navigate", { url: `${BASE}/faq` });
 await new Promise((r) => setTimeout(r, 1600));
+// Wait for the emulated media to be OBSERVABLE before asserting on it.
+// Over a network origin the navigation can win the race against the
+// override, and then this reports "still animates" about a page that does
+// not — a false failure is as bad as a missed one.
+for (let i = 0; i < 30; i++) {
+  if (await ev(`matchMedia("(prefers-reduced-motion: reduce)").matches`)) break;
+  await new Promise((r) => setTimeout(r, 200));
+}
+ok("reduced-motion emulation is actually in effect",
+  await ev(`matchMedia("(prefers-reduced-motion: reduce)").matches`));
 ok("open/close does not animate under reduced motion",
   (await ev(`getComputedStyle(document.querySelector('.fq .faq-list details')).transitionDuration`)) === "0s");
 await send("Emulation.setEmulatedMedia", { features: [] });
