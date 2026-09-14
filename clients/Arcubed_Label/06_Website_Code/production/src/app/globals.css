@@ -2272,8 +2272,18 @@ html { overflow-anchor: none; }
    the height is spent on. */
 .pd-stage:has(.pg-main:not(.is-cut)) { padding-top: 0; padding-bottom: 0; }
 .pd-stage:has(.pg-main:not(.is-cut)) .product-media { width: 100%; }
+/* NO FIXED HEIGHT, NO CROP.
+   This stage used to be a tall fixed box with the photograph cover-cropped
+   into it: at 390x844 that is a 0.72 window over a 1.47 photograph, so 51% of
+   the source width was thrown away and what remained — 591 source pixels —
+   was stretched across 1170 physical pixels on a DPR3 phone. Effective detail
+   0.51. That is precisely the "massively cropped and soft" the client saw,
+   and no dimension-only audit could see it because the DELIVERED file was a
+   perfectly adequate 1200px wide.
+   The stage takes the photograph's own aspect now. The whole bag is in frame,
+   nothing is discarded, and every delivered pixel lands on screen. */
 .pd-object .pg-main:not(.is-cut) {
-  display: block; width: 100%; height: clamp(340px, 64vh, 660px); overflow: hidden;
+  display: block; width: 100%; height: auto; overflow: hidden;
 }
 /* The crop was landing at 46%, which left a sliver of the handle clipped
    against the header — a partial dark shape at the top edge that reads as a
@@ -2283,7 +2293,7 @@ html { overflow-anchor: none; }
    and the full fringe — one deliberate texture crop, no severed element. The
    whole bag, handle included, is one thumbnail away directly underneath. */
 .pd-object .pg-main:not(.is-cut) .pg-img {
-  width: 100%; height: 100%; object-fit: cover; object-position: 50% 62%;
+  width: 100%; height: auto; object-fit: contain;
 }
 
 /* ---------- gallery thumbnails ---------- */
@@ -2593,9 +2603,14 @@ html { overflow-anchor: none; }
   font-family: var(--font-head); font-weight: 600; font-variation-settings: "opsz" 96;
   font-size: clamp(42px, 6vw, 86px); line-height: 0.96; letter-spacing: -0.035em;
 }
+/* Shaped to the photograph. This slot was built for macro-twotone at 1.57;
+   the band that replaced it is 2070x457, so a 1.57 window cropped 65% of it
+   away and left 374 source pixels across 1050 physical: effective detail
+   0.36, the worst number on the site. The slot is the band's own shape now,
+   which crops nothing. */
 .fq-crop {
   margin: clamp(22px, 3.4vh, 36px) 0 0; overflow: hidden;
-  aspect-ratio: 1465 / 932;
+  aspect-ratio: 2070 / 457;
 }
 .fq-crop img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .fq-note { margin: 12px 0 0; font-size: 12px; color: var(--muted); }

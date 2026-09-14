@@ -77,6 +77,7 @@ export default async function AboutPage() {
               width={1500}
               height={Math.round(1500 / openShot.ratio)}
               sizes="(max-width: 859px) 88vw, 54vw"
+              quality={90}
               preload
             />
           </figure>
@@ -106,7 +107,8 @@ export default async function AboutPage() {
         {lunaShot && luna ? (
           <Reveal as="figure" className="ab-plate ab-two-img" delay={90}>
             <Image src={lunaShot.photo} alt={altFor(luna, "Red")} width={1600}
-                   height={Math.round(1600 / lunaShot.ratio)} sizes="(max-width:860px) 84vw, 42vw" />
+                   height={Math.round(1600 / lunaShot.ratio)} sizes="(max-width:860px) 84vw, 42vw"
+                   quality={90} />
             <figcaption className="ab-cap">{luna.name.trim()} in Red</figcaption>
           </Reveal>
         ) : null}
@@ -121,7 +123,8 @@ export default async function AboutPage() {
         {novaShot && nova ? (
           <Reveal as="figure" className="ab-plate ab-split-img">
             <Image src={novaShot.photo} alt={altFor(nova, "Silver & Gold")} width={1600}
-                   height={Math.round(1600 / novaShot.ratio)} sizes="(max-width:860px) 84vw, 48vw" />
+                   height={Math.round(1600 / novaShot.ratio)} sizes="(max-width:860px) 84vw, 48vw"
+                   quality={90} />
             <figcaption className="ab-cap">{nova.name.trim()} in Silver &amp; Gold</figcaption>
           </Reveal>
         ) : null}

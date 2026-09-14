@@ -70,6 +70,10 @@ function Photos({ bag, selection }: { bag: Bag; selection: Selection }) {
           // now runs full-bleed. Declaring the photograph at 100vw is what
           // stops Next handing back a 1200px derivative for a 1440px box.
           sizes={useCut ? "(max-width: 860px) 96vw, 62vw" : "100vw"}
+          // The primary product image is the largest thing on the page and
+          // the one a customer studies. 75 leaves visible blocking in the
+          // crochet.
+          quality={90}
           loading="eager"
           fetchPriority="high"
           className="pg-img"

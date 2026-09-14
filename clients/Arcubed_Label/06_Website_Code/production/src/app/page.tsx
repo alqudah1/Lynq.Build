@@ -266,6 +266,7 @@ export default async function HomePage() {
                 // express a transform, so a resting-width budget left it soft
                 // exactly while it is largest on screen.
                 sizes="(max-width: 860px) 200vw, 92vw"
+                quality={90}
                 // Next 16 deprecated `priority` and it emitted nothing, so the
                 // hero — the LCP element — was being fetched at default
                 // priority and the browser warned about it on every load.
@@ -296,6 +297,7 @@ export default async function HomePage() {
                 // 36vw was the width before the phone composition grew the
                 // secondary to 40vw; it left a 1.11 upscale at 375.
                 sizes="(max-width: 699px) 62vw, (max-width: 860px) 64px, 21vw"
+                quality={90}
               />
             </figure>
           ) : null}
@@ -343,6 +345,7 @@ export default async function HomePage() {
               width={2522}
               height={1928}
               sizes="(max-width: 860px) 92vw, 56vw"
+                quality={90}
             />
           </figure>
           <div className="mat-side">
@@ -471,6 +474,7 @@ export default async function HomePage() {
                 // while resting width is 52vw. `sizes` cannot express a
                 // transform, so it is declared above the resting width.
                 sizes="(max-width: 860px) 100vw, 66vw"
+                quality={90}
                 style={{
                   ["--w0" as string]: CUST_WINDOW(i)[0],
                   ["--w1" as string]: CUST_WINDOW(i)[1],
@@ -501,6 +505,7 @@ export default async function HomePage() {
                 // scaled past the viewport edge to meet the stacked
                 // headline, and it measures 128vw at 375.
                 sizes="(max-width: 759px) 130vw, 56vw"
+              quality={90}
               />
             </figure>
           ) : null}

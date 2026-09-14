@@ -150,6 +150,7 @@ function ModelBlock({ product, bag, ways }: { product: string; bag: Bag; ways: W
               ? "(max-width: 759px) 100vw, 94vw"
               : "(max-width: 759px) 100vw, 32vw"
           }
+          quality={90}
           className={on.photo ? (on.framed ? "mc-photo mc-framed" : "mc-photo") : "mc-cut"}
           style={
             on.photo || !on.fit
