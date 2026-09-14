@@ -14,7 +14,7 @@
 import sharp from "sharp";
 import { mkdirSync, writeFileSync, existsSync } from "node:fs";
 import { analyzeFrame } from "./lib-mask.mjs";
-import { PRODUCT_MEDIA, TEXTURE_CROPS, DETAIL_CROPS, allFrames, REJECTED_CUTOUTS } from "./media-manifest.mjs";
+import { PRODUCT_MEDIA, TEXTURE_CROPS, DETAIL_CROPS, allFrames, REJECTED_CUTOUTS, HIRES_PHOTOS } from "./media-manifest.mjs";
 import { objectMatte } from "./lib-matte.mjs";
 import { buildTextures, buildDetails } from "./build-textures.mjs";
 
@@ -41,7 +41,10 @@ for (const frame of allFrames()) {
   const a = await analyzeFrame(src, { probeWidth: MATTE_W, dev: 20 });
   if (!a) { console.log(`${frame}: NO OBJECT — skipped`); continue; }
 
-  const needsHiRes = REJECTED_CUTOUTS.has(frame);
+  // A rejected cut-out means the framed photo IS the hero, and HIRES_PHOTOS
+  // names the frames whose framed photo is drawn large even though their
+  // cut-out is fine. Both need the crop re-cut from the 3200px proxy.
+  const needsHiRes = REJECTED_CUTOUTS.has(frame) || HIRES_PHOTOS.has(frame);
   const done = [1600, 800].every((x) => existsSync(`${OUT}/${frame}-${x}.webp`))
     && (!needsHiRes || existsSync(`${OUT}/${frame}-2600.webp`))
     && [1200, 600].every((x) => existsSync(`${OUT}/${frame}-cut-${x}.webp`));
@@ -154,11 +157,15 @@ lines.push("  /** Set only on detail frames, which the generic alt would describ
 lines.push("  alt?: string;");
 lines.push("}");
 lines.push("");
-lines.push("function f(id: string, ratio: number, cutOk = true): Frame {");
+lines.push("function f(id: string, ratio: number, cutOk = true, hires = !cutOk): Frame {");
 lines.push("  return {");
-lines.push("    // A rejected cut-out means the framed photo IS the hero image, so it");
-lines.push("    // is built at 2600px. Every other frame is shown as a cut-out.");
-lines.push("    photo: cutOk ? `/media/${id}-1600.webp` : `/media/${id}-2600.webp`,");
+lines.push("    // `hires` is its own axis, not a synonym for a failed cut-out. It");
+lines.push("    // defaults to !cutOk, because a frame with no usable cut-out is shown");
+lines.push("    // as a large photograph by definition — but a frame with a perfectly");
+lines.push("    // good cut-out can ALSO be drawn large somewhere (see HIRES_PHOTOS),");
+lines.push("    // and 1600 is not enough for that. Note that -1600 is a ceiling, not a");
+lines.push("    // width: the crop is whatever the object box occupies, 1184 to 1552px.");
+lines.push("    photo: hires ? `/media/${id}-2600.webp` : `/media/${id}-1600.webp`,");
 lines.push("    photoSmall: `/media/${id}-800.webp`,");
 lines.push("    cut: `/media/${id}-cut-2600.webp`,");
 lines.push("    cutSmall: `/media/${id}-cut-600.webp`,");
@@ -193,7 +200,13 @@ for (const [slug, p] of Object.entries(PRODUCT_MEDIA)) {
   lines.push(`  ${JSON.stringify(slug)}: {`);
   for (const [colour, v] of Object.entries(p.colours)) {
     const all = [...v.frames, ...(v.withHandle ?? [])].filter((x) => geom[x]);
-    const parts = all.map((x) => `f(${JSON.stringify(x)}, ${geom[x].ratio}${REJECTED_CUTOUTS.has(x) ? ", false" : ""})`);
+    const parts = all.map((x) => {
+      const cutOk = !REJECTED_CUTOUTS.has(x);
+      // Only spell out the third and fourth arguments when they differ from
+      // what f() would infer, so the manifest stays readable.
+      const args = !cutOk ? ", false" : HIRES_PHOTOS.has(x) ? ", true, true" : "";
+      return `f(${JSON.stringify(x)}, ${geom[x].ratio}${args})`;
+    });
     // Detail crops go LAST: the gallery leads on the whole bag, and a macro
     // as frames[0] would become the swatch, the cart thumbnail and the wall
     // tile as well, none of which can read a close-up.

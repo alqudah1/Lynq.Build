@@ -21,11 +21,15 @@ export interface Frame {
   alt?: string;
 }
 
-function f(id: string, ratio: number, cutOk = true): Frame {
+function f(id: string, ratio: number, cutOk = true, hires = !cutOk): Frame {
   return {
-    // A rejected cut-out means the framed photo IS the hero image, so it
-    // is built at 2600px. Every other frame is shown as a cut-out.
-    photo: cutOk ? `/media/${id}-1600.webp` : `/media/${id}-2600.webp`,
+    // `hires` is its own axis, not a synonym for a failed cut-out. It
+    // defaults to !cutOk, because a frame with no usable cut-out is shown
+    // as a large photograph by definition — but a frame with a perfectly
+    // good cut-out can ALSO be drawn large somewhere (see HIRES_PHOTOS),
+    // and 1600 is not enough for that. Note that -1600 is a ceiling, not a
+    // width: the crop is whatever the object box occupies, 1184 to 1552px.
+    photo: hires ? `/media/${id}-2600.webp` : `/media/${id}-1600.webp`,
     photoSmall: `/media/${id}-800.webp`,
     cut: `/media/${id}-cut-2600.webp`,
     cutSmall: `/media/${id}-cut-600.webp`,
@@ -70,7 +74,7 @@ export const COLOUR_MEDIA: Record<string, Record<string, Frame[]>> = {
     "Olive Green": [f("DSC05792", 1.5284), f("DSC05793", 1.3389)],
   },
   "mini-luna": {
-    "Red": [f("DSC05774", 1.1585), f("DSC05775", 1.097)],
+    "Red": [f("DSC05774", 1.1585, true, true), f("DSC05775", 1.097)],
     "Silver": [f("DSC04875", 1.2647)],
     "Gold": [f("DSC04874", 1.2445)],
     "Black": [f("DSC04872", 0.8909), f("DSC04873", 1.1564)],

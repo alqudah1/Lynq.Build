@@ -221,6 +221,82 @@ for (const slug of PRODUCTS) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// COLOUR SWATCH FIELDS
+//
+// A strip of swatches that all share one background is a strip that offers
+// the same option repeatedly. It shipped twice: every product-page swatch on
+// var(--pink), and then every PHOTOGRAPHIC model-block swatch on the same
+// default while the cut-outs had their field. Loco has two colourways and
+// both of them are photographs, so its block showed two identical pink boxes.
+//
+// Checked on both surfaces, at every width, because the two strips are laid
+// out differently — the phone grid wraps three-up and puts pairs beside each
+// other that a single desktop row never does.
+// ---------------------------------------------------------------------------
+const SWATCH_VIEWS = [
+  { w: 375, h: 812, dpr: 3 }, { w: 390, h: 844, dpr: 3 }, { w: 430, h: 932, dpr: 3 },
+  { w: 768, h: 1024, dpr: 2 }, { w: 1440, h: 900, dpr: 1 },
+];
+const PINK = "rgb(255, 224, 253)";
+
+/** Perceptually indistinguishable at swatch size. */
+function tooClose(a, b) {
+  const p = (s) => (s.match(/\d+/g) || []).slice(0, 3).map(Number);
+  const [x, y] = [p(a), p(b)];
+  return Math.abs(x[0] - y[0]) + Math.abs(x[1] - y[1]) + Math.abs(x[2] - y[2]) < 18;
+}
+
+for (const v of SWATCH_VIEWS) {
+  console.log(`\n=== colour swatch fields @ ${v.w} ===`);
+  await send("Emulation.setDeviceMetricsOverride", {
+    width: v.w, height: v.h, deviceScaleFactor: v.dpr, mobile: v.w < 900,
+  });
+
+  // Product pages.
+  for (const slug of PRODUCTS) {
+    await send("Page.navigate", { url: `${BASE}/product/${slug}` });
+    await new Promise((r) => setTimeout(r, 2200));
+    const got = JSON.parse((await send("Runtime.evaluate", {
+      returnByValue: true,
+      expression: `JSON.stringify([...document.querySelectorAll('.csw')].map(b=>
+        [b.getAttribute('aria-label'), getComputedStyle(b.querySelector('.csw-img')).backgroundColor]))`,
+    })).result.value || "[]");
+    const fields = got.map((g) => g[1]);
+    ok(`${slug} selector: no two swatches share a field`,
+      new Set(fields).size === fields.length, got.map((g) => `${g[0]}`).join(", "));
+    ok(`${slug} selector: not an all-pink row`,
+      !(fields.length > 1 && fields.every((f) => f === PINK)));
+    let clash = "";
+    for (let i = 1; i < fields.length; i++) if (tooClose(fields[i - 1], fields[i])) clash = `${got[i - 1][0]} / ${got[i][0]}`;
+    ok(`${slug} selector: neighbours are visibly different`, !clash, clash || "all clear");
+  }
+
+  // Model blocks, which live on the homepage and the Shop.
+  for (const route of ["/", "/shop"]) {
+    await send("Page.navigate", { url: BASE + route });
+    await new Promise((r) => setTimeout(r, 2600));
+    const blocks = JSON.parse((await send("Runtime.evaluate", {
+      returnByValue: true,
+      expression: `JSON.stringify([...document.querySelectorAll('.mc-block')].map(b=>({
+        m: b.className.replace('mc-block mc-',''),
+        w: [...b.querySelectorAll('.mc-way')].map(x=>[(x.getAttribute('aria-label')||'').split(' in ').pop(),
+                                                      getComputedStyle(x).backgroundColor])})))`,
+    })).result.value || "[]");
+    ok(`${route} renders all four model blocks`, blocks.length === 4, `${blocks.length}`);
+    for (const b of blocks) {
+      const fields = b.w.map((x) => x[1]);
+      ok(`${route} ${b.m} block: no two swatches share a field`,
+        new Set(fields).size === fields.length, b.w.map((x) => x[0]).join(", "));
+      ok(`${route} ${b.m} block: not an all-pink row`,
+        !(fields.length > 1 && fields.every((f) => f === PINK)));
+      let clash = "";
+      for (let i = 1; i < fields.length; i++) if (tooClose(fields[i - 1], fields[i])) clash = `${b.w[i - 1][0]} / ${b.w[i][0]}`;
+      ok(`${route} ${b.m} block: neighbours are visibly different`, !clash, clash || "all clear");
+    }
+  }
+}
+
 close();
 try { await fetch(`${CDP}/json/close/${targetId}`); } catch {}
 console.log(`\n${pass} passed, ${fail} failed`);

@@ -113,6 +113,30 @@ export const REJECTED_CUTOUTS = new Set([
   "DSC05772", "DSC05773",                          // Loco burgundy
 ]);
 
+/**
+ * FRAMES WHOSE **FRAMED PHOTOGRAPH** IS DRAWN LARGE, despite having a usable
+ * cut-out.
+ *
+ * The default framed photo tops out at `-1600`, and that name is a target,
+ * not a measurement: the crop comes out of the 1600px matte proxy, so what
+ * lands on disk is whatever the object box occupies inside it. Measured
+ * across the archive that is 1184 to 1552 pixels, never 1600.
+ *
+ * For a tile or a swatch that is plenty. For DSC05774 it was not: About draws
+ * that photograph at 84vw, which is 1290 physical pixels on a DPR2 tablet
+ * against a 1184px file — effective detail 0.88, the last under-resolved
+ * image on the site and one no `sizes` change could fix, because the pixels
+ * did not exist. Listing it here re-cuts the same region out of the 3200px
+ * proxy instead, exactly the way the Loco photographs are already built.
+ *
+ * Add a frame here only when its FRAMED photo (not its cut-out, not its tile)
+ * is rendered wider than about 40% of a large viewport. Everything else stays
+ * at 1600 — building all 53 at 2600 added 68MB that nothing renders.
+ */
+export const HIRES_PHOTOS = new Set([
+  "DSC05774", // Mini Luna Red — the About plate
+]);
+
 /** Macro texture crops, taken relative to the detected object box. */
 export const TEXTURE_CROPS = [
   { id: "texture-fringe",   frame: "DSC05765", rel: { l: 0.04, t: 0.34, w: 0.40, h: 0.52 } },

@@ -20,11 +20,11 @@ import Image from "next/image";
 import type { Bag } from "@/lib/types";
 import { money } from "@/lib/pricing";
 import { framesForColour, tileSrc, altFor } from "@/lib/product-media";
-import { COLLECTION, colourFit, LEAD_COLOUR } from "@/lib/collection";
+import { COLLECTION, colourFit, LEAD_COLOUR, swatchField, isDarkField } from "@/lib/collection";
 import { variantHref } from "@/lib/variant";
 
-type Way = { colour: string; field: string; src: string; ratio: number; alt: string; href: string; photo: boolean;
-  framed: boolean; fit?: { s: number; tx?: number; ty?: number } };
+type Way = { colour: string; field: string; swatch: string; src: string; ratio: number; alt: string; href: string;
+  photo: boolean; framed: boolean; fit?: { s: number; tx?: number; ty?: number } };
 
 export default function ModelCollection({ bags }: { bags: Bag[] }) {
   const bySlug = new Map(bags.map((b) => [b.slug, b]));
@@ -45,6 +45,20 @@ export default function ModelCollection({ bags }: { bags: Bag[] }) {
     grouped.get(e.slug)!.ways.push({
       colour: e.colour,
       field: e.field,
+      // THE SWATCH GETS A FIELD EVEN WHEN THE PICTURE IS A PHOTOGRAPH.
+      //
+      // The strip used to pass the wall field only for cut-outs and leave
+      // photographic swatches to the stylesheet's var(--pink) default. On
+      // Nova that was invisible, because none of its six are photographs. On
+      // Loco BOTH colourways are photographs, so the block offered two
+      // identical pink boxes — the same failure the product page had.
+      //
+      // swatchField() is the mapping the product-page selector already uses:
+      // the wall's own colours, with two documented overrides where a
+      // strip's ordering puts two of them side by side. Not a second system,
+      // and the block's stage still uses `field` — the wall palette is
+      // untouched.
+      swatch: swatchField(e.slug, e.colour),
       src: photo ? frame.photo : tileSrc(frame),
       ratio: frame.ratio,
       alt: altFor(bag, e.colour),
@@ -179,8 +193,8 @@ function ModelBlock({ product, bag, ways }: { product: string; bag: Bag; ways: W
             key={w.colour}
             type="button"
             ref={(el) => { refs.current[k] = el; }}
-            className={`mc-way${k === i ? " is-on" : ""}`}
-            style={{ background: w.photo ? undefined : w.field }}
+            className={`mc-way${k === i ? " is-on" : ""}${isDarkField(w.swatch) ? " is-deep" : ""}`}
+            style={{ background: w.swatch }}
             aria-pressed={k === i}
             aria-label={`${product} in ${w.colour}`}
             tabIndex={k === i ? 0 : -1}

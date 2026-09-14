@@ -2568,6 +2568,12 @@ html { overflow-anchor: none; }
 }
 .mc-way img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .mc-way.is-on { box-shadow: inset 0 0 0 2px var(--navy); }
+/* Loco Brown's field is navy, where a navy ring is nothing at all. Same rule
+   as the product-page swatches, and isDarkField() decides rather than a
+   hardcoded colourway, so a future deep field cannot ship without a visible
+   selected state. */
+.mc-way.is-deep { box-shadow: inset 0 0 0 1px rgba(255, 224, 253, 0.3); }
+.mc-way.is-deep.is-on { box-shadow: inset 0 0 0 2px var(--pink); }
 .mc-way:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
 
 /* Keyboard users got a visible ring on the homepage collection swatches and
