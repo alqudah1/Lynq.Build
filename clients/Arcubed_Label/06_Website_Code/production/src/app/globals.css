@@ -2086,10 +2086,11 @@ html { overflow-anchor: none; }
 .csw:hover .csw-img { box-shadow: inset 0 0 0 1px var(--navy); }
 .csw.is-on .csw-img { box-shadow: inset 0 0 0 2px var(--navy); }
 .csw.is-on .csw-name { color: var(--navy); }
-/* A navy field takes a pink ring, because a navy one is invisible on it and
-   the selected swatch would have no selected state at all. Loco Brown is the
-   only field deep enough to trigger this today; isDarkField() decides, so a
-   future deep field cannot ship without it. */
+/* A dark field takes a pink ring, because a navy one is invisible on it and
+   the selected swatch would have no selected state at all. Nothing in the
+   palette triggers this now that Loco Brown is mist, but isDarkField()
+   decides rather than a hardcoded colourway, so a deep field added later
+   cannot ship without a visible selected state. */
 .csw.is-deep .csw-img { box-shadow: inset 0 0 0 1px rgba(255, 224, 253, 0.3); }
 .csw.is-deep:hover .csw-img { box-shadow: inset 0 0 0 1px var(--pink); }
 .csw.is-deep.is-on .csw-img { box-shadow: inset 0 0 0 2px var(--pink); }
@@ -2568,10 +2569,9 @@ html { overflow-anchor: none; }
 }
 .mc-way img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .mc-way.is-on { box-shadow: inset 0 0 0 2px var(--navy); }
-/* Loco Brown's field is navy, where a navy ring is nothing at all. Same rule
-   as the product-page swatches, and isDarkField() decides rather than a
-   hardcoded colourway, so a future deep field cannot ship without a visible
-   selected state. */
+/* Same rule as the product-page swatches: on a dark field a navy ring is
+   nothing at all. Dormant while every field is a pale tint, and kept because
+   isDarkField() is what makes adding a deep one safe. */
 .mc-way.is-deep { box-shadow: inset 0 0 0 1px rgba(255, 224, 253, 0.3); }
 .mc-way.is-deep.is-on { box-shadow: inset 0 0 0 2px var(--pink); }
 .mc-way:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }

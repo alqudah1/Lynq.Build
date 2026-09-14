@@ -30,9 +30,12 @@
  *   OLIVE     #c6d0b9  muted olive, deeper — for the palest objects
  *   SNOW      #f4f1f4  near-white, where any tint would fight the product
  *
- * No tans, no terracotta, no gold, no brown interface colour. Navy appears
- * only as a FRAME around a photograph, never behind a cut-out, because the
- * cut-outs carry a soft studio matte that glows on a dark ground.
+ * No tans, no terracotta, no gold, no brown interface colour. Navy is NOT in
+ * this set at all any more. It was, as the mount behind the one photograph
+ * dark enough to carry it, and at tile and swatch size it read as a blue
+ * rectangle competing with the product rather than as a field behind it.
+ * Every field here is now a pale tint, and the separation between any two of
+ * them comes from hue, not from weight.
  *
  * Assignment is per tile and by eye against the object, not algorithmic. The
  * rule behind each choice is contrast: a warm metallic goes on a cool ground,
@@ -61,9 +64,10 @@ export interface CollectionEntry {
    * the tile edge next to bags on brand colour, those grounds read as dirty
    * boxes. Given a margin they read as photographs someone chose to print.
    *
-   * Loco Brown is mounted on navy because it is the darkest picture in the
-   * archive and the only one that can hold it; the other two take pink and
-   * blush.
+   * All three take a pale field. Loco Brown was mounted on navy on exactly
+   * this reasoning — darkest picture, heaviest field — and that reasoning
+   * only holds if you are looking at the photograph rather than at the page.
+   * See its entry above.
    */
   framed?: true;
 }
@@ -90,7 +94,21 @@ export const COLLECTION: CollectionEntry[] = [
   // eighteen, and costs Mini Luna nothing.
   { slug: "mini-luna", product: "Mini Luna", colour: "Gold", field: "#e4daf0" },
 
-  { slug: "loco", product: "Loco", colour: "Brown", field: "#143562", framed: true },
+  // MIST, not navy. Navy was chosen here because this is the darkest
+  // photograph in the archive and navy was the only field with the weight to
+  // hold it — which was true of the picture and wrong for the page. At tile
+  // and swatch size it stopped being a mount and became a large blue
+  // rectangle that the eye reached before it reached the bag, and the client
+  // called it out on a real device.
+  //
+  // The job the field has to do is unchanged: separate Brown from Burgundy,
+  // which sits on pink. Mist does that on HUE rather than on weight — cool
+  // against a warm pink, 59 apart in summed RGB where snow manages 37 and
+  // reads as another near-white. It is also cool against warm brown
+  // photography, so the product gains contrast instead of losing it to the
+  // field. The mount still reads: this frame's studio ground is 0.75
+  // luminance against mist's 0.87, so the print has a visible edge.
+  { slug: "loco", product: "Loco", colour: "Brown", field: "#dae3ea", framed: true },
   { slug: "nova", product: "Nova", colour: "Silver", field: "#f6d8de" },
   { slug: "loco", product: "Loco", colour: "Burgundy", field: "#ffe0fd", framed: true },
   { slug: "vault", product: "Vault", colour: "Light Brown", field: "#d6e2f0" },
@@ -214,9 +232,11 @@ export function swatchField(slug: string, colour: string): string {
 /**
  * True when a field is dark enough that a navy hairline disappears into it.
  *
- * Only Loco Brown's navy reaches this today, but the test is computed rather
- * than hardcoded so adding a deep field somewhere else cannot silently ship a
- * swatch with an invisible selected state.
+ * NOTHING in the palette reaches this today — Loco Brown's navy was the only
+ * one and it is now mist. The test stays because it is the guard that made
+ * that field safe to ship in the first place: it is computed rather than
+ * hardcoded, so a deep field added here later cannot arrive with an
+ * invisible selected state.
  */
 export function isDarkField(hex: string): boolean {
   const h = hex.replace("#", "");
