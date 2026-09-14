@@ -62,7 +62,10 @@ function Photos({ bag, selection }: { bag: Bag; selection: Selection }) {
         <Image
           key={current.frameId}
           src={useCut ? current.cut : current.photo}
-          alt={altFor(bag, shown, exact)}
+          // A macro frame carries its own description. The generic alt says
+          // "Loco, hand-crocheted by Arcubed in Brown", which is a lie about
+          // a picture that shows six inches of stitching.
+          alt={current.alt ?? altFor(bag, shown, exact)}
           width={1600}
           height={Math.round(1600 / current.ratio)}
           // Two different stages share this element, so one budget cannot serve
@@ -95,11 +98,20 @@ function Photos({ bag, selection }: { bag: Bag; selection: Selection }) {
               type="button"
               role="tab"
               aria-selected={i === active}
-              aria-label={`View ${bag.name} photograph ${i + 1} of ${frames.length}`}
+              aria-label={
+                f.detail
+                  ? `View close detail of the ${bag.name}, photograph ${i + 1} of ${frames.length}`
+                  : `View ${bag.name} photograph ${i + 1} of ${frames.length}`
+              }
               className={`pg-thumb${i === active ? " is-on" : ""}`}
               onClick={() => setActive(i)}
             >
-              <Image src={f.photoSmall} alt="" width={320} height={Math.round(320 / f.ratio)} sizes="128px" />
+              {/* 160, not 128. The thumb is 108 CSS px and cover crops up to
+                  23% of the file away before it is drawn, so a 128px
+                  candidate left 99 source pixels on 106 physical ones — the
+                  last two under-resolved images on the site. The next rung up
+                  costs about 2kB. */}
+              <Image src={f.photoSmall} alt="" width={320} height={Math.round(320 / f.ratio)} sizes="160px" />
             </button>
           ))}
         </div>

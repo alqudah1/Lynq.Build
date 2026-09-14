@@ -17,7 +17,7 @@
 import sharp from "sharp";
 import { pathToFileURL } from "node:url";
 import { analyzeFrame } from "./lib-mask.mjs";
-import { TEXTURE_CROPS } from "./media-manifest.mjs";
+import { TEXTURE_CROPS, DETAIL_CROPS } from "./media-manifest.mjs";
 
 const SRC = "../../03_Images";
 const OUT = "public/media";
@@ -130,8 +130,60 @@ export async function buildTextures(log = console.log) {
   return geom;
 }
 
+/**
+ * Gallery detail frames (DETAIL_CROPS).
+ *
+ * Same extraction as the macros above, two differences that matter:
+ *
+ *  - TWO widths, because these are real gallery frames and need a thumbnail
+ *    as well as a main image.
+ *  - the large one is named `-full`, not `-2600`, because it is whatever the
+ *    crop actually contains and is never enlarged to hit a number. The
+ *    archive already has files called `-1600` that are 1184px wide and that
+ *    misnaming cost a whole audit pass; a crop cannot honestly claim a width
+ *    it does not have.
+ */
+export async function buildDetails(log = console.log) {
+  const geom = {};
+  for (const t of DETAIL_CROPS) {
+    const src = `${SRC}/${t.frame}.JPG`;
+    const a = await analyzeFrame(src, { probeWidth: PROBE_W, dev: 20 });
+    const probe = {
+      left: a.box.x0 + a.box.width * t.rel.l,
+      top: a.box.y0 + a.box.height * t.rel.t,
+      width: a.box.width * t.rel.w,
+      height: a.box.height * t.rel.h,
+    };
+    const full = await sharp(src).rotate().toBuffer();
+    const fm = await sharp(full).metadata();
+    const k = fm.width / PROBE_W;
+    const r = {
+      left: Math.max(0, Math.round(probe.left * k)),
+      top: Math.max(0, Math.round(probe.top * k)),
+      width: Math.round(probe.width * k),
+      height: Math.round(probe.height * k),
+    };
+    r.width = Math.max(1, Math.min(r.width, fm.width - r.left));
+    r.height = Math.max(1, Math.min(r.height, fm.height - r.top));
+
+    const outW = Math.min(OUT_W, r.width);
+    // 88, matching the macros: this is shown large and the whole point of it
+    // is texture, which is the first thing a low quality setting destroys.
+    await sharp(full).extract(r).resize({ width: outW }).webp({ quality: 88 })
+      .toFile(`${OUT}/${t.id}-full.webp`);
+    await sharp(full).extract(r).resize({ width: 800 }).webp({ quality: 86 })
+      .toFile(`${OUT}/${t.id}-800.webp`);
+    geom[t.id] = { ratio: +(r.width / r.height).toFixed(4) };
+    log(`${t.id.padEnd(18)} ${t.frame}  source crop ${r.width}x${r.height}  ->  ${outW}px wide + 800px thumb`);
+  }
+  return geom;
+}
+
 // pathToFileURL, not string concatenation: this repo lives under a path with
 // a space in it, which import.meta.url percent-encodes and process.argv does
 // not, so the naive comparison never matched and the script silently did
 // nothing.
-if (import.meta.url === pathToFileURL(process.argv[1]).href) await buildTextures();
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  await buildTextures();
+  await buildDetails();
+}

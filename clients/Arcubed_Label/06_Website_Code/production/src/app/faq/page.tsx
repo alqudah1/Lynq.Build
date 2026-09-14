@@ -4,7 +4,6 @@
 // see getStoreSettings()/getShippingRules()/getReturnPolicies(). Do not
 // hardcode a specific lead time, rate, or return rule in this file again.
 
-import Image from "next/image";
 import { faqAnchor } from "@/lib/faq-anchors";
 import { getStoreSettings, getShippingRules, getReturnPolicies } from "@/lib/repository";
 import { plainText } from "@/lib/site-settings";
@@ -93,31 +92,23 @@ export default async function FaqPage() {
 
   return (
     <section className="fq">
-      {/* One real material photograph rather than decoration: the page was a
-          small title over five rules on white, with the footer taking nearly
-          half of it. */}
-      <div className="fq-side">
+      {/* THE PAGE HAD NO BRAND ON IT.
+          It was a title, one metallic macro and five rules, all on white, and
+          a customer arriving from the pink homepage found a page that could
+          have belonged to any store. The macro is gone rather than replaced:
+          it was the third silver-and-gold close-up on the site, it existed to
+          stop the page looking empty, and a pink field does that job without
+          repeating an asset. Structure, groups, anchors and copy are all
+          unchanged — this is the field the page sits on, not a new page. */}
+      <header className="fq-intro">
         <p className="eyebrow">FAQ</p>
         <h1 className="fq-title">
           Good
           <br />
           to know.
         </h1>
-        <figure className="fq-crop">
-          {/* LCP on /faq at every width measured.
-
-              macro-twotone moved out because the homepage already uses it, in
-              the strip that hands the material phase over to the four forms:
-              the same photograph was carrying a major moment on two different
-              pages. macro-ribbon-band is the same subject shot differently and
-              is used nowhere else now that About opens on a product. It is a
-              4.5 band being cropped to 1.57 here, which costs a texture
-              nothing — there is no silhouette to lose. */}
-          <Image src="/media/macro-ribbon-band.webp" alt="Close detail of silver and gold metallic ribbon yarn"
-                 width={2070} height={457} sizes="(max-width: 860px) 92vw, 34vw" preload />
-        </figure>
-        <p className="fq-note">Hand crocheted to order in Amman.</p>
-      </div>
+        <p className="fq-lede">Hand crocheted to order in Amman.</p>
+      </header>
 
       <div className="fq-body">
         {/* Each group is slugged so the footer can send someone straight to

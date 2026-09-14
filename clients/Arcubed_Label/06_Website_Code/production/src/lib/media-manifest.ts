@@ -15,6 +15,10 @@ export interface Frame {
   /** false when visual QA rejected the cut-out — use `photo`, never `cut`. */
   cutOk: boolean;
   frameId: string;
+  /** True for a macro crop of another frame rather than a whole-bag view. */
+  detail?: true;
+  /** Set only on detail frames, which the generic alt would describe wrongly. */
+  alt?: string;
 }
 
 function f(id: string, ratio: number, cutOk = true): Frame {
@@ -28,6 +32,26 @@ function f(id: string, ratio: number, cutOk = true): Frame {
     ratio,
     frameId: id,
     cutOk,
+  };
+}
+
+/**
+ * A macro DETAIL crop of a real frame (scripts/media-manifest.mjs,
+ * DETAIL_CROPS). It is a rectangle out of the full-resolution original, so
+ * there is no cut-out and no whole-bag silhouette: the crop IS the image,
+ * and `-full` is its true size rather than a width it was enlarged to hit.
+ */
+function d(id: string, ratio: number, alt: string): Frame {
+  return {
+    photo: `/media/${id}-full.webp`,
+    photoSmall: `/media/${id}-800.webp`,
+    cut: `/media/${id}-full.webp`,
+    cutSmall: `/media/${id}-800.webp`,
+    ratio,
+    frameId: id,
+    cutOk: false,
+    detail: true,
+    alt,
   };
 }
 
@@ -53,7 +77,7 @@ export const COLOUR_MEDIA: Record<string, Record<string, Frame[]>> = {
     "Silver & Gold": [f("DSC04870", 1.3017), f("DSC04871", 1.2417)],
   },
   "loco": {
-    "Brown": [f("DSC05765", 1.4652, false), f("DSC05764", 1.4679, false), f("DSC05766", 1.4679, false), f("DSC05770", 0.8032, false)],
+    "Brown": [f("DSC05765", 1.4652, false), f("DSC05770", 0.8032, false), d("loco-brown-detail", 1.3624, "Close detail of the Loco in Brown: crocheted stitch rows and the knotted top of the fringe")],
     "Burgundy": [f("DSC05772", 1.5101, false), f("DSC05773", 1.3371, false)],
   },
 };

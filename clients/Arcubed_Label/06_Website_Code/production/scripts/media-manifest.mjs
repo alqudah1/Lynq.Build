@@ -47,12 +47,56 @@ export const PRODUCT_MEDIA = {
   },
   loco: {
     colours: {
-      "Brown":    { frames: ["DSC05765", "DSC05764", "DSC05766", "DSC05770"] },
+      // THREE FRAMES, NOT FOUR — and the two that left were not weak, they
+      // were the SAME PICTURE. DSC05764, 05765 and 05766 are three exposures
+      // of one setup: same camera position, same light, same bag angle, the
+      // object box within about one percent across all three. Swiping the
+      // gallery moved between them and nothing appeared to happen, which is
+      // exactly what a customer reported. Only 05765 stays.
+      //
+      // 05770 earns its place because it is a genuinely different view: shot
+      // from above and to the side, it is the only Loco frame that shows the
+      // opening, the interior, and both handle bars at once.
+      //
+      // The third beat is a macro of the same object (see DETAIL_CROPS), so
+      // the set reads whole bag, then how it opens, then how it is made.
+      "Brown":    { frames: ["DSC05765", "DSC05770"] },
+      // Left alone: 05772 is a clean front and 05773 is a three-quarter with
+      // the handle sweep. Two frames, two views, no duplication to remove.
       "Burgundy": { frames: ["DSC05772", "DSC05773"] },
     },
     editorialOnly: {},
   },
 };
+
+/**
+ * MACRO DETAIL FRAMES — a real crop of a real frame, joining that colourway's
+ * own gallery as an extra view.
+ *
+ * This is not a new photograph and nothing is generated: it is a rectangle
+ * taken out of the client's 6000x4000 original at full resolution, which is
+ * the same thing TEXTURE_CROPS has always done for the editorial macros. It
+ * exists because Loco Brown has only two genuinely distinct camera positions
+ * in the archive, and a two-image gallery for the most texturally interesting
+ * bag in the collection undersells it.
+ *
+ * `rel` is a fraction of the DETECTED OBJECT BOX, as everywhere else in this
+ * file. The window deliberately keeps the left edge of the bag and a little
+ * studio ground: a crop taken purely from the middle of the fringe reads as
+ * an abstract brown rectangle (that is the note already recorded against
+ * texture-fringe in build-textures.mjs). With the edge, the stitch rows and
+ * the knot line in frame, it reads as a crocheted object.
+ */
+export const DETAIL_CROPS = [
+  {
+    id: "loco-brown-detail",
+    slug: "loco",
+    colour: "Brown",
+    frame: "DSC05765",
+    rel: { l: 0.08, t: 0.04, w: 0.52, h: 0.62 },
+    alt: "Close detail of the Loco in Brown: crocheted stitch rows and the knotted top of the fringe",
+  },
+];
 
 /**
  * Cut-outs rejected by visual QA — the UI must use the FRAMED photograph for
@@ -89,5 +133,6 @@ export function allFrames() {
     for (const list of Object.values(p.editorialOnly ?? {})) for (const f of list) set.add(f);
   }
   for (const t of TEXTURE_CROPS) set.add(t.frame);
+  for (const d of DETAIL_CROPS) set.add(d.frame);
   return [...set].sort();
 }

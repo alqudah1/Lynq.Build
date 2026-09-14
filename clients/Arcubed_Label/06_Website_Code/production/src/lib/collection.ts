@@ -171,6 +171,62 @@ export function colourFit(slug: string, colour: string): ColourFit | undefined {
 }
 
 /**
+ * THE FIELD BEHIND A COLOUR SWATCH ON A PRODUCT PAGE.
+ *
+ * Every swatch used to sit on `var(--pink)`. On Nova that was survivable,
+ * because six metallics against one ground still read as six different bags.
+ * On Loco it failed outright: two colourways, two pale pink boxes, and a
+ * brown bag and a burgundy bag are close enough in a 60px square that the
+ * client's own product page appeared to offer the same option twice.
+ *
+ * The fix is not a new palette. The wall in COLLECTION above already assigns
+ * every one of these sixteen pairings a field, chosen by eye against the
+ * object, and the selector should speak that same language: the swatch is a
+ * miniature of the tile the customer just clicked to get here.
+ *
+ * OVERRIDES exist only where the two orderings disagree. COLLECTION's rule is
+ * "no two tiles SIDE BY SIDE IN A ROW share a field", and its rows come from
+ * SHOP_RHYTHM. A selector row is the catalogue's colour order instead, which
+ * puts different pairs next to each other, and two of them collided:
+ *
+ *   vault Brown        blush, directly beside Olive Green's blush
+ *   mini-luna S&G      lavender, the second lavender in a five-swatch row
+ *
+ * Both move to a family that is already in the set. Nothing new is invented
+ * and no pairing is reassigned on the wall, where the original choice is
+ * still correct.
+ */
+const SWATCH_FIELD_OVERRIDE: Record<string, string> = {
+  "vault|Brown": "#e4daf0",
+  "mini-luna|Silver & Gold": "#dae3ea",
+};
+
+const WALL_FIELD: Record<string, string> = Object.fromEntries(
+  COLLECTION.map((e) => [`${e.slug}|${e.colour}`, e.field])
+);
+
+/** The field a colour swatch sits on. Falls back to the brand pink. */
+export function swatchField(slug: string, colour: string): string {
+  const key = `${slug}|${colour}`;
+  return SWATCH_FIELD_OVERRIDE[key] ?? WALL_FIELD[key] ?? "#ffe0fd";
+}
+
+/**
+ * True when a field is dark enough that a navy hairline disappears into it.
+ *
+ * Only Loco Brown's navy reaches this today, but the test is computed rather
+ * than hardcoded so adding a deep field somewhere else cannot silently ship a
+ * swatch with an invisible selected state.
+ */
+export function isDarkField(hex: string): boolean {
+  const h = hex.replace("#", "");
+  if (h.length !== 6) return false;
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
+  const lin = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b) < 0.35;
+}
+
+/**
  * WHICH COLOURWAY A MODEL BLOCK OPENS ON.
  *
  * Catalogue order decides this for Nova, Mini Luna and Vault, and it should:

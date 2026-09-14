@@ -14,9 +14,9 @@
 import sharp from "sharp";
 import { mkdirSync, writeFileSync, existsSync } from "node:fs";
 import { analyzeFrame } from "./lib-mask.mjs";
-import { PRODUCT_MEDIA, TEXTURE_CROPS, allFrames, REJECTED_CUTOUTS } from "./media-manifest.mjs";
+import { PRODUCT_MEDIA, TEXTURE_CROPS, DETAIL_CROPS, allFrames, REJECTED_CUTOUTS } from "./media-manifest.mjs";
 import { objectMatte } from "./lib-matte.mjs";
-import { buildTextures } from "./build-textures.mjs";
+import { buildTextures, buildDetails } from "./build-textures.mjs";
 
 const SRC = "../../03_Images";
 const OUT = "public/media";
@@ -125,6 +125,9 @@ console.log("");
 // 1600px proxy and then upscale the result — running this file would silently
 // undo the macro fix, so it delegates instead of duplicating.
 Object.assign(geom, await buildTextures());
+// Gallery detail frames — same extraction, but they are appended to a real
+// colourway below rather than exported as editorial texture.
+Object.assign(geom, await buildDetails());
 
 // Emit the typed manifest the app imports.
 const lines = [];
@@ -145,6 +148,10 @@ lines.push("  ratio: number;");
 lines.push("  /** false when visual QA rejected the cut-out — use `photo`, never `cut`. */");
 lines.push("  cutOk: boolean;")
 lines.push("  frameId: string;");
+lines.push("  /** True for a macro crop of another frame rather than a whole-bag view. */");
+lines.push("  detail?: true;");
+lines.push("  /** Set only on detail frames, which the generic alt would describe wrongly. */");
+lines.push("  alt?: string;");
 lines.push("}");
 lines.push("");
 lines.push("function f(id: string, ratio: number, cutOk = true): Frame {");
@@ -161,12 +168,40 @@ lines.push("    cutOk,");
 lines.push("  };");
 lines.push("}");
 lines.push("");
+lines.push("/**");
+lines.push(" * A macro DETAIL crop of a real frame (scripts/media-manifest.mjs,");
+lines.push(" * DETAIL_CROPS). It is a rectangle out of the full-resolution original, so");
+lines.push(" * there is no cut-out and no whole-bag silhouette: the crop IS the image,");
+lines.push(" * and `-full` is its true size rather than a width it was enlarged to hit.");
+lines.push(" */");
+lines.push("function d(id: string, ratio: number, alt: string): Frame {");
+lines.push("  return {");
+lines.push("    photo: `/media/${id}-full.webp`,");
+lines.push("    photoSmall: `/media/${id}-800.webp`,");
+lines.push("    cut: `/media/${id}-full.webp`,");
+lines.push("    cutSmall: `/media/${id}-800.webp`,");
+lines.push("    ratio,");
+lines.push("    frameId: id,");
+lines.push("    cutOk: false,");
+lines.push("    detail: true,");
+lines.push("    alt,");
+lines.push("  };");
+lines.push("}");
+lines.push("");
 lines.push("export const COLOUR_MEDIA: Record<string, Record<string, Frame[]>> = {");
 for (const [slug, p] of Object.entries(PRODUCT_MEDIA)) {
   lines.push(`  ${JSON.stringify(slug)}: {`);
   for (const [colour, v] of Object.entries(p.colours)) {
     const all = [...v.frames, ...(v.withHandle ?? [])].filter((x) => geom[x]);
-    lines.push(`    ${JSON.stringify(colour)}: [${all.map((x) => `f(${JSON.stringify(x)}, ${geom[x].ratio}${REJECTED_CUTOUTS.has(x) ? ", false" : ""})`).join(", ")}],`);
+    const parts = all.map((x) => `f(${JSON.stringify(x)}, ${geom[x].ratio}${REJECTED_CUTOUTS.has(x) ? ", false" : ""})`);
+    // Detail crops go LAST: the gallery leads on the whole bag, and a macro
+    // as frames[0] would become the swatch, the cart thumbnail and the wall
+    // tile as well, none of which can read a close-up.
+    for (const t of DETAIL_CROPS) {
+      if (t.slug !== slug || t.colour !== colour || !geom[t.id]) continue;
+      parts.push(`d(${JSON.stringify(t.id)}, ${geom[t.id].ratio}, ${JSON.stringify(t.alt)})`);
+    }
+    lines.push(`    ${JSON.stringify(colour)}: [${parts.join(", ")}],`);
   }
   lines.push("  },");
 }

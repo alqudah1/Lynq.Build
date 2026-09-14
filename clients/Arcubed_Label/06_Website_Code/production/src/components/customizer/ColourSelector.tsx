@@ -1,6 +1,7 @@
 import Image from "next/image";
 import type { Bag, Colour } from "@/lib/types";
 import { framesForColour, tileSrc } from "@/lib/product-media";
+import { swatchField, isDarkField } from "@/lib/collection";
 
 /**
  * Colourway selector.
@@ -38,11 +39,17 @@ export default function ColourSelector({
         {colours.map((c) => {
           const frame = framesForColour(bag, c.name)[0];
           const on = c.id === selectedId;
+          // Its own field, not the one pink every swatch used to share. See
+          // swatchField() for why the value comes from the Shop wall rather
+          // than from a second palette invented here.
+          const field = swatchField(bag.slug, c.name);
+          const dark = isDarkField(field);
           return (
             <button
               key={c.id}
               type="button"
-              className={`csw${on ? " is-on" : ""}${frame ? "" : " csw-named"}`}
+              className={`csw${on ? " is-on" : ""}${frame ? "" : " csw-named"}${dark ? " is-deep" : ""}`}
+              style={{ ["--csw-field" as string]: field }}
               aria-label={c.name}
               aria-pressed={on}
               onClick={() => onSelect(c.id)}

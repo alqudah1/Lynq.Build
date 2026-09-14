@@ -44,34 +44,9 @@ const PAGES = (process.env.PAGES ||
   "/,/shop,/about,/faq,/contact,/product/nova,/product/mini-luna,/product/vault,/product/loco"
 ).split(",");
 
-/** Pixel dimensions straight from the file header. No image library. */
-function imageSize(buf) {
-  // PNG
-  if (buf.length > 24 && buf.readUInt32BE(0) === 0x89504e47)
-    return { w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) };
-  // WebP: RIFF....WEBP
-  if (buf.length > 30 && buf.toString("ascii", 0, 4) === "RIFF" && buf.toString("ascii", 8, 12) === "WEBP") {
-    const fmt = buf.toString("ascii", 12, 16);
-    if (fmt === "VP8X") return { w: (buf.readUIntLE(24, 3) & 0xffffff) + 1, h: (buf.readUIntLE(27, 3) & 0xffffff) + 1 };
-    if (fmt === "VP8 ") return { w: buf.readUInt16LE(26) & 0x3fff, h: buf.readUInt16LE(28) & 0x3fff };
-    if (fmt === "VP8L") {
-      const b = buf.readUInt32LE(21);
-      return { w: (b & 0x3fff) + 1, h: ((b >> 14) & 0x3fff) + 1 };
-    }
-  }
-  // JPEG: walk the segments to a start-of-frame
-  if (buf.length > 4 && buf[0] === 0xff && buf[1] === 0xd8) {
-    let i = 2;
-    while (i < buf.length - 9) {
-      if (buf[i] !== 0xff) { i++; continue; }
-      const m = buf[i + 1];
-      if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc)
-        return { w: buf.readUInt16BE(i + 7), h: buf.readUInt16BE(i + 5) };
-      i += 2 + buf.readUInt16BE(i + 2);
-    }
-  }
-  return { w: 0, h: 0 };
-}
+// Header reading lives in lib-imagesize.mjs so scripts/test-gallery.mjs
+// measures resolution exactly the way this audit does.
+import { realDims } from "./lib-imagesize.mjs";
 
 async function cdp() {
   const t = await (await fetch(`${CDP}/json/new?about:blank`, { method: "PUT" })).json();
@@ -95,20 +70,39 @@ await send("Emulation.setDeviceMetricsOverride", {
   width: W, height: H, deviceScaleFactor: DPR, mobile: W < 760,
 });
 
-const seen = new Map();
-async function realDims(url) {
-  if (seen.has(url)) return seen.get(url);
-  const res = await fetch(url);
-  const buf = Buffer.from(await res.arrayBuffer());
-  const d = { ...imageSize(buf), bytes: buf.length };
-  seen.set(url, d);
-  return d;
+// THE MEASUREMENT HAS TO PROVE ITSELF FIRST.
+//
+// setDeviceMetricsOverride can silently not take — Chrome answers {} either
+// way — and when it doesn't, this audit measures a 1000px desktop window
+// while computing against the phone DPR it was asked for. It produced 35
+// under-resolved rows, IDENTICAL for five different viewports, none of them
+// real. A gate that can invent failures is as useless as one that misses
+// them, so the viewport is read back from the page and disagreement is a
+// hard abort, not a row.
+await send("Page.bringToFront");
+await send("Page.navigate", { url: BASE + "/" });
+await new Promise((r) => setTimeout(r, 1200));
+const seenVp = (await send("Runtime.evaluate", {
+  expression: "JSON.stringify([innerWidth, devicePixelRatio])", returnByValue: true,
+})).result.value;
+const [gotW, gotDpr] = JSON.parse(seenVp || "[0,0]");
+if (gotW !== W || gotDpr !== DPR) {
+  console.error(`ABORT: asked for ${W}css DPR${DPR}, the browser reports ${gotW}css DPR${gotDpr}.`);
+  console.error("The emulation did not take. Close stale tabs / restart Chrome and re-run.");
+  process.exit(2);
 }
 
 const raw = [];
 for (const path of PAGES) {
   await send("Page.navigate", { url: BASE + path });
   await new Promise((r) => setTimeout(r, 2200));
+  const here = (await send("Runtime.evaluate", {
+    expression: "location.pathname", returnByValue: true,
+  })).result.value;
+  if (here !== path) {
+    console.error(`ABORT: asked for ${path}, the browser is on ${here}. Close stale tabs and re-run.`);
+    process.exit(2);
+  }
   const height = (await send("Runtime.evaluate", {
     expression: "document.documentElement.scrollHeight", returnByValue: true,
   })).result.value;

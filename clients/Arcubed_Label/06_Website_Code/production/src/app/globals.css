@@ -1024,6 +1024,18 @@ html { overflow-anchor: none; }
 .pd-stage:has(.pg-main:not(.is-cut)) .pg-thumbs {
   padding-left: clamp(16px, 4vw, 54px); padding-right: clamp(16px, 4vw, 54px);
 }
+/* On the photographic stage the caption joins the flow instead of floating
+   over the bottom-right corner. pointer-events fixed the stolen tap; this
+   fixes the reason the tap was stolen, which is that the label was printed
+   ON TOP of the thumbnails whenever a portrait frame was selected. */
+.pd-stage:has(.pg-main:not(.is-cut)) .pd-caption {
+  position: static; justify-self: end;
+  margin: 12px clamp(16px, 4vw, 54px) 0;
+}
+/* Two auto rows under a min-height stretch by default, so the caption's row
+   grew and centred itself inside the slack — a 100px hole between the
+   thumbnails and the label. Pack the rows and put the slack outside them. */
+.pd-stage:has(.pg-main:not(.is-cut)) { align-content: center; }
 
 /* ==========================================================================
    ABOUT
@@ -1587,6 +1599,12 @@ html { overflow-anchor: none; }
   z-index: 3; margin: 0; text-align: right;
   font-size: 10.5px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase;
   color: var(--navy); opacity: 0.6;
+  /* It is a label. It sat at z-index 3 over the bottom-right of the stage,
+     which is exactly where the thumbnail strip ends up once a PORTRAIT frame
+     makes the main image 110px taller — and it was swallowing the tap on the
+     last thumbnail, silently, on a touch device. Nothing here is clickable,
+     so nothing here may intercept a finger. */
+  pointer-events: none;
 }
 
 /* ---------- buy band ---------- */
@@ -2050,9 +2068,13 @@ html { overflow-anchor: none; }
   display: flex; flex-direction: column; align-items: center; gap: 9px;
   padding: 0; background: none; border: 0; cursor: pointer;
 }
+/* --csw-field is set per swatch by ColourSelector, from swatchField() in
+   src/lib/collection.ts — the same field the colourway carries on the Shop
+   wall. Every swatch on the site used to be var(--pink), which on a two
+   colourway product (Loco) made the two options read as one repeated box. */
 .csw-img {
   display: block; width: 100%; aspect-ratio: 1 / 1;
-  background: var(--pink); overflow: hidden; position: relative;
+  background: var(--csw-field, var(--pink)); overflow: hidden; position: relative;
   box-shadow: inset 0 0 0 1px var(--line);
   transition: box-shadow 0.18s var(--ease-ui);
 }
@@ -2064,6 +2086,13 @@ html { overflow-anchor: none; }
 .csw:hover .csw-img { box-shadow: inset 0 0 0 1px var(--navy); }
 .csw.is-on .csw-img { box-shadow: inset 0 0 0 2px var(--navy); }
 .csw.is-on .csw-name { color: var(--navy); }
+/* A navy field takes a pink ring, because a navy one is invisible on it and
+   the selected swatch would have no selected state at all. Loco Brown is the
+   only field deep enough to trigger this today; isDarkField() decides, so a
+   future deep field cannot ship without it. */
+.csw.is-deep .csw-img { box-shadow: inset 0 0 0 1px rgba(255, 224, 253, 0.3); }
+.csw.is-deep:hover .csw-img { box-shadow: inset 0 0 0 1px var(--pink); }
+.csw.is-deep.is-on .csw-img { box-shadow: inset 0 0 0 2px var(--pink); }
 /* No photography for this colourway yet: a named box, never a guessed hex. */
 .csw-named .csw-name { padding: 12px 16px; box-shadow: inset 0 0 0 1px var(--line); color: var(--navy); }
 .csw-named.is-on .csw-name { box-shadow: inset 0 0 0 2px var(--navy); }
@@ -2583,44 +2612,91 @@ html { overflow-anchor: none; }
 
 /* ==========================================================================
    FAQ
-   Was a small title over five rules on white, with the footer taking nearly
-   half the page. An editorial spread instead: the subject and one real
-   material photograph hold the left, the answers are grouped on the right.
+   THREE COLOURS, IN THE ORDER THE REST OF THE SITE USES THEM.
+
+   The previous version put everything on white — title, macro, rules, answers
+   — and the page read as a support article on a different website. The
+   architecture below is the one that was already here (intro, three anchored
+   groups, native <details> accordions); what changed is the field.
+
+     pink   the intro, full bleed, so the page opens the way the homepage,
+            the empty cart and the Shop opener all open
+     white  the answers, because that is where the reading happens
+     navy   every piece of type and every rule
+     pink   again, small, as the field an OPEN answer sits on — the accent
+            that tells you where you are without a card, a shadow or a radius
+
+   No image. Deliberately: the one it had was the third metallic macro on the
+   site and it was there to stop the page looking bare, which a field does
+   better than a repeated asset.
    ========================================================================== */
-.fq {
-  display: grid; grid-template-columns: 1fr;
-  gap: clamp(30px, 5vw, 72px);
-  padding: clamp(40px, 7vh, 96px) clamp(20px, 4vw, 56px) clamp(56px, 9vh, 120px);
-  align-items: start;
-}
-@media (min-width: 860px) {
-  .fq { grid-template-columns: 36fr 64fr; }
-  /* Holds while the answers scroll past it. */
-  .fq-side { position: sticky; top: clamp(90px, 12vh, 130px); }
+.fq { display: block; padding: 0 0 clamp(56px, 9vh, 120px); }
+
+.fq-intro {
+  background: var(--pink);
+  padding: clamp(44px, 8vh, 104px) clamp(20px, 4vw, 56px) clamp(40px, 6.5vh, 76px);
 }
 .fq-title {
   margin: 8px 0 0; color: var(--navy);
   font-family: var(--font-head); font-weight: 600; font-variation-settings: "opsz" 96;
   font-size: clamp(42px, 6vw, 86px); line-height: 0.96; letter-spacing: -0.035em;
 }
-/* Shaped to the photograph. This slot was built for macro-twotone at 1.57;
-   the band that replaced it is 2070x457, so a 1.57 window cropped 65% of it
-   away and left 374 source pixels across 1050 physical: effective detail
-   0.36, the worst number on the site. The slot is the band's own shape now,
-   which crops nothing. */
-.fq-crop {
-  margin: clamp(22px, 3.4vh, 36px) 0 0; overflow: hidden;
-  aspect-ratio: 2070 / 457;
+.fq-lede {
+  margin: clamp(20px, 3vh, 32px) 0 0; color: var(--navy);
+  font-family: var(--font-body); font-size: 11.5px; font-weight: 600;
+  letter-spacing: 0.2em; text-transform: uppercase;
 }
-.fq-crop img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.fq-note { margin: 12px 0 0; font-size: 12px; color: var(--muted); }
 
-.fq-body { display: flex; flex-direction: column; gap: clamp(28px, 4vh, 48px); }
+.fq-body {
+  display: flex; flex-direction: column; gap: clamp(34px, 5vh, 64px);
+  padding: clamp(38px, 6vh, 76px) clamp(20px, 4vw, 56px) 0;
+}
+.fq-group { scroll-margin-top: 96px; }
+@media (min-width: 900px) {
+  /* The label becomes a rail beside its own questions rather than a heading
+     stacked above them, which is what turns a list into a spread. */
+  .fq-group { display: grid; grid-template-columns: 24fr 76fr; gap: clamp(24px, 4vw, 64px); align-items: start; }
+  .fq-group-label { position: sticky; top: clamp(96px, 12vh, 132px); }
+}
 .fq-group-label {
-  margin: 0 0 4px; color: var(--navy);
-  font-size: 11px; font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase;
+  /* font-family is stated because the global h2 rule sets the display serif,
+     and Bodoni at 11px with 0.24em tracking rendered as a smear. */
+  margin: 0 0 4px; padding: 12px 0 0; color: var(--navy);
+  font-family: var(--font-body); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.24em; text-transform: uppercase;
+  border-top: 1.5px solid var(--navy);
 }
 .fq .faq-list { max-width: none; }
+/* Navy hairlines, not the shared pale grey: on a page whose only other ink is
+   navy, a grey rule is the one warm-neutral thing left on it. */
+.fq .faq-list details {
+  border-top: 1px solid rgba(20, 53, 98, 0.16);
+  padding-inline: 18px; margin-inline: -18px;
+  transition: background 0.18s var(--ease-ui);
+}
+/* THE PADDING BELONGS TO THE SUMMARY, NOT THE DETAILS.
+   It was on the <details>, so the row measured 76px but only the 28px of
+   text inside it toggled anything: a finger landing in the generous gap
+   above or below a question did nothing at all. Same rhythm, the whole row
+   is now the target, floored at 44px. */
+.fq .faq-list details { padding-block: 0; }
+.fq .faq-list summary {
+  padding-block: clamp(18px, 2.2vh, 26px);
+  min-height: 44px; box-sizing: border-box;
+}
+.fq .faq-list details[open] summary { padding-bottom: 12px; }
+.fq .faq-list p { margin: 0 0 clamp(18px, 2.2vh, 26px); }
+.fq .faq-list details:first-child { border-top: 0; }
+/* The accent. A field, not a card — no radius, no border, no shadow. */
+.fq .faq-list details[open] { background: var(--pink); }
+.fq .faq-list summary { color: var(--navy); }
+.fq .faq-list summary::after { color: var(--navy); }
+/* --muted is 4.1:1 on white and drops further on the pink field an open
+   answer sits on. This is navy at ~78%, which clears AA on both grounds. */
+.fq .faq-list p { color: #33507f; }
+@media (prefers-reduced-motion: reduce) {
+  .fq .faq-list details { transition: none; }
+}
 
 /* ==========================================================================
    EMPTY STATES (cart, checkout)
