@@ -103,10 +103,13 @@ interface CartContextValue {
   cartCount: number;
   cartSubtotal: number;
   cartDrawerOpen: boolean;
-  openCartDrawer: () => void;
+  /** The line just added from a product page, while its confirmation shows. */
+  justAddedId: string | null;
+  openCartDrawer: (justAddedId?: string | null) => void;
   closeCartDrawer: () => void;
   toggleCartDrawer: () => void;
-  addOrUpdateLine: (line: CartLine, editingLineId?: string | null) => void;
+  /** Returns the id of the line that now holds this configuration. */
+  addOrUpdateLine: (line: CartLine, editingLineId?: string | null) => string;
   removeLine: (lineId: string) => void;
   setQty: (lineId: string, qty: number) => void;
   /** Empties the cart after an order is successfully placed. */
@@ -123,14 +126,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // Drawer open/close is pure UI state (not persisted) — plain useState is the
   // right tool here, no external store involved.
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [justAddedId, setJustAddedId] = useState<string | null>(null);
 
   const addOrUpdateLine = useCallback(
     (line: CartLine, editingLineId?: string | null) => {
       const current = parseCart(getSnapshot());
-      const next = editingLineId
-        ? current.map((l) => (l.lineId === editingLineId ? line : l))
-        : [...current, line];
-      writeCart(next);
+      if (editingLineId) {
+        writeCart(current.map((l) => (l.lineId === editingLineId ? line : l)));
+        return editingLineId;
+      }
+      // THE SAME BAG TWICE IS ONE LINE, NOT TWO. Adding an identical
+      // configuration again now raises its quantity instead of stacking a
+      // second, indistinguishable row in the cart — the product page no
+      // longer navigates away after adding, so pressing Add again is a real
+      // thing a customer can do. Ready for Delivery lines are single pieces
+      // and are never merged.
+      const same = line.kind === "made_to_order" ? current.find((l) => sameConfig(l, line)) : undefined;
+      if (same) {
+        writeCart(current.map((l) => (l.lineId === same.lineId ? { ...l, qty: l.qty + line.qty } : l)));
+        return same.lineId;
+      }
+      writeCart([...current, line]);
+      return line.lineId;
     },
     []
   );
@@ -149,6 +166,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
     writeCart(current.map((l) => (l.lineId === lineId ? { ...l, qty: Math.max(1, qty) } : l)));
   }, []);
 
+  // Stable, because the drawer's focus effect depends on them: a new function
+  // every render would re-run that effect on every cart change and bounce
+  // focus out of the panel and back.
+  const openCartDrawer = useCallback((id?: string | null) => {
+    setJustAddedId(id ?? null);
+    setDrawerOpen(true);
+  }, []);
+  const closeCartDrawer = useCallback(() => {
+    setDrawerOpen(false);
+    setJustAddedId(null);
+  }, []);
+  const toggleCartDrawer = useCallback(() => {
+    setJustAddedId(null);
+    setDrawerOpen((v) => !v);
+  }, []);
+
   const cartCount = useMemo(() => cart.reduce((n, l) => n + l.qty, 0), [cart]);
   const cartSubtotal = useMemo(() => cart.reduce((n, l) => n + l.unitPrice * l.qty, 0), [cart]);
 
@@ -158,9 +191,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     cartCount,
     cartSubtotal,
     cartDrawerOpen: drawerOpen,
-    openCartDrawer: () => setDrawerOpen(true),
-    closeCartDrawer: () => setDrawerOpen(false),
-    toggleCartDrawer: () => setDrawerOpen((v) => !v),
+    justAddedId,
+    openCartDrawer,
+    closeCartDrawer,
+    toggleCartDrawer,
     addOrUpdateLine,
     removeLine,
     setQty,
@@ -174,6 +208,23 @@ export function useCart(): CartContextValue {
   const ctx = useContext(CartContext);
   if (!ctx) throw new Error("useCart must be used within CartProvider");
   return ctx;
+}
+
+/** Two made-to-order lines describe the same physical bag. */
+function sameConfig(a: CartLine, b: CartLine): boolean {
+  if (a.kind !== "made_to_order" || b.kind !== "made_to_order") return false;
+  const ids = (x: string[]) => [...x].sort().join(",");
+  return (
+    a.bagId === b.bagId &&
+    a.colourId === b.colourId &&
+    (a.secondaryColourId ?? null) === (b.secondaryColourId ?? null) &&
+    (a.sizeId ?? null) === (b.sizeId ?? null) &&
+    (a.strapId ?? null) === (b.strapId ?? null) &&
+    (a.handleId ?? null) === (b.handleId ?? null) &&
+    (a.chainId ?? null) === (b.chainId ?? null) &&
+    ids(a.addonIds) === ids(b.addonIds) &&
+    a.unitPrice === b.unitPrice
+  );
 }
 
 export { uid };

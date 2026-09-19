@@ -1,4 +1,4 @@
-// End-to-end checkout in a real browser: product -> Add to Bag -> cart ->
+// End-to-end checkout in a real browser: product -> Add to Cart -> cart ->
 // checkout -> submit -> confirmation. Clicks real controls; does not simulate.
 const BASE = process.argv[2] || "http://127.0.0.1:4311";
 const CDP = "http://127.0.0.1:9222";
@@ -29,7 +29,7 @@ await session(async (send, events) => {
   await go(send, `${BASE}/`, 1500);
   await ev(send, `(()=>{try{localStorage.clear()}catch(e){} return 'ok'})()`);
 
-  // ---- 1. product page: pick a colour, add to bag
+  // ---- 1. product page: pick a colour, add to cart
   await go(send, `${BASE}/product/nova`, 3000);
   const price0 = await ev(send, `(document.querySelector('.pd-price')||{}).textContent`);
   t("nova opens at base price (no pre-added extras)", /55/.test(price0 || ""), price0);
@@ -57,10 +57,10 @@ await session(async (send, events) => {
   const price1 = await ev(send, `(document.querySelector('.pd-price')||{}).textContent`);
   t("adding a chain adds +5 (55 -> 60)", /60/.test(price1 || ""), price1);
 
-  await ev(send, `[...document.querySelectorAll('button')].find(b=>/add to bag/i.test(b.textContent))?.click()`);
+  await ev(send, `[...document.querySelectorAll('button')].find(b=>/add to cart/i.test(b.textContent))?.click()`);
   await new Promise(r => setTimeout(r, 900));
   const count = await ev(send, `(document.querySelector('.badge')||{}).textContent`);
-  t("add to bag updates cart count", (count || "").trim() === "1", count);
+  t("add to cart updates cart count", (count || "").trim() === "1", count);
 
   // ---- 2. cart
   await go(send, `${BASE}/cart`, 2200);

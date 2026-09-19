@@ -41,6 +41,14 @@ const LINKS = [
   { href: "/contact", label: "Contact" },
 ];
 
+/** Nova first: it leads the collection (client, 2026-09). */
+const MODELS = [
+  { href: "/product/nova", label: "Nova" },
+  { href: "/product/mini-luna", label: "Mini Luna" },
+  { href: "/product/vault", label: "Vault" },
+  { href: "/product/loco", label: "Loco" },
+];
+
 export default function MobileMenu() {
   const [open, setOpen] = useState(false);
   const mounted = useMounted();
@@ -134,16 +142,33 @@ export default function MobileMenu() {
                 aria-label="Site menu"
                 aria-hidden={!open}
               >
-                <nav className="mobile-menu-links">
+                <nav className="mobile-menu-links" aria-label="Site">
                   {LINKS.map((link, i) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      ref={i === 0 ? firstLinkRef : undefined}
-                      tabIndex={open ? 0 : -1}
-                    >
-                      {link.label}
-                    </Link>
+                    <div key={link.href} className="mobile-menu-item">
+                      <Link
+                        href={link.href}
+                        ref={i === 0 ? firstLinkRef : undefined}
+                        tabIndex={open ? 0 : -1}
+                        onClick={() => setOpen(false)}
+                      >
+                        {link.label}
+                      </Link>
+                      {/* EACH SHAPE, ONE TAP AWAY (client: "you can't pick a
+                          specific collection to view from the menu button").
+                          The four product pages already exist; the menu now
+                          reaches them directly instead of stopping at Shop. */}
+                      {link.href === "/shop" ? (
+                        <ul className="mobile-menu-models" aria-label="Shop by shape">
+                          {MODELS.map((m) => (
+                            <li key={m.href}>
+                              <Link href={m.href} tabIndex={open ? 0 : -1} onClick={() => setOpen(false)}>
+                                {m.label}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </div>
                   ))}
                 </nav>
               </div>

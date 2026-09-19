@@ -13,6 +13,7 @@ import Image from "next/image";
 import { getActiveBags } from "@/lib/repository";
 import { money } from "@/lib/pricing";
 import { framesForColour, resolveMedia, cutSrc, tileSrc, altFor } from "@/lib/product-media";
+import { variantHref } from "@/lib/variant";
 import ScrollStory from "@/components/home/ScrollStory";
 import ModelCollection from "@/components/ModelCollection";
 import type { Bag } from "@/lib/types";
@@ -134,7 +135,24 @@ export default async function HomePage() {
   //   · The macro is Red Mini Luna's OWN yarn (texture-metallic), which is
   //     what lets the material moment later be the same physical object
   //     rather than a cut to an unrelated picture.
-  const heroBag = frame(miniLuna, "Red");
+  // NOVA IS THE FACE OF THE BRAND (client, 2026-09: "the best selling bag by
+  // a high margin and the most visually appealing to most people").
+  //
+  // DSC05786 by name: Gold Nova, the frame that already leads Nova on the
+  // Shop wall, so the hero and the Shop introduce the same bag. The versions
+  // WITH a handle (DSC05776, DSC05778) were tried first for the through-
+  // opening the Mini Luna hero relied on, and rejected at hero scale: their
+  // mattes leave a pale rim along the handle and specks of studio ground in
+  // the opening, which a 200vw phone crop makes plain. This one's edge is the
+  // cleanest in the Nova archive. Rebuilt from the 6000px original
+  // (HIRES_CUTS). The Red Mini Luna is not retired: it keeps the material
+  // close-up and the colour sequence, and the Black Mini Luna stays as the
+  // hero's secondary object.
+  const nova = by("nova");
+  const novaGold = nova ? framesForColour(nova, "Gold") : [];
+  const heroBag = novaGold.find((f) => f.frameId === "DSC05786") ?? novaGold[0] ?? frame(miniLuna, "Red");
+  const heroProduct = heroBag && novaGold.includes(heroBag) ? nova : miniLuna;
+  const heroColour = heroProduct === nova ? "Gold" : "Red";
   // The closing frame deliberately uses a DIFFERENT product. The story
   // previously opened and closed on the same Red Mini Luna, which made the
   // range look like one bag. Vault Olive is the strongest contrast available:
@@ -151,8 +169,6 @@ export default async function HomePage() {
   // Mini Luna already owns the hero, and repeating it here is what made the
   // range look like one bag in the first place.
   const vault = by("vault");
-  const nova = by("nova");
-  const loco = by("loco");
   // THE CLOSING FRAME IS ONE CLEAN OBJECT.
   //
   // Two rebuilds now. First it was two cut-outs on a drawn floor, which was a
@@ -251,21 +267,26 @@ export default async function HomePage() {
             <span className="hero-l3">Way.</span>
           </h1>
 
-          {heroBag && miniLuna ? (
-            <figure className="hero-bag">
+          {heroBag && heroProduct ? (
+            <figure className={`hero-bag${heroProduct === nova ? " is-nova" : ""}`}>
               <Image
                 // The de-haloed variant. The ordinary cut-out carries the
                 // studio contact shadow, which on the white product floor
                 // reads as a grey smear beside the bag rather than grounding.
                 src={tileSrc(heroBag)}
-                alt={altFor(miniLuna, "Red")}
+                alt={altFor(heroProduct, heroColour)}
                 width={1600}
                 height={Math.round(1600 / heroBag.ratio)}
                 // Declared above the element's resting width on purpose: the hero bag
                 // scales up past 2x during the enter sequence, and `sizes` cannot
                 // express a transform, so a resting-width budget left it soft
                 // exactly while it is largest on screen.
-                sizes="(max-width: 860px) 200vw, 92vw"
+                // Nova rests at 56vw on a desktop (home.css) but the enter sequence
+                // scales it to ~1.5x, so the desktop budget stays at 92vw. Tablet rests
+                // at 80vw; the phone keeps 200vw for the push-in on exit.
+                sizes={heroProduct === nova
+                  ? "(max-width: 699px) 200vw, (max-width: 860px) 84vw, 92vw"
+                  : "(max-width: 860px) 200vw, 92vw"}
                 quality={90}
                 // Next 16 deprecated `priority` and it emitted nothing, so the
                 // hero — the LCP element — was being fetched at default
@@ -306,12 +327,12 @@ export default async function HomePage() {
               named, in the colourway shown, at its real price. The price is
               read from the product rather than typed, so it cannot drift from
               the database the rest of the store prices from. */}
-          {miniLuna ? (
+          {heroProduct ? (
             <div className="hero-credit">
               <span className="hero-credit-rule" aria-hidden="true" />
-              <p>Mini Luna</p>
-              <p>Red</p>
-              <p>{money(miniLuna.basePrice)}</p>
+              <p>{heroProduct.name.trim()}</p>
+              <p>{heroColour}</p>
+              <p>{money(heroProduct.basePrice)}</p>
             </div>
           ) : null}
 
@@ -398,19 +419,24 @@ export default async function HomePage() {
           <ul className="shape-row">
             {SHAPES.map((sh) => (
               <li key={sh.slug} className={`shape-item shape-${sh.slug}`}>
-                <span
-                  className="sil"
-                  role="img"
-                  aria-label={`Silhouette of the ${sh.name} bag`}
-                  style={{
-                    ["--sil" as string]: `url(/media/silhouette-${sh.slug}.webp)`,
-                    ["--ratio" as string]: sh.ratio,
-                    ["--w" as string]: sh.width,
-                    ["--fill" as string]: sh.fill,
-                  }}
-                />
-                <em>{sh.name}</em>
-                <i>{sh.note}</i>
+                {/* The whole shape is the link, not just the name under it
+                    (client: "tap the shape of any bag and it redirects you
+                    directly to its page"). One anchor per item, nothing
+                    interactive nested inside it. */}
+                <Link className="shape-link" href={`/product/${sh.slug}`} aria-label={`View the ${sh.name}`}>
+                  <span
+                    className="sil"
+                    aria-hidden="true"
+                    style={{
+                      ["--sil" as string]: `url(/media/silhouette-${sh.slug}.webp)`,
+                      ["--ratio" as string]: sh.ratio,
+                      ["--w" as string]: sh.width,
+                      ["--fill" as string]: sh.fill,
+                    }}
+                  />
+                  <em>{sh.name}</em>
+                  <i>{sh.note}</i>
+                </Link>
               </li>
             ))}
           </ul>
@@ -430,6 +456,13 @@ export default async function HomePage() {
               <br />
               your colour.
             </p>
+            {/* WHICH BAG THESE COLOURS BELONG TO. The rail listed five
+                colours under "Choose your colour." and nothing said they are
+                Mini Luna's five: read as a configurator, it looked as though
+                the brand only comes in five (client: "not all colors are
+                available for customization"). Colour is per shape, so the
+                model is named and the other eleven are one tap away. */}
+            <p className="cust-model">Shown on Mini Luna</p>
             <ul className="cust-rail">
               {customFrames.map((cf, i) => (
                 <li
@@ -439,6 +472,11 @@ export default async function HomePage() {
                     ["--w1" as string]: CUST_WINDOW(i)[1],
                   }}
                 >
+                  {/* Tapping a colour opens that exact colourway in the
+                      customizer. Scrolling still walks through them; a finger
+                      no longer has to scroll to choose one. */}
+                  <Link className="cust-pick" href={miniLuna ? variantHref(miniLuna.slug, cf.colour) : "/shop"}
+                        aria-label={`Customize the Mini Luna in ${cf.colour}`}>
                   {/* The same photographic swatch the shop and the product
                       pages use. A colour name on its own is not a colour, and
                       this is the one beat on the homepage whose whole subject
@@ -455,10 +493,12 @@ export default async function HomePage() {
                     />
                   </span>
                   <span>{cf.colour}</span>
+                  </Link>
                 </li>
               ))}
             </ul>
             <p className="cust-foot">Then the size, the strap, the chain. Yours before it is made.</p>
+            <Link className="cust-all" href="/shop">All 16 colourways</Link>
           </div>
 
           <div className="cust-bag">

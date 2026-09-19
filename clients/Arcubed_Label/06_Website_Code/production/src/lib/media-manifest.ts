@@ -77,7 +77,7 @@ export const COLOUR_MEDIA: Record<string, Record<string, Frame[]>> = {
     "Red": [f("DSC05774", 1.1585, true, true), f("DSC05775", 1.097)],
     "Silver": [f("DSC04875", 1.2647)],
     "Gold": [f("DSC04874", 1.2445)],
-    "Black": [f("DSC04872", 0.8909), f("DSC04873", 1.1564)],
+    "Black": [f("DSC04873", 1.1564), f("DSC04872", 0.8909)],
     "Silver & Gold": [f("DSC04870", 1.3017), f("DSC04871", 1.2417)],
   },
   "loco": {

@@ -1,38 +1,36 @@
-// ONE GESTURE, ONE STATE — the homepage story's input contract.
+// THE HOMEPAGE STORY'S INPUT CONTRACT — no skipped state, no hijacked scroll.
 //
-// WHY THIS EXISTS
+// HISTORY, because this file has now encoded two different contracts.
 //
-// Every state in the story is derived from scroll POSITION, so the story had
-// no concept of a gesture. A flick is just a large change in scrollY, and the
-// driver read whatever state that landed on. Measured at 390x844, where the
-// travel is 3376px across nine states:
+// f704d31 asserted "one gesture may change the state by at most one, measured
+// after the gesture lands". The only way to satisfy that is to hold the page
+// still: the implementation capped scrollY, froze the document mid-fling and
+// landed the page back inside the state it was showing. It passed 87/87 here
+// and the client then reported, on a phone AND a trackpad, exactly what it
+// does: "when scrolling past the 'made yours' picture, it keeps glitching and
+// sending me back up to it", scrolling "not smooth at all", and colour
+// changes that "send us up". Reproduced on the alias: dragged back 1130px on a
+// phone swipe and 431px on six wheel notches at 1440.
 //
-//   small swipe        0 -> 0
-//   medium swipe       0 -> 1
-//   large swipe        0 -> 4
-//   very large swipe   0 -> 8     the entire story in one gesture
-//   fast flick         0 -> 8
-//   slow long drag     0 -> 4
+// The test was measuring the wrong thing. What a reader must never see is a
+// state SKIPPED; what a reader must never feel is the page moving on its own.
+// This version asserts both, and neither can be satisfied at the other's
+// expense:
 //
-// No existing check could see this. The reduced-motion and reveal suites ask
-// whether the phases exist and whether they animate; nothing asked how many
-// of them a single thumb movement crosses.
+//   1. NO SKIPPED STATE   every change of the shown state, recorded as it
+//                         happens, is exactly one step
+//   2. NO FLASH           every intermediate state stays on screen for at
+//                         least MIN_DWELL_MS
+//   3. NO SNAP-BACK       after the gesture, the page never moves against its
+//                         direction — not a single pixel
+//   4. NO HIJACK          the page ends where the gesture took it, and one
+//                         hard flick is enough to leave the story entirely
+//   5. CATCHES UP         the shown state always ends on the state the scroll
+//                         position asks for
 //
-// WHAT IT CHECKS
-//
-//   1. abs(newState - oldState) <= 1 for EVERY gesture, at every magnitude,
-//      in both directions, from every starting state
-//   2. the story is still traversable — N separate gestures advance N states,
-//      so the clamp cannot be passed by making the story impossible to get
-//      through, or by demanding several nudges per state
-//   3. an ordinary swipe still moves, so the fix is not friction
-//   4. the page below the story still scrolls freely
-//
-// Gestures are real touch flings with momentum, via CDP
-// Input.synthesizeScrollGesture — not scrollTo(), which would prove nothing
-// about an input clamp.
-//
-// Needs Chrome on the CDP port, like every other audit here:
+// Phones are driven with real touch flings (CDP Input.synthesizeScrollGesture,
+// momentum included); desktops with real wheel events, including trackpad-like
+// bursts of small deltas. Needs Chrome on the CDP port like every other audit:
 //   /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
 //     --remote-debugging-port=9222 --headless=new
 //
@@ -41,25 +39,36 @@
 
 const CDP = process.env.CDP || "http://127.0.0.1:9222";
 const BASE = process.env.BASE || "http://127.0.0.1:4312";
-const VIEWS = [
+
+/** Shorter than the 300ms step on purpose: timers drift under load. */
+const MIN_DWELL_MS = 200;
+const BOUNDS = [0, 0.2, 0.34, 0.46, 0.54, 0.62, 0.7, 0.78, 0.86];
+
+const PHONES = [
   { w: 375, h: 812 },
   { w: 390, h: 844 },
   { w: 430, h: 932 },
 ];
-
-/** Every state the viewer can perceive, in order. Mirrors ScrollStory. */
-const ORD = { hero: 0, mat: 1, shape: 2, cust: 3, final: 8 };
-const BOUNDS = [0, 0.2, 0.34, 0.46, 0.54, 0.62, 0.7, 0.78, 0.86];
-
-/** Distance in px and speed in px/s. The last two are the pathological ones. */
-const GESTURES = [
+const DESKTOPS = [
+  { w: 1440, h: 900 },
+  { w: 1680, h: 1050 },
+];
+/** [label, distance px, speed px/s] */
+const FLINGS = [
   ["small swipe", 260, 800],
   ["medium swipe", 600, 1200],
   ["large swipe", 1400, 3000],
-  ["very large swipe", 2600, 6000],
   ["huge swipe", 5000, 9000],
   ["fast flick", 900, 12000],
   ["slow long drag", 1800, 300],
+];
+/** [label, deltaY per event, events, ms between] */
+const WHEELS = [
+  ["one notch", 100, 1, 0],
+  ["six notches", 120, 6, 60],
+  ["trackpad burst", 40, 30, 16],
+  ["big deltas", 400, 4, 80],
+  ["page-down sized", 800, 1, 0],
 ];
 
 async function cdp() {
@@ -83,6 +92,7 @@ await send("Runtime.enable");
 await send("Page.bringToFront");
 const ev = async (expr) =>
   (await send("Runtime.evaluate", { expression: expr, returnByValue: true })).result.value;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 let pass = 0, fail = 0;
 const ok = (name, cond, detail = "") => {
@@ -90,102 +100,109 @@ const ok = (name, cond, detail = "") => {
   console.log(`  ${cond ? "PASS" : "FAIL"}  ${name}${detail ? "  -> " + detail : ""}`);
 };
 
-const read = async () =>
-  JSON.parse(await ev(`(()=>{const st=document.querySelector('.story-stage');
-    return JSON.stringify({phase:st.getAttribute('data-phase'), step:+st.getAttribute('data-step'),
-                           y:Math.round(scrollY)})})()`));
-const idx = (s) => (s.phase === "cust" ? 3 + s.step : ORD[s.phase]);
+/** Start recording every shown-state change and every scroll position. */
+const RECORD = `(()=>{
+  const st=document.querySelector('.story-stage');
+  const idx=()=>st.dataset.phase==='cust'?3+(+st.dataset.step):({hero:0,mat:1,shape:2,final:8})[st.dataset.phase];
+  window.__rec={states:[[performance.now(),idx()]],ys:[[performance.now(),scrollY]]};
+  window.__mo=new MutationObserver(()=>{const i=idx();const s=window.__rec.states;if(s[s.length-1][1]!==i)s.push([performance.now(),i]);});
+  window.__mo.observe(st,{attributes:true,attributeFilter:['data-phase','data-step']});
+  window.__sc=()=>window.__rec.ys.push([performance.now(),scrollY]);
+  addEventListener('scroll',window.__sc,{passive:true});
+})()`;
+const STOP = `(()=>{window.__mo.disconnect();removeEventListener('scroll',window.__sc);return JSON.stringify(window.__rec)})()`;
 
-/** A real finger: touch down, drag, release, let momentum run. */
-async function fling(w, h, distance, speed) {
-  await send("Input.synthesizeScrollGesture", {
-    x: Math.round(w / 2), y: Math.round(h * 0.6),
-    xDistance: 0, yDistance: -distance, speed,
-    gestureSourceType: "touch", preventFling: false,
-  });
-  await new Promise((r) => setTimeout(r, 1500));
-}
+/** Where the scroll position says the story should be. */
+const TARGET = `(()=>{const e=document.querySelector('.story');const top=e.getBoundingClientRect().top+scrollY;
+  const tr=e.offsetHeight-innerHeight;const p=Math.min(1,Math.max(0,(scrollY-top)/tr));
+  const B=${JSON.stringify(BOUNDS)};let i=0;for(let k=0;k<B.length;k++)if(p>=B[k])i=k;return i})()`;
 
-/** Park the story on a given state without using a gesture. */
 async function park(state) {
   await ev(`(()=>{const el=document.querySelector('.story');
     const travel=el.offsetHeight-innerHeight;
     const top=el.getBoundingClientRect().top+scrollY;
     scrollTo(0, Math.round(top + ${BOUNDS[state]} * travel) + 2);})()`);
-  await new Promise((r) => setTimeout(r, 900));
+  // Let the shown state catch up to the parked position before measuring.
+  await sleep(3200);
 }
 
-for (const v of VIEWS) {
-  console.log(`\n=== ${v.w}x${v.h} DPR3 ===`);
-  await send("Emulation.setDeviceMetricsOverride", {
-    width: v.w, height: v.h, deviceScaleFactor: 3, mobile: true,
-  });
-  await send("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 5 });
+/** One gesture, fully recorded, with every contract checked against it. */
+async function gesture(label, from, dir, run, settleMs = 3400) {
+  await park(from);
+  const y0 = await ev("Math.round(scrollY)");
+  await ev(RECORD);
+  await run();
+  await sleep(settleMs);
+  const rec = JSON.parse(await ev(STOP));
+  const y1 = await ev("Math.round(scrollY)");
+  const target = await ev(TARGET);
+
+  const st = rec.states;
+  let worstJump = 0, shortest = Infinity;
+  for (let i = 1; i < st.length; i++) {
+    worstJump = Math.max(worstJump, Math.abs(st[i][1] - st[i - 1][1]));
+    // Dwell of every INTERMEDIATE state (not the first, not the final one).
+    if (i < st.length - 1) shortest = Math.min(shortest, st[i + 1][0] - st[i][0]);
+  }
+  // Snap-back: any movement against the gesture direction, anywhere.
+  let back = 0;
+  for (let i = 1; i < rec.ys.length; i++) back = Math.min(back, (rec.ys[i][1] - rec.ys[i - 1][1]) * dir);
+  const trail = st.map((s) => s[1]).join(">");
+
+  ok(`${label} from ${from}: no state skipped`, worstJump <= 1, `shown ${trail}`);
+  if (st.length > 2) ok(`${label} from ${from}: no state flashed`, shortest >= MIN_DWELL_MS, `shortest dwell ${Math.round(shortest)}ms`);
+  ok(`${label} from ${from}: no snap-back`, back === 0, `moved ${-Math.round(back)}px against the gesture`);
+  ok(`${label} from ${from}: page went where it was sent`, (y1 - y0) * dir > 0, `${y0} -> ${y1}`);
+  ok(`${label} from ${from}: shown state caught up`, st[st.length - 1][1] === target, `shown ${st[st.length - 1][1]}, scroll says ${target}`);
+  return { y0, y1 };
+}
+
+async function setView(w, h, mobile) {
+  await send("Emulation.setDeviceMetricsOverride", { width: w, height: h, deviceScaleFactor: mobile ? 3 : 1, mobile });
+  await send("Emulation.setTouchEmulationEnabled", { enabled: mobile, maxTouchPoints: mobile ? 5 : 0 });
   await send("Page.navigate", { url: BASE + "/" });
-  await new Promise((r) => setTimeout(r, 3000));
+  await sleep(3200);
+  return JSON.parse(await ev(`(()=>{const e=document.querySelector('.story');const top=Math.round(e.getBoundingClientRect().top+scrollY);
+    return JSON.stringify({top, end: top+e.offsetHeight-innerHeight, travel: e.offsetHeight-innerHeight})})()`));
+}
 
-  const geom = JSON.parse(await ev(`(()=>{const e=document.querySelector('.story');
-    return JSON.stringify({h:e.offsetHeight, vh:innerHeight, travel:e.offsetHeight-innerHeight})})()`));
-  console.log(`  story ${geom.h}px, travel ${geom.travel}px, ${BOUNDS.length} states ` +
-    `(~${Math.round(geom.travel / BOUNDS.length)}px each)`);
+for (const v of PHONES) {
+  console.log(`\n=== ${v.w}x${v.h} touch ===`);
+  const g = await setView(v.w, v.h, true);
+  const fling = (dist, speed) => () => send("Input.synthesizeScrollGesture", {
+    x: Math.round(v.w / 2), y: Math.round(v.h * 0.6), xDistance: 0, yDistance: -dist, speed,
+    gestureSourceType: "touch", preventFling: false,
+  });
+  for (const [label, dist, speed] of FLINGS) await gesture(label, 0, 1, fling(dist, speed));
+  for (const [label, dist, speed] of FLINGS.slice(1, 4)) await gesture(`reverse ${label}`, 8, -1, fling(-dist, speed));
+  // Past Made Yours and out, in one hard flick, and never pulled back.
+  const out = await gesture("flick out of the story", 7, 1, fling(3000, 9000));
+  ok("one flick leaves the story", out.y1 > g.end, `ended ${out.y1}, story ends ${g.end}`);
+  // Repeated crossing of the Made Yours boundary, both ways.
+  let crossBack = 0;
+  for (let k = 0; k < 4; k++) {
+    await ev(RECORD);
+    await fling(k % 2 ? -700 : 700, 1500)();
+    await sleep(2600);
+    const rec = JSON.parse(await ev(STOP));
+    for (let i = 1; i < rec.ys.length; i++) crossBack = Math.min(crossBack, (rec.ys[i][1] - rec.ys[i - 1][1]) * (k % 2 ? -1 : 1));
+  }
+  ok("repeated boundary crossing never pulls the page", crossBack === 0, `worst ${-Math.round(crossBack)}px`);
+}
 
-  // ---- FORWARD, from three different starting states ----------------------
-  let worst = 0, worstLabel = "";
-  for (const from of [0, 2, 5]) {
-    for (const [label, dist, speed] of GESTURES) {
-      await park(from);
-      const a = await read();
-      await fling(v.w, v.h, dist, speed);
-      const b = await read();
-      const d = idx(b) - idx(a);
-      if (Math.abs(d) > Math.abs(worst)) { worst = d; worstLabel = `${label} from ${from}`; }
-      ok(`${label} from state ${idx(a)} moves at most one`, Math.abs(d) <= 1,
-        `${idx(a)} -> ${idx(b)} (delta ${d}, ${dist}px @ ${speed}px/s)`);
+for (const v of DESKTOPS) {
+  console.log(`\n=== ${v.w}x${v.h} wheel ===`);
+  const g = await setView(v.w, v.h, false);
+  const wheel = (dy, n, gap) => async () => {
+    for (let i = 0; i < n; i++) {
+      await send("Input.dispatchMouseEvent", { type: "mouseWheel", x: Math.round(v.w / 2), y: Math.round(v.h / 2), deltaX: 0, deltaY: dy });
+      if (gap) await sleep(gap);
     }
-  }
-  console.log(`  largest delta seen: ${worst}${worstLabel ? ` (${worstLabel})` : ""}`);
-
-  // ---- REVERSE ------------------------------------------------------------
-  for (const [label, dist, speed] of GESTURES.slice(2)) {
-    await park(8);
-    const a = await read();
-    await fling(v.w, v.h, -dist, speed);
-    const b = await read();
-    ok(`reverse ${label} from state ${idx(a)} moves at most one`, Math.abs(idx(b) - idx(a)) <= 1,
-      `${idx(a)} -> ${idx(b)} (delta ${idx(b) - idx(a)})`);
-  }
-
-  // ---- STILL TRAVERSABLE --------------------------------------------------
-  // The clamp must not be satisfiable by making the story impossible to move
-  // through, and an ordinary swipe must still advance one state per swipe.
-  await park(0);
-  let prev = idx(await read());
-  let advanced = 0, stalled = 0, worstRun = 0;
-  for (let k = 0; k < 8; k++) {
-    await fling(v.w, v.h, 700, 1500);
-    const now = idx(await read());
-    const d = now - prev;
-    if (Math.abs(d) > worstRun) worstRun = Math.abs(d);
-    if (d === 1) advanced++;
-    else if (d === 0) stalled++;
-    prev = now;
-  }
-  // Two separate promises: no swipe in the run may skip, and eight ordinary
-  // swipes must be enough to cross the whole story — the clamp must not be
-  // satisfiable by making the story impossible to get through.
-  ok("no swipe in a run of eight skips a state", worstRun <= 1,
-    `largest delta in the run ${worstRun}`);
-  ok("eight ordinary swipes cross the whole story", prev === 8,
-    `${advanced} advanced, ${stalled} stalled, ended on state ${prev}`);
-
-  // ---- THE PAGE BELOW STILL SCROLLS --------------------------------------
-  await ev(`scrollTo(0, document.body.scrollHeight)`);
-  await new Promise((r) => setTimeout(r, 700));
-  const atEnd = await ev(`Math.round(scrollY)`);
-  await fling(v.w, v.h, -1200, 3000);
-  const afterUp = await ev(`Math.round(scrollY)`);
-  ok("the page below the story is not clamped", atEnd - afterUp > 200,
-    `${atEnd} -> ${afterUp}`);
+  };
+  for (const [label, dy, n, gap] of WHEELS) await gesture(label, 0, 1, wheel(dy, n, gap));
+  for (const [label, dy, n, gap] of WHEELS.slice(1, 4)) await gesture(`reverse ${label}`, 8, -1, wheel(-dy, n, gap));
+  const out = await gesture("scroll out past Made Yours", 7, 1, wheel(400, 6, 60));
+  ok("wheel leaves the story", out.y1 > g.end, `ended ${out.y1}, story ends ${g.end}`);
 }
 
 close();

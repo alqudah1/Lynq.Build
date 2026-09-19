@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Bag, CartItem, Selection } from "@/lib/types";
 import { computeUnitPrice, defaultSelectionFor, buildCartSnapshot, money } from "@/lib/pricing";
@@ -31,7 +31,10 @@ export default function Customizer({
   productionTimeLabel: string | null;
 }) {
   const router = useRouter();
-  const { addOrUpdateLine } = useCart();
+  const { addOrUpdateLine, openCartDrawer } = useCart();
+  // One press, one bag. A double tap on a phone fired handleAdd twice and put
+  // two lines in the cart; the second press inside this window is ignored.
+  const addLock = useRef(0);
 
   const [selection, setSelection] = useState<Selection>(() =>
     editingLine
@@ -48,9 +51,12 @@ export default function Customizer({
   );
 
   const price = computeUnitPrice(bag, selection);
-  const actionLabel = editingLine ? "Save Changes" : "Add to Bag";
+  const actionLabel = editingLine ? "Save Changes" : "Add to Cart";
 
   function handleAdd() {
+    const now = Date.now();
+    if (now - addLock.current < 800) return;
+    addLock.current = now;
     const line: CartItem = {
       kind: "made_to_order",
       lineId: editingLine?.lineId ?? uid(),
@@ -66,10 +72,27 @@ export default function Customizer({
       unitPrice: price,
       snapshot: buildCartSnapshot(bag, selection),
     };
-    addOrUpdateLine(line, editingLine?.lineId ?? null);
-    showToast(editingLine ? "Bag updated." : "Added to your bag.");
-    router.push("/cart");
+    const lineId = addOrUpdateLine(line, editingLine?.lineId ?? null);
+    if (editingLine) {
+      // Editing came FROM the cart, so saving goes back to it.
+      showToast("Cart updated.");
+      router.push("/cart");
+      return;
+    }
+    // A new bag stays on this page, configuration intact, and the cart panel
+    // offers the two ways on: View Cart or Keep Shopping.
+    openCartDrawer(lineId);
   }
+
+  // A STRAP OR A CHAIN, NOT BOTH (client, 2026-09: "we can add both a charm
+  // and a strap at the same time"). Both are the thing the bag is carried by,
+  // so choosing one clears the other rather than stacking two carrying
+  // options, and two +5 charges, on one bag. Nova's handle is a separate
+  // question (with or without) and is not affected.
+  const pickStrap = (strapId: string | null) =>
+    setSelection((prev) => ({ ...prev, strapId, chainId: strapId ? null : prev.chainId }));
+  const pickChain = (chainId: string | null) =>
+    setSelection((prev) => ({ ...prev, chainId, strapId: chainId ? null : prev.strapId }));
 
   function toggleAddon(id: string) {
     setSelection((prev) => {
@@ -167,7 +190,7 @@ export default function Customizer({
               {bag.straps ? (
                 <StrapHandleSelector label="Strap" kind="strap" bag={bag} options={bag.straps}
                   selectedId={selection.strapId} colourId={selection.colourId}
-                  onSelect={(strapId) => setSelection((prev) => ({ ...prev, strapId }))} />
+                  onSelect={pickStrap} />
               ) : null}
               {bag.handles ? (
                 <StrapHandleSelector label="Handle" kind="handle" bag={bag} options={bag.handles}
@@ -177,7 +200,10 @@ export default function Customizer({
               {bag.chains ? (
                 <StrapHandleSelector label="Chain" kind="chain" bag={bag} options={bag.chains}
                   selectedId={selection.chainId} colourId={selection.colourId}
-                  onSelect={(chainId) => setSelection((prev) => ({ ...prev, chainId }))} />
+                  onSelect={pickChain} />
+              ) : null}
+              {bag.straps?.length && bag.chains?.length ? (
+                <p className="opt-note opt-note-either">Choose a strap or a chain, not both.</p>
               ) : null}
               {bag.addons ? (
                 <AddonSelector addons={bag.addons} selectedIds={selection.addonIds}

@@ -57,11 +57,15 @@ export const metadata: Metadata = {
       "Hand-crocheted bags made to order in Amman, Jordan. Choose your shape, your colour and your fittings.",
     url: SITE,
     locale: "en_JO",
+    // Nova leads the collection (client, 2026-09), so it is what a shared
+    // link shows: the real Gold Nova cut-out on the brand field.
+    images: [{ url: "/media/og-nova.jpg", width: 1200, height: 630, alt: "Nova in Gold, hand-crocheted by Arcubed" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Arcubed Label | Handmade Crochet Bags",
     description: "Hand-crocheted bags made to order in Amman, Jordan.",
+    images: ["/media/og-nova.jpg"],
   },
   // Still closed to search engines. This is a launch switch, not an oversight:
   // set NEXT_PUBLIC_ALLOW_INDEXING=true once the client approves going live.

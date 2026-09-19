@@ -2,7 +2,8 @@
 // No invented founder biography, no fabricated history, no values cards.
 import Image from "next/image";
 import Link from "next/link";
-import { getActiveBags } from "@/lib/repository";
+import { getActiveBags, getStoreSettings } from "@/lib/repository";
+import { plainText } from "@/lib/site-settings";
 import { resolveMedia, framesForColour, tileSrc, altFor } from "@/lib/product-media";
 import Reveal from "@/components/Reveal";
 
@@ -14,7 +15,10 @@ export const metadata = {
 };
 
 export default async function AboutPage() {
-  const bags = await getActiveBags();
+  const [bags, settings] = await Promise.all([getActiveBags(), getStoreSettings()]);
+  // The one production-time value the whole store reads (store_settings), so
+  // About cannot drift from the product pages when the lead time changes.
+  const productionLabel = settings?.productionTimeLabel ? plainText(settings.productionTimeLabel) : null;
   const by = (n: string) => bags.find((b) => b.name.trim().toLowerCase() === n);
   const luna = by("mini luna");
   const nova = by("nova");
@@ -96,7 +100,7 @@ export default async function AboutPage() {
           <h2 className="ab-h2">Made to order,<br />not made in advance.</h2>
           <p className="ab-p">
             Every Arcubed bag starts after you choose it. You pick the shape, the colour and the
-            fittings, and it&rsquo;s crocheted for you in 3 to 5 business days.
+            fittings, and it&rsquo;s crocheted for you{productionLabel ? <> in {productionLabel}</> : null}.
           </p>
           <p className="ab-p">
             That&rsquo;s why the colours run the way they do. Metallic ribbon yarn that catches

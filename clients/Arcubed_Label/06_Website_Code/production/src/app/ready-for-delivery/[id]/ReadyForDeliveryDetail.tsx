@@ -5,11 +5,9 @@
 // (see docs/ready-for-delivery.md); a 3D viewer is explicitly optional here
 // and not built for this route.
 
-import { useRouter } from "next/navigation";
 import type { ReadyForDeliveryCartItem, ReadyForDeliveryItem } from "@/lib/types";
 import { money, buildReadyForDeliverySnapshot } from "@/lib/pricing";
 import { useCart, uid } from "@/lib/cart-context";
-import { showToast } from "@/lib/toast";
 import { AddToCartInline, AddToCartStickyBar } from "@/components/customizer/AddToCartControls";
 
 function description(item: ReadyForDeliveryItem): string {
@@ -27,8 +25,7 @@ export default function ReadyForDeliveryDetail({
   item: ReadyForDeliveryItem;
   fulfillmentLabel: string;
 }) {
-  const router = useRouter();
-  const { addOrUpdateLine } = useCart();
+  const { addOrUpdateLine, openCartDrawer } = useCart();
   const soldOut = item.quantityAvailable <= 0;
 
   function handleAdd() {
@@ -41,9 +38,9 @@ export default function ReadyForDeliveryDetail({
       unitPrice: item.price,
       snapshot: buildReadyForDeliverySnapshot(item, fulfillmentLabel),
     };
-    addOrUpdateLine(line);
-    showToast("Added to your bag.");
-    router.push("/cart");
+    // Same post-add decision as a made-to-order bag: stay here, and the cart
+    // panel offers View Cart or Keep Shopping.
+    openCartDrawer(addOrUpdateLine(line));
   }
 
   return (
@@ -84,7 +81,7 @@ export default function ReadyForDeliveryDetail({
           </p>
         </div>
 
-        <AddToCartInline label={soldOut ? "Sold Out" : "Add to Bag"} onClick={handleAdd} />
+        <AddToCartInline label={soldOut ? "Sold Out" : "Add to Cart"} onClick={handleAdd} />
 
         <div className="accordion-group">
           <details>
@@ -97,7 +94,7 @@ export default function ReadyForDeliveryDetail({
         </div>
       </div>
 
-      {!soldOut ? <AddToCartStickyBar price={item.price} label="Add to Bag" onClick={handleAdd} /> : null}
+      {!soldOut ? <AddToCartStickyBar price={item.price} label="Add to Cart" onClick={handleAdd} /> : null}
     </section>
   );
 }

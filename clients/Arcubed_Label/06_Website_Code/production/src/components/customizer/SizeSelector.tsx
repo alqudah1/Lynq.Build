@@ -1,4 +1,5 @@
 import type { SizeOption } from "@/lib/types";
+import { money } from "@/lib/pricing";
 
 export default function SizeSelector({
   sizes,
@@ -23,6 +24,11 @@ export default function SizeSelector({
             onClick={() => onSelect(s.id)}
           >
             {s.label}
+            {/* Every size says what it costs. Medium and Large used to be a
+                bare word on an empty row, the only options in the buy band
+                with nothing beside them, and read as blank placeholders
+                (client: "the medium and large options are little boxes"). */}
+            <span className="opt-chip-delta">{s.priceDelta ? `+${money(s.priceDelta)}` : "Included"}</span>
           </button>
         ))}
       </div>

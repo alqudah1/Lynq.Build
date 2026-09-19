@@ -38,7 +38,7 @@ export default function CartLineItem({ line }: { line: CartLine }) {
       type="button"
       onClick={() => {
         removeLine(line.lineId);
-        showToast("Removed from bag.");
+        showToast("Removed from cart.");
       }}
     >
       Remove

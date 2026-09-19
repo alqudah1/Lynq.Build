@@ -154,6 +154,13 @@ async function priceMadeToOrderLine(
   const chain = line.chainId ? bag.chains?.find((c) => c.id === line.chainId) : undefined;
   if (line.chainId && !chain) errors.push(`"${bag.name}": selected chain is not available.`);
 
+  // A strap and a chain are both the thing the bag is carried by; the
+  // configurator offers one or the other. A cart saved before that rule, or a
+  // hand-built request, must not become an order for an impossible bag.
+  if (strap && chain) {
+    errors.push(`"${bag.name}": choose a strap or a chain, not both.`);
+  }
+
   if (colour && strap?.compatibleWith && !strap.compatibleWith.includes(colour.id)) {
     errors.push(`"${bag.name}": "${strap.label}" is not available in "${colour.name}".`);
   }

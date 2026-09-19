@@ -210,7 +210,7 @@ export default function CheckoutClient({
 
       <aside className="co-summary">
         <div className="co-summary-inner">
-          <p className="co-legend">Your bag</p>
+          <p className="co-legend">Your cart</p>
           <ul className="co-lines">
             {cart.map((line) => {
               const parts = lineConfigParts(line);

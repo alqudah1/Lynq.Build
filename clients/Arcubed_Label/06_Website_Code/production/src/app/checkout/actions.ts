@@ -85,7 +85,7 @@ export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult>
   else if (!emailLooksReal(email)) errors.push("That email address doesn't look right. Please check it.");
   if (!input.zoneKey) errors.push("Please choose where we're delivering to.");
   if (!address) errors.push("Please enter a delivery address.");
-  if (!Array.isArray(input.items) || input.items.length === 0) errors.push("Your bag is empty.");
+  if (!Array.isArray(input.items) || input.items.length === 0) errors.push("Your cart is empty.");
   if (!input.idempotencyKey) errors.push("Something went wrong preparing your order. Please refresh and try again.");
 
   // The zone must be one the store actually has a rule for — never trust a

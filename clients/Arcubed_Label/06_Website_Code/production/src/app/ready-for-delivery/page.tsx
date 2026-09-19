@@ -8,6 +8,7 @@ import Image from "next/image";
 import { getReadyForDeliveryItems, getStoreSettings, getActiveBags } from "@/lib/repository";
 import { framesForColour, tileSrc, altFor } from "@/lib/product-media";
 import ReadyForDeliveryCard from "@/components/ReadyForDeliveryCard";
+import { plainText } from "@/lib/site-settings";
 
 // Live catalog data should never be prerendered — see app/page.tsx for why
 // this must be explicit rather than inferred.
@@ -24,6 +25,9 @@ export default async function ReadyForDeliveryPage() {
   const emptyBag = bags.find((b) => b.name.trim().toLowerCase() === "mini luna");
   const emptyFrame = emptyBag ? framesForColour(emptyBag, "Red")[0] : undefined;
   const fulfillmentLabel = settings?.readyForDeliveryFulfillmentLabel ?? "Next day";
+  // Production time comes from the same store setting as every other page,
+  // so it cannot say one thing here and another on the product page.
+  const productionLabel = settings?.productionTimeLabel ? plainText(settings.productionTimeLabel) : null;
   // The confirmed promise is "NEXT-DAY DELIVERY IN JORDAN". store_settings
   // holds "Next day"; hyphenate it into its adjectival form and append the
   // country, which the label alone does not carry — and the promise is only
@@ -71,7 +75,7 @@ export default async function ReadyForDeliveryPage() {
               <p className="rfd-empty-meta">
                 <span>{deliveryPromise}</span>
                 <span aria-hidden="true">·</span>
-                <span>Made to order in 3 to 5 business days</span>
+                {productionLabel ? <span>Made to order in {productionLabel}</span> : <span>Made to order</span>}
               </p>
             </div>
             {emptyFrame && emptyBag ? (

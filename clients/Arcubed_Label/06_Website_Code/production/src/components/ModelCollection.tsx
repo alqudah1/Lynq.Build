@@ -147,23 +147,12 @@ function ModelBlock({ product, bag, ways }: { product: string; bag: Bag; ways: W
           alt={on.alt}
           width={1400}
           height={Math.round(1400 / on.ratio)}
-          // Per model, because the blocks are no longer the same width. Three
-          // cut-out models share a row (measured 28.4vw each at both 768 and
-          // 1440) and Loco is the closing band at two thirds of the row
-          // (61.3vw). One shared 46vw declaration left the band asking for a
-          // 662px candidate to fill 882px: a measured 1.33 upscale, and the
-          // largest image on the page was the blurriest.
-          //
-          // 92vw on a phone was resolving to a candidate narrower than the
-          // rendered box once the per-model padding changed, which pushed the
-          // Vault tile to a 1.13 upscale. 100vw picks the next candidate up.
-          sizes={
-            // Loco is a full-width plate now, not a two-thirds band: measured
-            // 90vw at 768 and 91vw at 1440, where 64vw was a 1.42 upscale.
-            bag.slug === "loco"
-              ? "(max-width: 759px) 100vw, 94vw"
-              : "(max-width: 759px) 100vw, 32vw"
-          }
+          // All four blocks share one frame: one per row on a phone (100vw,
+          // which picks the candidate above the padded box rather than the
+          // one below it), two per row from 760, where each stage is just
+          // under half the content width. 48vw rather than 46 so the rounding
+          // never lands on the rung below.
+          sizes="(max-width: 759px) 100vw, 48vw"
           quality={90}
           className={on.photo ? (on.framed ? "mc-photo mc-framed" : "mc-photo") : "mc-cut"}
           style={

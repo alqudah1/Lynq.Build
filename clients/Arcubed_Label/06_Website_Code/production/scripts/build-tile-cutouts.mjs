@@ -39,7 +39,11 @@ const { COLOUR_MEDIA, EDITORIAL_ONLY } = await import("../src/lib/media-manifest
 const SOURCES = [
   ...Object.values(COLOUR_MEDIA).flatMap((p) => Object.values(p).flat()),
   ...Object.values(EDITORIAL_ONLY).flat(),
-].filter((f) => f.cutOk).map((f) => f.frameId);
+].filter((f) => f.cutOk).map((f) => f.frameId)
+  // TILE_IDS=DSC05776 rebuilds only the named tiles. A full run re-encodes
+  // every tile on the Shop wall, which changes bytes on pages nobody asked to
+  // touch; a targeted rebuild after one cut-out is regenerated should not.
+  .filter((id) => !process.env.TILE_IDS || process.env.TILE_IDS.split(",").includes(id));
 
 /**
  * The seamless colour, read from the ORIGINAL photograph rather than from the

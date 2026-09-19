@@ -30,7 +30,7 @@ export default function CartPageClient({
          centred sentence on white with the footer filling the rest. */
       <section className="es">
         <div className="es-copy">
-          <p className="eyebrow">Your bag</p>
+          <p className="eyebrow">Your cart</p>
           <p className="es-line">Nothing here yet.</p>
           <p className="es-note">Every piece is crocheted after you choose it.</p>
           <Link className="es-link" href="/shop">Shop the collection</Link>
@@ -46,7 +46,7 @@ export default function CartPageClient({
 
   return (
     <section className="section cart-page">
-      <p className="eyebrow">Your Bag</p>
+      <p className="eyebrow">Your Cart</p>
       <p className="cart-lede">Made exactly the way you designed it.</p>
       {/* Two zones on desktop: the bag on the left, the summary beside it,
           rather than a narrow column with the page's right half empty. */}

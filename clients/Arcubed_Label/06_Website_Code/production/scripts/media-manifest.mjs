@@ -40,7 +40,15 @@ export const PRODUCT_MEDIA = {
       "Red":           { frames: ["DSC05774", "DSC05775"] },
       "Silver":        { frames: ["DSC04875"] },
       "Gold":          { frames: ["DSC04874"] },
-      "Black":         { frames: ["DSC04872", "DSC04873"] },
+      // DSC04873 FIRST. The first frame of a colourway is its face
+      // everywhere — Shop tile, model block, swatch, cart thumbnail — and
+      // DSC04872 carries a matte flaw: a smear of studio ground trapped in
+      // the arch. The homepage already refused it by name; the client found
+      // it in the model block, cropped through the middle by a fit tuned to
+      // its portrait shape ("the black Mini Luna preview ... is cropped
+      // midway through"). 04872 stays in the product gallery as a second
+      // view.
+      "Black":         { frames: ["DSC04873", "DSC04872"] },
       "Silver & Gold": { frames: ["DSC04870", "DSC04871"] },
     },
     editorialOnly: {},
@@ -167,6 +175,7 @@ export const HIRES_PHOTOS = new Set([
  */
 export const HIRES_CUTS = new Set([
   "DSC05792", // Vault Olive Green — the "Made yours" campaign object
+  "DSC05786", // Nova Gold — the homepage hero (and the Shop's Nova lead tile)
 ]);
 
 /** Macro texture crops, taken relative to the detected object box. */

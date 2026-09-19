@@ -161,6 +161,20 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
   font-family: var(--font-head); font-size: clamp(28px, 8vw, 40px); font-weight: 500; color: var(--ink);
 }
 .mobile-menu-links a:hover { color: var(--primary); }
+/* The four shapes sit under Shop as a quieter second level: same navy, the
+   body face, uppercase and tracked, so they read as a list inside Shop and
+   not as four more pages at the top level. Each row is a 44px target. */
+.mobile-menu-item { display: flex; flex-direction: column; align-items: center; }
+.mobile-menu-models {
+  list-style: none; margin: 10px 0 0; padding: 0;
+  display: grid; grid-template-columns: repeat(2, auto); gap: 0 26px; justify-content: center;
+}
+.mobile-menu-models a {
+  display: flex; align-items: center; justify-content: center; min-height: 44px;
+  font-family: var(--font-body); font-size: 12px; font-weight: 600;
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--navy);
+}
+.mobile-menu-links a:focus-visible { outline: 2px solid var(--navy); outline-offset: 4px; }
 
 /* ---------- layout helpers ---------- */
 .section { padding: 56px 20px; max-width: 1180px; margin: 0 auto; }
@@ -2419,7 +2433,14 @@ html { overflow-anchor: none; }
    carrying its own studio ground. Sized like a Nova it read as the odd tile
    out. Three-up plus a closing band gives it the width it needs and leaves no
    empty cell, which spanning it inside a two-column grid would have. */
-@media (min-width: 760px) { .mc { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+/* FOUR EQUAL SHAPES, TWO BY TWO (client, 2026-09: "the Loco section is as
+   big as the other bags' sections"). The three-up-plus-band layout below was
+   a deliberate choice to give Loco the width its texture wanted, and measured
+   at 1440 it made Loco's plate 1372x549 against 425x319 for each of the
+   others, five and a half times the area. The client read that as Loco
+   outranking a collection that Nova now leads. Two by two gives all four the
+   same frame, reads left to right from Nova, and leaves no empty cell. */
+@media (min-width: 760px) { .mc { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 .mc-block { display: flex; flex-direction: column; margin: 0; }
 /* Every block is the same shape, so four of them end on one line and the
@@ -2429,6 +2450,13 @@ html { overflow-anchor: none; }
   display: grid; place-items: center; aspect-ratio: 4 / 3;
   padding: clamp(18px, 3vw, 42px); background: var(--pink);
   overflow: hidden; border-radius: 0;
+  /* A DEFINITE row, for every stage and not only the framed one. With the
+     implicit auto row the image's `height: 100%` had nothing to resolve
+     against, so `contain` only ever fitted the WIDTH: a Mini Luna (1.16) in
+     a 4/3 stage laid out 527px tall inside a 444px box and the stage cut its
+     base off (client: "the black Mini Luna preview ... is cropped midway
+     through"). Wide bags never showed it, which is why it survived. */
+  grid-template-rows: minmax(0, 1fr);
 }
 .mc-stage img { width: 100%; height: 100%; object-fit: contain; display: block; }
 /* The model block carries the same measured fit as the wall, at a gentler
@@ -2476,8 +2504,10 @@ html { overflow-anchor: none; }
      every other model block, so there is nothing left to leave empty.
      5/2 because the photograph is mounted and therefore CONTAINED: a wider
      band only adds mount around it, it never crops the bag. */
-  .mc-loco { grid-column: 1 / -1; display: flex; flex-direction: column; }
-  .mc-loco .mc-stage { aspect-ratio: 5 / 2; }
+  /* Loco is one of four now, in the same 4/3 frame as the others. Its
+     photograph is still MOUNTED and CONTAINED (see .mc-stage.is-framed), so
+     the smaller frame shrinks it rather than cropping the fringe. */
+  .mc-loco .mc-stage { aspect-ratio: 4 / 3; }
 }
 /* Single column, so there is no row to align to and each model can have its
    own frame. Four identical 4:3 windows stacked was the main reason the phone
@@ -2733,3 +2763,30 @@ html { overflow-anchor: none; }
 .es-link:hover { opacity: 0.65; }
 .es-art { margin: 0; justify-self: center; width: min(520px, 92%); }
 .es-art img { width: 100%; height: auto; display: block; }
+
+/* ==========================================================================
+   CLIENT FEEDBACK PASS, 2026-09 — cart panel, options
+   ========================================================================== */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+/* View Cart / Keep Shopping. The primary action keeps the navy block the
+   rest of the store uses; Keep Shopping is the quiet typographic link beneath
+   it, not a second button competing for the same weight. */
+.drawer-actions { display: grid; gap: 14px; margin-top: 14px; }
+.drawer-keep {
+  justify-self: center; min-height: 44px; padding: 0 12px;
+  color: var(--navy); font-size: 11.5px; font-weight: 600;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 1.5px;
+}
+.drawer-keep:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+/* The line that was just added carries a pink field, so the confirmation
+   points at the actual bag rather than at the whole list. */
+.drawer-line.is-added { background: var(--pink); margin: -10px; padding: 10px; }
+/* No double-tap zoom on the buy controls: a quick second tap on Add to Cart
+   in mobile Safari zoomed the page instead of being ignored. */
+.add-to-bag, .sticky-bar .btn, .drawer-actions a, .drawer-keep { touch-action: manipulation; }
+.drawer-line-qty { color: var(--muted); font-weight: 400; }
+.opt-note-either { margin: -14px 0 26px; }

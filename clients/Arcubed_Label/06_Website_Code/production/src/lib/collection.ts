@@ -171,13 +171,17 @@ export const COLOUR_FIT: Record<string, ColourFit> = {
   "nova|Silver": { s: 1.081, tx: 3.0, ty: 0.4 },
   "nova|Rose Gold": { s: 0.948, tx: 2.3, ty: 1.2 },
   "nova|Silver & Gold": { s: 0.937, tx: 0.5, ty: 0.4 },
-  // Mini Luna. Black is the exception in the family: its cut-out carries a
-  // deep empty band, so it needs the largest correction UP while its
-  // siblings come slightly down.
+  // Mini Luna.
   "mini-luna|Red": { s: 0.92, tx: -4.3, ty: 1.5 },
   "mini-luna|Silver": { s: 0.951, tx: 6.7, ty: 0.4 },
   "mini-luna|Gold": { s: 0.971, tx: 5.3, ty: 0.2 },
-  "mini-luna|Black": { s: 1.089, tx: 2.2, ty: -13.5 },
+  // Re-derived for DSC04873, which now leads Black (see media-manifest.mjs).
+  // The old { s: 1.089, ty: -13.5 } was measured on DSC04872, a portrait
+  // frame whose object sat 63.6% down its own image; applied to this frame
+  // it pushed the bag out of the bottom of the model block. 04873 has the
+  // same pixel size and object area as Red (0.735 vs 0.734), so it takes
+  // Red's scale; tx/ty are 50 minus its measured centre, as for every entry.
+  "mini-luna|Black": { s: 0.92, tx: 3.7, ty: -0.1 },
   "mini-luna|Silver & Gold": { s: 0.983, tx: 8.5, ty: 0.5 },
   // Vault: sits on the target already, so these barely move.
   "vault|Olive Green": { s: 1.034, tx: -5.5, ty: 0.8 },

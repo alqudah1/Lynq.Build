@@ -75,7 +75,7 @@ for (const c of CASES) {
     const price = await evalp(`(document.querySelector('.pd-price')||{}).textContent`);
 
     // 3. add to cart
-    await evalp(`(()=>{const b=[...document.querySelectorAll('button')].find(x=>/add to bag/i.test(x.textContent));if(!b)return 'no-btn';b.click();return 'ok';})()`);
+    await evalp(`(()=>{const b=[...document.querySelectorAll('button')].find(x=>/add to cart/i.test(x.textContent));if(!b)return 'no-btn';b.click();return 'ok';})()`);
     await new Promise((r) => setTimeout(r, 1400));
 
     // 4. cart. Wait for the lines and their images to actually be in the DOM

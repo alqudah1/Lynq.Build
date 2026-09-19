@@ -109,30 +109,28 @@ export default function ScrollStory({ children }: { children: ReactNode }) {
       storyH = el.offsetHeight;
     };
 
-    // ONE GESTURE, ONE STATE.
+    // THE PAGE IS NEVER MOVED BY SCRIPT.
     //
-    // Every state here is derived from scroll POSITION, so the story had no
-    // concept of a gesture: a flick is just a large change in scrollY, and
-    // the tick read whatever state that landed on. Measured at 390x844,
-    // where the travel is 3376px across nine states — the colour sequence
-    // alone is 270px per colourway, well under one thumb flick:
+    // The previous version (f704d31) tried to guarantee "one gesture, one
+    // state" by capping scrollY and freezing the document with
+    // overflow:hidden until a fling died, then landing the page back inside
+    // whichever state was showing. The client reported exactly what that
+    // does on a real phone and a real trackpad, and it reproduced on the
+    // first try:
     //
-    //   small swipe        state 0 -> 0
-    //   medium swipe       state 0 -> 1
-    //   large swipe        state 0 -> 4
-    //   very large swipe   state 0 -> 8    the whole story in one gesture
-    //   fast flick         state 0 -> 8
-    //   slow long drag     state 0 -> 4
+    //   - scroll past "Made yours." and the page is dragged back up to it:
+    //     1130px on a phone swipe, 431px on six wheel notches at 1440
+    //   - the freeze is felt as the story not scrolling smoothly
+    //   - scrolling through the colours "sends us up", because every capped
+    //     frame moves the page against the finger
     //
-    // This is an input clamp and nothing else. No transition is slower, no
-    // gesture needs more travel, and a swipe that crosses at most one
-    // boundary never reaches this code.
-    //
-    // WHY NOT CSS SCROLL SNAP. `scroll-snap-stop: always` is the platform
-    // feature for this and it was my first choice. Driven with real
-    // synthesized touch flings it did not hold: 69 of 84 gestures still
-    // crossed multiple states, and `proximity` snapping also made ordinary
-    // swipes stall. It cannot be shipped on a promise it does not keep.
+    // A scroll-driven story cannot hold the page still AND let the reader
+    // leave it. So the promise moves to where it belongs, the RENDER: scroll
+    // is native and untouched, and the state that is SHOWN follows the state
+    // the scroll position asks for one step at a time. A fling across five
+    // colourways plays all five in quick succession instead of jumping from
+    // the first to the last, and a normal swipe that crosses one boundary
+    // changes state immediately, exactly as before.
     //
     // BOUNDS is every state boundary as a progress value, the five colourway
     // sub-steps included, derived from the same bands the tick reads so the
@@ -171,137 +169,34 @@ export default function ScrollStory({ children }: { children: ReactNode }) {
       return i;
     };
 
-    // THE RENDERED STATE IS ITS OWN VARIABLE, NOT A READING OF scrollY.
-    //
-    // Capping the scroll position is the right mechanism but it cannot be a
-    // guarantee on its own: the cap is a main-thread reaction to a
-    // compositor-driven fling, and if a single scroll event is delivered
-    // late or coalesced, the position is already past and the render follows
-    // it. Measured over 588 synthesized gestures, that leaked about three
-    // times — always as a modest swipe that had picked up momentum.
-    //
-    // What the customer is promised is about what they SEE, so the promise
-    // is kept where the rendering is decided. `committed` moves by at most
-    // one per gesture by construction, and the scroll cap keeps the page
-    // position agreeing with it. A late scroll event can now make the page
-    // briefly out of position; it can no longer make the story skip a state.
+    /** The state on screen. Moves toward `target` by one, never more. */
     let committed = 0;
-    /** The state the gesture in flight started on, or -1 when none is. */
-    let anchor = -1;
-    let touching = false;
-    let byTouch = false;
-    let settle = 0;
-    // Momentum keeps firing scroll events long after the finger is gone, so
-    // a gesture is not over at touchend — it is over when the page stops
-    // moving. Anything shorter re-anchors mid-fling and releases the clamp
-    // at exactly the moment it is still needed.
-    const SETTLE_MS = 140;
+    /** The state the scroll position asks for. */
+    let target = 0;
+    let lastStepAt = -Infinity;
+    let chase = 0;
+    // Long enough that each state visibly lands before the next begins, so a
+    // fling reads as a quick sequence and not as a flash; short enough that
+    // catching up across all nine states takes under three seconds. The
+    // transitions themselves are unchanged (--t / --tc in home.css).
+    const STEP_MS = 300;
 
-    const endGesture = () => {
-      settle = 0;
-      if (touching) return;
-      // Land the page inside the band the story is actually showing, so
-      // position and state agree at rest and the next gesture starts from a
-      // truthful place.
-      const travel = storyH - window.innerHeight;
-      if (travel > 0) {
-        const lo = docTop + bounds[committed] * travel;
-        const hi = docTop + (committed + 1 < bounds.length ? bounds[committed + 1] : 1) * travel;
-        if (window.scrollY < lo - 1 || window.scrollY >= hi) window.scrollTo(0, Math.round(lo) + 1);
-      }
-      thaw();
-      anchor = -1;
-      byTouch = false;
-    };
-    const armSettle = () => {
-      if (settle) clearTimeout(settle);
-      settle = window.setTimeout(endGesture, SETTLE_MS);
-    };
-    const beginGesture = (touch: boolean) => {
-      if (anchor < 0) {
-        // Anchored on what is RENDERED, which is the only state the person
-        // making the gesture can see.
-        anchor = committed;
-        byTouch = touch;
-      }
-      armSettle();
-    };
-    const onTouchStart = () => { thaw(); touching = true; beginGesture(true); };
-    const onTouchEnd = () => { touching = false; armSettle(); };
-    const onWheel = () => { beginGesture(false); };
-
-    // CANCEL THE FLING, DO NOT FIGHT IT.
+    // WARM THE LATE IMAGES ON THE FIRST SCROLL.
     //
-    // The first version of this just called scrollTo() whenever the state
-    // ran past its limit. A fling runs on the COMPOSITOR and scrollTo runs
-    // on the main thread, so the two fought: traced at 375 on a 12000px/s
-    // flick, the page oscillated between y=650 and y=1295 twenty-six times
-    // over 600ms, and the flick still escaped to state 3 once.
-    //
-    // Making the document briefly unscrollable ends the fling outright, so
-    // the correction lands once and stays. One frame of overflow:hidden is
-    // invisible on a phone, which has no scrollbar to remove — and it is
-    // applied for touch gestures only, because on a desktop it would take
-    // the scrollbar away and shift the layout by its width.
-    /**
-     * Apply the gesture clamp. Returns the corrected progress, or -1 when
-     * no correction was needed.
-     *
-     * Called SYNCHRONOUSLY from the scroll listener as well as from the
-     * tick. Running only in the rAF tick meant reacting a frame late, and a
-     * frame is a long time on a busy main thread: over the network, with
-     * images still decoding, a 430 flick got two states ahead before the
-     * first correction ran. This is nine comparisons and an occasional
-     * scrollTo — nothing like the per-frame style invalidation this file
-     * exists to avoid.
-     */
-    const clamp = () => {
-      if (anchor < 0) return -1;
-      const travel = storyH - window.innerHeight;
-      if (travel <= 0) return -1;
-      const p = progress();
-      const raw = stateAt(p);
-      const limit = raw > anchor + 1 ? anchor + 1 : raw < anchor - 1 ? anchor - 1 : -1;
-      if (limit < 0) return -1;
-      // +1px so the landing sits INSIDE the band rather than exactly on its
-      // edge, where a sub-pixel scroll position reads as the state before it.
-      const target = Math.round(docTop + bounds[limit] * travel) + 1;
-      capScroll(target);
-      return Math.min(1, Math.max(0, (target - docTop) / travel));
-    };
-
-    // HOLD THE FREEZE UNTIL THE FLING IS ACTUALLY DEAD.
-    //
-    // Releasing overflow on the next animation frame was not enough: the
-    // fling is often still live at that point and simply resumes, which is
-    // how one gesture in eighty-four still reached state 2 across repeated
-    // runs. The document stays frozen until the gesture SETTLES — at most
-    // SETTLE_MS, and only after the page has stopped producing scroll events
-    // — so there is no momentum left to resume. A new touch thaws it
-    // immediately, so a finger can always scroll.
-    //
-    // Touch only. On a desktop this would remove the scrollbar and shift the
-    // layout by its width; wheel gestures carry little momentum and the
-    // scrollTo alone holds them.
-    let frozen = false;
-    const thaw = () => {
-      if (!frozen) return;
-      frozen = false;
-      document.documentElement.style.overflowY = "";
-    };
-    const capScroll = (target: number) => {
-      if (Math.abs(window.scrollY - target) <= 1) return;
-      // Freezing stops scroll events, and the settle timer is driven by
-      // scroll events — so without re-arming here the gesture would be
-      // declared over during its own correction, releasing the anchor just
-      // before the fling resumed. Measured: a 600px swipe from state 2
-      // reaching state 4 that way.
-      armSettle();
-      if (byTouch && !frozen) {
-        frozen = true;
-        document.documentElement.style.overflowY = "hidden";
-      }
-      window.scrollTo(0, target);
+    // The five "Make it yours" photographs and the "Made yours." object are
+    // lazy, and they sit inside phases clipped shut until reached, so the
+    // browser did not request them until the phase opened: measured on the
+    // alias, not one of the five had downloaded while the story was on the
+    // shape phase. On a phone that arrival is an empty stage. They are asked
+    // for the moment the reader first scrolls, which is after the hero (the
+    // LCP) has painted and long before either phase can be reached.
+    let warmed = false;
+    const warm = () => {
+      if (warmed) return;
+      warmed = true;
+      stage.current
+        ?.querySelectorAll<HTMLImageElement>(".phase-cust img, .phase-final img")
+        .forEach((img) => { img.loading = "eager"; });
     };
 
     // Resolved once, not per frame.
@@ -321,55 +216,29 @@ export default function ScrollStory({ children }: { children: ReactNode }) {
     let lastStep = -1;
     let lastStory = "";
 
-    const tick = () => {
-      raf = 0;
-      const el = outer.current;
+    /** Write the committed state. Attributes only change when they differ. */
+    const render = (p: number) => {
       const st = stage.current;
-      if (!el || !st) return;
-
-      const travel = storyH - window.innerHeight;
-      let p =
-        travel <= 0
-          ? 0
-          : Math.min(1, Math.max(0, (window.scrollY - docTop) / travel));
-
-      // THE CLAMP. While a gesture is in flight the story may move one state
-      // from where that gesture began, and the scroll position is capped at
-      // that boundary so position and state cannot disagree — clamping the
-      // state alone would only defer the skip to the moment the clamp
-      // released. Outside the story p is pinned at 0 or 1, the state stops
-      // changing, and the rest of the page scrolls untouched.
-      const capped = clamp();
-      if (capped >= 0) p = capped;
-
-      // COMMIT AT MOST ONE STATE PER GESTURE. The scroll cap above keeps the
-      // page where it should be; this keeps the RENDER right even on the
-      // frame where a late scroll event says otherwise.
-      const raw = stateAt(p);
-      committed =
-        anchor >= 0
-          ? raw > anchor + 1
-            ? anchor + 1
-            : raw < anchor - 1
-              ? anchor - 1
-              : raw
-          : raw;
-
-      // Which composition is on screen — read from the committed state, not
-      // from the raw progress.
+      if (!st) return;
       const phase = stateBand[committed];
       let i = 0;
       for (let k = 0; k < bands.length; k++) if (bands[k][0] === phase) i = k;
       const start = bands[i][1];
       const end = i + 1 < bands.length ? bands[i + 1][1] : 1;
-      // `within` still tracks the real scroll position: it only drives the
-      // drift on three leaf elements, where following the finger is the
-      // point, and clamping it would make the page feel dead mid-state.
+      // `within` tracks the real scroll position: it only drives the drift on
+      // three leaf elements, where following the finger is the point.
       const within = end > start ? Math.min(1, Math.max(0, (p - start) / (end - start))) : 0;
 
       if (phase !== lastPhase) {
         lastPhase = phase;
         st.setAttribute("data-phase", phase);
+        // Every phase is in the DOM at once and the hidden ones are only
+        // clipped, so their links (the shapes, the colour rail) were still in
+        // the tab order: a keyboard user could land on something invisible.
+        // Only the phase on screen is interactive.
+        st.querySelectorAll<HTMLElement>(":scope > .phase").forEach((el) => {
+          el.inert = !el.classList.contains(`phase-${phase}`);
+        });
         // The header sits over navy for exactly one phase, and navy needs the
         // pink wordmark. Derived from the phase rather than from a hardcoded
         // progress value, so it cannot drift out of step with the bands.
@@ -379,29 +248,11 @@ export default function ScrollStory({ children }: { children: ReactNode }) {
         );
       }
 
-      // Drives the header, which lives outside this component: it belongs to
-      // the hero at the top, gets out of the way while the story plays, and
-      // returns as a minimal bar once the story releases into the collection.
-      const story =
-        committed >= bounds.length - 1 && p >= 0.995
-          ? "done"
-          : committed > 0 || p > 0.04
-            ? "running"
-            : "hero";
-      if (story !== lastStory) {
-        lastStory = story;
-        document.documentElement.setAttribute("data-story", story);
-      }
-
       // Which colourway. Discrete on purpose: the customer sees a colour, a
       // transition, then the next colour, instead of five images dissolving
       // through each other while one swipe is still in progress.
       const step =
-        phase === "cust"
-          ? stateStep[committed]
-          : phase === "final"
-            ? CUST_STEPS - 1
-            : 0;
+        phase === "cust" ? stateStep[committed] : phase === "final" ? CUST_STEPS - 1 : 0;
       if (step !== lastStep) {
         lastStep = step;
         st.setAttribute("data-step", String(step));
@@ -412,12 +263,9 @@ export default function ScrollStory({ children }: { children: ReactNode }) {
       // which stops it fighting the transition running at a boundary.
       //
       // QUANTISED, because a custom property write is a style invalidation
-      // however small the change is. Measured at 4x CPU throttle, writing
-      // these three every frame cost 183ms of recalculation and 94ms of paint
-      // across a five second scroll. Rounded to a tenth of a vh the value
-      // only actually changes a few dozen times per phase, the motion is
-      // identical to the eye, and the writes stop being a cost worth naming.
-      const ease = Math.sin(Math.min(1, Math.max(0, within)) * Math.PI);
+      // however small the change is. Rounded to a tenth of a vh the value
+      // only actually changes a few dozen times per phase.
+      const ease = Math.sin(within * Math.PI);
       for (const d of drift) {
         const v = Math.round(ease * d[1] * 10) / 10;
         if (v !== d[2]) {
@@ -427,13 +275,43 @@ export default function ScrollStory({ children }: { children: ReactNode }) {
       }
     };
 
+    /** Step the shown state one place toward the target, then wait. */
+    const advance = () => {
+      chase = 0;
+      if (committed === target) return;
+      const wait = STEP_MS - (performance.now() - lastStepAt);
+      if (wait > 0) {
+        chase = window.setTimeout(advance, wait);
+        return;
+      }
+      committed += target > committed ? 1 : -1;
+      lastStepAt = performance.now();
+      render(progress());
+      if (committed !== target) chase = window.setTimeout(advance, STEP_MS);
+    };
+
+    const tick = () => {
+      raf = 0;
+      if (!outer.current || !stage.current) return;
+      const p = progress();
+      target = stateAt(p);
+      if (p > 0.02) warm();
+
+      // Drives the header, which lives outside this component. It follows
+      // the REAL position, not the shown state: a reader who has scrolled
+      // into the collection must get the header back even while the story
+      // is still stepping through its last states off screen.
+      const story = p >= 0.995 ? "done" : p > 0.04 ? "running" : "hero";
+      if (story !== lastStory) {
+        lastStory = story;
+        document.documentElement.setAttribute("data-story", story);
+      }
+
+      if (target !== committed && !chase) advance();
+      render(p);
+    };
+
     const onScroll = () => {
-      // Momentum fires this long after touchend, so a live gesture stays
-      // live until the page is genuinely still.
-      if (anchor >= 0) armSettle();
-      // Correct on the event itself. Waiting for the frame lets a fast
-      // fling travel a whole extra state before anything reacts.
-      clamp();
       if (!raf) raf = requestAnimationFrame(tick);
     };
 
@@ -445,15 +323,21 @@ export default function ScrollStory({ children }: { children: ReactNode }) {
       lastPhase = "";
       lastStep = -1;
       lastStory = "";
-      anchor = -1;
-      committed = stateAt(progress());
+      // A resize or orientation change is not a gesture: show where the
+      // reader actually is rather than walking there.
+      if (chase) clearTimeout(chase);
+      chase = 0;
+      committed = target = stateAt(progress());
       tick();
     };
 
     const stop = () => {
       const st = stage.current;
       if (!st) return;
-      committed = 0;
+      committed = target = 0;
+      // Reduced motion lays every phase out as a plain document, so all of
+      // them are readable and all of them must be reachable.
+      st.querySelectorAll<HTMLElement>(":scope > .phase").forEach((el) => { el.inert = false; });
       st.setAttribute("data-phase", "hero");
       st.setAttribute("data-step", "0");
       document.documentElement.removeAttribute("data-ground");
@@ -470,7 +354,8 @@ export default function ScrollStory({ children }: { children: ReactNode }) {
     rebuildBounds();
     collect();
     measure();
-    committed = stateAt(progress());
+    // A reload mid-page lands on the right state immediately.
+    committed = target = stateAt(progress());
     tick();
 
     // Re-measure whenever the container's own box changes: fonts landing,
@@ -485,28 +370,16 @@ export default function ScrollStory({ children }: { children: ReactNode }) {
     const onLoad = () => { measure(); onScroll(); };
     window.addEventListener("load", onLoad);
     window.addEventListener("scroll", onScroll, { passive: true });
-    // All passive: none of these call preventDefault, they only observe that
-    // a gesture has begun, so they must not sit on the critical path of the
-    // scroll they are watching.
-    window.addEventListener("touchstart", onTouchStart, { passive: true });
-    window.addEventListener("touchend", onTouchEnd, { passive: true });
-    window.addEventListener("touchcancel", onTouchEnd, { passive: true });
-    window.addEventListener("wheel", onWheel, { passive: true });
     window.addEventListener("resize", apply);
     mobile.addEventListener("change", apply);
     reduce.addEventListener("change", apply);
 
     return () => {
       if (raf) cancelAnimationFrame(raf);
-      if (settle) clearTimeout(settle);
-      document.documentElement.style.overflowY = "";
+      if (chase) clearTimeout(chase);
       ro.disconnect();
       window.removeEventListener("load", onLoad);
       window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("touchstart", onTouchStart);
-      window.removeEventListener("touchend", onTouchEnd);
-      window.removeEventListener("touchcancel", onTouchEnd);
-      window.removeEventListener("wheel", onWheel);
       window.removeEventListener("resize", apply);
       mobile.removeEventListener("change", apply);
       reduce.removeEventListener("change", apply);
