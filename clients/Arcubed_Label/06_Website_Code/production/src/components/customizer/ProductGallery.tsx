@@ -60,7 +60,12 @@ function Photos({ bag, selection }: { bag: Bag; selection: Selection }) {
     <div className="pg">
       <div className={`pg-main${useCut ? " is-cut" : ""}`}>
         <Image
-          key={current.frameId}
+          // NO key HERE, DELIBERATELY. Keying by frame id remounted the
+          // element on every thumbnail tap, so the stage went EMPTY until the
+          // next photograph arrived: measured at 0.4-1.1s per tap on a
+          // throttled phone connection, a blank pink box where the bag was.
+          // Re-using the element swaps the source and the browser keeps the
+          // previous frame painted until the new one decodes.
           src={useCut ? current.cut : current.photo}
           // A macro frame carries its own description. The generic alt says
           // "Loco, hand-crocheted by Arcubed in Brown", which is a lie about

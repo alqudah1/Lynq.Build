@@ -93,7 +93,12 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
   padding: 18px 20px; position: sticky; top: 0; z-index: 30;
   /* White, not the old cream. The header was the one element every page
      shared, so a warm ground here undid the locked palette on every route. */
-  background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  /* NEARLY OPAQUE, not 0.9. At 0.9 the header leaned on backdrop-filter to
+     hide what passed beneath it, and where the blur does not apply the page
+     text simply read THROUGH the bar: at the foot of a product page the care
+     line ran straight across the wordmark. The blur still softens what shows
+     where it is supported; the legibility no longer depends on it. */
+  background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
 }
 .logo { display: block; position: relative; }
 /* Two wordmarks are rendered so the homepage story can swap to the pale pink
@@ -471,9 +476,13 @@ button { font-family: inherit; cursor: pointer; background: none; border: 0; pad
 .cart-drawer {
   position: fixed; top: 0; right: 0; bottom: 0; width: min(410px, 92vw); background: var(--bg);
   transform: translateX(100%); transition: transform 0.35s var(--ease); z-index: 41; display: flex; flex-direction: column;
-  box-shadow: -12px 0 32px rgba(0, 0, 0, 0.08);
 }
-.cart-drawer.open { transform: translateX(0); }
+/* THE SHADOW BELONGS TO THE OPEN PANEL ONLY.
+   Closed, the panel is parked just off the right edge, and a shadow on it
+   spills back over the page: every page carried a grey smudge about 25px
+   wide down its right edge, on the homepage story as much as on Shop — up
+   to 6% darker at the very edge, on pink and on navy alike. */
+.cart-drawer.open { transform: translateX(0); box-shadow: -12px 0 32px rgba(0, 0, 0, 0.08); }
 .drawer-head { display: flex; justify-content: space-between; align-items: center; padding: 22px 22px 20px; font-family: var(--font-head); font-size: 16px; border-bottom: 1px solid var(--line); }
 .drawer-head button { font-size: 20px; color: var(--muted); }
 .drawer-empty { padding: 34px 22px; color: var(--muted); font-size: 14px; }
@@ -2338,6 +2347,20 @@ html { overflow-anchor: none; }
    whole bag, handle included, is one thumbnail away directly underneath. */
 .pd-object .pg-main:not(.is-cut) .pg-img {
   width: 100%; height: auto; object-fit: contain;
+}
+/* A PHOTOGRAPHIC HERO STILL HAS TO LEAVE ROOM FOR THE PRODUCT.
+   Loco is the one model whose lead frame is a photograph rather than a
+   cut-out, so its stage took the full content width: 1440x983 at a desktop
+   width, which filled the entire first screen. The name, the price and the
+   colours all began below the fold, while Nova, Mini Luna and Vault showed
+   theirs without scrolling. Capped by viewport height, the whole photograph
+   is still in frame at its own aspect — object-fit is contain, so nothing is
+   cropped and no delivered pixel is thrown away — and the first screen
+   carries the bag AND what it is. Phones are untouched: there the same
+   photograph is only 266px tall. */
+@media (min-width: 760px) {
+  .pd-object .pg-main:not(.is-cut) { max-height: 62vh; }
+  .pd-object .pg-main:not(.is-cut) .pg-img { max-height: 62vh; }
 }
 
 /* ---------- gallery thumbnails ---------- */
