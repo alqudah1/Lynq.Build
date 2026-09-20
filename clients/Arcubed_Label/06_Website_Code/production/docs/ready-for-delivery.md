@@ -101,7 +101,7 @@ Home / Shop nav → "Ready for Delivery" → grid of in-stock items
   ready lines show the real photo, "Ready for Delivery · {fulfillment
   label}," and a qty stepper with no "Edit" link (there's no configuration
   to re-open).
-- `/faq` states both fulfillment promises (made-to-order 3–5 business days,
+- `/faq` states both fulfillment promises (made-to-order 5–7 days,
   Ready for Delivery next day) and both return-policy summaries — see
   `product-matrix.md`'s "Return / exchange policy" section and the
   `return_policies` table.

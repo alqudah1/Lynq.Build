@@ -32,7 +32,7 @@ export default async function OrderConfirmationPage(props: { params: Promise<{ t
 
   const fulfillmentLabel = settings?.readyForDeliveryFulfillmentLabel ?? "Next day";
   const deliveryPromise = `${fulfillmentLabel.replace(/\s+day$/i, "-day")} delivery in Jordan`;
-  const productionTimeLabel = plainText(settings?.productionTimeLabel ?? "3 to 5 business days");
+  const productionTimeLabel = plainText(settings?.productionTimeLabel ?? "5 to 7 days");
   const hasMade = order.lines.some((l) => l.kind === "made_to_order");
   const hasReady = order.lines.some((l) => l.kind === "ready_for_delivery");
   const addr = order.shippingAddress ?? {};

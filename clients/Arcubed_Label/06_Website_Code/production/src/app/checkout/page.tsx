@@ -17,7 +17,7 @@ export default async function CheckoutPage() {
   return (
     <CheckoutClient
       rules={rules}
-      productionTimeLabel={plainText(settings?.productionTimeLabel ?? "3 to 5 business days")}
+      productionTimeLabel={plainText(settings?.productionTimeLabel ?? "5 to 7 days")}
       deliveryPromise={`${fulfillmentLabel.replace(/\s+day$/i, "-day")} delivery in Jordan`}
       currency={settings?.currencyCode ?? "JOD"}
     />

@@ -11,5 +11,5 @@ import type { Bag } from "@/lib/types";
 import Customizer from "@/components/customizer/Customizer";
 
 export default function DevCustomizerHarness({ bag }: { bag: Bag }) {
-  return <Customizer bag={bag} editingLine={null} productionTimeLabel="DEV TEST — 3–5 business days" />;
+  return <Customizer bag={bag} editingLine={null} productionTimeLabel="DEV TEST — 5 to 7 days" />;
 }

@@ -12,7 +12,10 @@ Ask Rand before inventing any of them.
 ## Global / site-wide
 
 - **Currency:** JOD ✅ confirmed
-- **Standard production time (made-to-order):** 3–5 business days ✅ confirmed
+- **Standard production time (made-to-order):** 5–7 days ✅ confirmed
+  (changed from 3–5 business days on 2026-09-19 at the client's request;
+  `store_settings.production_time_label` and
+  `supabase/migrations/20260919210000_production_time_five_to_seven.sql`)
 - **Ready for Delivery fulfillment:** next day ✅ confirmed ("these would be
   delivered next day") — see the Ready for Delivery section below.
 - **Shipping policy:** ✅ confirmed for Jordan, **UNRESOLVED for international**

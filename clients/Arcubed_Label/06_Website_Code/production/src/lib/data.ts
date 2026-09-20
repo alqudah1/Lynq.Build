@@ -20,11 +20,13 @@ export const MOCK_COLOURS: Colour[] = [
 // isn't configured locally. Mirrors the real values seeded in
 // supabase/migrations/20260902120200_seed_real_arcubed_catalog.sql — not
 // invented, just a local copy so `npm run dev` works without a live DB.
+// Production time follows the later
+// 20260919210000_production_time_five_to_seven.sql (client request).
 export const MOCK_STORE_SETTINGS: StoreSettings = {
   currencyCode: "JOD",
-  productionTimeLabel: "3 to 5 business days",
-  productionTimeMinDays: 3,
-  productionTimeMaxDays: 5,
+  productionTimeLabel: "5 to 7 days",
+  productionTimeMinDays: 5,
+  productionTimeMaxDays: 7,
   readyForDeliveryFulfillmentLabel: "Next day",
 };
 
