@@ -87,7 +87,11 @@ await session(async (send, events) => {
   await go(send, `${BASE}/checkout`, 2400);
   await ev(send, `document.querySelector('.co-submit').click()`);
   await new Promise(r => setTimeout(r, 900));
-  const errs = await ev(send, `[...document.querySelectorAll('.co-errors p')].map(p=>p.textContent)`);
+  // Validation now happens per FIELD before anything is sent (.co-err beside
+  // the input), and the server's own list (.co-errors) still renders for
+  // anything only the server can know. Either is a specific error, so this
+  // reads both rather than the summary block alone.
+  const errs = await ev(send, `[...document.querySelectorAll('.co-err, .co-errors p')].map(p=>p.textContent)`);
   t("empty submit shows specific field errors", (errs || []).length >= 3, JSON.stringify((errs || []).slice(0, 2)));
   t("errors are specific, not generic", !(errs || []).some(e => /something went wrong/i.test(e)));
 
