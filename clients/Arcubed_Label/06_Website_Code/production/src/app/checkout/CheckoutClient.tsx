@@ -27,6 +27,9 @@ function lineConfigParts(line: CartLine): string[] {
     s.secondaryColourName ? `${s.secondaryColourName} two-tone` : null,
     s.sizeLabel && s.sizeLabel !== "Regular" ? s.sizeLabel : null,
     s.strapLabel,
+    // Nova is sold with or without its handle. The choice changes what gets
+    // crocheted, so it belongs beside the colour and the strap.
+    s.handleLabel,
     s.chainLabel,
     ...(s.addons ?? []).map((a) => a.label),
   ].filter((v): v is string => Boolean(v));
@@ -56,7 +59,12 @@ export default function CheckoutClient({
   const [building, setBuilding] = useState("");
   const [notes, setNotes] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  // Collapsed on a phone, where the summary sits ABOVE the form and otherwise
+  // pushes the first field off the screen. The CSS only honours this below the
+  // two-column breakpoint; on a desktop the summary is always open.
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
   // One token per checkout attempt. Created on FIRST submit (an event
   // handler, where impure calls belong — generating it during render is both
@@ -82,9 +90,39 @@ export default function CheckoutClient({
   const hasMade = cart.some((l) => l.kind === "made_to_order");
   const hasReady = cart.some((l) => l.kind === "ready_for_delivery");
 
+  /** The same checks the Server Action applies, run early so a customer is
+   *  told which field is wrong instead of reading a list at the top. The
+   *  server still re-validates everything: this is courtesy, not security. */
+  function validate(): Record<string, string> {
+    const f: Record<string, string> = {};
+    if (!fullName.trim()) f.name = "Please enter your full name.";
+    if (!phone.trim()) f.phone = "Please enter a phone number so we can reach you about delivery.";
+    else if (phone.replace(/\D/g, "").length < 7) f.phone = "That phone number doesn't look complete.";
+    if (!email.trim()) f.email = "Please enter an email address for your confirmation.";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) f.email = "That email address doesn't look right.";
+    if (quoteRequired) { if (!country.trim()) f.country = "Please tell us which country we're shipping to."; }
+    else if (!city.trim()) f.city = "Please enter your city or delivery area.";
+    if (!address.trim()) f.address = "Please enter a delivery address.";
+    return f;
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (busy) return;
+    const f = validate();
+    setFieldErrors(f);
+    if (Object.keys(f).length) {
+      setErrors([]);
+      // Focus the first field that failed, BY ID. Querying for
+      // [aria-invalid="true"] ran before React had re-rendered the attribute,
+      // so it matched nothing and focus never moved.
+      const order = ["name", "phone", "email", quoteRequired ? "country" : "city", "address"];
+      const firstKey = order.find((k) => f[k]);
+      const el = firstKey ? document.getElementById(`f-${firstKey}`) : null;
+      el?.focus();
+      el?.scrollIntoView({ block: "center", behavior: "smooth" });
+      return;
+    }
     setBusy(true);
     setErrors([]);
     try {
@@ -147,21 +185,29 @@ export default function CheckoutClient({
         ) : null}
 
         <form className="co-form" onSubmit={onSubmit} noValidate>
-          <p className="co-legend">Your details</p>
+          <p className="co-legend">Contact</p>
           <div className="co-row">
             <label htmlFor="f-name">Full name</label>
-            <input id="f-name" autoComplete="name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+            <input id="f-name" autoComplete="name" value={fullName} onChange={(e) => setFullName(e.target.value)}
+                   aria-invalid={Boolean(fieldErrors.name)} aria-describedby={fieldErrors.name ? "e-name" : undefined} />
+            {fieldErrors.name ? <span className="co-err" id="e-name">{fieldErrors.name}</span> : null}
           </div>
           <div className="co-row">
             <label htmlFor="f-phone">Phone</label>
             <input id="f-phone" inputMode="tel" autoComplete="tel" placeholder="07 XXXX XXXX"
-                   value={phone} onChange={(e) => setPhone(e.target.value)} />
-            <span className="co-hint">We use this to arrange delivery.</span>
+                   value={phone} onChange={(e) => setPhone(e.target.value)}
+                   aria-invalid={Boolean(fieldErrors.phone)} aria-describedby={fieldErrors.phone ? "e-phone" : "h-phone"} />
+            {fieldErrors.phone
+              ? <span className="co-err" id="e-phone">{fieldErrors.phone}</span>
+              : <span className="co-hint" id="h-phone">We use this to arrange delivery.</span>}
           </div>
           <div className="co-row">
             <label htmlFor="f-email">Email</label>
-            <input id="f-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-            <span className="co-hint">Your order confirmation goes here.</span>
+            <input id="f-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                   aria-invalid={Boolean(fieldErrors.email)} aria-describedby={fieldErrors.email ? "e-email" : "h-email"} />
+            {fieldErrors.email
+              ? <span className="co-err" id="e-email">{fieldErrors.email}</span>
+              : <span className="co-hint" id="h-email">Your order confirmation goes here.</span>}
           </div>
 
           <p className="co-legend">Delivery</p>
@@ -174,17 +220,26 @@ export default function CheckoutClient({
           {quoteRequired ? (
             <div className="co-row">
               <label htmlFor="f-country">Country</label>
-              <input id="f-country" autoComplete="country-name" value={country} onChange={(e) => setCountry(e.target.value)} />
+              <input id="f-country" autoComplete="country-name" value={country} onChange={(e) => setCountry(e.target.value)}
+                     aria-invalid={Boolean(fieldErrors.country)} aria-describedby={fieldErrors.country ? "e-country" : undefined} />
+              {fieldErrors.country ? <span className="co-err" id="e-country">{fieldErrors.country}</span> : null}
             </div>
           ) : (
             <div className="co-row">
+              {/* Jordan is the default destination and the zone above already
+                  says which part of it, so the country field only appears when
+                  the order is leaving the country. */}
               <label htmlFor="f-city">City / area</label>
-              <input id="f-city" autoComplete="address-level2" value={city} onChange={(e) => setCity(e.target.value)} />
+              <input id="f-city" autoComplete="address-level2" value={city} onChange={(e) => setCity(e.target.value)}
+                     aria-invalid={Boolean(fieldErrors.city)} aria-describedby={fieldErrors.city ? "e-city" : undefined} />
+              {fieldErrors.city ? <span className="co-err" id="e-city">{fieldErrors.city}</span> : null}
             </div>
           )}
           <div className="co-row">
             <label htmlFor="f-address">Address</label>
-            <input id="f-address" autoComplete="street-address" value={address} onChange={(e) => setAddress(e.target.value)} />
+            <input id="f-address" autoComplete="street-address" value={address} onChange={(e) => setAddress(e.target.value)}
+                   aria-invalid={Boolean(fieldErrors.address)} aria-describedby={fieldErrors.address ? "e-address" : undefined} />
+            {fieldErrors.address ? <span className="co-err" id="e-address">{fieldErrors.address}</span> : null}
           </div>
           <div className="co-row">
             <label htmlFor="f-building">Building / apartment <span className="co-opt">optional</span></label>
@@ -195,21 +250,49 @@ export default function CheckoutClient({
             <textarea id="f-notes" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
           </div>
 
-          <button className="co-submit" type="submit" disabled={busy}>
+          {/* PAYMENT. No provider is integrated and no card details are
+              collected anywhere (docs/payment-integration.md). Naming a method
+              the store has not confirmed — Cash on Delivery, CliQ, a card —
+              would be inventing a business rule, so this section states the
+              one thing that is true today. */}
+          <p className="co-legend">Payment</p>
+          <div className="co-pay">
+            <p className="co-pay-head">No payment is taken on this site.</p>
+            <p className="co-pay-body">
+              Arcubed confirms your order, then arranges payment and delivery with you directly.
+              Nothing is charged now and no card details are collected.
+            </p>
+          </div>
+
+          <button className="co-submit" type="submit" disabled={busy} aria-busy={busy}>
             {busy ? "Sending…" : quoteRequired ? "Request your order" : "Place your order"}
           </button>
-          {/* Payment is not configured. Saying "pay now" or "purchase complete"
-              would be a lie, so the button and this note say what actually
-              happens. */}
           <p className="co-payment-note">
-            No payment is taken here. Arcubed confirms your order and arranges payment and delivery
-            with you directly.
+            {quoteRequired
+              ? "We reply with a shipping quote before anything is finalised."
+              : "You will get a confirmation with your order number straight away."}
           </p>
         </form>
       </div>
 
-      <aside className="co-summary">
-        <div className="co-summary-inner">
+      <aside className="co-summary" data-open={summaryOpen ? "true" : "false"}>
+        {/* On a phone the summary sits above the form, so left open it pushed
+            the first field off the screen. It collapses to one tappable row
+            carrying the count and the total — the same disclosure the approved
+            design direction asked for. The CSS only applies the collapse below
+            the two-column breakpoint; on a desktop the panel is always open
+            and this control is not rendered to the user at all. */}
+        <button type="button" className="co-summary-toggle" aria-expanded={summaryOpen}
+                aria-controls="co-summary-body" onClick={() => setSummaryOpen((o) => !o)}>
+          <span className="co-summary-toggle-label">
+            {summaryOpen ? "Hide order summary" : "Show order summary"}
+            <span className="co-caret" aria-hidden="true" />
+          </span>
+          <span className="co-summary-toggle-total">
+            {cartCount} {cartCount === 1 ? "item" : "items"} · {formatMoney(subtotal + shipping, currency)}
+          </span>
+        </button>
+        <div className="co-summary-inner" id="co-summary-body">
           <p className="co-legend">Your cart</p>
           <ul className="co-lines">
             {cart.map((line) => {

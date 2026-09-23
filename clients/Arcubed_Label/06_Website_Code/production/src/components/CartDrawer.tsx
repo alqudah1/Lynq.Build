@@ -7,6 +7,31 @@ import { snapshotSummary, money } from "@/lib/pricing";
 import type { CartLine } from "@/lib/types";
 import CartThumb from "./CartThumb";
 
+/** Quantity and remove, the same two controls the cart page offers, so a
+ *  customer never has to leave the panel to fix a mistake. setQty(0) removes,
+ *  which is what the cart context already does with a zero. */
+function LineControls({ line }: { line: CartLine }) {
+  const { setQty, removeLine } = useCart();
+  return (
+    <div className="drawer-line-controls">
+      <div className="qty-stepper qty-stepper-sm">
+        <button type="button" aria-label={`Decrease quantity of ${lineName(line)}`}
+                onClick={() => setQty(line.lineId, line.qty - 1)}>−</button>
+        <span aria-live="polite">{line.qty}</span>
+        <button type="button" aria-label={`Increase quantity of ${lineName(line)}`}
+                onClick={() => setQty(line.lineId, line.qty + 1)}>+</button>
+      </div>
+      <button type="button" className="drawer-remove"
+              aria-label={`Remove ${lineName(line)} from your cart`}
+              onClick={() => removeLine(line.lineId)}>Remove</button>
+    </div>
+  );
+}
+
+function lineName(line: CartLine): string {
+  return line.kind === "ready_for_delivery" ? line.snapshot.itemTitle : line.snapshot.bagName;
+}
+
 function DrawerLine({ line, added }: { line: CartLine; added: boolean }) {
   if (line.kind === "ready_for_delivery") {
     const { snapshot } = line;
@@ -18,7 +43,8 @@ function DrawerLine({ line, added }: { line: CartLine; added: boolean }) {
         <div className="drawer-line-body">
           <p className="drawer-line-name">{snapshot.itemTitle}</p>
           <p className="drawer-line-opt">Ready for Delivery</p>
-          <p className="drawer-line-price">{money(line.unitPrice)}</p>
+          <p className="drawer-line-price">{money(line.unitPrice * line.qty)}</p>
+          <LineControls line={line} />
         </div>
       </div>
     );
@@ -32,13 +58,15 @@ function DrawerLine({ line, added }: { line: CartLine; added: boolean }) {
       </div>
       <div className="drawer-line-body">
         <p className="drawer-line-name">{snapshot.bagName}</p>
-        {/* The line just added lists every choice: showing only the first
-            two left a strap out of a JOD 60 line that read as a JOD 55 bag. */}
-        <p className="drawer-line-opt">{(added ? snapshotSummary(snapshot) : snapshotSummary(snapshot).slice(0, 3)).join(" · ")}</p>
+        {/* EVERY choice, on every line. Truncating to three hid a strap on a
+            JOD 60 line that then read as a JOD 55 bag; the panel is short
+            enough to carry the whole configuration. */}
+        <p className="drawer-line-opt">{snapshotSummary(snapshot).join(" · ")}</p>
         <p className="drawer-line-price">
-          {money(line.unitPrice)}
-          {line.qty > 1 ? <span className="drawer-line-qty"> × {line.qty}</span> : null}
+          {money(line.unitPrice * line.qty)}
+          {line.qty > 1 ? <span className="drawer-line-qty"> {money(line.unitPrice)} each</span> : null}
         </p>
+        <LineControls line={line} />
       </div>
     </div>
   );
@@ -140,8 +168,15 @@ export default function CartDrawer() {
                 <span>Subtotal</span>
                 <strong>{money(cartSubtotal)}</strong>
               </div>
+              {/* Shipping depends on the delivery area, which is chosen at
+                  checkout, so this panel states that rather than showing an
+                  "estimated total" the store cannot yet know. */}
+              <p className="drawer-ship-note">Shipping calculated at checkout.</p>
               <div className="drawer-actions">
-                <Link ref={firstActionRef} className="btn btn-primary btn-block" href="/cart" onClick={closeCartDrawer}>
+                <Link ref={firstActionRef} className="btn btn-primary btn-block" href="/checkout" onClick={closeCartDrawer}>
+                  Checkout
+                </Link>
+                <Link className="btn btn-outline btn-block" href="/cart" onClick={closeCartDrawer}>
                   View Cart
                 </Link>
                 <button type="button" className="drawer-keep" onClick={closeCartDrawer}>

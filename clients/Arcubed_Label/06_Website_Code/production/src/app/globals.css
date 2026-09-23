@@ -1402,6 +1402,34 @@ html { overflow-anchor: none; }
 .co-errors p:last-child { margin-bottom: 0; }
 
 .co-summary { position: relative; }
+/* ---- checkout: order summary disclosure (phone only) ---- */
+.co-summary-toggle { display: none; }
+.co-err {
+  display: block; margin-top: 6px; font-size: 12.5px; line-height: 1.45; color: #a3312f; font-weight: 500;
+}
+.co-row input[aria-invalid="true"], .co-row select[aria-invalid="true"], .co-row textarea[aria-invalid="true"] {
+  border-color: #a3312f;
+}
+.co-pay { border: 1px solid var(--line); padding: 15px 16px; background: var(--surface); }
+.co-pay-head { margin: 0 0 6px; font-size: 14px; font-weight: 600; color: var(--primary); }
+.co-pay-body { margin: 0; font-size: 13px; line-height: 1.55; color: var(--muted); }
+@media (max-width: 939px) {
+  .co-summary-toggle {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    width: 100%; min-height: 54px; padding: 14px 16px;
+    background: var(--blush); border: 0; color: var(--primary);
+    font-size: 14px; font-weight: 600; text-align: left; touch-action: manipulation;
+  }
+  .co-summary-toggle-label { display: inline-flex; align-items: center; gap: 8px; }
+  .co-caret {
+    width: 7px; height: 7px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
+    transform: rotate(45deg) translate(-2px, -2px); transition: transform 0.2s var(--ease-ui);
+  }
+  .co-summary[data-open="true"] .co-caret { transform: rotate(-135deg) translate(-2px, -2px); }
+  .co-summary[data-open="false"] .co-summary-inner { display: none; }
+  .co-summary[data-open="true"] .co-summary-inner { padding-top: 6px; }
+}
+
 .co-summary-inner { background: var(--blush); padding: clamp(20px, 3vw, 30px); border-radius: 4px; }
 .co-lines { list-style: none; margin: 0; padding: 0; }
 .co-line { display: grid; grid-template-columns: 72px 1fr auto; gap: 13px; align-items: start; padding: 13px 0; border-bottom: 1px solid rgba(20, 53, 98, 0.14); }
@@ -2807,6 +2835,20 @@ html { overflow-anchor: none; }
 .drawer-keep:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
 /* The line that was just added carries a pink field, so the confirmation
    points at the actual bag rather than at the whole list. */
+/* ---- cart panel: the same controls the cart page has ---- */
+/* 44px targets on a phone: these sit inside a narrow panel and a 32px button
+   beside a Remove link is the classic mis-tap. */
+.drawer-line-controls { display: flex; align-items: center; gap: 14px; margin-top: 9px; flex-wrap: wrap; }
+.qty-stepper-sm button { width: 36px; height: 36px; }
+.drawer-remove {
+  font-size: 12px; letter-spacing: 0.04em; color: var(--muted);
+  text-decoration: underline; text-underline-offset: 3px; min-height: 36px; padding: 0 2px;
+  touch-action: manipulation;
+}
+.drawer-remove:hover { color: var(--navy); }
+.drawer-ship-note { margin: 2px 0 12px; font-size: 12px; color: var(--muted); }
+.drawer-actions .btn-outline { margin-top: 8px; }
+
 .drawer-line.is-added { background: var(--pink); margin: -10px; padding: 10px; }
 /* No double-tap zoom on the buy controls: a quick second tap on Add to Cart
    in mobile Safari zoomed the page instead of being ignored. */

@@ -620,6 +620,17 @@ export async function getOrderByConfirmationToken(token: string): Promise<OrderC
  * originally read a `configuration` array that the snapshot does not contain,
  * and silently showed nothing.
  */
+/** Add-on labels out of a stored snapshot, ignoring anything malformed. */
+function addonLabels(snap: Record<string, unknown>): string[] {
+  const raw = snap.addons;
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((a) => (a && typeof a === "object" && typeof (a as { label?: unknown }).label === "string"
+      ? (a as { label: string }).label
+      : null))
+    .filter((v): v is string => Boolean(v));
+}
+
 export function configurationFromSnapshot(
   snapshot: unknown,
   kind: "made_to_order" | "ready_for_delivery"
@@ -634,7 +645,15 @@ export function configurationFromSnapshot(
           str("secondaryColourName") ? `${str("secondaryColourName")} two-tone` : null,
           str("sizeLabel") && str("sizeLabel") !== "Regular" ? str("sizeLabel") : null,
           str("strapLabel"),
+          // THE HANDLE CHOICE BELONGS ON THE ORDER RECORD.
+          // Nova is sold with or without its handle and the choice was in the
+          // snapshot all along, but never in this list — so the confirmation
+          // page, the emailed record and Rand's admin view all showed a Nova
+          // with no indication of which one was being crocheted. Add-ons were
+          // dropped the same way, and they carry a price.
+          str("handleLabel"),
           str("chainLabel"),
+          ...addonLabels(snap),
         ];
   return parts.filter((v): v is string => Boolean(v));
 }
