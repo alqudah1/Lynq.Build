@@ -686,6 +686,8 @@ export interface AdminOrder {
   total: number;
   currency: string;
   shippingQuoteRequired: boolean;
+  /** What the customer typed in "Delivery notes" at checkout. */
+  notes: string | null;
   lines: AdminOrderLine[];
 }
 
@@ -695,7 +697,10 @@ export async function listOrders(limit = 100): Promise<AdminOrder[]> {
   const { data, error } = await supabase
     .from("orders")
     .select(
-      "id, order_number, created_at, status, payment_status, customer_name, customer_email, customer_phone, shipping_address, subtotal, shipping_amount, total, currency, shipping_quote_required, order_items ( item_kind, product_name_snapshot, quantity, unit_price, configuration_snapshot )"
+      // notes: checkout invites "Delivery notes (optional)" and this query
+      // never selected the column, so whatever the customer wrote — a landmark,
+      // a gate code, a delivery time — reached the database and stopped there.
+      "id, order_number, created_at, status, payment_status, customer_name, customer_email, customer_phone, shipping_address, notes, subtotal, shipping_amount, total, currency, shipping_quote_required, order_items ( item_kind, product_name_snapshot, quantity, unit_price, configuration_snapshot )"
     )
     .order("created_at", { ascending: false })
     .limit(Math.max(1, Math.min(limit, 200)));
@@ -720,6 +725,7 @@ export async function listOrders(limit = 100): Promise<AdminOrder[]> {
       total: Number(r.total ?? 0),
       currency: String(r.currency ?? "JOD"),
       shippingQuoteRequired: Boolean(r.shipping_quote_required),
+      notes: (r.notes as string | null) ?? null,
       lines: items.map((it) => {
         const kind = (it.item_kind === "ready_for_delivery" ? "ready_for_delivery" : "made_to_order") as AdminOrderLine["kind"];
         return {

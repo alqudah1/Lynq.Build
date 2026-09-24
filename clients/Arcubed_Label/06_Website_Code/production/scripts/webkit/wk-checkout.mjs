@@ -132,7 +132,8 @@ await p.waitForTimeout(600);
 
 /* 8 — the page claims nothing the business has not confirmed. */
 const body = (await p.innerText("body")).replace(/\s+/g, " ");
-ok("payment section states no payment is taken", /No payment is taken on this site/i.test(body));
+ok("payment section explains how payment happens",
+   /Arcubed confirms your order with you/i.test(body) && /not charged when you place it/i.test(body));
 ok("no invented payment method", !/cash on delivery|\bcliq\b|card number|visa|mastercard/i.test(body));
 ok("no discount field", (await p.locator('input[name*="discount" i], input[placeholder*="discount" i], input[placeholder*="promo" i]').count()) === 0);
 ok("no pickup option", !/pick ?up/i.test(body));

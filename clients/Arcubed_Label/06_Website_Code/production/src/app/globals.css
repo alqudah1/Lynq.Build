@@ -2032,6 +2032,9 @@ html { overflow-anchor: none; }
 .adm-order-top { display: grid; grid-template-columns: 1fr auto auto; gap: 14px; align-items: center; padding: 14px 18px; background: #ffe0fd; }
 .adm-num { margin: 0; font-weight: 600; font-size: 15px; letter-spacing: 0.02em; }
 .adm-when { margin: 3px 0 0; font-size: 12px; opacity: 0.7; }
+.adm-zone { margin: 6px 0 0; font-size: 13px; color: var(--primary); }
+.adm-notes { margin: 10px 0 0; padding: 9px 11px; background: rgba(20,53,98,0.05); font-size: 13px; line-height: 1.5; color: var(--primary); }
+.adm-notes .adm-h { display: block; margin-bottom: 3px; }
 .adm-badges { display: flex; gap: 8px; flex-wrap: wrap; }
 .adm-badge { font-size: 10.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; padding: 5px 9px; background: rgba(20,53,98,0.10); }
 .adm-p-paid { background: #cfe4cf; }

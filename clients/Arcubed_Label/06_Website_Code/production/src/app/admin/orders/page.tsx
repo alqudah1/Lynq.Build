@@ -10,7 +10,14 @@ export const metadata = { title: "Orders | Arcubed", robots: { index: false, fol
 
 function address(a: Record<string, unknown> | null): string {
   if (!a) return "";
-  return [a.city, a.address, a.building, a.zone].filter(Boolean).join(", ");
+  // The zone is shown on its own line below, so it is not repeated here.
+  return [a.address, a.building, a.city, a.country].filter(Boolean).join(", ");
+}
+
+/** "Inside Amman" / "Outside Amman" / "Worldwide" — the rate this order was
+ *  placed under, which decides what the courier costs. */
+function zone(a: Record<string, unknown> | null): string {
+  return a && typeof a.zone === "string" ? a.zone : "";
 }
 
 export default async function AdminOrdersPage() {
@@ -59,7 +66,11 @@ export default async function AdminOrdersPage() {
                   <p>{o.customerEmail}</p>
                   {o.customerPhone ? <p>{o.customerPhone}</p> : null}
                   {address(o.shippingAddress) ? <p className="adm-addr">{address(o.shippingAddress)}</p> : null}
+                  {zone(o.shippingAddress) ? <p className="adm-zone">Delivery zone: <strong>{zone(o.shippingAddress)}</strong></p> : null}
                   {o.shippingQuoteRequired ? <p className="adm-flag">Shipping quote required</p> : null}
+                  {o.notes ? (
+                    <p className="adm-notes"><span className="adm-h">Note from the customer</span>{o.notes}</p>
+                  ) : null}
                 </div>
 
                 <div className="adm-items">

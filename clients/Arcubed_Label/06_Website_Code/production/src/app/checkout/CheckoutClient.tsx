@@ -253,14 +253,18 @@ export default function CheckoutClient({
           {/* PAYMENT. No provider is integrated and no card details are
               collected anywhere (docs/payment-integration.md). Naming a method
               the store has not confirmed — Cash on Delivery, CliQ, a card —
-              would be inventing a business rule, so this section states the
-              one thing that is true today. */}
+              would be inventing a business rule.
+              The wording describes the process the customer is actually in:
+              every piece is crocheted to order, so the order is confirmed with
+              them before anything is paid. "No payment is taken on this site"
+              was equally true and read like a half-built shop. */}
           <p className="co-legend">Payment</p>
           <div className="co-pay">
-            <p className="co-pay-head">No payment is taken on this site.</p>
+            <p className="co-pay-head">Arcubed confirms your order with you.</p>
             <p className="co-pay-body">
-              Arcubed confirms your order, then arranges payment and delivery with you directly.
-              Nothing is charged now and no card details are collected.
+              Every piece is crocheted to order, so Arcubed gets in touch on the details above to
+              confirm your order and arrange payment and delivery. You are not charged when you
+              place it.
             </p>
           </div>
 
