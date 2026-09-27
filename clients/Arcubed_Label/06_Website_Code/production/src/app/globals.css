@@ -2603,6 +2603,18 @@ html { overflow-anchor: none; }
   grid-template-rows: minmax(0, 1fr);
 }
 .mc-stage.is-framed img { width: 100%; height: 100%; object-fit: contain; }
+/* THE PRINT GETS AN EDGE.
+   Loco's cut-outs are rejected by QA (REJECTED_CUTOUTS: the fringe is hundreds
+   of strands and the matte keeps lit backdrop between them, which lands as a
+   grey ghost on the field), so the honest option is the real photograph. Left
+   without an edge it read as a grey rectangle pasted onto the colour. A navy
+   hairline at 14% turns the same picture into a mounted print: the field is
+   the mount, the line is the frame, and the object inside is untouched
+   photography. Nothing is masked, blurred or invented. */
+.mc-stage.is-framed img,
+.shopx-field.is-framed img {
+  box-shadow: 0 0 0 1px rgba(20, 53, 98, 0.14);
+}
 /* Only the phone band crops now: 3/2 on desktop matches the photograph, and
    at 3/2 on a narrow screen the bag would be small, so the phone runs a
    shallower frame and takes the difference off the bottom. Weighted upward so

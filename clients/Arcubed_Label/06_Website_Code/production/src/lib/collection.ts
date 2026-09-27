@@ -272,6 +272,40 @@ export function isDarkField(hex: string): boolean {
  * No retouching: nobody has relit or colour-corrected the client's
  * photography to force a match.
  */
+/**
+ * THE FIELD BEHIND EACH MODEL BLOCK — one per shape, not per colourway.
+ *
+ * The four big blocks used to inherit the field of whichever colourway was
+ * selected, and those values are tuned for the sixteen-tile WALL, where
+ * adjacency is set by SHOP_RHYTHM. In the 2x2 model grid nothing kept two
+ * neighbours apart: selecting Vault's Light Brown (sky #d6e2f0) beside Loco's
+ * Brown (mist #dae3ea) put two fields 11 apart in summed RGB side by side, and
+ * the row read as one pale blue box twice. Hovering a swatch was enough to
+ * reach it, which is what the client saw.
+ *
+ * A block is an editorial composition for a SHAPE, so its ground is a property
+ * of the shape and holds still while the colourways change inside it. Picked
+ * for separation in the grid as it is actually laid out — Nova beside Mini
+ * Luna, Vault beside Loco, Nova above Vault, Mini Luna above Loco — and for
+ * contrast against each object:
+ *
+ *   Nova       SKY       #d6e2f0  cool blue under a warm metallic
+ *   Mini Luna  SAGE      #d6dfcd  green, against Nova's blue beside it
+ *   Vault      BLUSH     #f6d8de  warm rose under the olive and the browns
+ *   Loco       LAVENDER  #e4daf0  cool violet against warm burgundy fringe,
+ *                                 and clear of both the sage above it and the
+ *                                 blush beside it
+ *
+ * Every value is from the palette at the top of this file. No two are within
+ * 38 of each other in summed RGB; the pair the client reported was 11.
+ */
+export const MODEL_FIELD: Record<string, string> = {
+  nova: "#d6e2f0",
+  "mini-luna": "#d6dfcd",
+  vault: "#f6d8de",
+  loco: "#e4daf0",
+};
+
 export const LEAD_COLOUR: Record<string, string> = {
   loco: "Burgundy",
 };

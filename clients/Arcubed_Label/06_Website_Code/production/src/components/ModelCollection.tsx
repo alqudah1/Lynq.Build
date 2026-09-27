@@ -20,7 +20,7 @@ import Image from "next/image";
 import type { Bag } from "@/lib/types";
 import { money } from "@/lib/pricing";
 import { framesForColour, tileSrc, altFor } from "@/lib/product-media";
-import { COLLECTION, colourFit, LEAD_COLOUR, swatchField, isDarkField } from "@/lib/collection";
+import { COLLECTION, colourFit, LEAD_COLOUR, MODEL_FIELD, swatchField, isDarkField } from "@/lib/collection";
 import { variantHref } from "@/lib/variant";
 
 type Way = { colour: string; field: string; swatch: string; src: string; ratio: number; alt: string; href: string;
@@ -136,10 +136,15 @@ function ModelBlock({ product, bag, ways }: { product: string; bag: Bag; ways: W
     <li className={`mc-block mc-${bag.slug}`}>
       {/* A mounted photograph keeps its field: the colour is the mount the
           picture is printed on. Only a bleeding photograph hides it. */}
+      {/* The ground belongs to the SHAPE (MODEL_FIELD), not to the colourway
+          showing inside it. Inheriting the colourway's wall field let two
+          neighbouring blocks land on near-identical pale blues as soon as a
+          swatch was hovered. The picture and the link still change with the
+          selection; the composition it sits in holds still. */}
       <Link
         href={on.href}
         className={`mc-stage${on.framed ? " is-framed" : ""}`}
-        style={{ background: on.photo && !on.framed ? undefined : on.field }}
+        style={{ background: MODEL_FIELD[bag.slug] ?? on.field }}
       >
         <Image
           key={on.colour}
