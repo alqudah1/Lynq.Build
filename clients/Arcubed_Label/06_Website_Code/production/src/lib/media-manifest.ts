@@ -81,8 +81,8 @@ export const COLOUR_MEDIA: Record<string, Record<string, Frame[]>> = {
     "Silver & Gold": [f("DSC04870", 1.3017), f("DSC04871", 1.2417)],
   },
   "loco": {
-    "Brown": [f("DSC05765", 1.4652, false), f("DSC05770", 0.8032, false), d("loco-brown-detail", 1.3624, "Close detail of the Loco in Brown: crocheted stitch rows and the knotted top of the fringe")],
-    "Burgundy": [f("DSC05772", 1.5101, false), f("DSC05773", 1.3371, false)],
+    "Brown": [f("DSC05765", 1.5560), f("DSC05770", 1.1996), d("loco-brown-detail", 1.3624, "Close detail of the Loco in Brown: crocheted stitch rows and the knotted top of the fringe")],
+    "Burgundy": [f("DSC05772", 1.5768), f("DSC05773", 1.3479)],
   },
 };
 

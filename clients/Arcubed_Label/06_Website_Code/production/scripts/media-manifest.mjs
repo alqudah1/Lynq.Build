@@ -117,8 +117,12 @@ export const DETAIL_CROPS = [
  * composed as a framed image everywhere.
  */
 export const REJECTED_CUTOUTS = new Set([
-  "DSC05765", "DSC05764", "DSC05766", "DSC05770", // Loco brown
-  "DSC05772", "DSC05773",                          // Loco burgundy
+  // Loco's frames came off this list once a matte existed that could hold
+  // them: scripts/extract-loco-matte.py keys on CHROMA as well as luminance,
+  // so the neutral seamless and its contact shadow go to zero and the fringe
+  // gaps are genuinely empty. Its output IS the -cut- and -tile- asset for
+  // these frames, so do not regenerate them with the luminance matte here.
+  "DSC05764", "DSC05766", // Loco brown, unused duplicate exposures
 ]);
 
 /**

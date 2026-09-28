@@ -108,9 +108,9 @@ export const COLLECTION: CollectionEntry[] = [
   // photography, so the product gains contrast instead of losing it to the
   // field. The mount still reads: this frame's studio ground is 0.75
   // luminance against mist's 0.87, so the print has a visible edge.
-  { slug: "loco", product: "Loco", colour: "Brown", field: "#dae3ea", framed: true },
+  { slug: "loco", product: "Loco", colour: "Brown", field: "#dae3ea" },
   { slug: "nova", product: "Nova", colour: "Silver", field: "#f6d8de" },
-  { slug: "loco", product: "Loco", colour: "Burgundy", field: "#ffe0fd", framed: true },
+  { slug: "loco", product: "Loco", colour: "Burgundy", field: "#ffe0fd" },
   { slug: "vault", product: "Vault", colour: "Light Brown", field: "#d6e2f0" },
 
   { slug: "mini-luna", product: "Mini Luna", colour: "Black", field: "#f6d8de" },
