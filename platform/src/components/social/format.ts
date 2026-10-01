@@ -1,0 +1,151 @@
+import type { BadgeTone } from "@/components/ui/Badge";
+
+/**
+ * Module 19 UI — pure display helpers shared by the Social pages (server)
+ * and their few client components. Status tones only ever express a real
+ * state; nothing here is decoration.
+ */
+
+export const VARIANT_STATUS_TONE: Record<string, BadgeTone> = {
+  idea: "neutral",
+  draft: "neutral",
+  generating: "info",
+  ready_for_review: "warning",
+  changes_requested: "warning",
+  approved: "success",
+  scheduled: "info",
+  publishing: "info",
+  published: "success",
+  failed: "danger",
+  rejected: "danger",
+  archived: "neutral",
+};
+
+export const VARIANT_STATUS_LABEL: Record<string, string> = {
+  idea: "Idea",
+  draft: "Draft",
+  generating: "Generating",
+  ready_for_review: "In review",
+  changes_requested: "Changes requested",
+  approved: "Approved",
+  scheduled: "Scheduled",
+  publishing: "Publishing",
+  published: "Published",
+  failed: "Failed",
+  rejected: "Rejected",
+  archived: "Archived",
+};
+
+export const CONNECTION_STATUS_TONE: Record<string, BadgeTone> = {
+  connected: "success",
+  manual: "neutral",
+  authorization_required: "warning",
+  token_expired: "danger",
+  missing_configuration: "warning",
+  error: "danger",
+  not_supported: "neutral",
+  disconnected: "neutral",
+};
+
+export const CONNECTION_STATUS_LABEL: Record<string, string> = {
+  connected: "Connected",
+  manual: "Manual",
+  authorization_required: "Authorization needed",
+  token_expired: "Token expired",
+  missing_configuration: "Not configured",
+  error: "Error",
+  not_supported: "Not supported",
+  disconnected: "Disconnected",
+};
+
+export const JOB_STATUS_TONE: Record<string, BadgeTone> = {
+  queued: "neutral",
+  processing: "info",
+  published: "success",
+  failed: "danger",
+  retrying: "warning",
+  cancelled: "neutral",
+};
+
+export const SEVERITY_TONE: Record<string, BadgeTone> = { urgent: "danger", attention: "warning", info: "info" };
+
+/** Short glyph per platform for compact calendar chips (always paired with a text label elsewhere). */
+export const PLATFORM_GLYPH: Record<string, string> = { facebook: "FB", instagram: "IG", linkedin: "IN", tiktok: "TT", youtube: "YT", x: "X" };
+
+export const PLATFORM_SHORT_LABEL: Record<string, string> = { facebook: "Facebook", instagram: "Instagram", linkedin: "LinkedIn", tiktok: "TikTok", youtube: "YouTube", x: "X" };
+
+export function humanize(value: string): string {
+  const text = value.replaceAll("_", " ");
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+export function initials(name: string | null | undefined): string {
+  const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "?";
+  return (parts.length === 1 ? parts[0].slice(0, 2) : `${parts[0][0]}${parts[parts.length - 1][0]}`).toUpperCase();
+}
+
+function toDate(value: Date | string | null | undefined): Date | null {
+  if (!value) return null;
+  const d = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+export function formatDateTime(value: Date | string | null | undefined, timeZone: string): string {
+  const d = toDate(value);
+  if (!d) return "Not set";
+  return new Intl.DateTimeFormat("en-CA", { timeZone, weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(d);
+}
+
+export function formatDate(value: Date | string | null | undefined, timeZone: string): string {
+  const d = toDate(value);
+  if (!d) return "Not set";
+  return new Intl.DateTimeFormat("en-CA", { timeZone, weekday: "short", month: "short", day: "numeric" }).format(d);
+}
+
+export function formatTime(value: Date | string | null | undefined, timeZone: string): string {
+  const d = toDate(value);
+  if (!d) return "";
+  return new Intl.DateTimeFormat("en-CA", { timeZone, hour: "numeric", minute: "2-digit" }).format(d);
+}
+
+function zonedFields(d: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).formatToParts(d);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "00";
+  return { year: get("year"), month: get("month"), day: get("day"), hour: String(Number(get("hour")) % 24).padStart(2, "0"), minute: get("minute") };
+}
+
+/** `YYYY-MM-DD` of an instant in `timeZone`. */
+export function localDayKey(value: Date | string, timeZone: string): string {
+  const d = toDate(value) ?? new Date();
+  const f = zonedFields(d, timeZone);
+  return `${f.year}-${f.month}-${f.day}`;
+}
+
+/** `YYYY-MM-DDTHH:mm` for a `<input type="datetime-local">`, expressed in `timeZone`. */
+export function toDateTimeLocalValue(value: Date | string | null | undefined, timeZone: string): string {
+  const d = toDate(value);
+  if (!d) return "";
+  const f = zonedFields(d, timeZone);
+  return `${f.year}-${f.month}-${f.day}T${f.hour}:${f.minute}`;
+}
+
+export function formatUsd(value: number | null | undefined): string {
+  if (value === null || value === undefined) return "—";
+  return new Intl.NumberFormat("en-CA", { style: "currency", currency: "USD", maximumFractionDigits: value < 1 ? 4 : 2 }).format(value);
+}
+
+/** Builds an app link under the Social section, carrying the selected brand. */
+export function socialHref(organizationSlug: string, path: string, params: Record<string, string | null | undefined> = {}): string {
+  const clean = path.startsWith("/") ? path : `/${path}`;
+  const search = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) if (v) search.set(k, v);
+  const qs = search.toString();
+  return `/app/${organizationSlug}${clean}${qs ? `${clean.includes("?") ? "&" : "?"}${qs}` : ""}`;
+}
+
+/** Attention items carry service paths; a few map onto this pass's route names. */
+export function resolveAttentionPath(path: string): string {
+  if (path === "/social/studio") return "/social/create";
+  return path;
+}

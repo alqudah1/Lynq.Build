@@ -13,6 +13,7 @@ const SECTION_LABELS: Record<string, string> = {
   jarvis: "Jarvis",
   projects: "Projects",
   marketing: "Marketing",
+  social: "Social Command Center",
   crm: "Customers",
   sales: "Sales",
   communications: "Inbox",
