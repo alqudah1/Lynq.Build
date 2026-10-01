@@ -49,7 +49,7 @@ export async function processSocialJob(db: Db, job: RuntimeJob): Promise<Record<
     }
     case "social_generation_run": {
       const { runGenerationJob } = await import("./generation");
-      return runGenerationJob(db, { organizationId: job.organizationId, generationId: recordId });
+      return runGenerationJob(db, { organizationId: job.organizationId, generationId: recordId, runtimeJobId: job.id, finalAttempt: job.attemptCount >= job.maxAttempts });
     }
     default:
       throw new Error(`processSocialJob received a non-social job type: ${job.jobType}`);

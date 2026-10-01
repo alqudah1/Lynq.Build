@@ -211,43 +211,75 @@ export async function beginGeneration(db: Db, input: BeginGenerationInput): Prom
   if (dupe) throw new SocialGenerationLimitError("an identical generation is already running");
 
   const estimate = input.estimatedCostUsd ?? null;
-  if (MEDIA_TYPES.includes(input.generationType)) {
-    const env = input.env ?? (await loadSocialAiEnv());
-    const budget = dailyBudgetUsd(env);
-    const spent = await getDailyMediaSpendUsd(db, { organizationId: input.organizationId, now: input.now });
+  const now = input.now ?? new Date();
+  const isMedia = MEDIA_TYPES.includes(input.generationType);
+  const env = isMedia ? (input.env ?? (await loadSocialAiEnv())) : null;
+  const budget = env ? dailyBudgetUsd(env) : null;
+  if (isMedia && budget !== null) {
+    // Fast, friendly pre-check (gives the caller the numbers); the atomic guard below is what actually enforces it.
+    const spent = await getDailyMediaSpendUsd(db, { organizationId: input.organizationId, now });
     if (spent + (estimate ?? 0) > budget) throw new SocialGenerationLimitError(`today's media generation spend is ${money(spent)} and this request is estimated at ${money(estimate ?? 0)}, which exceeds the daily budget of ${money(budget)} (SOCIAL_AI_DAILY_BUDGET_USD)`);
   }
 
-  const now = input.now ?? new Date();
-  let row: GenerationRow;
+  const values = {
+    organizationId: input.organizationId,
+    brandProfileId: input.brandProfileId ?? null,
+    campaignId: input.campaignId ?? null,
+    contentItemId: input.contentItemId ?? null,
+    contentVariantId: input.contentVariantId ?? null,
+    generationType: input.generationType,
+    status: "running" as const,
+    provider: input.provider.slice(0, 60),
+    model: input.model.slice(0, 200),
+    requestFingerprint: fingerprint,
+    request: boundJson(input.request, MAX_REQUEST_JSON_BYTES),
+    providerTaskId: input.providerTaskId ?? null,
+    // A running media generation counts against today's budget at its estimate until the provider reports the real figure.
+    costUsd: estimate !== null ? estimate.toFixed(6) : null,
+    usage: estimate !== null ? { costUsd: estimate, estimated: true } : {},
+    requestedByUserId: input.actorUserId,
+    requestedByAgentId: input.agentId ?? null,
+    startedAt: now,
+  };
+
+  let row: GenerationRow | undefined;
   try {
-    [row] = await db
-      .insert(socialAiGenerations)
-      .values({
-        organizationId: input.organizationId,
-        brandProfileId: input.brandProfileId ?? null,
-        campaignId: input.campaignId ?? null,
-        contentItemId: input.contentItemId ?? null,
-        contentVariantId: input.contentVariantId ?? null,
-        generationType: input.generationType,
-        status: "running",
-        provider: input.provider.slice(0, 60),
-        model: input.model.slice(0, 200),
-        requestFingerprint: fingerprint,
-        request: boundJson(input.request, MAX_REQUEST_JSON_BYTES),
-        providerTaskId: input.providerTaskId ?? null,
-        // A running media generation counts against today's budget at its estimate until the provider reports the real figure.
-        costUsd: estimate !== null ? estimate.toFixed(6) : null,
-        usage: estimate !== null ? { costUsd: estimate, estimated: true } : {},
-        requestedByUserId: input.actorUserId,
-        requestedByAgentId: input.agentId ?? null,
-        startedAt: now,
-      })
-      .returning();
+    if (isMedia && budget !== null) {
+      // Atomic budget guard: serialize per organization with a transaction-scoped
+      // advisory lock, then insert only while today's media spend plus this
+      // estimate stays within budget — so concurrent requests cannot overshoot.
+      const since = startOfUtcDay(now);
+      const estimateText = (estimate ?? 0).toFixed(6);
+      const results = await db.batch([
+        db.execute(sql`select pg_advisory_xact_lock(hashtext(${`social_ai_budget:${input.organizationId}`}))`),
+        db.execute(sql`
+          insert into ${socialAiGenerations} (organization_id, brand_profile_id, campaign_id, content_item_id, content_variant_id, generation_type, status, provider, model, request_fingerprint, request, provider_task_id, cost_usd, usage, requested_by_user_id, requested_by_agent_id, started_at)
+          select ${values.organizationId}, ${values.brandProfileId}, ${values.campaignId}, ${values.contentItemId}, ${values.contentVariantId}, ${values.generationType}::social_generation_type, 'running'::social_generation_status, ${values.provider}, ${values.model}, ${values.requestFingerprint}, ${JSON.stringify(values.request)}::jsonb, ${values.providerTaskId}, ${values.costUsd}::numeric, ${JSON.stringify(values.usage)}::jsonb, ${values.requestedByUserId}, ${values.requestedByAgentId}, ${now}
+          where (
+            select coalesce(sum(cost_usd), 0) from ${socialAiGenerations}
+            where organization_id = ${input.organizationId}
+              and generation_type in ('image', 'video')
+              and status in ('queued', 'running', 'succeeded')
+              and created_at >= ${since}
+          ) + ${estimateText}::numeric <= ${budget.toFixed(6)}::numeric
+          returning id
+        `),
+      ]);
+      const inserted = results[1] as unknown as { rows?: { id: string }[] } | { id: string }[];
+      const idRow = Array.isArray(inserted) ? inserted[0] : inserted.rows?.[0];
+      if (!idRow) {
+        const spent = await getDailyMediaSpendUsd(db, { organizationId: input.organizationId, now });
+        throw new SocialGenerationLimitError(`today's media generation spend is ${money(spent)} and this request is estimated at ${money(estimate ?? 0)}, which exceeds the daily budget of ${money(budget)} (SOCIAL_AI_DAILY_BUDGET_USD)`);
+      }
+      [row] = await db.select().from(socialAiGenerations).where(eq(socialAiGenerations.id, idRow.id));
+    } else {
+      [row] = await db.insert(socialAiGenerations).values(values).returning();
+    }
   } catch (err) {
     if (isPostgresUniqueViolation(err)) throw new SocialGenerationLimitError("an identical generation is already running");
     throw err;
   }
+  if (!row) throw new SocialGenerationFailedError(input.provider, "generation record could not be created", true);
   await recordAuditEvent(db, {
     eventType: "social_generation_requested",
     actorUserId: input.actorUserId ?? undefined,
@@ -543,7 +575,7 @@ async function releaseGeneratingVariant(db: Db, organizationId: string, contentV
 // Worker entry: finish an async video render
 // ---------------------------------------------------------------------------
 
-export async function runGenerationJob(db: Db, input: { organizationId: string; generationId: string; runtimeJobId?: string; deps?: SocialGenerationDeps }): Promise<Record<string, unknown>> {
+export async function runGenerationJob(db: Db, input: { organizationId: string; generationId: string; runtimeJobId?: string; finalAttempt?: boolean; deps?: SocialGenerationDeps }): Promise<Record<string, unknown>> {
   const row = await resolveGenerationRow(db, input.organizationId, input.generationId);
   if (row.status !== "queued" && row.status !== "running") return { generationId: row.id, status: row.status, skipped: true };
   if (row.generationType !== "video") {
@@ -571,6 +603,15 @@ export async function runGenerationJob(db: Db, input: { organizationId: string; 
       await failGeneration(db, { organizationId: input.organizationId, generationId: row.id, errorCode: "timeout", errorMessage: "the render did not finish within 3 hours" });
       await releaseGeneratingVariant(db, input.organizationId, row.contentVariantId);
       throw new SocialGenerationFailedError(provider.label, "the render did not finish in time", false);
+    }
+    if (input.finalAttempt) {
+      // The queue will dead-letter this job after this attempt; never leave the
+      // generation `running` (it would keep counting against the budget and
+      // block the dedupe fingerprint forever).
+      if (provider.cancelVideo) await provider.cancelVideo(row.providerTaskId).catch(() => undefined);
+      await failGeneration(db, { organizationId: input.organizationId, generationId: row.id, errorCode: "retries_exhausted", errorMessage: "the render was still in progress when the last polling attempt ran" });
+      await releaseGeneratingVariant(db, input.organizationId, row.contentVariantId);
+      throw new SocialGenerationFailedError(provider.label, "the render did not finish before polling gave up", false);
     }
     throw new SocialGenerationFailedError(provider.label, "still rendering", true);
   }

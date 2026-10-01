@@ -46,6 +46,23 @@ describe("Social AI generations (integration)", () => {
     expect(again.id).not.toBe(first.id);
   });
 
+  it("enforces the daily media budget atomically under concurrent requests", async () => {
+    const { orgId, ownerId, brand } = await makeSocialOrg();
+    const env = { SOCIAL_AI_DAILY_BUDGET_USD: 1 } as const;
+    // Ten concurrent $0.40 video requests against a $1 budget: at most two may be admitted.
+    const results = await Promise.allSettled(
+      Array.from({ length: 10 }, (_, i) =>
+        beginGeneration(db, { organizationId: orgId, actorUserId: ownerId, brandProfileId: brand.id, generationType: "video", provider: "runway", model: "gen4.5", request: { prompt: `clip ${i}` }, estimatedCostUsd: 0.4, env }),
+      ),
+    );
+    const admitted = results.filter((r) => r.status === "fulfilled").length;
+    const refused = results.filter((r) => r.status === "rejected" && r.reason instanceof SocialGenerationLimitError).length;
+    expect(admitted).toBeLessThanOrEqual(2);
+    expect(admitted + refused).toBe(10);
+    const rows = await db.select({ id: socialAiGenerations.id }).from(socialAiGenerations).where(and(eq(socialAiGenerations.organizationId, orgId), eq(socialAiGenerations.generationType, "video")));
+    expect(rows.length).toBe(admitted);
+  });
+
   it("refuses media generations that would exceed today's budget (running ones count at their estimate)", async () => {
     const { orgId, ownerId } = await makeSocialOrg();
     const env = { SOCIAL_AI_DAILY_BUDGET_USD: 1 };
