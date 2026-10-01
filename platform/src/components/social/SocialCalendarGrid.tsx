@@ -194,7 +194,7 @@ export function SocialCalendarGrid({
     if (!list.length) return null;
     if (compact) {
       return (
-        <Link href={list[0].createHref} className="block rounded-sm border border-dashed border-border px-1.5 py-1 text-[0.65rem] text-subtle hover:border-border-strong hover:text-foreground" title={`No post planned on ${list.map((g) => g.platformLabel).join(", ")}`}>
+        <Link href={list[0].createHref} className="block rounded-sm border border-dashed border-border px-1.5 py-1 text-[0.65rem] text-subtle hover:border-border-strong hover:text-foreground" title={`No approved or scheduled post on ${list.map((g) => g.platformLabel).join(", ")}`}>
           + Create
         </Link>
       );
@@ -203,7 +203,7 @@ export function SocialCalendarGrid({
       <ul className="flex flex-col gap-1.5">
         {list.map((g) => (
           <li key={g.platform} className="flex min-h-11 items-center justify-between gap-2 rounded-sm border border-dashed border-border px-2.5 py-1.5 text-xs text-subtle">
-            <span>No {g.platformLabel} post planned</span>
+            <span>No approved {g.platformLabel} post</span>
             <Link href={g.createHref} className="shrink-0 text-foreground hover:underline">+ Create</Link>
           </li>
         ))}

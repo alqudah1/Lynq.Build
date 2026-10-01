@@ -24,7 +24,8 @@ export function SocialSectionNav({ organizationSlug, items }: { organizationSlug
 
   return (
     <nav aria-label="Social Command Center" className="lynq-glass sticky top-0 z-20 border-b border-glass-border">
-      <ul className="flex gap-1 overflow-x-auto px-4 md:px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {/* `relative` keeps the absolutely-positioned sr-only count labels inside the scroller; otherwise they resolve against the sticky <nav> and widen the whole page on mobile. */}
+      <ul className="relative flex gap-1 overflow-x-auto px-4 md:px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {items.map((item) => {
           const href = `${base}${item.path}`;
           const active = item.path === "/social" ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);

@@ -17,7 +17,8 @@ type Db = NeonHttpDatabase<Record<string, unknown>>;
  * a live variant placed on the day it was published, is scheduled for, or
  * is planned for (item `plannedPublishAt`). Undated ideas/drafts are listed
  * separately. Gaps are future days with nothing scheduled on one of the
- * brand's preferred organic platforms. Days are UTC calendar days.
+ * brand's preferred organic platforms. Days are calendar days in the
+ * caller's `timeZone` (the organization's social timezone), UTC when omitted.
  */
 
 export interface SocialCalendarEntry {
@@ -57,8 +58,17 @@ const MAX_RANGE_DAYS = 93;
 const DAY_MS = 24 * 3600 * 1000;
 const FILLED_STATES: readonly SocialVariantStatus[] = ["approved", "scheduled", "publishing", "published"];
 
-function dayKey(d: Date): string {
-  return d.toISOString().slice(0, 10);
+/** `YYYY-MM-DD` of an instant — in `timeZone` when given (the organization's social timezone, matching the grid the UI draws), else UTC. */
+function dayKey(d: Date, timeZone?: string): string {
+  if (!timeZone) return d.toISOString().slice(0, 10);
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(d);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "00";
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
+
+function nextKey(key: string): string {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10);
 }
 
 function calendarState(status: SocialVariantStatus, body: string, mediaCount: number): SocialCalendarState {
@@ -70,7 +80,7 @@ function calendarState(status: SocialVariantStatus, body: string, mediaCount: nu
 
 export async function getSocialCalendar(
   db: Db,
-  input: { organizationId: string; actorUserId: string; from: Date; to: Date; brandProfileId?: string; platform?: SocialOrganicPlatform; campaignId?: string; view: "day" | "week" | "month"; now?: Date }
+  input: { organizationId: string; actorUserId: string; from: Date; to: Date; brandProfileId?: string; platform?: SocialOrganicPlatform; campaignId?: string; view: "day" | "week" | "month"; now?: Date; timeZone?: string }
 ): Promise<SocialCalendar> {
   const ctx = await resolveMarketingAuthContext(db, { organizationId: input.organizationId, actorUserId: input.actorUserId });
   await requireMarketingViewAuthority(db, ctx, "social_calendar", input.brandProfileId ?? "all");
@@ -154,13 +164,15 @@ export async function getSocialCalendar(
   if (input.platform) for (const p of [...preferred]) if (p !== input.platform) preferred.delete(p);
   const filled = new Set(rows.filter((r) => FILLED_STATES.includes(r.variant.status)).map((r) => {
     const when = r.variant.publishedAt ?? r.variant.scheduledFor ?? r.plannedPublishAt;
-    return when ? `${dayKey(when)}|${r.variant.platform}` : "";
+    return when ? `${dayKey(when, input.timeZone)}|${r.variant.platform}` : "";
   }));
+  // Day keys are calendar days in `input.timeZone` (UTC when absent) so a
+  // 9 p.m. post fills the same day the grid shows it on.
   const gaps: SocialCalendarGap[] = [];
-  const todayStart = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-  const startDay = Math.max(Date.UTC(input.from.getUTCFullYear(), input.from.getUTCMonth(), input.from.getUTCDate()), todayStart);
-  for (let t = startDay; t < input.to.getTime(); t += DAY_MS) {
-    const key = dayKey(new Date(t));
+  const todayKey = dayKey(now, input.timeZone);
+  const fromKey = dayKey(input.from, input.timeZone);
+  const lastKey = dayKey(new Date(input.to.getTime() - 1), input.timeZone);
+  for (let key = fromKey < todayKey ? todayKey : fromKey; key <= lastKey; key = nextKey(key)) {
     for (const p of preferred) {
       if (!filled.has(`${key}|${p}`)) gaps.push({ date: key, platform: p, reason: `Nothing approved or scheduled on ${SOCIAL_PLATFORM_LABELS[p]}` });
     }

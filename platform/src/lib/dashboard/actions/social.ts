@@ -46,6 +46,7 @@ import {
   type SocialVariantUpdate,
 } from "@/lib/social-os/validation";
 import { toActionResult } from "./errors";
+import { SocialProviderError } from "@/lib/social-os/errors";
 import type { ActionResult } from "./types";
 
 /**
@@ -575,6 +576,17 @@ function dollarsToMinor(raw: string | undefined): number | undefined {
   return Number.isFinite(value) ? Math.round(value * 100) : Number.NaN;
 }
 
+/** A provider call failed: lead with what it means for the user, then the (already redacted) provider detail. */
+function providerFailure(err: SocialProviderError): ActionResult {
+  const lead = err.authorizationLost
+    ? "The platform no longer accepts LYNQ's authorization — reconnect the account in the Connection Center."
+    : err.retryable
+      ? "The platform could not be reached or had a temporary problem. Nothing was changed there — try again in a moment."
+      : "The platform refused the request.";
+  const base = toActionResult(err);
+  return base.ok ? base : { ...base, message: `${lead} Details: ${err.message}` };
+}
+
 async function run(organizationSlug: string, path: string, fn: (ctx: Awaited<ReturnType<typeof context>>) => Promise<string>): Promise<ActionResult> {
   const ctx = await context(organizationSlug, path);
   let message: string;
@@ -582,6 +594,7 @@ async function run(organizationSlug: string, path: string, fn: (ctx: Awaited<Ret
     message = await fn(ctx);
   } catch (err) {
     if (err instanceof z.ZodError) return zodFailure(err);
+    if (err instanceof SocialProviderError) return providerFailure(err);
     return toActionResult(err);
   }
   revalidateSocial(organizationSlug);
@@ -925,13 +938,20 @@ function connectionsPath(organizationSlug: string) {
   return `${socialPath(organizationSlug)}/connections`;
 }
 
+function verifyFailureLead(status: string, code: string | null): string {
+  if (status === "token_expired") return "The authorization has expired — reconnect the account to keep publishing and syncing.";
+  if (status === "authorization_required") return "LYNQ no longer has permission for this account — reconnect it.";
+  if (code === "network_error") return "LYNQ could not reach the platform to check this account. The stored authorization was kept — try Verify again in a moment.";
+  return `The platform did not confirm this account (status: ${status.replace(/_/g, " ")}).`;
+}
+
 /** Re-checks the stored authorization with the provider and records the honest result. */
 export async function verifyAccountAction(organizationSlug: string, channelAccountId: string): Promise<ActionResult> {
   const { db, user, organization } = await context(organizationSlug, connectionsPath(organizationSlug));
   let result: ActionResult;
   try {
     const account = await verifyAccount(db, { organizationId: organization.id, channelAccountId, actorUserId: user.userId });
-    result = account.connectionStatus === "connected" ? { ok: true, message: "Verified — the account is connected." } : { ok: false, code: account.lastErrorCode ?? account.connectionStatus, message: `Not connected (${account.connectionStatus.replace(/_/g, " ")})${account.lastErrorMessage ? `: ${account.lastErrorMessage}` : ""}.` };
+    result = account.connectionStatus === "connected" ? { ok: true, message: "Verified — the account is connected." } : { ok: false, code: account.lastErrorCode ?? account.connectionStatus, message: `${verifyFailureLead(account.connectionStatus, account.lastErrorCode)}${account.lastErrorMessage ? ` Details: ${account.lastErrorMessage}` : ""}` };
   } catch (err) {
     return toActionResult(err);
   }

@@ -55,7 +55,9 @@ function explainAccountError(a: SocialAccountView): string | null {
         ? "The platform no longer accepts LYNQ’s authorization — reconnect this account."
         : a.lastErrorCode === "credential_missing"
           ? "No stored authorization — reconnect this account."
-          : "The last check failed.";
+          : a.lastErrorCode === "network_error"
+            ? "The last call to the platform did not get through (network or platform outage)."
+            : "The last call to the platform failed.";
   return a.lastErrorMessage ? `${lead} (${a.lastErrorMessage})` : lead;
 }
 

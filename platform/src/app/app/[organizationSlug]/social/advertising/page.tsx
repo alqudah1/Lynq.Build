@@ -378,7 +378,7 @@ function ChangeCard({ organizationSlug, change: c, timeZone, canManageAds, canAp
             <ConfirmDialog
               triggerLabel="Approve"
               title="Approve this ad change?"
-              description={`${summary} ${estimate}. Approving sends this exact change to ${c.accountDisplayName ?? "the ad account"} once — it may start spending money.`}
+              description={`${summary} ${estimate}. Approving sends this exact change to ${c.accountDisplayName ?? "the ad account"} once${c.changeType === "pause_campaign" ? " — the campaign stops delivering." : " — it may start spending money."}`}
               confirmLabel="Approve and execute"
               formAction={bound(decideAdChangeAction)}
               hiddenFields={{ expectedRevision: rev, decision: "approve" }}

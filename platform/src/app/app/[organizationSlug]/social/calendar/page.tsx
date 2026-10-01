@@ -71,7 +71,7 @@ export default async function SocialCalendarPage({ params, searchParams }: { par
       return zonedDateTimeToUtc(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate(), 0, 0, timeZone);
     };
     const [calendar, ctx] = await Promise.all([
-      getSocialCalendar(db, { organizationId: organization.id, actorUserId: user.userId, from: toUtc(start), to: toUtc(start + count * DAY_MS), view, brandProfileId: selection.brandProfileId, platform: platform.success ? platform.data : undefined }),
+      getSocialCalendar(db, { organizationId: organization.id, actorUserId: user.userId, from: toUtc(start), to: toUtc(start + count * DAY_MS), view, timeZone, brandProfileId: selection.brandProfileId, platform: platform.success ? platform.data : undefined }),
       resolveMarketingAuthContext(db, { organizationId: organization.id, actorUserId: user.userId }),
     ]);
     data = { brands, selection, timeZone, todayKey, anchor, start, count, monthIndex, calendar, ctx };
@@ -192,7 +192,7 @@ export default async function SocialCalendarPage({ params, searchParams }: { par
           {legendStates.map((s) => (
             <li key={s}><Badge tone={VARIANT_STATUS_TONE[s] ?? "neutral"}>{VARIANT_STATUS_LABEL[s] ?? s}{calendar.countsByStatus[s] ? ` · ${calendar.countsByStatus[s]}` : ""}</Badge></li>
           ))}
-          <li className="inline-flex min-h-6 items-center rounded-sm border border-dashed border-border px-2 text-[0.65rem] uppercase tracking-[0.08em] text-subtle">No post planned</li>
+          <li className="inline-flex min-h-6 items-center rounded-sm border border-dashed border-border px-2 text-[0.65rem] uppercase tracking-[0.08em] text-subtle">No approved post</li>
         </ul>
       </section>
 

@@ -60,6 +60,20 @@ describe("Social calendar (integration)", () => {
     await expect(getSocialCalendar(db, { organizationId: s.orgId, actorUserId: s.ownerId, from: utcDay(0), to: utcDay(200), view: "month" })).rejects.toBeInstanceOf(SocialInvalidScheduleError);
   });
 
+  it("computes gap days in the caller's timezone, so an evening post fills the day the grid shows it on", async () => {
+    const s = await setup();
+    // 01:00 UTC on day 4 is 9 p.m. (EDT) / 8 p.m. (EST) on day 3 in Toronto.
+    await rescheduleVariant(db, { organizationId: s.orgId, contentVariantId: s.scheduledVariant.id, actorUserId: s.ownerId, expectedRevision: s.scheduledVariant.revision, scheduledFor: utcDay(4, 1) });
+    const d = (n: number) => utcDay(n).toISOString().slice(0, 10);
+    const range = { organizationId: s.orgId, actorUserId: s.ownerId, from: utcDay(0, 0), to: utcDay(7, 0), brandProfileId: s.brand.id, view: "week" as const };
+    const utc = (await getSocialCalendar(db, range)).gaps.map((g) => g.date);
+    expect(utc).not.toContain(d(4));
+    expect(utc).toContain(d(3));
+    const toronto = (await getSocialCalendar(db, { ...range, timeZone: "America/Toronto" })).gaps.map((g) => g.date);
+    expect(toronto).not.toContain(d(3));
+    expect(toronto).toContain(d(4));
+  });
+
   it("rescheduling a scheduled post cancels its job and queues a new one for the new time", async () => {
     const s = await setup();
     const [oldJob] = await db.select().from(socialPublishJobs).where(eq(socialPublishJobs.contentVariantId, s.scheduledVariant.id));
