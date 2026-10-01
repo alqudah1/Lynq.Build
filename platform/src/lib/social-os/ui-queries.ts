@@ -112,3 +112,32 @@ export async function getGenerationSummaries(db: Db, input: { organizationId: st
     .where(and(eq(socialAiGenerations.organizationId, input.organizationId), inArray(socialAiGenerations.id, ids)));
   return new Map(rows.map((r) => [r.id, r]));
 }
+
+export interface SocialPublishedContentOption {
+  contentItemId: string;
+  title: string;
+  platform: SocialOrganicPlatform;
+  platformLabel: string;
+  channelAccountId: string | null;
+  publishedAt: Date | null;
+}
+
+/** Published posts (any date) for the "record results manually" picker — one row per published platform version, newest first. */
+export async function listPublishedSocialContent(db: Db, input: { organizationId: string; actorUserId: string; brandProfileId?: string; limit?: number }): Promise<SocialPublishedContentOption[]> {
+  const ctx = await resolveMarketingAuthContext(db, { organizationId: input.organizationId, actorUserId: input.actorUserId });
+  await requireMarketingViewAuthority(db, ctx, "social_content_variant", "published");
+  const conditions = [eq(socialContentVariants.organizationId, input.organizationId), eq(socialContentVariants.status, "published"), isNull(socialContentVariants.archivedAt)];
+  if (input.brandProfileId) conditions.push(eq(marketingContentItems.brandProfileId, input.brandProfileId));
+  const rows = await db
+    .select({ contentItemId: socialContentVariants.contentItemId, title: marketingContentItems.title, platform: socialContentVariants.platform, channelAccountId: socialContentVariants.channelAccountId, publishedAt: socialContentVariants.publishedAt })
+    .from(socialContentVariants)
+    .innerJoin(marketingContentItems, and(eq(marketingContentItems.id, socialContentVariants.contentItemId), eq(marketingContentItems.organizationId, socialContentVariants.organizationId)))
+    .where(and(...conditions))
+    .orderBy(desc(socialContentVariants.publishedAt))
+    .limit(Math.min(Math.max(input.limit ?? 100, 1), 200));
+  return rows.flatMap((r) => {
+    const platform = socialOrganicPlatformSchema.safeParse(r.platform);
+    if (!platform.success) return [];
+    return [{ contentItemId: r.contentItemId, title: r.title, platform: platform.data, platformLabel: SOCIAL_PLATFORM_LABELS[platform.data], channelAccountId: r.channelAccountId, publishedAt: r.publishedAt }];
+  });
+}

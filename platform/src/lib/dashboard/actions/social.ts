@@ -25,12 +25,21 @@ import { rescheduleVariant } from "@/lib/social-os/calendar";
 import { cancelPublishJob, retryPublishJob } from "@/lib/social-os/publishing";
 import { generateVariantsForItem, planWeek, regenerateVariantPart, zonedDateTimeToUtc } from "@/lib/social-os/studio";
 import { createManagerThread } from "@/lib/social-os/manager";
+import { assignItem, draftReply, escalateItem, flagLead, hideItem, ignoreItem, linkToCrm, markNeedsReply, requestEngagementSync, sendReply } from "@/lib/social-os/engagement";
+import { requestMetricsSync } from "@/lib/social-os/analytics-sync";
+import { cancelAdChange, decideAdChange, generateAdRecommendations, proposeAdChange, submitAdChangeForApproval } from "@/lib/social-os/advertising";
+import { archiveBrand, createBrand, getBrandForUser, parseBrandChanges, updateBrand } from "@/lib/social-os/brands";
+import { archiveAccount, createManualAccount, disconnectConnection, updateAccount, verifyAccount } from "@/lib/social-os/connections";
+import { archiveAutomationRule, runAutomationRuleNow, setAutomationRuleEnabled, upsertAutomationRule } from "@/lib/social-os/automation";
 import { describeAiProviders, loadSocialAiEnv } from "@/lib/social-os/providers/ai/registry";
 import { getSocialTimezone } from "@/lib/social-os/ui-queries";
 import {
+  SOCIAL_AUTOMATION_KINDS,
   SOCIAL_CONTENT_KINDS,
   SOCIAL_CONTENT_OBJECTIVES,
   SOCIAL_ORGANIC_PLATFORMS,
+  SOCIAL_PLATFORMS,
+  brandProfileInputSchema,
   socialContentBriefSchema,
   socialRegeneratePartSchema,
   type SocialVariantMedia,
@@ -536,4 +545,521 @@ export async function planWeekAction(organizationSlug: string, formData: FormDat
 
 function invalidBrand(): ActionResult {
   return { ok: false, code: "invalid_request", message: "Choose a brand to plan for." };
+}
+
+// ===========================================================================
+// UI pass 2 — inbox, analytics, advertising, brands, connections, automation
+// ===========================================================================
+
+/** A zod failure with its first issue spelled out — the Social forms render `message`, not per-field errors. */
+function zodFailure(error: z.ZodError): ActionResult {
+  const issue = error.issues[0];
+  const field = issue?.path.length ? `${String(issue.path[issue.path.length - 1])}: ` : "";
+  return { ok: false, code: "invalid_request", message: issue ? `${field}${issue.message}` : "Please check the form.", fieldErrors: error.flatten().fieldErrors as Record<string, string[]> };
+}
+
+/** A single-field failure whose message is shown as-is (unlike `invalid`, which defers to inline field errors). */
+function fieldFailure(field: string, message: string): ActionResult {
+  return { ok: false, code: "invalid_request", message, fieldErrors: { [field]: [message] } };
+}
+
+/** One value per line (blank lines dropped, trimmed). */
+function lines(formData: FormData, name: string): string[] {
+  return text(formData, name).split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+}
+
+/** Dollars typed into a form → integer minor units; empty → undefined; garbage → NaN (rejected by the schema). */
+function dollarsToMinor(raw: string | undefined): number | undefined {
+  if (raw === undefined) return undefined;
+  const value = Number(raw.replace(/[$,\s]/g, ""));
+  return Number.isFinite(value) ? Math.round(value * 100) : Number.NaN;
+}
+
+async function run(organizationSlug: string, path: string, fn: (ctx: Awaited<ReturnType<typeof context>>) => Promise<string>): Promise<ActionResult> {
+  const ctx = await context(organizationSlug, path);
+  let message: string;
+  try {
+    message = await fn(ctx);
+  } catch (err) {
+    if (err instanceof z.ZodError) return zodFailure(err);
+    return toActionResult(err);
+  }
+  revalidateSocial(organizationSlug);
+  return { ok: true, message };
+}
+
+// ---------------------------------------------------------------------------
+// Engagement inbox
+// ---------------------------------------------------------------------------
+
+function inboxPath(organizationSlug: string) {
+  return `${socialPath(organizationSlug)}/inbox`;
+}
+
+/** AI-suggested reply. Never sends — the draft lands in the reply box for a human to edit. */
+export async function draftReplyAction(organizationSlug: string, engagementItemId: string): Promise<ActionResult> {
+  if (!(await textProviderConfigured())) return { ok: false, code: "social_provider_not_configured", message: "No AI text provider is configured on this server (Anthropic, OpenAI or the AI Gateway). Write the reply by hand." };
+  return run(organizationSlug, inboxPath(organizationSlug), async ({ db, user, organization }) => {
+    const item = await draftReply(db, { organizationId: organization.id, engagementItemId, actorUserId: user.userId });
+    return item.replyDraft ? "Draft ready — review and edit it before sending." : "The AI returned no reply text. Write the reply by hand.";
+  });
+}
+
+const sendReplySchema = z.object({ expectedRevision: revisionSchema, text: z.string().trim().min(1, "Write a reply first").max(8000) });
+
+/** Posts the reply publicly. Pressing send is the human approval. */
+export async function sendReplyAction(organizationSlug: string, engagementItemId: string, formData: FormData): Promise<ActionResult> {
+  const parsed = sendReplySchema.safeParse({ expectedRevision: formData.get("expectedRevision"), text: text(formData, "text") });
+  if (!parsed.success) return zodFailure(parsed.error);
+  return run(organizationSlug, inboxPath(organizationSlug), async ({ db, user, organization }) => {
+    await sendReply(db, { organizationId: organization.id, engagementItemId, actorUserId: user.userId, expectedRevision: parsed.data.expectedRevision, text: parsed.data.text });
+    return "Reply posted.";
+  });
+}
+
+const engagementStatusSchema = z.object({ expectedRevision: revisionSchema, status: z.enum(["hide", "ignore", "needs_reply", "escalate"]) });
+
+export async function engagementStatusAction(organizationSlug: string, engagementItemId: string, formData: FormData): Promise<ActionResult> {
+  const parsed = engagementStatusSchema.safeParse({ expectedRevision: formData.get("expectedRevision"), status: formData.get("status") });
+  if (!parsed.success) return zodFailure(parsed.error);
+  const { expectedRevision, status } = parsed.data;
+  return run(organizationSlug, inboxPath(organizationSlug), async ({ db, user, organization }) => {
+    const input = { organizationId: organization.id, engagementItemId, actorUserId: user.userId, expectedRevision };
+    if (status === "hide") {
+      await hideItem(db, input);
+      return "Hidden on the platform.";
+    }
+    if (status === "ignore") {
+      await ignoreItem(db, input);
+      return "Marked as ignored.";
+    }
+    if (status === "needs_reply") {
+      await markNeedsReply(db, input);
+      return "Marked as needing a reply.";
+    }
+    await escalateItem(db, input);
+    return "Escalated.";
+  });
+}
+
+export async function assignEngagementAction(organizationSlug: string, engagementItemId: string, formData: FormData): Promise<ActionResult> {
+  const parsed = z.object({ expectedRevision: revisionSchema, assignedUserId: uuidSchema.nullable() }).safeParse({ expectedRevision: formData.get("expectedRevision"), assignedUserId: optionalText(formData, "assignedUserId") ?? null });
+  if (!parsed.success) return zodFailure(parsed.error);
+  return run(organizationSlug, inboxPath(organizationSlug), async ({ db, user, organization }) => {
+    await assignItem(db, { organizationId: organization.id, engagementItemId, actorUserId: user.userId, expectedRevision: parsed.data.expectedRevision, assignedUserId: parsed.data.assignedUserId });
+    return parsed.data.assignedUserId ? "Assigned." : "Unassigned.";
+  });
+}
+
+export async function flagLeadAction(organizationSlug: string, engagementItemId: string, formData: FormData): Promise<ActionResult> {
+  const parsed = z.object({ expectedRevision: revisionSchema, isLead: z.enum(["1", "0"]) }).safeParse({ expectedRevision: formData.get("expectedRevision"), isLead: formData.get("isLead") });
+  if (!parsed.success) return zodFailure(parsed.error);
+  return run(organizationSlug, inboxPath(organizationSlug), async ({ db, user, organization }) => {
+    await flagLead(db, { organizationId: organization.id, engagementItemId, actorUserId: user.userId, expectedRevision: parsed.data.expectedRevision, isLead: parsed.data.isLead === "1" });
+    return parsed.data.isLead === "1" ? "Flagged as a lead." : "Lead flag removed.";
+  });
+}
+
+const crmLinkSchema = z.discriminatedUnion("mode", [
+  z.object({ mode: z.literal("create_lead"), expectedRevision: revisionSchema }),
+  z.object({ mode: z.literal("existing_lead"), expectedRevision: revisionSchema, leadId: z.string().trim().uuid("Paste the lead's id (a UUID from its CRM page)") }),
+  z.object({ mode: z.literal("existing_contact"), expectedRevision: revisionSchema, contactId: z.string().trim().uuid("Paste the contact's id (a UUID from its CRM page)") }),
+]);
+
+/** Links to CRM Core through its own services (which enforce CRM authority on top of marketing engagement authority). */
+export async function linkEngagementToCrmAction(organizationSlug: string, engagementItemId: string, formData: FormData): Promise<ActionResult> {
+  const parsed = crmLinkSchema.safeParse({ mode: formData.get("mode"), expectedRevision: formData.get("expectedRevision"), leadId: optionalText(formData, "leadId"), contactId: optionalText(formData, "contactId") });
+  if (!parsed.success) return zodFailure(parsed.error);
+  const data = parsed.data;
+  return run(organizationSlug, inboxPath(organizationSlug), async ({ db, user, organization }) => {
+    await linkToCrm(db, {
+      organizationId: organization.id,
+      engagementItemId,
+      actorUserId: user.userId,
+      expectedRevision: data.expectedRevision,
+      mode: data.mode,
+      leadId: data.mode === "existing_lead" ? data.leadId : undefined,
+      contactId: data.mode === "existing_contact" ? data.contactId : undefined,
+    });
+    return data.mode === "create_lead" ? "Lead created in CRM." : data.mode === "existing_lead" ? "Linked to the CRM lead." : "Linked to the CRM contact.";
+  });
+}
+
+export async function requestEngagementSyncAction(organizationSlug: string, channelAccountId: string): Promise<ActionResult> {
+  return run(organizationSlug, inboxPath(organizationSlug), async ({ db, user, organization }) => {
+    const job = await requestEngagementSync(db, { organizationId: organization.id, channelAccountId, actorUserId: user.userId });
+    return job.status === "queued" ? "Inbox sync queued. New comments appear once the worker finishes — refresh in a minute." : `Inbox sync is already ${job.status.replace(/_/g, " ")}.`;
+  });
+}
+
+export async function requestMetricsSyncAction(organizationSlug: string, channelAccountId: string): Promise<ActionResult> {
+  return run(organizationSlug, `${socialPath(organizationSlug)}/analytics`, async ({ db, user, organization }) => {
+    const job = await requestMetricsSync(db, { organizationId: organization.id, channelAccountId, actorUserId: user.userId });
+    return job.status === "queued" ? "Metrics sync queued. Numbers update once the worker finishes — refresh in a minute." : `Metrics sync is already ${job.status.replace(/_/g, " ")}.`;
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Advertising — recommendation → approval → execution
+// ---------------------------------------------------------------------------
+
+function adsPath(organizationSlug: string) {
+  return `${socialPath(organizationSlug)}/advertising`;
+}
+
+const AD_FORM_CHANGE_TYPES = ["update_budget", "pause_campaign", "resume_campaign", "create_campaign"] as const;
+const currencySchema = z.string().trim().regex(/^[A-Za-z]{3}$/, "Use a 3-letter currency code (e.g. CAD)").transform((v) => v.toUpperCase());
+const minorSchema = z.number({ message: "Enter an amount like 25 or 25.50" }).int().min(0).max(1_000_000_000);
+
+const proposeAdSchema = z.object({
+  channelAccountId: uuidSchema,
+  changeType: z.enum(AD_FORM_CHANGE_TYPES),
+  title: z.string().trim().min(1, "Give the change a short title").max(200),
+  rationale: z.string().trim().max(4000).default(""),
+  externalCampaignId: z.string().trim().max(100).optional(),
+  dailyBudgetMinor: minorSchema.optional(),
+  lifetimeBudgetMinor: minorSchema.optional(),
+  estimatedDailySpendMinor: minorSchema.optional(),
+  currency: currencySchema.optional(),
+  name: z.string().trim().max(200).optional(),
+  objective: z.string().trim().max(60).optional(),
+});
+
+/** A human proposal. Nothing reaches the ad platform until it is submitted, approved, and executed by the worker. */
+export async function proposeAdChangeAction(organizationSlug: string, formData: FormData): Promise<ActionResult> {
+  const parsed = proposeAdSchema.safeParse({
+    channelAccountId: formData.get("channelAccountId"),
+    changeType: formData.get("changeType"),
+    title: text(formData, "title"),
+    rationale: text(formData, "rationale"),
+    externalCampaignId: optionalText(formData, "externalCampaignId"),
+    dailyBudgetMinor: dollarsToMinor(optionalText(formData, "dailyBudget")),
+    lifetimeBudgetMinor: dollarsToMinor(optionalText(formData, "lifetimeBudget")),
+    estimatedDailySpendMinor: dollarsToMinor(optionalText(formData, "estimatedDailySpend")),
+    currency: optionalText(formData, "currency"),
+    name: optionalText(formData, "name"),
+    objective: optionalText(formData, "objective"),
+  });
+  if (!parsed.success) return zodFailure(parsed.error);
+  const d = parsed.data;
+  let payload: Record<string, unknown>;
+  if (d.changeType === "pause_campaign" || d.changeType === "resume_campaign") {
+    if (!d.externalCampaignId) return fieldFailure("externalCampaignId", "Choose the campaign to change");
+    payload = { externalCampaignId: d.externalCampaignId };
+  } else if (d.changeType === "update_budget") {
+    if (!d.externalCampaignId) return fieldFailure("externalCampaignId", "Choose the campaign to change");
+    if (d.dailyBudgetMinor === undefined && d.lifetimeBudgetMinor === undefined) return fieldFailure("dailyBudget", "Enter a new daily or lifetime budget");
+    if (!d.currency) return fieldFailure("currency", "Enter the account currency (e.g. CAD)");
+    payload = { externalCampaignId: d.externalCampaignId, currency: d.currency, ...(d.dailyBudgetMinor !== undefined ? { dailyBudgetMinor: d.dailyBudgetMinor } : {}), ...(d.lifetimeBudgetMinor !== undefined ? { lifetimeBudgetMinor: d.lifetimeBudgetMinor } : {}) };
+  } else {
+    if (!d.name) return fieldFailure("name", "Name the new campaign");
+    if (!d.objective) return fieldFailure("objective", "Enter the campaign objective");
+    if (!d.currency) return fieldFailure("currency", "Enter the account currency (e.g. CAD)");
+    payload = { name: d.name, objective: d.objective, currency: d.currency, startPaused: true, ...(d.dailyBudgetMinor !== undefined ? { dailyBudgetMinor: d.dailyBudgetMinor } : {}), ...(d.lifetimeBudgetMinor !== undefined ? { lifetimeBudgetMinor: d.lifetimeBudgetMinor } : {}) };
+  }
+  const estimate = d.estimatedDailySpendMinor ?? (d.changeType === "update_budget" || d.changeType === "create_campaign" ? d.dailyBudgetMinor : undefined);
+  return run(organizationSlug, adsPath(organizationSlug), async ({ db, user, organization }) => {
+    await proposeAdChange(db, { organizationId: organization.id, channelAccountId: d.channelAccountId, actorUserId: user.userId, changeType: d.changeType, title: d.title, rationale: d.rationale, payload, externalCampaignId: d.externalCampaignId ?? null, estimatedDailySpendMinor: estimate ?? null, currency: d.currency });
+    return "Proposed. Submit it for approval when it is ready — nothing changes on the ad platform until it is approved.";
+  });
+}
+
+async function adChangeRevision(organizationSlug: string, formData: FormData, fn: (ctx: Awaited<ReturnType<typeof context>>, expectedRevision: number) => Promise<string>): Promise<ActionResult> {
+  const expectedRevision = revisionSchema.safeParse(formData.get("expectedRevision"));
+  if (!expectedRevision.success) return zodFailure(expectedRevision.error);
+  return run(organizationSlug, adsPath(organizationSlug), (ctx) => fn(ctx, expectedRevision.data));
+}
+
+export async function submitAdChangeAction(organizationSlug: string, changeRequestId: string, formData: FormData): Promise<ActionResult> {
+  return adChangeRevision(organizationSlug, formData, async ({ db, user, organization }, expectedRevision) => {
+    await submitAdChangeForApproval(db, { organizationId: organization.id, changeRequestId, actorUserId: user.userId, expectedRevision });
+    return "Submitted for approval.";
+  });
+}
+
+export async function decideAdChangeAction(organizationSlug: string, changeRequestId: string, formData: FormData): Promise<ActionResult> {
+  const parsed = z.object({ expectedRevision: revisionSchema, decision: z.enum(["approve", "reject"]), note: z.string().trim().max(2000).optional() }).safeParse({ expectedRevision: formData.get("expectedRevision"), decision: formData.get("decision"), note: optionalText(formData, "note") });
+  if (!parsed.success) return zodFailure(parsed.error);
+  return run(organizationSlug, adsPath(organizationSlug), async ({ db, user, organization }) => {
+    await decideAdChange(db, { organizationId: organization.id, changeRequestId, actorUserId: user.userId, ...parsed.data });
+    return parsed.data.decision === "approve" ? "Approved. The change is queued for execution — check back for the platform's result." : "Rejected. Nothing was changed.";
+  });
+}
+
+export async function cancelAdChangeAction(organizationSlug: string, changeRequestId: string, formData: FormData): Promise<ActionResult> {
+  return adChangeRevision(organizationSlug, formData, async ({ db, user, organization }, expectedRevision) => {
+    await cancelAdChange(db, { organizationId: organization.id, changeRequestId, actorUserId: user.userId, expectedRevision });
+    return "Cancelled.";
+  });
+}
+
+/** AI proposals from synced campaign data only. They land as `proposed` changes; none is submitted automatically. */
+export async function generateAdRecommendationsAction(organizationSlug: string, formData: FormData): Promise<ActionResult> {
+  const account = uuidSchema.safeParse(formData.get("channelAccountId"));
+  if (!account.success) return fieldFailure("channelAccountId", "Choose an ad account");
+  if (!(await textProviderConfigured())) return { ok: false, code: "social_provider_not_configured", message: "No AI text provider is configured on this server, so no recommendations can be generated." };
+  const { db, user, organization } = await context(organizationSlug, adsPath(organizationSlug));
+  let message: string;
+  try {
+    const result = await generateAdRecommendations(db, { organizationId: organization.id, channelAccountId: account.data, actorUserId: user.userId });
+    if (!result.available) return { ok: false, code: "no_synced_data", message: result.reason };
+    const n = result.recommendations.length;
+    message = n ? `${n} recommendation${n === 1 ? "" : "s"} added as proposals below${result.dropped ? ` (${result.dropped} invalid suggestion${result.dropped === 1 ? "" : "s"} discarded)` : ""}. Review each one before submitting.` : `The AI found nothing it could recommend from the synced data${result.dropped ? ` (${result.dropped} invalid suggestion${result.dropped === 1 ? "" : "s"} discarded)` : ""}.`;
+  } catch (err) {
+    return toActionResult(err);
+  }
+  revalidateSocial(organizationSlug);
+  return { ok: true, message };
+}
+
+// ---------------------------------------------------------------------------
+// Brands
+// ---------------------------------------------------------------------------
+
+export async function createBrandAction(organizationSlug: string, formData: FormData): Promise<ActionResult> {
+  const { db, user, organization } = await context(organizationSlug, `${socialPath(organizationSlug)}/brands`);
+  const parsed = brandProfileInputSchema.safeParse({
+    brandKey: text(formData, "brandKey").trim().toLowerCase(),
+    name: text(formData, "name"),
+    positioning: text(formData, "positioning"),
+    audience: text(formData, "audience"),
+    voice: text(formData, "voice"),
+    productContext: text(formData, "productContext"),
+    claimsGuardrails: text(formData, "claimsGuardrails"),
+    visualRules: text(formData, "visualRules"),
+  });
+  if (!parsed.success) return zodFailure(parsed.error);
+  let brandProfileId: string;
+  try {
+    brandProfileId = (await createBrand(db, { organizationId: organization.id, actorUserId: user.userId, brand: parsed.data })).id;
+  } catch (err) {
+    return toActionResult(err);
+  }
+  revalidateSocial(organizationSlug);
+  redirect(`${socialPath(organizationSlug)}/brands/${brandProfileId}?brand=${brandProfileId}`);
+}
+
+const BRAND_SECTIONS = ["identity", "voice", "offer", "guardrails", "visual", "content"] as const;
+const MAX_FORM_ROWS = 12;
+
+function objectiveRows(formData: FormData): { key: string; description: string; target: string }[] {
+  const rows: { key: string; description: string; target: string }[] = [];
+  for (let i = 0; i < MAX_FORM_ROWS; i++) {
+    const key = text(formData, `objectiveKey${i}`).trim();
+    const description = text(formData, `objectiveDescription${i}`).trim();
+    const target = text(formData, `objectiveTarget${i}`).trim();
+    if (key || description || target) rows.push({ key, description, target });
+  }
+  return rows;
+}
+
+function colorRows(formData: FormData): { name: string; hex: string; role: string }[] {
+  const rows: { name: string; hex: string; role: string }[] = [];
+  for (let i = 0; i < MAX_FORM_ROWS; i++) {
+    const name = text(formData, `colorName${i}`).trim();
+    let hex = text(formData, `colorHex${i}`).trim();
+    const role = text(formData, `colorRole${i}`).trim();
+    if (hex && !hex.startsWith("#")) hex = `#${hex}`;
+    if (name || (hex && hex !== "#") || role) rows.push({ name, hex, role });
+  }
+  return rows;
+}
+
+/** Saves ONE section of a brand: only that section's fields are sent, so the other sections are never reset. */
+export async function updateBrandAction(organizationSlug: string, brandProfileId: string, formData: FormData): Promise<ActionResult> {
+  const head = z.object({ expectedRevision: revisionSchema, section: z.enum(BRAND_SECTIONS) }).safeParse({ expectedRevision: formData.get("expectedRevision"), section: formData.get("section") });
+  if (!head.success) return zodFailure(head.error);
+  const { expectedRevision, section } = head.data;
+  return run(organizationSlug, `${socialPath(organizationSlug)}/brands/${brandProfileId}`, async ({ db, user, organization }) => {
+    let raw: Record<string, unknown>;
+    switch (section) {
+      case "identity":
+        raw = { name: text(formData, "name"), companyInfo: text(formData, "companyInfo"), positioning: text(formData, "positioning"), brandStory: text(formData, "brandStory"), geographicMarket: text(formData, "geographicMarket"), websites: lines(formData, "websites") };
+        break;
+      case "voice":
+        raw = { voice: text(formData, "voice"), writingStyle: text(formData, "writingStyle"), prohibitedLanguage: lines(formData, "prohibitedLanguage"), approvedExamples: lines(formData, "approvedExamples") };
+        break;
+      case "offer":
+        raw = { productContext: text(formData, "productContext"), audience: text(formData, "audience"), objectives: objectiveRows(formData) };
+        break;
+      case "guardrails":
+        raw = { claimsGuardrails: text(formData, "claimsGuardrails"), neverClaim: lines(formData, "neverClaim"), competitors: lines(formData, "competitors") };
+        break;
+      case "visual": {
+        // visualIdentity is stored whole — keep the parts this form does not edit (logo ids).
+        const current = await getBrandForUser(db, { organizationId: organization.id, brandProfileId, actorUserId: user.userId });
+        raw = {
+          visualRules: text(formData, "visualRules"),
+          visualIdentity: { colors: colorRows(formData), typography: { heading: text(formData, "typographyHeading"), body: text(formData, "typographyBody") }, logoAssetIds: current.visualIdentity.logoAssetIds, notes: text(formData, "visualNotes") },
+        };
+        break;
+      }
+      case "content":
+        raw = { contentPillars: lines(formData, "contentPillars"), preferredPlatforms: formData.getAll("preferredPlatforms").map(String).filter((p) => (SOCIAL_PLATFORMS as readonly string[]).includes(p)), callsToAction: lines(formData, "callsToAction") };
+        break;
+    }
+    const changes = parseBrandChanges(raw);
+    await updateBrand(db, { organizationId: organization.id, brandProfileId, actorUserId: user.userId, expectedRevision, changes });
+    return "Saved.";
+  });
+}
+
+export async function archiveBrandAction(organizationSlug: string, brandProfileId: string, formData: FormData): Promise<ActionResult> {
+  const { db, user, organization } = await context(organizationSlug, `${socialPath(organizationSlug)}/brands/${brandProfileId}`);
+  const expectedRevision = revisionSchema.safeParse(formData.get("expectedRevision"));
+  if (!expectedRevision.success) return zodFailure(expectedRevision.error);
+  try {
+    await archiveBrand(db, { organizationId: organization.id, brandProfileId, actorUserId: user.userId, expectedRevision: expectedRevision.data });
+  } catch (err) {
+    return toActionResult(err);
+  }
+  revalidateSocial(organizationSlug);
+  redirect(`${socialPath(organizationSlug)}/brands`);
+}
+
+// ---------------------------------------------------------------------------
+// Connection Center
+// ---------------------------------------------------------------------------
+
+function connectionsPath(organizationSlug: string) {
+  return `${socialPath(organizationSlug)}/connections`;
+}
+
+/** Re-checks the stored authorization with the provider and records the honest result. */
+export async function verifyAccountAction(organizationSlug: string, channelAccountId: string): Promise<ActionResult> {
+  const { db, user, organization } = await context(organizationSlug, connectionsPath(organizationSlug));
+  let result: ActionResult;
+  try {
+    const account = await verifyAccount(db, { organizationId: organization.id, channelAccountId, actorUserId: user.userId });
+    result = account.connectionStatus === "connected" ? { ok: true, message: "Verified — the account is connected." } : { ok: false, code: account.lastErrorCode ?? account.connectionStatus, message: `Not connected (${account.connectionStatus.replace(/_/g, " ")})${account.lastErrorMessage ? `: ${account.lastErrorMessage}` : ""}.` };
+  } catch (err) {
+    return toActionResult(err);
+  }
+  revalidateSocial(organizationSlug);
+  return result;
+}
+
+const updateAccountSchema = z.object({
+  expectedRevision: revisionSchema,
+  brandProfileId: uuidSchema,
+  displayName: z.string().trim().min(1, "Enter a display name").max(200),
+  handle: z.string().trim().max(200).nullable(),
+  externalUrl: z.string().trim().url("Enter a full URL starting with https://").max(2000).nullable(),
+});
+
+export async function updateAccountAction(organizationSlug: string, channelAccountId: string, formData: FormData): Promise<ActionResult> {
+  const parsed = updateAccountSchema.safeParse({ expectedRevision: formData.get("expectedRevision"), brandProfileId: formData.get("brandProfileId"), displayName: text(formData, "displayName"), handle: optionalText(formData, "handle") ?? null, externalUrl: optionalText(formData, "externalUrl") ?? null });
+  if (!parsed.success) return zodFailure(parsed.error);
+  const { expectedRevision, ...changes } = parsed.data;
+  return run(organizationSlug, connectionsPath(organizationSlug), async ({ db, user, organization }) => {
+    await updateAccount(db, { organizationId: organization.id, channelAccountId, actorUserId: user.userId, expectedRevision, changes });
+    return "Account saved.";
+  });
+}
+
+export async function archiveAccountAction(organizationSlug: string, channelAccountId: string, formData: FormData): Promise<ActionResult> {
+  const expectedRevision = revisionSchema.safeParse(formData.get("expectedRevision"));
+  if (!expectedRevision.success) return zodFailure(expectedRevision.error);
+  return run(organizationSlug, connectionsPath(organizationSlug), async ({ db, user, organization }) => {
+    await archiveAccount(db, { organizationId: organization.id, channelAccountId, actorUserId: user.userId, expectedRevision: expectedRevision.data });
+    return "Account archived.";
+  });
+}
+
+const manualAccountSchema = z.object({
+  brandProfileId: uuidSchema,
+  platform: z.enum(SOCIAL_PLATFORMS),
+  displayName: z.string().trim().min(1, "Enter the account name").max(200),
+  handle: z.string().trim().max(200).optional(),
+  externalUrl: z.string().trim().url("Enter a full URL starting with https://").max(2000).optional(),
+});
+
+/** A tracking-only account (no credentials): its results are recorded by hand. */
+export async function createManualAccountAction(organizationSlug: string, formData: FormData): Promise<ActionResult> {
+  const parsed = manualAccountSchema.safeParse({ brandProfileId: formData.get("brandProfileId"), platform: formData.get("platform"), displayName: text(formData, "displayName"), handle: optionalText(formData, "handle"), externalUrl: optionalText(formData, "externalUrl") });
+  if (!parsed.success) return zodFailure(parsed.error);
+  return run(organizationSlug, connectionsPath(organizationSlug), async ({ db, user, organization }) => {
+    await createManualAccount(db, { organizationId: organization.id, actorUserId: user.userId, ...parsed.data });
+    return "Manual account added.";
+  });
+}
+
+export async function disconnectConnectionAction(organizationSlug: string, connectionId: string, formData: FormData): Promise<ActionResult> {
+  const expectedRevision = revisionSchema.safeParse(formData.get("expectedRevision"));
+  if (!expectedRevision.success) return zodFailure(expectedRevision.error);
+  return run(organizationSlug, connectionsPath(organizationSlug), async ({ db, user, organization }) => {
+    await disconnectConnection(db, { organizationId: organization.id, connectionId, actorUserId: user.userId, expectedRevision: expectedRevision.data });
+    return "Disconnected. The stored authorization was revoked.";
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Automation — drafts, syncs and attention only; never publishes or spends
+// ---------------------------------------------------------------------------
+
+function automationPath(organizationSlug: string) {
+  return `${socialPath(organizationSlug)}/automation`;
+}
+
+const optionalInt = (min: number, max: number) => z.preprocess((v) => (v === "" || v === null || v === undefined ? undefined : v), z.coerce.number().int().min(min).max(max).optional());
+
+const upsertRuleSchema = z.object({
+  kind: z.enum(SOCIAL_AUTOMATION_KINDS),
+  brandProfileId: uuidSchema.nullable(),
+  enabled: z.boolean(),
+  intervalMinutes: optionalInt(1, 60 * 24 * 31),
+  postsPerWeek: optionalInt(1, 21),
+  maxDraftsPerRun: optionalInt(1, 50),
+  expiryWarningDays: optionalInt(1, 30),
+  platforms: z.array(z.enum(SOCIAL_ORGANIC_PLATFORMS)),
+});
+
+export async function upsertAutomationRuleAction(organizationSlug: string, formData: FormData): Promise<ActionResult> {
+  const parsed = upsertRuleSchema.safeParse({
+    kind: formData.get("kind"),
+    brandProfileId: optionalText(formData, "brandProfileId") ?? null,
+    enabled: formData.get("enabled") === "on" || formData.get("enabled") === "1",
+    intervalMinutes: optionalText(formData, "intervalMinutes"),
+    postsPerWeek: optionalText(formData, "postsPerWeek"),
+    maxDraftsPerRun: optionalText(formData, "maxDraftsPerRun"),
+    expiryWarningDays: optionalText(formData, "expiryWarningDays"),
+    platforms: formData.getAll("platforms").map(String),
+  });
+  if (!parsed.success) return zodFailure(parsed.error);
+  const d = parsed.data;
+  const config = {
+    ...(d.kind === "weekly_plan" && d.postsPerWeek !== undefined ? { postsPerWeek: d.postsPerWeek } : {}),
+    ...(d.kind === "weekly_plan" && d.platforms.length ? { platforms: d.platforms } : {}),
+    ...(d.kind === "reply_drafts" && d.maxDraftsPerRun !== undefined ? { maxDraftsPerRun: d.maxDraftsPerRun } : {}),
+    ...(d.kind === "token_watch" && d.expiryWarningDays !== undefined ? { expiryWarningDays: d.expiryWarningDays } : {}),
+  };
+  return run(organizationSlug, automationPath(organizationSlug), async ({ db, user, organization }) => {
+    const rule = await upsertAutomationRule(db, { organizationId: organization.id, actorUserId: user.userId, brandProfileId: d.brandProfileId, kind: d.kind, enabled: d.enabled, intervalMinutes: d.intervalMinutes, config });
+    return rule.enabled ? "Saved. The rule is on." : "Saved. The rule is off.";
+  });
+}
+
+export async function setAutomationRuleEnabledAction(organizationSlug: string, ruleId: string, formData: FormData): Promise<ActionResult> {
+  const parsed = z.object({ expectedRevision: revisionSchema, enabled: z.enum(["1", "0"]) }).safeParse({ expectedRevision: formData.get("expectedRevision"), enabled: formData.get("enabled") });
+  if (!parsed.success) return zodFailure(parsed.error);
+  return run(organizationSlug, automationPath(organizationSlug), async ({ db, user, organization }) => {
+    await setAutomationRuleEnabled(db, { organizationId: organization.id, ruleId, actorUserId: user.userId, expectedRevision: parsed.data.expectedRevision, enabled: parsed.data.enabled === "1" });
+    return parsed.data.enabled === "1" ? "Turned on." : "Turned off.";
+  });
+}
+
+export async function archiveAutomationRuleAction(organizationSlug: string, ruleId: string, formData: FormData): Promise<ActionResult> {
+  const expectedRevision = revisionSchema.safeParse(formData.get("expectedRevision"));
+  if (!expectedRevision.success) return zodFailure(expectedRevision.error);
+  return run(organizationSlug, automationPath(organizationSlug), async ({ db, user, organization }) => {
+    await archiveAutomationRule(db, { organizationId: organization.id, ruleId, actorUserId: user.userId, expectedRevision: expectedRevision.data });
+    return "Rule removed.";
+  });
+}
+
+export async function runAutomationRuleNowAction(organizationSlug: string, ruleId: string): Promise<ActionResult> {
+  return run(organizationSlug, automationPath(organizationSlug), async ({ db, user, organization }) => {
+    await runAutomationRuleNow(db, { organizationId: organization.id, ruleId, actorUserId: user.userId });
+    return "Run queued. The result appears under recent runs once the worker finishes.";
+  });
 }
