@@ -55,6 +55,32 @@ const envSchema = z.object({
   // SQL-over-HTTP requests to this endpoint (for example a local shim in
   // front of a plain Postgres) instead of `https://<neon-host>/sql`. Never
   // set in a deployed environment — the value must be a loopback URL.
+  // Module 19 — Social Command Center. Every provider is optional: when a
+  // key is absent the Connection Center / AI studio report
+  // "missing configuration" honestly and the rest of the module keeps
+  // working. Never read these outside `src/lib/social-os/providers/*`.
+  META_APP_ID: z.string().min(1).optional(),
+  META_APP_SECRET: z.string().min(1).optional(),
+  META_WEBHOOK_VERIFY_TOKEN: z.string().min(16).optional(),
+  META_GRAPH_API_VERSION: z.string().regex(/^v\d+\.\d+$/).optional(),
+  LINKEDIN_CLIENT_ID: z.string().min(1).optional(),
+  LINKEDIN_CLIENT_SECRET: z.string().min(1).optional(),
+  LINKEDIN_API_VERSION: z.string().regex(/^\d{6}$/).optional(),
+  GOOGLE_ADS_CLIENT_ID: z.string().min(1).optional(),
+  GOOGLE_ADS_CLIENT_SECRET: z.string().min(1).optional(),
+  GOOGLE_ADS_DEVELOPER_TOKEN: z.string().min(1).optional(),
+  GOOGLE_ADS_LOGIN_CUSTOMER_ID: z.string().regex(/^\d{10}$/).optional(),
+  GOOGLE_ADS_API_VERSION: z.string().regex(/^v\d+$/).optional(),
+  ANTHROPIC_API_KEY: z.string().min(1).optional(),
+  ANTHROPIC_MODEL: z.string().min(1).optional(),
+  OPENAI_API_KEY: z.string().min(1).optional(),
+  OPENAI_TEXT_MODEL: z.string().min(1).optional(),
+  OPENAI_IMAGE_MODEL: z.string().min(1).optional(),
+  HIGGSFIELD_API_KEY: z.string().min(1).optional(),
+  HIGGSFIELD_API_SECRET: z.string().min(1).optional(),
+  BLOB_READ_WRITE_TOKEN: z.string().min(1).optional(),
+  /** Hard ceiling on AI media spend per organization per calendar day (USD, estimated). Default 25. */
+  SOCIAL_AI_DAILY_BUDGET_USD: z.coerce.number().min(0).max(10000).optional(),
   NEON_HTTP_FETCH_ENDPOINT: z
     .string()
     .url()
@@ -94,6 +120,27 @@ export function loadEnv(): Env {
     RESEND_WEBHOOK_SECRET: process.env.RESEND_WEBHOOK_SECRET,
     COMMUNICATIONS_DEV_WEBHOOK_SECRET: process.env.COMMUNICATIONS_DEV_WEBHOOK_SECRET,
     NEON_HTTP_FETCH_ENDPOINT: process.env.NEON_HTTP_FETCH_ENDPOINT,
+    META_APP_ID: process.env.META_APP_ID,
+    META_APP_SECRET: process.env.META_APP_SECRET,
+    META_WEBHOOK_VERIFY_TOKEN: process.env.META_WEBHOOK_VERIFY_TOKEN,
+    META_GRAPH_API_VERSION: process.env.META_GRAPH_API_VERSION,
+    LINKEDIN_CLIENT_ID: process.env.LINKEDIN_CLIENT_ID,
+    LINKEDIN_CLIENT_SECRET: process.env.LINKEDIN_CLIENT_SECRET,
+    LINKEDIN_API_VERSION: process.env.LINKEDIN_API_VERSION,
+    GOOGLE_ADS_CLIENT_ID: process.env.GOOGLE_ADS_CLIENT_ID,
+    GOOGLE_ADS_CLIENT_SECRET: process.env.GOOGLE_ADS_CLIENT_SECRET,
+    GOOGLE_ADS_DEVELOPER_TOKEN: process.env.GOOGLE_ADS_DEVELOPER_TOKEN,
+    GOOGLE_ADS_LOGIN_CUSTOMER_ID: process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID,
+    GOOGLE_ADS_API_VERSION: process.env.GOOGLE_ADS_API_VERSION,
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+    ANTHROPIC_MODEL: process.env.ANTHROPIC_MODEL,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    OPENAI_TEXT_MODEL: process.env.OPENAI_TEXT_MODEL,
+    OPENAI_IMAGE_MODEL: process.env.OPENAI_IMAGE_MODEL,
+    HIGGSFIELD_API_KEY: process.env.HIGGSFIELD_API_KEY,
+    HIGGSFIELD_API_SECRET: process.env.HIGGSFIELD_API_SECRET,
+    BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN,
+    SOCIAL_AI_DAILY_BUDGET_USD: process.env.SOCIAL_AI_DAILY_BUDGET_USD,
   });
 
   if (!parsed.success) {

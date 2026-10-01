@@ -50,10 +50,32 @@ const ROLE_CAPABILITIES: Record<MarketingRole, MarketingCapability[]> = {
     "marketing_manage_budget",
     "marketing_approve_content",
     "marketing_manage_playbooks",
+    "marketing_manage_brands",
+    "marketing_manage_connections",
+    "marketing_generate_content",
+    "marketing_publish",
+    "marketing_manage_engagement",
+    "marketing_manage_ads",
+    "marketing_approve_ad_changes",
+    "marketing_manage_automation",
     "marketing_admin",
   ],
-  marketing_manager: ["marketing_view", "marketing_create_campaigns", "marketing_manage_campaigns", "marketing_manage_content", "marketing_manage_audiences", "marketing_manage_budget", "marketing_approve_content"],
-  marketing_contributor: ["marketing_view", "marketing_create_campaigns", "marketing_manage_content"],
+  marketing_manager: [
+    "marketing_view",
+    "marketing_create_campaigns",
+    "marketing_manage_campaigns",
+    "marketing_manage_content",
+    "marketing_manage_audiences",
+    "marketing_manage_budget",
+    "marketing_approve_content",
+    "marketing_manage_brands",
+    "marketing_generate_content",
+    "marketing_publish",
+    "marketing_manage_engagement",
+    "marketing_manage_ads",
+    "marketing_manage_automation",
+  ],
+  marketing_contributor: ["marketing_view", "marketing_create_campaigns", "marketing_manage_content", "marketing_generate_content"],
   viewer: ["marketing_view"],
 };
 
@@ -127,4 +149,29 @@ export async function requireMarketingManagePlaybooksAuthority(db: Db, ctx: Mark
 }
 export async function requireMarketingAdminAuthority(db: Db, ctx: MarketingAuthContext, targetType: string, targetId: string): Promise<void> {
   return requireMarketingCapability(db, ctx, "marketing_admin", targetType, targetId);
+}
+// Module 19 — Social Command Center authorities.
+export async function requireMarketingManageBrandsAuthority(db: Db, ctx: MarketingAuthContext, targetType: string, targetId: string): Promise<void> {
+  return requireMarketingCapability(db, ctx, "marketing_manage_brands", targetType, targetId);
+}
+export async function requireMarketingManageConnectionsAuthority(db: Db, ctx: MarketingAuthContext, targetType: string, targetId: string): Promise<void> {
+  return requireMarketingCapability(db, ctx, "marketing_manage_connections", targetType, targetId);
+}
+export async function requireMarketingGenerateContentAuthority(db: Db, ctx: MarketingAuthContext, targetType: string, targetId: string): Promise<void> {
+  return requireMarketingCapability(db, ctx, "marketing_generate_content", targetType, targetId);
+}
+export async function requireMarketingPublishAuthority(db: Db, ctx: MarketingAuthContext, targetType: string, targetId: string): Promise<void> {
+  return requireMarketingCapability(db, ctx, "marketing_publish", targetType, targetId);
+}
+export async function requireMarketingManageEngagementAuthority(db: Db, ctx: MarketingAuthContext, targetType: string, targetId: string): Promise<void> {
+  return requireMarketingCapability(db, ctx, "marketing_manage_engagement", targetType, targetId);
+}
+export async function requireMarketingManageAdsAuthority(db: Db, ctx: MarketingAuthContext, targetType: string, targetId: string): Promise<void> {
+  return requireMarketingCapability(db, ctx, "marketing_manage_ads", targetType, targetId);
+}
+export async function requireMarketingApproveAdChangesAuthority(db: Db, ctx: MarketingAuthContext, targetType: string, targetId: string): Promise<void> {
+  return requireMarketingCapability(db, ctx, "marketing_approve_ad_changes", targetType, targetId);
+}
+export async function requireMarketingManageAutomationAuthority(db: Db, ctx: MarketingAuthContext, targetType: string, targetId: string): Promise<void> {
+  return requireMarketingCapability(db, ctx, "marketing_manage_automation", targetType, targetId);
 }

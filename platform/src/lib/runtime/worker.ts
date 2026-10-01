@@ -23,6 +23,7 @@ import { workflowNodeExecutions } from "@/db/schema";
 import { processSendJob, parseMessageIdFromSendJobKey } from "@/lib/communications-os/messages";
 import { reconcileCommunications } from "@/lib/communications-os/reconciliation";
 import { notifyJarvisExecutionStopped } from "@/lib/email/jarvis-notifier";
+import { processSocialJob, classifySocialJobError } from "@/lib/social-os/worker";
 
 type Db = NeonHttpDatabase<Record<string, unknown>>;
 type RawSql = NeonQueryFunction<false, false>;
@@ -56,6 +57,8 @@ export function classifyExecutionError(err: unknown): { failureClass: JobFailure
   if (err instanceof UnsupportedAgentTaskTypeError) return { failureClass: "permanent", errorCode: "unsupported_agent_task_type", requiresHumanReview: true };
   if (err instanceof AgentTaskEligibilityError) return { failureClass: "permanent", errorCode: "agent_task_ineligible", requiresHumanReview: true };
   if (err instanceof InvalidAgentTaskInputError) return { failureClass: "permanent", errorCode: "invalid_agent_task_input", requiresHumanReview: true };
+  const social = classifySocialJobError(err);
+  if (social) return social;
   return { failureClass: "transient", errorCode: "runtime_error", requiresHumanReview: false };
 }
 
@@ -193,6 +196,18 @@ export async function processClaimedJob(db: Db, rawSql: RawSql, job: RuntimeJob,
         resultRef = summary;
         break;
       }
+      // Module 19 — every Social Command Center job is dispatched through
+      // this same queue; the social worker owns the per-type logic and the
+      // idempotency rules (never publish twice, never generate twice).
+      case "social_publish":
+      case "social_metrics_sync":
+      case "social_engagement_sync":
+      case "social_token_watch":
+      case "social_automation_run":
+      case "social_ad_change_execute":
+      case "social_generation_run":
+        resultRef = await processSocialJob(db, job);
+        break;
       default: {
         const exhaustive: never = job.jobType;
         throw new Error(`unhandled job type: ${exhaustive as string}`);

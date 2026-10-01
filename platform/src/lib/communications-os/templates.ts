@@ -58,10 +58,10 @@ export async function createTemplate(
 
   let template: CommunicationTemplate;
   try {
-    [template] = await db
+    [template] = (await db
       .insert(communicationMessageTemplates)
       .values({ organizationId: input.organizationId, workspaceId: input.workspaceId ?? null, channel: input.channel, name: input.name, templateKey: input.templateKey, purpose: input.purpose ?? null, createdByUserId: input.actorUserId })
-      .returning();
+      .returning()) as CommunicationTemplate[];
   } catch (err) {
     if (isPostgresUniqueViolation(err)) throw new CommunicationKeyAlreadyTakenError("That template key is already in use.");
     throw err;
