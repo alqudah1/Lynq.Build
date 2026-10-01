@@ -22,6 +22,9 @@ export const dynamic = "force-dynamic";
 /** Plain-language explanation of the last publish error — the raw provider message is sanitized server-side and shown after it. */
 function explainError(job: SocialPublishJobView): string | null {
   if (!job.lastErrorCode && !job.lastErrorMessage) return null;
+  if (job.lastErrorCode === "publish_outcome_unknown") {
+    return "LYNQ sent this post to the platform but never heard back whether it went live, so it stopped rather than risk posting twice. Check the account on the platform: if the post is there, archive this job; if it is not, use Retry.";
+  }
   const lead =
     job.lastErrorClass === "authorization_lost"
       ? "The account's authorization was lost — reconnect it in Connections."

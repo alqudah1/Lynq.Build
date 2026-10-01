@@ -159,3 +159,20 @@ the LinkedIn app (Community Management API, Advertising API; redirect
 project with the Google Ads API enabled and an OAuth web client (redirect
 `${AUTH_BASE_URL}/api/social/oauth/google_ads/callback`), and set the keys
 listed in `.env.example` under "Module 19".
+
+## 8. Verification record (2026-10-01)
+
+- `npm run typecheck` 0 errors · `npm run lint` 0 problems · `npm run build` passes.
+- Unit: 1,335 tests (1,166 pre-existing, all intact). Integration against a real Postgres: 1,279 tests (1,208 pre-existing, all intact).
+- Browser (headless Chromium, 1440×900 and 390×844, HTTPS dev server): overview, brand switching, create → drafts, variant edit/stale-save/hashtags, submit refused on an unconnected account, mobile approvals (sticky bar, request changes → draft → resubmit → approve & schedule → cancel → publish now → honest retrying state after the worker ran), calendar day/week/month + drag/move + gaps, inbox draft/send/status/lead/assign, analytics null-vs-zero, advertising propose → submit → approve → honest execution failure, brand section edit, Connection Center states, automation run, settings, AI manager setup state, Founder approvals/attention, no-access and cross-org 404/403.
+- Independent audit: 4 HIGH findings fixed with regression tests (duplicate post on lease loss, retry of an ambiguous final create call, stale approval in the Founder Approval Center, double reply), plus open-redirect, SSRF, Communications isolation, cancel/claim races, env blanks, atomic daily media budget.
+
+## 9. Known limitations (state reality)
+
+- **Approver model.** `approveRequest` (Agent Runtime) only lets an org owner/admin or the submitting user decide. A `marketing_manager` who is a plain org member cannot approve another person's post or ad change (same limitation as Module 15). The founder (org owner) can. Changing this requires a runtime approver-rule change owned by the release lane.
+- **`publish_outcome_unknown`.** If a worker dies after the platform accepted a post but before LYNQ recorded it, the job stops for a human instead of posting twice. The Publishing screen explains what to check.
+- **DNS rebinding.** External asset URLs are checked against private ranges at create and on every redirect hop, but DNS is not pinned.
+- **Unverified against live providers.** Every adapter is built from official documentation and unit-tested with recorded request/response shapes, but no real Meta/LinkedIn/Google/Runway/Higgsfield/OpenAI/Anthropic call was possible from this environment (no credentials, outbound network blocked). Status: IMPLEMENTED — EXTERNAL AUTHORIZATION REQUIRED.
+- **Not supported through official APIs in this build:** TikTok, YouTube, X (tracking-only manual accounts); LinkedIn comment hiding; Instagram/Facebook DMs (comments and mentions only); LinkedIn member-profile insights.
+- **Account reach** is summed across disjoint 28-day windows; unique reach is not additive across periods.
+- A failed ad change or dead-lettered publish job appears twice in Founder attention (domain item + dead-letter item).
