@@ -163,11 +163,18 @@ export async function createBrand(db: Db, input: { organizationId: string; actor
   return toSocialBrand(row);
 }
 
+/** Zod 4 fills defaults for keys a `.partial()` schema did not receive; keep only the keys the caller actually sent so a partial update never resets other fields. */
+export function parseBrandChanges(raw: unknown): BrandProfileUpdate {
+  const parsed = brandProfileUpdateSchema.parse(raw ?? {});
+  const sent = raw && typeof raw === "object" ? new Set(Object.entries(raw as Record<string, unknown>).filter(([, v]) => v !== undefined).map(([k]) => k)) : new Set<string>();
+  return Object.fromEntries(Object.entries(parsed).filter(([k]) => sent.has(k))) as BrandProfileUpdate;
+}
+
 export async function updateBrand(db: Db, input: { organizationId: string; brandProfileId: string; actorUserId: string; expectedRevision: number; changes: BrandProfileUpdate }): Promise<SocialBrand> {
   const ctx = await resolveMarketingAuthContext(db, { organizationId: input.organizationId, actorUserId: input.actorUserId });
   await requireMarketingManageBrandsAuthority(db, ctx, "marketing_brand_profile", input.brandProfileId);
   await requireActiveBrand(db, input.organizationId, input.brandProfileId);
-  const changes = brandProfileUpdateSchema.parse(input.changes);
+  const changes = parseBrandChanges(input.changes);
   const [row] = await db
     .update(marketingBrandProfiles)
     .set({ ...toColumns(changes), revision: input.expectedRevision + 1, updatedAt: new Date() })
