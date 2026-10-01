@@ -51,6 +51,17 @@ const envSchema = z.object({
   // a real provider. Optional; if absent, the dev webhook route rejects
   // every request rather than accepting one unauthenticated.
   COMMUNICATIONS_DEV_WEBHOOK_SECRET: z.string().min(1).optional(),
+  // Local development only. When set, the Neon HTTP driver sends its
+  // SQL-over-HTTP requests to this endpoint (for example a local shim in
+  // front of a plain Postgres) instead of `https://<neon-host>/sql`. Never
+  // set in a deployed environment — the value must be a loopback URL.
+  NEON_HTTP_FETCH_ENDPOINT: z
+    .string()
+    .url()
+    .refine((value) => /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?\//.test(value), {
+      message: "NEON_HTTP_FETCH_ENDPOINT must point at a loopback address",
+    })
+    .optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -81,6 +92,8 @@ export function loadEnv(): Env {
     INTEGRATION_CREDENTIAL_ENCRYPTION_KEY: process.env.INTEGRATION_CREDENTIAL_ENCRYPTION_KEY,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     RESEND_WEBHOOK_SECRET: process.env.RESEND_WEBHOOK_SECRET,
+    COMMUNICATIONS_DEV_WEBHOOK_SECRET: process.env.COMMUNICATIONS_DEV_WEBHOOK_SECRET,
+    NEON_HTTP_FETCH_ENDPOINT: process.env.NEON_HTTP_FETCH_ENDPOINT,
   });
 
   if (!parsed.success) {
