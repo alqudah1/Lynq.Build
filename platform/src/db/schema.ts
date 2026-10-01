@@ -6269,7 +6269,8 @@ export const socialAutomationRules = pgTable("social_automation_rules", {
 }, (t) => [
   foreignKey({ name: "social_automation_rules_brand_org_fk", columns: [t.brandProfileId, t.organizationId], foreignColumns: [marketingBrandProfiles.id, marketingBrandProfiles.organizationId] }).onDelete("cascade"),
   unique("social_automation_rules_id_org_unique").on(t.id, t.organizationId),
-  uniqueIndex("social_automation_rules_scope_kind_unique").on(t.organizationId, t.brandProfileId, t.kind).where(sql`${t.archivedAt} IS NULL`),
+  // `coalesce` so an org-level rule (NULL brand) is unique too — Postgres treats NULLs as distinct in a plain unique index.
+  uniqueIndex("social_automation_rules_scope_kind_unique").on(t.organizationId, sql`coalesce(${t.brandProfileId}, '00000000-0000-0000-0000-000000000000'::uuid)`, t.kind).where(sql`${t.archivedAt} IS NULL`),
   index("social_automation_rules_due_idx").on(t.enabled, t.nextRunAt),
 ]);
 

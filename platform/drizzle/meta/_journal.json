@@ -323,6 +323,13 @@
       "when": 1790882533559,
       "tag": "0045_social_command_center_module19",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1790889336451,
+      "tag": "0046_social_automation_rule_scope_unique",
+      "breakpoints": true
     }
   ]
 }

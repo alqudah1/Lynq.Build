@@ -1,4 +1,5 @@
 import "server-only";
+import { socialAttentionRules } from "@/lib/social-os/attention";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { and, eq, lt, isNotNull, gte, lte, sql, count, desc, like } from "drizzle-orm";
 import {
@@ -535,6 +536,8 @@ export async function computeAttentionItems(db: Db, input: AttentionEngineInput)
     ["founder_workspace_view", () => crmRules(ctx)],
     ["founder_workspace_view_sales", () => salesRules(ctx)],
     ["founder_workspace_view_marketing", () => marketingRules(ctx)],
+    // Module 19 — Social Command Center items (pending post approvals, lost authorizations, stale platforms, ad anomalies).
+    ["founder_workspace_view_marketing", () => socialAttentionRules(ctx)],
     ["founder_workspace_view_operations", () => deliveryRules(ctx)],
     ["founder_workspace_view_operations", () => operationsRules(ctx)],
     ["founder_workspace_view_operations", () => communicationsRules(ctx)],
