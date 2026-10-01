@@ -1,6 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { marketingChannelAccounts, marketingContentItems, runtimeJobs, socialAssets, socialContentVariants, socialPublishJobs } from "@/db/schema";
 import { recordAuditEvent } from "@/lib/audit";
@@ -13,7 +13,7 @@ import { enqueueJob, cancelJob } from "@/lib/runtime/queue";
 import { resolveMarketingAuthContext, hasMarketingCapability, requireMarketingViewAuthority, requireMarketingPublishAuthority } from "@/lib/marketing-os/authz";
 import { resolveSocialAccountCredential, recordAccountError } from "./connections";
 import { resolveAdapterForPlatform, type SocialProviderEnv } from "./providers/social/registry";
-import { providerStateFromError, redactSecrets } from "./providers/social/http";
+import { PUBLISH_OUTCOME_UNKNOWN, providerStateFromError, redactSecrets } from "./providers/social/http";
 import type { FetchLike, PublishInput, PublishMediaInput } from "./providers/social/types";
 import { assetPublicUrl, resolveAssetBytes, type SocialAssetStorage } from "./assets";
 import { blockingMessages, computeStoredVariantWarnings, recordVariantPublished, recordVariantPublishFailed, resolveVariantRow, scheduleWarning, syncContentItemStatus } from "./content";
@@ -52,6 +52,22 @@ type JobRow = typeof socialPublishJobs.$inferSelect;
  */
 
 export const DEFAULT_PUBLISH_MAX_ATTEMPTS = 4;
+
+/**
+ * Written to `provider_state` immediately before the adapter is called and
+ * removed with whatever outcome is recorded. If a re-delivered job still
+ * carries it, the previous worker died (or lost its lease) while talking to
+ * the platform: the post may already be public, so the job fails as
+ * `publish_outcome_unknown` for a human to check instead of posting again.
+ */
+const IN_FLIGHT_KEY = "lynqProviderCallStartedAt";
+
+function withoutInFlight(state: unknown): Record<string, unknown> {
+  if (!state || typeof state !== "object" || Array.isArray(state)) return {};
+  const { [IN_FLIGHT_KEY]: _ignored, ...rest } = state as Record<string, unknown>;
+  void _ignored;
+  return rest;
+}
 const ACTIVE_JOB_STATUSES: SocialPublishJobStatus[] = ["queued", "processing", "retrying"];
 
 export interface SocialPublishJobView {
@@ -214,9 +230,11 @@ async function markCancelled(db: Db, job: JobRow, actorUserId: string | null): P
   const [row] = await db
     .update(socialPublishJobs)
     .set({ status: "cancelled", cancelledAt: now, revision: job.revision + 1, updatedAt: now })
-    .where(and(eq(socialPublishJobs.id, job.id), eq(socialPublishJobs.organizationId, job.organizationId), inArray(socialPublishJobs.status, ["queued", "retrying", "processing"])))
+    // Revision CAS + never `processing`: a cancel that raced the worker's claim loses instead of
+    // flipping a job that is mid-call with the platform (which would then publish "cancelled").
+    .where(and(eq(socialPublishJobs.id, job.id), eq(socialPublishJobs.organizationId, job.organizationId), eq(socialPublishJobs.revision, job.revision), inArray(socialPublishJobs.status, ["queued", "retrying"])))
     .returning();
-  await cancelRuntimeJob(db, job, actorUserId);
+  if (row) await cancelRuntimeJob(db, job, actorUserId);
   return row ?? null;
 }
 
@@ -365,6 +383,14 @@ export async function processPublishJob(db: Db, input: { organizationId: string;
   if (!claimed) return { outcome: "skipped", skipped: true, reason: "claim_lost" };
   let job = claimed;
 
+  const interrupted = loaded.status === "processing" && Boolean(loaded.providerState && typeof loaded.providerState === "object" && (loaded.providerState as Record<string, unknown>)[IN_FLIGHT_KEY]);
+  if (interrupted) {
+    const message = "A previous publish attempt was interrupted while the platform was processing it, so the post may already be public. Check the account; retry only if it is not there.";
+    job = await updateJob(db, job, { status: "failed", failedAt: clock(), providerState: withoutInFlight(job.providerState), lastErrorCode: PUBLISH_OUTCOME_UNKNOWN, lastErrorMessage: message, lastErrorClass: "unsafe_uncertain" });
+    await recordVariantPublishFailed(db, { organizationId: input.organizationId, contentVariantId: job.contentVariantId, code: PUBLISH_OUTCOME_UNKNOWN, message, publishJobId: job.id });
+    throw new SocialProviderError(SOCIAL_PLATFORM_PROVIDER[job.platform as SocialOrganicPlatform] ?? job.platform, PUBLISH_OUTCOME_UNKNOWN, message, { retryable: false });
+  }
+
   const [variant] = await db.select().from(socialContentVariants).where(and(eq(socialContentVariants.id, job.contentVariantId), eq(socialContentVariants.organizationId, input.organizationId)));
   if (!variant || variant.archivedAt || !["scheduled", "publishing", "approved"].includes(variant.status)) {
     job = await updateJob(db, job, { status: "cancelled", cancelledAt: clock(), lastErrorCode: "variant_not_publishable", lastErrorMessage: `The post is ${variant ? (variant.archivedAt ? "archived" : variant.status) : "missing"}; nothing was published.` });
@@ -376,13 +402,14 @@ export async function processPublishJob(db: Db, input: { organizationId: string;
     const details = errorDetails(err);
     const state = providerStateFromError(err);
     const retryable = err instanceof SocialProviderError && err.retryable && job.attemptCount < job.maxAttempts;
+    const unknownOutcome = err instanceof SocialProviderError && err.code === PUBLISH_OUTCOME_UNKNOWN;
     const now = clock();
     job = await updateJob(db, job, {
       status: retryable ? "retrying" : "failed",
-      ...(state ? { providerState: { ...(job.providerState as Record<string, unknown>), ...state } } : {}),
+      providerState: { ...withoutInFlight(job.providerState), ...withoutInFlight(state) },
       lastErrorCode: details.code.slice(0, 100),
       lastErrorMessage: details.message,
-      lastErrorClass: details.errorClass,
+      lastErrorClass: unknownOutcome ? "unsafe_uncertain" : details.errorClass,
       ...(retryable ? {} : { failedAt: now }),
     });
     if (!retryable) {
@@ -408,7 +435,17 @@ export async function processPublishJob(db: Db, input: { organizationId: string;
     if (variant.channelAccountId !== job.channelAccountId) throw new SocialVariantNotPublishableError(["the post's account changed after it was queued"]);
 
     if (variant.status !== "publishing") {
-      await db.update(socialContentVariants).set({ status: "publishing", revision: variant.revision + 1, updatedAt: new Date() }).where(and(eq(socialContentVariants.id, variant.id), eq(socialContentVariants.organizationId, input.organizationId)));
+      // CAS: an unschedule/edit that landed after we read the variant wins, and nothing is published.
+      const [moved] = await db
+        .update(socialContentVariants)
+        .set({ status: "publishing", revision: variant.revision + 1, updatedAt: new Date() })
+        .where(and(eq(socialContentVariants.id, variant.id), eq(socialContentVariants.organizationId, input.organizationId), eq(socialContentVariants.revision, variant.revision), eq(socialContentVariants.status, variant.status)))
+        .returning({ id: socialContentVariants.id });
+      if (!moved) {
+        job = await updateJob(db, job, { status: "cancelled", cancelledAt: clock(), providerState: withoutInFlight(job.providerState), lastErrorCode: "variant_changed", lastErrorMessage: "The post changed while it was being queued for publishing; nothing was published." });
+        await recordAuditEvent(db, { eventType: "social_publish_job_cancelled", organizationId: input.organizationId, targetType: "social_publish_job", targetId: job.id, metadata: { reason: "variant_changed" } });
+        return { outcome: "cancelled", skipped: true };
+      }
     }
 
     const env = deps.env ?? loadEnv();
@@ -426,20 +463,33 @@ export async function processPublishJob(db: Db, input: { organizationId: string;
       media: await buildMedia(db, input.organizationId, platform, variant.media, deps),
       platformOptions: variant.platformOptions && typeof variant.platformOptions === "object" ? (variant.platformOptions as Record<string, unknown>) : {},
       idempotencyKey: job.idempotencyKey,
-      providerState: job.providerState && typeof job.providerState === "object" ? (job.providerState as Record<string, unknown>) : {},
+      providerState: withoutInFlight(job.providerState),
       scheduledFor: job.scheduledFor,
     };
+    job = await updateJob(db, job, { providerState: { ...publishInput.providerState, [IN_FLIGHT_KEY]: clock().toISOString() } });
     const result = await adapter.publish(credential, publishInput);
 
     if (result.outcome === "pending") {
       const exhausted = job.attemptCount >= job.maxAttempts;
-      job = await updateJob(db, job, { status: "retrying", providerState: result.providerState ?? publishInput.providerState, lastErrorCode: "pending", lastErrorMessage: "The platform is still processing the media; the publish will be retried.", lastErrorClass: "transient" });
+      job = await updateJob(db, job, { status: "retrying", providerState: withoutInFlight(result.providerState ?? publishInput.providerState), lastErrorCode: "pending", lastErrorMessage: "The platform is still processing the media; the publish will be retried.", lastErrorClass: "transient" });
       throw new SocialProviderError(adapter.provider, exhausted ? "pending_timeout" : "pending", exhausted ? "the platform did not finish processing the media in time" : "the platform is still processing the media", { retryable: !exhausted });
     }
     if (!result.externalPostId) throw new SocialProviderError(adapter.provider, "missing_post_id", "the platform did not return a post id", { retryable: false });
 
     const publishedAt = result.outcome === "scheduled_natively" && job.scheduledFor > clock() ? job.scheduledFor : clock();
-    job = await updateJob(db, job, { status: "published", publishedAt, externalPostId: result.externalPostId, externalPostUrl: result.externalPostUrl ?? null, providerState: {}, lastErrorCode: null, lastErrorMessage: null, lastErrorClass: null });
+    const publishedSet = { status: "published" as const, publishedAt, externalPostId: result.externalPostId, externalPostUrl: result.externalPostUrl ?? null, providerState: {}, lastErrorCode: null, lastErrorMessage: null, lastErrorClass: null };
+    try {
+      job = await updateJob(db, job, publishedSet);
+    } catch (casErr) {
+      // The post IS public: record that truth even if the job row moved meanwhile (e.g. a reclaim marked it unknown).
+      if (!(casErr instanceof StaleSocialUpdateError)) throw casErr;
+      const [forced] = await db
+        .update(socialPublishJobs)
+        .set({ ...publishedSet, failedAt: null, revision: sql`${socialPublishJobs.revision} + 1`, updatedAt: new Date() })
+        .where(and(eq(socialPublishJobs.id, job.id), eq(socialPublishJobs.organizationId, job.organizationId)))
+        .returning();
+      job = forced ?? job;
+    }
     await recordVariantPublished(db, { organizationId: input.organizationId, contentVariantId: variant.id, externalPostId: result.externalPostId, externalPostUrl: result.externalPostUrl ?? null, publishedAt, publishJobId: job.id });
     await db.update(marketingChannelAccounts).set({ lastSyncAt: new Date(), updatedAt: new Date() }).where(and(eq(marketingChannelAccounts.id, job.channelAccountId), eq(marketingChannelAccounts.organizationId, input.organizationId)));
     return { outcome: result.outcome, externalPostId: result.externalPostId };

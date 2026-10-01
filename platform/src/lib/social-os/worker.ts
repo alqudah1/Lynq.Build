@@ -72,6 +72,8 @@ export function parseSocialJobRecordId(idempotencyKey: string): string | null {
  */
 export function classifySocialJobError(err: unknown): { failureClass: JobFailureClass; errorCode: string; requiresHumanReview: boolean } | null {
   if (err instanceof SocialProviderError) {
+    // The platform may already have published: never retried automatically, always surfaced to a human.
+    if (err.code === "publish_outcome_unknown") return { failureClass: "unsafe_uncertain", errorCode: err.code, requiresHumanReview: true };
     if (err.authorizationLost) return { failureClass: "permission_revoked", errorCode: err.code, requiresHumanReview: true };
     return err.retryable ? { failureClass: "transient", errorCode: err.code, requiresHumanReview: false } : { failureClass: "permanent", errorCode: err.code, requiresHumanReview: true };
   }

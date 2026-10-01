@@ -89,7 +89,7 @@ describe("LinkedIn publishing", () => {
       { match: (u) => u.includes("/rest/images?action=initializeUpload"), respond: () => ({ json: { value: { uploadUrl: "https://upload.linkedin.test/img1", image: "urn:li:image:I1" } } }) },
       { match: (u) => u === "https://cdn.example.com/a.jpg", respond: () => ({ json: "bytes" }) },
       { match: (u, i) => u.startsWith("https://upload.linkedin.test") && i?.method === "PUT", respond: () => ({ status: 201 }) },
-      { match: (u) => u.endsWith("/rest/posts"), respond: () => (++posts === 1 ? { status: 500, json: { message: "boom" } } : { status: 201, headers: { "x-restli-id": "urn:li:share:9" } }) },
+      { match: (u) => u.endsWith("/rest/posts"), respond: () => (++posts === 1 ? { status: 429, json: { message: "throttled" } } : { status: 201, headers: { "x-restli-id": "urn:li:share:9" } }) },
     ]);
     const adapter = createLinkedInAdapter(env, { fetchImpl });
     const media = [{ assetId: "a1", url: "https://cdn.example.com/a.jpg", contentType: "image/jpeg", role: "primary" as const, position: 0, altText: "logo" }];
@@ -104,6 +104,14 @@ describe("LinkedIn publishing", () => {
     const retryCalls = calls.slice(before);
     expect(retryCalls.some((c) => c.url.includes("initializeUpload"))).toBe(false);
     expect(JSON.parse(String(retryCalls[0].init?.body)).content).toEqual({ media: { id: "urn:li:image:I1", altText: "logo" } });
+  });
+
+  it("an ambiguous failure (HTTP 5xx) of the post-creating call is final: outcome unknown, never retried", async () => {
+    const { fetchImpl } = fake([{ match: (u) => u.endsWith("/rest/posts"), respond: () => ({ status: 500, json: { message: "boom" } }) }]);
+    const err = await createLinkedInAdapter(env, { fetchImpl }).publish!(org, input({ format: "text" })).catch((e) => e);
+    expect(err).toBeInstanceOf(SocialProviderError);
+    expect(err.code).toBe("publish_outcome_unknown");
+    expect(err.retryable).toBe(false);
   });
 
   it("uploads a video in parts, finalizes with ETags and waits for AVAILABLE", async () => {

@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 
 vi.mock("next/headers", () => ({ cookies: vi.fn() }));
 
-import { signSocialOAuthPayload, verifySocialOAuthPayload, generateState, SocialOAuthCookieInvalidError, type SocialOAuthPayload } from "./state";
+import { signSocialOAuthPayload, verifySocialOAuthPayload, generateState, isSafeSocialRedirectPath, SocialOAuthCookieInvalidError, type SocialOAuthPayload } from "./state";
 import { SocialOAuthStateError } from "../errors";
 
 const SECRET = "x".repeat(40);
@@ -58,5 +58,13 @@ describe("social OAuth state cookie", () => {
     const a = generateState();
     expect(a).toMatch(/^[A-Za-z0-9_-]{43}$/);
     expect(generateState()).not.toBe(a);
+  });
+
+  it("refuses redirect paths a browser would resolve off-origin (backslash, tab, newline)", () => {
+    for (const bad of ["/\\evil.com", "/\t/evil.com", "/\n/evil.com", "//evil.com", "https://evil.com", "/x://y", "evil", ""]) {
+      expect(isSafeSocialRedirectPath(bad)).toBe(false);
+      expect(() => verifySocialOAuthPayload(signSocialOAuthPayload(payload({ redirectTo: bad }), SECRET), SECRET)).toThrow(SocialOAuthCookieInvalidError);
+    }
+    expect(isSafeSocialRedirectPath("/app/acme/social/connections?tab=1")).toBe(true);
   });
 });

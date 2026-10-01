@@ -10,7 +10,6 @@ import { DomainRuleViolationError } from "@/lib/authz/errors";
 import { isPostgresUniqueViolation } from "@/lib/brain/db-errors";
 import { loadEnv } from "@/lib/env";
 import { loadAuthEnv } from "@/lib/auth/env";
-import { isSafeRedirectTarget } from "@/lib/auth/redirects";
 import { encryptCredentialSecret, decryptCredentialSecret } from "@/lib/communications-os/secrets";
 import { resolveMarketingAuthContext, requireMarketingViewAuthority, requireMarketingManageConnectionsAuthority } from "@/lib/marketing-os/authz";
 import { resolveBrandById, requireActiveBrand } from "./brands";
@@ -36,7 +35,7 @@ import {
 import { resolveSocialProviderAdapter, SOCIAL_PROVIDER_IDS, SOCIAL_PROVIDER_LABELS, type SocialProviderEnv } from "./providers/social/registry";
 import { redactSecrets } from "./providers/social/http";
 import { buildProviderAuthorizationUrl, exchangeProviderCode, socialOAuthRedirectUri, type StoredSocialTokenBundle } from "./oauth/providers";
-import { generateState, type NewSocialOAuthPayload } from "./oauth/state";
+import { generateState, isSafeSocialRedirectPath, type NewSocialOAuthPayload } from "./oauth/state";
 import type { DiscoveredAsset, FetchLike, SocialAccountCredential, SocialProviderAdapter, SocialProviderId, SocialTokenBundle } from "./providers/social/types";
 
 type Db = NeonHttpDatabase<Record<string, unknown>>;
@@ -342,7 +341,7 @@ export async function beginConnection(
   const state = generateState();
   const redirectUri = socialOAuthRedirectUri(authEnv.AUTH_BASE_URL, input.provider);
   const authorizationUrl = buildProviderAuthorizationUrl(input.provider, env, { redirectUri, state });
-  const redirectTo = isSafeRedirectTarget(input.redirectTo) ? input.redirectTo : "/";
+  const redirectTo = isSafeSocialRedirectPath(input.redirectTo) ? input.redirectTo : "/";
   await recordAuditEvent(db, { eventType: "social_connection_started", actorUserId: input.actorUserId, organizationId: input.organizationId, targetType: "marketing_brand_profile", targetId: input.brandProfileId, metadata: { provider: input.provider } });
   return { authorizationUrl, cookiePayload: { provider: input.provider, state, organizationId: input.organizationId, brandProfileId: input.brandProfileId, actorUserId: input.actorUserId, redirectTo } };
 }

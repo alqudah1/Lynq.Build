@@ -1,6 +1,6 @@
 import { SocialProviderError, SocialProviderNotSupportedError } from "../../errors";
 import { socialAdChangePayloadSchemas, type SocialAdChangeType, SOCIAL_AD_CHANGE_TYPES } from "../../validation";
-import { jsonRequest, withQuery, composeCaption, numberOrUndefined, defaultSleep, attachProviderState, isoDate } from "./http";
+import { jsonRequest, withQuery, composeCaption, numberOrUndefined, defaultSleep, attachProviderState, isoDate, nonIdempotentCreate } from "./http";
 import type {
   AccountInsights,
   AdCampaignRecord,
@@ -287,12 +287,12 @@ export function createMetaAdapter(env: MetaEnv, deps: MetaAdapterDeps = {}): Soc
     if (input.format === "video" || (media.length === 1 && isVideo(media[0]))) {
       const video = media[0];
       if (!video) throw new SocialProviderError("meta", "media_required", "A video post needs a video", { retryable: false });
-      const res = await graph<{ id: string }>("POST", `/${pageId}/videos`, token, { body: { file_url: mediaUrl(video), description: caption, ...scheduleFields } });
+      const res = await nonIdempotentCreate("meta", () => graph<{ id: string }>("POST", `/${pageId}/videos`, token, { body: { file_url: mediaUrl(video), description: caption, ...scheduleFields } }));
       return { outcome, externalPostId: res.id, externalPostUrl: `https://www.facebook.com/${pageId}/videos/${res.id}` };
     }
 
     if (media.length === 1 && (input.format === "image" || input.format === "carousel")) {
-      const res = await graph<{ id: string; post_id?: string }>("POST", `/${pageId}/photos`, token, { body: { url: mediaUrl(media[0]), message: caption, ...scheduleFields } });
+      const res = await nonIdempotentCreate("meta", () => graph<{ id: string; post_id?: string }>("POST", `/${pageId}/photos`, token, { body: { url: mediaUrl(media[0]), message: caption, ...scheduleFields } }));
       const postId = res.post_id ?? res.id;
       return { outcome, externalPostId: postId, externalPostUrl: `https://www.facebook.com/${postId}` };
     }
@@ -305,7 +305,7 @@ export function createMetaAdapter(env: MetaEnv, deps: MetaAdapterDeps = {}): Soc
           const res = await graph<{ id: string }>("POST", `/${pageId}/photos`, token, { body: { url: mediaUrl(media[i]), published: false, ...(media[i].altText ? { alt_text_custom: media[i].altText } : {}) } });
           photoIds.push(res.id);
         }
-        const res = await graph<{ id: string }>("POST", `/${pageId}/feed`, token, { body: { message: caption, attached_media: photoIds.map((id) => ({ media_fbid: id })), ...scheduleFields } });
+        const res = await nonIdempotentCreate("meta", () => graph<{ id: string }>("POST", `/${pageId}/feed`, token, { body: { message: caption, attached_media: photoIds.map((id) => ({ media_fbid: id })), ...scheduleFields } }));
         return { outcome, externalPostId: res.id, externalPostUrl: `https://www.facebook.com/${res.id}` };
       } catch (err) {
         if (err instanceof Error) attachProviderState(err, { ...input.providerState, photoIds });
@@ -313,7 +313,7 @@ export function createMetaAdapter(env: MetaEnv, deps: MetaAdapterDeps = {}): Soc
       }
     }
 
-    const res = await graph<{ id: string }>("POST", `/${pageId}/feed`, token, { body: { message: caption, ...(input.linkUrl ? { link: input.linkUrl } : {}), ...scheduleFields } });
+    const res = await nonIdempotentCreate("meta", () => graph<{ id: string }>("POST", `/${pageId}/feed`, token, { body: { message: caption, ...(input.linkUrl ? { link: input.linkUrl } : {}), ...scheduleFields } }));
     return { outcome, externalPostId: res.id, externalPostUrl: `https://www.facebook.com/${res.id}` };
   }
 
@@ -604,11 +604,11 @@ export function createMetaAdapter(env: MetaEnv, deps: MetaAdapterDeps = {}): Soc
     const token = tokenFor(credential);
     if (item.itemType !== "comment") throw new SocialProviderNotSupportedError(credential.platform, `replying to a ${item.itemType}`);
     if (credential.platform === "facebook") {
-      const res = await graph<{ id: string }>("POST", `/${item.externalId}/comments`, token, { body: { message } });
+      const res = await nonIdempotentCreate("meta", () => graph<{ id: string }>("POST", `/${item.externalId}/comments`, token, { body: { message } }));
       return { externalReplyId: res.id };
     }
     if (credential.platform === "instagram") {
-      const res = await graph<{ id: string }>("POST", `/${item.externalId}/replies`, token, { body: { message } });
+      const res = await nonIdempotentCreate("meta", () => graph<{ id: string }>("POST", `/${item.externalId}/replies`, token, { body: { message } }));
       return { externalReplyId: res.id };
     }
     throw new SocialProviderNotSupportedError(credential.platform, "replies");

@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, inArray, isNull, min, sql, count } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, min, ne, sql, count } from "drizzle-orm";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { crmSources, marketingBrandProfiles, marketingChannelAccounts, marketingContentItems, socialContentVariants, socialEngagementItems } from "@/db/schema";
 import { recordAuditEvent } from "@/lib/audit";
@@ -383,6 +383,14 @@ export async function sendReply(db: Db, input: { organizationId: string; engagem
   const { credential } = await resolveSocialAccountCredential(db, { organizationId: input.organizationId, channelAccountId: item.channelAccountId, deps: input.deps });
   const adapter = resolveAdapterForPlatform(item.platform, providerEnvOf(input.deps), adapterDepsOf(input.deps));
   if (!adapter.replyToEngagement) throw new SocialProviderNotSupportedError(item.platform, "replies");
+  // Claim the item (revision CAS, status unchanged) BEFORE the public reply: a double-submit or a second
+  // person replying concurrently loses here instead of posting a second public reply.
+  const [claimed] = await db
+    .update(socialEngagementItems)
+    .set({ revision: input.expectedRevision + 1, updatedAt: new Date() })
+    .where(and(eq(socialEngagementItems.id, item.id), eq(socialEngagementItems.organizationId, input.organizationId), eq(socialEngagementItems.revision, input.expectedRevision), ne(socialEngagementItems.status, "replied")))
+    .returning({ revision: socialEngagementItems.revision });
+  if (!claimed) throw new StaleSocialUpdateError("engagement item");
   let externalReplyId: string;
   try {
     ({ externalReplyId } = await adapter.replyToEngagement(credential, { itemType: item.itemType, externalId: item.externalId, externalPostId: item.externalPostId }, text));
@@ -394,8 +402,8 @@ export async function sendReply(db: Db, input: { organizationId: string; engagem
   const set = { replyText: text, repliedAt: now, repliedByUserId: input.actorUserId, externalReplyId, status: "replied" as const };
   let [row] = await db
     .update(socialEngagementItems)
-    .set({ ...set, revision: input.expectedRevision + 1, updatedAt: now })
-    .where(and(eq(socialEngagementItems.id, item.id), eq(socialEngagementItems.organizationId, input.organizationId), eq(socialEngagementItems.revision, input.expectedRevision)))
+    .set({ ...set, revision: claimed.revision + 1, updatedAt: now })
+    .where(and(eq(socialEngagementItems.id, item.id), eq(socialEngagementItems.organizationId, input.organizationId), eq(socialEngagementItems.revision, claimed.revision)))
     .returning();
   if (!row) {
     // The reply is already public — record it even though someone else touched the item meanwhile.

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sniffImageDimensions, createAssetDeliveryToken, verifyAssetDeliveryToken, assetPublicUrl, safeAssetFilename } from "./assets";
+import { sniffImageDimensions, createAssetDeliveryToken, verifyAssetDeliveryToken, assetPublicUrl, safeAssetFilename, isPublicHttpsUrl, openAssetStream, type SocialAssetRow } from "./assets";
 // Same bytes as test-helpers TINY_JPEG (test-helpers opens a DB connection, so it is not imported in a unit test).
 const TINY_JPEG = Uint8Array.from([
   0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0xff, 0xdb, 0x00, 0x43, 0x00, 0x03, 0x02, 0x02, 0x02, 0x02, 0x02, 0x03, 0x02, 0x02, 0x02, 0x03, 0x03, 0x03, 0x03, 0x04, 0x06, 0x04, 0x04, 0x04, 0x04, 0x04, 0x08, 0x06,
@@ -68,5 +68,26 @@ describe("safeAssetFilename", () => {
   it("slugifies and picks an extension from the content type", () => {
     expect(safeAssetFilename("My Photo (final).PNG", "image/png")).toBe("my-photo-final.png");
     expect(safeAssetFilename(undefined, "image/jpeg")).toBe("asset.jpg");
+  });
+});
+
+describe("external asset SSRF guard", () => {
+  it("accepts public https hosts only", () => {
+    expect(isPublicHttpsUrl("https://cdn.example.com/a.jpg")).toBe(true);
+    expect(isPublicHttpsUrl("https://8.8.8.8/a.jpg")).toBe(true);
+    for (const bad of ["http://cdn.example.com/a.jpg", "https://localhost/a", "https://127.0.0.1/a", "https://2130706433/a", "https://169.254.169.254/latest/meta-data", "https://10.0.0.5/a", "https://192.168.1.1/a", "https://172.20.0.1/a", "https://[::1]/a", "https://metadata.google.internal/a", "https://intranet/a", "https://user:pw@cdn.example.com/a"]) {
+      expect(isPublicHttpsUrl(bad), bad).toBe(false);
+    }
+  });
+
+  it("does not follow a redirect from a public URL into a private address", async () => {
+    const calls: string[] = [];
+    const fetchImpl = async (input: string | URL) => {
+      calls.push(String(input));
+      return new Response(null, { status: 302, headers: { location: "http://169.254.169.254/latest/meta-data/iam" } });
+    };
+    const asset = { storageKind: "external_url", url: "https://attacker.example.com/img.jpg", pathname: null, contentType: "image/jpeg", sizeBytes: 0 } as unknown as SocialAssetRow;
+    expect(await openAssetStream(asset, { fetchImpl })).toBeNull();
+    expect(calls).toEqual(["https://attacker.example.com/img.jpg"]);
   });
 });

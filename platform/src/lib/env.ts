@@ -12,6 +12,17 @@ import { z } from "zod";
  * whatever Next.js's default error page happens to show.
  */
 
+/**
+ * Module 19's provider settings are all optional, and a deployment that
+ * leaves one blank (`META_APP_ID=""`, as `.env.example` lists them) or
+ * writes the Google Ads manager id with dashes must not fail `loadEnv()` —
+ * which would take every route down, not just the Social Command Center.
+ * Blank means unset; the value is normalized before validation.
+ */
+function optionalSetting<T extends z.ZodTypeAny>(schema: T, normalize: (value: string) => string = (v) => v) {
+  return z.preprocess((value) => (typeof value === "string" ? (value.trim() === "" ? undefined : normalize(value.trim())) : value), schema.optional());
+}
+
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
   DATABASE_URL_UNPOOLED: z.string().min(1, "DATABASE_URL_UNPOOLED is required"),
@@ -59,28 +70,28 @@ const envSchema = z.object({
   // key is absent the Connection Center / AI studio report
   // "missing configuration" honestly and the rest of the module keeps
   // working. Never read these outside `src/lib/social-os/providers/*`.
-  META_APP_ID: z.string().min(1).optional(),
-  META_APP_SECRET: z.string().min(1).optional(),
-  META_WEBHOOK_VERIFY_TOKEN: z.string().min(16).optional(),
-  META_GRAPH_API_VERSION: z.string().regex(/^v\d+\.\d+$/).optional(),
-  LINKEDIN_CLIENT_ID: z.string().min(1).optional(),
-  LINKEDIN_CLIENT_SECRET: z.string().min(1).optional(),
-  LINKEDIN_API_VERSION: z.string().regex(/^\d{6}$/).optional(),
-  GOOGLE_ADS_CLIENT_ID: z.string().min(1).optional(),
-  GOOGLE_ADS_CLIENT_SECRET: z.string().min(1).optional(),
-  GOOGLE_ADS_DEVELOPER_TOKEN: z.string().min(1).optional(),
-  GOOGLE_ADS_LOGIN_CUSTOMER_ID: z.string().regex(/^\d{10}$/).optional(),
-  GOOGLE_ADS_API_VERSION: z.string().regex(/^v\d+$/).optional(),
-  ANTHROPIC_API_KEY: z.string().min(1).optional(),
-  ANTHROPIC_MODEL: z.string().min(1).optional(),
-  OPENAI_API_KEY: z.string().min(1).optional(),
-  OPENAI_TEXT_MODEL: z.string().min(1).optional(),
-  OPENAI_IMAGE_MODEL: z.string().min(1).optional(),
-  HIGGSFIELD_API_KEY: z.string().min(1).optional(),
-  HIGGSFIELD_API_SECRET: z.string().min(1).optional(),
-  BLOB_READ_WRITE_TOKEN: z.string().min(1).optional(),
+  META_APP_ID: optionalSetting(z.string().min(1)),
+  META_APP_SECRET: optionalSetting(z.string().min(1)),
+  META_WEBHOOK_VERIFY_TOKEN: optionalSetting(z.string().min(16)),
+  META_GRAPH_API_VERSION: optionalSetting(z.string().regex(/^v\d+\.\d+$/)),
+  LINKEDIN_CLIENT_ID: optionalSetting(z.string().min(1)),
+  LINKEDIN_CLIENT_SECRET: optionalSetting(z.string().min(1)),
+  LINKEDIN_API_VERSION: optionalSetting(z.string().regex(/^\d{6}$/)),
+  GOOGLE_ADS_CLIENT_ID: optionalSetting(z.string().min(1)),
+  GOOGLE_ADS_CLIENT_SECRET: optionalSetting(z.string().min(1)),
+  GOOGLE_ADS_DEVELOPER_TOKEN: optionalSetting(z.string().min(1)),
+  GOOGLE_ADS_LOGIN_CUSTOMER_ID: optionalSetting(z.string().regex(/^\d{10}$/), (v) => v.replace(/-/g, "")),
+  GOOGLE_ADS_API_VERSION: optionalSetting(z.string().regex(/^v\d+$/)),
+  ANTHROPIC_API_KEY: optionalSetting(z.string().min(1)),
+  ANTHROPIC_MODEL: optionalSetting(z.string().min(1)),
+  OPENAI_API_KEY: optionalSetting(z.string().min(1)),
+  OPENAI_TEXT_MODEL: optionalSetting(z.string().min(1)),
+  OPENAI_IMAGE_MODEL: optionalSetting(z.string().min(1)),
+  HIGGSFIELD_API_KEY: optionalSetting(z.string().min(1)),
+  HIGGSFIELD_API_SECRET: optionalSetting(z.string().min(1)),
+  BLOB_READ_WRITE_TOKEN: optionalSetting(z.string().min(1)),
   /** Hard ceiling on AI media spend per organization per calendar day (USD, estimated). Default 25. */
-  SOCIAL_AI_DAILY_BUDGET_USD: z.coerce.number().min(0).max(10000).optional(),
+  SOCIAL_AI_DAILY_BUDGET_USD: optionalSetting(z.coerce.number().min(0).max(10000)),
   NEON_HTTP_FETCH_ENDPOINT: z
     .string()
     .url()

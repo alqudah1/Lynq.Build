@@ -28,6 +28,54 @@ export type SocialAssetRow = typeof socialAssets.$inferSelect;
 export const SOCIAL_ASSET_MAX_BYTES = 50 * 1024 * 1024;
 export const SOCIAL_ASSET_CONTENT_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "video/mp4", "video/quicktime", "application/pdf"] as const;
 const DELIVERY_TOKEN_TTL_SECONDS = 3600;
+const EXTERNAL_FETCH_MAX_REDIRECTS = 3;
+
+// ---------------------------------------------------------------------------
+// External URLs (SSRF guard)
+// ---------------------------------------------------------------------------
+
+function isPrivateIpv4(host: string): boolean {
+  const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(host);
+  if (!m) return false;
+  const [a, b] = [Number(m[1]), Number(m[2])];
+  return a === 0 || a === 10 || a === 127 || (a === 100 && b >= 64 && b <= 127) || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 198 && (b === 18 || b === 19)) || a >= 224;
+}
+
+/**
+ * An external asset URL we are willing to fetch server-side (LinkedIn
+ * uploads, the public delivery route): https only, a public DNS name or a
+ * public IPv4 literal — never loopback, link-local (cloud metadata),
+ * private ranges, IPv6 literals, single-label or `.local`/`.internal`
+ * names. (Hostnames are not resolved here; see the audit notes on DNS
+ * rebinding.)
+ */
+export function isPublicHttpsUrl(raw: string): boolean {
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return false;
+  }
+  if (url.protocol !== "https:" || url.username || url.password) return false;
+  const host = url.hostname.toLowerCase().replace(/\.$/, "");
+  if (!host || host.startsWith("[") || host.includes(":")) return false;
+  if (host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local") || host.endsWith(".internal") || host.endsWith(".home.arpa") || !host.includes(".")) return false;
+  return !isPrivateIpv4(host);
+}
+
+/** GET with redirects followed by hand (max 3), each hop re-checked with `isPublicHttpsUrl`. */
+async function fetchExternal(fetchImpl: FetchLike, raw: string): Promise<Response | null> {
+  let current = raw;
+  for (let hop = 0; hop <= EXTERNAL_FETCH_MAX_REDIRECTS; hop++) {
+    if (!isPublicHttpsUrl(current)) return null;
+    const res = await fetchImpl(current, { method: "GET", redirect: "manual" });
+    if (res.status < 300 || res.status >= 400) return res;
+    const location = res.headers.get("location");
+    if (!location) return null;
+    current = new URL(location, current).toString();
+  }
+  return null;
+}
 
 // ---------------------------------------------------------------------------
 // Storage (injectable)
@@ -409,6 +457,7 @@ export async function createExternalAsset(
   await requireMarketingManageContentAuthority(db, ctx, "social_asset", "new");
   const url = z.string().trim().url().max(2000).parse(input.url);
   if (!url.startsWith("https://")) throw new SocialAssetNotUsableError("external assets must be served over https");
+  if (!isPublicHttpsUrl(url)) throw new SocialAssetNotUsableError("external assets must be on a public internet host");
   const contentType = input.contentType.toLowerCase().split(";")[0].trim();
   const assetType = socialAssetTypeSchema.parse(input.assetType);
   assertContentType(assetType, contentType);
@@ -578,8 +627,8 @@ export async function openAssetStream(asset: SocialAssetRow, deps: { storage?: S
   }
   if (asset.storageKind === "external_url" && asset.url) {
     const fetchImpl = deps.fetchImpl ?? ((i, init) => fetch(i, init));
-    const res = await fetchImpl(asset.url, { method: "GET", redirect: "follow" });
-    if (!res.ok || !res.body) return null;
+    const res = await fetchExternal(fetchImpl, asset.url);
+    if (!res || !res.ok || !res.body) return null;
     const len = Number(res.headers.get("content-length"));
     return { stream: res.body, contentType: asset.contentType, size: Number.isFinite(len) && len > 0 ? len : null };
   }

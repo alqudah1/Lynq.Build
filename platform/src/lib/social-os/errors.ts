@@ -126,13 +126,21 @@ export class SocialProviderError extends DomainRuleViolationError {
   readonly code: string;
   readonly retryable: boolean;
   readonly authorizationLost: boolean;
-  constructor(provider: string, code: string, message: string, options: { retryable?: boolean; authorizationLost?: boolean } = {}) {
+  /**
+   * The request may have been processed by the platform even though we saw
+   * a failure (transport error after sending, HTTP 5xx). Harmless for reads
+   * and resumable steps; for the final non-idempotent "create post" call it
+   * means the outcome is unknown (see `nonIdempotentCreate`).
+   */
+  readonly ambiguous: boolean;
+  constructor(provider: string, code: string, message: string, options: { retryable?: boolean; authorizationLost?: boolean; ambiguous?: boolean } = {}) {
     super(`${provider}: ${message}`);
     this.name = "SocialProviderError";
     this.provider = provider;
     this.code = code;
     this.retryable = options.retryable ?? false;
     this.authorizationLost = options.authorizationLost ?? false;
+    this.ambiguous = options.ambiguous ?? false;
   }
 }
 

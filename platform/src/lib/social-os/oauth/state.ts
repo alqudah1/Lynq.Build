@@ -16,11 +16,25 @@ export const SOCIAL_OAUTH_COOKIE_NAME = "lynq_social_oauth";
 export const SOCIAL_OAUTH_COOKIE_PATH = "/api/social/oauth";
 export const SOCIAL_OAUTH_COOKIE_MAX_AGE_SECONDS = 600;
 
-const safeAppPath = z
-  .string()
-  .min(1)
-  .max(2000)
-  .refine((v) => v.startsWith("/") && !v.startsWith("//") && !v.includes("://") && !v.includes("\\"), "must be an app-relative path");
+/**
+ * An app-relative path that stays on our origin once a browser resolves it.
+ * Stricter than the sign-in flow's check: WHATWG URL parsing treats `\` as
+ * `/` and strips tab/CR/LF, so `/\evil.com` or `/<TAB>/evil.com` would
+ * otherwise resolve to `https://evil.com/` (open redirect).
+ */
+export function isSafeSocialRedirectPath(value: unknown): value is string {
+  if (typeof value !== "string" || value.length < 1 || value.length > 2000) return false;
+  if (!value.startsWith("/") || value.startsWith("//") || value.includes("://") || value.includes("\\")) return false;
+  if (/[\u0000-\u001f\u007f]/.test(value)) return false;
+  try {
+    const base = "https://origin.invalid";
+    return new URL(value, base).origin === base;
+  } catch {
+    return false;
+  }
+}
+
+const safeAppPath = z.string().min(1).max(2000).refine(isSafeSocialRedirectPath, "must be an app-relative path");
 
 export const socialOAuthPayloadSchema = z
   .object({

@@ -7,7 +7,7 @@ import { recordAuditEvent } from "@/lib/audit";
 import { DomainRuleViolationError } from "@/lib/authz/errors";
 import { getAuthenticatedUser } from "@/lib/http/auth";
 import { completeConnection } from "@/lib/social-os/connections";
-import { readAndClearSocialOAuthCookie, type SocialOAuthPayload } from "@/lib/social-os/oauth/state";
+import { isSafeSocialRedirectPath, readAndClearSocialOAuthCookie, type SocialOAuthPayload } from "@/lib/social-os/oauth/state";
 import type { SocialProviderId } from "@/lib/social-os/providers/social/types";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +21,9 @@ function sameString(a: string, b: string): boolean {
 }
 
 function redirectWith(baseUrl: string, path: string, params: Record<string, string>): Response {
-  const target = new URL(path, baseUrl);
+  // Defence in depth: the signed payload's path is already validated, but never leave our origin.
+  let target = new URL(isSafeSocialRedirectPath(path) ? path : "/", baseUrl);
+  if (target.origin !== new URL(baseUrl).origin) target = new URL("/", baseUrl);
   for (const [k, v] of Object.entries(params)) target.searchParams.set(k, v);
   return Response.redirect(target.toString(), 302);
 }

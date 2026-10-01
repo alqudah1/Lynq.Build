@@ -1,6 +1,6 @@
 import { SocialProviderError, SocialProviderNotSupportedError } from "../../errors";
 import { socialAdChangePayloadSchemas, SOCIAL_AD_CHANGE_TYPES, type SocialAdChangeType } from "../../validation";
-import { jsonRequest, formBody, numberOrUndefined, defaultSleep, attachProviderState } from "./http";
+import { jsonRequest, formBody, numberOrUndefined, defaultSleep, attachProviderState, nonIdempotentCreate } from "./http";
 import type {
   AccountInsights,
   AdCampaignRecord,
@@ -398,7 +398,7 @@ export function createLinkedInAdapter(env: LinkedInEnv, deps: LinkedInAdapterDep
         isReshareDisabledByAuthor: false,
         ...(content ? { content } : {}),
       };
-      const res = await rest<unknown>("POST", "/posts", token, post);
+      const res = await nonIdempotentCreate("linkedin", () => rest<unknown>("POST", "/posts", token, post));
       const urn = res.headers.get("x-restli-id") ?? res.headers.get("x-linkedin-id");
       if (!urn) throw new SocialProviderError("linkedin", "missing_post_id", "LinkedIn accepted the post but returned no id", { retryable: false });
       state.postUrn = urn;
@@ -521,12 +521,14 @@ export function createLinkedInAdapter(env: LinkedInEnv, deps: LinkedInAdapterDep
     if (!item.externalPostId) throw new SocialProviderError("linkedin", "missing_post", "The comment is not linked to a post", { retryable: false });
     const token = credential.bundle.accessToken;
     const actor = linkedInAuthorUrn(credential.externalAccountId);
-    const res = await rest<{ $URN?: string; id?: string; commentUrn?: string }>("POST", `/socialActions/${enc(item.externalPostId)}/comments`, token, {
-      actor,
-      object: item.externalPostId,
-      message: { text: message },
-      ...(item.externalId.startsWith("urn:li:comment:") ? { parentComment: item.externalId } : {}),
-    });
+    const res = await nonIdempotentCreate("linkedin", () =>
+      rest<{ $URN?: string; id?: string; commentUrn?: string }>("POST", `/socialActions/${enc(item.externalPostId!)}/comments`, token, {
+        actor,
+        object: item.externalPostId,
+        message: { text: message },
+        ...(item.externalId.startsWith("urn:li:comment:") ? { parentComment: item.externalId } : {}),
+      })
+    );
     const id = res.headers.get("x-restli-id") ?? res.data?.$URN ?? res.data?.commentUrn ?? res.data?.id;
     if (!id) throw new SocialProviderError("linkedin", "missing_reply_id", "LinkedIn accepted the reply but returned no id", { retryable: false });
     return { externalReplyId: String(id) };

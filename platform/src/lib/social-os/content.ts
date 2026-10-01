@@ -965,6 +965,12 @@ export async function unscheduleVariant(db: Db, input: { organizationId: string;
   const existing = await resolveVariantRow(db, input.organizationId, input.contentVariantId);
   if (existing.status !== "scheduled" || existing.archivedAt) throw new InvalidSocialTransitionError("post", existing.status, "approved");
   if (existing.revision !== input.expectedRevision) throw new StaleSocialUpdateError("post");
+  // A job the worker already claimed is talking to the platform: it can no longer be pulled back.
+  const [inFlight] = await db
+    .select({ id: socialPublishJobs.id })
+    .from(socialPublishJobs)
+    .where(and(eq(socialPublishJobs.organizationId, input.organizationId), eq(socialPublishJobs.contentVariantId, existing.id), eq(socialPublishJobs.status, "processing")));
+  if (inFlight) throw new InvalidSocialTransitionError("post", "publishing", "approved");
   await cancelActiveJobs(db, input.organizationId, existing.id);
   const fresh = await resolveVariantRow(db, input.organizationId, existing.id);
   const row = await casVariantStatus(db, input.organizationId, fresh, fresh.revision, ["scheduled"], { status: "approved" });

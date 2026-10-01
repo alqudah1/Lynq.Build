@@ -91,7 +91,7 @@ describe("Publishing engine (integration)", () => {
     await expect(enqueuePublish(db, { organizationId: s.orgId, contentVariantId: s.variant.id, actorUserId: s.ownerId, scheduledFor: new Date(Date.now() + 48 * 3600_000) })).rejects.toBeInstanceOf(SocialDuplicatePublishError);
   });
 
-  it("a provider 500 leaves the job retrying with resumable provider state, and the retry resumes it", async () => {
+  it("a throttled final call leaves the job retrying with resumable provider state, and the retry resumes it", async () => {
     const storage = memoryStorage();
     const s = await approvedScheduledVariant({
       format: "carousel",
@@ -109,7 +109,7 @@ describe("Publishing engine (integration)", () => {
     let feedFails = true;
     const { fetchImpl, calls } = fakeFetch([
       { match: (u, i) => i?.method === "POST" && u.endsWith(`/${s.externalAccountId}/photos`), respond: () => ({ json: { id: `photo${++photo}` } }) },
-      { match: (u, i) => i?.method === "POST" && u.endsWith(`/${s.externalAccountId}/feed`), respond: () => (feedFails ? { status: 500, json: { error: { message: "An unexpected error has occurred", code: 2, is_transient: true } } } : { json: { id: `${s.externalAccountId}_888` } }) },
+      { match: (u, i) => i?.method === "POST" && u.endsWith(`/${s.externalAccountId}/feed`), respond: () => (feedFails ? { status: 400, json: { error: { message: "Application request limit reached", code: 4 } } } : { json: { id: `${s.externalAccountId}_888` } }) },
     ]);
     const deps = { fetchImpl, env: META_ENV, now: () => s.when, assetUrlEnv: URL_ENV, storage };
 

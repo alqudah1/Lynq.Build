@@ -81,6 +81,21 @@ async function recordFounderApprovalDecision(db: Db, input: { organizationId: st
  * service enforces its own Marketing OS capability on top of the Founder
  * view check above. Returns null for every other approval.
  */
+/**
+ * A Social approval that no longer belongs to its post/ad change (the record
+ * was edited and re-filed). Closes it as revision-requested when it is still
+ * pending, so it stops showing in the Approval Center, then refuses the
+ * decision — the founder must review the current request instead.
+ */
+async function refuseSupersededApproval(db: Db, input: { organizationId: string; approvalId: string; actorUserId: string }, entity: string): Promise<never> {
+  const [approval] = await db.select({ status: agentApprovalRequests.status }).from(agentApprovalRequests).where(and(eq(agentApprovalRequests.id, input.approvalId), eq(agentApprovalRequests.organizationId, input.organizationId)));
+  if (approval?.status === "pending") {
+    await requestRevision(db, { organizationId: input.organizationId, approvalId: input.approvalId, decisionNote: `Superseded: the ${entity} changed after this request was filed. Review its current request instead.`, actorUserId: input.actorUserId }).catch(() => undefined);
+  }
+  const { StaleSocialUpdateError } = await import("@/lib/social-os/errors");
+  throw new StaleSocialUpdateError(entity);
+}
+
 async function decideLinkedSocialApproval(
   db: Db,
   input: { organizationId: string; approvalId: string; decision: "approve" | "reject" | "request_revision"; decisionNote?: string | null; actorUserId: string }
@@ -92,13 +107,17 @@ async function decideLinkedSocialApproval(
   if (!link || (link.linkedEntityType !== "content_variant" && link.linkedEntityType !== "ad_change_request")) return null;
   const note = input.decisionNote ?? undefined;
   if (link.linkedEntityType === "content_variant") {
-    const [variant] = await db.select({ revision: socialContentVariants.revision }).from(socialContentVariants).where(and(eq(socialContentVariants.id, link.linkedEntityId), eq(socialContentVariants.organizationId, input.organizationId)));
+    const [variant] = await db.select({ revision: socialContentVariants.revision, approvalRequestId: socialContentVariants.approvalRequestId }).from(socialContentVariants).where(and(eq(socialContentVariants.id, link.linkedEntityId), eq(socialContentVariants.organizationId, input.organizationId)));
     if (!variant) return null;
+    // The post was edited (and possibly resubmitted) after this request was filed: deciding it must never
+    // decide the post's CURRENT request, whose content the founder has not seen here.
+    if (variant.approvalRequestId !== input.approvalId) await refuseSupersededApproval(db, input, "post");
     const { decideVariantApproval } = await import("@/lib/social-os/content");
     await decideVariantApproval(db, { organizationId: input.organizationId, contentVariantId: link.linkedEntityId, actorUserId: input.actorUserId, expectedRevision: variant.revision, decision: input.decision === "request_revision" ? "request_changes" : input.decision, note });
   } else {
-    const [change] = await db.select({ revision: socialAdChangeRequests.revision }).from(socialAdChangeRequests).where(and(eq(socialAdChangeRequests.id, link.linkedEntityId), eq(socialAdChangeRequests.organizationId, input.organizationId)));
+    const [change] = await db.select({ revision: socialAdChangeRequests.revision, approvalRequestId: socialAdChangeRequests.approvalRequestId }).from(socialAdChangeRequests).where(and(eq(socialAdChangeRequests.id, link.linkedEntityId), eq(socialAdChangeRequests.organizationId, input.organizationId)));
     if (!change) return null;
+    if (change.approvalRequestId !== input.approvalId) await refuseSupersededApproval(db, input, "advertising change");
     const { InvalidSocialTransitionError } = await import("@/lib/social-os/errors");
     // An ad change executes exactly the approved payload — there is no "revise in place"; reject it and propose a new one.
     if (input.decision === "request_revision") throw new InvalidSocialTransitionError("advertising change", "pending_approval", "revision_requested");

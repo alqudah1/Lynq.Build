@@ -167,7 +167,31 @@ export function classifyProviderError(status: number, body: unknown, headers?: H
 
 export function providerErrorFromResponse(provider: SocialProviderName, status: number, body: unknown, headers?: Headers): SocialProviderError {
   const c = classifyProviderError(status, body, headers);
-  return new SocialProviderError(provider, c.code, c.message, { retryable: c.retryable, authorizationLost: c.authorizationLost });
+  // A 5xx means the platform may have acted on the request before failing.
+  return new SocialProviderError(provider, c.code, c.message, { retryable: c.retryable, authorizationLost: c.authorizationLost, ambiguous: status >= 500 });
+}
+
+export const PUBLISH_OUTCOME_UNKNOWN = "publish_outcome_unknown";
+
+/**
+ * Wraps the single, non-idempotent call that makes a post (or reply)
+ * public. Facebook and LinkedIn have no idempotency key for it, so when
+ * that call fails ambiguously (the request may have reached the platform:
+ * transport failure, HTTP 5xx) a blind retry can publish the same post
+ * twice. Such a failure becomes a final `publish_outcome_unknown` error
+ * that a human resolves (check the account, then retry) — never an
+ * automatic retry. Unambiguous failures (4xx, throttling) pass through
+ * with their own classification.
+ */
+export async function nonIdempotentCreate<T>(provider: SocialProviderName, fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    if (err instanceof SocialProviderError && err.ambiguous) {
+      throw new SocialProviderError(provider, PUBLISH_OUTCOME_UNKNOWN, `the platform may or may not have published this (${err.code}: ${err.message.replace(/^[a-z_]+: /, "")}) — check the account before retrying`, { retryable: false });
+    }
+    throw err;
+  }
 }
 
 async function readBody(response: Response): Promise<unknown> {
@@ -191,7 +215,7 @@ export async function jsonRequest<T = unknown>(fetchImpl: FetchLike, url: string
     response = await fetchImpl(url, init);
   } catch (err) {
     const detail = err instanceof Error ? err.message : "network failure";
-    throw new SocialProviderError(options.provider, "network_error", truncate(redactSecrets(`${init.method ?? "GET"} ${describeUrl(url)} failed: ${detail}`)), { retryable: true });
+    throw new SocialProviderError(options.provider, "network_error", truncate(redactSecrets(`${init.method ?? "GET"} ${describeUrl(url)} failed: ${detail}`)), { retryable: true, ambiguous: true });
   }
   const body = await readBody(response);
   if (!response.ok) throw providerErrorFromResponse(options.provider, response.status, body, response.headers);

@@ -4,12 +4,11 @@ import { loadEnv } from "@/lib/env";
 import { createDbClient } from "@/db/client";
 import { PostgresRateLimiter } from "@/lib/rate-limit/postgres";
 import { loadAuthEnv } from "@/lib/auth/env";
-import { isSafeRedirectTarget } from "@/lib/auth/redirects";
 import { DomainRuleViolationError } from "@/lib/authz/errors";
 import { getAuthenticatedUser } from "@/lib/http/auth";
 import { handleRouteError } from "@/lib/http/responses";
 import { beginConnection } from "@/lib/social-os/connections";
-import { setSocialOAuthCookie } from "@/lib/social-os/oauth/state";
+import { isSafeSocialRedirectPath, setSocialOAuthCookie } from "@/lib/social-os/oauth/state";
 import type { SocialProviderId } from "@/lib/social-os/providers/social/types";
 
 export const dynamic = "force-dynamic";
@@ -31,7 +30,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prov
   const provider = providerParam as SocialProviderId;
   const url = new URL(request.url);
   const rawRedirect = url.searchParams.get("redirectTo");
-  const redirectTo = isSafeRedirectTarget(rawRedirect) ? rawRedirect : "/";
+  const redirectTo = isSafeSocialRedirectPath(rawRedirect) ? rawRedirect : "/";
   let authBaseUrl: string | null = null;
   try {
     const authEnv = loadAuthEnv();
