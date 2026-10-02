@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createHiggsfieldVideoProvider, DEFAULT_HIGGSFIELD_VIDEO_MODEL, HIGGSFIELD_API_BASE, mapHiggsfieldStatus } from "./higgsfield";
+import { createHiggsfieldVideoProvider, DEFAULT_HIGGSFIELD_IMAGE_TO_VIDEO_MODEL, DEFAULT_HIGGSFIELD_VIDEO_MODEL, HIGGSFIELD_API_BASE, mapHiggsfieldStatus } from "./higgsfield";
 import { SocialProviderNotConfiguredError, SocialProviderNotSupportedError } from "../../errors";
 import { makeFakeFetch } from "./test-fetch";
 
@@ -10,9 +10,10 @@ describe("Higgsfield video provider", () => {
     const { fetchImpl, calls } = makeFakeFetch([{ match: (u) => u === `${HIGGSFIELD_API_BASE}/${DEFAULT_HIGGSFIELD_VIDEO_MODEL}`, respond: () => ({ json: { request_id: "req-1", status_url: "https://api.higgsfield.ai/requests/req-1/status" } }) }]);
     const r = await createHiggsfieldVideoProvider(env, { fetchImpl }).startVideo({ prompt: "a reel", aspectRatio: "9:16", durationSeconds: 5, idempotencyKey: "gen-1" });
     expect(r).toEqual({ taskId: "req-1", model: DEFAULT_HIGGSFIELD_VIDEO_MODEL });
+    expect(DEFAULT_HIGGSFIELD_VIDEO_MODEL).toBe("bytedance/seedance-2.5/text-to-video");
     expect(calls[0].headers.authorization).toBe("Key kid:ksecret");
     expect(calls[0].headers["idempotency-key"]).toBe("gen-1");
-    expect(calls[0].body).toEqual({ prompt: "a reel", aspect_ratio: "9:16", duration: 5 });
+    expect(calls[0].body).toEqual({ prompt: "a reel", aspect_ratio: "9:16", duration: 5, resolution: "1080p" });
   });
 
   it("image conditioning needs an explicit public URL", async () => {
@@ -24,6 +25,10 @@ describe("Higgsfield video provider", () => {
     await (p.startVideo as (r: typeof req, o: { imageUrl: string; model: string }) => Promise<unknown>)(req, { imageUrl: "https://x/i.jpg", model: "custom/model" });
     expect(calls[0].url).toBe(`${HIGGSFIELD_API_BASE}/custom/model`);
     expect((calls[0].body as Record<string, unknown>).image_url).toBe("https://x/i.jpg");
+    // Without an explicit model, an image-conditioned request goes to the image-to-video model and omits aspect_ratio (the source image sets it).
+    await (p.startVideo as (r: typeof req, o: { imageUrl: string }) => Promise<unknown>)(req, { imageUrl: "https://x/i.jpg" });
+    expect(calls[1].url).toBe(`${HIGGSFIELD_API_BASE}/${DEFAULT_HIGGSFIELD_IMAGE_TO_VIDEO_MODEL}`);
+    expect(calls[1].body).toEqual({ prompt: "p", duration: 5, resolution: "1080p", image_url: "https://x/i.jpg" });
   });
 
   it("status mapping and polling URL", async () => {
