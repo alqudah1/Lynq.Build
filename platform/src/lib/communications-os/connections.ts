@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { integrationConnections, integrationCredentials } from "@/db/schema";
 import { recordAuditEvent } from "@/lib/audit";
@@ -8,9 +8,19 @@ import { resolveCommunicationAuthContext, requireCommunicationsViewAuthority, re
 import { StaleCommunicationUpdateError, ConnectionNotUsableError } from "./errors";
 import { encryptCredentialSecret, decryptCredentialSecret } from "./secrets";
 import { resolveProviderAdapter } from "./providers/registry";
-import type { IntegrationProvider, CommunicationChannel, IntegrationConnectionStatus } from "./validation";
+import { COMMUNICATION_CHANNELS, type IntegrationProvider, type CommunicationChannel, type IntegrationConnectionStatus } from "./validation";
 
 type Db = NeonHttpDatabase<Record<string, unknown>>;
+
+/**
+ * `integration_connections` also holds the Social Command Center's OAuth
+ * grants (integration types `social` / `ads`, providers meta / linkedin /
+ * google_ads — Module 19). Communications only ever sees, lists, verifies,
+ * rotates or disables its own message channels; a social grant id is a 404
+ * here, so its encrypted token bundle can never be overwritten from the
+ * Integrations page or used as a message connection.
+ */
+const isCommunicationsConnection = inArray(integrationConnections.integrationType, [...COMMUNICATION_CHANNELS]);
 
 export interface IntegrationConnection {
   id: string;
@@ -55,7 +65,7 @@ export async function createConnection(
 }
 
 export async function resolveConnectionById(db: Db, organizationId: string, connectionId: string): Promise<IntegrationConnection> {
-  const [row] = await db.select().from(integrationConnections).where(and(eq(integrationConnections.id, connectionId), eq(integrationConnections.organizationId, organizationId)));
+  const [row] = await db.select().from(integrationConnections).where(and(eq(integrationConnections.id, connectionId), eq(integrationConnections.organizationId, organizationId), isCommunicationsConnection));
   if (!row) throw new TenantResourceNotFoundError();
   return row as IntegrationConnection;
 }
@@ -69,7 +79,7 @@ export async function getConnectionForUser(db: Db, input: { organizationId: stri
 export async function listConnectionsForUser(db: Db, input: { organizationId: string; actorUserId: string }): Promise<IntegrationConnection[]> {
   const ctx = await resolveCommunicationAuthContext(db, { organizationId: input.organizationId, actorUserId: input.actorUserId });
   await requireCommunicationsViewAuthority(db, ctx, "integration_connection", "list");
-  return db.select().from(integrationConnections).where(eq(integrationConnections.organizationId, input.organizationId)).orderBy(integrationConnections.createdAt) as Promise<IntegrationConnection[]>;
+  return db.select().from(integrationConnections).where(and(eq(integrationConnections.organizationId, input.organizationId), isCommunicationsConnection)).orderBy(integrationConnections.createdAt) as Promise<IntegrationConnection[]>;
 }
 
 /** Stores a new active credential (encrypted), revoking any prior active one for the same connection — rotation-friendly, mirrors `agent_credentials`' shape. Fails closed (`IntegrationCredentialEncryptionUnavailableError`) with no encryption key configured — never falls back to plaintext. */
@@ -215,7 +225,7 @@ export async function disableConnection(db: Db, input: { organizationId: string;
   const [row] = await db
     .update(integrationConnections)
     .set({ status: "disabled", disconnectedAt: new Date(), revision: input.expectedRevision + 1, updatedAt: new Date() })
-    .where(and(eq(integrationConnections.id, input.connectionId), eq(integrationConnections.organizationId, input.organizationId), eq(integrationConnections.revision, input.expectedRevision)))
+    .where(and(eq(integrationConnections.id, input.connectionId), eq(integrationConnections.organizationId, input.organizationId), eq(integrationConnections.revision, input.expectedRevision), isCommunicationsConnection))
     .returning();
   if (!row) throw new StaleCommunicationUpdateError("integration connection");
 

@@ -73,6 +73,17 @@ export const MARKETING_CAPABILITIES = [
   "marketing_manage_budget",
   "marketing_approve_content",
   "marketing_manage_playbooks",
+  // Module 19 — Social Command Center. Publishing to a public account,
+  // replying publicly, and touching advertising are each their own
+  // capability so a contributor can draft without ever being able to post.
+  "marketing_manage_brands",
+  "marketing_manage_connections",
+  "marketing_generate_content",
+  "marketing_publish",
+  "marketing_manage_engagement",
+  "marketing_manage_ads",
+  "marketing_approve_ad_changes",
+  "marketing_manage_automation",
   "marketing_admin",
 ] as const;
 export const marketingCapabilitySchema = z.enum(MARKETING_CAPABILITIES);
@@ -102,7 +113,7 @@ export const MARKETING_RUN_ITEM_STATUSES = ["pending", "complete", "skipped"] as
 export const marketingRunItemStatusSchema = z.enum(MARKETING_RUN_ITEM_STATUSES);
 export type MarketingRunItemStatus = (typeof MARKETING_RUN_ITEM_STATUSES)[number];
 
-export const MARKETING_APPROVAL_LINKED_ENTITY_TYPES = ["content_item"] as const;
+export const MARKETING_APPROVAL_LINKED_ENTITY_TYPES = ["content_item", "content_variant", "publish_job", "ad_change_request", "engagement_reply"] as const;
 export const marketingApprovalLinkedEntityTypeSchema = z.enum(MARKETING_APPROVAL_LINKED_ENTITY_TYPES);
 export type MarketingApprovalLinkedEntityType = (typeof MARKETING_APPROVAL_LINKED_ENTITY_TYPES)[number];
 

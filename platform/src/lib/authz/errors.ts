@@ -64,7 +64,8 @@ export class InsufficientRoleError extends AuthzError {
 }
 
 export abstract class DomainRuleViolationError extends Error {
-  readonly httpStatus = 409;
+  /** 409 by default; a subclass may narrow to another 4xx/5xx (e.g. 429 for a limit, 502 for a provider failure). */
+  readonly httpStatus: number = 409;
   abstract readonly reason: string;
 }
 

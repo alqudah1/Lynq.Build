@@ -1,0 +1,2 @@
+DROP INDEX "social_automation_rules_scope_kind_unique";--> statement-breakpoint
+CREATE UNIQUE INDEX "social_automation_rules_scope_kind_unique" ON "social_automation_rules" USING btree ("organization_id",coalesce("brand_profile_id", '00000000-0000-0000-0000-000000000000'::uuid),"kind") WHERE "social_automation_rules"."archived_at" IS NULL;
