@@ -1,6 +1,6 @@
 import { SocialGenerationFailedError, SocialProviderNotConfiguredError } from "../../errors";
 import { defaultFetch, extractJsonObject, present, requestJson, type ProviderDeps, type SocialAiEnv } from "./http";
-import type { ImageGenerationRequest, ImageGenerationResult, ImageProvider, TextGenerationRequest, TextGenerationResult, TextProvider } from "./types";
+import type { FetchLike, ImageGenerationRequest, ImageGenerationResult, ImageProvider, TextGenerationRequest, TextGenerationResult, TextProvider } from "./types";
 
 /**
  * Module 19 — OpenAI text (Responses API) and image (Images API) providers,
@@ -9,9 +9,43 @@ import type { ImageGenerationRequest, ImageGenerationResult, ImageProvider, Text
 
 export const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 export const OPENAI_IMAGES_URL = "https://api.openai.com/v1/images/generations";
-export const DEFAULT_OPENAI_TEXT_MODEL = "gpt-5.3-mini";
-export const DEFAULT_OPENAI_IMAGE_MODEL = "gpt-image-1.5";
+export const OPENAI_MODELS_URL = "https://api.openai.com/v1/models";
+/**
+ * Model ids differ per account (new families roll out gradually and old
+ * ones retire), so a hard-coded default is a guess that fails with a 404.
+ * When no `OPENAI_TEXT_MODEL` / `OPENAI_IMAGE_MODEL` is configured, the
+ * provider lists the account's models once and picks the first of these
+ * that the account actually has. The first entry is only the fallback
+ * when the listing itself is unavailable.
+ */
+export const OPENAI_TEXT_MODEL_PREFERENCE = ["gpt-6-luna", "gpt-6.1-sol", "gpt-5.3-mini", "gpt-5-mini", "gpt-5.1-mini", "gpt-5", "gpt-4.1-mini", "gpt-4o-mini"] as const;
+export const OPENAI_IMAGE_MODEL_PREFERENCE = ["gpt-image-2.5-flare", "gpt-image-1.5", "gpt-image-1", "gpt-image-2.5-sunburst"] as const;
+export const DEFAULT_OPENAI_TEXT_MODEL = OPENAI_TEXT_MODEL_PREFERENCE[0];
+export const DEFAULT_OPENAI_IMAGE_MODEL = OPENAI_IMAGE_MODEL_PREFERENCE[0];
 const LABEL = "OpenAI";
+const MODEL_LIST_TTL_MS = 10 * 60 * 1000;
+
+/** Picks the first preferred model the account lists; `undefined` when nothing in the list is available. */
+export function pickAvailableModel(available: Iterable<string>, preference: readonly string[]): string | undefined {
+  const set = new Set(available);
+  return preference.find((m) => set.has(m));
+}
+
+function createModelResolver(env: SocialAiEnv, fetchImpl: FetchLike, preference: readonly string[], configured: string | undefined) {
+  let cache: { at: number; models: Set<string> } | null = null;
+  return async function resolve(): Promise<string> {
+    if (configured) return configured;
+    if (!cache || Date.now() - cache.at > MODEL_LIST_TTL_MS) {
+      try {
+        const raw = (await requestJson(fetchImpl, LABEL, OPENAI_MODELS_URL, { method: "GET", headers: authHeaders(env) })) as { data?: { id?: string }[] };
+        cache = { at: Date.now(), models: new Set((raw.data ?? []).map((m) => m.id).filter((id): id is string => typeof id === "string")) };
+      } catch {
+        return preference[0];
+      }
+    }
+    return pickAvailableModel(cache.models, preference) ?? preference[0];
+  };
+}
 
 function missing(env: SocialAiEnv): string[] {
   return present(env.OPENAI_API_KEY) ? [] : ["OPENAI_API_KEY"];
@@ -37,7 +71,9 @@ export function readResponsesText(raw: ResponsesApiResponse): string {
 
 export function createOpenAiTextProvider(env: SocialAiEnv, deps?: ProviderDeps): TextProvider {
   const fetchImpl = defaultFetch(deps);
-  const defaultModel = env.OPENAI_TEXT_MODEL?.trim() || DEFAULT_OPENAI_TEXT_MODEL;
+  const configured = env.OPENAI_TEXT_MODEL?.trim() || undefined;
+  const defaultModel = configured ?? DEFAULT_OPENAI_TEXT_MODEL;
+  const resolveModel = createModelResolver(env, fetchImpl, OPENAI_TEXT_MODEL_PREFERENCE, configured);
   return {
     id: "openai",
     kind: "text",
@@ -47,7 +83,7 @@ export function createOpenAiTextProvider(env: SocialAiEnv, deps?: ProviderDeps):
     async generateText(request: TextGenerationRequest, options?: { model?: string; signal?: AbortSignal }): Promise<TextGenerationResult> {
       const m = missing(env);
       if (m.length) throw new SocialProviderNotConfiguredError(LABEL, m);
-      const model = options?.model ?? defaultModel;
+      const model = options?.model ?? (await resolveModel());
       const body: Record<string, unknown> = {
         model,
         instructions: request.system,
@@ -91,7 +127,9 @@ export function estimateOpenAiImageCostUsd(aspectRatio: ImageGenerationRequest["
 
 export function createOpenAiImageProvider(env: SocialAiEnv, deps?: ProviderDeps & { outputFormat?: "png" | "jpeg" }): ImageProvider {
   const fetchImpl = defaultFetch(deps);
-  const defaultModel = env.OPENAI_IMAGE_MODEL?.trim() || DEFAULT_OPENAI_IMAGE_MODEL;
+  const configured = env.OPENAI_IMAGE_MODEL?.trim() || undefined;
+  const defaultModel = configured ?? DEFAULT_OPENAI_IMAGE_MODEL;
+  const resolveModel = createModelResolver(env, fetchImpl, OPENAI_IMAGE_MODEL_PREFERENCE, configured);
   // JPEG by default: Instagram (the strictest target) only accepts JPEG, and every other platform accepts it too.
   const outputFormat = deps?.outputFormat ?? "jpeg";
   return {
@@ -103,7 +141,7 @@ export function createOpenAiImageProvider(env: SocialAiEnv, deps?: ProviderDeps 
     async generateImage(request: ImageGenerationRequest, options?: { model?: string; signal?: AbortSignal }): Promise<ImageGenerationResult> {
       const m = missing(env);
       if (m.length) throw new SocialProviderNotConfiguredError(LABEL, m);
-      const model = options?.model ?? defaultModel;
+      const model = options?.model ?? (await resolveModel());
       const size = IMAGE_SIZES[request.aspectRatio] ?? IMAGE_SIZES["1:1"];
       const prompt = request.style ? `${request.prompt}\n\nStyle: ${request.style}` : request.prompt;
       const raw = (await requestJson(fetchImpl, LABEL, OPENAI_IMAGES_URL, {
