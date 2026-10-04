@@ -40,6 +40,8 @@ export interface LinkedInEnv {
   LINKEDIN_CLIENT_ID?: string;
   LINKEDIN_CLIENT_SECRET?: string;
   LINKEDIN_API_VERSION?: string;
+  /** Space-separated scope override — set to `LINKEDIN_FULL_SCOPES` once Community Management / Advertising API access is approved. */
+  LINKEDIN_SCOPES?: string;
 }
 
 export interface LinkedInAdapterDeps {
@@ -50,9 +52,21 @@ export interface LinkedInAdapterDeps {
   videoPollIntervalMs?: number;
 }
 
-export const LINKEDIN_DEFAULT_SCOPES = [
+/**
+ * Scopes every LinkedIn app can request without an approved partner
+ * product ("Sign In with LinkedIn using OpenID Connect" + "Share on
+ * LinkedIn"): posting as the member. LinkedIn rejects the whole
+ * authorization request if any scope the app isn't approved for is
+ * included, so this is the default; organization pages and ads need
+ * `LINKEDIN_SCOPES` set to the full list below after approval.
+ */
+export const LINKEDIN_DEFAULT_SCOPES = ["openid", "profile", "email", "w_member_social"] as const;
+
+/** Community Management API + Advertising API scopes (require approved products on the app). */
+export const LINKEDIN_FULL_SCOPES = [
   "openid",
   "profile",
+  "email",
   "r_basicprofile",
   "r_organization_social",
   "w_organization_social",
@@ -63,6 +77,14 @@ export const LINKEDIN_DEFAULT_SCOPES = [
   "r_ads_reporting",
   "rw_ads",
 ] as const;
+
+/** `LINKEDIN_SCOPES` (space/comma separated) when set and well-formed, otherwise the self-serve default. */
+export function resolveLinkedInScopes(env: Pick<LinkedInEnv, "LINKEDIN_SCOPES">): string[] {
+  const raw = env.LINKEDIN_SCOPES?.trim();
+  if (!raw) return [...LINKEDIN_DEFAULT_SCOPES];
+  const scopes = raw.split(/[\s,]+/).filter((s) => /^[a-z_]+$/.test(s));
+  return scopes.length ? Array.from(new Set(scopes)) : [...LINKEDIN_DEFAULT_SCOPES];
+}
 
 export const LINKEDIN_DEFAULT_API_VERSION = "202509";
 const REST = "https://api.linkedin.com/rest";

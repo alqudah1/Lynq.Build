@@ -179,3 +179,15 @@ describe("LinkedIn errors, insights and ads", () => {
     await expect(createLinkedInAdapter(env).refresh!({ accessToken: "x", scopes: [] })).rejects.toBeInstanceOf(SocialProviderNotSupportedError);
   });
 });
+
+describe("LinkedIn scope resolution", () => {
+  it("defaults to the self-serve scopes and honours LINKEDIN_SCOPES", async () => {
+    const { resolveLinkedInScopes, LINKEDIN_FULL_SCOPES } = await import("./linkedin");
+    expect(resolveLinkedInScopes({})).toEqual(["openid", "profile", "email", "w_member_social"]);
+    expect(resolveLinkedInScopes({ LINKEDIN_SCOPES: "   " })).toEqual(["openid", "profile", "email", "w_member_social"]);
+    expect(resolveLinkedInScopes({ LINKEDIN_SCOPES: LINKEDIN_FULL_SCOPES.join(" ") })).toEqual([...LINKEDIN_FULL_SCOPES]);
+    expect(resolveLinkedInScopes({ LINKEDIN_SCOPES: "openid, w_member_social,openid bad-scope!" })).toEqual(["openid", "w_member_social"]);
+    const url = new URL(buildLinkedInAuthorizationUrl({ clientId: "c", redirectUri: "https://x/cb", state: "s", scopes: resolveLinkedInScopes({ LINKEDIN_SCOPES: "openid w_member_social" }) }));
+    expect(url.searchParams.get("scope")).toBe("openid w_member_social");
+  });
+});
