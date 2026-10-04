@@ -57,8 +57,8 @@ await tap(p.locator(".pill", { hasText: "Large" }));
 await tap(grp("Handle").locator("button", { hasText: "Without Handle" }));
 await tap(grp("Chain").locator("button", { hasText: "Gold Tone Chain" }));
 await p.waitForTimeout(500);
-// 55 base + 5 for Large + 5 for the chain. The button carries the live price.
-ok("options are priced on the button", /65/.test(await txt(".add-to-bag")), await txt(".add-to-bag"));
+// 55 base + 10 for Large + 5 for the chain. The button carries the live price.
+ok("options are priced on the button", /70/.test(await txt(".add-to-bag")), await txt(".add-to-bag"));
 await tap(p.locator(".add-to-bag").first());
 await p.waitForTimeout(1400);
 
@@ -78,8 +78,8 @@ ok("panel keeps View Cart and Keep Shopping",
 await tap(p.locator('.drawer-line-controls .qty-stepper button[aria-label^="Increase"]'));
 await p.waitForTimeout(700);
 ok("quantity reads 2", (await txt(".drawer-line-controls .qty-stepper span")) === "2");
-ok("line total doubles", /130/.test(await txt(".drawer-line-price")), await txt(".drawer-line-price"));
-ok("subtotal follows", /130/.test(await txt(".drawer-subtotal")), await txt(".drawer-subtotal"));
+ok("line total doubles", /140/.test(await txt(".drawer-line-price")), await txt(".drawer-line-price"));
+ok("subtotal follows", /140/.test(await txt(".drawer-subtotal")), await txt(".drawer-subtotal"));
 ok("header badge counts 2", (await txt(".cart-icon .badge")) === "2");
 
 /* 4 — remove, then add the same thing again. */
@@ -120,10 +120,10 @@ ok("summary repeats the whole configuration, handle included",
 const totals = async () => (await txt(".co-totals")).replace(/\s+/g, " ");
 await p.selectOption("#f-zone", { label: "Inside Amman" });
 await p.waitForTimeout(600);
-ok("Amman: shipping 3, total 68", /Shipping JOD 3/.test(await totals()) && /Total JOD 68/.test(await totals()), await totals());
+ok("Amman: shipping 3, total 73", /Shipping JOD 3/.test(await totals()) && /Total JOD 73/.test(await totals()), await totals());
 await p.selectOption("#f-zone", { label: "Outside Amman" });
 await p.waitForTimeout(600);
-ok("outside Amman: shipping 5, total 70", /Shipping JOD 5/.test(await totals()) && /Total JOD 70/.test(await totals()), await totals());
+ok("outside Amman: shipping 5, total 75", /Shipping JOD 5/.test(await totals()) && /Total JOD 75/.test(await totals()), await totals());
 await p.selectOption("#f-zone", { label: "Worldwide" });
 await p.waitForTimeout(600);
 ok("worldwide is quoted, never guessed", /Quoted by destination/.test(await totals()), await totals());
@@ -170,7 +170,7 @@ if (SKIP_ORDER) {
     ok("confirmation keeps the whole configuration",
        /Black/.test(conf) && /Large/.test(conf) && /Without Handle/.test(conf) && /Gold Tone Chain/.test(conf));
     ok("confirmation states 5 to 7 days", /5 to 7 days/.test(conf));
-    ok("confirmation totals 65 + 3 = 68", /JOD 65/.test(conf) && /JOD 3/.test(conf) && /JOD 68/.test(conf));
+    ok("confirmation totals 70 + 3 = 73", /JOD 70/.test(conf) && /JOD 3/.test(conf) && /JOD 73/.test(conf));
     ok("confirmation does not claim payment", !/\bpaid\b|payment received/i.test(conf));
   }
 }

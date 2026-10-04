@@ -2,7 +2,8 @@
 // (pricing.ts's pure pricing rule: basePrice + sum(selected priceDeltas))
 // against synthetic Bag objects built from Rand's CONFIRMED real values
 // (already applied to Supabase via 20260903090000_update_confirmed_size_
-// strap_chain_and_luna_colours.sql — verified against the live DB separately,
+// strap_chain_and_luna_colours.sql and, for Nova Large,
+// 20261004190000_nova_large_plus_ten.sql — verified against the live DB separately,
 // this script only checks the pure arithmetic is correct). Run with:
 // node scripts/test-pricing.ts
 
@@ -36,13 +37,13 @@ function baseBag(overrides: Partial<Bag>): Bag {
   } as Bag;
 }
 
-// --- Nova: Regular (default, +0), Medium (+5), Large (+5) ---
+// --- Nova: Regular (default, +0), Medium (+5), Large (+10) ---
 const nova = baseBag({
   basePrice: 55,
   sizes: [
     { id: "reg", label: "Regular", priceDelta: 0 },
     { id: "med", label: "Medium", priceDelta: 5 },
-    { id: "lg", label: "Large", priceDelta: 5 },
+    { id: "lg", label: "Large", priceDelta: 10 },
   ],
 });
 assert(
@@ -54,8 +55,8 @@ assert(
   "Nova Medium = base + 5 (60)"
 );
 assert(
-  computeUnitPrice(nova, { colourId: "c1", secondaryColourId: null, sizeId: "lg", strapId: null, handleId: null, chainId: null, addonIds: [] }) === 60,
-  "Nova Large = base + 5 (60)"
+  computeUnitPrice(nova, { colourId: "c1", secondaryColourId: null, sizeId: "lg", strapId: null, handleId: null, chainId: null, addonIds: [] }) === 65,
+  "Nova Large = base + 10 (65)"
 );
 
 // --- Vault: Regular (default, +0), Large (+5) ---
