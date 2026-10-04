@@ -31,6 +31,12 @@ export interface MetaEnv {
   META_APP_ID?: string;
   META_APP_SECRET?: string;
   META_GRAPH_API_VERSION?: string;
+  /**
+   * Facebook Login for Business configuration id. Business-type apps grant
+   * permissions through a configuration (`config_id`) rather than a `scope`
+   * list; when set, the dialog is built with `config_id` and no `scope`.
+   */
+  META_LOGIN_CONFIG_ID?: string;
 }
 
 export interface MetaAdapterDeps {
@@ -65,14 +71,16 @@ function graphBase(version: string): string {
   return `https://graph.facebook.com/${version}`;
 }
 
-export function buildMetaAuthorizationUrl(input: { appId: string; redirectUri: string; state: string; scopes?: readonly string[]; version?: string }): string {
+export function buildMetaAuthorizationUrl(input: { appId: string; redirectUri: string; state: string; scopes?: readonly string[]; version?: string; configId?: string }): string {
   const version = input.version ?? META_DEFAULT_GRAPH_VERSION;
   const url = new URL(`https://www.facebook.com/${version}/dialog/oauth`);
   url.searchParams.set("client_id", input.appId);
   url.searchParams.set("redirect_uri", input.redirectUri);
   url.searchParams.set("state", input.state);
   url.searchParams.set("response_type", "code");
-  url.searchParams.set("scope", (input.scopes ?? META_DEFAULT_SCOPES).join(","));
+  // Facebook Login for Business: the configuration carries the permissions; `scope` must not be sent alongside it.
+  if (input.configId) url.searchParams.set("config_id", input.configId);
+  else url.searchParams.set("scope", (input.scopes ?? META_DEFAULT_SCOPES).join(","));
   return url.toString();
 }
 

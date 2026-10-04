@@ -36,7 +36,7 @@ function requireConfig(provider: SocialProviderId, values: Record<string, string
 export function buildProviderAuthorizationUrl(provider: SocialProviderId, env: SocialProviderEnv, input: { redirectUri: string; state: string }): string {
   if (provider === "meta") {
     const c = requireConfig(provider, { META_APP_ID: env.META_APP_ID, META_APP_SECRET: env.META_APP_SECRET });
-    return buildMetaAuthorizationUrl({ appId: c.META_APP_ID, redirectUri: input.redirectUri, state: input.state, version: env.META_GRAPH_API_VERSION || META_DEFAULT_GRAPH_VERSION });
+    return buildMetaAuthorizationUrl({ appId: c.META_APP_ID, redirectUri: input.redirectUri, state: input.state, version: env.META_GRAPH_API_VERSION || META_DEFAULT_GRAPH_VERSION, configId: env.META_LOGIN_CONFIG_ID?.trim() || undefined });
   }
   if (provider === "linkedin") {
     const c = requireConfig(provider, { LINKEDIN_CLIENT_ID: env.LINKEDIN_CLIENT_ID, LINKEDIN_CLIENT_SECRET: env.LINKEDIN_CLIENT_SECRET });

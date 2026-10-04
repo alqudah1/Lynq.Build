@@ -29,6 +29,9 @@ function baseInput(overrides: Partial<PublishInput> = {}): PublishInput {
 
 describe("Meta OAuth helpers", () => {
   it("builds the dialog URL with the default scopes", () => {
+    const biz = new URL(buildMetaAuthorizationUrl({ appId: "123", redirectUri: "https://app.test/cb", state: "s".repeat(20), configId: "999" }));
+    expect(biz.searchParams.get("config_id")).toBe("999");
+    expect(biz.searchParams.get("scope")).toBeNull();
     const url = new URL(buildMetaAuthorizationUrl({ appId: "123", redirectUri: "https://app.test/cb", state: "s".repeat(20) }));
     expect(url.origin + url.pathname).toBe("https://www.facebook.com/v25.0/dialog/oauth");
     expect(url.searchParams.get("scope")).toBe(META_DEFAULT_SCOPES.join(","));
