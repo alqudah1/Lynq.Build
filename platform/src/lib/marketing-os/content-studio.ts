@@ -12,6 +12,7 @@ import { resolveMarketingAuthContext, requireMarketingManageContentAuthority, re
 import { createContentItem } from "./content";
 import { createContentStudioPackageTask, resolveContentDraftAssistantAgent } from "./agents";
 import { resolveCreativeReferences, serializeCreativeReferences, type CreativeReference } from "./creative-references";
+import { LYNQ_METAPHOR_GUIDE } from "./lynq-scenes";
 import {
   contentStudioConceptSchema,
   contentStudioConceptsSchema,
@@ -66,6 +67,23 @@ export interface ContentStudioDraft {
   updatedAt: Date;
 }
 
+/**
+ * Previous LYNQ default. Kept so `ensureDefaultBrandProfiles` can move brand
+ * profiles that were never edited onto the current rules; a profile someone
+ * customised is left alone.
+ */
+const LEGACY_LYNQ_VISUAL_RULES = "Black and white foundation with neon lime as a controlled accent. Editorial scale, generous negative space, sharp contrast, refined motion and premium art direction. Never use generic blue SaaS gradients, cartoon robots, stock-tech imagery or rainbow AI effects.";
+
+export const LYNQ_VISUAL_RULES = [
+  "Black and white foundation with neon lime as one controlled accent. Editorial scale, generous negative space, sharp contrast, premium art direction.",
+  "Every image is a scene with a concept, never one object plus a headline: a physical metaphor the viewer reads in a second (a bottleneck, a door with light pouring out, a whiteboard with one sticky note, a broken handoff, a page under a single spotlight, a blueprint, a tangled path that straightens).",
+  "Layered type system: small brand lockup top-left, one big line, a quiet caption, and two or three small annotation labels that point at parts of the scene and explain it.",
+  "Each panel of a carousel must use a different metaphor; real website or portfolio proof should appear as a lit storefront, not a floating screenshot.",
+  "Never use generic blue SaaS gradients, cartoon robots, stock-tech imagery, rainbow AI effects or template layouts that look generated.",
+].join(" ");
+
+export const LYNQ_PANEL_VISUAL_GRAMMAR = `Write every LYNQ panel visual as: "<scene token>: metaphor=<key> | <one sentence describing the physical scene and what the lime accent does> | labels: <two or three short annotation labels separated by ;>". Scene tokens: brand, website, portfolio, systems, office, automation, cta. Metaphor keys: ${Object.entries(LYNQ_METAPHOR_GUIDE).map(([key, meaning]) => `${key} (${meaning})`).join("; ")}. Use a different metaphor for every panel, pick the one whose meaning matches the line, and reserve cta for the final panel.`;
+
 const DEFAULT_BRANDS: Record<MarketingBrandKey, Omit<MarketingBrandProfile, "id" | "organizationId" | "workspaceId" | "revision" | "createdAt" | "updatedAt">> = {
   lynq: {
     brandKey: "lynq",
@@ -73,7 +91,7 @@ const DEFAULT_BRANDS: Record<MarketingBrandKey, Omit<MarketingBrandProfile, "id"
     positioning: "A premium digital partner that leads with high-converting websites and landing pages, then connects the systems, automation and LYNQ Office operations behind the customer journey. Digital transformation is the expansion path, not the opening pitch.",
     audience: "Founders and operators of established service businesses, restaurants, creative brands and growth-minded small-to-medium companies that need a better digital presence and fewer disconnected systems.",
     voice: "Direct, assured, precise and premium. Short sentences. Strong point of view. Show the business outcome through concrete proof. Avoid hype, jargon, generic AI language and crowded feature lists.",
-    visualRules: "Black and white foundation with neon lime as a controlled accent. Editorial scale, generous negative space, sharp contrast, refined motion and premium art direction. Never use generic blue SaaS gradients, cartoon robots, stock-tech imagery or rainbow AI effects.",
+    visualRules: LYNQ_VISUAL_RULES,
     productContext: "Primary offer: websites and landing pages built to present the business clearly and convert demand. Expansion: connected CRM, workflows, analytics, automation, digital transformation and LYNQ Office as the operating layer that keeps people and AI work coordinated.",
     callsToAction: ["Book a strategy call", "Start with your website", "See what LYNQ can build", "Connect the systems behind your growth"],
     approvedExamples: ["Your website should do more than look expensive.", "Start with the page customers see. Then fix the system behind it.", "One clear landing page can expose every broken handoff behind it."],
@@ -125,12 +143,19 @@ export async function ensureDefaultBrandProfiles(db: Db, input: { organizationId
   await requireMarketingManageContentAuthority(db, ctx, "marketing_brand_profile", "defaults");
 
   for (const profile of Object.values(DEFAULT_BRANDS)) {
-    const [existing] = await db.select({ id: marketingBrandProfiles.id }).from(marketingBrandProfiles).where(and(
+    const [existing] = await db.select({ id: marketingBrandProfiles.id, visualRules: marketingBrandProfiles.visualRules }).from(marketingBrandProfiles).where(and(
       eq(marketingBrandProfiles.organizationId, input.organizationId),
       workspaceId ? eq(marketingBrandProfiles.workspaceId, workspaceId) : isNull(marketingBrandProfiles.workspaceId),
       eq(marketingBrandProfiles.brandKey, profile.brandKey),
     ));
-    if (existing) continue;
+    if (existing) {
+      // Only untouched defaults move forward; a customised profile is the founder's.
+      if (profile.brandKey === "lynq" && existing.visualRules === LEGACY_LYNQ_VISUAL_RULES) {
+        await db.update(marketingBrandProfiles).set({ visualRules: LYNQ_VISUAL_RULES, updatedAt: new Date() }).where(eq(marketingBrandProfiles.id, existing.id));
+        await recordAuditEvent(db, { eventType: "marketing_brand_profile_updated", actorUserId: input.actorUserId, organizationId: input.organizationId, targetType: "marketing_brand_profile", targetId: existing.id, metadata: { brandKey: profile.brandKey, field: "visualRules", reason: "default_rules_upgraded" } });
+      }
+      continue;
+    }
     const [created] = await db.insert(marketingBrandProfiles).values({ organizationId: input.organizationId, workspaceId, ...profile }).returning();
     await recordAuditEvent(db, { eventType: "marketing_brand_profile_created", actorUserId: input.actorUserId, organizationId: input.organizationId, targetType: "marketing_brand_profile", targetId: created.id, metadata: { brandKey: profile.brandKey, workspaceScoped: Boolean(workspaceId) } });
   }
@@ -255,11 +280,11 @@ export function buildFallbackProductionPackage(input: { brand: MarketingBrandPro
         { timing: "0:14–0:18", visual: "code_output: Real output or lesson proof showing the code concept behind the game.", onScreenText: "Learn how it works.", audio: "Then learn the code behind it." },
         { timing: "0:18–0:21", visual: "cta: Pixel mascot, approved logo and codeitlearn.com.", onScreenText: "Try the free first-game challenge.", audio: callToAction },
       ] : [
-        { timing: "0:00–0:03", visual: "website: Real premium landing-page proof.", onScreenText: "Your website is the first system customers meet.", audio: hooks[0] },
-        { timing: "0:03–0:06", visual: "portfolio: Real LYNQ website work.", onScreenText: "Make the offer clear.", audio: "Make the offer clear." },
-        { timing: "0:06–0:09", visual: "website: Real conversion path and call to action.", onScreenText: "Make the next step obvious.", audio: "Make the next step obvious." },
-        { timing: "0:09–0:12", visual: "systems: Connected workflow behind the customer journey.", onScreenText: "Connect what happens next.", audio: "Then connect the system behind it." },
-        { timing: "0:12–0:15", visual: "cta: LYNQ brand card and lynq.build.", onScreenText: "Start with your website.", audio: callToAction },
+        { timing: "0:00–0:03", visual: "website: metaphor=storefront | The real landing page glows as a lit shop window on a dark street. | labels: The page customers meet", onScreenText: "Your website is the first system customers meet.", audio: hooks[0] },
+        { timing: "0:03–0:06", visual: "portfolio: metaphor=spotlight | One page under a single cone of lime light on an empty stage. | labels: One clear offer; The next step", onScreenText: "Make the offer clear.", audio: "Make the offer clear." },
+        { timing: "0:06–0:09", visual: "website: metaphor=path | A tangled route straightens into one lime line that ends on a target. | labels: Where they start; Where they convert", onScreenText: "Make the next step obvious.", audio: "Make the next step obvious." },
+        { timing: "0:09–0:12", visual: "systems: metaphor=stack | The website sits as the top plate on a stack of connected systems. | labels: The website; The systems behind it", onScreenText: "Connect what happens next.", audio: "Then connect the system behind it." },
+        { timing: "0:12–0:15", visual: "cta: metaphor=cta | Minimal closing frame with the call to action and lynq.build.", onScreenText: "Start with your website.", audio: callToAction },
       ],
     });
   }
@@ -272,11 +297,11 @@ export function buildFallbackProductionPackage(input: { brand: MarketingBrandPro
     { position: "5", purpose: "Close with the approved acquisition path.", visual: "cta: Pixel mascot, approved logo and codeitlearn.com.", overlayText: "Try the free first-game challenge." },
   ];
   const lynqPanels = [
-    { position: "1", purpose: "Lead with customer-facing proof.", visual: "website: Real premium landing-page work.", overlayText: "Start with the page customers see." },
-    { position: "2", purpose: "Clarify the business value.", visual: "portfolio: Real LYNQ website or portfolio proof.", overlayText: "Make the offer clear." },
-    { position: "3", purpose: "Show the conversion path.", visual: "website: Real page and call-to-action detail.", overlayText: "Make the next step obvious." },
-    { position: "4", purpose: "Reveal the operating layer after the website.", visual: "systems: Connected CRM and workflow behind the page.", overlayText: "Then connect what happens next." },
-    { position: "5", purpose: "Close with the brand CTA.", visual: "cta: LYNQ brand card and lynq.build.", overlayText: "Start with your website." },
+    { position: "1", purpose: "Before anyone calls, they look. The page is the first system a customer meets.", visual: "website: metaphor=storefront | The real landing page glows as a lit shop window on a dark street. | labels: The page customers meet", overlayText: "Start with the page customers see." },
+    { position: "2", purpose: "One offer, lit. Everything else can wait in the dark.", visual: "portfolio: metaphor=spotlight | One page under a single cone of lime light on an empty stage. | labels: One clear offer; The next step", overlayText: "Make the offer clear." },
+    { position: "3", purpose: "Demand arrives faster than a manual handoff can pass it on.", visual: "website: metaphor=bottleneck | Dozens of enquiries jam before a narrow neck; one lime dot gets through. | labels: Demand; The handoff; What gets through", overlayText: "Make the next step obvious." },
+    { position: "4", purpose: "The page is the top layer. The CRM, workflows and follow-up underneath decide what happens next.", visual: "systems: metaphor=stack | The website sits as the top plate on a stack of connected systems. | labels: The website; The systems behind it", overlayText: "Then connect what happens next." },
+    { position: "5", purpose: "Book a strategy call and we start with the page customers see.", visual: "cta: metaphor=cta | Minimal closing frame with the call to action and lynq.build.", overlayText: "Start with your website." },
   ];
   const panels = contentKind === "single_image_post" ? [(isCodeIt ? codeItPanels : lynqPanels)[0]] : (isCodeIt ? codeItPanels : lynqPanels);
   return contentStudioPackageSchema.parse({ ...base, contentKind, postCopy: base.caption, panels });
@@ -326,11 +351,11 @@ const defaultPackageGenerator: PackageGenerator = async ({ brand, goal, channel,
   const isCodeItVideo = isVideo && brand.brandKey === "codeitlearn";
   const isLynqVideo = isVideo && brand.brandKey === "lynq";
   const system = isVideo
-    ? `You are LYNQ Office's short-form Creative Director and Script Writer. Create a complete short-video production package that a social media manager can render, review and publish. Follow the supplied brand truth and claims guardrails. The storyboard must be specific and usable. ${isCodeItVideo ? "Create 5–8 concise shots for an 18–24 second product walkthrough. Every visual field must start with one approved scene token—pixel_mascot, brand_logo, project_builder, built_game, game_play, lessons_map, python_playground, code_output, explore, or cta—then add the production direction. When the goal involves a project or game, open with built_game or game_play showing a real playable result; never use the homepage, lesson map or sign-in screen as a substitute. Include the builder and at least two real product-proof scenes." : isLynqVideo ? "Create exactly 5 premium shots for a 15-second video. Every visual field must start with one approved scene token—brand, website, portfolio, systems, office, automation, or cta. Lead with websites/landing pages unless the user's goal explicitly asks for operations. Use website or portfolio proof in at least two shots. Keep neon lime controlled and editorial." : "Keep the total concept suitable for a concise 10–15 second social video."} Never put production directions in onScreenText; onScreenText is final audience-facing copy only. contentKind must be short_video. Set renderingStatus to not_requested, renderedAssets to an empty array and renderingError to null. Return structured data only.`
-    : `You are LYNQ Office's Social Creative Director and Copywriter. Create a complete, publish-ready social post package with final copy and specific visual direction. Follow the supplied brand truth and claims guardrails. For a single-image post return exactly one panel; for a carousel return 3–10 ordered panels with a clear narrative. ${brand.brandKey === "lynq" ? "Start every panel visual with one approved scene token—brand, website, portfolio, systems, office, automation, or cta. Lead with websites or landing pages unless the goal explicitly asks for operations. Use real portfolio/site proof and premium black/white/neon-lime art direction." : "Start every panel visual with one approved scene token—pixel_mascot, brand_logo, project_builder, built_game, game_play, lessons_map, python_playground, code_output, explore, or cta. When the goal involves a project or game, panel one must use built_game or game_play and show the real playable result with its visible game UI. Never substitute the homepage, lesson map or sign-in screen. Use Pixel only as supporting brand art, not as fake product proof."} Set renderingStatus to not_requested, renderedAssets to an empty array and renderingError to null. Return structured data only.`;
+    ? `You are LYNQ Office's short-form Creative Director and Script Writer. Create a complete short-video production package that a social media manager can render, review and publish. Follow the supplied brand truth and claims guardrails. The storyboard must be specific and usable. ${isCodeItVideo ? "Create 5–8 concise shots for an 18–24 second product walkthrough. Every visual field must start with one approved scene token—pixel_mascot, brand_logo, project_builder, built_game, game_play, lessons_map, python_playground, code_output, explore, or cta—then add the production direction. When the goal involves a project or game, open with built_game or game_play showing a real playable result; never use the homepage, lesson map or sign-in screen as a substitute. Include the builder and at least two real product-proof scenes." : isLynqVideo ? "Create exactly 5 premium shots for a 15-second video. Every visual field must start with one approved scene token—brand, website, portfolio, systems, office, automation, or cta. Lead with websites/landing pages unless the user's goal explicitly asks for operations. Use website or portfolio proof in at least two shots. Keep neon lime controlled and editorial. Every shot is a scene with a concept, not a headline on a background. " + LYNQ_PANEL_VISUAL_GRAMMAR : "Keep the total concept suitable for a concise 10–15 second social video."} Never put production directions in onScreenText; onScreenText is final audience-facing copy only. contentKind must be short_video. Set renderingStatus to not_requested, renderedAssets to an empty array and renderingError to null. Return structured data only.`
+    : `You are LYNQ Office's Social Creative Director and Copywriter. Create a complete, publish-ready social post package with final copy and specific visual direction. Follow the supplied brand truth and claims guardrails. For a single-image post return exactly one panel; for a carousel return 3–10 ordered panels with a clear narrative. ${brand.brandKey === "lynq" ? "Start every panel visual with one approved scene token—brand, website, portfolio, systems, office, automation, or cta. Lead with websites or landing pages unless the goal explicitly asks for operations. Use real portfolio/site proof and premium black/white/neon-lime art direction. " + LYNQ_PANEL_VISUAL_GRAMMAR + " The overlayText is the one big line; purpose becomes the quiet caption under the scene, so write it as audience-facing copy, not an internal note." : "Start every panel visual with one approved scene token—pixel_mascot, brand_logo, project_builder, built_game, game_play, lessons_map, python_playground, code_output, explore, or cta. When the goal involves a project or game, panel one must use built_game or game_play and show the real playable result with its visible game UI. Never substitute the homepage, lesson map or sign-in screen. Use Pixel only as supporting brand art, not as fake product proof."} Set renderingStatus to not_requested, renderedAssets to an empty array and renderingError to null. Return structured data only.`;
   const prompt = JSON.stringify({ brand, goal, channel, contentKind, selectedConcept: concept, creativeReferences: serializeCreativeReferences(creativeReferences), referencePolicy: ["Borrow only the explicitly noted pacing, structure, framing, transition or storytelling principles", "Do not copy exact wording, protected characters, music, branding, footage, credentials, outcomes or product claims", "The supplied brand profile and claims guardrails always override a reference"], requirements: isVideo
-      ? [isCodeItVideo ? "18–24 seconds with 5–8 shots" : isLynqVideo ? "15 seconds with exactly 5 shots" : "10–15 seconds", "3–6 strong hooks", "concise word-for-word script", "timed shot list", "caption and cover", "specific asset instructions", "one CTA", ...(isCodeItVideo ? ["Open with built_game or game_play when showing a project", "Use real project_builder, built_game, game_play, lessons_map, python_playground, code_output or explore scenes", "End with cta and codeitlearn.com"] : []), ...(isLynqVideo ? ["Lead with website/landing-page proof", "Use website or portfolio scenes twice", "End with cta and lynq.build"] : [])]
-      : ["3–6 opening-line options", "final post copy", "platform-appropriate caption", "panel-by-panel visual and overlay text", "specific asset instructions", "one CTA", "no invented product features or results"] });
+      ? [isCodeItVideo ? "18–24 seconds with 5–8 shots" : isLynqVideo ? "15 seconds with exactly 5 shots" : "10–15 seconds", "3–6 strong hooks", "concise word-for-word script", "timed shot list", "caption and cover", "specific asset instructions", "one CTA", ...(isCodeItVideo ? ["Open with built_game or game_play when showing a project", "Use real project_builder, built_game, game_play, lessons_map, python_playground, code_output or explore scenes", "End with cta and codeitlearn.com"] : []), ...(isLynqVideo ? ["Lead with website/landing-page proof", "Use website or portfolio scenes twice", "A different metaphor for every shot", "End with cta and lynq.build"] : [])]
+      : ["3–6 opening-line options", "final post copy", "platform-appropriate caption", "panel-by-panel visual and overlay text", "specific asset instructions", "one CTA", "no invented product features or results", ...(brand.brandKey === "lynq" ? ["Every panel visual follows the LYNQ scene grammar with a distinct metaphor and two or three annotation labels"] : [])] });
 
   // Keep each structured-output schema concrete here. A union schema would be
   // ambiguous to the provider and is rejected by TypeScript's output contract.

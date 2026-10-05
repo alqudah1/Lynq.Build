@@ -498,6 +498,7 @@ export type AuditEventType =
   | "marketing_audience_updated"
   | "marketing_content_created"
   | "marketing_brand_profile_created"
+  | "marketing_brand_profile_updated"
   | "marketing_creative_reference_created"
   | "marketing_content_studio_started"
   | "marketing_content_studio_package_created"

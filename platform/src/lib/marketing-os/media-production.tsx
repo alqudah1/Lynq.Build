@@ -17,6 +17,7 @@ import { requireMarketingManageContentAuthority, resolveMarketingAuthContext } f
 import { getStudioDraftForUser, listBrandProfiles, type ContentStudioDraft, type MarketingBrandProfile } from "./content-studio";
 import { contentStudioPackageSchema, type ContentStudioPackage } from "./validation";
 import { generateRunwayMotionClip, isRunwayPremiumRendererConfigured } from "./providers/runway";
+import { LynqFrame, assignLynqMetaphors, parseLynqVisualDirection, type LynqScene } from "./lynq-scenes";
 
 type Db = NeonHttpDatabase<Record<string, unknown>>;
 
@@ -38,7 +39,6 @@ type CodeItAssets = {
   explore: string;
 };
 
-type LynqScene = "brand" | "website" | "portfolio" | "systems" | "office" | "automation" | "cta";
 type LynqAssets = { logo: string; brandCard: string; website: string; portfolio: string };
 
 let codeItAssetsPromise: Promise<CodeItAssets> | null = null;
@@ -99,41 +99,6 @@ function classifyLynqScene(input: { visual: string; onScreenText: string }, inde
   if (/automat|workflow|agent|ai /.test(value)) return "automation";
   if (/system|digital transformation|connected/.test(value)) return "systems";
   return index === 0 ? "brand" : "website";
-}
-
-function lynqFrame(input: { assets: LynqAssets; scene: LynqScene; headline: string; supportingText: string; index: number; count: number; callToAction: string; square: boolean }) {
-  const { assets, scene, headline, supportingText, index, count, callToAction, square } = input;
-  const showsProduct = scene === "website" || scene === "portfolio";
-  const screen = scene === "portfolio" ? assets.portfolio : assets.website;
-  const label = scene === "website" ? "WEBSITES & LANDING PAGES" : scene === "portfolio" ? "SELECTED WORK" : scene === "office" ? "LYNQ OFFICE" : scene === "automation" ? "AI & AUTOMATION" : scene === "systems" ? "CONNECTED SYSTEMS" : "LYNQ";
-  return (
-    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", padding: square ? "62px" : "44px", background: "#050505", color: "#f7f7f2", fontFamily: "Arial, sans-serif", position: "relative", overflow: "hidden" }}>
-      <div style={{ display: "flex", position: "absolute", width: square ? "520px" : "390px", height: square ? "520px" : "390px", borderRadius: "999px", border: "1px solid #c8ff00", opacity: 0.18, right: "-180px", top: "-170px" }} />
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: square ? "92px" : "72px" }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={assets.logo} alt="LYNQ" style={{ width: square ? "170px" : "135px", height: square ? "70px" : "56px", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
-        <span style={{ color: "#c8ff00", fontWeight: 800, fontSize: square ? "24px" : "19px", letterSpacing: "0.12em" }}>{String(index + 1).padStart(2, "0")} / {String(count).padStart(2, "0")}</span>
-      </div>
-      <div style={{ display: "flex", flex: 1, flexDirection: "column", justifyContent: "center", gap: square ? "30px" : "22px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "14px", fontSize: square ? "19px" : "16px", letterSpacing: "0.18em", color: "#c8ff00", fontWeight: 800 }}><span style={{ width: "54px", height: "3px", background: "#c8ff00" }} />{label}</div>
-        <div style={{ display: "flex", maxWidth: square ? "900px" : "620px", fontSize: headline.length > 78 ? (square ? "62px" : "46px") : (square ? "78px" : "58px"), lineHeight: 0.98, fontWeight: 800, letterSpacing: "-0.045em" }}>{scene === "cta" ? callToAction : headline}</div>
-        {showsProduct ? (
-          <div style={{ display: "flex", flexDirection: "column", overflow: "hidden", border: "1px solid #333", borderRadius: "12px", background: "#111", boxShadow: "0 28px 80px rgba(0,0,0,.6)" }}>
-            <div style={{ display: "flex", height: square ? "42px" : "32px", alignItems: "center", gap: "8px", padding: "0 15px", background: "#171717", borderBottom: "1px solid #2b2b2b" }}><span style={{ width: "9px", height: "9px", borderRadius: "99px", background: "#c8ff00" }} /><span style={{ color: "#777", fontSize: square ? "15px" : "12px", marginLeft: "8px" }}>lynq.build / selected work</span></div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={screen} alt="Real LYNQ website work" style={{ width: square ? "930px" : "620px", height: square ? "510px" : "360px", objectFit: "cover", objectPosition: "top" }} />
-          </div>
-        ) : (
-          <div style={{ display: "flex", minHeight: square ? "430px" : "330px", alignItems: "center", justifyContent: "center", border: "1px solid #242424", background: "linear-gradient(145deg,#0b0b0b,#151515)" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={assets.brandCard} alt="LYNQ premium brand" style={{ width: "92%", height: "92%", objectFit: "contain", opacity: scene === "cta" ? 0.72 : 0.9 }} />
-          </div>
-        )}
-        <div style={{ display: "flex", maxWidth: "820px", fontSize: square ? "27px" : "20px", lineHeight: 1.35, color: "#a5a5a0" }}>{supportingText}</div>
-      </div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: square ? "68px" : "54px", borderTop: "1px solid #282828", fontSize: square ? "22px" : "17px" }}><span>Build better. Work smarter.</span><span style={{ color: "#c8ff00", fontWeight: 800 }}>LYNQ.BUILD</span></div>
-    </div>
-  );
 }
 
 export function classifyCodeItScene(input: { visual: string; onScreenText: string }, index: number, count: number, forceFinalCta = true): CodeItScene {
@@ -293,8 +258,24 @@ export async function renderPostPanel({ brand, pkg, panelIndex }: Parameters<Non
   }
   if (brand.brandKey === "lynq") {
     const assets = await loadLynqAssets();
-    const response = new ImageResponse(lynqFrame({ assets, scene: classifyLynqScene({ visual: panel.visual, onScreenText: panel.overlayText }, panelIndex, count), headline: panel.overlayText || pkg.coverText, supportingText: panel.purpose, index: panelIndex, count, callToAction: pkg.callToAction, square: true }), { width: 1080, height: 1350 });
-    return { bytes: new Uint8Array(await response.arrayBuffer()), contentType: "image/png", model: `${CONTENT_STUDIO_DESIGN_RENDERER}-lynq-premium-v2` };
+    const metaphors = assignLynqMetaphors(pkg.panels.map((item) => ({ visual: item.visual, onScreenText: item.overlayText })));
+    const direction = parseLynqVisualDirection(panel.visual);
+    const response = new ImageResponse(
+      <LynqFrame
+        assets={assets}
+        scene={direction.scene ?? classifyLynqScene({ visual: panel.visual, onScreenText: panel.overlayText }, panelIndex, count)}
+        metaphor={metaphors[panelIndex]}
+        headline={panel.overlayText || pkg.coverText}
+        caption={panel.purpose}
+        labels={direction.labels}
+        index={panelIndex}
+        count={count}
+        callToAction={pkg.callToAction}
+        square
+      />,
+      { width: 1080, height: 1350 },
+    );
+    return { bytes: new Uint8Array(await response.arrayBuffer()), contentType: "image/png", model: `${CONTENT_STUDIO_DESIGN_RENDERER}-lynq-scene-v3` };
   }
   const response = new ImageResponse(
     <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "76px", background: colors.background, color: colors.foreground, fontFamily: "Arial, sans-serif", position: "relative", overflow: "hidden" }}>
@@ -326,6 +307,7 @@ async function renderVideo({ brand, pkg }: Parameters<NonNullable<MediaProductio
   const shots = pkg.shots.slice(0, brand.brandKey === "codeitlearn" ? 8 : 5);
   const codeItAssets = brand.brandKey === "codeitlearn" ? await loadCodeItAssets() : null;
   const lynqAssets = brand.brandKey === "lynq" ? await loadLynqAssets() : null;
+  const lynqMetaphors = assignLynqMetaphors(shots.map((shot) => ({ visual: shot.visual, onScreenText: shot.onScreenText })));
   try {
     const segments: string[] = [];
     const durations: number[] = [];
@@ -343,16 +325,20 @@ async function renderVideo({ brand, pkg }: Parameters<NonNullable<MediaProductio
           index,
           count: shots.length,
           callToAction: pkg.callToAction,
-        }) : lynqAssets ? lynqFrame({
-          assets: lynqAssets,
-          scene: classifyLynqScene(shot, index, shots.length),
-          headline: shot.onScreenText || (index === 0 ? pkg.selectedHook : pkg.coverText),
-          supportingText: shot.visual,
-          index,
-          count: shots.length,
-          callToAction: pkg.callToAction,
-          square: false,
-        }) : (
+        }) : lynqAssets ? (
+          <LynqFrame
+            assets={lynqAssets}
+            scene={parseLynqVisualDirection(shot.visual).scene ?? classifyLynqScene(shot, index, shots.length)}
+            metaphor={lynqMetaphors[index]}
+            headline={shot.onScreenText || (index === 0 ? pkg.selectedHook : pkg.coverText)}
+            caption={parseLynqVisualDirection(shot.visual).description || shot.visual}
+            labels={parseLynqVisualDirection(shot.visual).labels}
+            index={index}
+            count={shots.length}
+            callToAction={pkg.callToAction}
+            square={false}
+          />
+        ) : (
           <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "58px", background: colors.background, color: colors.foreground, fontFamily: "Arial, sans-serif", position: "relative", overflow: "hidden" }}>
             <div style={{ display: "flex", position: "absolute", width: "390px", height: "390px", borderRadius: "999px", background: colors.accent, opacity: 0.18, right: "-140px", top: "-100px" }} />
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "25px", fontWeight: 800, letterSpacing: "0.06em" }}><span>{brand.name.toUpperCase()}</span><span style={{ color: colors.accent }}>{String(index + 1).padStart(2, "0")}</span></div>
