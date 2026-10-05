@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { approvalKeyboard, buildApprovalCaption, encodeDecision, handleTelegramUpdate, parseDecision, registerTelegramWebhook, telegramEnabled, telegramWebhookSecret, verifyTelegramWebhookSecret, type TelegramEnv } from "./telegram";
+import { approvalKeyboard, buildApprovalCaption, draftKeyboard, encodeDecision, handleTelegramUpdate, parseDecision, registerTelegramWebhook, telegramEnabled, telegramWebhookSecret, verifyTelegramWebhookSecret, type TelegramEnv } from "./telegram";
 
 const TOKEN = "123456789:AAH-abcdefghijklmnopqrstuvwxyz012345";
 const env: TelegramEnv = { TELEGRAM_BOT_TOKEN: TOKEN, TELEGRAM_CHAT_ID: "555", TELEGRAM_APPROVER_EMAIL: "owner@lynq.build", AUTH_SECRET: "s".repeat(40), AUTH_BASE_URL: "https://office.example" };
@@ -39,6 +39,9 @@ describe("telegram approvals", () => {
     for (const bad of [undefined, "", "x:" + VID + ":1", "p:not-a-uuid:1", `p:${VID}:-1`, `p:${VID}:abc`]) expect(parseDecision(bad)).toBeNull();
     const kb = approvalKeyboard(VID, 4).inline_keyboard.flat();
     expect(kb.map((b) => parseDecision(b.callback_data)?.decision)).toEqual(["publish", "changes", "reject"]);
+    const draft = draftKeyboard(VID, 2).inline_keyboard.flat();
+    expect(draft.map((b) => parseDecision(b.callback_data))).toEqual([{ decision: "submit", contentVariantId: VID, revision: 2 }]);
+    expect(Buffer.byteLength(draft[0].callback_data)).toBeLessThanOrEqual(64);
   });
 
   it("caption names the destination, keeps hashtags, and fits the 1024-char photo limit", () => {

@@ -6,7 +6,7 @@ import { organizationMemberships, organizations, socialContentVariants, users } 
 import { loadAuthEnv } from "@/lib/auth/env";
 import { loadEnv } from "@/lib/env";
 import { assetPublicUrl } from "./assets";
-import { decideVariantApproval, listPendingApprovals, type SocialPendingApproval } from "./content";
+import { decideVariantApproval, listDraftsAwaitingReview, listPendingApprovals, submitVariantForReview, type SocialPendingApproval } from "./content";
 import { SOCIAL_PLATFORM_LABELS } from "./validation";
 
 /**
@@ -36,9 +36,9 @@ export interface TelegramDeps {
   fetchImpl?: typeof fetch;
 }
 
-type Decision = "publish" | "changes" | "reject";
-const DECISION_CODES: Record<string, Decision> = { p: "publish", c: "changes", r: "reject" };
-const CODE_FOR: Record<Decision, string> = { publish: "p", changes: "c", reject: "r" };
+type Decision = "publish" | "changes" | "reject" | "submit";
+const DECISION_CODES: Record<string, Decision> = { p: "publish", c: "changes", r: "reject", s: "submit" };
+const CODE_FOR: Record<Decision, string> = { publish: "p", changes: "c", reject: "r", submit: "s" };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CAPTION_LIMIT = 1024;
 
@@ -89,6 +89,10 @@ export function buildApprovalCaption(p: Pick<SocialPendingApproval, "title" | "b
   return `${head}\n\n${body}${tags}`.slice(0, CAPTION_LIMIT);
 }
 
+export function draftKeyboard(contentVariantId: string, revision: number) {
+  return { inline_keyboard: [[{ text: "📤 Send for review", callback_data: encodeDecision("submit", contentVariantId, revision) }]] };
+}
+
 export function approvalKeyboard(contentVariantId: string, revision: number) {
   return {
     inline_keyboard: [
@@ -131,15 +135,21 @@ async function resolveApprover(db: Db, env: TelegramEnv): Promise<Approver | { e
   return { userId: user.id, organizationIds: orgs.map((m) => m.organizationId) };
 }
 
-async function sendPending(db: Db, env: TelegramEnv, chatId: string, pending: SocialPendingApproval, deps: TelegramDeps): Promise<void> {
-  const caption = buildApprovalCaption(pending);
-  const reply_markup = approvalKeyboard(pending.variant.id, pending.variant.revision);
+async function sendPending(db: Db, env: TelegramEnv, chatId: string, pending: SocialPendingApproval, deps: TelegramDeps, mode: "approve" | "draft" = "approve"): Promise<void> {
+  const caption = mode === "draft" ? `📝 DRAFT — not sent for review yet\n${buildApprovalCaption(pending)}`.slice(0, CAPTION_LIMIT) : buildApprovalCaption(pending);
+  const reply_markup = mode === "draft" ? draftKeyboard(pending.variant.id, pending.variant.revision) : approvalKeyboard(pending.variant.id, pending.variant.revision);
+  const video = pending.assets.find((a) => a.contentType.startsWith("video/"));
   const image = pending.assets.find((a) => a.contentType.startsWith("image/"));
-  if (image) {
-    await telegram(env, "sendPhoto", { chat_id: chatId, photo: assetPublicUrl(env, image.id), caption, reply_markup }, deps);
-  } else {
-    await telegram(env, "sendMessage", { chat_id: chatId, text: caption, reply_markup, link_preview_options: { is_disabled: true } }, deps);
+  try {
+    if (video) return void (await telegram(env, "sendVideo", { chat_id: chatId, video: assetPublicUrl(env, video.id), caption, reply_markup, supports_streaming: true }, deps));
+    if (image) return void (await telegram(env, "sendPhoto", { chat_id: chatId, photo: assetPublicUrl(env, image.id), caption, reply_markup }, deps));
+  } catch {
+    // Telegram couldn't fetch the media (too large, unreachable) — still deliver the post and its buttons.
+    const note = video ? "🎬 Video attached in LYNQ (couldn't preview it here)" : "🖼 Image attached in LYNQ (couldn't preview it here)";
+    await telegram(env, "sendMessage", { chat_id: chatId, text: `${note}\n\n${caption}`, reply_markup, link_preview_options: { is_disabled: true } }, deps);
+    return;
   }
+  await telegram(env, "sendMessage", { chat_id: chatId, text: caption, reply_markup, link_preview_options: { is_disabled: true } }, deps);
 }
 
 /**
@@ -166,7 +176,7 @@ interface TelegramUpdate {
   callback_query?: { id: string; data?: string; message?: { chat?: { id?: number | string }; message_id?: number; caption?: string; text?: string } };
 }
 
-const OUTCOME: Record<Decision, string> = { publish: "✅ Approved — publishing now", changes: "✏️ Sent back for changes", reject: "✖️ Rejected" };
+const OUTCOME: Record<Decision, string> = { publish: "✅ Approved — publishing now", changes: "✏️ Sent back for changes", reject: "✖️ Rejected", submit: "📤 Sent for review — approve it below" };
 
 function friendlyError(err: unknown): string {
   const name = err instanceof Error ? err.name : "";
@@ -192,7 +202,7 @@ export async function handleTelegramUpdate(db: Db, env: TelegramEnv, update: Tel
     }
     if (chatId !== allowed) return { action: "ignored_chat" };
     if (/^\/(start|help)\b/.test(text)) {
-      await telegram(env, "sendMessage", { chat_id: chatId, text: "LYNQ approvals are on. New posts sent for review arrive here. /pending re-sends everything waiting for you." }, deps);
+      await telegram(env, "sendMessage", { chat_id: chatId, text: "LYNQ approvals are on.\n/pending — posts waiting for your approval\n/drafts — every draft, with a button to send it for review\nNew posts sent for review arrive here automatically." }, deps);
       return { action: "help" };
     }
     if (/^\/pending\b/.test(text)) {
@@ -209,6 +219,19 @@ export async function handleTelegramUpdate(db: Db, env: TelegramEnv, update: Tel
       if (!pending.length) await telegram(env, "sendMessage", { chat_id: chatId, text: "Nothing is waiting for review." }, deps);
       for (const p of pending.slice(0, 20)) await sendPending(db, env, chatId, p, deps);
       return { action: `pending:${pending.length}` };
+    }
+    if (/^\/drafts\b/.test(text)) {
+      const approver = await resolveApprover(db, env);
+      if ("error" in approver) {
+        await telegram(env, "sendMessage", { chat_id: chatId, text: approver.error }, deps);
+        return { action: "no_approver" };
+      }
+      const drafts: SocialPendingApproval[] = [];
+      for (const organizationId of approver.organizationIds) drafts.push(...(await listDraftsAwaitingReview(db, { organizationId, actorUserId: approver.userId }).catch(() => [])));
+      if (!drafts.length) await telegram(env, "sendMessage", { chat_id: chatId, text: "No drafts. Everything is either waiting in /pending or already decided." }, deps);
+      else if (drafts.length > 20) await telegram(env, "sendMessage", { chat_id: chatId, text: `Showing the first 20 of ${drafts.length} drafts.` }, deps);
+      for (const d of drafts.slice(0, 20)) await sendPending(db, env, chatId, d, deps, "draft");
+      return { action: `drafts:${drafts.length}` };
     }
     return { action: "ignored_text" };
   }
@@ -234,6 +257,12 @@ export async function handleTelegramUpdate(db: Db, env: TelegramEnv, update: Tel
     result = "This post isn't in the approver's organization.";
   } else {
     try {
+      if (parsed.decision === "submit") {
+        await submitVariantForReview(db, { organizationId: variant.organizationId, contentVariantId: parsed.contentVariantId, actorUserId: approver.userId, expectedRevision: parsed.revision, summary: "Sent for review from Telegram" });
+        result = OUTCOME.submit;
+        const next = (await listPendingApprovals(db, { organizationId: variant.organizationId, actorUserId: approver.userId })).find((p) => p.variant.id === parsed.contentVariantId);
+        if (next) await sendPending(db, env, chatId, next, deps).catch(() => undefined);
+      } else {
       await decideVariantApproval(db, {
         organizationId: variant.organizationId,
         contentVariantId: parsed.contentVariantId,
@@ -244,6 +273,7 @@ export async function handleTelegramUpdate(db: Db, env: TelegramEnv, update: Tel
         note: "Decided from Telegram",
       });
       result = OUTCOME[parsed.decision];
+      }
     } catch (err) {
       result = friendlyError(err);
     }
@@ -283,8 +313,8 @@ export async function registerTelegramWebhook(env: TelegramEnv, deps: TelegramDe
   const changed = before.url !== target;
   if (changed) {
     await telegram(env, "setWebhook", { url: target, secret_token: telegramWebhookSecret(env.AUTH_SECRET), allowed_updates: ["message", "callback_query"], drop_pending_updates: false }, deps);
-    await telegram(env, "setMyCommands", { commands: [{ command: "pending", description: "Re-send every post waiting for review" }, { command: "help", description: "How approvals work" }] }, deps).catch(() => undefined);
   }
+  await telegram(env, "setMyCommands", { commands: [{ command: "pending", description: "Posts waiting for your approval" }, { command: "drafts", description: "Every draft — send any for review" }, { command: "help", description: "How approvals work" }] }, deps).catch(() => undefined);
   const redact = (m?: string) => (m ? m.replace(/x-vercel-protection-bypass=[^&\s]+/g, "x-vercel-protection-bypass=***").slice(0, 200) : null);
   return { url, changed, lastError: changed ? null : redact(before.last_error_message), pendingUpdates: before.pending_update_count ?? 0 };
 }

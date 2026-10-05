@@ -1003,9 +1003,18 @@ export interface SocialPendingApproval {
 
 /** Everything awaiting a human decision — for the Approval Center and the founder's phone. */
 export async function listPendingApprovals(db: Db, input: { organizationId: string; actorUserId: string; brandProfileId?: string }): Promise<SocialPendingApproval[]> {
+  return listVariantsInStatus(db, input, ["ready_for_review"]);
+}
+
+/** Drafts (and posts sent back for changes) not yet submitted — so the owner can review and submit them from their phone. */
+export async function listDraftsAwaitingReview(db: Db, input: { organizationId: string; actorUserId: string; brandProfileId?: string }): Promise<SocialPendingApproval[]> {
+  return listVariantsInStatus(db, input, ["draft", "changes_requested"]);
+}
+
+async function listVariantsInStatus(db: Db, input: { organizationId: string; actorUserId: string; brandProfileId?: string }, statuses: SocialVariantStatus[]): Promise<SocialPendingApproval[]> {
   const ctx = await resolveMarketingAuthContext(db, { organizationId: input.organizationId, actorUserId: input.actorUserId });
   await requireMarketingViewAuthority(db, ctx, "social_content_variant", "approvals");
-  const conditions = [eq(socialContentVariants.organizationId, input.organizationId), eq(socialContentVariants.status, "ready_for_review"), isNull(socialContentVariants.archivedAt)];
+  const conditions = [eq(socialContentVariants.organizationId, input.organizationId), inArray(socialContentVariants.status, statuses), isNull(socialContentVariants.archivedAt)];
   if (input.brandProfileId) conditions.push(eq(marketingContentItems.brandProfileId, input.brandProfileId));
   const rows = await db
     .select({ variant: socialContentVariants, item: marketingContentItems })
