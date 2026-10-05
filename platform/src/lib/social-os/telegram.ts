@@ -246,9 +246,13 @@ export async function handleTelegramUpdate(db: Db, env: TelegramEnv, update: Tel
 }
 
 /** Points the bot's webhook at this deployment. Called by the signed-in owner from LYNQ. */
-export async function registerTelegramWebhook(env: TelegramEnv, deps: TelegramDeps = {}): Promise<string> {
+export async function registerTelegramWebhook(env: TelegramEnv, deps: TelegramDeps = {}): Promise<{ url: string; changed: boolean }> {
+  // The target is always this deployment's own configured base URL — never
+  // anything from the request — so calling this can only point the bot here.
   const url = `${env.AUTH_BASE_URL.replace(/\/+$/, "")}/api/social/telegram/webhook`;
-  await telegram(env, "setWebhook", { url, secret_token: telegramWebhookSecret(env.AUTH_SECRET), allowed_updates: ["message", "callback_query"], drop_pending_updates: true }, deps);
+  const info = await telegram<{ url?: string }>(env, "getWebhookInfo", {}, deps).catch(() => ({ url: undefined }));
+  if (info.url === url) return { url, changed: false };
+  await telegram(env, "setWebhook", { url, secret_token: telegramWebhookSecret(env.AUTH_SECRET), allowed_updates: ["message", "callback_query"], drop_pending_updates: false }, deps);
   await telegram(env, "setMyCommands", { commands: [{ command: "pending", description: "Re-send every post waiting for review" }, { command: "help", description: "How approvals work" }] }, deps).catch(() => undefined);
-  return url;
+  return { url, changed: true };
 }

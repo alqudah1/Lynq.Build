@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { approvalKeyboard, buildApprovalCaption, encodeDecision, handleTelegramUpdate, parseDecision, telegramEnabled, telegramWebhookSecret, verifyTelegramWebhookSecret, type TelegramEnv } from "./telegram";
+import { approvalKeyboard, buildApprovalCaption, encodeDecision, handleTelegramUpdate, parseDecision, registerTelegramWebhook, telegramEnabled, telegramWebhookSecret, verifyTelegramWebhookSecret, type TelegramEnv } from "./telegram";
 
 const TOKEN = "123456789:AAH-abcdefghijklmnopqrstuvwxyz012345";
 const env: TelegramEnv = { TELEGRAM_BOT_TOKEN: TOKEN, TELEGRAM_CHAT_ID: "555", TELEGRAM_APPROVER_EMAIL: "owner@lynq.build", AUTH_SECRET: "s".repeat(40), AUTH_BASE_URL: "https://office.example" };
@@ -78,5 +78,15 @@ describe("telegram approvals", () => {
     const { calls, fetchImpl } = fakeFetch();
     expect((await handleTelegramUpdate(noDb, { ...env, TELEGRAM_BOT_TOKEN: undefined }, { message: { chat: { id: 555 }, text: "/pending" } }, { fetchImpl })).action).toBe("disabled");
     expect(calls).toHaveLength(0);
+  });
+
+  it("setup always targets this deployment's own URL and is a no-op once set", async () => {
+    const { calls, fetchImpl } = fakeFetch();
+    const first = await registerTelegramWebhook(env, { fetchImpl });
+    expect(first).toEqual({ url: "https://office.example/api/social/telegram/webhook", changed: true });
+    expect(calls.map((c) => c.method)).toEqual(["getWebhookInfo", "setWebhook", "setMyCommands"]);
+    expect(calls[1].body.url).toBe(first.url);
+    const already = (async () => new Response(JSON.stringify({ ok: true, result: { url: first.url } }), { status: 200 })) as unknown as typeof fetch;
+    expect(await registerTelegramWebhook(env, { fetchImpl: already })).toEqual({ url: first.url, changed: false });
   });
 });
