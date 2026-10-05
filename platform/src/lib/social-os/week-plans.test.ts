@@ -69,4 +69,15 @@ describe("week plan Oct 12", () => {
       expect(set).toContain(p.storyHighlight);
     }
   });
+
+  it("every LYNQ draft reference has fallback copy, so a fresh database still gets a full week", () => {
+    const rules = SOCIAL_PLATFORM_RULES.instagram;
+    for (const p of plan.feed.filter((e) => e.existingContentItemId)) {
+      expect(p.fallback?.title).toBeTruthy();
+      expect(p.fallback?.body?.length ?? 0).toBeGreaterThan(80);
+      expect(p.fallback!.body!.length).toBeLessThanOrEqual(rules.maxBodyLength);
+      for (const t of p.fallback?.hashtags ?? []) expect(t).toMatch(/^#?[\p{L}\p{N}_]{1,100}$/u);
+      if (p.pillar === "PROOF" || p.pillar === "FOUNDER") expect(p.fallback?.realPhotoOnly).toBe(true);
+    }
+  });
 });
