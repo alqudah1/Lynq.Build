@@ -62,7 +62,7 @@ export async function createBulkBatch(
 
   let row: CommunicationBulkBatch;
   try {
-    [row] = await db
+    [row] = (await db
       .insert(communicationBulkBatches)
       .values({
         organizationId: input.organizationId,
@@ -75,7 +75,7 @@ export async function createBulkBatch(
         maxRecipients: input.maxRecipients ?? 200,
         createdByUserId: input.actorUserId,
       })
-      .returning();
+      .returning()) as CommunicationBulkBatch[];
   } catch (err) {
     if (isPostgresUniqueViolation(err)) throw new DuplicateActiveBulkBatchError();
     throw err;

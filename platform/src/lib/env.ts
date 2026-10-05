@@ -12,6 +12,17 @@ import { z } from "zod";
  * whatever Next.js's default error page happens to show.
  */
 
+/**
+ * Module 19's provider settings are all optional, and a deployment that
+ * leaves one blank (`META_APP_ID=""`, as `.env.example` lists them) or
+ * writes the Google Ads manager id with dashes must not fail `loadEnv()` —
+ * which would take every route down, not just the Social Command Center.
+ * Blank means unset; the value is normalized before validation.
+ */
+function optionalSetting<T extends z.ZodTypeAny>(schema: T, normalize: (value: string) => string = (v) => v) {
+  return z.preprocess((value) => (typeof value === "string" ? (value.trim() === "" ? undefined : normalize(value.trim())) : value), schema.optional());
+}
+
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
   DATABASE_URL_UNPOOLED: z.string().min(1, "DATABASE_URL_UNPOOLED is required"),
@@ -51,6 +62,50 @@ const envSchema = z.object({
   // a real provider. Optional; if absent, the dev webhook route rejects
   // every request rather than accepting one unauthenticated.
   COMMUNICATIONS_DEV_WEBHOOK_SECRET: z.string().min(1).optional(),
+  // Local development only. When set, the Neon HTTP driver sends its
+  // SQL-over-HTTP requests to this endpoint (for example a local shim in
+  // front of a plain Postgres) instead of `https://<neon-host>/sql`. Never
+  // set in a deployed environment — the value must be a loopback URL.
+  // Module 19 — Social Command Center. Every provider is optional: when a
+  // key is absent the Connection Center / AI studio report
+  // "missing configuration" honestly and the rest of the module keeps
+  // working. Never read these outside `src/lib/social-os/providers/*`.
+  META_APP_ID: optionalSetting(z.string().min(1)),
+  META_APP_SECRET: optionalSetting(z.string().min(1)),
+  META_WEBHOOK_VERIFY_TOKEN: optionalSetting(z.string().min(16)),
+  META_GRAPH_API_VERSION: optionalSetting(z.string().regex(/^v\d+\.\d+$/)),
+  META_LOGIN_CONFIG_ID: optionalSetting(z.string().regex(/^\d+$/)),
+  LINKEDIN_CLIENT_ID: optionalSetting(z.string().min(1)),
+  LINKEDIN_CLIENT_SECRET: optionalSetting(z.string().min(1)),
+  LINKEDIN_API_VERSION: optionalSetting(z.string().regex(/^\d{6}$/)),
+  LINKEDIN_SCOPES: optionalSetting(z.string().min(1)),
+  // Telegram approvals: posts submitted for review are sent to one chat with Post now / Request changes / Reject buttons.
+  TELEGRAM_BOT_TOKEN: optionalSetting(z.string().min(1)),
+  TELEGRAM_CHAT_ID: optionalSetting(z.string().min(1)),
+  TELEGRAM_APPROVER_EMAIL: optionalSetting(z.string().min(1)),
+  TELEGRAM_ORGANIZATION_SLUG: optionalSetting(z.string().min(1)),
+  GOOGLE_ADS_CLIENT_ID: optionalSetting(z.string().min(1)),
+  GOOGLE_ADS_CLIENT_SECRET: optionalSetting(z.string().min(1)),
+  GOOGLE_ADS_DEVELOPER_TOKEN: optionalSetting(z.string().min(1)),
+  GOOGLE_ADS_LOGIN_CUSTOMER_ID: optionalSetting(z.string().regex(/^\d{10}$/), (v) => v.replace(/-/g, "")),
+  GOOGLE_ADS_API_VERSION: optionalSetting(z.string().regex(/^v\d+$/)),
+  ANTHROPIC_API_KEY: optionalSetting(z.string().min(1)),
+  ANTHROPIC_MODEL: optionalSetting(z.string().min(1)),
+  OPENAI_API_KEY: optionalSetting(z.string().min(1)),
+  OPENAI_TEXT_MODEL: optionalSetting(z.string().min(1)),
+  OPENAI_IMAGE_MODEL: optionalSetting(z.string().min(1)),
+  HIGGSFIELD_API_KEY: optionalSetting(z.string().min(1)),
+  HIGGSFIELD_API_SECRET: optionalSetting(z.string().min(1)),
+  BLOB_READ_WRITE_TOKEN: optionalSetting(z.string().min(1)),
+  /** Hard ceiling on AI media spend per organization per calendar day (USD, estimated). Default 25. */
+  SOCIAL_AI_DAILY_BUDGET_USD: optionalSetting(z.coerce.number().min(0).max(10000)),
+  NEON_HTTP_FETCH_ENDPOINT: z
+    .string()
+    .url()
+    .refine((value) => /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?\//.test(value), {
+      message: "NEON_HTTP_FETCH_ENDPOINT must point at a loopback address",
+    })
+    .optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -81,6 +136,35 @@ export function loadEnv(): Env {
     INTEGRATION_CREDENTIAL_ENCRYPTION_KEY: process.env.INTEGRATION_CREDENTIAL_ENCRYPTION_KEY,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     RESEND_WEBHOOK_SECRET: process.env.RESEND_WEBHOOK_SECRET,
+    COMMUNICATIONS_DEV_WEBHOOK_SECRET: process.env.COMMUNICATIONS_DEV_WEBHOOK_SECRET,
+    NEON_HTTP_FETCH_ENDPOINT: process.env.NEON_HTTP_FETCH_ENDPOINT,
+    META_APP_ID: process.env.META_APP_ID,
+    META_APP_SECRET: process.env.META_APP_SECRET,
+    META_WEBHOOK_VERIFY_TOKEN: process.env.META_WEBHOOK_VERIFY_TOKEN,
+    META_GRAPH_API_VERSION: process.env.META_GRAPH_API_VERSION,
+    META_LOGIN_CONFIG_ID: process.env.META_LOGIN_CONFIG_ID,
+    LINKEDIN_CLIENT_ID: process.env.LINKEDIN_CLIENT_ID,
+    LINKEDIN_CLIENT_SECRET: process.env.LINKEDIN_CLIENT_SECRET,
+    LINKEDIN_API_VERSION: process.env.LINKEDIN_API_VERSION,
+    LINKEDIN_SCOPES: process.env.LINKEDIN_SCOPES,
+    TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
+    TELEGRAM_CHAT_ID: process.env.TELEGRAM_CHAT_ID,
+    TELEGRAM_APPROVER_EMAIL: process.env.TELEGRAM_APPROVER_EMAIL,
+    TELEGRAM_ORGANIZATION_SLUG: process.env.TELEGRAM_ORGANIZATION_SLUG,
+    GOOGLE_ADS_CLIENT_ID: process.env.GOOGLE_ADS_CLIENT_ID,
+    GOOGLE_ADS_CLIENT_SECRET: process.env.GOOGLE_ADS_CLIENT_SECRET,
+    GOOGLE_ADS_DEVELOPER_TOKEN: process.env.GOOGLE_ADS_DEVELOPER_TOKEN,
+    GOOGLE_ADS_LOGIN_CUSTOMER_ID: process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID,
+    GOOGLE_ADS_API_VERSION: process.env.GOOGLE_ADS_API_VERSION,
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+    ANTHROPIC_MODEL: process.env.ANTHROPIC_MODEL,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    OPENAI_TEXT_MODEL: process.env.OPENAI_TEXT_MODEL,
+    OPENAI_IMAGE_MODEL: process.env.OPENAI_IMAGE_MODEL,
+    HIGGSFIELD_API_KEY: process.env.HIGGSFIELD_API_KEY,
+    HIGGSFIELD_API_SECRET: process.env.HIGGSFIELD_API_SECRET,
+    BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN,
+    SOCIAL_AI_DAILY_BUDGET_USD: process.env.SOCIAL_AI_DAILY_BUDGET_USD,
   });
 
   if (!parsed.success) {

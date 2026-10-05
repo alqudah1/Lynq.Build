@@ -184,6 +184,7 @@ export const NAV_ICON_BY_LABEL: Record<string, (props: SVGProps<SVGSVGElement>) 
   Sales: IconSales,
   Marketing: IconMarketing,
   "Marketing Command Center": IconCommandCenter,
+  "Social Command Center": IconMarketing,
   "Content Studio": IconContentStudio,
   Jarvis: IconAgents,
   Workflows: IconWorkflows,

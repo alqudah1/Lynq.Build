@@ -28,6 +28,7 @@ export function getNavItems(organizationSlug: string, role: OrganizationRole = "
       { label: "My Work", href: `${base}/my-work`, section: "Start" },
       { label: "Projects", href: `${base}/projects`, section: "Work" },
       { label: "Marketing Command Center", href: `${base}/marketing/command-center`, section: "Growth" },
+      { label: "Social Command Center", href: `${base}/social`, section: "Growth" },
       { label: "Content Studio", href: `${base}/marketing/content-studio`, section: "Growth" },
     ];
   }
@@ -39,6 +40,7 @@ export function getNavItems(organizationSlug: string, role: OrganizationRole = "
     { label: "Projects", href: `${base}/projects`, section: "Work" },
     { label: "Marketing", href: `${base}/marketing`, section: "Growth" },
     { label: "Marketing Command Center", href: `${base}/marketing/command-center`, section: "Growth" },
+    { label: "Social Command Center", href: `${base}/social`, section: "Growth" },
     { label: "Content Studio", href: `${base}/marketing/content-studio`, section: "Growth" },
     { label: "CRM", href: `${base}/crm`, section: "Growth" },
     { label: "Sales", href: `${base}/sales`, section: "Growth" },

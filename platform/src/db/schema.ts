@@ -2346,6 +2346,15 @@ export const runtimeJobTypeEnum = pgEnum("runtime_job_type", [
   // this exact same queue and worker (never a second execution engine).
   "communication_send",
   "communication_reconcile",
+  // Module 19 — Social Command Center's own job types, dispatched through
+  // this exact same queue and worker (never a second scheduler).
+  "social_publish",
+  "social_metrics_sync",
+  "social_engagement_sync",
+  "social_token_watch",
+  "social_automation_run",
+  "social_ad_change_execute",
+  "social_generation_run",
 ]);
 
 export const runtimeJobStatusEnum = pgEnum("runtime_job_status", [
@@ -4291,7 +4300,7 @@ export const marketingRunStatusEnum = pgEnum("marketing_run_status", ["not_start
 export const marketingRunItemStatusEnum = pgEnum("marketing_run_item_status", ["pending", "complete", "skipped"]);
 export const marketingTeamMemberRoleEnum = pgEnum("marketing_team_member_role", ["manager", "contributor", "viewer"]);
 export const marketingRoleEnum = pgEnum("marketing_role", ["marketing_admin", "marketing_manager", "marketing_contributor", "viewer"]);
-export const marketingApprovalLinkedEntityTypeEnum = pgEnum("marketing_approval_linked_entity_type", ["content_item"]);
+export const marketingApprovalLinkedEntityTypeEnum = pgEnum("marketing_approval_linked_entity_type", ["content_item", "content_variant", "publish_job", "ad_change_request", "engagement_reply"]);
 export const marketingProjectLinkEntityTypeEnum = pgEnum("marketing_project_link_entity_type", ["campaign", "content_item"]);
 export const marketingAttributionTouchTypeEnum = pgEnum("marketing_attribution_touch_type", ["first_touch", "last_touch"]);
 export const marketingDestinationTypeEnum = pgEnum("marketing_destination_type", ["external_url", "internal_reference"]);
@@ -4479,6 +4488,52 @@ export const marketingCampaignAudienceLinks = pgTable("marketing_campaign_audien
 ]);
 
 /** Content body lives in a real Runtime artifact (`currentArtifactId`, single-column FK per the established `workflow_node_executions.artifactId` precedent — a composite FK paired with `ON DELETE SET NULL` would null out this row's own `organizationId` too) — never duplicated into this table. */
+/** Persistent, tenant-scoped brand truth used by Content Studio. A brand is intentionally not a campaign: it is reusable positioning, voice, visual and product context applied across many campaigns. */
+export const marketingBrandProfiles = pgTable("marketing_brand_profiles", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  workspaceId: uuid("workspace_id"),
+  brandKey: text("brand_key").notNull(),
+  name: text("name").notNull(),
+  positioning: text("positioning").notNull(),
+  audience: text("audience").notNull(),
+  voice: text("voice").notNull(),
+  visualRules: text("visual_rules").notNull(),
+  productContext: text("product_context").notNull(),
+  callsToAction: jsonb("calls_to_action").notNull().default([]),
+  approvedExamples: jsonb("approved_examples").notNull().default([]),
+  claimsGuardrails: text("claims_guardrails").notNull(),
+  // Module 19 — persistent brand context for the Social Command Center.
+  // Additive, defaulted columns so the Content Studio rows seeded before
+  // this module keep working unchanged.
+  companyInfo: text("company_info").notNull().default(""),
+  brandStory: text("brand_story").notNull().default(""),
+  writingStyle: text("writing_style").notNull().default(""),
+  /** `{ colors: [{name, hex, role}], typography: {heading, body}, logoAssetIds: [] }` — validated by `brandVisualIdentitySchema`. */
+  visualIdentity: jsonb("visual_identity").notNull().default({}),
+  websites: jsonb("websites").notNull().default([]),
+  competitors: jsonb("competitors").notNull().default([]),
+  contentPillars: jsonb("content_pillars").notNull().default([]),
+  preferredPlatforms: jsonb("preferred_platforms").notNull().default([]),
+  prohibitedLanguage: jsonb("prohibited_language").notNull().default([]),
+  neverClaim: jsonb("never_claim").notNull().default([]),
+  geographicMarket: text("geographic_market").notNull().default(""),
+  objectives: jsonb("objectives").notNull().default([]),
+  createdByUserId: uuid("created_by_user_id").references(() => users.id, { onDelete: "set null" }),
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
+  revision: integer("revision").notNull().default(1),
+  ...timestamps,
+}, (t) => [
+  foreignKey({
+    name: "marketing_brand_profiles_workspace_org_fk",
+    columns: [t.workspaceId, t.organizationId],
+    foreignColumns: [workspaces.id, workspaces.organizationId],
+  }).onDelete("restrict"),
+  unique("marketing_brand_profiles_id_org_unique").on(t.id, t.organizationId),
+  uniqueIndex("marketing_brand_profiles_org_only_key_unique").on(t.organizationId, t.brandKey).where(sql`${t.workspaceId} IS NULL`),
+  uniqueIndex("marketing_brand_profiles_workspace_key_unique").on(t.organizationId, t.workspaceId, t.brandKey).where(sql`${t.workspaceId} IS NOT NULL`),
+]);
+
 export const marketingContentItems = pgTable("marketing_content_items", {
   id: uuid("id").primaryKey().defaultRandom(),
   organizationId: uuid("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
@@ -4492,6 +4547,12 @@ export const marketingContentItems = pgTable("marketing_content_items", {
   plannedPublishAt: timestamp("planned_publish_at", { withTimezone: true }),
   publishedAt: timestamp("published_at", { withTimezone: true }),
   projectTaskId: uuid("project_task_id"),
+  // Module 19 — the brand a content item belongs to (nullable so pre-existing
+  // items keep working), plus the shared creative brief the per-platform
+  // variants are derived from.
+  brandProfileId: uuid("brand_profile_id"),
+  /** Validated by `socialContentBriefSchema`: objective, audience, topic, format, tone, cta, creativeDirection, hook, script, shots… */
+  brief: jsonb("brief").notNull().default({}),
   createdByUserId: uuid("created_by_user_id").references(() => users.id, { onDelete: "set null" }),
   revision: integer("revision").notNull().default(1),
   archivedAt: timestamp("archived_at", { withTimezone: true }),
@@ -4507,9 +4568,15 @@ export const marketingContentItems = pgTable("marketing_content_items", {
     columns: [t.projectTaskId, t.organizationId],
     foreignColumns: [projectTasks.id, projectTasks.organizationId],
   }).onDelete("set null"),
+  foreignKey({
+    name: "marketing_content_items_brand_org_fk",
+    columns: [t.brandProfileId, t.organizationId],
+    foreignColumns: [marketingBrandProfiles.id, marketingBrandProfiles.organizationId],
+  }).onDelete("set null"),
   unique("marketing_content_items_id_org_unique").on(t.id, t.organizationId),
   index("marketing_content_items_campaign_idx").on(t.campaignId),
   index("marketing_content_items_org_status_idx").on(t.organizationId, t.status),
+  index("marketing_content_items_org_brand_idx").on(t.organizationId, t.brandProfileId),
 ]);
 
 /** Every artifact ever attached to a content item, in order — the item's own `currentArtifactId` is always the latest; this table is the historical trail (Runtime artifacts are already immutable, so no content body is ever copied here, only the pointer + version number). */
@@ -4534,34 +4601,6 @@ export const marketingContentItemArtifacts = pgTable("marketing_content_item_art
     foreignColumns: [marketingContentItems.id, marketingContentItems.organizationId],
   }).onDelete("cascade"),
   unique("marketing_content_item_artifacts_item_version_unique").on(t.contentItemId, t.versionNumber),
-]);
-
-/** Persistent, tenant-scoped brand truth used by Content Studio. A brand is intentionally not a campaign: it is reusable positioning, voice, visual and product context applied across many campaigns. */
-export const marketingBrandProfiles = pgTable("marketing_brand_profiles", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  organizationId: uuid("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
-  workspaceId: uuid("workspace_id"),
-  brandKey: text("brand_key").notNull(),
-  name: text("name").notNull(),
-  positioning: text("positioning").notNull(),
-  audience: text("audience").notNull(),
-  voice: text("voice").notNull(),
-  visualRules: text("visual_rules").notNull(),
-  productContext: text("product_context").notNull(),
-  callsToAction: jsonb("calls_to_action").notNull().default([]),
-  approvedExamples: jsonb("approved_examples").notNull().default([]),
-  claimsGuardrails: text("claims_guardrails").notNull(),
-  revision: integer("revision").notNull().default(1),
-  ...timestamps,
-}, (t) => [
-  foreignKey({
-    name: "marketing_brand_profiles_workspace_org_fk",
-    columns: [t.workspaceId, t.organizationId],
-    foreignColumns: [workspaces.id, workspaces.organizationId],
-  }).onDelete("restrict"),
-  unique("marketing_brand_profiles_id_org_unique").on(t.id, t.organizationId),
-  uniqueIndex("marketing_brand_profiles_org_only_key_unique").on(t.organizationId, t.brandKey).where(sql`${t.workspaceId} IS NULL`),
-  uniqueIndex("marketing_brand_profiles_workspace_key_unique").on(t.organizationId, t.workspaceId, t.brandKey).where(sql`${t.workspaceId} IS NOT NULL`),
 ]);
 
 /** Tenant-scoped creative references that teach Content Studio structure and quality without turning competitor claims or protected assets into brand truth. */
@@ -4643,8 +4682,28 @@ export const marketingChannelAccounts = pgTable("marketing_channel_accounts", {
   displayName: text("display_name").notNull(),
   handle: text("handle"),
   externalUrl: text("external_url"),
+  /**
+   * Honest connection state. `manual` = tracked by hand, no credentials.
+   * Module 19 values (`SOCIAL_ACCOUNT_CONNECTION_STATUSES`): connected,
+   * authorization_required, token_expired, missing_configuration, error,
+   * not_supported, disconnected. Never "connected" without a verified,
+   * decryptable credential on the linked `integration_connections` row.
+   */
   connectionStatus: text("connection_status").notNull().default("manual"),
   ownerUserId: uuid("owner_user_id").references(() => users.id, { onDelete: "set null" }),
+  // Module 19 — real provider linkage. The OAuth grant lives on an
+  // `integration_connections` row (one grant can expose many assets:
+  // Pages, Instagram accounts, ad accounts); this row is one such asset.
+  integrationConnectionId: uuid("integration_connection_id").references((): AnyPgColumn => integrationConnections.id, { onDelete: "set null" }),
+  externalAccountId: text("external_account_id"),
+  scopes: jsonb("scopes").notNull().default([]),
+  tokenExpiresAt: timestamp("token_expires_at", { withTimezone: true }),
+  lastSyncAt: timestamp("last_sync_at", { withTimezone: true }),
+  lastErrorCode: text("last_error_code"),
+  lastErrorMessage: text("last_error_message"),
+  lastErrorAt: timestamp("last_error_at", { withTimezone: true }),
+  /** Provider-specific, non-secret metadata (page category, follower count at discovery, currency for ad accounts…). */
+  metadata: jsonb("metadata").notNull().default({}),
   revision: integer("revision").notNull().default(1),
   archivedAt: timestamp("archived_at", { withTimezone: true }),
   ...timestamps,
@@ -4653,7 +4712,9 @@ export const marketingChannelAccounts = pgTable("marketing_channel_accounts", {
   foreignKey({ name: "marketing_channel_accounts_brand_org_fk", columns: [t.brandProfileId, t.organizationId], foreignColumns: [marketingBrandProfiles.id, marketingBrandProfiles.organizationId] }).onDelete("restrict"),
   unique("marketing_channel_accounts_id_org_unique").on(t.id, t.organizationId),
   uniqueIndex("marketing_channel_accounts_scope_unique").on(t.organizationId, t.brandProfileId, t.platform, t.accountKind, t.displayName).where(sql`${t.archivedAt} IS NULL`),
+  uniqueIndex("marketing_channel_accounts_external_unique").on(t.organizationId, t.platform, t.externalAccountId).where(sql`${t.externalAccountId} IS NOT NULL AND ${t.archivedAt} IS NULL`),
   index("marketing_channel_accounts_org_platform_idx").on(t.organizationId, t.platform),
+  index("marketing_channel_accounts_connection_idx").on(t.integrationConnectionId),
 ]);
 
 /** Append-only real performance observations. Manual entry works today; provider sync can write the same shape later without replacing it. */
@@ -4678,12 +4739,20 @@ export const marketingContentPerformanceSnapshots = pgTable("marketing_content_p
   revenueAmount: numeric("revenue_amount", { precision: 14, scale: 2 }).notNull().default("0"),
   notes: text("notes"),
   recordedByUserId: uuid("recorded_by_user_id").references(() => users.id, { onDelete: "set null" }),
+  // Module 19 — provider-synced snapshots are keyed to the published
+  // per-platform variant and the external post. `source` becomes
+  // `synced:<provider>` for those rows; manual rows stay `manual`.
+  contentVariantId: uuid("content_variant_id"),
+  externalPostId: text("external_post_id"),
+  /** Metrics the fixed columns cannot hold (video watch time, saves breakdowns, reactions by type…). Never fabricated; absent = not provided by the platform. */
+  extraMetrics: jsonb("extra_metrics").notNull().default({}),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   foreignKey({ name: "marketing_performance_content_org_fk", columns: [t.contentItemId, t.organizationId], foreignColumns: [marketingContentItems.id, marketingContentItems.organizationId] }).onDelete("cascade"),
   foreignKey({ name: "marketing_performance_account_org_fk", columns: [t.channelAccountId, t.organizationId], foreignColumns: [marketingChannelAccounts.id, marketingChannelAccounts.organizationId] }).onDelete("cascade"),
   index("marketing_performance_org_captured_idx").on(t.organizationId, t.capturedAt),
   index("marketing_performance_content_idx").on(t.contentItemId),
+  index("marketing_performance_variant_idx").on(t.contentVariantId),
 ]);
 
 export const marketingPlaybooks = pgTable("marketing_playbooks", {
@@ -4951,8 +5020,9 @@ export const marketingProjectLinks = pgTable("marketing_project_links", {
 // change.
 // ---------------------------------------------------------------------------
 
-export const integrationProviderEnum = pgEnum("integration_provider", ["resend", "dev_email", "twilio", "dev_sms", "whatsapp_cloud_api", "dev_whatsapp"]);
-export const communicationChannelEnum = pgEnum("communication_channel", ["email", "sms", "whatsapp"]);
+export const integrationProviderEnum = pgEnum("integration_provider", ["resend", "dev_email", "twilio", "dev_sms", "whatsapp_cloud_api", "dev_whatsapp", "meta", "linkedin", "google_ads"]);
+/** `social` and `ads` are integration TYPES only (Module 19 OAuth connections); they are never a conversation/message channel. */
+export const communicationChannelEnum = pgEnum("communication_channel", ["email", "sms", "whatsapp", "social", "ads"]);
 export const integrationConnectionStatusEnum = pgEnum("integration_connection_status", ["pending", "connected", "verification_failed", "disabled", "disconnected"]);
 export const communicationRoleEnum = pgEnum("communication_role", ["communications_admin", "communications_manager", "communications_agent", "viewer"]);
 export const communicationConversationStatusEnum = pgEnum("communication_conversation_status", ["open", "pending", "resolved", "archived"]);
@@ -5833,4 +5903,426 @@ export const jarvisVoiceWebhookEvents = pgTable("jarvis_voice_webhook_events", {
 }, (t) => [
   uniqueIndex("jarvis_voice_webhook_events_dedup_unique").on(t.provider, t.externalEventId),
   index("jarvis_voice_webhook_events_call_idx").on(t.providerCallId),
+]);
+
+// ---------------------------------------------------------------------------
+// Social Command Center — Module 19. Builds on Marketing OS (brands, content
+// items, channel accounts, performance snapshots, approval links), on
+// Communications & Integrations Core (`integration_connections` +
+// `integration_credentials` for OAuth grants, `communication_provider_events`
+// for webhook dedupe) and on the Runtime queue (`runtime_jobs`) — never a
+// second brand model, approval system, scheduler or credential store.
+//
+// Design rules carried through every table below:
+//   * the publishable unit is the per-platform CONTENT VARIANT, derived from
+//     a content item's shared brief; an item is "published" only when the
+//     platform confirmed a variant;
+//   * a publish job is idempotent (one active job per variant), retryable
+//     through the runtime queue, observable (status + attempts + last error)
+//     and auditable (external ids/urls recorded on success only);
+//   * money-moving / public-facing actions (publish, ad changes) require an
+//     explicit human approval recorded through `agent_approval_requests`;
+//   * nothing here stores a secret — tokens live only in
+//     `integration_credentials` ciphertext.
+// ---------------------------------------------------------------------------
+
+export const socialPlatformEnum = pgEnum("social_platform", ["facebook", "instagram", "linkedin", "tiktok", "youtube", "x", "meta_ads", "google_ads", "linkedin_ads"]);
+export const socialVariantStatusEnum = pgEnum("social_variant_status", ["draft", "generating", "ready_for_review", "changes_requested", "approved", "scheduled", "publishing", "published", "failed", "rejected", "archived"]);
+export const socialPublishJobStatusEnum = pgEnum("social_publish_job_status", ["queued", "processing", "published", "failed", "retrying", "cancelled"]);
+export const socialAssetTypeEnum = pgEnum("social_asset_type", ["image", "video", "logo", "brand_file", "thumbnail", "document"]);
+export const socialAssetSourceEnum = pgEnum("social_asset_source", ["uploaded", "generated", "rendered", "external"]);
+export const socialGenerationTypeEnum = pgEnum("social_generation_type", ["text", "image", "video", "strategy", "plan", "reply_draft", "analysis", "manager_task"]);
+export const socialGenerationStatusEnum = pgEnum("social_generation_status", ["queued", "running", "succeeded", "failed", "cancelled"]);
+export const socialEngagementTypeEnum = pgEnum("social_engagement_type", ["comment", "mention", "direct_message", "review"]);
+export const socialEngagementStatusEnum = pgEnum("social_engagement_status", ["new", "needs_reply", "reply_drafted", "replied", "ignored", "hidden", "escalated"]);
+export const socialAdChangeTypeEnum = pgEnum("social_ad_change_type", ["create_campaign", "update_budget", "pause_campaign", "resume_campaign", "update_targeting", "create_ad_set", "create_ad"]);
+export const socialAdChangeStatusEnum = pgEnum("social_ad_change_status", ["proposed", "pending_approval", "approved", "rejected", "executing", "executed", "failed", "cancelled"]);
+export const socialAutomationKindEnum = pgEnum("social_automation_kind", ["weekly_plan", "daily_attention", "metrics_sync", "engagement_sync", "token_watch", "reply_drafts"]);
+export const socialManagerMessageRoleEnum = pgEnum("social_manager_message_role", ["user", "assistant", "tool", "system"]);
+
+/** Stored media. Binary bytes live in Vercel Blob (private) or at an external URL — never in Postgres. */
+export const socialAssets = pgTable("social_assets", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  workspaceId: uuid("workspace_id"),
+  brandProfileId: uuid("brand_profile_id"),
+  campaignId: uuid("campaign_id"),
+  contentItemId: uuid("content_item_id"),
+  contentVariantId: uuid("content_variant_id"),
+  assetType: socialAssetTypeEnum("asset_type").notNull(),
+  source: socialAssetSourceEnum("source").notNull(),
+  /** `blob` → `pathname` is a private Vercel Blob pathname; `external_url` → `url` is a public URL we do not control. */
+  storageKind: text("storage_kind").notNull().default("blob"),
+  pathname: text("pathname"),
+  url: text("url"),
+  contentType: text("content_type").notNull(),
+  sizeBytes: integer("size_bytes").notNull().default(0),
+  width: integer("width"),
+  height: integer("height"),
+  durationSeconds: numeric("duration_seconds", { precision: 10, scale: 2 }),
+  title: text("title").notNull(),
+  altText: text("alt_text").notNull().default(""),
+  tags: jsonb("tags").notNull().default([]),
+  platformHint: socialPlatformEnum("platform_hint"),
+  provider: text("provider"),
+  model: text("model"),
+  generationId: uuid("generation_id"),
+  thumbnailAssetId: uuid("thumbnail_asset_id"),
+  createdByUserId: uuid("created_by_user_id").references(() => users.id, { onDelete: "set null" }),
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
+  ...timestamps,
+}, (t) => [
+  foreignKey({ name: "social_assets_workspace_org_fk", columns: [t.workspaceId, t.organizationId], foreignColumns: [workspaces.id, workspaces.organizationId] }).onDelete("restrict"),
+  foreignKey({ name: "social_assets_brand_org_fk", columns: [t.brandProfileId, t.organizationId], foreignColumns: [marketingBrandProfiles.id, marketingBrandProfiles.organizationId] }).onDelete("set null"),
+  foreignKey({ name: "social_assets_campaign_org_fk", columns: [t.campaignId, t.organizationId], foreignColumns: [marketingCampaigns.id, marketingCampaigns.organizationId] }).onDelete("set null"),
+  foreignKey({ name: "social_assets_content_org_fk", columns: [t.contentItemId, t.organizationId], foreignColumns: [marketingContentItems.id, marketingContentItems.organizationId] }).onDelete("set null"),
+  unique("social_assets_id_org_unique").on(t.id, t.organizationId),
+  index("social_assets_org_brand_idx").on(t.organizationId, t.brandProfileId),
+  index("social_assets_org_content_idx").on(t.organizationId, t.contentItemId),
+  index("social_assets_org_type_idx").on(t.organizationId, t.assetType),
+  check("social_assets_storage_check", sql`(${t.storageKind} = 'blob' AND ${t.pathname} IS NOT NULL) OR (${t.storageKind} = 'external_url' AND ${t.url} IS NOT NULL)`),
+]);
+
+/** The platform-specific, publishable rendering of a content item. One row per (item, platform, account). */
+export const socialContentVariants = pgTable("social_content_variants", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  contentItemId: uuid("content_item_id").notNull(),
+  platform: socialPlatformEnum("platform").notNull(),
+  /** Which real account this variant will publish to. Nullable until an account is connected — the approval/publish path refuses to proceed without one. */
+  channelAccountId: uuid("channel_account_id"),
+  /** Platform format: text, image, carousel, story, reel, short_video, video, article… (validated by `socialVariantFormatSchema`). */
+  format: text("format").notNull().default("text"),
+  status: socialVariantStatusEnum("status").notNull().default("draft"),
+  hook: text("hook").notNull().default(""),
+  body: text("body").notNull().default(""),
+  hashtags: jsonb("hashtags").notNull().default([]),
+  callToAction: text("call_to_action").notNull().default(""),
+  linkUrl: text("link_url"),
+  /** Ordered media: `[{ assetId, position, role: "primary" | "carousel_item" | "cover" | "thumbnail" }]`. */
+  media: jsonb("media").notNull().default([]),
+  /** Platform-specific extras (first comment, title for YouTube, alt text overrides, poll…). Non-secret. */
+  platformOptions: jsonb("platform_options").notNull().default({}),
+  /** Why a reviewer should look twice: missing media, over length, token expiring, brand guardrail hits… computed, never hidden. */
+  warnings: jsonb("warnings").notNull().default([]),
+  scheduledFor: timestamp("scheduled_for", { withTimezone: true }),
+  approvalRequestId: uuid("approval_request_id").references(() => agentApprovalRequests.id, { onDelete: "set null" }),
+  approvedByUserId: uuid("approved_by_user_id").references(() => users.id, { onDelete: "set null" }),
+  approvedAt: timestamp("approved_at", { withTimezone: true }),
+  reviewNote: text("review_note"),
+  externalPostId: text("external_post_id"),
+  externalPostUrl: text("external_post_url"),
+  publishedAt: timestamp("published_at", { withTimezone: true }),
+  lastGenerationId: uuid("last_generation_id"),
+  createdByUserId: uuid("created_by_user_id").references(() => users.id, { onDelete: "set null" }),
+  createdByAgentId: uuid("created_by_agent_id"),
+  revision: integer("revision").notNull().default(1),
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
+  ...timestamps,
+}, (t) => [
+  foreignKey({ name: "social_content_variants_item_org_fk", columns: [t.contentItemId, t.organizationId], foreignColumns: [marketingContentItems.id, marketingContentItems.organizationId] }).onDelete("cascade"),
+  foreignKey({ name: "social_content_variants_account_org_fk", columns: [t.channelAccountId, t.organizationId], foreignColumns: [marketingChannelAccounts.id, marketingChannelAccounts.organizationId] }).onDelete("set null"),
+  unique("social_content_variants_id_org_unique").on(t.id, t.organizationId),
+  uniqueIndex("social_content_variants_item_platform_account_unique").on(t.contentItemId, t.platform, t.channelAccountId).where(sql`${t.archivedAt} IS NULL AND ${t.channelAccountId} IS NOT NULL`),
+  index("social_content_variants_org_status_idx").on(t.organizationId, t.status),
+  index("social_content_variants_org_scheduled_idx").on(t.organizationId, t.scheduledFor),
+  index("social_content_variants_account_idx").on(t.channelAccountId),
+]);
+
+/** One attempt-tracked publish of one variant to one account. At most one ACTIVE (queued/processing/retrying) job per variant. Mirrors `runtime_jobs` state but keeps the provider-facing record (external ids, sanitized response) here. */
+export const socialPublishJobs = pgTable("social_publish_jobs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  contentItemId: uuid("content_item_id").notNull(),
+  contentVariantId: uuid("content_variant_id").notNull(),
+  channelAccountId: uuid("channel_account_id").notNull(),
+  platform: socialPlatformEnum("platform").notNull(),
+  status: socialPublishJobStatusEnum("status").notNull().default("queued"),
+  scheduledFor: timestamp("scheduled_for", { withTimezone: true }).notNull(),
+  /** `social_publish:<variantId>:<attemptSeries>` — also the runtime job's idempotency key. */
+  idempotencyKey: text("idempotency_key").notNull(),
+  runtimeJobId: uuid("runtime_job_id").references(() => runtimeJobs.id, { onDelete: "set null" }),
+  attemptCount: integer("attempt_count").notNull().default(0),
+  maxAttempts: integer("max_attempts").notNull().default(4),
+  startedAt: timestamp("started_at", { withTimezone: true }),
+  publishedAt: timestamp("published_at", { withTimezone: true }),
+  failedAt: timestamp("failed_at", { withTimezone: true }),
+  cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+  externalPostId: text("external_post_id"),
+  externalPostUrl: text("external_post_url"),
+  /** Provider container/upload identifiers needed to resume safely (e.g. Instagram creation_id) so a retry never creates a duplicate. */
+  providerState: jsonb("provider_state").notNull().default({}),
+  lastErrorCode: text("last_error_code"),
+  lastErrorMessage: text("last_error_message"),
+  lastErrorClass: text("last_error_class"),
+  requestedByUserId: uuid("requested_by_user_id").references(() => users.id, { onDelete: "set null" }),
+  revision: integer("revision").notNull().default(1),
+  ...timestamps,
+}, (t) => [
+  foreignKey({ name: "social_publish_jobs_item_org_fk", columns: [t.contentItemId, t.organizationId], foreignColumns: [marketingContentItems.id, marketingContentItems.organizationId] }).onDelete("cascade"),
+  foreignKey({ name: "social_publish_jobs_variant_org_fk", columns: [t.contentVariantId, t.organizationId], foreignColumns: [socialContentVariants.id, socialContentVariants.organizationId] }).onDelete("cascade"),
+  foreignKey({ name: "social_publish_jobs_account_org_fk", columns: [t.channelAccountId, t.organizationId], foreignColumns: [marketingChannelAccounts.id, marketingChannelAccounts.organizationId] }).onDelete("cascade"),
+  unique("social_publish_jobs_id_org_unique").on(t.id, t.organizationId),
+  unique("social_publish_jobs_idempotency_unique").on(t.organizationId, t.idempotencyKey),
+  uniqueIndex("social_publish_jobs_variant_active_unique").on(t.contentVariantId).where(sql`${t.status} IN ('queued', 'processing', 'retrying')`),
+  index("social_publish_jobs_org_status_idx").on(t.organizationId, t.status),
+  index("social_publish_jobs_org_scheduled_idx").on(t.organizationId, t.scheduledFor),
+]);
+
+/** Append-only account-level metrics (followers, reach, views, engagement) from provider insights. `metrics` holds only values the platform returned — missing ≠ zero. */
+export const socialAccountMetricSnapshots = pgTable("social_account_metric_snapshots", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  channelAccountId: uuid("channel_account_id").notNull(),
+  platform: socialPlatformEnum("platform").notNull(),
+  capturedAt: timestamp("captured_at", { withTimezone: true }).notNull().defaultNow(),
+  periodStart: timestamp("period_start", { withTimezone: true }).notNull(),
+  periodEnd: timestamp("period_end", { withTimezone: true }).notNull(),
+  source: text("source").notNull(),
+  followers: integer("followers"),
+  reach: integer("reach"),
+  impressions: integer("impressions"),
+  views: integer("views"),
+  engagements: integer("engagements"),
+  profileViews: integer("profile_views"),
+  websiteClicks: integer("website_clicks"),
+  metrics: jsonb("metrics").notNull().default({}),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  foreignKey({ name: "social_account_metrics_account_org_fk", columns: [t.channelAccountId, t.organizationId], foreignColumns: [marketingChannelAccounts.id, marketingChannelAccounts.organizationId] }).onDelete("cascade"),
+  uniqueIndex("social_account_metrics_period_unique").on(t.channelAccountId, t.source, t.periodStart, t.periodEnd),
+  index("social_account_metrics_org_captured_idx").on(t.organizationId, t.capturedAt),
+]);
+
+/** Every AI call the Social Command Center makes: provider, model, type, config, cost, output pointer. Dedupe via `requestFingerprint` so a retry never pays for the same video twice. */
+export const socialAiGenerations = pgTable("social_ai_generations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  brandProfileId: uuid("brand_profile_id"),
+  campaignId: uuid("campaign_id"),
+  contentItemId: uuid("content_item_id"),
+  contentVariantId: uuid("content_variant_id"),
+  generationType: socialGenerationTypeEnum("generation_type").notNull(),
+  status: socialGenerationStatusEnum("status").notNull().default("queued"),
+  provider: text("provider").notNull(),
+  model: text("model").notNull(),
+  /** sha256 over (orgId, type, provider, model, canonical prompt/config). */
+  requestFingerprint: text("request_fingerprint").notNull(),
+  /** Prompt/config as sent, minus secrets. Bounded in size by the service layer. */
+  request: jsonb("request").notNull().default({}),
+  /** Structured output (text, JSON plan, asset pointer). Binary outputs are stored as `social_assets` and referenced by `assetId`. */
+  output: jsonb("output").notNull().default({}),
+  assetId: uuid("asset_id"),
+  providerTaskId: text("provider_task_id"),
+  usage: jsonb("usage").notNull().default({}),
+  costUsd: numeric("cost_usd", { precision: 12, scale: 6 }),
+  errorCode: text("error_code"),
+  errorMessage: text("error_message"),
+  requestedByUserId: uuid("requested_by_user_id").references(() => users.id, { onDelete: "set null" }),
+  requestedByAgentId: uuid("requested_by_agent_id"),
+  startedAt: timestamp("started_at", { withTimezone: true }),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  revision: integer("revision").notNull().default(1),
+  ...timestamps,
+}, (t) => [
+  foreignKey({ name: "social_ai_generations_brand_org_fk", columns: [t.brandProfileId, t.organizationId], foreignColumns: [marketingBrandProfiles.id, marketingBrandProfiles.organizationId] }).onDelete("set null"),
+  foreignKey({ name: "social_ai_generations_item_org_fk", columns: [t.contentItemId, t.organizationId], foreignColumns: [marketingContentItems.id, marketingContentItems.organizationId] }).onDelete("set null"),
+  foreignKey({ name: "social_ai_generations_variant_org_fk", columns: [t.contentVariantId, t.organizationId], foreignColumns: [socialContentVariants.id, socialContentVariants.organizationId] }).onDelete("set null"),
+  foreignKey({ name: "social_ai_generations_asset_org_fk", columns: [t.assetId, t.organizationId], foreignColumns: [socialAssets.id, socialAssets.organizationId] }).onDelete("set null"),
+  unique("social_ai_generations_id_org_unique").on(t.id, t.organizationId),
+  uniqueIndex("social_ai_generations_active_fingerprint_unique").on(t.organizationId, t.requestFingerprint).where(sql`${t.status} IN ('queued', 'running')`),
+  index("social_ai_generations_org_created_idx").on(t.organizationId, t.createdAt),
+  index("social_ai_generations_org_type_idx").on(t.organizationId, t.generationType),
+]);
+
+/** Comments, mentions and (where the platform allows) direct messages, unified. Public replies are sent only by an explicit human action. */
+export const socialEngagementItems = pgTable("social_engagement_items", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  channelAccountId: uuid("channel_account_id").notNull(),
+  platform: socialPlatformEnum("platform").notNull(),
+  contentVariantId: uuid("content_variant_id"),
+  itemType: socialEngagementTypeEnum("item_type").notNull(),
+  status: socialEngagementStatusEnum("status").notNull().default("new"),
+  externalId: text("external_id").notNull(),
+  externalParentId: text("external_parent_id"),
+  externalPostId: text("external_post_id"),
+  externalUrl: text("external_url"),
+  authorExternalId: text("author_external_id"),
+  authorName: text("author_name"),
+  authorHandle: text("author_handle"),
+  text: text("text").notNull().default(""),
+  postedAt: timestamp("posted_at", { withTimezone: true }).notNull(),
+  sentiment: text("sentiment"),
+  category: text("category"),
+  isLead: boolean("is_lead").notNull().default(false),
+  crmLeadId: uuid("crm_lead_id"),
+  crmContactId: uuid("crm_contact_id"),
+  assignedUserId: uuid("assigned_user_id").references(() => users.id, { onDelete: "set null" }),
+  replyDraft: text("reply_draft"),
+  replyDraftGenerationId: uuid("reply_draft_generation_id"),
+  replyText: text("reply_text"),
+  repliedAt: timestamp("replied_at", { withTimezone: true }),
+  repliedByUserId: uuid("replied_by_user_id").references(() => users.id, { onDelete: "set null" }),
+  externalReplyId: text("external_reply_id"),
+  hiddenAt: timestamp("hidden_at", { withTimezone: true }),
+  metadata: jsonb("metadata").notNull().default({}),
+  revision: integer("revision").notNull().default(1),
+  ...timestamps,
+}, (t) => [
+  foreignKey({ name: "social_engagement_account_org_fk", columns: [t.channelAccountId, t.organizationId], foreignColumns: [marketingChannelAccounts.id, marketingChannelAccounts.organizationId] }).onDelete("cascade"),
+  foreignKey({ name: "social_engagement_variant_org_fk", columns: [t.contentVariantId, t.organizationId], foreignColumns: [socialContentVariants.id, socialContentVariants.organizationId] }).onDelete("set null"),
+  foreignKey({ name: "social_engagement_lead_org_fk", columns: [t.crmLeadId, t.organizationId], foreignColumns: [crmLeads.id, crmLeads.organizationId] }).onDelete("set null"),
+  foreignKey({ name: "social_engagement_contact_org_fk", columns: [t.crmContactId, t.organizationId], foreignColumns: [crmContacts.id, crmContacts.organizationId] }).onDelete("set null"),
+  unique("social_engagement_items_id_org_unique").on(t.id, t.organizationId),
+  uniqueIndex("social_engagement_items_external_unique").on(t.channelAccountId, t.itemType, t.externalId),
+  index("social_engagement_items_org_status_idx").on(t.organizationId, t.status),
+  index("social_engagement_items_org_posted_idx").on(t.organizationId, t.postedAt),
+]);
+
+/** Append-only snapshots of ad campaigns pulled from Meta Ads / Google Ads / LinkedIn Ads. Budgets in the account currency's minor units. */
+export const socialAdCampaignSnapshots = pgTable("social_ad_campaign_snapshots", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  channelAccountId: uuid("channel_account_id").notNull(),
+  platform: socialPlatformEnum("platform").notNull(),
+  externalCampaignId: text("external_campaign_id").notNull(),
+  name: text("name").notNull(),
+  status: text("status").notNull(),
+  objective: text("objective"),
+  currency: text("currency").notNull().default("CAD"),
+  dailyBudgetMinor: integer("daily_budget_minor"),
+  lifetimeBudgetMinor: integer("lifetime_budget_minor"),
+  periodStart: timestamp("period_start", { withTimezone: true }).notNull(),
+  periodEnd: timestamp("period_end", { withTimezone: true }).notNull(),
+  capturedAt: timestamp("captured_at", { withTimezone: true }).notNull().defaultNow(),
+  spendMinor: integer("spend_minor"),
+  impressions: integer("impressions"),
+  clicks: integer("clicks"),
+  reach: integer("reach"),
+  conversions: numeric("conversions", { precision: 14, scale: 2 }),
+  /** cpc/cpm/ctr/cpa/roas and provider-specific fields — present only when the platform returned them. */
+  metrics: jsonb("metrics").notNull().default({}),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  foreignKey({ name: "social_ad_campaign_snapshots_account_org_fk", columns: [t.channelAccountId, t.organizationId], foreignColumns: [marketingChannelAccounts.id, marketingChannelAccounts.organizationId] }).onDelete("cascade"),
+  uniqueIndex("social_ad_campaign_snapshots_period_unique").on(t.channelAccountId, t.externalCampaignId, t.periodStart, t.periodEnd),
+  index("social_ad_campaign_snapshots_org_captured_idx").on(t.organizationId, t.capturedAt),
+]);
+
+/** RECOMMENDATION vs EXECUTION boundary for advertising. A change request is proposed (by a human or the AI), approved through `agent_approval_requests`, then executed by a runtime job — spend never moves without the recorded approval. */
+export const socialAdChangeRequests = pgTable("social_ad_change_requests", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  channelAccountId: uuid("channel_account_id").notNull(),
+  platform: socialPlatformEnum("platform").notNull(),
+  changeType: socialAdChangeTypeEnum("change_type").notNull(),
+  status: socialAdChangeStatusEnum("status").notNull().default("proposed"),
+  externalCampaignId: text("external_campaign_id"),
+  title: text("title").notNull(),
+  rationale: text("rationale").notNull().default(""),
+  /** Validated per change type by `socialAdChangePayloadSchema` — budgets always in minor units with explicit currency. */
+  payload: jsonb("payload").notNull().default({}),
+  estimatedDailySpendMinor: integer("estimated_daily_spend_minor"),
+  currency: text("currency").notNull().default("CAD"),
+  approvalRequestId: uuid("approval_request_id").references(() => agentApprovalRequests.id, { onDelete: "set null" }),
+  approvedByUserId: uuid("approved_by_user_id").references(() => users.id, { onDelete: "set null" }),
+  approvedAt: timestamp("approved_at", { withTimezone: true }),
+  decisionNote: text("decision_note"),
+  idempotencyKey: text("idempotency_key").notNull(),
+  runtimeJobId: uuid("runtime_job_id").references(() => runtimeJobs.id, { onDelete: "set null" }),
+  executedAt: timestamp("executed_at", { withTimezone: true }),
+  externalResult: jsonb("external_result").notNull().default({}),
+  lastErrorCode: text("last_error_code"),
+  lastErrorMessage: text("last_error_message"),
+  proposedByUserId: uuid("proposed_by_user_id").references(() => users.id, { onDelete: "set null" }),
+  proposedByAgentId: uuid("proposed_by_agent_id"),
+  generationId: uuid("generation_id"),
+  revision: integer("revision").notNull().default(1),
+  ...timestamps,
+}, (t) => [
+  foreignKey({ name: "social_ad_change_requests_account_org_fk", columns: [t.channelAccountId, t.organizationId], foreignColumns: [marketingChannelAccounts.id, marketingChannelAccounts.organizationId] }).onDelete("cascade"),
+  unique("social_ad_change_requests_id_org_unique").on(t.id, t.organizationId),
+  unique("social_ad_change_requests_idempotency_unique").on(t.organizationId, t.idempotencyKey),
+  index("social_ad_change_requests_org_status_idx").on(t.organizationId, t.status),
+]);
+
+/** Safe automation: each rule is explicit, per org (optionally per brand), enabled by a human, bounded by `config`, and only ever produces drafts/notifications — never publishes or spends. */
+export const socialAutomationRules = pgTable("social_automation_rules", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  brandProfileId: uuid("brand_profile_id"),
+  kind: socialAutomationKindEnum("kind").notNull(),
+  name: text("name").notNull(),
+  enabled: boolean("enabled").notNull().default(false),
+  /** Minutes between runs. Daily = 1440, weekly = 10080, metrics sync = 360… bounded by the service layer. */
+  intervalMinutes: integer("interval_minutes").notNull(),
+  config: jsonb("config").notNull().default({}),
+  lastRunAt: timestamp("last_run_at", { withTimezone: true }),
+  nextRunAt: timestamp("next_run_at", { withTimezone: true }),
+  lastRunStatus: text("last_run_status"),
+  lastRunSummary: text("last_run_summary"),
+  createdByUserId: uuid("created_by_user_id").references(() => users.id, { onDelete: "set null" }),
+  revision: integer("revision").notNull().default(1),
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
+  ...timestamps,
+}, (t) => [
+  foreignKey({ name: "social_automation_rules_brand_org_fk", columns: [t.brandProfileId, t.organizationId], foreignColumns: [marketingBrandProfiles.id, marketingBrandProfiles.organizationId] }).onDelete("cascade"),
+  unique("social_automation_rules_id_org_unique").on(t.id, t.organizationId),
+  // `coalesce` so an org-level rule (NULL brand) is unique too — Postgres treats NULLs as distinct in a plain unique index.
+  uniqueIndex("social_automation_rules_scope_kind_unique").on(t.organizationId, sql`coalesce(${t.brandProfileId}, '00000000-0000-0000-0000-000000000000'::uuid)`, t.kind).where(sql`${t.archivedAt} IS NULL`),
+  index("social_automation_rules_due_idx").on(t.enabled, t.nextRunAt),
+]);
+
+/** Per-run log for automation rules (what ran, what it produced, what failed) — the observable trail the Automation screen renders. */
+export const socialAutomationRuns = pgTable("social_automation_runs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  ruleId: uuid("rule_id").notNull(),
+  kind: socialAutomationKindEnum("kind").notNull(),
+  runtimeJobId: uuid("runtime_job_id").references(() => runtimeJobs.id, { onDelete: "set null" }),
+  startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  succeeded: boolean("succeeded"),
+  summary: text("summary").notNull().default(""),
+  /** Counters and record ids produced (drafts created, snapshots written, items flagged) — never free-form provider payloads. */
+  result: jsonb("result").notNull().default({}),
+  errorMessage: text("error_message"),
+}, (t) => [
+  foreignKey({ name: "social_automation_runs_rule_org_fk", columns: [t.ruleId, t.organizationId], foreignColumns: [socialAutomationRules.id, socialAutomationRules.organizationId] }).onDelete("cascade"),
+  index("social_automation_runs_org_started_idx").on(t.organizationId, t.startedAt),
+  index("social_automation_runs_rule_idx").on(t.ruleId),
+]);
+
+/** A conversation with the AI Social Manager. The manager only acts through typed tools that run with the human's own authority. */
+export const socialManagerThreads = pgTable("social_manager_threads", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  brandProfileId: uuid("brand_profile_id"),
+  title: text("title").notNull(),
+  ownerUserId: uuid("owner_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  lastMessageAt: timestamp("last_message_at", { withTimezone: true }).notNull().defaultNow(),
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
+  ...timestamps,
+}, (t) => [
+  foreignKey({ name: "social_manager_threads_brand_org_fk", columns: [t.brandProfileId, t.organizationId], foreignColumns: [marketingBrandProfiles.id, marketingBrandProfiles.organizationId] }).onDelete("set null"),
+  unique("social_manager_threads_id_org_unique").on(t.id, t.organizationId),
+  index("social_manager_threads_org_owner_idx").on(t.organizationId, t.ownerUserId, t.lastMessageAt),
+]);
+
+export const socialManagerMessages = pgTable("social_manager_messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  threadId: uuid("thread_id").notNull(),
+  role: socialManagerMessageRoleEnum("role").notNull(),
+  content: text("content").notNull().default(""),
+  /** Tool calls the assistant made and their (bounded) results, for the transcript UI. */
+  toolCalls: jsonb("tool_calls").notNull().default([]),
+  /** Records the assistant created or proposed in this turn: `[{ type, id, label }]`. */
+  proposedActions: jsonb("proposed_actions").notNull().default([]),
+  generationId: uuid("generation_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  foreignKey({ name: "social_manager_messages_thread_org_fk", columns: [t.threadId, t.organizationId], foreignColumns: [socialManagerThreads.id, socialManagerThreads.organizationId] }).onDelete("cascade"),
+  index("social_manager_messages_thread_idx").on(t.threadId, t.createdAt),
 ]);

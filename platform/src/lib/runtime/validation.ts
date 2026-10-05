@@ -14,6 +14,14 @@ export const RUNTIME_JOB_TYPES = [
   "workflow_reconcile",
   "communication_send",
   "communication_reconcile",
+  // Module 19 — Social Command Center.
+  "social_publish",
+  "social_metrics_sync",
+  "social_engagement_sync",
+  "social_token_watch",
+  "social_automation_run",
+  "social_ad_change_execute",
+  "social_generation_run",
 ] as const;
 export const runtimeJobTypeSchema = z.enum(RUNTIME_JOB_TYPES);
 export type RuntimeJobType = (typeof RUNTIME_JOB_TYPES)[number];
