@@ -70,8 +70,14 @@ describe("week plan Oct 12", () => {
     }
   });
 
-  it("proof and founder posts always use real screenshots or photos, never AI images", () => {
-    for (const p of plan.feed) if (p.pillar === "PROOF" || p.pillar === "FOUNDER") expect(p.realPhotoOnly).toBe(true);
+  it("needs no uploads, and proof/founder art never fakes a client's site or a real person", () => {
+    for (const p of plan.feed) {
+      expect(p.realPhotoOnly, p.key).toBeFalsy();
+      expect(p.body, p.key).not.toMatch(/swipe/i);
+      if (p.pillar !== "PROOF" && p.pillar !== "FOUNDER") continue;
+      expect(p.creativeDirection, p.key).not.toMatch(/screenshot|real photo|upload/i);
+      expect(p.creativeDirection, p.key).toMatch(/no website screens|no real people/i);
+    }
   });
 
   it("Facebook captions are their own shorter version, and hashtags stay at five or fewer", () => {

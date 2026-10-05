@@ -101,7 +101,7 @@ export interface WeekPlan {
 const LYNQ: PlanBrandRef = { brandKey: "lynq", matchName: /^lynq\b/i };
 const LYNQ_TAGS = ["TorontoSmallBusiness", "WebDesign", "GTA"];
 const LYNQ_LOOK = "LYNQ's look, matching @lynqbuild: near-black background, one acid-lime accent, large thin editorial type, generous margins, cinematic and calm. Real screens and objects, not illustrations. No stock people, no glossy 3D, no gradients, no clip-art icons.";
-const PROOF_UPLOAD = "Upload real screenshots of the client's live site (phone + desktop) on the dark LYNQ card. Proof posts never use AI images.";
+const HONEST_CARD = "Honest design card: no website screens, no logos, no people or faces — it must never pass for the client's real site, premises or customers.";
 
 const CODEIT_PROFILE: BrandProfileInput = {
   brandKey: "codeit",
@@ -146,14 +146,13 @@ export const WEEK_PLANS: WeekPlan[] = [
       // ── LYNQ — grid rows read PROOF → TEACH → OFFER/FOUNDER. Series names repeat every week so people learn them.
       {
         key: "lynq-mon", brand: LYNQ, day: "2026-10-12", time: "12:15", pillar: "PROOF", storyHighlight: "WORK",
-        title: "LYNQ · PROOF 01 — Kingsbridge Group", kind: "carousel", platforms: ["instagram", "facebook"],
+        title: "LYNQ · PROOF 01 — Kingsbridge Group", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "Two people visit a property manager's website. Only one of them is a customer yet.",
-        body: "Two people visit a property manager's website.\n\nOne owns a building and is deciding who to trust with it. The other is a tenant with a leak at 11pm.\n\nKingsbridge Group's website has to win both — the trust of the owner and the patience of the tenant.\n\nWe designed it, we built it, and we still look after it.\n\nSwipe through it.\n\nRunning a local business with a site that isn't pulling its weight? DM \"AUDIT\" and I'll send you a free 5-minute review.",
+        body: "Two people visit a property manager's website.\n\nOne owns a building and is deciding who to trust with it. The other is a tenant with a leak at 11pm.\n\nKingsbridge Group's website has to win both — the trust of the owner and the patience of the tenant.\n\nWe designed it, we built it, and we still look after it.\n\nRunning a local business with a site that isn't pulling its weight? DM \"AUDIT\" and I'll send you a free 5-minute review.",
         facebookBody: "Two people visit a property manager's website: an owner deciding who to trust, and a tenant with a leak at 11pm.\n\nKingsbridge Group's website has to win both. We designed it, built it, and still look after it.\n\nWant a free 5-minute review of your own site? Send us a message.",
         hashtags: ["PropertyManagement", ...LYNQ_TAGS], callToAction: "DM AUDIT",
-        creativeDirection: `Carousel on the dark LYNQ card: slide 1 headline "One site. Two visitors." in lime; slides 2–4 real screenshots of the Kingsbridge site (homepage, an inner page, phone view). ${LYNQ_LOOK}`,
-        realPhotoOnly: true, uploadNote: PROOF_UPLOAD,
-      },
+        creativeDirection: `Two brass keys on one ring lying on black stone under a single hard light — a small paper tag on one reads "OWNER", the other "TENANT", the tenant tag lit lime. "PROOF 01 · Kingsbridge Group" small at the top, "One site. Two visitors." large in white. ${HONEST_CARD} ${LYNQ_LOOK}`,
+              },
       {
         key: "lynq-tue", brand: LYNQ, day: "2026-10-13", time: "07:30", pillar: "TEACH", storyHighlight: null,
         title: "LYNQ · FIX THIS — Your menu is a PDF", kind: "carousel", platforms: ["instagram", "facebook"],
@@ -174,14 +173,13 @@ export const WEEK_PLANS: WeekPlan[] = [
       },
       {
         key: "lynq-thu", brand: LYNQ, day: "2026-10-15", time: "12:15", pillar: "PROOF", storyHighlight: "WORK",
-        title: "LYNQ · PROOF 02 — Nasma", kind: "carousel", platforms: ["instagram", "facebook"],
+        title: "LYNQ · PROOF 02 — Nasma", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "People open a restaurant's website for three things. We built Nasma's around them.",
-        body: "People open a restaurant's website for three things: the menu, the hours, and a way to book.\n\nEverything else is decoration.\n\nFor Nasma we started there — then made it look as good as the food.\n\nSwipe for the phone view.\n\nOwn a restaurant in the GTA? DM \"AUDIT\" for a free 5-minute review of your site.",
+        body: "People open a restaurant's website for three things: the menu, the hours, and a way to book.\n\nEverything else is decoration.\n\nFor Nasma we started there — then made it look as good as the food.\n\nOwn a restaurant in the GTA? DM \"AUDIT\" for a free 5-minute review of your site.",
         facebookBody: "Diners open a restaurant's website for three things: the menu, the hours, and a way to book. For Nasma we started there — then made it look as good as the food.\n\nWant a free 5-minute review of your restaurant's site? Send us a message.",
         hashtags: ["TorontoRestaurants", ...LYNQ_TAGS], callToAction: "DM AUDIT",
-        creativeDirection: `Carousel on the dark LYNQ card: slide 1 "Menu. Hours. Book." in white with lime dots; slides 2–3 real screenshots of Nasma's site on a phone. ${LYNQ_LOOK}`,
-        realPhotoOnly: true, uploadNote: PROOF_UPLOAD,
-      },
+        creativeDirection: `Three objects in a row on a near-black table, each in its own pool of warm light: a folded blank menu card, a small brass clock, a silver reservation bell with a lime glint. "PROOF 02 · Nasma" small at the top, "Menu. Hours. Book." large in white with lime dots. ${HONEST_CARD} ${LYNQ_LOOK}`,
+              },
       {
         key: "lynq-fri", brand: LYNQ, day: "2026-10-16", time: "12:15", pillar: "TEACH", storyHighlight: null,
         title: "LYNQ · FIX THIS — 5 empty fields on your Google profile", kind: "carousel", platforms: ["instagram", "facebook"],
@@ -198,19 +196,17 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "\"How much is a website?\"\n\n\"It depends\" is the most honest-sounding dishonest answer in my industry. It means: we'll find out how much you're willing to pay.\n\nSo LYNQ sells fixed packages with fixed prices. You know what you get, what it costs and when it's live — before we start.\n\nThis week I also changed how we post: every post is drafted, sent to my phone, and only goes out when I approve it. Same rule as client work. Nothing ships without a human saying yes.\n\nI'm Mustafa. Ask me anything — comments are open.",
         facebookBody: "\"How much is a website?\" — \"It depends\" usually means \"we'll see what you'll pay.\"\n\nSo LYNQ sells fixed packages at fixed prices: you know what you get, what it costs and when it's live before we start.\n\nI'm Mustafa. Questions welcome in the comments.",
         hashtags: ["Founder", ...LYNQ_TAGS.slice(0, 2)], callToAction: "Comments open",
-        creativeDirection: "Real phone photo only: you at your desk, laptop open, natural light, no graphics.",
-        realPhotoOnly: true, uploadNote: "Upload a real phone photo of you — founder posts don't use AI images.",
+        creativeDirection: `Pull-quote card: huge white quotation marks in lime, the line "\"It depends\" isn't a price." set large in thin editorial type, and "— Mustafa, LYNQ" small underneath; a crumpled agency quote sheet sits out of focus in the corner. ${HONEST_CARD} ${LYNQ_LOOK}`,
       },
       {
         key: "lynq-sun", brand: LYNQ, day: "2026-10-18", time: "12:15", pillar: "PROOF", storyHighlight: "WORK",
-        title: "LYNQ · PROOF 03 — Finding Amy", kind: "carousel", platforms: ["instagram", "facebook"],
+        title: "LYNQ · PROOF 03 — Finding Amy", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "An events business needs its website to do one thing: get the date request.",
-        body: "An events business needs its website to do exactly one thing: get the date request.\n\nFinding Amy runs a photo booth for events. Their customers want to see the booth at a real party, see what's included, and ask about their date — fast.\n\nSo the whole site walks that one path.\n\nSwipe through it.\n\nWant your site built around the one thing that pays you? DM \"AUDIT\".",
+        body: "An events business needs its website to do exactly one thing: get the date request.\n\nFinding Amy runs a photo booth for events. Their customers want to see the booth at a real party, see what's included, and ask about their date — fast.\n\nSo the whole site walks that one path.\n\nWant your site built around the one thing that pays you? DM \"AUDIT\".",
         facebookBody: "An events business needs its website to do one thing: get the date request. We built Finding Amy's site around that one path — see the booth, see what's included, ask about your date.\n\nWant yours built around the one thing that pays you? Send us a message.",
         hashtags: ["TorontoEvents", ...LYNQ_TAGS], callToAction: "DM AUDIT",
-        creativeDirection: `Carousel on the dark LYNQ card: slide 1 "One path." in white, lime arrow; slides 2–4 real screenshots of the Finding Amy site on a phone. ${LYNQ_LOOK}`,
-        realPhotoOnly: true, uploadNote: PROOF_UPLOAD,
-      },
+        creativeDirection: `A single glowing lime line drawn across a dark event-hall floor, scattered with gold confetti, ending at a desk calendar with one date circled; an empty instant-photo strip with blank frames lies beside it. "PROOF 03 · Finding Amy" small at the top, "One path." large in white. ${HONEST_CARD} ${LYNQ_LOOK}`,
+              },
       {
         key: "lynq-mon2", brand: LYNQ, day: "2026-10-19", time: "07:30", pillar: "TEACH", storyHighlight: null,
         title: "LYNQ · FIX THIS — Slow replies lose the job", kind: "carousel", platforms: ["instagram", "facebook"],
@@ -274,8 +270,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "I'm Mustafa. I teach kids to code in Toronto, and I ran CodeIt's first workshop at Northcrest's Community Sundays.\n\nWhat I see in class: kids light up when they build something that's theirs — and tune out when it's another worksheet.\n\nSo CodeIt starts with their idea, builds the first version with them, then makes sure they understand every line.\n\nParents and teachers: what would you want it to do next? Comments are open.",
         facebookBody: "I'm Mustafa. I teach kids to code in Toronto, and I ran CodeIt's first workshop at Northcrest's Community Sundays.\n\nKids light up when they build something that's theirs — so CodeIt starts with their idea and makes sure they understand every line.\n\nParents and teachers: what would you want it to do next?",
         hashtags: ["EdTech", ...CODEIT_TAGS.slice(1)], callToAction: "Comments open",
-        creativeDirection: "Real photo only: you teaching, the workshop room (no identifiable children), or your laptop with CodeIt open. Upload it in LYNQ — no AI image for founder posts.",
-        realPhotoOnly: true, uploadNote: "Upload a real photo of you teaching or your laptop with CodeIt open — no identifiable children.",
+        creativeDirection: `Quote card: the mascot standing at a small whiteboard with a marker, having just written "Start with their idea. End with their code." in chunky navy type; "— Mustafa, founder" small in orange underneath. No real people. ${CODEIT_LOOK}`,
       },
       {
         key: "codeit-sun", brand: CODEIT, day: "2026-10-18", time: "10:00", pillar: "OFFER", storyHighlight: "PRICING",

@@ -1167,6 +1167,39 @@ async function loadBrandReferences(db: Db, organizationId: string, brandProfileI
       const { bytes, contentType } = await resolveAssetBytes(db, { organizationId, assetId: r.id }).catch(() => ({ bytes: new Uint8Array(), contentType: "" }));
       if (bytes.byteLength) out.push({ bytes, contentType, tag: "brand-reference" });
     }
+    if (out.length) return out;
+    // Nothing uploaded: use the brand's own latest Instagram posts (its existing look and mascot), read through the connected account.
+    return await loadInstagramReferences(db, organizationId, brandProfileId);
+  } catch {
+    return [];
+  }
+}
+
+const REFERENCE_MAX_BYTES = 8 * 1024 * 1024;
+
+async function loadInstagramReferences(db: Db, organizationId: string, brandProfileId: string): Promise<{ bytes: Uint8Array; contentType: string; tag: string }[]> {
+  try {
+    const [account] = await db
+      .select({ id: marketingChannelAccounts.id })
+      .from(marketingChannelAccounts)
+      .where(and(eq(marketingChannelAccounts.organizationId, organizationId), eq(marketingChannelAccounts.brandProfileId, brandProfileId), eq(marketingChannelAccounts.platform, "instagram"), eq(marketingChannelAccounts.connectionStatus, "connected"), isNull(marketingChannelAccounts.archivedAt)))
+      .limit(1);
+    if (!account) return [];
+    const { resolveSocialAccountCredential } = await import("./connections");
+    const { resolveAdapterForPlatform } = await import("./providers/social/registry");
+    const { loadEnv } = await import("@/lib/env");
+    const { credential } = await resolveSocialAccountCredential(db, { organizationId, channelAccountId: account.id });
+    const adapter = resolveAdapterForPlatform("instagram", loadEnv());
+    const media = (await adapter.fetchRecentMediaImages?.(credential, 2)) ?? [];
+    const out: { bytes: Uint8Array; contentType: string; tag: string }[] = [];
+    for (const m of media) {
+      const res = await fetch(m.url).catch(() => null);
+      if (!res?.ok) continue;
+      const type = (res.headers.get("content-type") ?? "image/jpeg").split(";")[0].trim();
+      if (!/^image\/(png|jpeg|webp)$/.test(type)) continue;
+      const bytes = new Uint8Array(await res.arrayBuffer());
+      if (bytes.byteLength && bytes.byteLength <= REFERENCE_MAX_BYTES) out.push({ bytes, contentType: type, tag: "instagram-reference" });
+    }
     return out;
   } catch {
     return [];
