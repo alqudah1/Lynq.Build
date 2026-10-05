@@ -365,6 +365,12 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
     report.brands.push({ name: brand.name, created, accountsLinked });
   }
 
+  // Accounts the brand's feed posts already use, so stories and reels go to the same place.
+  const accountFor = new Map<string, string>();
+  const noteAccounts = (brandKey: string, item: SocialContentItem) => {
+    for (const v of item.variants) if (!v.archivedAt && v.channelAccountId && !accountFor.has(`${brandKey}|${v.platform}`)) accountFor.set(`${brandKey}|${v.platform}`, v.channelAccountId);
+  };
+
   // 2. Feed posts (+ a story for each).
   for (const post of plan.feed) {
     const brandProfileId = brandIds.get(post.brand.brandKey);
@@ -424,6 +430,8 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
       else if (ig && !ig.media.length) report.imagesQueued.push({ contentItemId: item.id, igVariantId: ig.id, copyTo: item.variants.filter((v) => v.id !== ig.id && !v.archivedAt && !v.media.length).map((v) => v.id) });
     }
 
+    noteAccounts(post.brand.brandKey, item);
+
     // Story: re-shares the post's image 10 minutes after it goes out.
     const storyMarker = planMarker(plan.key, `${post.key}-story`);
     if (!(await findMarkedItem(db, input.organizationId, storyMarker))) {
@@ -445,7 +453,7 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
       const igStory = story.variants[0];
       const igFeed = item.variants.find((v) => v.platform === "instagram" && !v.archivedAt);
       if (igStory) {
-        await updateVariant(db, { organizationId: input.organizationId, contentVariantId: igStory.id, actorUserId: input.actorUserId, expectedRevision: igStory.revision, changes: { format: "story", scheduledFor: planInstant(post.day, post.time, 10), ...(igFeed?.media.length ? { media: igFeed.media.slice(0, 1).map((m) => ({ ...m, position: 0, role: "primary" as const })) } : {}) } });
+        await updateVariant(db, { organizationId: input.organizationId, contentVariantId: igStory.id, actorUserId: input.actorUserId, expectedRevision: igStory.revision, changes: { format: "story", scheduledFor: planInstant(post.day, post.time, 10), ...(!igStory.channelAccountId && igFeed?.channelAccountId ? { channelAccountId: igFeed.channelAccountId } : {}), ...(igFeed?.media.length ? { media: igFeed.media.slice(0, 1).map((m) => ({ ...m, position: 0, role: "primary" as const })) } : {}) } });
         const queued = report.imagesQueued.find((q) => q.contentItemId === item!.id);
         if (queued) queued.copyTo.push(igStory.id);
       }
@@ -477,7 +485,8 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
     });
     for (const v of item.variants) {
       const platformOptions: SocialVariantPlatformOptions = v.platform === "instagram" ? { shareToFeed: false } : {};
-      await updateVariant(db, { organizationId: input.organizationId, contentVariantId: v.id, actorUserId: input.actorUserId, expectedRevision: v.revision, changes: { format: v.platform === "instagram" ? "reel" : "video", hook: reel.hook, body: reel.body, hashtags: reel.hashtags, callToAction: reel.callToAction, platformOptions, scheduledFor: at } });
+      const account = v.channelAccountId ? undefined : accountFor.get(`${reel.brand.brandKey}|${v.platform}`);
+      await updateVariant(db, { organizationId: input.organizationId, contentVariantId: v.id, actorUserId: input.actorUserId, expectedRevision: v.revision, changes: { format: v.platform === "instagram" ? "reel" : "video", hook: reel.hook, body: reel.body, hashtags: reel.hashtags, callToAction: reel.callToAction, platformOptions, scheduledFor: at, ...(account ? { channelAccountId: account } : {}) } });
     }
     report.created.push(`${reel.title} · ${reel.day} ${reel.time}`);
     report.needsYou.push(`${reel.title}: film it from the script and upload the video before ${reel.day}.`);
