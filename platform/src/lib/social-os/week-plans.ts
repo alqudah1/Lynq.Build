@@ -46,7 +46,10 @@ interface PlanFeedPost {
   kind?: SocialContentKind;
   platforms?: SocialOrganicPlatform[];
   hook?: string;
+  /** Instagram caption. */
   body?: string;
+  /** Shorter Facebook caption (Facebook rewards fewer hashtags and no links). Falls back to `body`. */
+  facebookBody?: string;
   hashtags?: string[];
   callToAction?: string;
   creativeDirection?: string;
@@ -67,10 +70,22 @@ interface PlanReel {
   title: string;
   hook: string;
   body: string;
+  facebookBody?: string;
   hashtags: string[];
   callToAction: string;
   script: string;
   shots: { timing: string; visual: string; onScreenText?: string; audio?: string }[];
+}
+
+/** A text post for Mustafa's personal LinkedIn (no images: founder text posts, 800–1,000 characters, no links). */
+interface PlanLinkedIn {
+  key: string;
+  brand: PlanBrandRef;
+  day: string;
+  time: string;
+  pillar: PlanPillar;
+  title: string;
+  body: string;
 }
 
 export interface WeekPlan {
@@ -79,21 +94,22 @@ export interface WeekPlan {
   weekStart: string;
   feed: PlanFeedPost[];
   reels: PlanReel[];
+  linkedin: PlanLinkedIn[];
   highlights: Record<string, string[]>;
 }
 
 const LYNQ: PlanBrandRef = { brandKey: "lynq", matchName: /^lynq\b/i };
-const LYNQ_TAGS = ["TorontoBusiness", "SmallBusiness", "WebDesign", "GTA", "LocalBusiness"];
-const LYNQ_LOOK = "LYNQ's look: near-black background, one lime accent, large editorial type, generous margins, premium and calm. No stock people, no glossy 3D, no gradients.";
-const PROOF_UPLOAD = "Upload real screenshots of the client's live site (phone + desktop). Proof posts never use AI images.";
+const LYNQ_TAGS = ["TorontoSmallBusiness", "WebDesign", "GTA"];
+const LYNQ_LOOK = "LYNQ's look, matching @lynqbuild: near-black background, one acid-lime accent, large thin editorial type, generous margins, cinematic and calm. Real screens and objects, not illustrations. No stock people, no glossy 3D, no gradients, no clip-art icons.";
+const PROOF_UPLOAD = "Upload real screenshots of the client's live site (phone + desktop) on the dark LYNQ card. Proof posts never use AI images.";
 
 const CODEIT_PROFILE: BrandProfileInput = {
   brandKey: "codeit",
   name: "CodeIt",
   positioning: "A free, browser-based coding studio for ages 5–18: kids describe a site, game or quiz, get a working first version, then edit it and see the code. Plus 31 beginner Python lessons and a Python playground that run with no AI involved.",
   audience: "Parents of kids aged 5–18 in Toronto and across Canada who want screen time that builds something; homeschool families; teachers looking for beginner Python.",
-  voice: "Warm, plain-spoken, practical. Talks to parents, never down to kids. Short sentences, real examples, no hype.",
-  visualRules: "Bright and clean: white or very light backgrounds, one bold orange accent (#F97316), Apple-style minimal product shots of laptops/tablets showing colourful kid-built games, quizzes and code. Lots of space. Never show children's faces; no stock-photo families; no AI-looking people.",
+  voice: "Warm, playful, plain-spoken. Talks to parents, never down to kids. Short sentences, real examples, a little humour, no hype.",
+  visualRules: "Match @codeitlearn: warm cream background, the orange fluffy clay-style mascot in a yellow hoodie, cozy desk scenes (laptop, sticky notes, sketchbook), chunky rounded navy and orange headline type, small doodles (stars, arrows, code brackets). Never show real children's faces.",
   productContext: "Free to start, no card required: 10 AI-assisted builds a month, 31 beginner Python lessons and the Python playground are free for everyone. Paid family plan: CA$12/month. Lead differentiator: comprehension is checked against the child's own project — questions are generated from their code, wrong options come from other real values in the same file, and only first-time-correct answers count.",
   claimsGuardrails: "Prices only in CAD (CA$12/month). Never claim Mustafa is a parent or homeschooler. No invented testimonials, user counts, results or partnerships. Example projects are labelled as examples.",
   callsToAction: ["Start free at codeitlearn.com", "Link in bio", "Save this for later"],
@@ -101,7 +117,7 @@ const CODEIT_PROFILE: BrandProfileInput = {
   companyInfo: "CodeIt (codeitlearn.com), founded by Mustafa in Toronto. First workshop ran at Northcrest's Community Sundays.",
   brandStory: "Mustafa teaches kids to code and built the tool he wanted: start from the kid's own idea, build the first version with them, then make sure they understand every line.",
   writingStyle: "Lead with what the kid does, then why it matters to the parent. One idea per post. End with one clear next step.",
-  visualIdentity: { colors: [{ name: "CodeIt orange", hex: "#F97316", role: "accent" }, { name: "White", hex: "#FFFFFF", role: "background" }, { name: "Ink", hex: "#111827", role: "text" }], typography: { heading: "Inter", body: "Inter" }, logoAssetIds: [], notes: "Orange is the only accent. Rounded, friendly UI shapes." },
+  visualIdentity: { colors: [{ name: "CodeIt orange", hex: "#F97316", role: "accent" }, { name: "Cream", hex: "#FFF6EC", role: "background" }, { name: "Navy", hex: "#1E2A44", role: "text" }], typography: { heading: "Baloo 2", body: "Nunito" }, logoAssetIds: [], notes: "The orange mascot appears in every visual." },
   websites: ["https://codeitlearn.com"],
   competitors: ["CodeCombat", "Tynker", "Scratch"],
   contentPillars: ["BUILD — what kids make", "LEARN — parent tips and mini Python lessons", "HOW IT WORKS — the comprehension check", "OFFER — free to start, CA$12 family plan", "FOUNDER — Mustafa teaching"],
@@ -114,8 +130,8 @@ const CODEIT_PROFILE: BrandProfileInput = {
 
 const CODEIT: PlanBrandRef = { brandKey: "codeit", matchName: /^code\s?it/i, createWith: CODEIT_PROFILE };
 
-const CODEIT_TAGS = ["KidsCoding", "CodingForKids", "LearnToCode", "PythonForKids", "TorontoParents"];
-const CODEIT_LOOK = "Bright white background, a single bold orange (#F97316) accent, Apple-style minimal product photography, soft daylight, lots of empty space. No people, no children's faces, no text other than what is described.";
+const CODEIT_TAGS = ["KidsWhoCode", "PythonForKids", "TorontoParents"];
+const CODEIT_LOOK = "Match @codeitlearn exactly: warm cream background, the orange fluffy clay-style mascot with big eyes wearing a yellow hoodie, cozy desk scene with a laptop, sticky notes and a sketchbook, soft daylight, small doodles (stars, arrows, </> brackets). Chunky rounded navy-and-orange headline type only where described. Never show a real child.";
 
 export const WEEK_PLANS: WeekPlan[] = [
   {
@@ -127,166 +143,261 @@ export const WEEK_PLANS: WeekPlan[] = [
       CodeIt: ["START HERE", "BUILDS", "LESSONS", "PRICING", "ABOUT"],
     },
     feed: [
-      // LYNQ — the drafts already written for the growth plan, in grid order PROOF → TEACH → OFFER/FOUNDER.
-      { key: "lynq-mon", brand: LYNQ, day: "2026-10-12", time: "12:15", pillar: "PROOF", storyHighlight: "WORK", existingContentItemId: "08cc2bdf-2a1d-4bb4-96dd-a2fa4cd7d9cf",
-        fallback: { title: "03 PROOF · Kingsbridge Group", kind: "image_post", platforms: ["instagram", "facebook"], hook: "A property management company that looks as solid online as it does in person.", body: "Kingsbridge Group manages properties across the GTA. Their website has two audiences — owners deciding who to trust, and tenants who need help now.\n\nWe designed and built the site around both: a clear path for each, plain language instead of jargon, and a layout that works on a phone first.\n\nWe still maintain it today.\n\nWant a site like this for your business? DM \"AUDIT\".", hashtags: LYNQ_TAGS, callToAction: "DM AUDIT", creativeDirection: `Real screenshots of kingsbridge's site on a phone and a laptop, placed on a near-black card. ${LYNQ_LOOK}`, realPhotoOnly: true, uploadNote: PROOF_UPLOAD } },
-      { key: "lynq-tue", brand: LYNQ, day: "2026-10-13", time: "07:30", pillar: "TEACH", storyHighlight: null, existingContentItemId: "cc06bc59-0da8-472c-8e8f-656bb1c6bf18",
-        fallback: { title: "04 TEACH · Why a restaurant site loses the reservation", kind: "carousel", platforms: ["instagram", "facebook"], hook: "Three reasons a hungry customer leaves your restaurant's website.", body: "Three reasons a hungry customer leaves your restaurant's website — and books somewhere else:\n\n1. The menu is a PDF. On a phone it opens tiny, slow, or not at all.\n2. The booking button is buried. If they have to scroll to find it, many won't.\n3. The hours are hidden. \"Are they open right now?\" should take one second.\n\nThe fix is a menu page, a booking button at the top, and hours on every page.\n\nSend this to a restaurant owner.", hashtags: ["TorontoRestaurants", "RestaurantMarketing", "SmallBusiness", "WebDesign", "GTA"], callToAction: "Send to a business owner", creativeDirection: `A phone on a near-black table showing a blurry, tiny PDF menu, one lime circle highlighting the problem. ${LYNQ_LOOK}` } },
-      { key: "lynq-wed", brand: LYNQ, day: "2026-10-14", time: "18:30", pillar: "OFFER", storyHighlight: "PRICING", existingContentItemId: "1f90bb0e-1a34-4afa-802b-f3cc408a0094",
-        fallback: { title: "05 OFFER · Launch Site — $2,500, live in 10 days", kind: "image_post", platforms: ["instagram", "facebook"], hook: "A real website for your business, live in 10 days, for one fixed price.", body: "Launch Site — $2,500, one time.\n\nWhat's included:\n• A 5-page website, built for phones first\n• Your Google Business Profile set up properly\n• A booking or contact form that lands in your inbox\n• Live in 10 days\n\nFor trades, clinics and restaurants with no site, or a site from 2018.\n\nDM \"SITE\" or tap the link in bio.", hashtags: LYNQ_TAGS, callToAction: "DM SITE", creativeDirection: `A clean package card on near-black: the words LAUNCH SITE, $2,500 in lime, and "Live in 10 days" underneath. ${LYNQ_LOOK}` } },
-      { key: "lynq-thu", brand: LYNQ, day: "2026-10-15", time: "12:15", pillar: "PROOF", storyHighlight: "WORK", existingContentItemId: "320fbd5d-72ee-46b2-afee-ee9085845792",
-        fallback: { title: "06 PROOF · Nasma", kind: "image_post", platforms: ["instagram", "facebook"], hook: "A restaurant site built around the three things diners actually look for.", body: "Diners open a restaurant's website for three things: the menu, the hours, and a way to book.\n\nFor Nasma we put all three where a phone shows them first — a real menu page instead of a PDF, hours on every page, and a booking button that's never more than a thumb away.\n\nWant this for your restaurant? DM \"AUDIT\".", hashtags: ["TorontoRestaurants", "RestaurantMarketing", "WebDesign", "GTA", "SmallBusiness"], callToAction: "DM AUDIT", creativeDirection: `Real screenshots of Nasma's site on a phone, on a near-black card. ${LYNQ_LOOK}`, realPhotoOnly: true, uploadNote: PROOF_UPLOAD } },
-      { key: "lynq-fri", brand: LYNQ, day: "2026-10-16", time: "12:15", pillar: "TEACH", storyHighlight: null, existingContentItemId: "158518c1-68aa-4034-9fbc-b26952e580f6",
-        fallback: { title: "07 TEACH · Google Business Profile: 5 fields owners leave empty", kind: "carousel", platforms: ["instagram", "facebook"], hook: "Five things on your Google Business Profile that cost you calls when they're empty.", body: "Five fields on your Google Business Profile that most owners leave empty — and every one costs you calls:\n\n1. Business description\n2. Services (with prices if you can)\n3. Opening hours, including holidays\n4. Photos of the real place and real work\n5. Booking or website link\n\nFill these in this week. It's free, and it's often the first thing a customer sees.\n\nSave this.", hashtags: ["GoogleBusinessProfile", "LocalSEO", "TorontoBusiness", "SmallBusiness", "GTA"], callToAction: "Save this", creativeDirection: `A phone on near-black showing a Google-style business listing with five empty fields outlined in lime. ${LYNQ_LOOK}` } },
-      { key: "lynq-sat", brand: LYNQ, day: "2026-10-17", time: "10:00", pillar: "FOUNDER", storyHighlight: "BEHIND", existingContentItemId: "abdf136a-5299-48b9-8bb0-8eee0d43727a",
-        fallback: { title: "08 FOUNDER · Why LYNQ sells fixed packages", kind: "image_post", platforms: ["instagram", "facebook"], hook: "Why I stopped saying \"it depends\" when people ask what a website costs.", body: "When a business owner asks what a website costs, \"it depends\" is the worst answer you can give.\n\nSo LYNQ sells fixed packages with fixed prices. You know what you get, what it costs and when it's live — before we start.\n\nThis week I'm rebuilding how we post too: everything is drafted, sent to my phone, and goes out only when I approve it.\n\nComments are open — ask me anything.", hashtags: LYNQ_TAGS, callToAction: "Comments open", creativeDirection: "Real photo only: you at your desk or on a job, phone photo, no graphics.", realPhotoOnly: true, uploadNote: "Upload a real phone photo of you — founder posts don't use AI images." } },
-      { key: "lynq-sun", brand: LYNQ, day: "2026-10-18", time: "12:15", pillar: "PROOF", storyHighlight: "WORK", existingContentItemId: "f0a766c4-c969-4734-8f80-1990e53385a2",
-        fallback: { title: "09 PROOF · Finding Amy", kind: "image_post", platforms: ["instagram", "facebook"], hook: "An events business needs one thing from its website: the date request.", body: "Finding Amy runs a photo booth for events. Their customers want to see the booth, see the options, and ask about a date — fast.\n\nWe built the site around that one path: what it looks like at a real event, what's included, and a date request that takes under a minute.\n\nWant this for your business? DM \"AUDIT\".", hashtags: ["TorontoEvents", "EventPlanning", "WebDesign", "GTA", "SmallBusiness"], callToAction: "DM AUDIT", creativeDirection: `Real screenshots of the Finding Amy site on a phone, on a near-black card. ${LYNQ_LOOK}`, realPhotoOnly: true, uploadNote: PROOF_UPLOAD } },
-      { key: "lynq-mon2", brand: LYNQ, day: "2026-10-19", time: "07:30", pillar: "TEACH", storyHighlight: null, existingContentItemId: "e6f22811-fb0f-4dd0-9c9b-e1fafed181a3",
-        fallback: { title: "10 TEACH · Slow replies lose the lead", kind: "carousel", platforms: ["instagram", "facebook"], hook: "The business that answers first usually gets the job.", body: "Someone fills in your contact form. They also filled in two others.\n\nThe business that answers first usually gets the job — and by tomorrow morning, that's rarely you.\n\nThe fix isn't working later. It's an instant reply: a text and an email that go out the moment the form is sent, with your booking link in it.\n\nThat's what our Lead Engine sets up.\n\nSend this to a business owner.", hashtags: LYNQ_TAGS, callToAction: "Send to a business owner", creativeDirection: `A phone on near-black showing an incoming lead notification and an instant reply bubble in lime. ${LYNQ_LOOK}` } },
+      // ── LYNQ — grid rows read PROOF → TEACH → OFFER/FOUNDER. Series names repeat every week so people learn them.
+      {
+        key: "lynq-mon", brand: LYNQ, day: "2026-10-12", time: "12:15", pillar: "PROOF", storyHighlight: "WORK",
+        title: "LYNQ · PROOF 01 — Kingsbridge Group", kind: "carousel", platforms: ["instagram", "facebook"],
+        hook: "Two people visit a property manager's website. Only one of them is a customer yet.",
+        body: "Two people visit a property manager's website.\n\nOne owns a building and is deciding who to trust with it. The other is a tenant with a leak at 11pm.\n\nKingsbridge Group's website has to win both — the trust of the owner and the patience of the tenant.\n\nWe designed it, we built it, and we still look after it.\n\nSwipe through it.\n\nRunning a local business with a site that isn't pulling its weight? DM \"AUDIT\" and I'll send you a free 5-minute review.",
+        facebookBody: "Two people visit a property manager's website: an owner deciding who to trust, and a tenant with a leak at 11pm.\n\nKingsbridge Group's website has to win both. We designed it, built it, and still look after it.\n\nWant a free 5-minute review of your own site? Send us a message.",
+        hashtags: ["PropertyManagement", ...LYNQ_TAGS], callToAction: "DM AUDIT",
+        creativeDirection: `Carousel on the dark LYNQ card: slide 1 headline "One site. Two visitors." in lime; slides 2–4 real screenshots of the Kingsbridge site (homepage, an inner page, phone view). ${LYNQ_LOOK}`,
+        realPhotoOnly: true, uploadNote: PROOF_UPLOAD,
+      },
+      {
+        key: "lynq-tue", brand: LYNQ, day: "2026-10-13", time: "07:30", pillar: "TEACH", storyHighlight: null,
+        title: "LYNQ · FIX THIS — Your menu is a PDF", kind: "carousel", platforms: ["instagram", "facebook"],
+        hook: "Your menu is a PDF. Here's what that's quietly costing you.",
+        body: "FIX THIS ▸ Your menu is a PDF.\n\nOn a phone, a PDF menu opens tiny, loads slowly, and makes people pinch and zoom. Someone hungry at 6:40pm doesn't zoom. They go back and tap the next restaurant.\n\nThe fix takes an afternoon:\n→ A real menu page (text, not a file)\n→ A booking button at the top of every page\n→ Hours and phone number visible without scrolling\n\nSave this for your next website update — or send it to the restaurant owner who needs it.",
+        facebookBody: "FIX THIS: your menu is a PDF.\n\nOn a phone it opens tiny and slow. A hungry customer doesn't zoom — they book somewhere else.\n\nThe fix: a real menu page, a booking button at the top, and hours you can see without scrolling.\n\nKnow a restaurant owner who needs this? Share it with them.",
+        hashtags: ["TorontoRestaurants", "RestaurantMarketing", "WebDesign"], callToAction: "Save this",
+        creativeDirection: `Carousel cover: a phone on a near-black table showing a blurry, tiny PDF menu, one lime circle around the problem, headline "FIX THIS" small in lime and "Your menu is a PDF." large in white. Following slides: one fix per slide in big type. ${LYNQ_LOOK}`,
+      },
+      {
+        key: "lynq-wed", brand: LYNQ, day: "2026-10-14", time: "18:30", pillar: "OFFER", storyHighlight: "PRICING",
+        title: "LYNQ · THE RECEIPT — What $2,500 buys", kind: "carousel", platforms: ["instagram", "facebook"],
+        hook: "Most agencies say \"it depends.\" Here's the receipt.",
+        body: "THE RECEIPT ▸ Launch Site — $2,500. One time.\n\nWhat's on it:\n✓ A 5-page website, built for phones first\n✓ Your Google Business Profile set up properly\n✓ A booking or contact form that lands in your inbox\n✓ Live in 10 days\n\nWhat's not on it: hourly billing, surprise invoices, or \"it depends.\"\n\nBuilt for trades, clinics and restaurants with no website — or one from 2018.\n\nDM \"SITE\" and I'll tell you honestly if it's right for you.",
+        facebookBody: "Launch Site — $2,500, one time.\n\n✓ 5-page website, phone-first\n✓ Google Business Profile set up properly\n✓ Booking or contact form to your inbox\n✓ Live in 10 days\n\nNo hourly billing, no surprises. For trades, clinics and restaurants with no website, or one from 2018. Message us to see if it fits.",
+        hashtags: LYNQ_TAGS, callToAction: "DM SITE",
+        creativeDirection: `Styled as a printed receipt on near-black: line items "5 pages", "Google profile", "Booking form", "Live in 10 days", total "$2,500" in lime, "THE RECEIPT" small at the top. ${LYNQ_LOOK}`,
+      },
+      {
+        key: "lynq-thu", brand: LYNQ, day: "2026-10-15", time: "12:15", pillar: "PROOF", storyHighlight: "WORK",
+        title: "LYNQ · PROOF 02 — Nasma", kind: "carousel", platforms: ["instagram", "facebook"],
+        hook: "People open a restaurant's website for three things. We built Nasma's around them.",
+        body: "People open a restaurant's website for three things: the menu, the hours, and a way to book.\n\nEverything else is decoration.\n\nFor Nasma we started there — then made it look as good as the food.\n\nSwipe for the phone view.\n\nOwn a restaurant in the GTA? DM \"AUDIT\" for a free 5-minute review of your site.",
+        facebookBody: "Diners open a restaurant's website for three things: the menu, the hours, and a way to book. For Nasma we started there — then made it look as good as the food.\n\nWant a free 5-minute review of your restaurant's site? Send us a message.",
+        hashtags: ["TorontoRestaurants", ...LYNQ_TAGS], callToAction: "DM AUDIT",
+        creativeDirection: `Carousel on the dark LYNQ card: slide 1 "Menu. Hours. Book." in white with lime dots; slides 2–3 real screenshots of Nasma's site on a phone. ${LYNQ_LOOK}`,
+        realPhotoOnly: true, uploadNote: PROOF_UPLOAD,
+      },
+      {
+        key: "lynq-fri", brand: LYNQ, day: "2026-10-16", time: "12:15", pillar: "TEACH", storyHighlight: null,
+        title: "LYNQ · FIX THIS — 5 empty fields on your Google profile", kind: "carousel", platforms: ["instagram", "facebook"],
+        hook: "Before anyone sees your website, they see this. Most owners leave half of it empty.",
+        body: "FIX THIS ▸ Your Google Business Profile.\n\nBefore anyone sees your website, they see this. And most local businesses leave half of it empty:\n\n1. Business description\n2. Services (with prices if you can)\n3. Hours — including holidays\n4. Photos of the real place and real work\n5. A booking or website link\n\nIt's free, it takes an hour, and it's often the first impression you make.\n\nSave this and do it this weekend.",
+        facebookBody: "Before anyone sees your website, they see your Google Business Profile. Five fields most owners leave empty: description, services, hours (holidays too), real photos, and a booking link.\n\nFree, one hour, and often your first impression. Worth doing this weekend.",
+        hashtags: ["GoogleBusinessProfile", "LocalSEO", ...LYNQ_TAGS.slice(0, 2)], callToAction: "Save this",
+        creativeDirection: `A phone on near-black showing a Google-style business listing with five empty fields outlined in lime, headline "FIX THIS" small in lime. ${LYNQ_LOOK}`,
+      },
+      {
+        key: "lynq-sat", brand: LYNQ, day: "2026-10-17", time: "10:00", pillar: "FOUNDER", storyHighlight: "BEHIND",
+        title: "LYNQ · FOUNDER — Why I stopped saying \"it depends\"", kind: "image_post", platforms: ["instagram", "facebook"],
+        hook: "The worst answer to \"how much is a website?\" is the one most agencies give.",
+        body: "\"How much is a website?\"\n\n\"It depends\" is the most honest-sounding dishonest answer in my industry. It means: we'll find out how much you're willing to pay.\n\nSo LYNQ sells fixed packages with fixed prices. You know what you get, what it costs and when it's live — before we start.\n\nThis week I also changed how we post: every post is drafted, sent to my phone, and only goes out when I approve it. Same rule as client work. Nothing ships without a human saying yes.\n\nI'm Mustafa. Ask me anything — comments are open.",
+        facebookBody: "\"How much is a website?\" — \"It depends\" usually means \"we'll see what you'll pay.\"\n\nSo LYNQ sells fixed packages at fixed prices: you know what you get, what it costs and when it's live before we start.\n\nI'm Mustafa. Questions welcome in the comments.",
+        hashtags: ["Founder", ...LYNQ_TAGS.slice(0, 2)], callToAction: "Comments open",
+        creativeDirection: "Real phone photo only: you at your desk, laptop open, natural light, no graphics.",
+        realPhotoOnly: true, uploadNote: "Upload a real phone photo of you — founder posts don't use AI images.",
+      },
+      {
+        key: "lynq-sun", brand: LYNQ, day: "2026-10-18", time: "12:15", pillar: "PROOF", storyHighlight: "WORK",
+        title: "LYNQ · PROOF 03 — Finding Amy", kind: "carousel", platforms: ["instagram", "facebook"],
+        hook: "An events business needs its website to do one thing: get the date request.",
+        body: "An events business needs its website to do exactly one thing: get the date request.\n\nFinding Amy runs a photo booth for events. Their customers want to see the booth at a real party, see what's included, and ask about their date — fast.\n\nSo the whole site walks that one path.\n\nSwipe through it.\n\nWant your site built around the one thing that pays you? DM \"AUDIT\".",
+        facebookBody: "An events business needs its website to do one thing: get the date request. We built Finding Amy's site around that one path — see the booth, see what's included, ask about your date.\n\nWant yours built around the one thing that pays you? Send us a message.",
+        hashtags: ["TorontoEvents", ...LYNQ_TAGS], callToAction: "DM AUDIT",
+        creativeDirection: `Carousel on the dark LYNQ card: slide 1 "One path." in white, lime arrow; slides 2–4 real screenshots of the Finding Amy site on a phone. ${LYNQ_LOOK}`,
+        realPhotoOnly: true, uploadNote: PROOF_UPLOAD,
+      },
+      {
+        key: "lynq-mon2", brand: LYNQ, day: "2026-10-19", time: "07:30", pillar: "TEACH", storyHighlight: null,
+        title: "LYNQ · FIX THIS — Slow replies lose the job", kind: "carousel", platforms: ["instagram", "facebook"],
+        hook: "They filled in your form. They also filled in two others.",
+        body: "FIX THIS ▸ Slow replies.\n\nSomeone fills in your contact form. They also filled in two others.\n\nThe business that answers first usually gets the job — and at 9pm, that's rarely you.\n\nThe fix isn't working later. It's an instant reply: a text and an email that go out the moment the form is sent, with your booking link inside.\n\nThat's what our Lead Engine sets up.\n\nSend this to a business owner who's always \"getting back to people.\"",
+        facebookBody: "Someone fills in your contact form — and two others. The business that answers first usually gets the job.\n\nThe fix isn't working later; it's an instant text and email the moment the form is sent, with your booking link inside. That's what our Lead Engine sets up.",
+        hashtags: ["SmallBusinessTips", ...LYNQ_TAGS.slice(0, 2)], callToAction: "Send to a business owner",
+        creativeDirection: `A phone on near-black: an incoming form notification and an instant reply bubble in lime, timestamp "9:04 PM", headline "FIX THIS" small in lime. ${LYNQ_LOOK}`,
+      },
 
-      // CodeIt — grid order BUILD → LEARN → HOW/OFFER/FOUNDER.
+      // ── CodeItLearn — keeps the mascot world from the existing grid. Rows read BUILD → LEARN → HOW/FOUNDER/OFFER.
       {
         key: "codeit-mon", brand: CODEIT, day: "2026-10-12", time: "19:30", pillar: "BUILD", storyHighlight: "BUILDS",
-        title: "CodeIt · Describe it. Play it.", kind: "image_post", platforms: ["instagram", "facebook"],
+        title: "CodeIt · One sentence in. One game out.", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "Your kid types one sentence. A minute later, they're playing it.",
-        body: "Your kid types one sentence. A minute later, they're playing it.\n\n\"A game where a cat catches falling pizza.\" That's all it takes for CodeIt to build a working first version.\n\nThen the real part starts: they change the speed, the colours, the score — and see the code behind every change.\n\nFree to start, no card needed. Ages 5–18.\nLink in bio → codeitlearn.com",
+        body: "\"A game where a cat catches falling pizza.\"\n\nThat one sentence is all it takes. CodeIt builds a working first version — and then the real part starts.\n\nYour kid makes it faster. Changes the colours. Adds a score. And every change shows them the code behind it.\n\nThat's the whole idea: start with their idea, end with their code.\n\nFree to start, no card needed. Ages 5–18.\nLink in bio → codeitlearn.com",
+        facebookBody: "\"A game where a cat catches falling pizza.\"\n\nOne sentence, and CodeIt builds a working first version. Then your kid makes it faster, changes the colours, adds a score — and sees the code behind every change.\n\nFree to start, no card needed, ages 5–18: codeitlearn.com",
         hashtags: CODEIT_TAGS, callToAction: "Link in bio",
-        creativeDirection: `A laptop on a clean white desk showing a bright, simple 2D browser game: a cartoon cat catching falling pizza slices, a score counter in the corner. ${CODEIT_LOOK}`,
+        creativeDirection: `Split scene like the existing "It started with an idea" post: left, a sticky note reading "a cat catches falling pizza"; right, the mascot at a laptop playing a bright 2D game of a cat catching pizza slices. Headline "One sentence in. One game out." ${CODEIT_LOOK}`,
       },
       {
         key: "codeit-tue", brand: CODEIT, day: "2026-10-13", time: "19:30", pillar: "LEARN", storyHighlight: "LESSONS",
-        title: "CodeIt · 3 questions after screen time", kind: "image_post", platforms: ["instagram", "facebook"],
-        hook: "Not all screen time is the same. Here's how to tell the difference.",
-        body: "Not all screen time is the same. Three questions to ask your kid tonight:\n\n1. \"What did you make?\" — watching vs. building.\n2. \"What would you change about it?\" — that's design thinking.\n3. \"Can you show me how it works?\" — if they can explain it, they learned it.\n\nCodeIt is built around question 3: after every build, kids answer questions about their own code.\n\nSave this for after dinner.",
-        hashtags: CODEIT_TAGS, callToAction: "Save this for later",
-        creativeDirection: `Overhead flat-lay on a white table: a tablet showing a colourful kid-made game next to three blank orange sticky notes in a row. ${CODEIT_LOOK}`,
+        title: "CodeIt · Same 20 minutes.", kind: "carousel", platforms: ["instagram", "facebook"],
+        hook: "Same 20 minutes of screen time. Two very different kids at the end of it.",
+        body: "Same 20 minutes. Same screen.\n\nOne kid watched someone else play a game.\nOne kid made one.\n\nScreen time isn't the problem — passive screen time is. Three questions that tell you which kind it was:\n\n1. \"What did you make?\"\n2. \"What would you change about it?\"\n3. \"Can you show me how it works?\"\n\nIf they can answer number 3, they learned something.\n\nSave this for after dinner tonight.",
+        facebookBody: "Same 20 minutes, same screen: one kid watched a game, one kid made one.\n\nThree questions that tell you which kind of screen time it was:\n1. What did you make?\n2. What would you change?\n3. Can you show me how it works?\n\nIf they can answer number 3, they learned something.",
+        hashtags: ["ScreenTime", ...CODEIT_TAGS.slice(1)], callToAction: "Save this",
+        creativeDirection: `Two panels: left, the mascot slumped on a couch watching a tablet, sleepy; right, the mascot at a desk proudly building a game with code on screen. Big headline "Same 20 minutes." ${CODEIT_LOOK}`,
       },
       {
         key: "codeit-wed", brand: CODEIT, day: "2026-10-14", time: "19:30", pillar: "HOW IT WORKS", storyHighlight: "START HERE",
-        title: "CodeIt · The quiz comes from their own code", kind: "image_post", platforms: ["instagram", "facebook"],
-        hook: "Most coding apps check if the code runs. We check if your kid understands it.",
-        body: "Most coding apps check whether the code runs. CodeIt checks whether your kid understands it.\n\nAfter a build, CodeIt asks questions generated from their own project file. The wrong answers come from other real values in that same file — so guessing doesn't work.\n\nOnly first-time-correct answers count.\n\nThat's the difference between copying and learning.\nTry it free → codeitlearn.com",
+        title: "CodeIt · We prove it.", kind: "carousel", platforms: ["instagram", "facebook"],
+        hook: "Kids can code. We prove it — here's how.",
+        body: "Our bio says \"Kids can code. We prove it.\" Here's the proof part.\n\nA lot of coding apps only check whether the code runs. That's easy to fake — copy, paste, done.\n\nCodeIt checks whether your kid understands it. After a build, it asks questions generated from their own project. The wrong answers come from other real values in that same file, so guessing doesn't work. Only first-time-correct answers count.\n\nCopying isn't learning. Explaining is.\n\nTry it free → link in bio.",
+        facebookBody: "A lot of coding apps only check whether the code runs. CodeIt checks whether your kid understands it.\n\nAfter each build, it asks questions made from their own project — the wrong answers come from their own code too, so guessing doesn't work.\n\nKids can code. We prove it. Try it free: codeitlearn.com",
         hashtags: CODEIT_TAGS, callToAction: "Start free at codeitlearn.com",
-        creativeDirection: `Close-up of a laptop screen split in two: on the left a short block of code with one line highlighted in orange, on the right a clean multiple-choice card with four rounded answer buttons. ${CODEIT_LOOK}`,
+        creativeDirection: `The mascot holding a magnifying glass over a laptop screen: left half a short block of code with one line highlighted orange, right half a quiz card with four rounded answer buttons. Headline "We prove it." ${CODEIT_LOOK}`,
       },
       {
         key: "codeit-thu", brand: CODEIT, day: "2026-10-15", time: "19:30", pillar: "BUILD", storyHighlight: "BUILDS",
-        title: "CodeIt · Their favourite topic, as an app", kind: "image_post", platforms: ["instagram", "facebook"],
-        hook: "Whatever your kid can't stop talking about can become an app they built.",
-        body: "Dinosaurs, football, Minecraft — whatever your kid can't stop talking about can become a quiz app they build themselves.\n\nThey describe it, CodeIt builds the first version, and then they make it theirs: new questions, new colours, a harder level.\n\nEvery change shows them the code behind it.\n\nAges 5–18. Free to start.",
+        title: "CodeIt · Their obsession, their app", kind: "image_post", platforms: ["instagram", "facebook"],
+        hook: "Whatever your kid won't stop talking about can become an app they built.",
+        body: "Dinosaurs. Football. Minecraft. Their favourite snack.\n\nWhatever your kid won't stop talking about can become a quiz app they built themselves.\n\nThey describe it. CodeIt builds the first version. Then they make it theirs — new questions, new colours, a harder level — and see the code behind every change.\n\nWhat would your kid build first? (Example project shown.)\n\nAges 5–18. Free to start.",
+        facebookBody: "Dinosaurs, football, Minecraft — whatever your kid won't stop talking about can become a quiz app they build themselves. They describe it, CodeIt builds the first version, and they make it theirs.\n\nWhat would your kid build first?",
         hashtags: CODEIT_TAGS, callToAction: "Link in bio",
-        creativeDirection: `A tablet standing on a white table showing a bright quiz app with a friendly cartoon dinosaur and big rounded orange answer buttons (example project). ${CODEIT_LOOK}`,
+        creativeDirection: `The mascot at a laptop showing a bright dinosaur quiz app with big rounded orange answer buttons, toy dinosaur on the desk, sticky note "my app!". Small label "example project". ${CODEIT_LOOK}`,
       },
       {
         key: "codeit-fri", brand: CODEIT, day: "2026-10-16", time: "19:30", pillar: "LEARN", storyHighlight: "LESSONS",
-        title: "CodeIt · Lesson 1: print()", kind: "image_post", platforms: ["instagram", "facebook"],
-        hook: "The first line of Python almost every coder writes.",
-        body: "print(\"Hello!\")\n\nThat's the first line of Python almost every coder ever wrote. It tells the computer: show this on the screen.\n\nTry it with your kid: change \"Hello!\" to their name. Run it. That's programming.\n\nCodeIt has 31 beginner Python lessons and a Python playground — free for everyone, with no AI involved, so the learning is theirs.\n\nSave this and try it this weekend.",
-        hashtags: CODEIT_TAGS, callToAction: "Save this for later",
-        creativeDirection: `A minimal code editor window centred on white, one line of Python in large monospace type: print("Hello!"), an output panel below showing Hello!, and a rounded orange Run button. ${CODEIT_LOOK}`,
+        title: "CodeIt · Lesson 1 of 31: make the computer say your name", kind: "carousel", platforms: ["instagram", "facebook"],
+        hook: "The first line of Python almost every coder ever wrote. Try it with your kid tonight.",
+        body: "Lesson 1 of 31 ▸ print()\n\nprint(\"Hello!\")\n\nThat's the first line of Python almost every coder ever wrote. It tells the computer: show this on the screen.\n\nTry it with your kid tonight: change \"Hello!\" to their name. Press run. That's programming.\n\nAll 31 beginner lessons and the Python playground are free for everyone — no AI involved, so the learning is theirs.\n\nSave this for the weekend.",
+        facebookBody: "Lesson 1 of 31: print(\"Hello!\")\n\nThe first line of Python almost every coder wrote. Try it tonight — change \"Hello!\" to your kid's name and press run.\n\nAll 31 beginner lessons and the Python playground are free at codeitlearn.com.",
+        hashtags: ["LearnPython", ...CODEIT_TAGS.slice(1)], callToAction: "Save this",
+        creativeDirection: `The mascot pointing at a big friendly code editor window showing one line: print("Hello!") with an output panel saying Hello! and an orange Run button. Headline "Lesson 1 of 31". ${CODEIT_LOOK}`,
       },
       {
         key: "codeit-sat", brand: CODEIT, day: "2026-10-17", time: "10:00", pillar: "FOUNDER", storyHighlight: "ABOUT",
         title: "CodeIt · Why I'm building CodeIt", kind: "image_post", platforms: ["instagram", "facebook"],
-        hook: "I'm Mustafa. I teach kids to code — and I built the tool I wished I had.",
-        body: "I'm Mustafa. I teach kids to code in Toronto, and I ran CodeIt's first workshop at Northcrest's Community Sundays.\n\nWhat I noticed: kids light up when they build something that's theirs — and tune out when it's another worksheet.\n\nSo CodeIt starts with their idea, builds the first version with them, then makes sure they understand every line.\n\nQuestions from parents are always welcome — comments are open.",
-        hashtags: CODEIT_TAGS, callToAction: "Comments open",
-        creativeDirection: "Real photo only: you teaching, the workshop room, or your laptop with CodeIt open. Upload it in LYNQ — no AI image for founder posts.",
-        realPhotoOnly: true,
+        hook: "I teach kids to code. Here's the moment that made me build CodeIt.",
+        body: "I'm Mustafa. I teach kids to code in Toronto, and I ran CodeIt's first workshop at Northcrest's Community Sundays.\n\nWhat I see in class: kids light up when they build something that's theirs — and tune out when it's another worksheet.\n\nSo CodeIt starts with their idea, builds the first version with them, then makes sure they understand every line.\n\nParents and teachers: what would you want it to do next? Comments are open.",
+        facebookBody: "I'm Mustafa. I teach kids to code in Toronto, and I ran CodeIt's first workshop at Northcrest's Community Sundays.\n\nKids light up when they build something that's theirs — so CodeIt starts with their idea and makes sure they understand every line.\n\nParents and teachers: what would you want it to do next?",
+        hashtags: ["EdTech", ...CODEIT_TAGS.slice(1)], callToAction: "Comments open",
+        creativeDirection: "Real photo only: you teaching, the workshop room (no identifiable children), or your laptop with CodeIt open. Upload it in LYNQ — no AI image for founder posts.",
+        realPhotoOnly: true, uploadNote: "Upload a real photo of you teaching or your laptop with CodeIt open — no identifiable children.",
       },
       {
         key: "codeit-sun", brand: CODEIT, day: "2026-10-18", time: "10:00", pillar: "OFFER", storyHighlight: "PRICING",
-        title: "CodeIt · Free to start, CA$12 for the family", kind: "image_post", platforms: ["instagram", "facebook"],
+        title: "CodeIt · Free means free", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "Free to start. No card. Here's exactly what's included.",
-        body: "What's free, what's paid — no surprises:\n\nFree for everyone: 31 beginner Python lessons, the Python playground, and 10 AI-assisted builds a month. No card needed.\n\nFamily plan: CA$12/month.\n\nBuilt for ages 5–18.\nStart free → codeitlearn.com (link in bio)",
+        body: "\"Free\" usually means \"free until we ask for your card.\" Not here.\n\nFree for everyone:\n✓ 31 beginner Python lessons\n✓ The Python playground\n✓ 10 AI-assisted builds a month\nNo card needed.\n\nFamily plan: CA$12/month.\n\nBuilt for ages 5–18.\nStart free → codeitlearn.com (link in bio)",
+        facebookBody: "Free for everyone: 31 beginner Python lessons, the Python playground, and 10 AI-assisted builds a month. No card needed.\n\nFamily plan: CA$12/month. Ages 5–18.\n\nStart free: codeitlearn.com",
         hashtags: CODEIT_TAGS, callToAction: "Start free at codeitlearn.com",
-        creativeDirection: `Two clean rounded cards side by side on white, the right card outlined in orange; a laptop edge visible in the corner showing a colourful kid-built game. ${CODEIT_LOOK}`,
+        creativeDirection: `The mascot holding up two rounded cards: "Free" (lessons, playground, 10 builds/month) and "Family — CA$12/month" outlined in orange. Headline "Free means free." ${CODEIT_LOOK}`,
       },
     ],
     reels: [
       {
-        key: "lynq-reel-tue", brand: LYNQ, day: "2026-10-13", time: "18:30", series: "Build in 10 days",
-        title: "LYNQ Reel · Build in 10 days — Day 1–3",
-        hook: "Day 1 of building a local business website in 10 days.",
-        body: "Day 1 to Day 3 of a Launch Site.\n\nDay 1: the call. What the business sells, who calls, what they ask first.\nDay 2: the wireframe. Five pages, the booking button above the fold, hours and phone on every page.\nDay 3: real copy and real photos. No lorem ipsum, no stock smiles.\n\nDay 10 it goes live. Follow to watch the rest.\nWant yours built the same way? DM \"SITE\".",
-        hashtags: ["WebDesign", "TorontoBusiness", "SmallBusiness", "GTA"], callToAction: "DM SITE",
-        script: "Screen-record your real build. First frame: the project file with the business name and a big 'DAY 1'. Keep it 20–30 seconds. Voice or on-screen text only — no music-only cuts.",
+        key: "lynq-reel-tue", brand: LYNQ, day: "2026-10-13", time: "18:30", series: "BUILD LOG",
+        title: "LYNQ Reel · BUILD LOG — Day 1 of 10",
+        hook: "I'm building a local business a website in 10 days. This is Day 1.",
+        body: "BUILD LOG ▸ Day 1 of 10.\n\nDay 1 isn't design. It's one question: what does the person visiting this site actually want to do?\n\nBook. Call. Get a quote. Everything we build after today serves that one answer.\n\nFollow to watch the next 9 days.\nWant yours built the same way? DM \"SITE\".",
+        facebookBody: "BUILD LOG, Day 1 of 10: before any design, one question — what does the visitor actually want to do? Book, call, or get a quote. Everything after today serves that answer. Follow along for the next 9 days.",
+        hashtags: LYNQ_TAGS, callToAction: "DM SITE",
+        script: "Screen-record a real build you're doing now (e.g. Chris Property Buyers, with his OK; blur the name if not). First frame: the project file with a big 'DAY 1/10' — no logo intro. 20–30 seconds, your voice or on-screen text, original audio.",
         shots: [
-          { timing: "0–3s", visual: "Figma/Notion page titled with the business name, 'DAY 1' on screen", onScreenText: "Day 1: the call" },
-          { timing: "3–12s", visual: "Wireframe being laid out — booking button placed at the top", onScreenText: "Day 2: wireframe" },
-          { timing: "12–24s", visual: "Real copy and photos dropping into the layout", onScreenText: "Day 3: real words, real photos" },
-          { timing: "24–30s", visual: "Black end card", onScreenText: "Day 10: live. DM SITE" },
+          { timing: "0–2s", visual: "Project board with 'DAY 1/10' and the business type", onScreenText: "Day 1 of 10" },
+          { timing: "2–12s", visual: "Writing the one question on a sticky note or doc", onScreenText: "What does the visitor want to DO?" },
+          { timing: "12–24s", visual: "Rough wireframe with the booking button placed first", onScreenText: "Book. Call. Quote." },
+          { timing: "24–30s", visual: "Black end card", onScreenText: "Day 2 tomorrow · DM SITE" },
         ],
       },
       {
-        key: "lynq-reel-thu", brand: LYNQ, day: "2026-10-15", time: "18:30", series: "Watch it work",
-        title: "LYNQ Reel · Watch it work — approving a post from my phone",
-        hook: "This is how my clients' posts go out.",
-        body: "This is how LYNQ clients' posts go out.\n\nThe system drafts the post. My phone buzzes. I read the caption, check the image, tap one button — and it's live on Instagram and Facebook.\n\nNo logging into four apps. No forgetting to post on Thursday.\n\nIt's part of the Growth System: posts and reels every month, approved from your phone.\nDM \"GROW\" and I'll show you yours.",
-        hashtags: ["SocialMediaMarketing", "TorontoBusiness", "SmallBusiness", "Automation"], callToAction: "DM GROW",
-        script: "Screen-record your phone: the Telegram notification arriving, opening it, the image and caption, tapping ✅. Then cut to the Instagram profile with the new post. 15–20 seconds.",
+        key: "lynq-reel-thu", brand: LYNQ, day: "2026-10-15", time: "18:30", series: "WATCH IT WORK",
+        title: "LYNQ Reel · WATCH IT WORK — one tap, live",
+        hook: "This post went live because I tapped one button on my phone.",
+        body: "WATCH IT WORK ▸ This post went live because I tapped one button.\n\nThe system drafts it. My phone buzzes. I read the caption, check the image, tap ✅ — and it's on Instagram and Facebook.\n\nNo logging into four apps. No \"I'll post Thursday\" that turns into next month.\n\nIt's what our Growth System sets up for clients.\nDM \"GROW\" and I'll show you how it would work for you.",
+        facebookBody: "This post went live because I tapped one button on my phone. The system drafts it, I check it, one tap — and it's on Instagram and Facebook. It's what our Growth System sets up for clients. Message us to see how it would work for you.",
+        hashtags: ["SocialMediaMarketing", ...LYNQ_TAGS.slice(0, 2)], callToAction: "DM GROW",
+        script: "Screen-record your phone for real: the Telegram notification from the LYNQ bot, opening it, the image and caption, your thumb tapping ✅. Cut to the Instagram profile with this post at the top. 12–20 seconds. This reel is literally true — film it the morning it goes out.",
         shots: [
-          { timing: "0–3s", visual: "Phone lock screen: Telegram notification from the LYNQ bot", onScreenText: "My phone buzzes" },
-          { timing: "3–10s", visual: "Telegram open: the post's image, caption and buttons", onScreenText: "I check it" },
-          { timing: "10–13s", visual: "Thumb taps ✅ Post now", onScreenText: "One tap" },
-          { timing: "13–20s", visual: "Instagram profile, the new post at the top", onScreenText: "Live. DM GROW" },
+          { timing: "0–2s", visual: "Lock screen: Telegram notification from the LYNQ bot", onScreenText: "My phone just buzzed" },
+          { timing: "2–8s", visual: "The post's image, caption and buttons in Telegram", onScreenText: "I check it" },
+          { timing: "8–11s", visual: "Thumb taps ✅", onScreenText: "One tap" },
+          { timing: "11–18s", visual: "Instagram profile with the new post on top", onScreenText: "Live. DM GROW" },
         ],
       },
       {
-        key: "lynq-reel-sat", brand: LYNQ, day: "2026-10-17", time: "12:15", series: "60-second audit",
-        title: "LYNQ Reel · 60-second audit — a GTA clinic site",
-        hook: "60 seconds on a GTA clinic's website. Watch what it gets wrong.",
-        body: "60-second audit: a GTA clinic website (name hidden).\n\nThe three things I check first on every clinic site:\n1. Can a patient on a phone find \"Book\" without scrolling?\n2. Are the hours and phone number on every page?\n3. Do the Google reviews show up on the site?\n\nWatch what this one gets wrong.\n\nWant a free 5-minute audit of your site? DM \"AUDIT\".",
-        hashtags: ["WebDesign", "TorontoBusiness", "ClinicMarketing", "GTA"], callToAction: "DM AUDIT",
-        script: "Screen-record a real GTA clinic site on a phone-sized window, name blurred. Walk the three checks in order and say what you find out loud. Keep claims to what is on screen. 30–40 seconds.",
+        key: "lynq-reel-sat", brand: LYNQ, day: "2026-10-17", time: "12:15", series: "FIX THIS",
+        title: "LYNQ Reel · FIX THIS — 60 seconds on a clinic's website",
+        hook: "60 seconds on a GTA clinic's website. Watch where the bookings leak.",
+        body: "FIX THIS ▸ 60 seconds on a GTA clinic's website (name hidden).\n\nThe three things I check first on every clinic site:\n1. Can a patient on a phone find \"Book\" without scrolling?\n2. Are the hours and phone number on every page?\n3. Do the Google reviews show up on the site?\n\nWatch what this one gets wrong.\n\nWant me to do yours? DM \"AUDIT\" — it's free.",
+        facebookBody: "60 seconds on a GTA clinic's website: can a patient find \"Book\" without scrolling, are hours and phone on every page, do the reviews show up? Watch what this one gets wrong. Want a free review of yours? Send us a message.",
+        hashtags: ["ClinicMarketing", ...LYNQ_TAGS], callToAction: "DM AUDIT",
+        script: "Screen-record a real GTA clinic site in a phone-sized window, name and logo blurred. Walk the three checks in order and say what you actually find. Only claim what's on screen. 30–45 seconds.",
         shots: [
-          { timing: "0–3s", visual: "The clinic homepage on a phone frame, name blurred", onScreenText: "60-second audit" },
-          { timing: "3–15s", visual: "Scrolling to find the Book button", onScreenText: "1. Where's 'Book'?" },
-          { timing: "15–25s", visual: "Looking for hours/phone on an inner page", onScreenText: "2. Hours + phone" },
-          { timing: "25–35s", visual: "Searching for reviews on the site", onScreenText: "3. Reviews" },
-          { timing: "35–40s", visual: "Black end card", onScreenText: "Free audit: DM AUDIT" },
+          { timing: "0–2s", visual: "Clinic homepage on a phone frame, name blurred, timer '0:60'", onScreenText: "60-second audit" },
+          { timing: "2–15s", visual: "Scrolling to find the Book button", onScreenText: "1. Where's 'Book'?" },
+          { timing: "15–27s", visual: "Inner page — looking for hours/phone", onScreenText: "2. Hours + phone" },
+          { timing: "27–38s", visual: "Searching for reviews on the site", onScreenText: "3. Reviews" },
+          { timing: "38–45s", visual: "Black end card", onScreenText: "Free audit · DM AUDIT" },
         ],
       },
       {
-        key: "codeit-reel-tue", brand: CODEIT, day: "2026-10-13", time: "16:30", series: "Idea to game",
-        title: "CodeIt Reel · Idea to game in 60 seconds",
-        hook: "One sentence → a game → the code behind it.",
-        body: "One sentence → a playable game → the code behind it. In under a minute.\n\nThis is CodeIt. Free to start for ages 5–18.\nLink in bio.",
+        key: "codeit-reel-tue", brand: CODEIT, day: "2026-10-13", time: "16:30", series: "IDEA → GAME",
+        title: "CodeIt Reel · Idea → game in under a minute",
+        hook: "Type a sentence. Get a game. Then see the code.",
+        body: "One sentence → a playable game → the code behind it. Under a minute.\n\nWhat should we build next? Drop your kid's wildest game idea below and we'll build one of them on camera.\n\nCodeIt is free to start for ages 5–18. Link in bio.",
+        facebookBody: "One sentence → a playable game → the code behind it, in under a minute. What should we build next? Tell us your kid's wildest game idea and we'll build one on camera.",
         hashtags: CODEIT_TAGS, callToAction: "Link in bio",
-        script: "Screen-record CodeIt: type a one-line game idea, the game appears, play it for a few seconds, change one value (speed or colour), then open the code view. 30–45 seconds.",
+        script: "Screen-record CodeIt for real: first frame is the idea being typed (no intro). Game appears, play 3 seconds, change one value (speed or colour), open the code view. 25–40 seconds, original audio or voice-over.",
         shots: [
-          { timing: "0–4s", visual: "Typing the idea into CodeIt", onScreenText: "One sentence…" },
-          { timing: "4–15s", visual: "The game appears and is played", onScreenText: "…a real game" },
-          { timing: "15–30s", visual: "Changing the speed or colour, game updates", onScreenText: "Make it theirs" },
-          { timing: "30–40s", visual: "Code view with the changed line highlighted", onScreenText: "See the code" },
+          { timing: "0–3s", visual: "Typing the idea into CodeIt", onScreenText: "One sentence…" },
+          { timing: "3–14s", visual: "The game appears and is played", onScreenText: "…a real game" },
+          { timing: "14–28s", visual: "Changing speed or colour, game updates live", onScreenText: "Make it yours" },
+          { timing: "28–38s", visual: "Code view with the changed line highlighted", onScreenText: "Now see the code" },
         ],
       },
       {
-        key: "codeit-reel-thu", brand: CODEIT, day: "2026-10-15", time: "16:30", series: "Python in 20 seconds",
+        key: "codeit-reel-thu", brand: CODEIT, day: "2026-10-15", time: "16:30", series: "PYTHON IN 20 SECONDS",
         title: "CodeIt Reel · Python in 20 seconds: print()",
         hook: "Your kid's first line of Python, in 20 seconds.",
-        body: "Your kid's first line of Python, in 20 seconds.\n\nprint(\"Hello!\") → change it to their name → run it.\n\nSave this and try it tonight. 31 free lessons at codeitlearn.com.",
-        hashtags: CODEIT_TAGS, callToAction: "Save this for later",
-        script: "Screen-record the CodeIt Python playground: type print(\"Hello!\"), run, change to a name, run again. 15–20 seconds.",
+        body: "Your kid's first line of Python, in 20 seconds.\n\nprint(\"Hello!\") → change it to their name → run it.\n\nSend this to a parent who keeps saying \"I don't know anything about coding.\" Neither did anyone, before line 1.\n\n31 free lessons at codeitlearn.com.",
+        facebookBody: "Your kid's first line of Python in 20 seconds: print(\"Hello!\"), change it to their name, press run. 31 free lessons at codeitlearn.com.",
+        hashtags: ["LearnPython", ...CODEIT_TAGS.slice(1)], callToAction: "Save this",
+        script: "Screen-record the CodeIt Python playground: type print(\"Hello!\"), run, change to a name, run again. 15–20 seconds, big readable font.",
         shots: [
-          { timing: "0–5s", visual: "Typing print(\"Hello!\") in the playground", onScreenText: "Line 1 of Python" },
-          { timing: "5–10s", visual: "Run → Hello! appears", onScreenText: "Run it" },
-          { timing: "10–20s", visual: "Change to a name and run again", onScreenText: "Now make it yours" },
+          { timing: "0–4s", visual: "Typing print(\"Hello!\")", onScreenText: "Line 1 of Python" },
+          { timing: "4–9s", visual: "Run → Hello! appears", onScreenText: "Run it" },
+          { timing: "9–18s", visual: "Change to a name, run again", onScreenText: "Now make it yours" },
         ],
       },
       {
-        key: "codeit-reel-sat", brand: CODEIT, day: "2026-10-17", time: "11:00", series: "The question after the build",
+        key: "codeit-reel-sat", brand: CODEIT, day: "2026-10-17", time: "11:00", series: "WE PROVE IT",
         title: "CodeIt Reel · The question after the build",
         hook: "Copying code is easy. Explaining it is learning.",
-        body: "Copying code is easy. Explaining it is learning.\n\nAfter every build, CodeIt asks your kid questions about their own code — and the wrong answers come from their own project, so guessing doesn't work.\n\nTry it free → link in bio.",
+        body: "Copying code is easy. Explaining it is learning.\n\nAfter every build, CodeIt asks your kid about their own code — and the wrong answers come from their own project, so guessing doesn't work.\n\nKids can code. We prove it.\nTry it free → link in bio.",
+        facebookBody: "Copying code is easy; explaining it is learning. After every build, CodeIt asks your kid about their own code — so guessing doesn't work. Kids can code. We prove it.",
         hashtags: CODEIT_TAGS, callToAction: "Link in bio",
-        script: "Screen-record finishing a build in CodeIt, then the comprehension question appearing and being answered. 20–30 seconds.",
+        script: "Screen-record finishing a build in CodeIt, then the comprehension question appearing and being answered right first time. 20–30 seconds.",
         shots: [
-          { timing: "0–6s", visual: "A finished build running", onScreenText: "Built it?" },
-          { timing: "6–18s", visual: "The question generated from that code appears", onScreenText: "Now explain it" },
-          { timing: "18–28s", visual: "Answering correctly first time", onScreenText: "That's learning" },
+          { timing: "0–5s", visual: "A finished build running", onScreenText: "Built it?" },
+          { timing: "5–17s", visual: "The question generated from that code appears", onScreenText: "Now explain it" },
+          { timing: "17–27s", visual: "Answering correctly first time", onScreenText: "We prove it." },
         ],
+      },
+    ],
+    linkedin: [
+      {
+        key: "lynq-li-tue", brand: LYNQ, day: "2026-10-13", time: "08:15", pillar: "FOUNDER",
+        title: "LinkedIn · Mustafa — I stopped saying \"it depends\"",
+        body: "\"How much does a website cost?\"\n\nFor years the standard answer in my industry has been \"it depends.\" I used to say it too.\n\nHere's what it actually means to a local business owner: \"I'm going to find out how much you're willing to pay.\" It's the least trustworthy sentence a small business can hear at the moment it's deciding whether to trust you.\n\nSo at LYNQ we stopped.\n\nWe sell three fixed packages with the price on the page. The entry one is a 5-page site, a properly set-up Google Business Profile and a booking form, live in 10 days, for $2,500.\n\nWhy it's worth it:\n→ Calls get shorter. People arrive already knowing if it fits.\n→ The package is the scope, so there's less to argue about later.\n→ I spend my time building instead of writing custom quotes.\n\nFixed pricing isn't for everyone. Complex builds still need a conversation. But for most local businesses, the honest answer to \"how much?\" is a number.\n\nIf you run a service business: do you publish your prices? Why or why not?",
+      },
+      {
+        key: "lynq-li-thu", brand: LYNQ, day: "2026-10-15", time: "08:15", pillar: "TEACH",
+        title: "LinkedIn · Mustafa — The 3 checks I run on every local business site",
+        body: "I review a lot of local business websites. Before design, before SEO, I check three things — and plenty of sites miss at least one.\n\n1. Can a customer on a phone find the main action without scrolling?\nBook, call, get a quote. If it's below three paragraphs of \"welcome to our family business,\" most visitors never see it.\n\n2. Are the hours and phone number on every page?\nNot just the contact page. People land on inner pages from Google.\n\n3. Does the site show proof that already exists?\nMost businesses have Google reviews. Very few show them on their own website, where the decision actually happens.\n\nNone of these need a redesign. All three can usually be fixed in an afternoon.\n\nIf you own or market a local business, run these three on your own site today. If you want a second pair of eyes, send me a message and I'll do a free 5-minute review.",
+      },
+      {
+        key: "codeit-li-wed", brand: CODEIT, day: "2026-10-14", time: "08:15", pillar: "FOUNDER",
+        title: "LinkedIn · Mustafa — What kids actually need to learn now",
+        body: "I teach kids to code in Toronto. A question I hear from parents: \"Does my kid still need to learn coding if AI can write it?\"\n\nMy honest answer: they need it more — but a different version of it.\n\nWhen AI writes the first draft, the valuable skills move:\n→ Saying clearly what you want\n→ Reading code someone (or something) else wrote\n→ Predicting what it will do before you run it\n→ Finding the line that's wrong when the result isn't what you asked for\n\nThat's what I built CodeIt around. A kid describes a game, gets a working first version, then changes it and sees the code behind every change. After each build, CodeIt asks them questions generated from their own project — and the wrong answers come from that same file, so you can't guess your way through.\n\nTyping code was never the point. Understanding it is.\n\nTeachers and parents: how are you thinking about this?",
+      },
+      {
+        key: "codeit-li-fri", brand: CODEIT, day: "2026-10-16", time: "08:15", pillar: "HOW IT WORKS",
+        title: "LinkedIn · Mustafa — Why our quiz questions come from the kid's own code",
+        body: "A lot of coding platforms for kids check one thing: does the code run?\n\nThe problem is that \"it runs\" is easy to fake. Copy, paste, green tick. The platform reports progress. The kid learned nothing.\n\nWhen I designed CodeIt's comprehension checks, I set three rules:\n\n1. Questions are generated from the child's own project file — not a generic question bank.\n2. The wrong answer options come from other real values in that same file, so every option looks plausible to someone who didn't read the code.\n3. Only first-time-correct answers count toward progress.\n\nThe result is slower-looking progress and much more honest progress. A parent can trust that \"done\" means understood.\n\nCodeIt is free to start for ages 5–18 — the 31 beginner Python lessons and the playground are free for everyone, with a CA$12/month family plan.\n\nIf you build learning products: how do you measure understanding rather than completion?",
       },
     ],
   },
@@ -439,7 +550,10 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
         };
         item = await createContentItem(db, { organizationId: input.organizationId, actorUserId: input.actorUserId, brandProfileId, title: p.title ?? p.key, brief, platforms: p.platforms ?? ["instagram", "facebook"], scheduledFor: at });
         for (const v of item.variants) {
-          await updateVariant(db, { organizationId: input.organizationId, contentVariantId: v.id, actorUserId: input.actorUserId, expectedRevision: v.revision, changes: { format: p.kind === "carousel" ? "carousel" : "image", hook: p.hook ?? "", body: p.body ?? "", hashtags: p.hashtags ?? [], callToAction: p.callToAction ?? "", scheduledFor: at } });
+          // A carousel needs 2+ slides: only real-screenshot posts start as carousels; AI-image posts start as a single cover image.
+          const format = p.kind === "carousel" && p.realPhotoOnly ? "carousel" : "image";
+          const body = v.platform === "facebook" ? (p.facebookBody ?? p.body ?? "") : (p.body ?? "");
+          await updateVariant(db, { organizationId: input.organizationId, contentVariantId: v.id, actorUserId: input.actorUserId, expectedRevision: v.revision, changes: { format, hook: p.hook ?? "", body, hashtags: p.hashtags ?? [], callToAction: p.callToAction ?? "", scheduledFor: at } });
         }
         item = await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId: item.id, actorUserId: input.actorUserId });
         report.created.push(`${item.title} · ${post.day} ${post.time}`);
@@ -506,10 +620,32 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
     for (const v of item.variants) {
       const platformOptions: SocialVariantPlatformOptions = v.platform === "instagram" ? { shareToFeed: false } : {};
       const account = v.channelAccountId ? undefined : accountFor.get(`${reel.brand.brandKey}|${v.platform}`);
-      await updateVariant(db, { organizationId: input.organizationId, contentVariantId: v.id, actorUserId: input.actorUserId, expectedRevision: v.revision, changes: { format: v.platform === "instagram" ? "reel" : "video", hook: reel.hook, body: reel.body, hashtags: reel.hashtags, callToAction: reel.callToAction, platformOptions, scheduledFor: at, ...(account ? { channelAccountId: account } : {}) } });
+      await updateVariant(db, { organizationId: input.organizationId, contentVariantId: v.id, actorUserId: input.actorUserId, expectedRevision: v.revision, changes: { format: v.platform === "instagram" ? "reel" : "video", hook: reel.hook, body: v.platform === "facebook" ? (reel.facebookBody ?? reel.body) : reel.body, hashtags: reel.hashtags, callToAction: reel.callToAction, platformOptions, scheduledFor: at, ...(account ? { channelAccountId: account } : {}) } });
     }
     report.created.push(`${reel.title} · ${reel.day} ${reel.time}`);
     report.needsYou.push(`${reel.title}: film it from the script and upload the video before ${reel.day}.`);
+  }
+
+  // 4. LinkedIn: text posts for Mustafa's profile (drafts until LinkedIn is connected; copy them from Telegram or the Library meanwhile).
+  for (const li of plan.linkedin) {
+    const brandProfileId = brandIds.get(li.brand.brandKey);
+    if (!brandProfileId) continue;
+    const marker = planMarker(plan.key, li.key);
+    if (await findMarkedItem(db, input.organizationId, marker)) continue;
+    const at = planInstant(li.day, li.time);
+    const item = await createContentItem(db, {
+      organizationId: input.organizationId,
+      actorUserId: input.actorUserId,
+      brandProfileId,
+      title: li.title,
+      brief: { kind: "founder_post", objective: "founder_voice", audience: "", topic: `LinkedIn ${li.pillar} post`, tone: "", callToAction: "", creativeDirection: "", hook: li.body.split("\n")[0] ?? "", script: "", shots: [], sourceText: "", keyPoints: [`Pillar: ${li.pillar}`, "Text-only, no link — reply to every comment in the first hour."], researchNotes: marker },
+      platforms: ["linkedin"],
+      scheduledFor: at,
+    });
+    for (const v of item.variants) {
+      await updateVariant(db, { organizationId: input.organizationId, contentVariantId: v.id, actorUserId: input.actorUserId, expectedRevision: v.revision, changes: { format: "text", hook: li.body.split("\n")[0] ?? "", body: li.body, hashtags: [], scheduledFor: at } });
+    }
+    report.created.push(`${li.title} · ${li.day} ${li.time}`);
   }
 
   return report;
@@ -550,7 +686,7 @@ async function getVariantRevision(db: Db, organizationId: string, actorUserId: s
 
 export interface WeekPlanEntryStatus {
   key: string;
-  kind: "post" | "story" | "reel";
+  kind: "post" | "story" | "reel" | "linkedin";
   brand: string;
   day: string;
   time: string;
@@ -608,6 +744,10 @@ export async function getWeekPlanStatus(db: Db, input: { organizationId: string;
   for (const reel of plan.reels) {
     const item = get(idFor.get(planMarker(plan.key, reel.key)));
     entries.push({ key: reel.key, kind: "reel", brand: reel.brand.createWith?.name ?? "LYNQ", day: reel.day, time: reel.time, title: reel.title, pillar: reel.series, highlight: null, ...summarize(item, "reel") });
+  }
+  for (const li of plan.linkedin) {
+    const item = get(idFor.get(planMarker(plan.key, li.key)));
+    entries.push({ key: li.key, kind: "linkedin", brand: li.brand.createWith?.name ?? "LYNQ", day: li.day, time: li.time, title: li.title, pillar: li.pillar, highlight: null, ...summarize(item, "post") });
   }
   entries.sort((a, b) => `${a.day} ${a.time} ${a.kind}`.localeCompare(`${b.day} ${b.time} ${b.kind}`));
   return { loaded: anyLoaded, entries };
