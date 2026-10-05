@@ -438,10 +438,14 @@ export function buildReplyPrompt(input: { brand: BrandContext; item: { platform:
 
 export function buildImagePrompt(input: { brand: SocialBrand; brief: SocialContentBrief; title: string; hook: string; platform: SocialOrganicPlatform; instruction?: string }): string {
   const visual = buildBrandContextText(input.brand, ["visual"]).split("\n").slice(1).join("\n");
+  // A regenerate instruction is the owner asking for a different picture, so it
+  // replaces the brief's earlier art direction instead of trailing behind it
+  // (image models anchor on whatever comes first).
+  const instruction = input.instruction?.trim();
+  const direction = instruction || input.brief.creativeDirection;
   return [
-    input.brief.creativeDirection ? `Art direction: ${input.brief.creativeDirection}` : `A striking social media visual for "${input.title}".`,
+    direction ? `Art direction: ${direction}` : `A striking social media visual for "${input.title}".`,
     input.hook ? `The post's message: ${input.hook}` : "",
-    input.instruction ? `Additional direction: ${input.instruction}` : "",
     visual ? `Brand visual identity:\n${visual}` : "",
     `Format: a ${SOCIAL_PLATFORM_LABELS[input.platform]} post visual. No fake logos, no fake UI text, no invented statistics. Avoid rendering long text in the image.`,
   ]

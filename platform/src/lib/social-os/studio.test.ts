@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { assignWeekSlots, buildAnalysisPrompt, buildIdeasPrompt, buildPartPrompt, buildReplyPrompt, buildVariantGenerationPrompt, fitVariantToPlatform, hasPerformanceData, imageAspectFor, normalizeIdea, variantGenerationOutputSchema, zonedDateTimeToUtc, type PerformanceEvidence } from "./studio";
+import { assignWeekSlots, buildAnalysisPrompt, buildImagePrompt, buildIdeasPrompt, buildPartPrompt, buildReplyPrompt, buildVariantGenerationPrompt, fitVariantToPlatform, hasPerformanceData, imageAspectFor, normalizeIdea, variantGenerationOutputSchema, zonedDateTimeToUtc, type PerformanceEvidence } from "./studio";
 import { composeCaption } from "./providers/social/http";
 import { socialContentBriefSchema } from "./validation";
-import type { BrandContext } from "./brands";
+import type { BrandContext, SocialBrand } from "./brands";
 
 const brand: BrandContext = {
   brandId: "b1",
@@ -120,5 +120,22 @@ describe("performance evidence", () => {
     expect(hasPerformanceData(emptyEvidence)).toBe(false);
     expect(hasPerformanceData({ ...emptyEvidence, publishedPosts: 3 })).toBe(false);
     expect(hasPerformanceData({ ...emptyEvidence, postsWithMetrics: 1 })).toBe(true);
+  });
+});
+
+describe("buildImagePrompt", () => {
+  const socialBrand = { name: "LYNQ", brandKey: "lynq", visualRules: "Scenes with a concept.", visualIdentity: { colors: [], typography: {} } } as unknown as SocialBrand;
+  const withDirection = socialContentBriefSchema.parse({ topic: "Nasma", creativeDirection: "One ceramic plate on black." });
+
+  it("leads with the brief's art direction when there is no instruction", () => {
+    const p = buildImagePrompt({ brand: socialBrand, brief: withDirection, title: "Nasma", hook: "Menu to reservation", platform: "instagram" });
+    expect(p.split("\n")[0]).toBe("Art direction: One ceramic plate on black.");
+    expect(p).toContain("VISUAL RULES: Scenes with a concept.");
+  });
+
+  it("a regenerate instruction replaces the old art direction instead of trailing it", () => {
+    const p = buildImagePrompt({ brand: socialBrand, brief: withDirection, title: "Nasma", hook: "Menu to reservation", platform: "instagram", instruction: "  A kitchen pass at night.  " });
+    expect(p.split("\n")[0]).toBe("Art direction: A kitchen pass at night.");
+    expect(p).not.toContain("ceramic plate");
   });
 });
