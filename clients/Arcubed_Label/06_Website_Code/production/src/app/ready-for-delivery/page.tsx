@@ -14,6 +14,8 @@ import { plainText } from "@/lib/site-settings";
 // this must be explicit rather than inferred.
 export const dynamic = "force-dynamic";
 
+export const metadata = { title: "Ready for Delivery", alternates: { canonical: "/ready-for-delivery" } };
+
 export default async function ReadyForDeliveryPage() {
   const [items, settings, bags] = await Promise.all([
     getReadyForDeliveryItems(),

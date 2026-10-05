@@ -132,9 +132,13 @@ await p.waitForTimeout(600);
 
 /* 8 — the page claims nothing the business has not confirmed. */
 const body = (await p.innerText("body")).replace(/\s+/g, " ");
-ok("payment section explains how payment happens",
-   /Arcubed confirms your order with you/i.test(body) && /not charged when you place it/i.test(body));
-ok("no invented payment method", !/cash on delivery|\bcliq\b|card number|visa|mastercard/i.test(body));
+// Cash on Delivery is the live method (Rand, 2026-10). CliQ is approved but
+// has no destination yet, so it must not appear.
+ok("payment method is Cash on Delivery", /Payment method/i.test(body) && /Cash on Delivery/.test(body), body.match(/Payment method.{0,140}/i)?.[0]);
+ok("payment is due on delivery, nothing charged online",
+   /Payment is due when your order is delivered/i.test(body) && /Nothing is charged online/i.test(body));
+ok("no CliQ and no card payment", !/\bcliq\b|card number|visa|mastercard/i.test(body));
+ok("no card fields", (await p.locator('input[autocomplete^="cc-"], input[name*="card" i]').count()) === 0);
 ok("no discount field", (await p.locator('input[name*="discount" i], input[placeholder*="discount" i], input[placeholder*="promo" i]').count()) === 0);
 ok("no pickup option", !/pick ?up/i.test(body));
 
@@ -172,6 +176,8 @@ if (SKIP_ORDER) {
     ok("confirmation states 5 to 7 days", /5 to 7 days/.test(conf));
     ok("confirmation totals 70 + 3 = 73", /JOD 70/.test(conf) && /JOD 3/.test(conf) && /JOD 73/.test(conf));
     ok("confirmation does not claim payment", !/\bpaid\b|payment received/i.test(conf));
+    ok("confirmation names Cash on Delivery, due on delivery",
+       /Cash on Delivery/.test(conf) && /Payment is due when your order is delivered/i.test(conf));
   }
 }
 

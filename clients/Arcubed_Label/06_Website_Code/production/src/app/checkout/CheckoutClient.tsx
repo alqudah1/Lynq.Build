@@ -8,6 +8,7 @@ import { useCart } from "@/lib/cart-context";
 import { formatMoney } from "@/lib/site-settings";
 import { mediaForSnapshot } from "@/lib/product-media";
 import { submitOrder, type CheckoutResult } from "./actions";
+import { AVAILABLE_PAYMENT_METHODS } from "@/lib/payment";
 import type { CartLine, ShippingRule } from "@/lib/types";
 
 // Every amount rendered here is a PREVIEW. The server recomputes all of it at
@@ -128,6 +129,8 @@ export default function CheckoutClient({
     try {
       const res: CheckoutResult = await submitOrder({
         fullName, phone, email, zoneKey, country, city, address, building, notes,
+        // One live method today, so nothing to choose: see src/lib/payment.ts.
+        paymentMethod: AVAILABLE_PAYMENT_METHODS[0],
         idempotencyKey: attemptKey(),
         // IDs and quantities only — no prices.
         items: cart.map((l) =>
@@ -250,21 +253,19 @@ export default function CheckoutClient({
             <textarea id="f-notes" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
           </div>
 
-          {/* PAYMENT. No provider is integrated and no card details are
-              collected anywhere (docs/payment-integration.md). Naming a method
-              the store has not confirmed — Cash on Delivery, CliQ, a card —
-              would be inventing a business rule.
-              The wording describes the process the customer is actually in:
-              every piece is crocheted to order, so the order is confirmed with
-              them before anything is paid. "No payment is taken on this site"
-              was equally true and read like a half-built shop. */}
-          <p className="co-legend">Payment</p>
+          {/* PAYMENT. Cash on Delivery is the store's live method (Rand,
+              2026-10). It is stated as THE method, not offered as a choice of
+              one, and it is what the order records (orders.payment_method).
+              No card fields exist anywhere and nothing is charged online.
+              CliQ is approved in principle but has no destination yet, so it
+              is not shown — src/lib/payment.ts. Every piece is crocheted to
+              order, which is why Arcubed still confirms with the customer. */}
+          <p className="co-legend">Payment method</p>
           <div className="co-pay">
-            <p className="co-pay-head">Arcubed confirms your order with you.</p>
+            <p className="co-pay-head">Cash on Delivery</p>
             <p className="co-pay-body">
-              Every piece is crocheted to order, so Arcubed gets in touch on the details above to
-              confirm your order and arrange payment and delivery. You are not charged when you
-              place it.
+              Payment is due when your order is delivered. Nothing is charged online. Every piece is
+              crocheted to order, so Arcubed confirms your order with you first.
             </p>
           </div>
 

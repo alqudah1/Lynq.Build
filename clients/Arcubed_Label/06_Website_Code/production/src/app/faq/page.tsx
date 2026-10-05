@@ -21,6 +21,7 @@ export const dynamic = "force-dynamic";
 // applies, and writing a new one would be new customer-facing copy.
 export const metadata = {
   title: "FAQ",
+  alternates: { canonical: "/faq" },
 };
 
 function shippingSentence(rules: Awaited<ReturnType<typeof getShippingRules>>): string {

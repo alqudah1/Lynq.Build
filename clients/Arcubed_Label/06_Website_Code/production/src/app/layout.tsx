@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Bodoni_Moda } from "next/font/google";
+import { SITE_URL, INDEXING_OPEN } from "@/lib/seo";
 import "./globals.css";
 import ScrollReset from "@/components/ScrollReset";
 import { CartProvider } from "@/lib/cart-context";
@@ -38,7 +39,7 @@ const inter = Inter({
   display: "swap",
 });
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arcubed-label.vercel.app";
+const SITE = SITE_URL;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
@@ -48,7 +49,6 @@ export const metadata: Metadata = {
   },
   description:
     "Hand-crocheted bags made to order in Amman, Jordan. Choose your shape, your colour and your fittings.",
-  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     siteName: "Arcubed Label",
@@ -67,12 +67,14 @@ export const metadata: Metadata = {
     description: "Hand-crocheted bags made to order in Amman, Jordan.",
     images: ["/media/og-nova.jpg"],
   },
-  // Still closed to search engines. This is a launch switch, not an oversight:
-  // set NEXT_PUBLIC_ALLOW_INDEXING=true once the client approves going live.
-  robots:
-    process.env.NEXT_PUBLIC_ALLOW_INDEXING === "true"
-      ? { index: true, follow: true }
-      : { index: false, follow: false },
+  // No canonical here on purpose. A canonical in the root layout is inherited
+  // by every page that does not set its own, and "/" here told search engines
+  // that the shop, every product and every colourway were copies of the
+  // homepage. Each public page now declares its own.
+  //
+  // Open since launch (2026-10-05) — see src/lib/seo.ts. Private routes
+  // (checkout, cart, order, admin, the photo page) set their own noindex.
+  robots: INDEXING_OPEN ? { index: true, follow: true } : { index: false, follow: false },
 };
 
 export const viewport: Viewport = {

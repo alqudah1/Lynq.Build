@@ -16,6 +16,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Contact",
+  alternates: { canonical: "/contact" },
   description: "Questions about a custom order, colours, shipping or an existing order.",
 };
 

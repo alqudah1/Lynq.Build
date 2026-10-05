@@ -12,6 +12,7 @@
 
 import { createOrder, type CreateOrderResult } from "@/lib/orders";
 import { getShippingRules } from "@/lib/repository";
+import { isAvailablePaymentMethod, type PaymentMethod } from "@/lib/payment";
 
 export interface CheckoutLineInput {
   kind: "made_to_order" | "ready_for_delivery";
@@ -39,6 +40,8 @@ export interface CheckoutInput {
   building?: string;
   country?: string;
   notes?: string;
+  /** Only AVAILABLE_PAYMENT_METHODS are accepted — today, cash_on_delivery. */
+  paymentMethod: string;
   items: CheckoutLineInput[];
   idempotencyKey: string;
 }
@@ -86,6 +89,9 @@ export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult>
   if (!input.zoneKey) errors.push("Please choose where we're delivering to.");
   if (!address) errors.push("Please enter a delivery address.");
   if (!Array.isArray(input.items) || input.items.length === 0) errors.push("Your cart is empty.");
+  // CliQ is known to the schema but refused here until Rand has a real
+  // destination for it (src/lib/payment.ts).
+  if (!isAvailablePaymentMethod(input.paymentMethod)) errors.push("Please choose how you'd like to pay.");
   if (!input.idempotencyKey) errors.push("Something went wrong preparing your order. Please refresh and try again.");
 
   // The zone must be one the store actually has a rule for — never trust a
@@ -131,6 +137,7 @@ export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult>
       zone: rule!.label,
     },
     notes: notes || undefined,
+    paymentMethod: input.paymentMethod as PaymentMethod,
     idempotencyKey: input.idempotencyKey,
     items: input.items.map((l) =>
       l.kind === "ready_for_delivery"

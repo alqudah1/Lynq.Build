@@ -1,10 +1,11 @@
 // Order confirmation. Addressed by an unguessable confirmation token; the
 // order number is shown but is never the lookup key.
 //
-// HONESTY: no payment provider is configured, so nothing here says "paid",
-// "purchase complete" or "payment successful". The order is a REQUEST that
-// Arcubed confirms — which is exactly what the database records
-// (status 'pending', payment_status 'unpaid').
+// HONESTY: payment is Cash on Delivery, so nothing has been paid when this
+// page renders and nothing here says "paid", "purchase complete" or "payment
+// successful". The order is a REQUEST that Arcubed confirms — which is
+// exactly what the database records (status 'pending', payment_status
+// 'unpaid', payment_method 'cash_on_delivery').
 
 import { notFound } from "next/navigation";
 import { plainText } from "@/lib/site-settings";
@@ -13,6 +14,7 @@ import Image from "next/image";
 import { getOrderByConfirmationToken } from "@/lib/orders";
 import { getStoreSettings } from "@/lib/repository";
 import { formatMoney } from "@/lib/site-settings";
+import { paymentMethodLabel } from "@/lib/payment";
 import { mediaForSnapshot } from "@/lib/product-media";
 
 export const dynamic = "force-dynamic";
@@ -49,7 +51,7 @@ export default async function OrderConfirmationPage(props: { params: Promise<{ t
       </p>
       <p className="oc-lede">
         We&rsquo;ve got your order. Arcubed will contact you on the details below to confirm it and
-        arrange payment and delivery.
+        arrange delivery.
       </p>
 
       <div className="oc-grid">
@@ -113,9 +115,16 @@ export default async function OrderConfirmationPage(props: { params: Promise<{ t
           </p>
 
           <p className="co-legend">Status</p>
+          <p className="oc-block">Order received. Awaiting confirmation from Arcubed.</p>
+
+          <p className="co-legend">Payment</p>
           <p className="oc-block">
-            Order received. Awaiting confirmation from Arcubed.<br />
-            <span className="oc-muted">No payment has been taken.</span>
+            {paymentMethodLabel(order.paymentMethod) ?? "Arranged with Arcubed"}<br />
+            <span className="oc-muted">
+              {order.paymentMethod === "cash_on_delivery"
+                ? "Payment is due when your order is delivered."
+                : "No payment has been taken."}
+            </span>
           </p>
 
           {hasMade || hasReady ? (

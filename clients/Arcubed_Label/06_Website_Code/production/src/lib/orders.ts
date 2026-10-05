@@ -23,6 +23,7 @@ import { computeUnitPrice, buildCartSnapshot, buildReadyForDeliverySnapshot } fr
 import { logOrderError } from "./logger";
 import type { Selection, ShippingRule } from "./types";
 import type { Json } from "./supabase/types";
+import { isAvailablePaymentMethod, type PaymentMethod } from "./payment";
 
 export interface MadeToOrderInputLine {
   kind: "made_to_order";
@@ -56,6 +57,8 @@ export interface CreateOrderInput {
   shippingZone: ShippingRule["zoneKey"];
   shippingAddress?: Record<string, unknown>;
   notes?: string;
+  /** Must be one of AVAILABLE_PAYMENT_METHODS — checked again here, not only in the action. */
+  paymentMethod: PaymentMethod;
   items: OrderInputLine[];
   /**
    * Per-attempt token from the client. Two submissions carrying the same key
@@ -370,6 +373,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
   if (!input.customerEmail?.trim()) errors.push("Customer email is required.");
   if (!input.items?.length) errors.push("Cart is empty.");
   if (!input.shippingZone) errors.push("Shipping destination is required.");
+  if (!isAvailablePaymentMethod(input.paymentMethod)) errors.push("That payment method is not available.");
   if (errors.length > 0) return { ok: false, errors };
 
   // Server-side authoritative shipping lookup — never trust a client-sent
@@ -457,6 +461,9 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
       ...(currency ? { currency } : {}),
       shipping_address: (input.shippingAddress as Json | undefined) ?? null,
       notes: input.notes ?? null,
+      // payment_status is left to its default, 'unpaid': Cash on Delivery is
+      // paid at the door, and only Rand marks an order paid.
+      payment_method: input.paymentMethod,
       shipping_quote_required: quoteRequired,
       ...(input.idempotencyKey ? { idempotency_key: input.idempotencyKey } : {}),
     })
@@ -538,6 +545,8 @@ export interface OrderConfirmation {
   createdAt: string;
   status: string;
   paymentStatus: string;
+  /** Null on orders placed before 2026-10-05, which never recorded one. */
+  paymentMethod: string | null;
   customerName: string;
   customerEmail: string;
   customerPhone: string | null;
@@ -567,7 +576,7 @@ export async function getOrderByConfirmationToken(token: string): Promise<OrderC
   const { data, error } = await admin
     .from("orders")
     .select(
-      "order_number, created_at, status, payment_status, customer_name, customer_email, customer_phone, shipping_address, subtotal, shipping_amount, total, currency, shipping_quote_required, order_items ( item_kind, product_name_snapshot, quantity, unit_price, configuration_snapshot )"
+      "order_number, created_at, status, payment_status, payment_method, customer_name, customer_email, customer_phone, shipping_address, subtotal, shipping_amount, total, currency, shipping_quote_required, order_items ( item_kind, product_name_snapshot, quantity, unit_price, configuration_snapshot )"
     )
     .eq("confirmation_token", token)
     .maybeSingle();
@@ -597,6 +606,7 @@ export async function getOrderByConfirmationToken(token: string): Promise<OrderC
     createdAt: data.created_at,
     status: data.status,
     paymentStatus: data.payment_status,
+    paymentMethod: data.payment_method ?? null,
     customerName: data.customer_name,
     customerEmail: data.customer_email,
     customerPhone: data.customer_phone,
@@ -677,6 +687,8 @@ export interface AdminOrder {
   createdAt: string;
   status: string;
   paymentStatus: string;
+  /** Null on orders placed before 2026-10-05, which never recorded one. */
+  paymentMethod: string | null;
   customerName: string;
   customerEmail: string;
   customerPhone: string | null;
@@ -700,7 +712,7 @@ export async function listOrders(limit = 100): Promise<AdminOrder[]> {
       // notes: checkout invites "Delivery notes (optional)" and this query
       // never selected the column, so whatever the customer wrote — a landmark,
       // a gate code, a delivery time — reached the database and stopped there.
-      "id, order_number, created_at, status, payment_status, customer_name, customer_email, customer_phone, shipping_address, notes, subtotal, shipping_amount, total, currency, shipping_quote_required, order_items ( item_kind, product_name_snapshot, quantity, unit_price, configuration_snapshot )"
+      "id, order_number, created_at, status, payment_status, payment_method, customer_name, customer_email, customer_phone, shipping_address, notes, subtotal, shipping_amount, total, currency, shipping_quote_required, order_items ( item_kind, product_name_snapshot, quantity, unit_price, configuration_snapshot )"
     )
     .order("created_at", { ascending: false })
     .limit(Math.max(1, Math.min(limit, 200)));
@@ -716,6 +728,7 @@ export async function listOrders(limit = 100): Promise<AdminOrder[]> {
       createdAt: String(r.created_at),
       status: String(r.status),
       paymentStatus: String(r.payment_status),
+      paymentMethod: (r.payment_method as string | null) ?? null,
       customerName: String(r.customer_name ?? ""),
       customerEmail: String(r.customer_email ?? ""),
       customerPhone: (r.customer_phone as string | null) ?? null,
@@ -741,7 +754,10 @@ export async function listOrders(limit = 100): Promise<AdminOrder[]> {
 }
 
 /** The only values an order may be moved between from the admin screen. */
-export const ORDER_STATUSES = ["pending", "confirmed", "in_production", "ready", "shipped", "completed", "cancelled"] as const;
+// Must match the orders_status_check constraint exactly. This list used to
+// offer "ready" and "completed", which the database rejects, so saving either
+// failed with "Could not update that order."
+export const ORDER_STATUSES = ["pending", "confirmed", "in_production", "ready_to_ship", "shipped", "delivered", "cancelled"] as const;
 export const PAYMENT_STATUSES = ["unpaid", "paid", "refunded"] as const;
 
 export async function updateOrderStatus(

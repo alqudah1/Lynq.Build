@@ -137,12 +137,12 @@ await session(async (send, events) => {
   const conf = await ev(send, `(() => {
     const txt=document.body.innerText;
     return { paidClaim: /payment successful|purchase complete|paid/i.test(txt),
-             noPayment: /no payment has been taken/i.test(txt),
+             cod: /Cash on Delivery/.test(txt) && /Payment is due when your order is delivered/i.test(txt),
              hasThumb: !!document.querySelector('.oc-line img'),
              total: [...document.querySelectorAll('.co-totals div')].map(d=>d.textContent).join(' | ') };
   })()`);
   t("confirmation does NOT claim payment", !conf.paidClaim);
-  t("confirmation states no payment taken", conf.noPayment);
+  t("confirmation states Cash on Delivery, due on delivery", conf.cod);
   t("confirmation shows real product thumbnail", conf.hasThumb);
   t("confirmation shows totals", /58|Total/i.test(conf.total), conf.total);
 

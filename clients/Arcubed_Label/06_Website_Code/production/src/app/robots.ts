@@ -1,17 +1,16 @@
 import type { MetadataRoute } from "next";
-
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arcubed-label.vercel.app";
+import { SITE_URL as SITE, INDEXING_OPEN } from "@/lib/seo";
 
 /**
- * Closed by default. Arcubed has not been approved for launch, and shipping an
- * open robots.txt before the client says go is how a half-finished storefront
- * ends up in search results. Flip NEXT_PUBLIC_ALLOW_INDEXING to open it.
+ * Open since launch (2026-10-05); NEXT_PUBLIC_ALLOW_INDEXING=false closes the
+ * whole site again (src/lib/seo.ts).
  *
- * /admin, /dev and /order are never crawlable in either state: /order carries
- * unguessable customer tokens, and the other two are not public surfaces.
+ * /admin, /dev, /order, /checkout and /cart are never crawlable: /order carries
+ * unguessable customer tokens, and the rest are not public surfaces. Each of
+ * them also sets noindex at page level (or 404s, for /dev), so the two agree.
  */
 export default function robots(): MetadataRoute.Robots {
-  const open = process.env.NEXT_PUBLIC_ALLOW_INDEXING === "true";
+  const open = INDEXING_OPEN;
   return {
     rules: open
       ? { userAgent: "*", allow: "/", disallow: ["/admin", "/dev", "/order", "/checkout", "/cart"] }

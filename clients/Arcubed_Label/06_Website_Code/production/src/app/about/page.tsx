@@ -11,6 +11,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "About",
+  alternates: { canonical: "/about" },
   description: "Hand-crocheted bags made to order, one stitch at a time.",
 };
 

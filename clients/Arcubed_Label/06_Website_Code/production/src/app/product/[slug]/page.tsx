@@ -6,7 +6,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getBagBySlug, getStoreSettings } from "@/lib/repository";
-import { resolveColour, colourParam } from "@/lib/variant";
+import { resolveColour, colourParam, variantHref } from "@/lib/variant";
 import { formatMoney, plainText } from "@/lib/site-settings";
 import ProductPageClient from "./ProductPageClient";
 
@@ -20,6 +20,9 @@ export async function generateMetadata(props: PageProps<"/product/[slug]">): Pro
   const name = colour ? `${bag.name} in ${colour.name}` : bag.name;
   return {
     title: name,
+    // A colourway is its own page (and its own sitemap entry), so it is its
+    // own canonical — the same URL variantHref builds everywhere else.
+    alternates: { canonical: variantHref(bag.slug, colour?.name) },
     // tagline is empty for every product in the catalogue today, which left
     // each description starting with a stray space and carrying no product
     // detail at all. Falls back to the material/production facts already

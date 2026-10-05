@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { isAdmin } from "@/lib/admin-auth";
 import { listOrders, ORDER_STATUSES, PAYMENT_STATUSES } from "@/lib/orders";
+import { paymentMethodLabel } from "@/lib/payment";
 import { formatMoney } from "@/lib/site-settings";
 import { setStatus, signOut } from "../actions";
 
@@ -68,6 +69,9 @@ export default async function AdminOrdersPage() {
                   {address(o.shippingAddress) ? <p className="adm-addr">{address(o.shippingAddress)}</p> : null}
                   {zone(o.shippingAddress) ? <p className="adm-zone">Delivery zone: <strong>{zone(o.shippingAddress)}</strong></p> : null}
                   {o.shippingQuoteRequired ? <p className="adm-flag">Shipping quote required</p> : null}
+                  {paymentMethodLabel(o.paymentMethod) ? (
+                    <p className="adm-zone">Payment method: <strong>{paymentMethodLabel(o.paymentMethod)}</strong></p>
+                  ) : null}
                   {o.notes ? (
                     <p className="adm-notes"><span className="adm-h">Note from the customer</span>{o.notes}</p>
                   ) : null}

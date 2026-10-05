@@ -89,6 +89,13 @@ export default function Customizer({
   // so choosing one clears the other rather than stacking two carrying
   // options, and two +5 charges, on one bag. Nova's handle is a separate
   // question (with or without) and is not affected.
+  //
+  // ASSUMPTION (launch, 2026-10-05): Rand's note says "charm", but no Charm
+  // exists in the confirmed product matrix — the accessory in that role is
+  // the Chain, so "charm" is read as Chain. No Charm option, image or price
+  // was created, and customers only ever see "Chain". If Rand later means a
+  // separate charm product, it needs its own option and price, and this rule
+  // must be revisited.
   const pickStrap = (strapId: string | null) =>
     setSelection((prev) => ({ ...prev, strapId, chainId: strapId ? null : prev.chainId }));
   const pickChain = (chainId: string | null) =>

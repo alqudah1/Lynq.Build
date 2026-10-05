@@ -1,6 +1,28 @@
 # Payment integration status
 
-## Where this actually stands
+## Live since launch (2026-10-05): Cash on Delivery
+
+Rand confirmed: *"I would keep it cliq or cash on delivery."*
+
+- **Cash on Delivery is the live method.** Checkout states it under "Payment
+  method": payment is due when the order is delivered, nothing is charged
+  online, and there are no card fields. Every order records
+  `orders.payment_method = 'cash_on_delivery'`
+  (`supabase/migrations/20261005120000_orders_payment_method.sql`) and stays
+  `payment_status = 'unpaid'` until Rand marks it paid in `/admin/orders`.
+  The confirmation page and the admin both show the method.
+- **CliQ is prepared, not offered.** The schema and `src/lib/payment.ts` know
+  the value `cliq`, but it is not in `AVAILABLE_PAYMENT_METHODS`, so checkout
+  never shows it and the server refuses it. To turn it on, Rand supplies her
+  real CliQ alias and the details customers should send to; then add `cliq` to
+  that list and show those details at checkout and on the confirmation. Do not
+  invent an alias, number or bank detail.
+- Orders placed before 2026-10-05 have `payment_method = null` (they never
+  declared one) and show no method in the admin.
+
+Everything below describes the state before launch and is kept as history.
+
+## Where this actually stood before launch
 
 **No payment provider is integrated, and no card details are collected
 anywhere.** Checkout creates a real order with `payment_status = 'unpaid'` and

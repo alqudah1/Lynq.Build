@@ -16,6 +16,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Shop",
+  alternates: { canonical: "/shop" },
   description: "Every Arcubed colourway. Four hand-crocheted shapes, made to order in Jordan.",
 };
 

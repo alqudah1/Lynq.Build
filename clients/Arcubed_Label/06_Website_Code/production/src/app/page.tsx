@@ -19,6 +19,8 @@ import ModelCollection from "@/components/ModelCollection";
 import type { Bag } from "@/lib/types";
 import "./home.css";
 
+export const metadata = { alternates: { canonical: "/" } };
+
 export const dynamic = "force-dynamic";
 
 

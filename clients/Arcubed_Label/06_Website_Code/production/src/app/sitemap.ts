@@ -2,8 +2,7 @@ import type { MetadataRoute } from "next";
 import { getActiveBags } from "@/lib/repository";
 import { COLLECTION } from "@/lib/collection";
 import { variantHref } from "@/lib/variant";
-
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://arcubed-label.vercel.app";
+import { SITE_URL as SITE } from "@/lib/seo";
 
 /**
  * Public pages plus one entry per verified COLOURWAY, because a colourway is a

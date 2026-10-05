@@ -211,6 +211,7 @@ export type Database = {
           notes: string | null
           idempotency_key: string | null
           order_number: string
+          payment_method: string | null
           payment_status: string
           shipping_address: Json | null
           shipping_amount: number
@@ -231,6 +232,7 @@ export type Database = {
           notes?: string | null
           idempotency_key?: string | null
           order_number: string
+          payment_method?: string | null
           payment_status?: string
           shipping_address?: Json | null
           shipping_amount?: number
@@ -251,6 +253,7 @@ export type Database = {
           notes?: string | null
           idempotency_key?: string | null
           order_number?: string
+          payment_method?: string | null
           payment_status?: string
           shipping_address?: Json | null
           shipping_amount?: number

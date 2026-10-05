@@ -11,6 +11,9 @@ import CartPageClient from "./CartPageClient";
 // as app/page.tsx.
 export const dynamic = "force-dynamic";
 
+// Private and per-visitor; robots.txt disallows /cart too.
+export const metadata = { title: "Cart", robots: { index: false, follow: false } };
+
 export default async function CartPage() {
   const [shippingRules, storeSettings] = await Promise.all([getShippingRules(), getStoreSettings()]);
 
