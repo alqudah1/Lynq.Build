@@ -109,20 +109,26 @@ async function telegram<T = unknown>(env: TelegramEnv, method: string, body: Rec
   return json.result as T;
 }
 
-/** The LYNQ user decisions are made as; must hold approve (and publish) authority in the org. */
-async function resolveApprover(db: Db, env: TelegramEnv): Promise<{ userId: string; organizationId: string } | null> {
+/**
+ * The LYNQ user decisions are made as, and every organization they belong to
+ * (narrowed to TELEGRAM_ORGANIZATION_SLUG when set). Authority to approve or
+ * publish is still enforced per post by listPendingApprovals/decideVariantApproval.
+ */
+type Approver = { userId: string; organizationIds: string[] };
+async function resolveApprover(db: Db, env: TelegramEnv): Promise<Approver | { error: string }> {
   const email = env.TELEGRAM_APPROVER_EMAIL?.trim().toLowerCase();
-  if (!email) return null;
+  if (!email) return { error: "TELEGRAM_APPROVER_EMAIL isn't set on this deployment." };
   const [user] = await db.select({ id: users.id }).from(users).where(sql`lower(${users.email}) = ${email}`).limit(1);
-  if (!user) return null;
+  if (!user) return { error: "TELEGRAM_APPROVER_EMAIL doesn't match any LYNQ account. Use the email you sign in to LYNQ with." };
   const slug = env.TELEGRAM_ORGANIZATION_SLUG?.trim();
-  const memberships = await db
+  const memberships: { organizationId: string; slug: string }[] = await db
     .select({ organizationId: organizations.id, slug: organizations.slug })
     .from(organizationMemberships)
     .innerJoin(organizations, eq(organizations.id, organizationMemberships.organizationId))
     .where(and(eq(organizationMemberships.userId, user.id), isNull(organizations.deletedAt)));
-  const org = slug ? memberships.find((m: { slug: string }) => m.slug === slug) : memberships.length === 1 ? memberships[0] : undefined;
-  return org ? { userId: user.id, organizationId: org.organizationId } : null;
+  const orgs = slug ? memberships.filter((m) => m.slug === slug) : memberships;
+  if (!orgs.length) return { error: slug ? `The approver isn't a member of the "${slug}" organization.` : "The approver account isn't in any LYNQ organization." };
+  return { userId: user.id, organizationIds: orgs.map((m) => m.organizationId) };
 }
 
 async function sendPending(db: Db, env: TelegramEnv, chatId: string, pending: SocialPendingApproval, deps: TelegramDeps): Promise<void> {
@@ -144,8 +150,8 @@ export async function notifyTelegramOfReview(db: Db, env: TelegramEnv, input: { 
   try {
     if (!telegramEnabled(env) || !env.TELEGRAM_CHAT_ID) return false;
     const approver = await resolveApprover(db, env);
-    if (!approver || approver.organizationId !== input.organizationId) return false;
-    const pending = (await listPendingApprovals(db, { organizationId: approver.organizationId, actorUserId: approver.userId })).find((p) => p.variant.id === input.contentVariantId);
+    if ("error" in approver || !approver.organizationIds.includes(input.organizationId)) return false;
+    const pending = (await listPendingApprovals(db, { organizationId: input.organizationId, actorUserId: approver.userId })).find((p) => p.variant.id === input.contentVariantId);
     if (!pending) return false;
     await sendPending(db, env, env.TELEGRAM_CHAT_ID, pending, deps);
     return true;
@@ -191,11 +197,15 @@ export async function handleTelegramUpdate(db: Db, env: TelegramEnv, update: Tel
     }
     if (/^\/pending\b/.test(text)) {
       const approver = await resolveApprover(db, env);
-      if (!approver) {
-        await telegram(env, "sendMessage", { chat_id: chatId, text: "TELEGRAM_APPROVER_EMAIL doesn't match a LYNQ user in one organization." }, deps);
+      if ("error" in approver) {
+        await telegram(env, "sendMessage", { chat_id: chatId, text: approver.error }, deps);
         return { action: "no_approver" };
       }
-      const pending = await listPendingApprovals(db, { organizationId: approver.organizationId, actorUserId: approver.userId });
+      const pending: SocialPendingApproval[] = [];
+      for (const organizationId of approver.organizationIds) {
+        // One org the approver can't review in must not hide the others.
+        pending.push(...(await listPendingApprovals(db, { organizationId, actorUserId: approver.userId }).catch(() => [])));
+      }
       if (!pending.length) await telegram(env, "sendMessage", { chat_id: chatId, text: "Nothing is waiting for review." }, deps);
       for (const p of pending.slice(0, 20)) await sendPending(db, env, chatId, p, deps);
       return { action: `pending:${pending.length}` };
@@ -218,12 +228,14 @@ export async function handleTelegramUpdate(db: Db, env: TelegramEnv, update: Tel
   const approver = await resolveApprover(db, env);
   const [variant] = await db.select({ organizationId: socialContentVariants.organizationId }).from(socialContentVariants).where(eq(socialContentVariants.id, parsed.contentVariantId)).limit(1);
   let result: string;
-  if (!approver || !variant || variant.organizationId !== approver.organizationId) {
+  if ("error" in approver) {
+    result = approver.error;
+  } else if (!variant || !approver.organizationIds.includes(variant.organizationId)) {
     result = "This post isn't in the approver's organization.";
   } else {
     try {
       await decideVariantApproval(db, {
-        organizationId: approver.organizationId,
+        organizationId: variant.organizationId,
         contentVariantId: parsed.contentVariantId,
         actorUserId: approver.userId,
         expectedRevision: parsed.revision,
