@@ -161,7 +161,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "FIX THIS ▸ Your menu is a PDF.\n\nOn a phone, a PDF menu opens tiny, loads slowly, and makes people pinch and zoom. Someone hungry at 6:40pm doesn't zoom. They go back and tap the next restaurant.\n\nThe fix takes an afternoon:\n→ A real menu page (text, not a file)\n→ A booking button at the top of every page\n→ Hours and phone number visible without scrolling\n\nSave this for your next website update — or send it to the restaurant owner who needs it.",
         facebookBody: "FIX THIS: your menu is a PDF.\n\nOn a phone it opens tiny and slow. A hungry customer doesn't zoom — they book somewhere else.\n\nThe fix: a real menu page, a booking button at the top, and hours you can see without scrolling.\n\nKnow a restaurant owner who needs this? Share it with them.",
         hashtags: ["TorontoRestaurants", "RestaurantMarketing", "WebDesign"], callToAction: "Save this",
-        creativeDirection: `Carousel cover: a phone on a near-black table showing a blurry, tiny PDF menu, one lime circle around the problem, headline "FIX THIS" small in lime and "Your menu is a PDF." large in white. Following slides: one fix per slide in big type. ${LYNQ_LOOK}`,
+        creativeDirection: `A real paper restaurant menu folded down into a tiny unreadable square, sitting on a giant phone screen like a postage stamp; a lime magnifying glass hovers over it. "FIX THIS" small in lime, "Your menu is a PDF." large in white. ${LYNQ_LOOK}`,
       },
       {
         key: "lynq-wed", brand: LYNQ, day: "2026-10-14", time: "18:30", pillar: "OFFER", storyHighlight: "PRICING",
@@ -170,7 +170,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "THE RECEIPT ▸ Launch Site — $2,500. One time.\n\nWhat's on it:\n✓ A 5-page website, built for phones first\n✓ Your Google Business Profile set up properly\n✓ A booking or contact form that lands in your inbox\n✓ Live in 10 days\n\nWhat's not on it: hourly billing, surprise invoices, or \"it depends.\"\n\nBuilt for trades, clinics and restaurants with no website — or one from 2018.\n\nDM \"SITE\" and I'll tell you honestly if it's right for you.",
         facebookBody: "Launch Site — $2,500, one time.\n\n✓ 5-page website, phone-first\n✓ Google Business Profile set up properly\n✓ Booking or contact form to your inbox\n✓ Live in 10 days\n\nNo hourly billing, no surprises. For trades, clinics and restaurants with no website, or one from 2018. Message us to see if it fits.",
         hashtags: LYNQ_TAGS, callToAction: "DM SITE",
-        creativeDirection: `Styled as a printed receipt on near-black: line items "5 pages", "Google profile", "Booking form", "Live in 10 days", total "$2,500" in lime, "THE RECEIPT" small at the top. ${LYNQ_LOOK}`,
+        creativeDirection: `A long thermal receipt curling out of a laptop screen onto a black desk under one hard side light. Line items "5 pages", "Google profile", "Booking form", "Live in 10 days"; "TOTAL $2,500" in lime; "THE RECEIPT" small at the top. ${LYNQ_LOOK}`,
       },
       {
         key: "lynq-thu", brand: LYNQ, day: "2026-10-15", time: "12:15", pillar: "PROOF", storyHighlight: "WORK",
@@ -189,7 +189,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "FIX THIS ▸ Your Google Business Profile.\n\nBefore anyone sees your website, they see this. And most local businesses leave half of it empty:\n\n1. Business description\n2. Services (with prices if you can)\n3. Hours — including holidays\n4. Photos of the real place and real work\n5. A booking or website link\n\nIt's free, it takes an hour, and it's often the first impression you make.\n\nSave this and do it this weekend.",
         facebookBody: "Before anyone sees your website, they see your Google Business Profile. Five fields most owners leave empty: description, services, hours (holidays too), real photos, and a booking link.\n\nFree, one hour, and often your first impression. Worth doing this weekend.",
         hashtags: ["GoogleBusinessProfile", "LocalSEO", ...LYNQ_TAGS.slice(0, 2)], callToAction: "Save this",
-        creativeDirection: `A phone on near-black showing a Google-style business listing with five empty fields outlined in lime, headline "FIX THIS" small in lime. ${LYNQ_LOOK}`,
+        creativeDirection: `A shopfront window at night with five empty lit picture frames hanging on the glass, each labelled in small lime type: description, services, hours, photos, booking. "FIX THIS" small in lime. ${LYNQ_LOOK}`,
       },
       {
         key: "lynq-sat", brand: LYNQ, day: "2026-10-17", time: "10:00", pillar: "FOUNDER", storyHighlight: "BEHIND",
@@ -218,7 +218,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "FIX THIS ▸ Slow replies.\n\nSomeone fills in your contact form. They also filled in two others.\n\nThe business that answers first usually gets the job — and at 9pm, that's rarely you.\n\nThe fix isn't working later. It's an instant reply: a text and an email that go out the moment the form is sent, with your booking link inside.\n\nThat's what our Lead Engine sets up.\n\nSend this to a business owner who's always \"getting back to people.\"",
         facebookBody: "Someone fills in your contact form — and two others. The business that answers first usually gets the job.\n\nThe fix isn't working later; it's an instant text and email the moment the form is sent, with your booking link inside. That's what our Lead Engine sets up.",
         hashtags: ["SmallBusinessTips", ...LYNQ_TAGS.slice(0, 2)], callToAction: "Send to a business owner",
-        creativeDirection: `A phone on near-black: an incoming form notification and an instant reply bubble in lime, timestamp "9:04 PM", headline "FIX THIS" small in lime. ${LYNQ_LOOK}`,
+        creativeDirection: `A pile of white paper airplanes (contact forms) crash-landed on an empty desk at night, a wall clock reading 9:04, and one lime paper airplane flying straight back out. "FIX THIS" small in lime. ${LYNQ_LOOK}`,
       },
 
       // ── CodeItLearn — keeps the mascot world from the existing grid. Rows read BUILD → LEARN → HOW/FOUNDER/OFFER.
@@ -229,7 +229,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "\"A game where a cat catches falling pizza.\"\n\nThat one sentence is all it takes. CodeIt builds a working first version — and then the real part starts.\n\nYour kid makes it faster. Changes the colours. Adds a score. And every change shows them the code behind it.\n\nThat's the whole idea: start with their idea, end with their code.\n\nFree to start, no card needed. Ages 5–18.\nLink in bio → codeitlearn.com",
         facebookBody: "\"A game where a cat catches falling pizza.\"\n\nOne sentence, and CodeIt builds a working first version. Then your kid makes it faster, changes the colours, adds a score — and sees the code behind every change.\n\nFree to start, no card needed, ages 5–18: codeitlearn.com",
         hashtags: CODEIT_TAGS, callToAction: "Link in bio",
-        creativeDirection: `Split scene like the existing "It started with an idea" post: left, a sticky note reading "a cat catches falling pizza"; right, the mascot at a laptop playing a bright 2D game of a cat catching pizza slices. Headline "One sentence in. One game out." ${CODEIT_LOOK}`,
+        creativeDirection: `The mascot surfing a giant pizza slice through its own bright 2D game world that bursts out of the laptop screen; a sticky note on the laptop reads "a cat catches falling pizza". Headline "One sentence in. One game out." ${CODEIT_LOOK}`,
       },
       {
         key: "codeit-tue", brand: CODEIT, day: "2026-10-13", time: "19:30", pillar: "LEARN", storyHighlight: "LESSONS",
@@ -238,7 +238,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "Same 20 minutes. Same screen.\n\nOne kid watched someone else play a game.\nOne kid made one.\n\nScreen time isn't the problem — passive screen time is. Three questions that tell you which kind it was:\n\n1. \"What did you make?\"\n2. \"What would you change about it?\"\n3. \"Can you show me how it works?\"\n\nIf they can answer number 3, they learned something.\n\nSave this for after dinner tonight.",
         facebookBody: "Same 20 minutes, same screen: one kid watched a game, one kid made one.\n\nThree questions that tell you which kind of screen time it was:\n1. What did you make?\n2. What would you change?\n3. Can you show me how it works?\n\nIf they can answer number 3, they learned something.",
         hashtags: ["ScreenTime", ...CODEIT_TAGS.slice(1)], callToAction: "Save this",
-        creativeDirection: `Two panels: left, the mascot slumped on a couch watching a tablet, sleepy; right, the mascot at a desk proudly building a game with code on screen. Big headline "Same 20 minutes." ${CODEIT_LOOK}`,
+        creativeDirection: `Mirror composition with one wall clock showing 20 minutes: left half grey and sleepy, the mascot slumped on a couch with a tablet; right half bright and warm, the same mascot building a rocket out of colourful code blocks. Headline "Same 20 minutes." ${CODEIT_LOOK}`,
       },
       {
         key: "codeit-wed", brand: CODEIT, day: "2026-10-14", time: "19:30", pillar: "HOW IT WORKS", storyHighlight: "START HERE",
@@ -247,7 +247,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "Our bio says \"Kids can code. We prove it.\" Here's the proof part.\n\nA lot of coding apps only check whether the code runs. That's easy to fake — copy, paste, done.\n\nCodeIt checks whether your kid understands it. After a build, it asks questions generated from their own project. The wrong answers come from other real values in that same file, so guessing doesn't work. Only first-time-correct answers count.\n\nCopying isn't learning. Explaining is.\n\nTry it free → link in bio.",
         facebookBody: "A lot of coding apps only check whether the code runs. CodeIt checks whether your kid understands it.\n\nAfter each build, it asks questions made from their own project — the wrong answers come from their own code too, so guessing doesn't work.\n\nKids can code. We prove it. Try it free: codeitlearn.com",
         hashtags: CODEIT_TAGS, callToAction: "Start free at codeitlearn.com",
-        creativeDirection: `The mascot holding a magnifying glass over a laptop screen: left half a short block of code with one line highlighted orange, right half a quiz card with four rounded answer buttons. Headline "We prove it." ${CODEIT_LOOK}`,
+        creativeDirection: `The mascot as a detective in a tiny trench coat with a magnifying glass, inspecting one giant highlighted line of code; a quiz card pinned like evidence on a corkboard with red string. Headline "We prove it." ${CODEIT_LOOK}`,
       },
       {
         key: "codeit-thu", brand: CODEIT, day: "2026-10-15", time: "19:30", pillar: "BUILD", storyHighlight: "BUILDS",
@@ -256,7 +256,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "Dinosaurs. Football. Minecraft. Their favourite snack.\n\nWhatever your kid won't stop talking about can become a quiz app they built themselves.\n\nThey describe it. CodeIt builds the first version. Then they make it theirs — new questions, new colours, a harder level — and see the code behind every change.\n\nWhat would your kid build first? (Example project shown.)\n\nAges 5–18. Free to start.",
         facebookBody: "Dinosaurs, football, Minecraft — whatever your kid won't stop talking about can become a quiz app they build themselves. They describe it, CodeIt builds the first version, and they make it theirs.\n\nWhat would your kid build first?",
         hashtags: CODEIT_TAGS, callToAction: "Link in bio",
-        creativeDirection: `The mascot at a laptop showing a bright dinosaur quiz app with big rounded orange answer buttons, toy dinosaur on the desk, sticky note "my app!". Small label "example project". ${CODEIT_LOOK}`,
+        creativeDirection: `The mascot wearing a dinosaur-costume hood, proudly holding up a tablet with a bright dinosaur quiz app (big rounded orange answer buttons) while a toy T-rex cheers on the desk. Small label "example project". ${CODEIT_LOOK}`,
       },
       {
         key: "codeit-fri", brand: CODEIT, day: "2026-10-16", time: "19:30", pillar: "LEARN", storyHighlight: "LESSONS",
@@ -265,7 +265,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "Lesson 1 of 31 ▸ print()\n\nprint(\"Hello!\")\n\nThat's the first line of Python almost every coder ever wrote. It tells the computer: show this on the screen.\n\nTry it with your kid tonight: change \"Hello!\" to their name. Press run. That's programming.\n\nAll 31 beginner lessons and the Python playground are free for everyone — no AI involved, so the learning is theirs.\n\nSave this for the weekend.",
         facebookBody: "Lesson 1 of 31: print(\"Hello!\")\n\nThe first line of Python almost every coder wrote. Try it tonight — change \"Hello!\" to your kid's name and press run.\n\nAll 31 beginner lessons and the Python playground are free at codeitlearn.com.",
         hashtags: ["LearnPython", ...CODEIT_TAGS.slice(1)], callToAction: "Save this",
-        creativeDirection: `The mascot pointing at a big friendly code editor window showing one line: print("Hello!") with an output panel saying Hello! and an orange Run button. Headline "Lesson 1 of 31". ${CODEIT_LOOK}`,
+        creativeDirection: `The mascot shouting through a megaphone made of curly code brackets; the speech bubble print("Hello!") turns into the word Hello! in big bouncy letters. Headline "Lesson 1 of 31". ${CODEIT_LOOK}`,
       },
       {
         key: "codeit-sat", brand: CODEIT, day: "2026-10-17", time: "10:00", pillar: "FOUNDER", storyHighlight: "ABOUT",
@@ -284,7 +284,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "\"Free\" usually means \"free until we ask for your card.\" Not here.\n\nFree for everyone:\n✓ 31 beginner Python lessons\n✓ The Python playground\n✓ 10 AI-assisted builds a month\nNo card needed.\n\nFamily plan: CA$12/month.\n\nBuilt for ages 5–18.\nStart free → codeitlearn.com (link in bio)",
         facebookBody: "Free for everyone: 31 beginner Python lessons, the Python playground, and 10 AI-assisted builds a month. No card needed.\n\nFamily plan: CA$12/month. Ages 5–18.\n\nStart free: codeitlearn.com",
         hashtags: CODEIT_TAGS, callToAction: "Start free at codeitlearn.com",
-        creativeDirection: `The mascot holding up two rounded cards: "Free" (lessons, playground, 10 builds/month) and "Family — CA$12/month" outlined in orange. Headline "Free means free." ${CODEIT_LOOK}`,
+        creativeDirection: `The mascot cheerfully pushing away a giant credit card wearing a "no card needed" sticker, while holding a golden ticket that says FREE; a small card in the corner reads "Family plan CA$12/month". Headline "Free means free." ${CODEIT_LOOK}`,
       },
     ],
     reels: [

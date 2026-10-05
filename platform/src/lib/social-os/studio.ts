@@ -2,7 +2,7 @@ import "server-only";
 import { and, desc, eq, gte, inArray, isNull } from "drizzle-orm";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { z } from "zod";
-import { marketingChannelAccounts, marketingConfigurations, marketingContentItems, marketingContentPerformanceSnapshots, socialAccountMetricSnapshots, socialContentVariants } from "@/db/schema";
+import { marketingChannelAccounts, marketingConfigurations, marketingContentItems, marketingContentPerformanceSnapshots, socialAccountMetricSnapshots, socialAssets, socialContentVariants } from "@/db/schema";
 import { recordAuditEvent } from "@/lib/audit";
 import { resolveMarketingAuthContext, requireMarketingGenerateContentAuthority, requireMarketingViewAuthority, type MarketingAuthContext } from "@/lib/marketing-os/authz";
 import { enqueueJob } from "@/lib/runtime/queue";
@@ -740,7 +740,8 @@ async function regenerateImage(
   });
   let assetId: string;
   try {
-    const image = await provider.generateImage({ prompt, aspectRatio, idempotencyKey: generation.id });
+    const references = await loadBrandReferences(db, input.organizationId, input.scope.brandProfileId);
+    const image = await provider.generateImage({ prompt, aspectRatio, idempotencyKey: generation.id, ...(references.length ? { references } : {}) });
     const asset = await createGeneratedAsset(db, {
       organizationId: input.organizationId,
       brandProfileId: input.scope.brandProfileId,
@@ -1147,3 +1148,27 @@ export async function draftEngagementReply(
   };
 }
 
+/**
+ * The brand's own logo/mascot images (Brand → Logos & mascot), passed to image
+ * generation as references so a mascot stays the same character in every
+ * post. Best-effort: a missing or unreadable file just means no reference.
+ */
+async function loadBrandReferences(db: Db, organizationId: string, brandProfileId: string): Promise<{ bytes: Uint8Array; contentType: string; tag: string }[]> {
+  try {
+    const rows = await db
+      .select({ id: socialAssets.id, contentType: socialAssets.contentType })
+      .from(socialAssets)
+      .where(and(eq(socialAssets.organizationId, organizationId), eq(socialAssets.brandProfileId, brandProfileId), eq(socialAssets.assetType, "logo"), isNull(socialAssets.archivedAt)))
+      .orderBy(desc(socialAssets.createdAt))
+      .limit(3);
+    const out: { bytes: Uint8Array; contentType: string; tag: string }[] = [];
+    for (const r of rows) {
+      if (!/^image\/(png|jpeg|webp)$/.test(r.contentType)) continue;
+      const { bytes, contentType } = await resolveAssetBytes(db, { organizationId, assetId: r.id }).catch(() => ({ bytes: new Uint8Array(), contentType: "" }));
+      if (bytes.byteLength) out.push({ bytes, contentType, tag: "brand-reference" });
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
