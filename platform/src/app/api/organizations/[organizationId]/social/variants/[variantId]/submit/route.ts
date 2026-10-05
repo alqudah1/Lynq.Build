@@ -1,4 +1,5 @@
 import "server-only";
+import { after } from "next/server";
 import { z } from "zod";
 import { loadEnv } from "@/lib/env";
 import { createDbClient } from "@/db/client";
@@ -6,6 +7,7 @@ import { getAuthenticatedUser } from "@/lib/http/auth";
 import { jsonSuccess, handleRouteError } from "@/lib/http/responses";
 import { parseJsonBody, parseUuidParam } from "@/lib/http/validation";
 import { submitVariantForReview } from "@/lib/social-os/content";
+import { loadTelegramEnv, notifyTelegramOfReview } from "@/lib/social-os/telegram";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +26,7 @@ export async function POST(request: Request, { params }: RouteParams) {
     const user = await getAuthenticatedUser(db);
     const body = await parseJsonBody(request, bodySchema);
     const variant = await submitVariantForReview(db, { organizationId, contentVariantId, actorUserId: user.userId, expectedRevision: body.expectedRevision, summary: body.summary });
+    after(() => notifyTelegramOfReview(db, loadTelegramEnv(), { organizationId, contentVariantId }));
     return jsonSuccess(variant);
   } catch (err) {
     return handleRouteError(err);

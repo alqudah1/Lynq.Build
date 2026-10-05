@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { loadEnv } from "@/lib/env";
@@ -25,6 +26,7 @@ import { rescheduleVariant } from "@/lib/social-os/calendar";
 import { cancelPublishJob, retryPublishJob } from "@/lib/social-os/publishing";
 import { generateVariantsForItem, planWeek, regenerateVariantPart, zonedDateTimeToUtc } from "@/lib/social-os/studio";
 import { createManagerThread } from "@/lib/social-os/manager";
+import { loadTelegramEnv, notifyTelegramOfReview } from "@/lib/social-os/telegram";
 import { assignItem, draftReply, escalateItem, flagLead, hideItem, ignoreItem, linkToCrm, markNeedsReply, requestEngagementSync, sendReply } from "@/lib/social-os/engagement";
 import { requestMetricsSync } from "@/lib/social-os/analytics-sync";
 import { cancelAdChange, decideAdChange, generateAdRecommendations, proposeAdChange, submitAdChangeForApproval } from "@/lib/social-os/advertising";
@@ -348,7 +350,15 @@ async function lifecycle(
 }
 
 export async function submitVariantForReviewAction(organizationSlug: string, contentVariantId: string, formData: FormData): Promise<ActionResult> {
-  return lifecycle(organizationSlug, formData, ({ db, user, organization }, expectedRevision) => submitVariantForReview(db, { organizationId: organization.id, contentVariantId, actorUserId: user.userId, expectedRevision, summary: optionalText(formData, "summary") }), "Sent for review.");
+  return lifecycle(
+    organizationSlug,
+    formData,
+    async ({ db, user, organization }, expectedRevision) => {
+      await submitVariantForReview(db, { organizationId: organization.id, contentVariantId, actorUserId: user.userId, expectedRevision, summary: optionalText(formData, "summary") });
+      after(() => notifyTelegramOfReview(db, loadTelegramEnv(), { organizationId: organization.id, contentVariantId }));
+    },
+    "Sent for review.",
+  );
 }
 
 export async function returnVariantToDraftAction(organizationSlug: string, contentVariantId: string, formData: FormData): Promise<ActionResult> {
