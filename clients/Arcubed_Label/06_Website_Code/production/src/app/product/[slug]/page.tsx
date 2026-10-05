@@ -8,6 +8,7 @@ import { notFound } from "next/navigation";
 import { getBagBySlug, getStoreSettings } from "@/lib/repository";
 import { resolveColour, colourParam, variantHref } from "@/lib/variant";
 import { formatMoney, plainText } from "@/lib/site-settings";
+import { pageUrls } from "@/lib/seo";
 import ProductPageClient from "./ProductPageClient";
 
 // Every route previously rendered the same site-wide <title>, so four product
@@ -21,8 +22,8 @@ export async function generateMetadata(props: PageProps<"/product/[slug]">): Pro
   return {
     title: name,
     // A colourway is its own page (and its own sitemap entry), so it is its
-    // own canonical — the same URL variantHref builds everywhere else.
-    alternates: { canonical: variantHref(bag.slug, colour?.name) },
+    // own canonical and og:url — the same URL variantHref builds everywhere else.
+    ...pageUrls(variantHref(bag.slug, colour?.name)),
     // tagline is empty for every product in the catalogue today, which left
     // each description starting with a stray space and carrying no product
     // detail at all. Falls back to the material/production facts already

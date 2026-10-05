@@ -9,12 +9,13 @@ import { getReadyForDeliveryItems, getStoreSettings, getActiveBags } from "@/lib
 import { framesForColour, tileSrc, altFor } from "@/lib/product-media";
 import ReadyForDeliveryCard from "@/components/ReadyForDeliveryCard";
 import { plainText } from "@/lib/site-settings";
+import { pageUrls } from "@/lib/seo";
 
 // Live catalog data should never be prerendered — see app/page.tsx for why
 // this must be explicit rather than inferred.
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Ready for Delivery", alternates: { canonical: "/ready-for-delivery" } };
+export const metadata = { title: "Ready for Delivery", ...pageUrls("/ready-for-delivery") };
 
 export default async function ReadyForDeliveryPage() {
   const [items, settings, bags] = await Promise.all([

@@ -6,12 +6,13 @@ import { getActiveBags, getStoreSettings } from "@/lib/repository";
 import { plainText } from "@/lib/site-settings";
 import { resolveMedia, framesForColour, tileSrc, altFor } from "@/lib/product-media";
 import Reveal from "@/components/Reveal";
+import { pageUrls } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "About",
-  alternates: { canonical: "/about" },
+  ...pageUrls("/about"),
   description: "Hand-crocheted bags made to order, one stitch at a time.",
 };
 

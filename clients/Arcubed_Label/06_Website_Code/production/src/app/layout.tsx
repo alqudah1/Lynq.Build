@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Bodoni_Moda } from "next/font/google";
-import { SITE_URL, INDEXING_OPEN } from "@/lib/seo";
+import { SITE_URL, INDEXING_OPEN, SITE_OPEN_GRAPH } from "@/lib/seo";
 import "./globals.css";
 import ScrollReset from "@/components/ScrollReset";
 import { CartProvider } from "@/lib/cart-context";
@@ -49,18 +49,9 @@ export const metadata: Metadata = {
   },
   description:
     "Hand-crocheted bags made to order in Amman, Jordan. Choose your shape, your colour and your fittings.",
-  openGraph: {
-    type: "website",
-    siteName: "Arcubed Label",
-    title: "Arcubed Label | Handmade Crochet Bags",
-    description:
-      "Hand-crocheted bags made to order in Amman, Jordan. Choose your shape, your colour and your fittings.",
-    url: SITE,
-    locale: "en_JO",
-    // Nova leads the collection (client, 2026-09), so it is what a shared
-    // link shows: the real Gold Nova cut-out on the brand field.
-    images: [{ url: "/media/og-nova.jpg", width: 1200, height: 630, alt: "Nova in Gold, hand-crocheted by Arcubed" }],
-  },
+  // Pages with their own address override this through pageUrls() in
+  // src/lib/seo.ts, which keeps their canonical and og:url identical.
+  openGraph: { ...SITE_OPEN_GRAPH, url: SITE },
   twitter: {
     card: "summary_large_image",
     title: "Arcubed Label | Handmade Crochet Bags",

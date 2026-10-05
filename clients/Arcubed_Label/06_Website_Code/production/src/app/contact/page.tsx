@@ -11,12 +11,13 @@ import Image from "next/image";
 import { getActiveBags } from "@/lib/repository";
 import { framesForColour, resolveMedia, altFor } from "@/lib/product-media";
 import ContactForm from "./ContactForm";
+import { pageUrls } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Contact",
-  alternates: { canonical: "/contact" },
+  ...pageUrls("/contact"),
   description: "Questions about a custom order, colours, shipping or an existing order.",
 };
 

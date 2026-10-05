@@ -9,6 +9,7 @@ import { getStoreSettings, getShippingRules, getReturnPolicies } from "@/lib/rep
 import { plainText } from "@/lib/site-settings";
 import { formatMoney } from "@/lib/site-settings";
 import type { ReturnPolicy } from "@/lib/types";
+import { pageUrls } from "@/lib/seo";
 
 // Live catalog-adjacent data should never be prerendered — same reasoning as
 // app/page.tsx.
@@ -21,7 +22,7 @@ export const dynamic = "force-dynamic";
 // applies, and writing a new one would be new customer-facing copy.
 export const metadata = {
   title: "FAQ",
-  alternates: { canonical: "/faq" },
+  ...pageUrls("/faq"),
 };
 
 function shippingSentence(rules: Awaited<ReturnType<typeof getShippingRules>>): string {

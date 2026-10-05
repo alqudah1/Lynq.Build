@@ -11,12 +11,13 @@ import ModelCollection from "@/components/ModelCollection";
 import ShopDiscovery from "@/components/ShopDiscovery";
 import ColourwayReveal from "@/components/ColourwayReveal";
 import { COLLECTION } from "@/lib/collection";
+import { pageUrls } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Shop",
-  alternates: { canonical: "/shop" },
+  ...pageUrls("/shop"),
   description: "Every Arcubed colourway. Four hand-crocheted shapes, made to order in Jordan.",
 };
 

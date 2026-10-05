@@ -18,8 +18,9 @@ import ScrollStory from "@/components/home/ScrollStory";
 import ModelCollection from "@/components/ModelCollection";
 import type { Bag } from "@/lib/types";
 import "./home.css";
+import { pageUrls } from "@/lib/seo";
 
-export const metadata = { alternates: { canonical: "/" } };
+export const metadata = { ...pageUrls("/") };
 
 export const dynamic = "force-dynamic";
 
