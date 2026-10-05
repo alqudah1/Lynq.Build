@@ -155,7 +155,7 @@ type Anchor = { x: number; y: number; align: "left" | "right"; dark?: boolean };
 const LABEL_ANCHORS: Record<LynqMetaphor, Anchor[]> = {
   bottleneck: [{ x: 7, y: 9, align: "left" }, { x: 62, y: 76, align: "left" }, { x: 94, y: 22, align: "right" }],
   open_door: [{ x: 7, y: 9, align: "left" }, { x: 94, y: 86, align: "right" }],
-  sticky_note: [{ x: 92, y: 10, align: "right", dark: true }, { x: 9, y: 90, align: "left", dark: true }],
+  sticky_note: [{ x: 92, y: 88, align: "right", dark: true }, { x: 9, y: 93, align: "left", dark: true }],
   broken_handoff: [{ x: 7, y: 12, align: "left" }, { x: 60, y: 76, align: "left" }, { x: 94, y: 12, align: "right" }],
   spotlight: [{ x: 7, y: 9, align: "left" }, { x: 94, y: 88, align: "right" }],
   blueprint: [{ x: 7, y: 9, align: "left" }, { x: 94, y: 88, align: "right" }],
