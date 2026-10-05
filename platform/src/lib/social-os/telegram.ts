@@ -1,12 +1,13 @@
 import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, isNull, lte, sql } from "drizzle-orm";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
-import { organizationMemberships, organizations, socialContentVariants, users } from "@/db/schema";
+import { marketingBrandProfiles, marketingContentItems, organizationMemberships, organizations, socialContentVariants, users } from "@/db/schema";
 import { loadAuthEnv } from "@/lib/auth/env";
 import { loadEnv } from "@/lib/env";
 import { assetPublicUrl } from "./assets";
 import { decideVariantApproval, listDraftsAwaitingReview, listPendingApprovals, submitVariantForReview, type SocialPendingApproval } from "./content";
+import { zonedDateTimeToUtc } from "./studio";
 import { SOCIAL_PLATFORM_LABELS } from "./validation";
 
 /**
@@ -34,11 +35,18 @@ export interface TelegramEnv {
 
 export interface TelegramDeps {
   fetchImpl?: typeof fetch;
+  now?: () => Date;
 }
 
-type Decision = "publish" | "changes" | "reject" | "submit";
-const DECISION_CODES: Record<string, Decision> = { p: "publish", c: "changes", r: "reject", s: "submit" };
-const CODE_FOR: Record<Decision, string> = { publish: "p", changes: "c", reject: "r", submit: "s" };
+type Decision = "publish" | "approve" | "changes" | "reject" | "submit";
+const DECISION_CODES: Record<string, Decision> = { p: "publish", a: "approve", c: "changes", r: "reject", s: "submit" };
+const CODE_FOR: Record<Decision, string> = { publish: "p", approve: "a", changes: "c", reject: "r", submit: "s" };
+/** Times in captions and buttons are shown in the owner's timezone. */
+export const TELEGRAM_TIMEZONE = "America/Toronto";
+
+export function formatLocal(d: Date, timeZone = TELEGRAM_TIMEZONE): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone, weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(d);
+}
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CAPTION_LIMIT = 1024;
 
@@ -79,30 +87,38 @@ export function parseDecision(data: string | undefined): { decision: Decision; c
 }
 
 /** Caption for the approval message: where it goes, the post itself, and nothing secret. Fits Telegram's 1024-char photo caption. */
-export function buildApprovalCaption(p: Pick<SocialPendingApproval, "title" | "brandName"> & { variant: Pick<SocialPendingApproval["variant"], "platform" | "accountDisplayName" | "body" | "hashtags" | "scheduledFor"> }): string {
+export function buildApprovalCaption(p: Pick<SocialPendingApproval, "title" | "brandName"> & { brief?: Pick<SocialPendingApproval["brief"], "keyPoints">; variant: Pick<SocialPendingApproval["variant"], "platform" | "accountDisplayName" | "body" | "hashtags" | "scheduledFor"> & { format?: string } }): string {
   const v = p.variant;
-  const where = `${SOCIAL_PLATFORM_LABELS[v.platform]}${v.accountDisplayName ? ` → ${v.accountDisplayName}` : ""}`;
-  const head = [`${p.brandName ?? "LYNQ"} · ${where}`, p.title, v.scheduledFor ? `Planned: ${v.scheduledFor.toISOString().slice(0, 16).replace("T", " ")} UTC` : "Not scheduled — 'Post now' publishes immediately"].join("\n");
+  const where = `${SOCIAL_PLATFORM_LABELS[v.platform]}${v.format === "story" ? " Story" : v.format === "reel" ? " Reel" : ""}${v.accountDisplayName ? ` → ${v.accountDisplayName}` : ""}`;
+  const when = v.scheduledFor ? `Planned: ${formatLocal(v.scheduledFor)}` : "Not scheduled — 'Post now' publishes immediately";
+  const extra = v.format === "story" ? (p.brief?.keyPoints?.find((k) => /highlight/i.test(k)) ?? "") : v.format === "reel" ? "Reel — stays off the grid." : "";
+  const head = [`${p.brandName ?? "LYNQ"} · ${where}`, p.title, when, extra].filter(Boolean).join("\n");
   const tags = v.hashtags.length ? `\n\n${v.hashtags.map((t) => (t.startsWith("#") ? t : `#${t}`)).join(" ")}` : "";
   const room = CAPTION_LIMIT - head.length - tags.length - 4;
   const body = v.body.length > room ? `${v.body.slice(0, Math.max(0, room - 1)).trimEnd()}…` : v.body;
-  return `${head}\n\n${body}${tags}`.slice(0, CAPTION_LIMIT);
+  return `${head}${body ? `\n\n${body}` : ""}${tags}`.slice(0, CAPTION_LIMIT);
 }
 
 export function draftKeyboard(contentVariantId: string, revision: number) {
   return { inline_keyboard: [[{ text: "📤 Send for review", callback_data: encodeDecision("submit", contentVariantId, revision) }]] };
 }
 
-export function approvalKeyboard(contentVariantId: string, revision: number) {
-  return {
-    inline_keyboard: [
-      [{ text: "✅ Post now", callback_data: encodeDecision("publish", contentVariantId, revision) }],
-      [
-        { text: "✏️ Request changes", callback_data: encodeDecision("changes", contentVariantId, revision) },
-        { text: "✖️ Reject", callback_data: encodeDecision("reject", contentVariantId, revision) },
+export function approvalKeyboard(contentVariantId: string, revision: number, scheduledFor?: Date | null, now: Date = new Date()) {
+  const later = scheduledFor && scheduledFor.getTime() - now.getTime() > 10 * 60_000;
+  const decide = [
+    { text: "✏️ Request changes", callback_data: encodeDecision("changes", contentVariantId, revision) },
+    { text: "✖️ Reject", callback_data: encodeDecision("reject", contentVariantId, revision) },
+  ];
+  if (later) {
+    return {
+      inline_keyboard: [
+        [{ text: `🗓 Approve — posts ${formatLocal(scheduledFor!)}`, callback_data: encodeDecision("approve", contentVariantId, revision) }],
+        [{ text: "🚀 Post now instead", callback_data: encodeDecision("publish", contentVariantId, revision) }],
+        decide,
       ],
-    ],
-  };
+    };
+  }
+  return { inline_keyboard: [[{ text: "✅ Post now", callback_data: encodeDecision("publish", contentVariantId, revision) }], decide] };
 }
 
 async function telegram<T = unknown>(env: TelegramEnv, method: string, body: Record<string, unknown>, deps: TelegramDeps = {}): Promise<T> {
@@ -137,7 +153,7 @@ async function resolveApprover(db: Db, env: TelegramEnv): Promise<Approver | { e
 
 async function sendPending(db: Db, env: TelegramEnv, chatId: string, pending: SocialPendingApproval, deps: TelegramDeps, mode: "approve" | "draft" = "approve"): Promise<void> {
   const caption = mode === "draft" ? `📝 DRAFT — not sent for review yet\n${buildApprovalCaption(pending)}`.slice(0, CAPTION_LIMIT) : buildApprovalCaption(pending);
-  const reply_markup = mode === "draft" ? draftKeyboard(pending.variant.id, pending.variant.revision) : approvalKeyboard(pending.variant.id, pending.variant.revision);
+  const reply_markup = mode === "draft" ? draftKeyboard(pending.variant.id, pending.variant.revision) : approvalKeyboard(pending.variant.id, pending.variant.revision, pending.variant.scheduledFor);
   const video = pending.assets.find((a) => a.contentType.startsWith("video/"));
   const image = pending.assets.find((a) => a.contentType.startsWith("image/"));
   try {
@@ -176,7 +192,7 @@ interface TelegramUpdate {
   callback_query?: { id: string; data?: string; message?: { chat?: { id?: number | string }; message_id?: number; caption?: string; text?: string } };
 }
 
-const OUTCOME: Record<Decision, string> = { publish: "✅ Approved — publishing now", changes: "✏️ Sent back for changes", reject: "✖️ Rejected", submit: "📤 Sent for review — approve it below" };
+const OUTCOME: Record<Decision, string> = { publish: "✅ Approved — publishing now", approve: "🗓 Approved — it will post at its planned time", changes: "✏️ Sent back for changes", reject: "✖️ Rejected", submit: "📤 Sent for review — approve it below" };
 
 function friendlyError(err: unknown): string {
   const name = err instanceof Error ? err.name : "";
@@ -202,7 +218,7 @@ export async function handleTelegramUpdate(db: Db, env: TelegramEnv, update: Tel
     }
     if (chatId !== allowed) return { action: "ignored_chat" };
     if (/^\/(start|help)\b/.test(text)) {
-      await telegram(env, "sendMessage", { chat_id: chatId, text: "LYNQ approvals are on.\n/pending — posts waiting for your approval\n/drafts — every draft, with a button to send it for review\nNew posts sent for review arrive here automatically." }, deps);
+      await telegram(env, "sendMessage", { chat_id: chatId, text: "LYNQ approvals are on.\nEvery morning at 8, that day's posts arrive here — approve them for their time or post now.\n/week — the next 7 days at a glance\n/pending — posts waiting for your approval\n/drafts — every draft, with a button to send it for review" }, deps);
       return { action: "help" };
     }
     if (/^\/pending\b/.test(text)) {
@@ -219,6 +235,16 @@ export async function handleTelegramUpdate(db: Db, env: TelegramEnv, update: Tel
       if (!pending.length) await telegram(env, "sendMessage", { chat_id: chatId, text: "Nothing is waiting for review." }, deps);
       for (const p of pending.slice(0, 20)) await sendPending(db, env, chatId, p, deps);
       return { action: `pending:${pending.length}` };
+    }
+    if (/^\/week\b/.test(text)) {
+      const approver = await resolveApprover(db, env);
+      if ("error" in approver) {
+        await telegram(env, "sendMessage", { chat_id: chatId, text: approver.error }, deps);
+        return { action: "no_approver" };
+      }
+      const lines = await weekOverview(db, approver.organizationIds, deps.now?.() ?? new Date());
+      await telegram(env, "sendMessage", { chat_id: chatId, text: lines.length ? lines.join("\n").slice(0, 4000) : "Nothing planned for the next 7 days." }, deps);
+      return { action: `week:${lines.length}` };
     }
     if (/^\/drafts\b/.test(text)) {
       const approver = await resolveApprover(db, env);
@@ -268,7 +294,7 @@ export async function handleTelegramUpdate(db: Db, env: TelegramEnv, update: Tel
         contentVariantId: parsed.contentVariantId,
         actorUserId: approver.userId,
         expectedRevision: parsed.revision,
-        decision: parsed.decision === "publish" ? "approve" : parsed.decision === "reject" ? "reject" : "request_changes",
+        decision: parsed.decision === "publish" || parsed.decision === "approve" ? "approve" : parsed.decision === "reject" ? "reject" : "request_changes",
         publishNow: parsed.decision === "publish",
         note: "Decided from Telegram",
       });
@@ -317,4 +343,95 @@ export async function registerTelegramWebhook(env: TelegramEnv, deps: TelegramDe
   await telegram(env, "setMyCommands", { commands: [{ command: "pending", description: "Posts waiting for your approval" }, { command: "drafts", description: "Every draft — send any for review" }, { command: "help", description: "How approvals work" }] }, deps).catch(() => undefined);
   const redact = (m?: string) => (m ? m.replace(/x-vercel-protection-bypass=[^&\s]+/g, "x-vercel-protection-bypass=***").slice(0, 200) : null);
   return { url, changed, lastError: changed ? null : redact(before.last_error_message), pendingUpdates: before.pending_update_count ?? 0 };
+}
+
+
+const STATUS_ICON: Record<string, string> = { draft: "📝", changes_requested: "✏️", ready_for_review: "👀", approved: "✅", scheduled: "🗓", publishing: "⏫", published: "🟢", failed: "⚠️", rejected: "✖️" };
+
+/** One line per planned post for the next 7 days, grouped by day, in the owner's timezone. */
+async function weekOverview(db: Db, organizationIds: string[], now: Date): Promise<string[]> {
+  if (!organizationIds.length) return [];
+  const until = new Date(now.getTime() + 7 * 86_400_000);
+  const rows = await db
+    .select({ title: marketingContentItems.title, brand: marketingBrandProfiles.name, platform: socialContentVariants.platform, format: socialContentVariants.format, status: socialContentVariants.status, at: socialContentVariants.scheduledFor, media: socialContentVariants.media })
+    .from(socialContentVariants)
+    .innerJoin(marketingContentItems, and(eq(marketingContentItems.id, socialContentVariants.contentItemId), eq(marketingContentItems.organizationId, socialContentVariants.organizationId)))
+    .leftJoin(marketingBrandProfiles, eq(marketingBrandProfiles.id, marketingContentItems.brandProfileId))
+    .where(and(inArray(socialContentVariants.organizationId, organizationIds), isNull(socialContentVariants.archivedAt), isNull(marketingContentItems.archivedAt), gt(socialContentVariants.scheduledFor, now), lte(socialContentVariants.scheduledFor, until)))
+    .orderBy(asc(socialContentVariants.scheduledFor))
+    .limit(200);
+  // Collapse Instagram + Facebook versions of the same post into one line.
+  const merged = new Map<string, { title: string; brand: string; at: Date; platforms: Set<string>; status: string; needsMedia: boolean }>();
+  for (const r of rows) {
+    if (!r.at) continue;
+    const key = `${r.title}|${r.at.toISOString()}`;
+    const entry = merged.get(key) ?? { title: r.title, brand: r.brand ?? "", at: r.at, platforms: new Set<string>(), status: r.status, needsMedia: false };
+    entry.platforms.add(r.format === "story" ? "Story" : r.format === "reel" ? "Reel" : SOCIAL_PLATFORM_LABELS[r.platform as keyof typeof SOCIAL_PLATFORM_LABELS] ?? r.platform);
+    if (!Array.isArray(r.media) || r.media.length === 0) entry.needsMedia = r.platform !== "linkedin" || entry.needsMedia;
+    merged.set(key, entry);
+  }
+  const dayFmt = new Intl.DateTimeFormat("en-CA", { timeZone: TELEGRAM_TIMEZONE, weekday: "long", month: "short", day: "numeric" });
+  const timeFmt = new Intl.DateTimeFormat("en-CA", { timeZone: TELEGRAM_TIMEZONE, hour: "numeric", minute: "2-digit" });
+  const lines: string[] = [];
+  let lastDay = "";
+  for (const e of merged.values()) {
+    const day = dayFmt.format(e.at);
+    if (day !== lastDay) {
+      lines.push(`${lines.length ? "\n" : ""}📅 ${day}`);
+      lastDay = day;
+    }
+    lines.push(`${STATUS_ICON[e.status] ?? "•"} ${timeFmt.format(e.at)} · ${e.brand} · ${[...e.platforms].join("+")} — ${e.title}${e.needsMedia ? (e.platforms.has("Reel") ? " 🎬 needs video" : " 🖼 needs image") : ""}`);
+  }
+  return lines;
+}
+
+/**
+ * Called by the runtime cron. From 8:00 in the owner's timezone, every draft
+ * planned for later today is submitted for review as the approver, which
+ * sends it to Telegram with an "Approve for its time" button. Posts that
+ * can't be submitted yet (no video, no image, no account) are listed in one
+ * reminder sent in the first run after 8:00. Idempotent: a submitted post is
+ * no longer a draft.
+ */
+export async function runMorningTelegramSend(db: Db, env: TelegramEnv, deps: TelegramDeps = {}): Promise<{ sent: number; blocked: number }> {
+  if (!telegramEnabled(env) || !env.TELEGRAM_CHAT_ID) return { sent: 0, blocked: 0 };
+  const now = deps.now?.() ?? new Date();
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone: TELEGRAM_TIMEZONE, hour: "numeric", minute: "numeric", hourCycle: "h23" }).formatToParts(now);
+  const hour = Number(parts.find((p) => p.type === "hour")?.value ?? 0);
+  const minute = Number(parts.find((p) => p.type === "minute")?.value ?? 0);
+  if (hour < 8) return { sent: 0, blocked: 0 };
+  const approver = await resolveApprover(db, env);
+  if ("error" in approver) return { sent: 0, blocked: 0 };
+  // End of today in the owner's timezone: tomorrow 00:00 local.
+  const local = new Intl.DateTimeFormat("en-CA", { timeZone: TELEGRAM_TIMEZONE, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+  const [y, m, d] = local.split("-").map(Number);
+  const endOfDay = zonedDateTimeToUtc(y, m, d + 1, 0, 0, TELEGRAM_TIMEZONE);
+  const soonest = new Date(now.getTime() + 15 * 60_000);
+  const rows = await db
+    .select({ id: socialContentVariants.id, organizationId: socialContentVariants.organizationId, revision: socialContentVariants.revision, title: marketingContentItems.title, at: socialContentVariants.scheduledFor, format: socialContentVariants.format })
+    .from(socialContentVariants)
+    .innerJoin(marketingContentItems, and(eq(marketingContentItems.id, socialContentVariants.contentItemId), eq(marketingContentItems.organizationId, socialContentVariants.organizationId)))
+    .where(and(inArray(socialContentVariants.organizationId, approver.organizationIds), eq(socialContentVariants.status, "draft"), isNull(socialContentVariants.archivedAt), isNull(marketingContentItems.archivedAt), gt(socialContentVariants.scheduledFor, soonest), lte(socialContentVariants.scheduledFor, endOfDay)))
+    .orderBy(asc(socialContentVariants.scheduledFor))
+    .limit(40);
+  let sent = 0;
+  const blocked: string[] = [];
+  for (const r of rows) {
+    try {
+      await submitVariantForReview(db, { organizationId: r.organizationId, contentVariantId: r.id, actorUserId: approver.userId, expectedRevision: r.revision, summary: `Today's post: ${r.title}` });
+      const pending = (await listPendingApprovals(db, { organizationId: r.organizationId, actorUserId: approver.userId })).find((p) => p.variant.id === r.id);
+      if (pending) await sendPending(db, env, env.TELEGRAM_CHAT_ID, pending, deps);
+      sent++;
+    } catch (err) {
+      const why = err instanceof Error && err.name === "SocialVariantNotPublishableError" ? (r.format === "reel" || r.format === "video" ? "needs its video" : "needs an image or a linked account") : "couldn't be sent";
+      blocked.push(`• ${r.at ? new Intl.DateTimeFormat("en-CA", { timeZone: TELEGRAM_TIMEZONE, hour: "numeric", minute: "2-digit" }).format(r.at) : ""} ${r.title} — ${why}`);
+    }
+  }
+  const firstRunOfDay = hour === 8 && minute < 15;
+  if (sent && firstRunOfDay) await telegram(env, "sendMessage", { chat_id: env.TELEGRAM_CHAT_ID, text: `☀️ Good morning — ${sent} post${sent === 1 ? "" : "s"} for today ${sent === 1 ? "is" : "are"} above. Approve each for its time, or post now.` }, deps).catch(() => undefined);
+  if (blocked.length && firstRunOfDay) {
+    const unique = [...new Set(blocked)];
+    await telegram(env, "sendMessage", { chat_id: env.TELEGRAM_CHAT_ID, text: `Today, still needs you in LYNQ:\n${unique.join("\n")}`.slice(0, 4000) }, deps).catch(() => undefined);
+  }
+  return { sent, blocked: blocked.length };
 }

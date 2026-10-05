@@ -35,6 +35,7 @@ import { archiveAccount, createManualAccount, disconnectConnection, updateAccoun
 import { archiveAutomationRule, runAutomationRuleNow, setAutomationRuleEnabled, upsertAutomationRule } from "@/lib/social-os/automation";
 import { describeAiProviders, loadSocialAiEnv } from "@/lib/social-os/providers/ai/registry";
 import { getSocialTimezone } from "@/lib/social-os/ui-queries";
+import { applyWeekPlan, generatePlanImages, getWeekPlan } from "@/lib/social-os/week-plans";
 import {
   SOCIAL_AUTOMATION_KINDS,
   SOCIAL_CONTENT_KINDS,
@@ -552,6 +553,35 @@ export async function planWeekAction(organizationSlug: string, formData: FormDat
   revalidateSocial(organizationSlug);
   const from = monday.toISOString().slice(0, 10);
   redirect(`${socialPath(organizationSlug)}/calendar?view=week&from=${from}&brand=${parsed.data.brandProfileId}&notice=planned_${created}`);
+}
+
+/**
+ * Loads a reviewed week plan (lib/social-os/week-plans) as dated drafts for
+ * every brand in it. Images for new posts are generated in the background
+ * after the redirect; nothing is submitted, approved or published.
+ */
+export async function loadWeekPlanAction(organizationSlug: string, formData: FormData): Promise<ActionResult> {
+  const { db, user, organization } = await context(organizationSlug, socialPath(organizationSlug));
+  const planKey = String(formData.get("planKey") ?? "");
+  const plan = getWeekPlan(planKey);
+  if (!plan) return { ok: false, code: "invalid_request", message: "That week plan doesn't exist." };
+  let created = 0;
+  let needs = 0;
+  try {
+    const report = await applyWeekPlan(db, { organizationId: organization.id, actorUserId: user.userId, planKey });
+    created = report.created.length + report.scheduled.length;
+    needs = report.needsYou.length;
+    if (report.imagesQueued.length) {
+      const queue = report.imagesQueued;
+      after(async () => {
+        await generatePlanImages(createDbClient(loadEnv()), { organizationId: organization.id, actorUserId: user.userId, queue });
+      });
+    }
+  } catch (err) {
+    return toActionResult(err);
+  }
+  revalidateSocial(organizationSlug);
+  redirect(`${socialPath(organizationSlug)}/calendar?view=week&from=${plan.weekStart}&notice=weekplan_${created}_${needs}`);
 }
 
 function invalidBrand(): ActionResult {

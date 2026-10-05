@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { approvalKeyboard, buildApprovalCaption, draftKeyboard, encodeDecision, handleTelegramUpdate, parseDecision, registerTelegramWebhook, telegramEnabled, telegramWebhookSecret, verifyTelegramWebhookSecret, type TelegramEnv } from "./telegram";
+import { approvalKeyboard, buildApprovalCaption, draftKeyboard, runMorningTelegramSend, encodeDecision, handleTelegramUpdate, parseDecision, registerTelegramWebhook, telegramEnabled, telegramWebhookSecret, verifyTelegramWebhookSecret, type TelegramEnv } from "./telegram";
 
 const TOKEN = "123456789:AAH-abcdefghijklmnopqrstuvwxyz012345";
 const env: TelegramEnv = { TELEGRAM_BOT_TOKEN: TOKEN, TELEGRAM_CHAT_ID: "555", TELEGRAM_APPROVER_EMAIL: "owner@lynq.build", AUTH_SECRET: "s".repeat(40), AUTH_BASE_URL: "https://office.example" };
@@ -96,5 +96,29 @@ describe("telegram approvals", () => {
     expect(again).toMatchObject({ changed: false, pendingUpdates: 2 });
     expect(again.lastError).toContain("401");
     expect(again.lastError).not.toContain("byp4ss");
+  });
+
+  it("a post planned for later gets 'Approve for its time' first, then 'Post now instead'", () => {
+    const now = new Date("2026-10-12T12:00:00Z");
+    const later = approvalKeyboard(VID, 3, new Date("2026-10-12T16:15:00Z"), now).inline_keyboard;
+    expect(parseDecision(later[0][0].callback_data)?.decision).toBe("approve");
+    expect(later[0][0].text).toContain("12:15");
+    expect(parseDecision(later[1][0].callback_data)?.decision).toBe("publish");
+    const soon = approvalKeyboard(VID, 3, new Date("2026-10-12T12:05:00Z"), now).inline_keyboard;
+    expect(parseDecision(soon[0][0].callback_data)?.decision).toBe("publish");
+  });
+
+  it("captions show the planned time in Toronto and the story's highlight", () => {
+    const caption = buildApprovalCaption({ title: "Story · Kingsbridge → WORK", brandName: "LYNQ", brief: { keyPoints: ["After it posts, add this story to the WORK highlight (Instagram app → story → Highlight)."] }, variant: { platform: "instagram", format: "story", accountDisplayName: "lynqbuild", body: "", hashtags: [], scheduledFor: new Date("2026-10-12T16:25:00Z") } });
+    expect(caption).toContain("Instagram Story");
+    expect(caption).toContain("12:25");
+    expect(caption).toContain("WORK highlight");
+  });
+
+  it("the morning send does nothing before 8:00 Toronto or without a chat", async () => {
+    const { calls, fetchImpl } = fakeFetch();
+    expect(await runMorningTelegramSend(noDb, env, { fetchImpl, now: () => new Date("2026-10-12T11:30:00Z") })).toEqual({ sent: 0, blocked: 0 });
+    expect(await runMorningTelegramSend(noDb, { ...env, TELEGRAM_CHAT_ID: undefined }, { fetchImpl, now: () => new Date("2026-10-12T13:00:00Z") })).toEqual({ sent: 0, blocked: 0 });
+    expect(calls).toHaveLength(0);
   });
 });

@@ -216,3 +216,61 @@ export async function rescheduleVariant(db: Db, input: { organizationId: string;
   await recordAuditEvent(db, { eventType: "social_variant_scheduled", actorUserId: input.actorUserId, organizationId: input.organizationId, targetType: "social_content_variant", targetId: existing.id, metadata: { action: "rescheduled", from: existing.scheduledFor?.toISOString() ?? null, to: input.scheduledFor.toISOString(), status: existing.status } });
   return getVariantForUser(db, { organizationId: input.organizationId, contentVariantId: existing.id, actorUserId: input.actorUserId });
 }
+
+export interface InstagramGridTile {
+  variantId: string;
+  contentItemId: string;
+  title: string;
+  status: SocialVariantStatus;
+  at: string | null;
+  format: string;
+  imageAssetId: string | null;
+  published: boolean;
+}
+
+/**
+ * How the brand's Instagram grid will read: feed posts (and reels shared to
+ * the feed) newest first — planned ones on top of what LYNQ already
+ * published — so the row pattern can be checked before anything goes out.
+ * Posts made outside LYNQ aren't known here and sit below these.
+ */
+export async function getInstagramGridPreview(db: Db, input: { organizationId: string; actorUserId: string; brandProfileId: string; limit?: number }): Promise<InstagramGridTile[]> {
+  const ctx = await resolveMarketingAuthContext(db, { organizationId: input.organizationId, actorUserId: input.actorUserId });
+  await requireMarketingViewAuthority(db, ctx, "social_calendar", input.brandProfileId);
+  const when = sql<Date | null>`coalesce(${socialContentVariants.publishedAt}, ${socialContentVariants.scheduledFor}, ${marketingContentItems.plannedPublishAt})`;
+  const rows = await db
+    .select({ variant: socialContentVariants, title: marketingContentItems.title, when })
+    .from(socialContentVariants)
+    .innerJoin(marketingContentItems, and(eq(marketingContentItems.id, socialContentVariants.contentItemId), eq(marketingContentItems.organizationId, socialContentVariants.organizationId)))
+    .where(and(
+      eq(socialContentVariants.organizationId, input.organizationId),
+      eq(marketingContentItems.brandProfileId, input.brandProfileId),
+      eq(socialContentVariants.platform, "instagram"),
+      inArray(socialContentVariants.format, ["image", "carousel", "reel"]),
+      isNull(socialContentVariants.archivedAt),
+      isNull(marketingContentItems.archivedAt),
+      inArray(socialContentVariants.status, ["draft", "changes_requested", "ready_for_review", "approved", "scheduled", "publishing", "published"]),
+    ))
+    .orderBy(sql`${when} desc nulls last`)
+    .limit(Math.min(input.limit ?? 18, 60) * 2);
+  const tiles: InstagramGridTile[] = [];
+  for (const r of rows) {
+    const v = r.variant;
+    const options = (v.platformOptions ?? {}) as { shareToFeed?: boolean };
+    if (v.format === "reel" && options.shareToFeed === false) continue; // reels kept off the grid
+    if (!r.when && v.status !== "published") continue; // undated drafts aren't part of the planned grid
+    const media = socialVariantMediaSchema.safeParse(v.media);
+    tiles.push({
+      variantId: v.id,
+      contentItemId: v.contentItemId,
+      title: r.title,
+      status: v.status,
+      at: r.when ? new Date(r.when).toISOString() : null,
+      format: v.format,
+      imageAssetId: media.success ? media.data[0]?.assetId ?? null : null,
+      published: v.status === "published",
+    });
+    if (tiles.length >= (input.limit ?? 18)) break;
+  }
+  return tiles;
+}
