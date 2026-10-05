@@ -50,8 +50,12 @@ interface PlanFeedPost {
   hashtags?: string[];
   callToAction?: string;
   creativeDirection?: string;
-  /** No AI image: the owner uploads a real photo (founder posts). */
+  /** No AI image: the owner uploads a real photo or screenshot. */
   realPhotoOnly?: boolean;
+  /** What to upload when realPhotoOnly (shown in the checklist and the morning reminder). */
+  uploadNote?: string;
+  /** Used when `existingContentItemId` isn't in this workspace (e.g. drafts made on a preview database). */
+  fallback?: Omit<PlanFeedPost, "key" | "brand" | "day" | "time" | "pillar" | "storyHighlight" | "existingContentItemId" | "fallback">;
 }
 
 interface PlanReel {
@@ -79,6 +83,9 @@ export interface WeekPlan {
 }
 
 const LYNQ: PlanBrandRef = { brandKey: "lynq", matchName: /^lynq\b/i };
+const LYNQ_TAGS = ["TorontoBusiness", "SmallBusiness", "WebDesign", "GTA", "LocalBusiness"];
+const LYNQ_LOOK = "LYNQ's look: near-black background, one lime accent, large editorial type, generous margins, premium and calm. No stock people, no glossy 3D, no gradients.";
+const PROOF_UPLOAD = "Upload real screenshots of the client's live site (phone + desktop). Proof posts never use AI images.";
 
 const CODEIT_PROFILE: BrandProfileInput = {
   brandKey: "codeit",
@@ -121,14 +128,22 @@ export const WEEK_PLANS: WeekPlan[] = [
     },
     feed: [
       // LYNQ — the drafts already written for the growth plan, in grid order PROOF → TEACH → OFFER/FOUNDER.
-      { key: "lynq-mon", brand: LYNQ, day: "2026-10-12", time: "12:15", pillar: "PROOF", storyHighlight: "WORK", existingContentItemId: "08cc2bdf-2a1d-4bb4-96dd-a2fa4cd7d9cf" },
-      { key: "lynq-tue", brand: LYNQ, day: "2026-10-13", time: "07:30", pillar: "TEACH", storyHighlight: null, existingContentItemId: "cc06bc59-0da8-472c-8e8f-656bb1c6bf18" },
-      { key: "lynq-wed", brand: LYNQ, day: "2026-10-14", time: "18:30", pillar: "OFFER", storyHighlight: "PRICING", existingContentItemId: "1f90bb0e-1a34-4afa-802b-f3cc408a0094" },
-      { key: "lynq-thu", brand: LYNQ, day: "2026-10-15", time: "12:15", pillar: "PROOF", storyHighlight: "WORK", existingContentItemId: "320fbd5d-72ee-46b2-afee-ee9085845792" },
-      { key: "lynq-fri", brand: LYNQ, day: "2026-10-16", time: "12:15", pillar: "TEACH", storyHighlight: null, existingContentItemId: "158518c1-68aa-4034-9fbc-b26952e580f6" },
-      { key: "lynq-sat", brand: LYNQ, day: "2026-10-17", time: "10:00", pillar: "FOUNDER", storyHighlight: "BEHIND", existingContentItemId: "abdf136a-5299-48b9-8bb0-8eee0d43727a" },
-      { key: "lynq-sun", brand: LYNQ, day: "2026-10-18", time: "12:15", pillar: "PROOF", storyHighlight: "WORK", existingContentItemId: "f0a766c4-c969-4734-8f80-1990e53385a2" },
-      { key: "lynq-mon2", brand: LYNQ, day: "2026-10-19", time: "07:30", pillar: "TEACH", storyHighlight: null, existingContentItemId: "e6f22811-fb0f-4dd0-9c9b-e1fafed181a3" },
+      { key: "lynq-mon", brand: LYNQ, day: "2026-10-12", time: "12:15", pillar: "PROOF", storyHighlight: "WORK", existingContentItemId: "08cc2bdf-2a1d-4bb4-96dd-a2fa4cd7d9cf",
+        fallback: { title: "03 PROOF · Kingsbridge Group", kind: "image_post", platforms: ["instagram", "facebook"], hook: "A property management company that looks as solid online as it does in person.", body: "Kingsbridge Group manages properties across the GTA. Their website has two audiences — owners deciding who to trust, and tenants who need help now.\n\nWe designed and built the site around both: a clear path for each, plain language instead of jargon, and a layout that works on a phone first.\n\nWe still maintain it today.\n\nWant a site like this for your business? DM \"AUDIT\".", hashtags: LYNQ_TAGS, callToAction: "DM AUDIT", creativeDirection: `Real screenshots of kingsbridge's site on a phone and a laptop, placed on a near-black card. ${LYNQ_LOOK}`, realPhotoOnly: true, uploadNote: PROOF_UPLOAD } },
+      { key: "lynq-tue", brand: LYNQ, day: "2026-10-13", time: "07:30", pillar: "TEACH", storyHighlight: null, existingContentItemId: "cc06bc59-0da8-472c-8e8f-656bb1c6bf18",
+        fallback: { title: "04 TEACH · Why a restaurant site loses the reservation", kind: "carousel", platforms: ["instagram", "facebook"], hook: "Three reasons a hungry customer leaves your restaurant's website.", body: "Three reasons a hungry customer leaves your restaurant's website — and books somewhere else:\n\n1. The menu is a PDF. On a phone it opens tiny, slow, or not at all.\n2. The booking button is buried. If they have to scroll to find it, many won't.\n3. The hours are hidden. \"Are they open right now?\" should take one second.\n\nThe fix is a menu page, a booking button at the top, and hours on every page.\n\nSend this to a restaurant owner.", hashtags: ["TorontoRestaurants", "RestaurantMarketing", "SmallBusiness", "WebDesign", "GTA"], callToAction: "Send to a business owner", creativeDirection: `A phone on a near-black table showing a blurry, tiny PDF menu, one lime circle highlighting the problem. ${LYNQ_LOOK}` } },
+      { key: "lynq-wed", brand: LYNQ, day: "2026-10-14", time: "18:30", pillar: "OFFER", storyHighlight: "PRICING", existingContentItemId: "1f90bb0e-1a34-4afa-802b-f3cc408a0094",
+        fallback: { title: "05 OFFER · Launch Site — $2,500, live in 10 days", kind: "image_post", platforms: ["instagram", "facebook"], hook: "A real website for your business, live in 10 days, for one fixed price.", body: "Launch Site — $2,500, one time.\n\nWhat's included:\n• A 5-page website, built for phones first\n• Your Google Business Profile set up properly\n• A booking or contact form that lands in your inbox\n• Live in 10 days\n\nFor trades, clinics and restaurants with no site, or a site from 2018.\n\nDM \"SITE\" or tap the link in bio.", hashtags: LYNQ_TAGS, callToAction: "DM SITE", creativeDirection: `A clean package card on near-black: the words LAUNCH SITE, $2,500 in lime, and "Live in 10 days" underneath. ${LYNQ_LOOK}` } },
+      { key: "lynq-thu", brand: LYNQ, day: "2026-10-15", time: "12:15", pillar: "PROOF", storyHighlight: "WORK", existingContentItemId: "320fbd5d-72ee-46b2-afee-ee9085845792",
+        fallback: { title: "06 PROOF · Nasma", kind: "image_post", platforms: ["instagram", "facebook"], hook: "A restaurant site built around the three things diners actually look for.", body: "Diners open a restaurant's website for three things: the menu, the hours, and a way to book.\n\nFor Nasma we put all three where a phone shows them first — a real menu page instead of a PDF, hours on every page, and a booking button that's never more than a thumb away.\n\nWant this for your restaurant? DM \"AUDIT\".", hashtags: ["TorontoRestaurants", "RestaurantMarketing", "WebDesign", "GTA", "SmallBusiness"], callToAction: "DM AUDIT", creativeDirection: `Real screenshots of Nasma's site on a phone, on a near-black card. ${LYNQ_LOOK}`, realPhotoOnly: true, uploadNote: PROOF_UPLOAD } },
+      { key: "lynq-fri", brand: LYNQ, day: "2026-10-16", time: "12:15", pillar: "TEACH", storyHighlight: null, existingContentItemId: "158518c1-68aa-4034-9fbc-b26952e580f6",
+        fallback: { title: "07 TEACH · Google Business Profile: 5 fields owners leave empty", kind: "carousel", platforms: ["instagram", "facebook"], hook: "Five things on your Google Business Profile that cost you calls when they're empty.", body: "Five fields on your Google Business Profile that most owners leave empty — and every one costs you calls:\n\n1. Business description\n2. Services (with prices if you can)\n3. Opening hours, including holidays\n4. Photos of the real place and real work\n5. Booking or website link\n\nFill these in this week. It's free, and it's often the first thing a customer sees.\n\nSave this.", hashtags: ["GoogleBusinessProfile", "LocalSEO", "TorontoBusiness", "SmallBusiness", "GTA"], callToAction: "Save this", creativeDirection: `A phone on near-black showing a Google-style business listing with five empty fields outlined in lime. ${LYNQ_LOOK}` } },
+      { key: "lynq-sat", brand: LYNQ, day: "2026-10-17", time: "10:00", pillar: "FOUNDER", storyHighlight: "BEHIND", existingContentItemId: "abdf136a-5299-48b9-8bb0-8eee0d43727a",
+        fallback: { title: "08 FOUNDER · Why LYNQ sells fixed packages", kind: "image_post", platforms: ["instagram", "facebook"], hook: "Why I stopped saying \"it depends\" when people ask what a website costs.", body: "When a business owner asks what a website costs, \"it depends\" is the worst answer you can give.\n\nSo LYNQ sells fixed packages with fixed prices. You know what you get, what it costs and when it's live — before we start.\n\nThis week I'm rebuilding how we post too: everything is drafted, sent to my phone, and goes out only when I approve it.\n\nComments are open — ask me anything.", hashtags: LYNQ_TAGS, callToAction: "Comments open", creativeDirection: "Real photo only: you at your desk or on a job, phone photo, no graphics.", realPhotoOnly: true, uploadNote: "Upload a real phone photo of you — founder posts don't use AI images." } },
+      { key: "lynq-sun", brand: LYNQ, day: "2026-10-18", time: "12:15", pillar: "PROOF", storyHighlight: "WORK", existingContentItemId: "f0a766c4-c969-4734-8f80-1990e53385a2",
+        fallback: { title: "09 PROOF · Finding Amy", kind: "image_post", platforms: ["instagram", "facebook"], hook: "An events business needs one thing from its website: the date request.", body: "Finding Amy runs a photo booth for events. Their customers want to see the booth, see the options, and ask about a date — fast.\n\nWe built the site around that one path: what it looks like at a real event, what's included, and a date request that takes under a minute.\n\nWant this for your business? DM \"AUDIT\".", hashtags: ["TorontoEvents", "EventPlanning", "WebDesign", "GTA", "SmallBusiness"], callToAction: "DM AUDIT", creativeDirection: `Real screenshots of the Finding Amy site on a phone, on a near-black card. ${LYNQ_LOOK}`, realPhotoOnly: true, uploadNote: PROOF_UPLOAD } },
+      { key: "lynq-mon2", brand: LYNQ, day: "2026-10-19", time: "07:30", pillar: "TEACH", storyHighlight: null, existingContentItemId: "e6f22811-fb0f-4dd0-9c9b-e1fafed181a3",
+        fallback: { title: "10 TEACH · Slow replies lose the lead", kind: "carousel", platforms: ["instagram", "facebook"], hook: "The business that answers first usually gets the job.", body: "Someone fills in your contact form. They also filled in two others.\n\nThe business that answers first usually gets the job — and by tomorrow morning, that's rarely you.\n\nThe fix isn't working later. It's an instant reply: a text and an email that go out the moment the form is sent, with your booking link in it.\n\nThat's what our Lead Engine sets up.\n\nSend this to a business owner.", hashtags: LYNQ_TAGS, callToAction: "Send to a business owner", creativeDirection: `A phone on near-black showing an incoming lead notification and an instant reply bubble in lime. ${LYNQ_LOOK}` } },
 
       // CodeIt — grid order BUILD → LEARN → HOW/OFFER/FOUNDER.
       {
@@ -378,17 +393,20 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
     const at = planInstant(post.day, post.time);
     let item: SocialContentItem | null = null;
 
+    let useExisting = false;
     if (post.existingContentItemId) {
       try {
         item = await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId: post.existingContentItemId, actorUserId: input.actorUserId });
+        useExisting = !item.archivedAt;
       } catch {
+        item = null;
+      }
+      if (!useExisting && !post.fallback) {
         report.skipped.push(`${post.key}: draft ${post.existingContentItemId} not found`);
         continue;
       }
-      if (item.archivedAt) {
-        report.skipped.push(`${item.title}: archived`);
-        continue;
-      }
+    }
+    if (useExisting && item) {
       let moved = 0;
       for (const v of item.variants) {
         if (v.archivedAt || !RESCHEDULABLE.has(v.status)) continue;
@@ -398,38 +416,40 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
       }
       if (moved) report.scheduled.push(`${item.title} → ${post.day} ${post.time}`);
     } else {
+      const p = { ...post, ...(post.fallback ?? {}) };
       const marker = planMarker(plan.key, post.key);
       const existingId = await findMarkedItem(db, input.organizationId, marker);
       if (existingId) {
         item = await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId: existingId, actorUserId: input.actorUserId });
       } else {
         const brief: SocialContentBrief = {
-          kind: post.kind ?? "image_post",
-          objective: post.pillar === "OFFER" ? "promotion" : post.pillar === "FOUNDER" ? "founder_voice" : post.pillar === "LEARN" || post.pillar === "TEACH" ? "education" : "engagement",
+          kind: p.kind ?? "image_post",
+          objective: p.pillar === "OFFER" ? "promotion" : p.pillar === "FOUNDER" ? "founder_voice" : p.pillar === "LEARN" || p.pillar === "TEACH" ? "education" : "engagement",
           audience: "",
-          topic: `${post.pillar} post`,
+          topic: `${p.pillar} post`,
           tone: "",
-          callToAction: post.callToAction ?? "",
-          creativeDirection: post.creativeDirection ?? "",
-          hook: post.hook ?? "",
+          callToAction: p.callToAction ?? "",
+          creativeDirection: p.creativeDirection ?? "",
+          hook: p.hook ?? "",
           script: "",
           shots: [],
           sourceText: "",
-          keyPoints: [`Pillar: ${post.pillar}`, post.storyHighlight ? `Story highlight: ${post.storyHighlight}` : "Story: 24h only"],
+          keyPoints: [`Pillar: ${p.pillar}`, p.storyHighlight ? `Story highlight: ${p.storyHighlight}` : "Story: 24h only", ...(post.fallback && post.existingContentItemId ? ["Plan copy written without the original draft — check every claim about the client against their real site before approving."] : [])],
           researchNotes: marker,
         };
-        item = await createContentItem(db, { organizationId: input.organizationId, actorUserId: input.actorUserId, brandProfileId, title: post.title ?? post.key, brief, platforms: post.platforms ?? ["instagram", "facebook"], scheduledFor: at });
+        item = await createContentItem(db, { organizationId: input.organizationId, actorUserId: input.actorUserId, brandProfileId, title: p.title ?? p.key, brief, platforms: p.platforms ?? ["instagram", "facebook"], scheduledFor: at });
         for (const v of item.variants) {
-          await updateVariant(db, { organizationId: input.organizationId, contentVariantId: v.id, actorUserId: input.actorUserId, expectedRevision: v.revision, changes: { format: "image", hook: post.hook ?? "", body: post.body ?? "", hashtags: post.hashtags ?? [], callToAction: post.callToAction ?? "", scheduledFor: at } });
+          await updateVariant(db, { organizationId: input.organizationId, contentVariantId: v.id, actorUserId: input.actorUserId, expectedRevision: v.revision, changes: { format: p.kind === "carousel" ? "carousel" : "image", hook: p.hook ?? "", body: p.body ?? "", hashtags: p.hashtags ?? [], callToAction: p.callToAction ?? "", scheduledFor: at } });
         }
         item = await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId: item.id, actorUserId: input.actorUserId });
         report.created.push(`${item.title} · ${post.day} ${post.time}`);
       }
       const ig = item.variants.find((v) => v.platform === "instagram" && !v.archivedAt);
-      if (post.realPhotoOnly) report.needsYou.push(`${item.title}: upload a real photo (founder posts don't use AI images).`);
+      if (p.realPhotoOnly) report.needsYou.push(`${item.title}: ${p.uploadNote ?? "upload a real photo (founder posts don't use AI images)."}`);
       else if (ig && !ig.media.length) report.imagesQueued.push({ contentItemId: item.id, igVariantId: ig.id, copyTo: item.variants.filter((v) => v.id !== ig.id && !v.archivedAt && !v.media.length).map((v) => v.id) });
     }
 
+    if (!item) continue;
     noteAccounts(post.brand.brandKey, item);
 
     // Story: re-shares the post's image 10 minutes after it goes out.
@@ -579,10 +599,10 @@ export async function getWeekPlanStatus(db: Db, input: { organizationId: string;
   const get = (id: string | null | undefined) => (id ? items.get(id) ?? null : null);
   anyLoaded = marked.length > 0;
   for (const post of plan.feed) {
-    const item = get(post.existingContentItemId ?? idFor.get(planMarker(plan.key, post.key)));
+    const item = get(post.existingContentItemId) ?? get(idFor.get(planMarker(plan.key, post.key)));
     const storyItem = get(idFor.get(planMarker(plan.key, `${post.key}-story`)));
     const brand = post.brand.createWith?.name ?? "LYNQ";
-    entries.push({ key: post.key, kind: "post", brand, day: post.day, time: post.time, title: item?.title ?? post.title ?? post.key, pillar: post.pillar, highlight: null, ...summarize(item, "post", post.realPhotoOnly) });
+    entries.push({ key: post.key, kind: "post", brand, day: post.day, time: post.time, title: item?.title ?? post.title ?? post.key, pillar: post.pillar, highlight: null, ...summarize(item, "post", post.realPhotoOnly || (!get(post.existingContentItemId) && post.fallback?.realPhotoOnly)) });
     entries.push({ key: `${post.key}-story`, kind: "story", brand, day: post.day, time: post.time, title: storyItem?.title ?? `Story · ${item?.title ?? post.title ?? post.key}`, pillar: null, highlight: post.storyHighlight, ...summarize(storyItem, "story", post.realPhotoOnly) });
   }
   for (const reel of plan.reels) {
