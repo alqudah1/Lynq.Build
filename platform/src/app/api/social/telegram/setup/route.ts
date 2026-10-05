@@ -14,12 +14,20 @@ export async function GET() {
   const tg = loadTelegramEnv();
   if (!telegramEnabled(tg)) return Response.json({ ok: false, error: "TELEGRAM_BOT_TOKEN is missing or malformed on this deployment." }, { status: 503 });
   try {
-    const { changed } = await registerTelegramWebhook(tg);
+    const status = await registerTelegramWebhook(tg);
+    const protectedPreview = /401|403|authentication|unauthorized|forbidden/i.test(status.lastError ?? "");
     return Response.json({
-      ok: true,
+      ok: !status.lastError,
       connected: true,
-      alreadyConnected: !changed,
-      next: tg.TELEGRAM_CHAT_ID ? "All set. Send /pending to the bot." : "Bot connected. Send /start to the bot to get your chat id, then add it as TELEGRAM_CHAT_ID.",
+      webhookHost: new URL(status.url).host,
+      bypassConfigured: Boolean(process.env.VERCEL_AUTOMATION_BYPASS_SECRET),
+      telegramLastError: status.lastError,
+      waitingMessages: status.pendingUpdates,
+      next: status.lastError
+        ? protectedPreview && !process.env.VERCEL_AUTOMATION_BYPASS_SECRET
+          ? "Telegram is being blocked by Vercel Deployment Protection. Enable 'Protection Bypass for Automation' in Vercel → Settings → Deployment Protection, redeploy, then open this link again."
+          : "Telegram can't deliver to this site yet — see telegramLastError."
+        : tg.TELEGRAM_CHAT_ID ? "All set. Send /pending to the bot." : "Bot connected. Send /start to the bot to get your chat id, then add it as TELEGRAM_CHAT_ID.",
     });
   } catch (err) {
     return Response.json({ ok: false, error: err instanceof Error ? err.message.replace(/bot\d+:[^/]+/g, "bot***") : "Telegram rejected the setup." }, { status: 502 });

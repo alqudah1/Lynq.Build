@@ -80,13 +80,18 @@ describe("telegram approvals", () => {
     expect(calls).toHaveLength(0);
   });
 
-  it("setup always targets this deployment's own URL and is a no-op once set", async () => {
+  it("setup always targets this deployment's own URL, adds the Vercel bypass, and never returns it", async () => {
     const { calls, fetchImpl } = fakeFetch();
-    const first = await registerTelegramWebhook(env, { fetchImpl });
-    expect(first).toEqual({ url: "https://office.example/api/social/telegram/webhook", changed: true });
+    const first = await registerTelegramWebhook(env, { fetchImpl, bypassSecret: "byp4ss" });
+    expect(first).toMatchObject({ url: "https://office.example/api/social/telegram/webhook", changed: true, lastError: null });
     expect(calls.map((c) => c.method)).toEqual(["getWebhookInfo", "setWebhook", "setMyCommands"]);
-    expect(calls[1].body.url).toBe(first.url);
-    const already = (async () => new Response(JSON.stringify({ ok: true, result: { url: first.url } }), { status: 200 })) as unknown as typeof fetch;
-    expect(await registerTelegramWebhook(env, { fetchImpl: already })).toEqual({ url: first.url, changed: false });
+    expect(calls[1].body.url).toBe(`${first.url}?x-vercel-protection-bypass=byp4ss`);
+    expect(JSON.stringify(first)).not.toContain("byp4ss");
+    const target = `${first.url}?x-vercel-protection-bypass=byp4ss`;
+    const already = (async () => new Response(JSON.stringify({ ok: true, result: { url: target, last_error_message: `Wrong response from the webhook: 401 Unauthorized ${target}`, pending_update_count: 2 } }), { status: 200 })) as unknown as typeof fetch;
+    const again = await registerTelegramWebhook(env, { fetchImpl: already, bypassSecret: "byp4ss" });
+    expect(again).toMatchObject({ changed: false, pendingUpdates: 2 });
+    expect(again.lastError).toContain("401");
+    expect(again.lastError).not.toContain("byp4ss");
   });
 });

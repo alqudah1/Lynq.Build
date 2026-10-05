@@ -246,13 +246,33 @@ export async function handleTelegramUpdate(db: Db, env: TelegramEnv, update: Tel
 }
 
 /** Points the bot's webhook at this deployment. Called by the signed-in owner from LYNQ. */
-export async function registerTelegramWebhook(env: TelegramEnv, deps: TelegramDeps = {}): Promise<{ url: string; changed: boolean }> {
-  // The target is always this deployment's own configured base URL — never
-  // anything from the request — so calling this can only point the bot here.
+export interface TelegramWebhookStatus {
+  url: string;
+  changed: boolean;
+  /** Telegram's own report of the last delivery failure, if any. */
+  lastError: string | null;
+  pendingUpdates: number;
+}
+
+/**
+ * Points the bot at this deployment and reports what Telegram last saw.
+ * The target is always this deployment's own configured base URL — never
+ * anything from the request. When Vercel Deployment Protection is on, the
+ * project's "Protection Bypass for Automation" secret (exposed by Vercel as
+ * VERCEL_AUTOMATION_BYPASS_SECRET) is added so Telegram can get through; it is
+ * never returned.
+ */
+export async function registerTelegramWebhook(env: TelegramEnv, deps: TelegramDeps & { bypassSecret?: string } = {}): Promise<TelegramWebhookStatus> {
   const url = `${env.AUTH_BASE_URL.replace(/\/+$/, "")}/api/social/telegram/webhook`;
-  const info = await telegram<{ url?: string }>(env, "getWebhookInfo", {}, deps).catch(() => ({ url: undefined }));
-  if (info.url === url) return { url, changed: false };
-  await telegram(env, "setWebhook", { url, secret_token: telegramWebhookSecret(env.AUTH_SECRET), allowed_updates: ["message", "callback_query"], drop_pending_updates: false }, deps);
-  await telegram(env, "setMyCommands", { commands: [{ command: "pending", description: "Re-send every post waiting for review" }, { command: "help", description: "How approvals work" }] }, deps).catch(() => undefined);
-  return { url, changed: true };
+  const bypass = deps.bypassSecret ?? process.env.VERCEL_AUTOMATION_BYPASS_SECRET?.trim();
+  const target = bypass ? `${url}?x-vercel-protection-bypass=${encodeURIComponent(bypass)}` : url;
+  type Info = { url?: string; last_error_message?: string; pending_update_count?: number };
+  const before = await telegram<Info>(env, "getWebhookInfo", {}, deps).catch((): Info => ({}));
+  const changed = before.url !== target;
+  if (changed) {
+    await telegram(env, "setWebhook", { url: target, secret_token: telegramWebhookSecret(env.AUTH_SECRET), allowed_updates: ["message", "callback_query"], drop_pending_updates: false }, deps);
+    await telegram(env, "setMyCommands", { commands: [{ command: "pending", description: "Re-send every post waiting for review" }, { command: "help", description: "How approvals work" }] }, deps).catch(() => undefined);
+  }
+  const redact = (m?: string) => (m ? m.replace(/x-vercel-protection-bypass=[^&\s]+/g, "x-vercel-protection-bypass=***").slice(0, 200) : null);
+  return { url, changed, lastError: changed ? null : redact(before.last_error_message), pendingUpdates: before.pending_update_count ?? 0 };
 }
