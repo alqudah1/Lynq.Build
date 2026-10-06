@@ -65,12 +65,12 @@ export async function notifyInquiry(inquiry: InquiryNotification): Promise<Notif
   ];
 
   const text =
-    `New Arcubed enquiry\n\n` +
+    `New Arcubed inquiry\n\n` +
     lines.map(([k, v]) => `${k}: ${v}`).join("\n") +
     `\n\nMessage:\n${inquiry.message}\n`;
 
   const html =
-    `<h2 style="font-family:Georgia,serif;color:#143562;margin:0 0 16px">New Arcubed enquiry</h2>` +
+    `<h2 style="font-family:Georgia,serif;color:#143562;margin:0 0 16px">New Arcubed inquiry</h2>` +
     `<table style="font-family:system-ui,sans-serif;font-size:14px;color:#143562;border-collapse:collapse">` +
     lines
       .map(
@@ -96,7 +96,7 @@ export async function notifyInquiry(inquiry: InquiryNotification): Promise<Notif
       body: JSON.stringify({
         from,
         to: [to],
-        subject: `New Arcubed enquiry — ${inquiry.topic}`,
+        subject: `New Arcubed inquiry — ${inquiry.topic}`,
         text,
         html,
         ...(replyTo ? { reply_to: replyTo } : {}),

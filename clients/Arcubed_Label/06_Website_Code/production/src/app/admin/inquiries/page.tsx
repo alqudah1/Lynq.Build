@@ -83,7 +83,7 @@ export default async function AdminInquiriesPage() {
               <div className="adm-inq-foot">
                 {/* mailto, not a form: replying happens in Rand's own mail
                     client, which is where the conversation should continue. */}
-                <a className="adm-inq-reply" href={`mailto:${q.email}?subject=${encodeURIComponent("Re: your Arcubed enquiry")}`}>
+                <a className="adm-inq-reply" href={`mailto:${q.email}?subject=${encodeURIComponent("Re: your Arcubed inquiry")}`}>
                   {q.email}
                 </a>
                 <form action={setInquiryStatus} className="adm-inq-status">
