@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { approvalKeyboard, buildApprovalCaption, draftKeyboard, nextPostPerBrand, runMorningTelegramSend, encodeDecision, handleTelegramUpdate, parseDecision, registerTelegramWebhook, telegramEnabled, telegramWebhookSecret, verifyTelegramWebhookSecret, type TelegramEnv } from "./telegram";
+import { approvalKeyboard, buildApprovalCaption, draftKeyboard, groupByPost, nextPostPerBrand, runMorningTelegramSend, encodeDecision, handleTelegramUpdate, parseDecision, registerTelegramWebhook, telegramEnabled, telegramWebhookSecret, verifyTelegramWebhookSecret, type TelegramEnv } from "./telegram";
 
 const TOKEN = "123456789:AAH-abcdefghijklmnopqrstuvwxyz012345";
 const env: TelegramEnv = { TELEGRAM_BOT_TOKEN: TOKEN, TELEGRAM_CHAT_ID: "555", TELEGRAM_APPROVER_EMAIL: "owner@lynq.build", AUTH_SECRET: "s".repeat(40), AUTH_BASE_URL: "https://office.example" };
@@ -144,5 +144,16 @@ describe("/drafts default: the next post per brand", () => {
 
   it("is empty when nothing has an image yet", () => {
     expect(nextPostPerBrand([d({ item: "x", brand: "lynq", platform: "instagram", format: "image", at: "2026-10-12T16:15Z", assets: [] })])).toEqual([]);
+  });
+});
+
+describe("one Telegram message per post", () => {
+  const v = (item: string, platform: string, account: string) => ({ contentItemId: item, brandProfileId: "b", brandName: "LYNQ", title: item, brief: {}, submittedAt: new Date(), assets: [], variant: { id: `${item}-${platform}`, platform, format: "image", accountDisplayName: account, body: "Hi", hashtags: [], scheduledFor: null } }) as unknown as Parameters<typeof groupByPost>[0][number];
+
+  it("leads with the Instagram version and lists the other platforms in the caption", () => {
+    const grouped = groupByPost([v("p1", "facebook", "lynqbuild"), v("p1", "instagram", "LYNQ"), v("p2", "facebook", "lynqbuild")]);
+    expect(grouped.map((g) => g.variant.id)).toEqual(["p1-instagram", "p2-facebook"]);
+    expect(grouped[0]!.alsoOn).toEqual([{ platform: "facebook", accountDisplayName: "lynqbuild" }]);
+    expect(buildApprovalCaption(grouped[0]!)).toContain("Instagram → LYNQ + Facebook Page → lynqbuild");
   });
 });
