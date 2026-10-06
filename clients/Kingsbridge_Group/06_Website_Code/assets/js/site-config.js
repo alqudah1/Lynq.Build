@@ -1,11 +1,6 @@
-// Kingsbridge Group — single source of truth for contact details that are
-// not yet confirmed. Every value below is null until Chris supplies it.
-// Nothing on the public site should ever hardcode a phone number, email
-// address, or office location directly — read it from KB_CONFIG instead, so
-// the real details can be dropped in here once, in one place, when they
-// arrive (see 07_Feedback/Client_Presentation/client-assets-needed.md).
+// Confirmed Kingsbridge contact details. Keep static contact links in sync.
 var KB_CONFIG = {
-  phone: null, // e.g. "(647) 000-0000" — new business line, not yet issued
+  phone: "+1 (647) 518-7798",
   email: "admin@kingsbridgegroup.ca",
   offices: [
     { label: "Mississauga", address: "77 City Centre Dr, Suite 501, Mississauga, ON L5B 1M5" },

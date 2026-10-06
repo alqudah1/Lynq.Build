@@ -39,6 +39,11 @@ function initPageTransitions() {
   var veil = document.getElementById('page-veil');
   if (!veil || veil.dataset.bound) return;
   veil.dataset.bound = '1';
+  // Back/forward cache restores the page exactly as it was left: with the veil still
+  // covering it. Clear it whenever a page is shown again.
+  window.addEventListener('pageshow', function (e) {
+    if (e.persisted) veil.classList.remove('active');
+  });
 
   document.addEventListener('click', function (e) {
     if (KB_REDUCED_MOTION) return;

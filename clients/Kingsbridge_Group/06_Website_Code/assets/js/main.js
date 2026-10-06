@@ -72,12 +72,23 @@ function initHeaderScroll() {
 function initMobileMenu() {
   var toggle = document.getElementById('nav-toggle');
   if (!toggle) return;
-  toggle.addEventListener('click', function () {
-    var open = document.body.classList.toggle('menu-open');
+  function setOpen(open) {
+    document.body.classList.toggle('menu-open', open);
     toggle.setAttribute('aria-expanded', open);
+    toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+  }
+  toggle.addEventListener('click', function () {
+    setOpen(!document.body.classList.contains('menu-open'));
   });
   document.querySelectorAll('#mobile-menu a').forEach(function (a) {
-    a.addEventListener('click', function () { document.body.classList.remove('menu-open'); });
+    a.addEventListener('click', function () { setOpen(false); });
+  });
+  // Escape closes the menu and returns focus to the button that opened it.
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && document.body.classList.contains('menu-open')) {
+      setOpen(false);
+      toggle.focus();
+    }
   });
 }
 

@@ -11,7 +11,7 @@
   --gold-light: #D1B77C; /* Light Gold — brighter highlight variant, used sparingly */
 
   --text-on-ivory: rgba(14, 14, 14, 0.86);
-  --text-muted-on-ivory: rgba(14, 14, 14, 0.56);
+  --text-muted-on-ivory: rgba(14, 14, 14, 0.62); /* 0.62 = 5.2:1 on ivory, 4.9:1 on stone (WCAG AA); 0.56 fell short at 4.3:1 */
   --text-on-ink: rgba(244, 240, 232, 0.9);
   --text-muted-on-ink: rgba(244, 240, 232, 0.56);
   --line-on-ivory: rgba(14, 14, 14, 0.12);

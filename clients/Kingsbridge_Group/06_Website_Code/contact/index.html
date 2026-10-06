@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JWFYMEP5VK"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-JWFYMEP5VK');
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Contact Kingsbridge Group</title>
@@ -16,11 +25,17 @@
 <meta property="og:title" content="Contact Kingsbridge Group">
 <meta property="og:description" content="Contact Kingsbridge Group about a custom home or commercial property management inquiry.">
 <meta property="og:url" content="https://www.kingsbridgegroup.ca/contact/">
-<meta property="og:image" content="https://www.kingsbridgegroup.ca/assets/img/og-image.jpg">
+<meta property="og:image" content="https://www.kingsbridgegroup.ca/assets/img/kingsbridge-social-preview-v2.jpg">
+<meta property="og:image:secure_url" content="https://www.kingsbridgegroup.ca/assets/img/kingsbridge-social-preview-v2.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Kingsbridge Group">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Contact Kingsbridge Group">
 <meta name="twitter:description" content="Contact Kingsbridge Group about a custom home or commercial property management inquiry.">
-<meta name="twitter:image" content="https://www.kingsbridgegroup.ca/assets/img/og-image.jpg">
+<meta name="twitter:image" content="https://www.kingsbridgegroup.ca/assets/img/kingsbridge-social-preview-v2.jpg">
+<meta name="twitter:image:alt" content="Kingsbridge Group">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -36,11 +51,17 @@
 
 <div id="header-root"></div>
 
+<main id="main">
+
 <section class="page-header">
   <div class="container">
     <span class="eyebrow">Contact Kingsbridge</span>
     <h1>Tell us about your project or commercial property.</h1>
     <p>Submit the form below. Your inquiry will be emailed directly to the Kingsbridge team for follow-up.</p>
+    <div class="direct-contact" role="group" aria-label="Contact Kingsbridge">
+      <a href="tel:+16475187798">+1 (647) 518-7798</a>
+      <a href="mailto:admin@kingsbridgegroup.ca">admin@kingsbridgegroup.ca</a>
+    </div>
   </div>
 </section>
 
@@ -48,35 +69,35 @@
   <div class="container contact-layout">
     <div class="contact-layout-main">
       <div class="path-pills" id="path-pills">
-        <button class="path-pill" data-path="custom-home">Custom Home Inquiry</button>
-        <button class="path-pill" data-path="commercial-management">Commercial Property Management Inquiry</button>
-        <button class="path-pill" data-path="general">General Inquiry</button>
+        <button type="button" class="path-pill" data-path="custom-home" aria-controls="inquiry-form">Custom Home Inquiry</button>
+        <button type="button" class="path-pill" data-path="commercial-management" aria-controls="inquiry-form">Commercial Property Management Inquiry</button>
+        <button type="button" class="path-pill" data-path="general" aria-controls="inquiry-form">General Inquiry</button>
       </div>
 
       <p class="form-intro" id="form-intro"></p>
 
       <form class="inquiry-form" id="inquiry-form">
         <div class="hp-field" aria-hidden="true">
-          <label for="website">Website</label><input id="website" name="website" tabindex="-1" autocomplete="off">
+          <label for="website">Website</label><input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
         </div>
         <div class="row-2">
-          <div class="field"><label for="name">Full Name</label><input id="name" name="name" required></div>
+          <div class="field"><label for="name">Full Name</label><input type="text" id="name" name="name" required minlength="2"></div>
           <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" required></div>
         </div>
         <div class="row-2">
           <div class="field"><label for="phone">Phone</label><input id="phone" name="phone" type="tel"></div>
           <div class="field dyn-fields" data-group="commercial-management">
-            <label for="cm-company">Company (if applicable)</label><input id="cm-company" name="cm-company">
+            <label for="cm-company">Company (if applicable)</label><input type="text" id="cm-company" name="cm-company">
           </div>
         </div>
 
         <!-- ===== Custom Home Inquiry ===== -->
         <div class="dyn-fields" data-group="custom-home">
           <div class="row-2">
-            <div class="field"><label for="ch-location">Project Location</label><input id="ch-location" name="ch-location"></div>
+            <div class="field"><label for="ch-location">Project Location</label><input type="text" id="ch-location" name="ch-location"></div>
             <div class="field"><label for="ch-type">Project Type</label>
               <select id="ch-type" name="ch-type"><option value="">Select one</option>
-                <option>New Custom Home</option><option>Teardown &amp; Rebuild</option><option>Full Renovation</option><option>Vacant Lot Build</option>
+                <option>New Custom Home</option><option>Teardown &amp; Rebuild</option><option>Full Renovation</option><option>Vacant Lot Build</option><option>Guest House</option>
               </select>
             </div>
           </div>
@@ -93,18 +114,18 @@
         <!-- ===== Commercial Property Management Inquiry ===== -->
         <div class="dyn-fields" data-group="commercial-management">
           <div class="row-2">
-            <div class="field"><label for="cm-location">Property Location</label><input id="cm-location" name="cm-location"></div>
+            <div class="field"><label for="cm-location">Property Location</label><input type="text" id="cm-location" name="cm-location"></div>
             <div class="field"><label for="cm-type">Property Type</label>
               <select id="cm-type" name="cm-type"><option value="">Select one</option>
-                <option>Commercial Plaza</option><option>Retail</option><option>Office</option><option>Other Commercial</option>
+                <option>Commercial Plaza</option><option>Retail</option><option>Office</option><option>Multi-Family</option><option>Other Commercial</option>
               </select>
             </div>
           </div>
           <div class="row-2">
-            <div class="field"><label for="cm-size">Approximate Size / Units</label><input id="cm-size" name="cm-size" placeholder="e.g. 12,000 sq ft, or number of units"></div>
+            <div class="field"><label for="cm-size">Approximate Size / Units</label><input type="text" id="cm-size" name="cm-size" placeholder="e.g. 12,000 sq ft, or number of units"></div>
             <div class="field"><label for="cm-needs">Support Needed</label>
               <select id="cm-needs" name="cm-needs"><option value="">Select one</option>
-                <option>Full Property Management</option><option>Maintenance Coordination Only</option><option>Tenant Communication Only</option><option>Not Sure Yet</option>
+                <option>Full Property Management</option><option>Property Management Consulting</option><option>Not Sure Yet</option>
               </select>
             </div>
           </div>
@@ -112,7 +133,9 @@
 
         <div class="field">
           <label for="message">Tell us more</label>
-          <textarea id="message" name="message" required></textarea>
+          <!-- minlength mirrors the server's rules (api/contact.js), so the browser explains a
+               too-short entry inline instead of it coming back as a failed submission. -->
+          <textarea id="message" name="message" required minlength="10"></textarea>
         </div>
         <div>
           <button class="btn btn-solid" type="submit">Send Inquiry
@@ -130,12 +153,15 @@
   </div>
 </section>
 
+</main>
+
 <div id="footer-root"></div>
 
 <script src="/assets/js/site-config.js" defer></script>
 <script src="/assets/js/include.js" defer></script>
 <script src="/assets/js/main.js" defer></script>
 <script src="/assets/js/experience.js" defer></script>
+<script src="/assets/js/analytics.js" defer></script>
 <script>
   var PATH_LABELS = {
     'custom-home': 'Custom Home Inquiry',
@@ -150,10 +176,16 @@
 
   function setPath(selected) {
     document.querySelectorAll('.path-pill').forEach(function (p) {
-      p.classList.toggle('selected', p.getAttribute('data-path') === selected);
+      var on = p.getAttribute('data-path') === selected;
+      p.classList.toggle('selected', on);
+      p.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
     document.querySelectorAll('.dyn-fields').forEach(function (g) {
-      g.classList.toggle('active', g.getAttribute('data-group') === selected);
+      var on = g.getAttribute('data-group') === selected;
+      g.classList.toggle('active', on);
+      // Hidden groups are disabled so values typed before switching paths are not sent
+      // with an inquiry they no longer belong to.
+      g.querySelectorAll('input, select, textarea').forEach(function (f) { f.disabled = !on; });
     });
     document.getElementById('form-intro').innerHTML = PATH_INTROS[selected] || '';
   }
@@ -178,42 +210,90 @@
     var details = document.getElementById('contact-page-details');
     if (details && typeof KB_CONFIG !== 'undefined') {
       var rows = [];
-      if (KB_CONFIG.phone) rows.push('<a href="tel:' + KB_CONFIG.phone.replace(/[^\d+]/g, '') + '">' + KB_CONFIG.phone + '</a>');
       (KB_CONFIG.offices || []).forEach(function (o) { if (o.address) rows.push('<span class="office"><span class="office-label">' + o.label + '</span><span class="office-address">' + o.address + '</span></span>'); });
       if (rows.length) details.innerHTML = rows.join('');
     }
   });
 
+  // Stamped when the page loads; the endpoint uses it to reject submissions that arrive
+  // faster than a person could plausibly fill the form in. Not a form field.
+  var FORM_RENDERED_AT = Date.now();
+  // Guards against a second submit slipping through between the click and the button
+  // actually being disabled (double click, Enter held down).
+  var submitInFlight = false;
+
   document.getElementById('inquiry-form').addEventListener('submit', async function (e) {
     e.preventDefault();
+    if (submitInFlight) return;
     if (!e.currentTarget.reportValidity()) return;
+    var form = e.currentTarget;
     var selected = document.querySelector('.path-pill.selected');
     var selectedPath = selected ? selected.getAttribute('data-path') : 'general';
     var inquiryType = selected ? PATH_LABELS[selected.getAttribute('data-path')] : PATH_LABELS.general;
-    var data = new FormData(e.currentTarget);
-    var payload = { inquiryType: inquiryType };
+    var data = new FormData(form);
+    var payload = { inquiryType: inquiryType, renderedAt: FORM_RENDERED_AT };
     data.forEach(function (value, key) { payload[key] = String(value || '').trim(); });
-    var button = e.currentTarget.querySelector('button[type="submit"]');
+    var failure = null;
+    var button = form.querySelector('button[type="submit"]');
     var status = document.getElementById('form-status');
     var originalButton = button.innerHTML;
+    submitInFlight = true;
     button.disabled = true;
     button.textContent = 'Sending...';
     status.className = 'form-status';
     status.textContent = '';
     try {
-      var response = await fetch('https://lynq-build.vercel.app/api/kingsbridge-contact', {
+      // Same-origin endpoint on the Kingsbridge project — no CORS, no third-party form
+      // service, and no Microsoft credential ever reaches the browser.
+      var response = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
       var result = await response.json().catch(function () { return {}; });
-      if (!response.ok) throw new Error(result.error || 'Unable to send your inquiry.');
-      e.currentTarget.reset();
+      if (!response.ok || !result.ok) {
+        // Remember WHY it failed. A 4xx means the visitor can fix it themselves (too short a
+        // message, a mistyped address, too many attempts); only a 5xx or a dead connection
+        // means delivery itself is broken, which is the only case the mailto fallback is for.
+        failure = { status: response.status, error: result.error };
+        throw new Error(result.error || 'Unable to send your inquiry.');
+      }
+      form.reset();
       setPath(selectedPath);
+      FORM_RENDERED_AT = Date.now();
       status.className = 'form-status success';
       status.textContent = 'Thank you. Your inquiry has been emailed directly to Kingsbridge.';
+
+      // Success hooks. kb_contact_submit (dataLayer) and kb:contact:success (DOM event) fire
+      // whenever the thank-you message is shown; the Google tag ignores plain dataLayer
+      // objects, so neither reaches GA4. The GA4 conversion is generate_lead, below.
+      try {
+        // `delivered` distinguishes a new inquiry Microsoft actually accepted from a repeat or
+        // a silently discarded spam submission, for any platform later attached to these hooks.
+        var detail = { form_id: 'inquiry-form', inquiry_type: inquiryType, path: selectedPath,
+          delivered: result.delivered === true };
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push(Object.assign({ event: 'kb_contact_submit' }, detail));
+        document.dispatchEvent(new CustomEvent('kb:contact:success', { detail: detail }));
+
+        // GA4 lead (client guide §2.1, Case B). /api/contact returns `delivered: true` only
+        // after Microsoft Graph has accepted the email. Every other outcome — a repeat of an
+        // already-delivered inquiry, a discarded spam submission, and every error — lacks it,
+        // so each generate_lead is one real inquiry in the Kingsbridge inbox. Non-personal
+        // metadata only — never the visitor's name, email, phone or message.
+        if (result.delivered === true && typeof gtag === 'function') {
+          gtag('event', 'generate_lead', { form_id: 'inquiry-form', inquiry_type: inquiryType });
+        }
+      } catch (hookError) { /* analytics must never break the confirmation */ }
     } catch (error) {
       status.className = 'form-status error';
+      // Something the visitor can correct: show what the server actually said, rather than
+      // telling them delivery is down. Reporting a short message as an outage sent people to
+      // email when the form was working perfectly.
+      if (failure && failure.status >= 400 && failure.status < 500 && failure.error) {
+        status.textContent = failure.error;
+        return;
+      }
       var subject = encodeURIComponent('Kingsbridge — ' + inquiryType);
       var body = encodeURIComponent(
         'Name: ' + (payload.name || '') + '\n' +
@@ -223,6 +303,7 @@
       );
       status.innerHTML = 'Automatic delivery is temporarily unavailable. <a href="mailto:admin@kingsbridgegroup.ca?subject=' + subject + '&amp;body=' + body + '">Email Kingsbridge directly</a>.';
     } finally {
+      submitInFlight = false;
       button.disabled = false;
       button.innerHTML = originalButton;
     }

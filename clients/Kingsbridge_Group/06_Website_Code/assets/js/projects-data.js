@@ -1,48 +1,27 @@
-// Kingsbridge Group — CUSTOM HOME CONCEPTS, rendered directly on the homepage
-// (the standalone Concept Collection page has been removed per the August 20,
-// 2026 client direction — see development-plan.md). These are design studies
-// exploring Kingsbridge's architectural direction for future custom homes,
-// not completed projects or real addresses. When real, built projects are
-// confirmed, replace an entry's fields directly — the shape stays the same.
+// Kingsbridge Custom Home concepts — legacy compatibility only.
+// Current galleries are static HTML and never depend on this file.
+// Retained approved sources: 1CHouse.png, 3CHouse.png, 5CHouse.png.
+// Conceptual imagery, not completed projects.
 var KB_CONCEPTS = [
   {
-    slug: 'front-elevation',
-    title: 'Front Elevation',
-    label: 'Kingsbridge Concept',
-    photoLabel: 'Estate Exterior at Dusk',
-    image: '/assets/img/photography/concept-dusk-estate.jpg',
-    description: 'A contemporary front elevation in limestone, warm wood and bronze-framed glass.'
+    "slug": "custom-home-01",
+    "image": "/assets/img/photography/custom-home-01.jpg",
+    "w": 1672,
+    "h": 941,
+    "alt": "Conceptual contemporary limestone home with charcoal panels, walnut-toned soffits and warm glazing at blue hour"
   },
   {
-    slug: 'side-elevation',
-    title: 'Side Elevation',
-    label: 'Kingsbridge Concept',
-    photoLabel: 'Brick and Cedar Side Courtyard',
-    image: '/assets/img/photography/concept-side-brick-courtyard.jpg',
-    description: 'A distinct brick-and-cedar custom home shaped around its side garden, walkway and private courtyard.'
+    "slug": "custom-home-03",
+    "image": "/assets/img/photography/custom-home-03.jpg",
+    "w": 1672,
+    "h": 941,
+    "alt": "Conceptual modern Tudor home with charcoal brick gables, buff limestone entrance and rain-damp stone driveway"
   },
   {
-    slug: 'rear-garden',
-    title: 'Rear Garden',
-    label: 'Kingsbridge Concept',
-    photoLabel: 'Transitional Home Rear Garden',
-    image: '/assets/img/photography/concept-rear-garden-transitional.jpg',
-    description: 'A separate transitional custom home designed around outdoor dining, garden views and indoor-outdoor living.'
-  },
-  {
-    slug: 'the-interior',
-    title: 'The Interior',
-    label: 'Kingsbridge Concept',
-    photoLabel: 'Warm Stone and Oak Interior',
-    image: '/assets/img/photography/concept-stone-entrance.jpg',
-    description: 'Pale stone, warm oak and bronze details shaped into a calm, light-filled interior.'
-  },
-  {
-    slug: 'the-build',
-    title: 'The Build',
-    label: 'Kingsbridge Concept',
-    photoLabel: 'Custom Home Design and Construction',
-    image: '/assets/img/photography/concept-design-build.jpg',
-    description: 'A custom-home concept carried from architectural planning into careful construction.'
+    "slug": "custom-home-05",
+    "image": "/assets/img/photography/custom-home-05.jpg",
+    "w": 1672,
+    "h": 941,
+    "alt": "Conceptual contemporary Georgian-inspired limestone home with bronze-framed windows and established hydrangea planting"
   }
 ];

@@ -49,9 +49,10 @@ body.menu-open .nav-toggle span:nth-child(3) { transform: translateY(-6px) rotat
 .mobile-menu {
   position: fixed; inset: 0; background: var(--ink); z-index: 99;
   display: flex; flex-direction: column; justify-content: center; padding: 0 32px;
-  opacity: 0; pointer-events: none; transition: opacity .4s ease;
+  opacity: 0; pointer-events: none; visibility: hidden; transition: opacity .4s ease, visibility 0s linear .4s;
 }
-body.menu-open .mobile-menu { opacity: 1; pointer-events: auto; }
+/* visibility keeps the closed menu's links out of the Tab order and away from screen readers */
+body.menu-open .mobile-menu { opacity: 1; pointer-events: auto; visibility: visible; transition: opacity .4s ease, visibility 0s; }
 .mobile-menu a { display: block; font-family: var(--font-display); font-size: 34px; color: var(--ivory); padding: 14px 0; border-bottom: 1px solid var(--line-on-ink); }
 .mobile-menu .mm-cta { margin-top: 30px; }
 
@@ -337,7 +338,7 @@ body.menu-open .mobile-menu { opacity: 1; pointer-events: auto; }
 .footer-social { display: flex; gap: 16px; min-height: 1px; }
 .footer-social a { color: var(--text-muted-on-ink); transition: color .2s ease; font-size: 12.5px; }
 .footer-social a:hover { color: var(--bronze); }
-.footer-copyright { font-size: 11.5px; color: rgba(246,241,232,0.4); }
+.footer-copyright { font-size: 11.5px; color: rgba(246,241,232,0.55); } /* 5.7:1 on ink; 0.4 was 3.5:1 */
 
 /* ============ CONTACT / INQUIRY ============ */
 .contact-layout { display: grid; grid-template-columns: 1fr; gap: 56px; align-items: start; }
@@ -389,6 +390,7 @@ body.menu-open .mobile-menu { opacity: 1; pointer-events: auto; }
 
 /* ============ PAGE HEADER (interior pages) ============ */
 .page-header { padding: 176px 0 60px; background: var(--ink); }
+.page-header .eyebrow { color: var(--bronze); } /* dark header: bronze-deep was 3.2:1 here */
 .page-header h1 { color: var(--ivory); font-size: clamp(36px,6vw,58px); max-width: 16ch; }
 .page-header p { color: var(--text-muted-on-ink); margin-top: 20px; max-width: 50ch; font-size: 15.5px; line-height: 1.7; }
 
@@ -459,17 +461,31 @@ body.menu-open .mobile-menu { opacity: 1; pointer-events: auto; }
 .ab-approach {
   position: relative; z-index: 1; margin-top: 64px; border-top: 1px solid var(--line-on-ivory);
 }
-@media (min-width: 900px) { .ab-approach { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 88px; } }
+/* Desktop: three equal columns separated by a real gap, with the dividing hairlines drawn
+   inside that gap instead of as a border on each item. Every .aa-row is then structurally
+   identical — same padding, same content width, same baselines — so 01/02/03 sit on an
+   exactly even rhythm and the first item's text aligns with the statement above it.
+   (The previous rule gave every row `border-left` + 32px of horizontal padding, then zeroed
+   `padding-left` on :first-child alone. That pulled "Listen" 32px out of step with
+   "Consider" and "Build" and left its divider hairline flush against the text.) */
+@media (min-width: 900px) {
+  .ab-approach {
+    display: grid; grid-template-columns: repeat(3, 1fr); column-gap: 64px; margin-top: 88px;
+  }
+}
 .aa-row {
   padding: 26px 0; border-bottom: 1px solid var(--line-on-ivory);
   display: grid; grid-template-columns: 32px 1fr; column-gap: 16px; align-items: baseline;
 }
 @media (min-width: 900px) {
   .aa-row {
-    border-bottom: 0; border-left: 1px solid var(--line-on-ivory); padding: 0 32px 0;
-    grid-template-columns: 1fr; row-gap: 10px; align-content: start;
+    position: relative; border-bottom: 0; padding: 0;
+    grid-template-columns: 1fr; row-gap: 10px; align-content: start; align-items: start;
   }
-  .aa-row:first-child { padding-left: 0; }
+  .aa-row + .aa-row::before {
+    content: ''; position: absolute; top: 0; bottom: 0; left: -32px;
+    width: 1px; background: var(--line-on-ivory);
+  }
 }
 .aa-num { font-family: var(--font-display); font-size: 13px; color: var(--bronze-deep); }
 .aa-label {
@@ -477,7 +493,9 @@ body.menu-open .mobile-menu { opacity: 1; pointer-events: auto; }
 }
 @media (min-width: 900px) { .aa-label { grid-column: auto; margin-top: 18px; } }
 .aa-line { font-size: 14.5px; line-height: 1.6; color: var(--text-muted-on-ivory); grid-column: 2 / 3; margin-top: 4px; }
-@media (min-width: 900px) { .aa-line { grid-column: auto; margin-top: 0; max-width: 24ch; } }
+/* `balance` keeps all three descriptions to two evenly-split lines instead of leaving a
+   single orphaned word ("live." / "priorities." / "construction.") on the second line. */
+@media (min-width: 900px) { .aa-line { grid-column: auto; margin-top: 0; max-width: 24ch; text-wrap: balance; } }
 
 .ab-close {
   position: relative; z-index: 1;
@@ -532,7 +550,14 @@ body.menu-open .mobile-menu { opacity: 1; pointer-events: auto; }
 .tw-half:hover .tw-media img { transform: scale(1.05); }
 .tw-homes::after, .tw-pm::after {
   content: ''; position: absolute; inset: 0;
-  background: linear-gradient(180deg, rgba(14,14,14,0.08) 0%, rgba(14,14,14,0.8) 100%);
+  background: linear-gradient(180deg, rgba(14,14,14,0.08) 0%, rgba(14,14,14,0.3) 40%, rgba(14,14,14,0.9) 100%);
+}
+/* Stacked tiles on phones/tablets put the text over the busiest part of the photo (the
+   commercial facade is pale), so the scrim is stronger there to keep the small bronze labels legible. */
+@media (max-width: 899px) {
+  .tw-homes::after, .tw-pm::after {
+    background: linear-gradient(180deg, rgba(14,14,14,0.22) 0%, rgba(14,14,14,0.64) 34%, rgba(14,14,14,0.9) 100%);
+  }
 }
 .tw-lines {
   position: absolute; inset: 0;
@@ -570,6 +595,51 @@ body.menu-open .mobile-menu { opacity: 1; pointer-events: auto; }
 .cg-index { font-family: var(--font-display); font-size: 12px; color: var(--bronze); display: block; margin-bottom: 8px; }
 .cg-content h3 { color: var(--ivory); font-size: clamp(22px, 2.6vw, 30px); }
 .cg-content p { color: var(--text-muted-on-ink); font-size: 13.5px; margin-top: 6px; }
+/* Custom-home concept plates — an architectural portfolio, not captioned cards.
+   No label, index, caption or scrim over the image; the section's own .concept-notice
+   carries the single disclosure, and the plates run larger than the captioned .cg-item
+   they replace.
+   The renders are deliberately different architectural styles and so have different
+   proportions. Rather than force them into one fixed frame — which crops a portrait render
+   straight through its roofline — each plate keeps its own aspect ratio and is scaled to fit
+   a shared bounding box. Nothing is ever cropped, the strip still reads as one consistent
+   band, and the variety between the homes survives.
+   Every image carries its real width/height attributes, so one definite axis plus the
+   intrinsic ratio fully determines each plate's box before the image has loaded — the strip
+   reserves its space up front instead of collapsing to zero and jumping on load.
+   Mobile constrains width (the scarce axis); desktop constrains height so the band is even. */
+.concept-gallery--plates { align-items: center; scroll-padding-left: var(--gutter); }
+@media (min-width: 900px) { .concept-gallery--plates { scroll-padding-left: 56px; } }
+
+/* FAIL-SAFE SIZING. Each plate carries its own `aspect-ratio` inline (from the render's real
+   pixel dimensions), and one axis is always a definite CSS length. The browser therefore
+   computes the full box from CSS alone — before any image loads, without reading the image's
+   intrinsic size, and without JavaScript.
+   The previous version sized the plate from the <img> with width:auto/height:auto. Chromium
+   inferred a box from the width/height attributes; WebKit did not, so in Safari every plate
+   computed 0x0, which collapsed the strip to zero height, which meant the lazy images never
+   entered the viewport, so they never loaded and stayed 0x0 — a deadlock that rendered the
+   whole gallery blank. Never size these plates from the image again. */
+.cg-item.cg-plate {
+  margin: 0; flex: 0 0 auto; overflow: hidden;
+  width: 86vw; height: auto;
+  /* The gallery must never need JavaScript to become visible. Even if a reveal hook is
+     re-added to these figures later, they stay painted. */
+  opacity: 1; transform: none;
+}
+.cg-item.cg-plate::after { content: none; }
+.cg-item.cg-plate picture { position: static; display: block; width: 100%; height: 100%; }
+/* The plate's aspect-ratio equals the render's, so `cover` fills it exactly and crops nothing. */
+.cg-item.cg-plate img {
+  position: static; display: block; width: 100%; height: 100%; object-fit: cover;
+}
+@media (min-width: 700px) {
+  .cg-item.cg-plate { width: auto; height: 62vh; }
+}
+@media (min-width: 1100px) {
+  .cg-item.cg-plate { width: auto; height: min(66vh, 620px); }
+}
+
 .cg-nav { display: flex; gap: 10px; justify-content: flex-end; padding: 20px var(--gutter) 0; }
 @media (min-width: 900px) { .cg-nav { padding: 24px 56px 0; } }
 .cg-nav button {
@@ -647,7 +717,7 @@ body.menu-open .mobile-menu { opacity: 1; pointer-events: auto; }
 .pm-exp-credibility { display: flex; align-items: baseline; gap: 20px; }
 .pm-exp-num { font-family: var(--font-display); font-size: clamp(40px, 4.6vw, 56px); line-height: 1; color: var(--ink); }
 .pm-exp-label {
-  font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--bronze-deep); max-width: 22ch;
+  font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--bronze-deep); max-width: 30ch;
 }
 
 .pm-exp-head { margin-top: 0; }
@@ -738,3 +808,19 @@ body.menu-open .mobile-menu { opacity: 1; pointer-events: auto; }
 .dyn-fields.active { display: grid; }
 @media (min-width: 700px) { .dyn-fields .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; } }
 .form-intro { font-size: 13.5px; color: var(--text-muted-on-ivory); margin-bottom: 28px; max-width: 52ch; line-height: 1.6; }
+
+/* Confirmed direct contact links: footer, Contact and Property Management. */
+.direct-contact { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 28px; margin-top: 24px; }
+.direct-contact a { display: inline-flex; align-items: center; min-height: 44px; max-width: 100%; overflow-wrap: anywhere; font-size: 15px; text-decoration: underline; text-decoration-color: var(--bronze); text-underline-offset: 6px; }
+.direct-contact a:hover { color: var(--bronze-deep); }
+.direct-contact a:focus-visible { outline: 2px solid var(--bronze); outline-offset: 5px; }
+.site-footer .direct-contact { justify-content: center; margin: 0; color: var(--ivory); }
+.section-on-ink .direct-contact, .page-header .direct-contact { color: var(--ivory); }
+.section-on-ink .direct-contact a:hover, .site-footer .direct-contact a:hover, .page-header .direct-contact a:hover { color: var(--gold-light); }
+
+/* Consistent, visible keyboard focus on every link and control (mouse clicks are unaffected). */
+a:focus-visible, button:focus-visible, select:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--bronze); outline-offset: 3px; }
+.field input:focus-visible, .field textarea:focus-visible, .field select:focus-visible { box-shadow: 0 0 0 2px rgba(124, 94, 41, 0.35); }
+
+/* Keep phone numbers on one line without putting non-breaking characters into the copied text. */
+a[href^="tel:"] { white-space: nowrap; }

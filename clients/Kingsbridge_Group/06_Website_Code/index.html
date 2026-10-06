@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JWFYMEP5VK"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-JWFYMEP5VK');
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kingsbridge Group | Custom Home Builder &amp; Commercial Property Management, Toronto &amp; GTA</title>
@@ -16,11 +25,17 @@
 <meta property="og:title" content="Kingsbridge Group | Custom Home Builder &amp; Commercial Property Management">
 <meta property="og:description" content="Custom homes and commercial property management across Toronto, Mississauga, North York, Etobicoke, Vaughan and Oakville.">
 <meta property="og:url" content="https://www.kingsbridgegroup.ca/">
-<meta property="og:image" content="https://www.kingsbridgegroup.ca/assets/img/og-image.jpg">
+<meta property="og:image" content="https://www.kingsbridgegroup.ca/assets/img/kingsbridge-social-preview-v2.jpg">
+<meta property="og:image:secure_url" content="https://www.kingsbridgegroup.ca/assets/img/kingsbridge-social-preview-v2.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Kingsbridge Group">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Kingsbridge Group | Custom Home Builder &amp; Commercial Property Management">
 <meta name="twitter:description" content="Custom homes and commercial property management across Toronto, Mississauga, North York, Etobicoke, Vaughan and Oakville.">
-<meta name="twitter:image" content="https://www.kingsbridgegroup.ca/assets/img/og-image.jpg">
+<meta name="twitter:image" content="https://www.kingsbridgegroup.ca/assets/img/kingsbridge-social-preview-v2.jpg">
+<meta name="twitter:image:alt" content="Kingsbridge Group">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -31,6 +46,17 @@
 <link rel="preload" href="/partials/header.html" as="fetch" crossorigin>
 <link rel="preload" href="/partials/footer.html" as="fetch" crossorigin>
 <link rel="preload" href="/assets/img/photography/hero-estate-v2.webp" as="image" fetchpriority="high">
+<noscript><style>.intro-veil { display: none; }</style></noscript>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Kingsbridge Group",
+  "url": "https://www.kingsbridgegroup.ca/",
+  "logo": "https://www.kingsbridgegroup.ca/assets/img/logo/kingsbridge-logo-square-v2.png",
+  "image": "https://www.kingsbridgegroup.ca/assets/img/kingsbridge-social-preview-v2.jpg"
+}
+</script>
 </head>
 <body data-page="home">
 <div class="page-veil" id="page-veil"><div class="pv-inner"><img class="pv-mark" src="/assets/img/logo/kingsbridge-icon.png" alt=""><span class="pv-line"></span></div></div>
@@ -40,6 +66,8 @@
 </div>
 
 <div id="header-root"></div>
+
+<main id="main">
 
 <!-- ============ 01 — HERO (single image, stationary, restrained arrival + scroll motion) ============ -->
 <section class="hero" data-parallax>
@@ -74,7 +102,7 @@
       <h2 class="ab-statement">A home should feel considered long before the first wall goes up.</h2>
     </div>
     <div class="ab-secondary">
-      <p class="ab-support">Since 2003, Kingsbridge has been guided by a simple idea: building a home should
+      <p class="ab-support">Kingsbridge is guided by a simple idea: building a home should
         feel personal. We take the time to understand how our clients want to live, then carry
         that thinking through design and construction with care, communication and attention to
         the details that make a house feel like home.</p>
@@ -146,10 +174,22 @@
   </div>
 </section>
 <div class="concept-gallery-wrap" id="concepts">
-  <div class="concept-gallery" id="concept-gallery" data-reveal></div>
+  <!-- The three retained Custom Home concepts, updated 2026-09-17.
+       Sources: 03_Images/1CHouse.png, 3CHouse.png and 5CHouse.png (.jpg + .webp).
+       These plates are written directly into the HTML on purpose. They used to be built at
+       runtime from assets/js/projects-data.js, which meant a single blocked or failed script
+       request left the whole Custom Homes section empty. The markup below is the one source
+       of truth; JavaScript now only wires up the arrows. Image-only by design: no label,
+       elevation name, counter, caption, address or project name. The single conceptual
+       disclosure lives once above, at section level. -->
+  <div class="concept-gallery concept-gallery--plates" id="concept-gallery" tabindex="0" role="region" aria-label="Custom home concept images">
+    <figure class="cg-item cg-plate" style="aspect-ratio:1672/941"><picture><source srcset="/assets/img/photography/custom-home-01.webp" type="image/webp"><img src="/assets/img/photography/custom-home-01.jpg" alt="Conceptual contemporary limestone home with charcoal panels, walnut-toned soffits and warm glazing at blue hour" width="1672" height="941"></picture></figure>
+    <figure class="cg-item cg-plate" style="aspect-ratio:1672/941"><picture><source srcset="/assets/img/photography/custom-home-03.webp" type="image/webp"><img src="/assets/img/photography/custom-home-03.jpg" alt="Conceptual modern Tudor home with charcoal brick gables, buff limestone entrance and rain-damp stone driveway" width="1672" height="941"></picture></figure>
+    <figure class="cg-item cg-plate" style="aspect-ratio:1672/941"><picture><source srcset="/assets/img/photography/custom-home-05.webp" type="image/webp"><img src="/assets/img/photography/custom-home-05.jpg" alt="Conceptual contemporary Georgian-inspired limestone home with bronze-framed windows and established hydrangea planting" width="1672" height="941"></picture></figure>
+  </div>
   <div class="cg-nav">
-    <button class="cg-prev" aria-label="Previous concept"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 6l-6 6 6 6"/></svg></button>
-    <button class="cg-next" aria-label="Next concept"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 6l6 6-6 6"/></svg></button>
+    <button type="button" class="cg-prev" aria-label="Previous concept"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 6l-6 6 6 6"/></svg></button>
+    <button type="button" class="cg-next" aria-label="Next concept"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 6l6 6-6 6"/></svg></button>
   </div>
 </div>
 
@@ -184,28 +224,20 @@
   </div>
 </section>
 
+</main>
+
 <div id="footer-root"></div>
 
 <script src="/assets/js/site-config.js" defer></script>
-<script src="/assets/js/projects-data.js" defer></script>
 <script src="/assets/js/include.js" defer></script>
 <script src="/assets/js/main.js" defer></script>
 <script src="/assets/js/experience.js" defer></script>
+<script src="/assets/js/analytics.js" defer></script>
 <script>
+  // The gallery plates are static markup above — this only wires the arrows, so a script
+  // failure can no longer empty the Custom Homes section.
   document.addEventListener('partials:ready', function () {
     var gallery = document.getElementById('concept-gallery');
-    if (gallery && typeof KB_CONCEPTS !== 'undefined') {
-      gallery.innerHTML = KB_CONCEPTS.map(function (c, idx) {
-        return '<div class="cg-item" data-reveal>' +
-          '<picture><source srcset="' + c.image.replace(/\.jpg$/, '.webp') + '" type="image/webp">' +
-          '<img src="' + c.image + '" alt="' + c.title + '" loading="lazy"></picture>' +
-          '<div class="cg-content">' +
-          '<span class="cg-index">' + String(idx + 1).padStart(2, '0') + ' / ' + String(KB_CONCEPTS.length).padStart(2, '0') + '</span>' +
-          '<h3>' + c.title + '</h3><p>' + c.description + '</p>' +
-          '</div></div>';
-      }).join('');
-      initScrollReveal();
-    }
     var prev = document.querySelector('.cg-prev');
     var next = document.querySelector('.cg-next');
     if (prev && next && gallery) {
