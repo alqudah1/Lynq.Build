@@ -87,9 +87,11 @@ export function parseDecision(data: string | undefined): { decision: Decision; c
 }
 
 /** Caption for the approval message: where it goes, the post itself, and nothing secret. Fits Telegram's 1024-char photo caption. */
-export function buildApprovalCaption(p: Pick<SocialPendingApproval, "title" | "brandName"> & { brief?: Pick<SocialPendingApproval["brief"], "keyPoints">; variant: Pick<SocialPendingApproval["variant"], "platform" | "accountDisplayName" | "body" | "hashtags" | "scheduledFor"> & { format?: string } }): string {
+export function buildApprovalCaption(p: Pick<SocialPendingApproval, "title" | "brandName"> & { brief?: Pick<SocialPendingApproval["brief"], "keyPoints">; variant: Pick<SocialPendingApproval["variant"], "platform" | "accountDisplayName" | "body" | "hashtags" | "scheduledFor"> & { format?: string }; alsoOn?: { platform: string; accountDisplayName: string | null }[] }): string {
   const v = p.variant;
-  const where = `${SOCIAL_PLATFORM_LABELS[v.platform]}${v.format === "story" ? " Story" : v.format === "reel" ? " Reel" : ""}${v.accountDisplayName ? ` → ${v.accountDisplayName}` : ""}`;
+  const kind = v.format === "story" ? " Story" : v.format === "reel" ? " Reel" : "";
+  const place = (x: { platform: string; accountDisplayName: string | null }) => `${SOCIAL_PLATFORM_LABELS[x.platform as keyof typeof SOCIAL_PLATFORM_LABELS] ?? x.platform}${kind}${x.accountDisplayName ? ` → ${x.accountDisplayName}` : ""}`;
+  const where = [v, ...(p.alsoOn ?? [])].map(place).join(" + ");
   const when = v.scheduledFor ? `Planned: ${formatLocal(v.scheduledFor)}` : "Not scheduled — 'Post now' publishes immediately";
   const extra = v.format === "story" ? (p.brief?.keyPoints?.find((k) => /highlight/i.test(k)) ?? "") : v.format === "reel" ? "Reel — stays off the grid." : "";
   const head = [`${p.brandName ?? "LYNQ"} · ${where}`, p.title, when, extra].filter(Boolean).join("\n");
@@ -173,7 +175,19 @@ async function resolveApprover(db: Db, env: TelegramEnv): Promise<Approver | { e
   return { userId: user.id, organizationIds: orgs.map((m) => m.organizationId) };
 }
 
-async function sendPending(db: Db, env: TelegramEnv, chatId: string, pending: SocialPendingApproval, deps: TelegramDeps, mode: "approve" | "draft" = "approve"): Promise<void> {
+/** One entry per post: the Instagram version (or the first) carries the message; the others are listed as "+ Facebook Page → …" and decided together. */
+export function groupByPost(list: SocialPendingApproval[]): (SocialPendingApproval & { alsoOn: { platform: string; accountDisplayName: string | null }[] })[] {
+  const byItem = new Map<string, SocialPendingApproval[]>();
+  for (const p of list) byItem.set(p.contentItemId, [...(byItem.get(p.contentItemId) ?? []), p]);
+  const out: (SocialPendingApproval & { alsoOn: { platform: string; accountDisplayName: string | null }[] })[] = [];
+  for (const group of byItem.values()) {
+    const lead = group.find((p) => p.variant.platform === "instagram") ?? group[0]!;
+    out.push({ ...lead, alsoOn: group.filter((p) => p !== lead).map((p) => ({ platform: p.variant.platform, accountDisplayName: p.variant.accountDisplayName })) });
+  }
+  return out;
+}
+
+async function sendPending(db: Db, env: TelegramEnv, chatId: string, pending: SocialPendingApproval & { alsoOn?: { platform: string; accountDisplayName: string | null }[] }, deps: TelegramDeps, mode: "approve" | "draft" = "approve"): Promise<void> {
   const caption = mode === "draft" ? `📝 DRAFT — not sent for review yet\n${buildApprovalCaption(pending)}`.slice(0, CAPTION_LIMIT) : buildApprovalCaption(pending);
   const reply_markup = mode === "draft" ? draftKeyboard(pending.variant.id, pending.variant.revision) : approvalKeyboard(pending.variant.id, pending.variant.revision, pending.variant.scheduledFor);
   const video = pending.assets.find((a) => a.contentType.startsWith("video/"));
@@ -199,9 +213,11 @@ export async function notifyTelegramOfReview(db: Db, env: TelegramEnv, input: { 
     if (!telegramEnabled(env) || !env.TELEGRAM_CHAT_ID) return false;
     const approver = await resolveApprover(db, env);
     if ("error" in approver || !approver.organizationIds.includes(input.organizationId)) return false;
-    const pending = (await listPendingApprovals(db, { organizationId: input.organizationId, actorUserId: approver.userId })).find((p) => p.variant.id === input.contentVariantId);
-    if (!pending) return false;
-    await sendPending(db, env, env.TELEGRAM_CHAT_ID, pending, deps);
+    const all = await listPendingApprovals(db, { organizationId: input.organizationId, actorUserId: approver.userId });
+    const mine = all.find((p) => p.variant.id === input.contentVariantId);
+    if (!mine) return false;
+    const group = groupByPost(all.filter((p) => p.contentItemId === mine.contentItemId))[0];
+    if (group) await sendPending(db, env, env.TELEGRAM_CHAT_ID, group, deps);
     return true;
   } catch (err) {
     console.error("[telegram] review notification failed:", err instanceof Error ? err.message.split(":")[0] : "unknown");
@@ -255,7 +271,7 @@ export async function handleTelegramUpdate(db: Db, env: TelegramEnv, update: Tel
         pending.push(...(await listPendingApprovals(db, { organizationId, actorUserId: approver.userId }).catch(() => [])));
       }
       if (!pending.length) await telegram(env, "sendMessage", { chat_id: chatId, text: "Nothing is waiting for review." }, deps);
-      for (const p of pending.slice(0, 20)) await sendPending(db, env, chatId, p, deps);
+      for (const p of groupByPost(pending).slice(0, 20)) await sendPending(db, env, chatId, p, deps);
       return { action: `pending:${pending.length}` };
     }
     if (/^\/week\b/.test(text)) {
@@ -282,13 +298,13 @@ export async function handleTelegramUpdate(db: Db, env: TelegramEnv, update: Tel
       }
       if (/^\/drafts\s+all\b/.test(text)) {
         if (drafts.length > 20) await telegram(env, "sendMessage", { chat_id: chatId, text: `Showing the first 20 of ${drafts.length} drafts.` }, deps);
-        for (const d of drafts.slice(0, 20)) await sendPending(db, env, chatId, d, deps, "draft");
+        for (const d of groupByPost(drafts).slice(0, 20)) await sendPending(db, env, chatId, d, deps, "draft");
         return { action: `drafts:${drafts.length}` };
       }
       // Default: the next post for each brand (its Instagram and Facebook versions), nothing else. Stories and reels follow once the post is sent.
       const next = nextPostPerBrand(drafts);
       if (!next.length) await telegram(env, "sendMessage", { chat_id: chatId, text: `No post is ready to go yet (${drafts.length} drafts are still waiting on an image or video). Send /drafts all to see everything.` }, deps);
-      for (const d of next) await sendPending(db, env, chatId, d, deps, "draft");
+      for (const d of groupByPost(next)) await sendPending(db, env, chatId, d, deps, "draft");
       return { action: `drafts:${next.length}/${drafts.length}` };
     }
     return { action: "ignored_text" };
@@ -307,7 +323,7 @@ export async function handleTelegramUpdate(db: Db, env: TelegramEnv, update: Tel
     return { action: "bad_data" };
   }
   const approver = await resolveApprover(db, env);
-  const [variant] = await db.select({ organizationId: socialContentVariants.organizationId }).from(socialContentVariants).where(eq(socialContentVariants.id, parsed.contentVariantId)).limit(1);
+  const [variant] = await db.select({ organizationId: socialContentVariants.organizationId, contentItemId: socialContentVariants.contentItemId }).from(socialContentVariants).where(eq(socialContentVariants.id, parsed.contentVariantId)).limit(1);
   let result: string;
   if ("error" in approver) {
     result = approver.error;
@@ -315,22 +331,42 @@ export async function handleTelegramUpdate(db: Db, env: TelegramEnv, update: Tel
     result = "This post isn't in the approver's organization.";
   } else {
     try {
-      if (parsed.decision === "submit") {
-        await submitVariantForReview(db, { organizationId: variant.organizationId, contentVariantId: parsed.contentVariantId, actorUserId: approver.userId, expectedRevision: parsed.revision, summary: "Sent for review from Telegram" });
-        result = OUTCOME.submit;
-        const next = (await listPendingApprovals(db, { organizationId: variant.organizationId, actorUserId: approver.userId })).find((p) => p.variant.id === parsed.contentVariantId);
-        if (next) await sendPending(db, env, chatId, next, deps).catch(() => undefined);
-      } else {
-      await decideVariantApproval(db, {
-        organizationId: variant.organizationId,
-        contentVariantId: parsed.contentVariantId,
-        actorUserId: approver.userId,
-        expectedRevision: parsed.revision,
-        decision: parsed.decision === "publish" || parsed.decision === "approve" ? "approve" : parsed.decision === "reject" ? "reject" : "request_changes",
-        publishNow: parsed.decision === "publish",
-        note: "Decided from Telegram",
-      });
-      result = OUTCOME[parsed.decision];
+      const decision = parsed.decision;
+      const applyTo = async (contentVariantId: string, expectedRevision: number) => {
+        if (decision === "submit") {
+          await submitVariantForReview(db, { organizationId: variant.organizationId, contentVariantId, actorUserId: approver.userId, expectedRevision, summary: "Sent for review from Telegram" });
+        } else {
+          await decideVariantApproval(db, {
+            organizationId: variant.organizationId,
+            contentVariantId,
+            actorUserId: approver.userId,
+            expectedRevision,
+            decision: decision === "publish" || decision === "approve" ? "approve" : decision === "reject" ? "reject" : "request_changes",
+            publishNow: decision === "publish",
+            note: "Decided from Telegram",
+          });
+        }
+      };
+      await applyTo(parsed.contentVariantId, parsed.revision);
+      // The same decision for every other platform version of this post: what goes on Facebook goes on Instagram.
+      const siblings = await db
+        .select({ id: socialContentVariants.id, revision: socialContentVariants.revision, platform: socialContentVariants.platform, status: socialContentVariants.status })
+        .from(socialContentVariants)
+        .where(and(eq(socialContentVariants.organizationId, variant.organizationId), eq(socialContentVariants.contentItemId, variant.contentItemId), isNull(socialContentVariants.archivedAt)));
+      const wanted = decision === "submit" ? ["draft", "changes_requested"] : ["ready_for_review"];
+      const skipped: string[] = [];
+      for (const sib of siblings) {
+        if (sib.id === parsed.contentVariantId || !wanted.includes(sib.status)) continue;
+        try {
+          await applyTo(sib.id, sib.revision);
+        } catch (err) {
+          skipped.push(`${SOCIAL_PLATFORM_LABELS[sib.platform as keyof typeof SOCIAL_PLATFORM_LABELS] ?? sib.platform}: ${friendlyError(err)}`);
+        }
+      }
+      result = skipped.length ? `${OUTCOME[decision]}\n${skipped.join("\n")}` : OUTCOME[decision];
+      if (decision === "submit") {
+        const pending = (await listPendingApprovals(db, { organizationId: variant.organizationId, actorUserId: approver.userId })).filter((p) => p.contentItemId === variant.contentItemId);
+        for (const next of groupByPost(pending)) await sendPending(db, env, chatId, next, deps).catch(() => undefined);
       }
     } catch (err) {
       result = friendlyError(err);
@@ -342,7 +378,7 @@ export async function handleTelegramUpdate(db: Db, env: TelegramEnv, update: Tel
     await telegram(env, "editMessageReplyMarkup", { chat_id: chatId, message_id: cb.message.message_id, reply_markup: { inline_keyboard: [] } }, deps).catch(() => undefined);
     await telegram(env, "sendMessage", { chat_id: chatId, text: result, reply_parameters: { message_id: cb.message.message_id } }, deps).catch(() => undefined);
   }
-  return { action: `decided:${parsed.decision}:${result === OUTCOME[parsed.decision] ? "ok" : "failed"}` };
+  return { action: `decided:${parsed.decision}:${result.startsWith(OUTCOME[parsed.decision]) ? "ok" : "failed"}` };
 }
 
 /** Points the bot's webhook at this deployment. Called by the signed-in owner from LYNQ. */
@@ -448,15 +484,24 @@ export async function runMorningTelegramSend(db: Db, env: TelegramEnv, deps: Tel
     .limit(40);
   let sent = 0;
   const blocked: string[] = [];
+  const submitted = new Set<string>();
+  const orgs = new Set<string>();
   for (const r of rows) {
     try {
       await submitVariantForReview(db, { organizationId: r.organizationId, contentVariantId: r.id, actorUserId: approver.userId, expectedRevision: r.revision, summary: `Today's post: ${r.title}` });
-      const pending = (await listPendingApprovals(db, { organizationId: r.organizationId, actorUserId: approver.userId })).find((p) => p.variant.id === r.id);
-      if (pending) await sendPending(db, env, env.TELEGRAM_CHAT_ID, pending, deps);
-      sent++;
+      submitted.add(r.id);
+      orgs.add(r.organizationId);
     } catch (err) {
       const why = err instanceof Error && err.name === "SocialVariantNotPublishableError" ? (r.format === "reel" || r.format === "video" ? "needs its video" : "needs an image or a linked account") : "couldn't be sent";
       blocked.push(`• ${r.at ? new Intl.DateTimeFormat("en-CA", { timeZone: TELEGRAM_TIMEZONE, hour: "numeric", minute: "2-digit" }).format(r.at) : ""} ${r.title} — ${why}`);
+    }
+  }
+  // One message per post, covering every platform it goes to.
+  for (const organizationId of orgs) {
+    const pending = (await listPendingApprovals(db, { organizationId, actorUserId: approver.userId }).catch(() => [])).filter((p) => submitted.has(p.variant.id));
+    for (const p of groupByPost(pending)) {
+      await sendPending(db, env, env.TELEGRAM_CHAT_ID, p, deps);
+      sent++;
     }
   }
   const firstRunOfDay = hour === 8 && minute < 15;
