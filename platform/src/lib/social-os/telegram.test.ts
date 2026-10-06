@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { approvalKeyboard, buildApprovalCaption, draftKeyboard, runMorningTelegramSend, encodeDecision, handleTelegramUpdate, parseDecision, registerTelegramWebhook, telegramEnabled, telegramWebhookSecret, verifyTelegramWebhookSecret, type TelegramEnv } from "./telegram";
+import { approvalKeyboard, buildApprovalCaption, draftKeyboard, nextPostPerBrand, runMorningTelegramSend, encodeDecision, handleTelegramUpdate, parseDecision, registerTelegramWebhook, telegramEnabled, telegramWebhookSecret, verifyTelegramWebhookSecret, type TelegramEnv } from "./telegram";
 
 const TOKEN = "123456789:AAH-abcdefghijklmnopqrstuvwxyz012345";
 const env: TelegramEnv = { TELEGRAM_BOT_TOKEN: TOKEN, TELEGRAM_CHAT_ID: "555", TELEGRAM_APPROVER_EMAIL: "owner@lynq.build", AUTH_SECRET: "s".repeat(40), AUTH_BASE_URL: "https://office.example" };
@@ -120,5 +120,29 @@ describe("telegram approvals", () => {
     expect(await runMorningTelegramSend(noDb, env, { fetchImpl, now: () => new Date("2026-10-12T11:30:00Z") })).toEqual({ sent: 0, blocked: 0 });
     expect(await runMorningTelegramSend(noDb, { ...env, TELEGRAM_CHAT_ID: undefined }, { fetchImpl, now: () => new Date("2026-10-12T13:00:00Z") })).toEqual({ sent: 0, blocked: 0 });
     expect(calls).toHaveLength(0);
+  });
+});
+
+describe("/drafts default: the next post per brand", () => {
+  const img = [{ id: "a", title: "", assetType: "image", contentType: "image/png", width: 1, height: 1, previewUrl: "" }];
+  const d = (o: { item: string; brand: string; platform: string; format: string; at: string; assets?: typeof img }) =>
+    ({ contentItemId: o.item, brandProfileId: o.brand, brandName: o.brand, title: o.item, brief: {}, submittedAt: new Date(), assets: o.assets ?? img, variant: { id: `${o.item}-${o.platform}`, platform: o.platform, format: o.format, scheduledFor: new Date(o.at) } }) as unknown as Parameters<typeof nextPostPerBrand>[0][number];
+
+  it("returns both platform versions of the soonest ready post for each brand, skipping stories, reels and posts without an image", () => {
+    const out = nextPostPerBrand([
+      d({ item: "lynq-2", brand: "lynq", platform: "instagram", format: "image", at: "2026-10-13T11:30Z" }),
+      d({ item: "lynq-1", brand: "lynq", platform: "instagram", format: "image", at: "2026-10-12T16:15Z" }),
+      d({ item: "lynq-1", brand: "lynq", platform: "facebook", format: "image", at: "2026-10-12T16:15Z" }),
+      d({ item: "lynq-1-story", brand: "lynq", platform: "instagram", format: "story", at: "2026-10-12T16:25Z" }),
+      d({ item: "codeit-0", brand: "codeit", platform: "instagram", format: "image", at: "2026-10-12T10:00Z", assets: [] }),
+      d({ item: "codeit-1", brand: "codeit", platform: "instagram", format: "image", at: "2026-10-12T23:30Z" }),
+      d({ item: "codeit-reel", brand: "codeit", platform: "instagram", format: "reel", at: "2026-10-12T09:00Z" }),
+      d({ item: "li", brand: "lynq", platform: "linkedin", format: "text", at: "2026-10-12T08:00Z" }),
+    ]);
+    expect(out.map((x) => x.variant.id)).toEqual(["lynq-1-facebook", "lynq-1-instagram", "codeit-1-instagram"]);
+  });
+
+  it("is empty when nothing has an image yet", () => {
+    expect(nextPostPerBrand([d({ item: "x", brand: "lynq", platform: "instagram", format: "image", at: "2026-10-12T16:15Z", assets: [] })])).toEqual([]);
   });
 });
