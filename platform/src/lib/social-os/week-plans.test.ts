@@ -80,6 +80,17 @@ describe("week plan Oct 12", () => {
     }
   });
 
+  it("captions read like a person wrote them: no dashes, arrows or markers", () => {
+    const texts: [string, string][] = [];
+    for (const p of plan.feed) texts.push([p.key, p.hook ?? ""], [p.key, p.body ?? ""], [p.key, p.facebookBody ?? ""], [p.key, p.fallback?.body ?? ""], [p.key, p.fallback?.facebookBody ?? ""]);
+    for (const r of plan.reels) texts.push([r.key, r.hook], [r.key, r.body], [r.key, r.facebookBody ?? ""]);
+    for (const li of plan.linkedin) texts.push([li.key, li.body]);
+    for (const [key, t] of texts) {
+      expect(t, key).not.toMatch(/[—–▸→]/);
+      expect(t, key).not.toMatch(/ - /);
+    }
+  });
+
   it("Facebook captions are their own shorter version, and hashtags stay at five or fewer", () => {
     for (const e of [...plan.feed, ...plan.reels]) {
       expect(e.facebookBody, e.key).toBeTruthy();

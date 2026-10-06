@@ -6,7 +6,8 @@ import { loadEnv } from "@/lib/env";
 import { timingSafeEqualStrings } from "@/lib/communications-os/secrets";
 import { pollAndProcess } from "@/lib/runtime/worker";
 import { enqueueDueAutomationRules } from "@/lib/social-os/automation";
-import { loadTelegramEnv, runMorningTelegramSend } from "@/lib/social-os/telegram";
+import { loadTelegramEnv, resolveTelegramActor, runMorningTelegramSend } from "@/lib/social-os/telegram";
+import { fillWeekPlanImages } from "@/lib/social-os/week-plans";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 800;
@@ -32,11 +33,22 @@ export async function GET(request: Request) {
   } catch (err) {
     console.error("telegram morning send failed", err instanceof Error ? err.message.split(":")[0] : "unknown error");
   }
+  // Social: finish week-plan images the load-time job didn't get to (a few per run). Never blocks job processing.
+  let planImages = 0;
+  try {
+    const actor = await resolveTelegramActor(db, loadTelegramEnv());
+    for (const organizationId of actor?.organizationIds ?? []) {
+      const r = await fillWeekPlanImages(db, { organizationId, actorUserId: actor!.userId, limit: 3 });
+      planImages += r.generated + r.copied;
+    }
+  } catch (err) {
+    console.error("week plan image fill failed", err instanceof Error ? err.message.slice(0, 200) : "unknown error");
+  }
   const processed: string[] = [];
   for (let cycle = 0; cycle < 8; cycle += 1) {
     const result = await pollAndProcess(db, rawSql, { leaseOwner: `office-cron:${crypto.randomUUID()}`, maxJobs: 4 });
     processed.push(...result.processed.map((job) => job.id));
     if (result.processed.length === 0) break;
   }
-  return Response.json({ ok: true, processed: processed.length, automationEnqueued, telegramSent });
+  return Response.json({ ok: true, processed: processed.length, automationEnqueued, telegramSent, planImages });
 }
