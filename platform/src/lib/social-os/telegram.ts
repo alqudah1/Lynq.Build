@@ -135,6 +135,12 @@ async function telegram<T = unknown>(env: TelegramEnv, method: string, body: Rec
  * publish is still enforced per post by listPendingApprovals/decideVariantApproval.
  */
 type Approver = { userId: string; organizationIds: string[] };
+/** The Telegram approver as the actor for unattended work (the cron). Null when Telegram isn't set up. */
+export async function resolveTelegramActor(db: Db, env: TelegramEnv): Promise<Approver | null> {
+  if (!telegramEnabled(env)) return null;
+  const a = await resolveApprover(db, env);
+  return "error" in a ? null : a;
+}
 async function resolveApprover(db: Db, env: TelegramEnv): Promise<Approver | { error: string }> {
   const email = env.TELEGRAM_APPROVER_EMAIL?.trim().toLowerCase();
   if (!email) return { error: "TELEGRAM_APPROVER_EMAIL isn't set on this deployment." };
