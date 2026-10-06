@@ -17,7 +17,7 @@ import { notifyStatus } from "@/lib/notify";
 import { setInquiryStatus, signOut } from "../actions";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Enquiries | Arcubed", robots: { index: false, follow: false } };
+export const metadata = { title: "Inquiries | Arcubed", robots: { index: false, follow: false } };
 
 export default async function AdminInquiriesPage() {
   if (!(await isAdmin())) redirect("/admin");
@@ -30,7 +30,7 @@ export default async function AdminInquiriesPage() {
       <header className="adm-head">
         <div>
           <p className="adm-kicker">Arcubed</p>
-          <h1 className="adm-title">Enquiries</h1>
+          <h1 className="adm-title">Inquiries</h1>
         </div>
         <form action={signOut}>
           <button type="submit" className="adm-signout">Sign out</button>
@@ -40,7 +40,7 @@ export default async function AdminInquiriesPage() {
       <nav className="adm-tabs" aria-label="Admin sections">
         <Link href="/admin/orders">Orders</Link>
         <Link href="/admin/inquiries" aria-current="page">
-          Enquiries{unread ? ` (${unread})` : ""}
+          Inquiries{unread ? ` (${unread})` : ""}
         </Link>
       </nav>
 
@@ -49,7 +49,7 @@ export default async function AdminInquiriesPage() {
           when one arrives. */}
       {!notify.configured ? (
         <p className="adm-note">
-          Email notification is not switched on, so new enquiries appear here only. Set{" "}
+          Email notification is not switched on, so new inquiries appear here only. Set{" "}
           {notify.missing.map((m, i) => (
             <span key={m}>
               {i > 0 ? " and " : ""}
@@ -62,7 +62,7 @@ export default async function AdminInquiriesPage() {
 
       {inquiries.length === 0 ? (
         <p className="adm-note">
-          No enquiries yet. Messages from the contact form appear here as soon as someone sends one.
+          No inquiries yet. Messages from the contact form appear here as soon as someone sends one.
         </p>
       ) : (
         <ul className="adm-list">

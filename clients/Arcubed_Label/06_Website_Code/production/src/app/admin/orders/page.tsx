@@ -39,7 +39,7 @@ export default async function AdminOrdersPage() {
 
       <nav className="adm-tabs" aria-label="Admin sections">
         <Link href="/admin/orders" aria-current="page">Orders</Link>
-        <Link href="/admin/inquiries">Enquiries</Link>
+        <Link href="/admin/inquiries">Inquiries</Link>
       </nav>
 
       {orders.length === 0 ? (
