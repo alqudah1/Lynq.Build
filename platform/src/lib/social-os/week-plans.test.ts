@@ -70,14 +70,36 @@ describe("week plan Oct 12", () => {
     }
   });
 
-  it("every LYNQ draft reference has fallback copy, so a fresh database still gets a full week", () => {
-    const rules = SOCIAL_PLATFORM_RULES.instagram;
-    for (const p of plan.feed.filter((e) => e.existingContentItemId)) {
-      expect(p.fallback?.title).toBeTruthy();
-      expect(p.fallback?.body?.length ?? 0).toBeGreaterThan(80);
-      expect(p.fallback!.body!.length).toBeLessThanOrEqual(rules.maxBodyLength);
-      for (const t of p.fallback?.hashtags ?? []) expect(t).toMatch(/^#?[\p{L}\p{N}_]{1,100}$/u);
-      if (p.pillar === "PROOF" || p.pillar === "FOUNDER") expect(p.fallback?.realPhotoOnly).toBe(true);
+  it("needs no uploads, and proof/founder art never fakes a client's site or a real person", () => {
+    for (const p of plan.feed) {
+      expect(p.realPhotoOnly, p.key).toBeFalsy();
+      expect(p.body, p.key).not.toMatch(/swipe/i);
+      if (p.pillar !== "PROOF" && p.pillar !== "FOUNDER") continue;
+      expect(p.creativeDirection, p.key).not.toMatch(/screenshot|real photo|upload/i);
+      expect(p.creativeDirection, p.key).toMatch(/no website screens|no real people/i);
     }
+  });
+
+  it("Facebook captions are their own shorter version, and hashtags stay at five or fewer", () => {
+    for (const e of [...plan.feed, ...plan.reels]) {
+      expect(e.facebookBody, e.key).toBeTruthy();
+      expect(e.facebookBody!.length, e.key).toBeLessThan(e.body!.length);
+      expect((e.hashtags ?? []).length, e.key).toBeLessThanOrEqual(5);
+      expect(e.facebookBody, e.key).not.toMatch(/#\w/);
+    }
+  });
+
+  it("LinkedIn posts are text-only founder posts of roughly 800–1,000+ characters with no links", () => {
+    expect(plan.linkedin.filter((l) => l.brand.brandKey === "lynq")).toHaveLength(2);
+    expect(plan.linkedin.filter((l) => l.brand.brandKey === "codeit")).toHaveLength(2);
+    for (const l of plan.linkedin) {
+      expect(l.body.length, l.key).toBeGreaterThan(700);
+      expect(l.body.length, l.key).toBeLessThan(1500);
+      expect(l.body, l.key).not.toMatch(/https?:\/\/|www\./);
+    }
+  });
+
+  it("reel hooks are short enough to land in the first three seconds", () => {
+    for (const r of plan.reels) expect(r.hook.length, r.key).toBeLessThanOrEqual(90);
   });
 });

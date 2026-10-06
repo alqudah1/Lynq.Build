@@ -236,7 +236,7 @@ export default async function SocialCalendarPage({ params, searchParams }: { par
 }
 
 const NEEDS_LABEL: Record<NonNullable<WeekPlanEntryStatus["needs"]>, string> = { video: "Film & upload video", photo: "Upload a real photo", image: "Image being made", account: "Link account" };
-const KIND_LABEL: Record<WeekPlanEntryStatus["kind"], string> = { post: "Post", story: "Story", reel: "Reel" };
+const KIND_LABEL: Record<WeekPlanEntryStatus["kind"], string> = { post: "Post", story: "Story", reel: "Reel", linkedin: "LinkedIn" };
 
 function WeekPlanPanel({ planLabel, planKey, status, loaded, action, timeZone, itemHref }: { planLabel: string; planKey: string; status: WeekPlanEntryStatus[]; loaded: boolean; action: (formData: FormData) => Promise<unknown>; timeZone: string; itemHref: (id: string) => string }) {
   const days = [...new Set(status.map((e) => e.day))];

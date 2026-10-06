@@ -485,6 +485,15 @@ export function createMetaAdapter(env: MetaEnv, deps: MetaAdapterDeps = {}): Soc
     }
   }
 
+  async function fetchRecentMediaImages(credential: SocialAccountCredential, limit: number): Promise<{ url: string; externalPostId: string }[]> {
+    if (credential.platform !== "instagram") return [];
+    const page = await graph<GraphPage<{ id: string; media_type?: string; media_url?: string; thumbnail_url?: string }>>("GET", `/${credential.externalAccountId}/media`, tokenFor(credential), { params: { fields: "id,media_type,media_url,thumbnail_url", limit: String(Math.min(Math.max(limit * 2, 1), 25)) } });
+    return (page.data ?? [])
+      .map((m) => ({ url: m.media_type === "VIDEO" ? m.thumbnail_url : m.media_url, externalPostId: String(m.id) }))
+      .filter((m): m is { url: string; externalPostId: string } => typeof m.url === "string" && m.url.startsWith("https://"))
+      .slice(0, limit);
+  }
+
   async function fetchAccountInsights(credential: SocialAccountCredential, range: { since: Date; until: Date }): Promise<AccountInsights | null> {
     const token = tokenFor(credential);
     const id = credential.externalAccountId;
@@ -735,6 +744,7 @@ export function createMetaAdapter(env: MetaEnv, deps: MetaAdapterDeps = {}): Soc
     discoverAssets,
     publish,
     fetchAccountInsights,
+    fetchRecentMediaImages,
     fetchPostInsights,
     fetchEngagement,
     replyToEngagement,

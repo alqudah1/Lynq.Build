@@ -9,6 +9,8 @@ import type { FetchLike, ImageGenerationRequest, ImageGenerationResult, ImagePro
 
 export const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 export const OPENAI_IMAGES_URL = "https://api.openai.com/v1/images/generations";
+/** Image edits: same models, conditioned on input images (used to keep a brand mascot/logo consistent). */
+export const OPENAI_IMAGE_EDITS_URL = "https://api.openai.com/v1/images/edits";
 export const OPENAI_MODELS_URL = "https://api.openai.com/v1/models";
 /**
  * Model ids differ per account (new families roll out gradually and old
@@ -144,12 +146,35 @@ export function createOpenAiImageProvider(env: SocialAiEnv, deps?: ProviderDeps 
       const model = options?.model ?? (await resolveModel());
       const size = IMAGE_SIZES[request.aspectRatio] ?? IMAGE_SIZES["1:1"];
       const prompt = request.style ? `${request.prompt}\n\nStyle: ${request.style}` : request.prompt;
-      const raw = (await requestJson(fetchImpl, LABEL, OPENAI_IMAGES_URL, {
-        method: "POST",
-        headers: authHeaders(env),
-        body: JSON.stringify({ model, prompt: prompt.slice(0, 32000), size: size.size, quality: "medium", output_format: outputFormat, n: 1 }),
-        signal: options?.signal,
-      })) as { data?: { b64_json?: string }[] };
+      const refs = (request.references ?? []).filter((r) => /^image\/(png|jpeg|webp)$/.test(r.contentType)).slice(0, 4);
+      const generate = async () =>
+        (await requestJson(fetchImpl, LABEL, OPENAI_IMAGES_URL, {
+          method: "POST",
+          headers: authHeaders(env),
+          body: JSON.stringify({ model, prompt: prompt.slice(0, 32000), size: size.size, quality: "medium", output_format: outputFormat, n: 1 }),
+          signal: options?.signal,
+        })) as { data?: { b64_json?: string }[] };
+      let raw: { data?: { b64_json?: string }[] };
+      if (refs.length) {
+        // Reference images (the brand's mascot / logo) go to the edits endpoint so the character stays the same across posts.
+        const form = new FormData();
+        form.append("model", model);
+        form.append("prompt", `${prompt}\n\nThe attached reference image(s) show the brand's own mascot/logo. Keep that character exactly the same — shape, colours, face, outfit, proportions — and place it in the new scene described above. Do not copy the reference's background or text.`.slice(0, 32000));
+        form.append("size", size.size);
+        form.append("quality", "medium");
+        form.append("output_format", outputFormat);
+        form.append("n", "1");
+        refs.forEach((r, i) => form.append("image[]", new Blob([Buffer.from(r.bytes)], { type: r.contentType }), `${r.tag || "reference"}-${i}.${r.contentType.split("/")[1]}`));
+        try {
+          raw = (await requestJson(fetchImpl, LABEL, OPENAI_IMAGE_EDITS_URL, { method: "POST", headers: { Authorization: `Bearer ${env.OPENAI_API_KEY!.trim()}` }, body: form, signal: options?.signal })) as { data?: { b64_json?: string }[] };
+        } catch (err) {
+          // A model or account without edits access still gets an image — just without the reference.
+          if (err instanceof SocialGenerationFailedError && !err.message.includes("authentication")) raw = await generate();
+          else throw err;
+        }
+      } else {
+        raw = await generate();
+      }
       const b64 = raw.data?.[0]?.b64_json;
       if (!b64) throw new SocialGenerationFailedError(LABEL, "the provider returned no image", true);
       const bytes = new Uint8Array(Buffer.from(b64, "base64"));

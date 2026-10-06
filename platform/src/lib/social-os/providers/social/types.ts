@@ -177,6 +177,8 @@ export interface SocialProviderAdapter {
   refresh?(bundle: SocialTokenBundle): Promise<SocialTokenBundle>;
   publish?(credential: SocialAccountCredential, input: PublishInput): Promise<PublishResult>;
   fetchAccountInsights?(credential: SocialAccountCredential, range: { since: Date; until: Date }): Promise<AccountInsights | null>;
+  /** The account's own recent post images (newest first) — read-only; used as brand references for image generation. */
+  fetchRecentMediaImages?(credential: SocialAccountCredential, limit: number): Promise<{ url: string; externalPostId: string }[]>;
   fetchPostInsights?(credential: SocialAccountCredential, externalPostIds: string[]): Promise<PostInsights[]>;
   fetchEngagement?(credential: SocialAccountCredential, options: { since?: Date | null; externalPostIds?: string[] }): Promise<FetchedEngagementItem[]>;
   replyToEngagement?(credential: SocialAccountCredential, item: { itemType: string; externalId: string; externalPostId?: string | null }, message: string): Promise<{ externalReplyId: string }>;

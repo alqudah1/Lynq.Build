@@ -150,9 +150,10 @@ export default async function SocialBrandPage({ params }: { params: Promise<{ or
           <Save disabled={!canManage} />
         </SocialActionForm>
         <div className="flex flex-col gap-3 border-t border-border pt-4">
-          <h3 className={FIELD_LABEL}>Logos</h3>
+          <h3 className={FIELD_LABEL}>Logos &amp; mascot</h3>
+          <p className="text-xs text-subtle">AI images for this brand are drawn from the newest three of these, so a mascot stays the same character in every post. Use a clean, well-lit picture of it.</p>
           {logos.length === 0 ? (
-            <p className="text-sm text-subtle">No logo uploaded yet.</p>
+            <p className="text-sm text-subtle">No logo or mascot uploaded yet.</p>
           ) : (
             <ul className="flex flex-wrap gap-3">
               {logos.map((logo) => (
@@ -164,7 +165,7 @@ export default async function SocialBrandPage({ params }: { params: Promise<{ or
               ))}
             </ul>
           )}
-          {canManage ? <AssetUploader organizationId={organization.id} brandProfileId={brand.id} assetType="logo" label="Upload a logo" accept="image/png,image/jpeg,image/webp,image/gif" /> : null}
+          {canManage ? <AssetUploader organizationId={organization.id} brandProfileId={brand.id} assetType="logo" label="Upload a logo or mascot image" accept="image/png,image/jpeg,image/webp,image/gif" /> : null}
         </div>
       </BrandSection>
 

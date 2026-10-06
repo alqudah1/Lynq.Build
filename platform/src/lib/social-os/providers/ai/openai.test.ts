@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createOpenAiImageProvider, createOpenAiTextProvider, OPENAI_IMAGES_URL, OPENAI_MODELS_URL, OPENAI_RESPONSES_URL, pickAvailableModel, OPENAI_TEXT_MODEL_PREFERENCE, readResponsesText } from "./openai";
+import { createOpenAiImageProvider, createOpenAiTextProvider, OPENAI_IMAGE_EDITS_URL, OPENAI_IMAGES_URL, OPENAI_MODELS_URL, OPENAI_RESPONSES_URL, pickAvailableModel, OPENAI_TEXT_MODEL_PREFERENCE, readResponsesText } from "./openai";
 import { SocialGenerationFailedError, SocialProviderNotConfiguredError } from "../../errors";
 import { makeFakeFetch } from "./test-fetch";
 
@@ -100,5 +100,37 @@ describe("OpenAI image provider", () => {
     expect(e).toBeInstanceOf(SocialGenerationFailedError);
     expect(e.retryable).toBe(true);
     expect(createOpenAiImageProvider({}).missingConfiguration()).toEqual(["OPENAI_API_KEY"]);
+  });
+
+  it("with brand reference images, uses the edits endpoint so the mascot stays the same", async () => {
+    const seen: { url: string; body: unknown }[] = [];
+    const fetchImpl = (async (url: string, init?: RequestInit) => {
+      seen.push({ url, body: init?.body });
+      return new Response(JSON.stringify({ data: [{ b64_json: b64 }] }), { status: 200 });
+    }) as unknown as typeof fetch;
+    const ref = { bytes: new Uint8Array([0x89, 0x50, 0x4e, 0x47]), contentType: "image/png", tag: "mascot" };
+    const r = await createOpenAiImageProvider({ OPENAI_API_KEY: "k", OPENAI_IMAGE_MODEL: "gpt-image-1" }, { fetchImpl }).generateImage({ prompt: "mascot reading a book", aspectRatio: "4:5", references: [ref] });
+    expect(seen[0].url).toBe(OPENAI_IMAGE_EDITS_URL);
+    const form = seen[0].body as FormData;
+    expect(form.get("model")).toBe("gpt-image-1");
+    expect(String(form.get("prompt"))).toContain("mascot reading a book");
+    expect(String(form.get("prompt"))).toContain("Keep that character exactly the same");
+    expect(form.getAll("image[]")).toHaveLength(1);
+    expect(Array.from(r.bytes)).toEqual([0xff, 0xd8, 0xff, 0xd9]);
+  });
+
+  it("falls back to plain generation when the edits call fails (but not on bad credentials)", async () => {
+    const urls: string[] = [];
+    const fetchImpl = (async (url: string) => {
+      urls.push(url);
+      if (url === OPENAI_IMAGE_EDITS_URL) return new Response(JSON.stringify({ error: { message: "edits not supported" } }), { status: 400 });
+      return new Response(JSON.stringify({ data: [{ b64_json: b64 }] }), { status: 200 });
+    }) as unknown as typeof fetch;
+    const ref = { bytes: new Uint8Array([1, 2, 3]), contentType: "image/jpeg", tag: "logo" };
+    await createOpenAiImageProvider({ OPENAI_API_KEY: "k", OPENAI_IMAGE_MODEL: "gpt-image-1" }, { fetchImpl }).generateImage({ prompt: "x", aspectRatio: "1:1", references: [ref] });
+    expect(urls).toEqual([OPENAI_IMAGE_EDITS_URL, OPENAI_IMAGES_URL]);
+    const denied = (async () => new Response(JSON.stringify({ error: { message: "bad key" } }), { status: 401 })) as unknown as typeof fetch;
+    const e = await createOpenAiImageProvider({ OPENAI_API_KEY: "k", OPENAI_IMAGE_MODEL: "gpt-image-1" }, { fetchImpl: denied }).generateImage({ prompt: "x", aspectRatio: "1:1", references: [ref] }).catch((x) => x);
+    expect(e).toBeInstanceOf(SocialGenerationFailedError);
   });
 });

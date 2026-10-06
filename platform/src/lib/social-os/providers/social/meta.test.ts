@@ -254,3 +254,27 @@ describe("Meta insights, engagement and ads", () => {
     expect(createMetaAdapter(env).missingConfiguration()).toEqual([]);
   });
 });
+
+describe("Meta recent media (style references)", () => {
+  const ig: SocialAccountCredential = { bundle: { accessToken: "U", scopes: [], assets: { IG1: { accessToken: "PAGE" } } }, externalAccountId: "IG1", platform: "instagram" };
+
+  it("reads the account's own latest images, using the cover frame for videos", async () => {
+    const { fetchImpl, calls } = fake([{ match: (u) => u.includes("/IG1/media"), respond: () => ({ json: { data: [
+      { id: "1", media_type: "IMAGE", media_url: "https://cdn/1.jpg" },
+      { id: "2", media_type: "VIDEO", media_url: "https://cdn/2.mp4", thumbnail_url: "https://cdn/2.jpg" },
+      { id: "3", media_type: "IMAGE" },
+      { id: "4", media_type: "CAROUSEL_ALBUM", media_url: "https://cdn/4.jpg" },
+    ] } }) }]);
+    const out = await createMetaAdapter(env, { fetchImpl }).fetchRecentMediaImages!(ig, 2);
+    expect(out).toEqual([{ url: "https://cdn/1.jpg", externalPostId: "1" }, { url: "https://cdn/2.jpg", externalPostId: "2" }]);
+    expect(calls).toHaveLength(1);
+    expect(calls[0].init?.method ?? "GET").toBe("GET");
+  });
+
+  it("does nothing for Facebook pages", async () => {
+    const { fetchImpl, calls } = fake([]);
+    const out = await createMetaAdapter(env, { fetchImpl }).fetchRecentMediaImages!({ ...ig, platform: "facebook" }, 2);
+    expect(out).toEqual([]);
+    expect(calls).toHaveLength(0);
+  });
+});

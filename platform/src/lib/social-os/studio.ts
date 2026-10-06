@@ -2,7 +2,7 @@ import "server-only";
 import { and, desc, eq, gte, inArray, isNull } from "drizzle-orm";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { z } from "zod";
-import { marketingChannelAccounts, marketingConfigurations, marketingContentItems, marketingContentPerformanceSnapshots, socialAccountMetricSnapshots, socialContentVariants } from "@/db/schema";
+import { marketingChannelAccounts, marketingConfigurations, marketingContentItems, marketingContentPerformanceSnapshots, socialAccountMetricSnapshots, socialAssets, socialContentVariants } from "@/db/schema";
 import { recordAuditEvent } from "@/lib/audit";
 import { resolveMarketingAuthContext, requireMarketingGenerateContentAuthority, requireMarketingViewAuthority, type MarketingAuthContext } from "@/lib/marketing-os/authz";
 import { enqueueJob } from "@/lib/runtime/queue";
@@ -740,7 +740,8 @@ async function regenerateImage(
   });
   let assetId: string;
   try {
-    const image = await provider.generateImage({ prompt, aspectRatio, idempotencyKey: generation.id });
+    const references = await loadBrandReferences(db, input.organizationId, input.scope.brandProfileId);
+    const image = await provider.generateImage({ prompt, aspectRatio, idempotencyKey: generation.id, ...(references.length ? { references } : {}) });
     const asset = await createGeneratedAsset(db, {
       organizationId: input.organizationId,
       brandProfileId: input.scope.brandProfileId,
@@ -1147,3 +1148,60 @@ export async function draftEngagementReply(
   };
 }
 
+/**
+ * The brand's own logo/mascot images (Brand → Logos & mascot), passed to image
+ * generation as references so a mascot stays the same character in every
+ * post. Best-effort: a missing or unreadable file just means no reference.
+ */
+async function loadBrandReferences(db: Db, organizationId: string, brandProfileId: string): Promise<{ bytes: Uint8Array; contentType: string; tag: string }[]> {
+  try {
+    const rows = await db
+      .select({ id: socialAssets.id, contentType: socialAssets.contentType })
+      .from(socialAssets)
+      .where(and(eq(socialAssets.organizationId, organizationId), eq(socialAssets.brandProfileId, brandProfileId), eq(socialAssets.assetType, "logo"), isNull(socialAssets.archivedAt)))
+      .orderBy(desc(socialAssets.createdAt))
+      .limit(3);
+    const out: { bytes: Uint8Array; contentType: string; tag: string }[] = [];
+    for (const r of rows) {
+      if (!/^image\/(png|jpeg|webp)$/.test(r.contentType)) continue;
+      const { bytes, contentType } = await resolveAssetBytes(db, { organizationId, assetId: r.id }).catch(() => ({ bytes: new Uint8Array(), contentType: "" }));
+      if (bytes.byteLength) out.push({ bytes, contentType, tag: "brand-reference" });
+    }
+    if (out.length) return out;
+    // Nothing uploaded: use the brand's own latest Instagram posts (its existing look and mascot), read through the connected account.
+    return await loadInstagramReferences(db, organizationId, brandProfileId);
+  } catch {
+    return [];
+  }
+}
+
+const REFERENCE_MAX_BYTES = 8 * 1024 * 1024;
+
+async function loadInstagramReferences(db: Db, organizationId: string, brandProfileId: string): Promise<{ bytes: Uint8Array; contentType: string; tag: string }[]> {
+  try {
+    const [account] = await db
+      .select({ id: marketingChannelAccounts.id })
+      .from(marketingChannelAccounts)
+      .where(and(eq(marketingChannelAccounts.organizationId, organizationId), eq(marketingChannelAccounts.brandProfileId, brandProfileId), eq(marketingChannelAccounts.platform, "instagram"), eq(marketingChannelAccounts.connectionStatus, "connected"), isNull(marketingChannelAccounts.archivedAt)))
+      .limit(1);
+    if (!account) return [];
+    const { resolveSocialAccountCredential } = await import("./connections");
+    const { resolveAdapterForPlatform } = await import("./providers/social/registry");
+    const { loadEnv } = await import("@/lib/env");
+    const { credential } = await resolveSocialAccountCredential(db, { organizationId, channelAccountId: account.id });
+    const adapter = resolveAdapterForPlatform("instagram", loadEnv());
+    const media = (await adapter.fetchRecentMediaImages?.(credential, 2)) ?? [];
+    const out: { bytes: Uint8Array; contentType: string; tag: string }[] = [];
+    for (const m of media) {
+      const res = await fetch(m.url).catch(() => null);
+      if (!res?.ok) continue;
+      const type = (res.headers.get("content-type") ?? "image/jpeg").split(";")[0].trim();
+      if (!/^image\/(png|jpeg|webp)$/.test(type)) continue;
+      const bytes = new Uint8Array(await res.arrayBuffer());
+      if (bytes.byteLength && bytes.byteLength <= REFERENCE_MAX_BYTES) out.push({ bytes, contentType: type, tag: "instagram-reference" });
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
