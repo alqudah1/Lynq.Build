@@ -99,6 +99,22 @@ export function buildApprovalCaption(p: Pick<SocialPendingApproval, "title" | "b
   return `${head}${body ? `\n\n${body}` : ""}${tags}`.slice(0, CAPTION_LIMIT);
 }
 
+/**
+ * The next feed post per brand that is ready to go (has its image, is not a story or reel),
+ * with every platform version of that post. Soonest scheduled first.
+ */
+export function nextPostPerBrand(drafts: SocialPendingApproval[]): SocialPendingApproval[] {
+  const ready = drafts.filter((d) => d.variant.format !== "story" && d.variant.format !== "reel" && d.variant.format !== "video" && d.variant.platform !== "linkedin" && d.assets.some((a) => a.contentType.startsWith("image/")));
+  const time = (d: SocialPendingApproval) => d.variant.scheduledFor?.getTime() ?? Number.MAX_SAFE_INTEGER;
+  const byBrand = new Map<string, string>();
+  for (const d of [...ready].sort((a, b) => time(a) - time(b))) {
+    const brand = d.brandProfileId ?? d.brandName ?? "";
+    if (!byBrand.has(brand)) byBrand.set(brand, d.contentItemId);
+  }
+  const chosen = new Set(byBrand.values());
+  return ready.filter((d) => chosen.has(d.contentItemId)).sort((a, b) => time(a) - time(b) || a.variant.platform.localeCompare(b.variant.platform));
+}
+
 export function draftKeyboard(contentVariantId: string, revision: number) {
   return { inline_keyboard: [[{ text: "📤 Send for review", callback_data: encodeDecision("submit", contentVariantId, revision) }]] };
 }
@@ -224,7 +240,7 @@ export async function handleTelegramUpdate(db: Db, env: TelegramEnv, update: Tel
     }
     if (chatId !== allowed) return { action: "ignored_chat" };
     if (/^\/(start|help)\b/.test(text)) {
-      await telegram(env, "sendMessage", { chat_id: chatId, text: "LYNQ approvals are on.\nEvery morning at 8, that day's posts arrive here — approve them for their time or post now.\n/week — the next 7 days at a glance\n/pending — posts waiting for your approval\n/drafts — every draft, with a button to send it for review" }, deps);
+      await telegram(env, "sendMessage", { chat_id: chatId, text: "LYNQ approvals are on.\nEvery morning at 8, that day's posts arrive here — approve them for their time or post now.\n/week — the next 7 days at a glance\n/pending — posts waiting for your approval\n/drafts — the next post for each brand, ready to send for review\n/drafts all — every draft" }, deps);
       return { action: "help" };
     }
     if (/^\/pending\b/.test(text)) {
@@ -260,10 +276,20 @@ export async function handleTelegramUpdate(db: Db, env: TelegramEnv, update: Tel
       }
       const drafts: SocialPendingApproval[] = [];
       for (const organizationId of approver.organizationIds) drafts.push(...(await listDraftsAwaitingReview(db, { organizationId, actorUserId: approver.userId }).catch(() => [])));
-      if (!drafts.length) await telegram(env, "sendMessage", { chat_id: chatId, text: "No drafts. Everything is either waiting in /pending or already decided." }, deps);
-      else if (drafts.length > 20) await telegram(env, "sendMessage", { chat_id: chatId, text: `Showing the first 20 of ${drafts.length} drafts.` }, deps);
-      for (const d of drafts.slice(0, 20)) await sendPending(db, env, chatId, d, deps, "draft");
-      return { action: `drafts:${drafts.length}` };
+      if (!drafts.length) {
+        await telegram(env, "sendMessage", { chat_id: chatId, text: "No drafts. Everything is either waiting in /pending or already decided." }, deps);
+        return { action: "drafts:0" };
+      }
+      if (/^\/drafts\s+all\b/.test(text)) {
+        if (drafts.length > 20) await telegram(env, "sendMessage", { chat_id: chatId, text: `Showing the first 20 of ${drafts.length} drafts.` }, deps);
+        for (const d of drafts.slice(0, 20)) await sendPending(db, env, chatId, d, deps, "draft");
+        return { action: `drafts:${drafts.length}` };
+      }
+      // Default: the next post for each brand (its Instagram and Facebook versions), nothing else. Stories and reels follow once the post is sent.
+      const next = nextPostPerBrand(drafts);
+      if (!next.length) await telegram(env, "sendMessage", { chat_id: chatId, text: `No post is ready to go yet (${drafts.length} drafts are still waiting on an image or video). Send /drafts all to see everything.` }, deps);
+      for (const d of next) await sendPending(db, env, chatId, d, deps, "draft");
+      return { action: `drafts:${next.length}/${drafts.length}` };
     }
     return { action: "ignored_text" };
   }
