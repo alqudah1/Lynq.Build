@@ -448,6 +448,7 @@ export function buildImagePrompt(input: { brand: SocialBrand; brief: SocialConte
     input.hook ? `The post's message: ${input.hook}` : "",
     visual ? `Brand visual identity:\n${visual}` : "",
     `Format: a ${SOCIAL_PLATFORM_LABELS[input.platform]} post visual. No fake logos, no fake UI text, no invented statistics. Avoid rendering long text in the image.`,
+    "Composition: keep every logo, headline and important element well inside the frame, at least 12% away from the top and bottom edges. The outer top and bottom strips are trimmed before posting.",
   ]
     .filter(Boolean)
     .join("\n")
