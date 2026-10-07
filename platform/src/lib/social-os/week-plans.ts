@@ -2,9 +2,10 @@ import "server-only";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { marketingChannelAccounts, marketingContentItems } from "@/db/schema";
+import { resolveAssetRow } from "./assets";
 import { createBrand, listBrands } from "./brands";
 import { updateAccount } from "./connections";
-import { createContentItem, getContentItemForUser, getVariantForUser, updateVariant, type SocialContentItem } from "./content";
+import { archiveContentItem, createContentItem, getContentItemForUser, getVariantForUser, updateVariant, type SocialContentItem } from "./content";
 import { regenerateVariantPart, zonedDateTimeToUtc } from "./studio";
 import type { BrandProfileInput, SocialContentBrief, SocialContentKind, SocialOrganicPlatform, SocialVariantPlatformOptions } from "./validation";
 
@@ -96,6 +97,8 @@ export interface WeekPlan {
   reels: PlanReel[];
   linkedin: PlanLinkedIn[];
   highlights: Record<string, string[]>;
+  /** Entry keys removed from the plan: their loaded drafts (and stories) are archived on the next load. */
+  retired?: string[];
 }
 
 const LYNQ: PlanBrandRef = { brandKey: "lynq", matchName: /^lynq\b/i };
@@ -136,8 +139,9 @@ const CODEIT_LOOK = "Match @codeitlearn exactly: warm cream background, the oran
 export const WEEK_PLANS: WeekPlan[] = [
   {
     key: "2026-10-12",
-    label: "Week of Oct 12 — LYNQ + CodeIt",
-    weekStart: "2026-10-12",
+    label: "Week of Oct 6 — LYNQ + CodeIt",
+    weekStart: "2026-10-07",
+    retired: ["lynq-wed", "lynq-sat", "lynq-mon", "codeit-mon"],
     highlights: {
       LYNQ: ["START HERE", "WORK", "RESULTS", "PRICING", "BEHIND"],
       CodeIt: ["START HERE", "BUILDS", "LESSONS", "PRICING", "ABOUT"],
@@ -145,7 +149,7 @@ export const WEEK_PLANS: WeekPlan[] = [
     feed: [
       // ── LYNQ — grid rows read PROOF → TEACH → OFFER/FOUNDER. Series names repeat every week so people learn them.
       {
-        key: "lynq-mon", brand: LYNQ, day: "2026-10-12", time: "12:15", pillar: "PROOF", storyHighlight: "WORK",
+        key: "lynq-mon-r", brand: LYNQ, day: "2026-10-07", time: "12:15", pillar: "PROOF", storyHighlight: "WORK",
         title: "LYNQ · PROOF 01 — Kingsbridge Group", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "Two people visit a property manager's website. Only one of them is a customer yet.",
         body: "Two people visit a property manager's website.\n\nOne owns a building and is deciding who to trust with it. The other is a tenant with a leak at 11pm.\n\nKingsbridge Group's site has to work for both. The owner needs to feel confident. The tenant needs to find help fast.\n\nWe designed it, built it, and we still look after it.\n\nRunning a local business with a site that isn't pulling its weight? DM \"AUDIT\" and I'll send you a free 5 minute review.",
@@ -154,7 +158,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `Two brass keys on one ring lying on black stone under a single hard light — a small paper tag on one reads "OWNER", the other "TENANT", the tenant tag lit lime. "PROOF 01 · Kingsbridge Group" small at the top, "One site. Two visitors." large in white. ${HONEST_CARD} ${LYNQ_LOOK}`,
               },
       {
-        key: "lynq-tue", brand: LYNQ, day: "2026-10-13", time: "07:30", pillar: "TEACH", storyHighlight: null,
+        key: "lynq-tue", brand: LYNQ, day: "2026-10-08", time: "07:30", pillar: "TEACH", storyHighlight: null,
         title: "LYNQ · FIX THIS — Your menu is a PDF", kind: "carousel", platforms: ["instagram", "facebook"],
         hook: "Your menu is a PDF. That's costing you tables.",
         body: "FIX THIS: your menu is a PDF.\n\nOn a phone, a PDF menu opens tiny, loads slowly, and makes people pinch and zoom. Someone hungry at 6:40pm doesn't zoom. They go back and tap the next restaurant.\n\nThe fix takes an afternoon:\n1. A real menu page (text, not a file)\n2. A booking button at the top of every page\n3. Hours and phone number you can see without scrolling\n\nSave this for your next website update, or send it to the restaurant owner who needs it.",
@@ -163,16 +167,16 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `A real paper restaurant menu folded down into a tiny unreadable square, sitting on a giant phone screen like a postage stamp; a lime magnifying glass hovers over it. "FIX THIS" small in lime, "Your menu is a PDF." large in white. ${LYNQ_LOOK}`,
       },
       {
-        key: "lynq-wed", brand: LYNQ, day: "2026-10-14", time: "18:30", pillar: "OFFER", storyHighlight: "PRICING",
-        title: "LYNQ · THE RECEIPT — What $2,500 buys", kind: "carousel", platforms: ["instagram", "facebook"],
-        hook: "Most agencies say \"it depends.\" This is the receipt.",
-        body: "THE RECEIPT: Launch Site, $2,500. One time.\n\nWhat's on it:\n✓ A 5 page website, built for phones first\n✓ Your Google Business Profile set up properly\n✓ A booking or contact form that lands in your inbox\n✓ Live in 10 days\n\nWhat's not on it: hourly billing, surprise invoices, or \"it depends.\"\n\nBuilt for trades, clinics and restaurants with no website, or one from 2018.\n\nDM \"SITE\" and I'll tell you honestly if it's right for you.",
-        facebookBody: "Launch Site: $2,500, one time.\n\n✓ 5 page website, built for phones first\n✓ Google Business Profile set up properly\n✓ Booking or contact form to your inbox\n✓ Live in 10 days\n\nNo hourly billing, no surprises. For trades, clinics and restaurants with no website, or one from 2018. Message us to see if it fits.",
+        key: "lynq-offer-2", brand: LYNQ, day: "2026-10-09", time: "18:30", pillar: "OFFER", storyHighlight: "PRICING",
+        title: "LYNQ · WHAT YOU GET — A site that answers", kind: "image_post", platforms: ["instagram", "facebook"],
+        hook: "A website that gets you customers has four parts. Most local sites have one.",
+        body: "WHAT YOU GET with a LYNQ site:\n\n1. Built for phones first, with the booking or call button at the top of every page\n2. Your Google Business Profile set up properly, so people find you before they find your competitor\n3. A form that replies by text and email in under a minute, with your booking link inside\n4. We keep it running after launch. Hours change, photos change, we update it\n\nWhat you don't get: hourly billing or surprise invoices. You get a written quote for your business before anything starts.\n\nTrades, clinics and restaurants across the GTA.\n\nDM \"SITE\" and I'll tell you what it would take for yours.",
+        facebookBody: "A LYNQ site comes with four things:\n\n1. Phone first, booking or call button at the top of every page\n2. Google Business Profile set up properly\n3. A form that replies by text and email in under a minute\n4. We keep it running after launch\n\nNo hourly billing, no surprise invoices. A written quote for your business before anything starts. Message us to see what yours would take.",
         hashtags: LYNQ_TAGS, callToAction: "DM SITE",
-        creativeDirection: `A long thermal receipt curling out of a laptop screen onto a black desk under one hard side light. Line items "5 pages", "Google profile", "Booking form", "Live in 10 days"; "TOTAL $2,500" in lime; "THE RECEIPT" small at the top. ${LYNQ_LOOK}`,
+        creativeDirection: `A matte black clipboard on a dark desk under one hard side light, a single sheet with four lime check marks beside short lines of text: "Phone first", "Google profile", "Replies in 60s", "Kept running". "WHAT YOU GET" small in lime at the top. No prices, no dollar signs. ${HONEST_CARD} ${LYNQ_LOOK}`,
       },
       {
-        key: "lynq-thu", brand: LYNQ, day: "2026-10-15", time: "12:15", pillar: "PROOF", storyHighlight: "WORK",
+        key: "lynq-thu", brand: LYNQ, day: "2026-10-10", time: "12:15", pillar: "PROOF", storyHighlight: "WORK",
         title: "LYNQ · PROOF 02 — Nasma", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "People open a restaurant's website for three things. We built Nasma's around them.",
         body: "People open a restaurant's website for three things: the menu, the hours, and a way to book.\n\nEverything else is decoration.\n\nFor Nasma we started with those three, then made the whole thing look as good as the food.\n\nOwn a restaurant in the GTA? DM \"AUDIT\" for a free 5 minute review of your site.",
@@ -181,7 +185,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `Three objects in a row on a near-black table, each in its own pool of warm light: a folded blank menu card, a small brass clock, a silver reservation bell with a lime glint. "PROOF 02 · Nasma" small at the top, "Menu. Hours. Book." large in white with lime dots. ${HONEST_CARD} ${LYNQ_LOOK}`,
               },
       {
-        key: "lynq-fri", brand: LYNQ, day: "2026-10-16", time: "12:15", pillar: "TEACH", storyHighlight: null,
+        key: "lynq-fri", brand: LYNQ, day: "2026-10-11", time: "12:15", pillar: "TEACH", storyHighlight: null,
         title: "LYNQ · FIX THIS — 5 empty fields on your Google profile", kind: "carousel", platforms: ["instagram", "facebook"],
         hook: "Before anyone sees your website, they see this. Most owners leave half of it empty.",
         body: "FIX THIS: your Google Business Profile.\n\nBefore anyone sees your website, they see this. And most local businesses leave half of it empty:\n\n1. Business description\n2. Services (with prices if you can)\n3. Hours, including holidays\n4. Photos of the real place and real work\n5. A booking or website link\n\nIt's free, it takes an hour, and it's often the first impression you make.\n\nSave this and do it this weekend.",
@@ -190,16 +194,16 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `A shopfront window at night with five empty lit picture frames hanging on the glass, each labelled in small lime type: description, services, hours, photos, booking. "FIX THIS" small in lime. ${LYNQ_LOOK}`,
       },
       {
-        key: "lynq-sat", brand: LYNQ, day: "2026-10-17", time: "10:00", pillar: "FOUNDER", storyHighlight: "BEHIND",
-        title: "LYNQ · FOUNDER — Why I stopped saying \"it depends\"", kind: "image_post", platforms: ["instagram", "facebook"],
-        hook: "The worst answer to \"how much is a website?\" is the one most agencies give.",
-        body: "\"How much is a website?\"\n\n\"It depends\" is the most common answer in my industry, and I think it's a cop out. Most of the time it means: we'll find out how much you're willing to pay.\n\nSo LYNQ sells fixed packages with fixed prices. You know what you get, what it costs and when it's live before we start.\n\nThis week I also changed how we post. Every post gets drafted, sent to my phone, and only goes out when I approve it. Same rule as client work. Nothing ships without a human saying yes.\n\nI'm Mustafa. Ask me anything, the comments are open.",
-        facebookBody: "\"How much is a website?\" \"It depends\" usually means \"we'll see what you'll pay.\"\n\nSo LYNQ sells fixed packages at fixed prices. You know what you get, what it costs and when it's live before we start.\n\nI'm Mustafa. Questions welcome in the comments.",
+        key: "lynq-founder-2", brand: LYNQ, day: "2026-10-12", time: "10:00", pillar: "FOUNDER", storyHighlight: "BEHIND",
+        title: "LYNQ · FOUNDER — The 9pm test", kind: "image_post", platforms: ["instagram", "facebook"],
+        hook: "I fill in contact forms at 9pm to see who answers. Almost nobody does.",
+        body: "I have a habit. When I look at a local business website, I fill in the contact form at 9pm and wait.\n\nMost of the time, nothing. A reply the next afternoon if I'm lucky. By then the person who needed a plumber, a table or an appointment has already booked with someone else.\n\nThat's why every LYNQ site replies on its own. Form in, text and email out, with the booking link, in under a minute. Then the owner follows up in the morning like normal.\n\nIt's also how we run LYNQ itself. Every post you see here was drafted, checked and approved from my phone before it went out. Nothing ships without a human saying yes.\n\nI'm Mustafa. Ask me anything, the comments are open.",
+        facebookBody: "I fill in local business contact forms at 9pm to see who answers. Almost nobody does. By the next afternoon the customer has booked with someone else.\n\nSo every LYNQ site replies on its own, by text and email, in under a minute. The owner follows up in the morning.\n\nI'm Mustafa. Questions welcome in the comments.",
         hashtags: ["Founder", ...LYNQ_TAGS.slice(0, 2)], callToAction: "Comments open",
-        creativeDirection: `Pull-quote card: huge white quotation marks in lime, the line "\"It depends\" isn't a price." set large in thin editorial type, and "— Mustafa, LYNQ" small underneath; a crumpled agency quote sheet sits out of focus in the corner. ${HONEST_CARD} ${LYNQ_LOOK}`,
+        creativeDirection: `Pull-quote card: lime quotation marks, the line "The business that replies first gets the job." set large in thin editorial type, "— Mustafa, LYNQ" small underneath; a phone face-down on a dark desk with a single notification glow, clock reading 9:04. ${HONEST_CARD} ${LYNQ_LOOK}`,
       },
       {
-        key: "lynq-sun", brand: LYNQ, day: "2026-10-18", time: "12:15", pillar: "PROOF", storyHighlight: "WORK",
+        key: "lynq-sun", brand: LYNQ, day: "2026-10-13", time: "12:15", pillar: "PROOF", storyHighlight: "WORK",
         title: "LYNQ · PROOF 03 — Finding Amy", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "An events business needs its website to do one thing: get the date request.",
         body: "An events business needs its website to do exactly one thing: get the date request.\n\nFinding Amy runs a photo booth for events. Their customers want to see the booth at a real party, see what's included, and ask about their date, fast.\n\nSo the whole site walks that one path.\n\nWant your site built around the one thing that pays you? DM \"AUDIT\".",
@@ -208,7 +212,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `A single glowing lime line drawn across a dark event-hall floor, scattered with gold confetti, ending at a desk calendar with one date circled; an empty instant-photo strip with blank frames lies beside it. "PROOF 03 · Finding Amy" small at the top, "One path." large in white. ${HONEST_CARD} ${LYNQ_LOOK}`,
               },
       {
-        key: "lynq-mon2", brand: LYNQ, day: "2026-10-19", time: "07:30", pillar: "TEACH", storyHighlight: null,
+        key: "lynq-mon2", brand: LYNQ, day: "2026-10-14", time: "07:30", pillar: "TEACH", storyHighlight: null,
         title: "LYNQ · FIX THIS — Slow replies lose the job", kind: "carousel", platforms: ["instagram", "facebook"],
         hook: "They filled in your form. They also filled in two others.",
         body: "FIX THIS: slow replies.\n\nSomeone fills in your contact form. They also filled in two others.\n\nThe business that answers first usually gets the job. At 9pm, that's rarely you.\n\nThe fix isn't working later. It's an instant reply: a text and an email that go out the moment the form is sent, with your booking link inside.\n\nThat's what our Lead Engine sets up.\n\nSend this to a business owner who's always \"getting back to people.\"",
@@ -219,7 +223,7 @@ export const WEEK_PLANS: WeekPlan[] = [
 
       // ── CodeItLearn — keeps the mascot world from the existing grid. Rows read BUILD → LEARN → HOW/FOUNDER/OFFER.
       {
-        key: "codeit-mon", brand: CODEIT, day: "2026-10-12", time: "19:30", pillar: "BUILD", storyHighlight: "BUILDS",
+        key: "codeit-mon-r", brand: CODEIT, day: "2026-10-07", time: "19:30", pillar: "BUILD", storyHighlight: "BUILDS",
         title: "CodeIt · One sentence in. One game out.", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "Your kid types one sentence. A minute later, they're playing it.",
         body: "\"A game where a cat catches falling pizza.\"\n\nThat one sentence is all it takes. CodeIt builds a working first version, and then the real part starts.\n\nYour kid makes it faster. Changes the colours. Adds a score. And every change shows them the code behind it.\n\nStart with their idea, end with their code.\n\nFree to start, no card needed. Ages 5 to 18.\nLink in bio: codeitlearn.com",
@@ -228,7 +232,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `The mascot surfing a giant pizza slice through its own bright 2D game world that bursts out of the laptop screen; a sticky note on the laptop reads "a cat catches falling pizza". Headline "One sentence in. One game out." ${CODEIT_LOOK}`,
       },
       {
-        key: "codeit-tue", brand: CODEIT, day: "2026-10-13", time: "19:30", pillar: "LEARN", storyHighlight: "LESSONS",
+        key: "codeit-tue", brand: CODEIT, day: "2026-10-08", time: "19:30", pillar: "LEARN", storyHighlight: "LESSONS",
         title: "CodeIt · Same 20 minutes.", kind: "carousel", platforms: ["instagram", "facebook"],
         hook: "Same 20 minutes of screen time. Two very different kids at the end of it.",
         body: "Same 20 minutes. Same screen.\n\nOne kid watched someone else play a game.\nOne kid made one.\n\nScreen time isn't the problem. Passive screen time is. Three questions that tell you which kind it was:\n\n1. \"What did you make?\"\n2. \"What would you change about it?\"\n3. \"Can you show me how it works?\"\n\nIf they can answer number 3, they learned something.\n\nSave this for after dinner tonight.",
@@ -237,7 +241,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `Mirror composition with one wall clock showing 20 minutes: left half grey and sleepy, the mascot slumped on a couch with a tablet; right half bright and warm, the same mascot building a rocket out of colourful code blocks. Headline "Same 20 minutes." ${CODEIT_LOOK}`,
       },
       {
-        key: "codeit-wed", brand: CODEIT, day: "2026-10-14", time: "19:30", pillar: "HOW IT WORKS", storyHighlight: "START HERE",
+        key: "codeit-wed", brand: CODEIT, day: "2026-10-09", time: "19:30", pillar: "HOW IT WORKS", storyHighlight: "START HERE",
         title: "CodeIt · We prove it.", kind: "carousel", platforms: ["instagram", "facebook"],
         hook: "Kids can code. We prove it. Here's how.",
         body: "Our bio says \"Kids can code. We prove it.\" This is the proof part.\n\nA lot of coding apps only check whether the code runs. That's easy to fake. Copy, paste, done.\n\nCodeIt checks whether your kid understands it. After a build, it asks questions made from their own project. The wrong answers come from other real values in that same file, so guessing doesn't work. Only answers that are right the first time count.\n\nCopying isn't learning. Explaining is.\n\nTry it free, link in bio.",
@@ -246,7 +250,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `The mascot as a detective in a tiny trench coat with a magnifying glass, inspecting one giant highlighted line of code; a quiz card pinned like evidence on a corkboard with red string. Headline "We prove it." ${CODEIT_LOOK}`,
       },
       {
-        key: "codeit-thu", brand: CODEIT, day: "2026-10-15", time: "19:30", pillar: "BUILD", storyHighlight: "BUILDS",
+        key: "codeit-thu", brand: CODEIT, day: "2026-10-10", time: "19:30", pillar: "BUILD", storyHighlight: "BUILDS",
         title: "CodeIt · Their obsession, their app", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "Whatever your kid won't stop talking about can become an app they built.",
         body: "Dinosaurs. Football. Minecraft. Their favourite snack.\n\nWhatever your kid won't stop talking about can become a quiz app they built themselves.\n\nThey describe it. CodeIt builds the first version. Then they make it theirs with new questions, new colours, a harder level, and they see the code behind every change.\n\nWhat would your kid build first? (Example project shown.)\n\nAges 5 to 18. Free to start.",
@@ -255,7 +259,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `The mascot wearing a dinosaur-costume hood, proudly holding up a tablet with a bright dinosaur quiz app (big rounded orange answer buttons) while a toy T-rex cheers on the desk. Small label "example project". ${CODEIT_LOOK}`,
       },
       {
-        key: "codeit-fri", brand: CODEIT, day: "2026-10-16", time: "19:30", pillar: "LEARN", storyHighlight: "LESSONS",
+        key: "codeit-fri", brand: CODEIT, day: "2026-10-11", time: "19:30", pillar: "LEARN", storyHighlight: "LESSONS",
         title: "CodeIt · Lesson 1 of 31: make the computer say your name", kind: "carousel", platforms: ["instagram", "facebook"],
         hook: "The first line of Python almost every coder ever wrote. Try it with your kid tonight.",
         body: "Lesson 1 of 31: print()\n\nprint(\"Hello!\")\n\nThat's the first line of Python almost every coder ever wrote. It tells the computer: show this on the screen.\n\nTry it with your kid tonight. Change \"Hello!\" to their name. Press run. That's programming.\n\nAll 31 beginner lessons and the Python playground are free for everyone, with no AI involved, so the learning is theirs.\n\nSave this for the weekend.",
@@ -264,7 +268,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `The mascot shouting through a megaphone made of curly code brackets; the speech bubble print("Hello!") turns into the word Hello! in big bouncy letters. Headline "Lesson 1 of 31". ${CODEIT_LOOK}`,
       },
       {
-        key: "codeit-sat", brand: CODEIT, day: "2026-10-17", time: "10:00", pillar: "FOUNDER", storyHighlight: "ABOUT",
+        key: "codeit-sat", brand: CODEIT, day: "2026-10-12", time: "10:00", pillar: "FOUNDER", storyHighlight: "ABOUT",
         title: "CodeIt · Why I'm building CodeIt", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "I teach kids to code. Here's the moment that made me build CodeIt.",
         body: "I'm Mustafa. I teach kids to code in Toronto, and I ran CodeIt's first workshop at Northcrest's Community Sundays.\n\nWhat I see in class: kids light up when they build something that's theirs, and tune out when it's another worksheet.\n\nSo CodeIt starts with their idea, builds the first version with them, then makes sure they understand every line.\n\nParents and teachers: what would you want it to do next? Comments are open.",
@@ -273,7 +277,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `Quote card: the mascot standing at a small whiteboard with a marker, having just written "Start with their idea. End with their code." in chunky navy type; "— Mustafa, founder" small in orange underneath. No real people. ${CODEIT_LOOK}`,
       },
       {
-        key: "codeit-sun", brand: CODEIT, day: "2026-10-18", time: "10:00", pillar: "OFFER", storyHighlight: "PRICING",
+        key: "codeit-sun", brand: CODEIT, day: "2026-10-13", time: "10:00", pillar: "OFFER", storyHighlight: "PRICING",
         title: "CodeIt · Free means free", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "Free to start. No card. Here's exactly what's included.",
         body: "\"Free\" usually means \"free until we ask for your card.\" Not with CodeIt.\n\nFree for everyone:\n✓ 31 beginner Python lessons\n✓ The Python playground\n✓ 10 AI assisted builds a month\nNo card needed.\n\nFamily plan: CA$12/month.\n\nBuilt for ages 5 to 18.\nStart free at codeitlearn.com (link in bio)",
@@ -284,7 +288,7 @@ export const WEEK_PLANS: WeekPlan[] = [
     ],
     reels: [
       {
-        key: "lynq-reel-tue", brand: LYNQ, day: "2026-10-13", time: "18:30", series: "BUILD LOG",
+        key: "lynq-reel-tue", brand: LYNQ, day: "2026-10-09", time: "18:30", series: "BUILD LOG",
         title: "LYNQ Reel · BUILD LOG — Day 1 of 10",
         hook: "I'm building a local business a website in 10 days. This is Day 1.",
         body: "BUILD LOG, Day 1 of 10.\n\nDay 1 isn't design. It's one question: what does the person visiting this site actually want to do?\n\nBook. Call. Get a quote. Everything we build after today serves that one answer.\n\nFollow to watch the next 9 days.\nWant yours built the same way? DM \"SITE\".",
@@ -299,7 +303,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         ],
       },
       {
-        key: "lynq-reel-thu", brand: LYNQ, day: "2026-10-15", time: "18:30", series: "WATCH IT WORK",
+        key: "lynq-reel-thu", brand: LYNQ, day: "2026-10-11", time: "18:30", series: "WATCH IT WORK",
         title: "LYNQ Reel · WATCH IT WORK — one tap, live",
         hook: "This post went live because I tapped one button on my phone.",
         body: "WATCH IT WORK: this post went live because I tapped one button.\n\nThe system drafts it. My phone buzzes. I read the caption, check the image, tap ✅, and it's on Instagram and Facebook.\n\nNo logging into four apps. No \"I'll post Thursday\" that turns into next month.\n\nIt's what our Growth System sets up for clients.\nDM \"GROW\" and I'll show you how it would work for you.",
@@ -314,7 +318,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         ],
       },
       {
-        key: "lynq-reel-sat", brand: LYNQ, day: "2026-10-17", time: "12:15", series: "FIX THIS",
+        key: "lynq-reel-sat", brand: LYNQ, day: "2026-10-13", time: "12:15", series: "FIX THIS",
         title: "LYNQ Reel · FIX THIS — 60 seconds on a clinic's website",
         hook: "60 seconds on a GTA clinic's website. Watch where the bookings leak.",
         body: "FIX THIS: 60 seconds on a GTA clinic's website (name hidden).\n\nThe three things I check first on every clinic site:\n1. Can a patient on a phone find \"Book\" without scrolling?\n2. Are the hours and phone number on every page?\n3. Do the Google reviews show up on the site?\n\nWatch what this one gets wrong.\n\nWant me to do yours? DM \"AUDIT\". It's free.",
@@ -330,7 +334,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         ],
       },
       {
-        key: "codeit-reel-tue", brand: CODEIT, day: "2026-10-13", time: "16:30", series: "IDEA → GAME",
+        key: "codeit-reel-tue", brand: CODEIT, day: "2026-10-08", time: "16:30", series: "IDEA → GAME",
         title: "CodeIt Reel · Idea → game in under a minute",
         hook: "Type a sentence. Get a game. Then see the code.",
         body: "One sentence becomes a playable game, and then you see the code behind it. Under a minute.\n\nWhat should we build next? Drop your kid's wildest game idea below and we'll build one of them on camera.\n\nCodeIt is free to start for ages 5 to 18. Link in bio.",
@@ -345,7 +349,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         ],
       },
       {
-        key: "codeit-reel-thu", brand: CODEIT, day: "2026-10-15", time: "16:30", series: "PYTHON IN 20 SECONDS",
+        key: "codeit-reel-thu", brand: CODEIT, day: "2026-10-10", time: "16:30", series: "PYTHON IN 20 SECONDS",
         title: "CodeIt Reel · Python in 20 seconds: print()",
         hook: "Your kid's first line of Python, in 20 seconds.",
         body: "Your kid's first line of Python, in 20 seconds.\n\nType print(\"Hello!\"), change it to their name, run it.\n\nSend this to a parent who keeps saying \"I don't know anything about coding.\" Neither did anyone, before line 1.\n\n31 free lessons at codeitlearn.com.",
@@ -359,7 +363,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         ],
       },
       {
-        key: "codeit-reel-sat", brand: CODEIT, day: "2026-10-17", time: "11:00", series: "WE PROVE IT",
+        key: "codeit-reel-sat", brand: CODEIT, day: "2026-10-12", time: "11:00", series: "WE PROVE IT",
         title: "CodeIt Reel · The question after the build",
         hook: "Copying code is easy. Explaining it is learning.",
         body: "Copying code is easy. Explaining it is learning.\n\nAfter every build, CodeIt asks your kid about their own code. The wrong answers come from their own project, so guessing doesn't work.\n\nKids can code. We prove it.\nTry it free, link in bio.",
@@ -376,21 +380,21 @@ export const WEEK_PLANS: WeekPlan[] = [
     linkedin: [
       {
         key: "lynq-li-tue", brand: LYNQ, day: "2026-10-13", time: "08:15", pillar: "FOUNDER",
-        title: "LinkedIn · Mustafa — I stopped saying \"it depends\"",
-        body: "\"How much does a website cost?\"\n\nFor years the standard answer in my industry has been \"it depends.\" I used to say it too.\n\nTo a local business owner it means one thing: \"I'm going to find out how much you're willing to pay.\" It's the least trustworthy sentence a small business can hear at the moment it's deciding whether to trust you.\n\nSo at LYNQ we stopped.\n\nWe sell three fixed packages with the price on the page. The entry one is a 5-page site, a properly set-up Google Business Profile and a booking form, live in 10 days, for $2,500.\n\nWhy it's worth it:\n1. Calls get shorter. People arrive already knowing if it fits.\n2. The package is the scope, so there's less to argue about later.\n3. I spend my time building instead of writing custom quotes.\n\nFixed pricing isn't for everyone. Complex builds still need a conversation. But for most local businesses, the honest answer to \"how much?\" is a number.\n\nIf you run a service business: do you publish your prices? Why or why not?",
+        title: "LinkedIn · Mustafa — The 9pm test",
+        body: "I have a habit that annoys business owners until it helps them.\n\nWhen I look at a local business website, I fill in the contact form at 9pm. Then I wait.\n\nMost of the time, nothing happens. Sometimes a reply arrives the next afternoon. By then the person who needed a plumber, a table or an appointment has already booked with whoever answered first.\n\nThis isn't a design problem. The site can be beautiful. It's a response problem, and it happens after hours, when the owner is the one person who can't be at a keyboard.\n\nSo every site LYNQ builds replies on its own. Form in, text and email out within a minute, with the booking link inside. The owner follows up in the morning, like normal, except the customer already feels looked after.\n\nWe run LYNQ the same way. Every post goes out only after a human approves it from a phone. The automation does the waiting. People make the decisions.\n\nIf you run a service business: fill in your own contact form tonight at 9pm. What happens?",
       },
       {
-        key: "lynq-li-thu", brand: LYNQ, day: "2026-10-15", time: "08:15", pillar: "TEACH",
+        key: "lynq-li-thu", brand: LYNQ, day: "2026-10-09", time: "08:15", pillar: "TEACH",
         title: "LinkedIn · Mustafa — The 3 checks I run on every local business site",
         body: "I review a lot of local business websites. Before design, before SEO, I check three things, and plenty of sites miss at least one.\n\n1. Can a customer on a phone find the main action without scrolling?\nBook, call, get a quote. If it's below three paragraphs of \"welcome to our family business,\" most visitors never see it.\n\n2. Are the hours and phone number on every page?\nNot just the contact page. People land on inner pages from Google.\n\n3. Does the site show proof that already exists?\nMost businesses have Google reviews. Very few show them on their own website, where the decision actually happens.\n\nNone of these need a redesign. All three can usually be fixed in an afternoon.\n\nIf you own or market a local business, run these three on your own site today. If you want a second pair of eyes, send me a message and I'll do a free 5-minute review.",
       },
       {
-        key: "codeit-li-wed", brand: CODEIT, day: "2026-10-14", time: "08:15", pillar: "FOUNDER",
+        key: "codeit-li-wed", brand: CODEIT, day: "2026-10-08", time: "08:15", pillar: "FOUNDER",
         title: "LinkedIn · Mustafa — What kids actually need to learn now",
         body: "I teach kids to code in Toronto. A question I hear from parents: \"Does my kid still need to learn coding if AI can write it?\"\n\nMy honest answer: they need it more, just a different version of it.\n\nWhen AI writes the first draft, the valuable skills move:\n1. Saying clearly what you want\n2. Reading code someone (or something) else wrote\n3. Predicting what it will do before you run it\n4. Finding the line that's wrong when the result isn't what you asked for\n\nThat's what I built CodeIt around. A kid describes a game, gets a working first version, then changes it and sees the code behind every change. After each build, CodeIt asks them questions made from their own project. The wrong answers come from that same file, so you can't guess your way through.\n\nTyping code was never the point. Understanding it is.\n\nTeachers and parents: how are you thinking about this?",
       },
       {
-        key: "codeit-li-fri", brand: CODEIT, day: "2026-10-16", time: "08:15", pillar: "HOW IT WORKS",
+        key: "codeit-li-fri", brand: CODEIT, day: "2026-10-10", time: "08:15", pillar: "HOW IT WORKS",
         title: "LinkedIn · Mustafa — Why our quiz questions come from the kid's own code",
         body: "A lot of coding platforms for kids check one thing: does the code run?\n\nThe problem is that \"it runs\" is easy to fake. Copy, paste, green tick. The platform reports progress. The kid learned nothing.\n\nWhen I designed CodeIt's comprehension checks, I set three rules:\n\n1. Questions are generated from the child's own project file, not a generic question bank.\n2. The wrong answer options come from other real values in that same file, so every option looks plausible to someone who didn't read the code.\n3. Only first-time-correct answers count toward progress.\n\nThe result is slower-looking progress and much more honest progress. A parent can trust that \"done\" means understood.\n\nCodeIt is free to start for ages 5 to 18. The 31 beginner Python lessons and the playground are free for everyone, and the family plan is CA$12/month.\n\nIf you build learning products: how do you measure understanding rather than completion?",
       },
@@ -405,7 +409,13 @@ export function getWeekPlan(key: string): WeekPlan | undefined {
 /** The plan whose week contains (or comes right after) `now`, for the calendar's "Load week plan" button. */
 export function currentWeekPlan(now: Date = new Date()): WeekPlan | undefined {
   const today = now.toISOString().slice(0, 10);
-  return WEEK_PLANS.filter((p) => addDays(p.weekStart, 7) > today).sort((a, b) => a.weekStart.localeCompare(b.weekStart))[0];
+  return WEEK_PLANS.filter((p) => planEnd(p) >= today).sort((a, b) => a.weekStart.localeCompare(b.weekStart))[0];
+}
+
+/** The last day any entry in the plan is scheduled for. */
+export function planEnd(plan: WeekPlan): string {
+  const days = [...plan.feed, ...plan.reels, ...plan.linkedin].map((e) => e.day);
+  return days.length ? days.sort()[days.length - 1]! : addDays(plan.weekStart, 6);
 }
 
 function addDays(day: string, n: number): string {
@@ -492,6 +502,22 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
     for (const v of item.variants) if (!v.archivedAt && v.channelAccountId && !accountFor.has(`${brandKey}|${v.platform}`)) accountFor.set(`${brandKey}|${v.platform}`, v.channelAccountId);
   };
 
+  // 1b. Entries removed from the plan: archive their drafts so the morning send never picks them up.
+  for (const key of plan.retired ?? []) {
+    for (const marker of [planMarker(plan.key, key), planMarker(plan.key, `${key}-story`)]) {
+      const id = await findMarkedItem(db, input.organizationId, marker);
+      if (!id) continue;
+      try {
+        const item = await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId: id, actorUserId: input.actorUserId });
+        if (item.variants.some((v) => !v.archivedAt && !RESCHEDULABLE.has(v.status))) continue;
+        await archiveContentItem(db, { organizationId: input.organizationId, contentItemId: id, actorUserId: input.actorUserId, expectedRevision: item.revision });
+        report.skipped.push(`${item.title}: retired from the plan`);
+      } catch (err) {
+        report.skipped.push(`${key}: couldn't retire (${err instanceof Error ? err.message.slice(0, 80) : "unknown"})`);
+      }
+    }
+  }
+
   // 2. Feed posts (+ a story for each).
   for (const post of plan.feed) {
     const brandProfileId = brandIds.get(post.brand.brandKey);
@@ -528,7 +554,7 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
       if (existingId) {
         item = await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId: existingId, actorUserId: input.actorUserId });
         // Re-loading the plan updates the copy of posts nobody has touched yet (still drafts), so caption fixes land without re-creating anything.
-        const refreshed = await refreshPlanCopy(db, input, item, (v) => ({ hook: p.hook ?? "", body: v.platform === "facebook" ? (p.facebookBody ?? p.body ?? "") : (p.body ?? ""), hashtags: p.hashtags ?? [], callToAction: p.callToAction ?? "" }));
+        const refreshed = await refreshPlanCopy(db, input, item, (v) => ({ hook: p.hook ?? "", body: v.platform === "facebook" ? (p.facebookBody ?? p.body ?? "") : (p.body ?? ""), hashtags: p.hashtags ?? [], callToAction: p.callToAction ?? "", scheduledFor: at }));
         if (refreshed) {
           item = await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId: existingId, actorUserId: input.actorUserId });
           report.scheduled.push(`${item.title}: caption updated`);
@@ -576,8 +602,17 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
       if (igFeed?.media.length) {
         const story = await getVariantsOfItem(db, input, existingStoryId);
         for (const sv of story) {
-          if (sv.archivedAt || sv.media.length || !RESCHEDULABLE.has(sv.status)) continue;
-          await updateVariant(db, { organizationId: input.organizationId, contentVariantId: sv.id, actorUserId: input.actorUserId, expectedRevision: sv.revision, changes: { media: igFeed.media.slice(0, 1).map((m) => ({ ...m, position: 0, role: "primary" as const })) } });
+          if (sv.archivedAt || !RESCHEDULABLE.has(sv.status)) continue;
+          const storyAt = planInstant(post.day, post.time, 10);
+          const changes = { ...(sv.media.length ? {} : { media: igFeed.media.slice(0, 1).map((m) => ({ ...m, position: 0, role: "primary" as const })) }), ...(sv.scheduledFor?.getTime() === storyAt.getTime() ? {} : { scheduledFor: storyAt }) };
+          if (Object.keys(changes).length) await updateVariant(db, { organizationId: input.organizationId, contentVariantId: sv.id, actorUserId: input.actorUserId, expectedRevision: sv.revision, changes });
+        }
+      } else {
+        const story = await getVariantsOfItem(db, input, existingStoryId);
+        const storyAt = planInstant(post.day, post.time, 10);
+        for (const sv of story) {
+          if (sv.archivedAt || !RESCHEDULABLE.has(sv.status) || sv.scheduledFor?.getTime() === storyAt.getTime()) continue;
+          await updateVariant(db, { organizationId: input.organizationId, contentVariantId: sv.id, actorUserId: input.actorUserId, expectedRevision: sv.revision, changes: { scheduledFor: storyAt } });
         }
       }
     } else {
@@ -615,7 +650,7 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
     const existingReelId = await findMarkedItem(db, input.organizationId, marker);
     if (existingReelId) {
       const existing = await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId: existingReelId, actorUserId: input.actorUserId });
-      if (await refreshPlanCopy(db, input, existing, (v) => ({ hook: reel.hook, body: v.platform === "facebook" ? (reel.facebookBody ?? reel.body) : reel.body, hashtags: reel.hashtags, callToAction: reel.callToAction }))) report.scheduled.push(`${existing.title}: caption updated`);
+      if (await refreshPlanCopy(db, input, existing, (v) => ({ hook: reel.hook, body: v.platform === "facebook" ? (reel.facebookBody ?? reel.body) : reel.body, hashtags: reel.hashtags, callToAction: reel.callToAction, scheduledFor: planInstant(reel.day, reel.time) }))) report.scheduled.push(`${existing.title}: updated`);
       continue;
     }
     const at = planInstant(reel.day, reel.time);
@@ -651,7 +686,7 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
     const existingLiId = await findMarkedItem(db, input.organizationId, marker);
     if (existingLiId) {
       const existing = await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId: existingLiId, actorUserId: input.actorUserId });
-      if (await refreshPlanCopy(db, input, existing, () => ({ hook: li.body.split("\n")[0] ?? "", body: li.body, hashtags: [] }))) report.scheduled.push(`${existing.title}: caption updated`);
+      if (await refreshPlanCopy(db, input, existing, () => ({ hook: li.body.split("\n")[0] ?? "", body: li.body, hashtags: [], scheduledFor: planInstant(li.day, li.time) }))) report.scheduled.push(`${existing.title}: updated`);
       continue;
     }
     const at = planInstant(li.day, li.time);
@@ -698,7 +733,7 @@ export async function generatePlanImages(db: Db, input: { organizationId: string
   return { done, failed };
 }
 
-type PlanCopy = { hook: string; body: string; hashtags: string[]; callToAction?: string };
+type PlanCopy = { hook: string; body: string; hashtags: string[]; callToAction?: string; scheduledFor?: Date };
 const tagKey = (tags: string[]) => tags.map((t) => t.replace(/^#/, "").toLowerCase()).join(" ");
 
 /** Writes the plan's current copy onto variants nobody has edited or submitted yet. Returns how many changed. */
@@ -707,7 +742,7 @@ async function refreshPlanCopy(db: Db, input: { organizationId: string; actorUse
   for (const v of item.variants) {
     if (v.archivedAt || !RESCHEDULABLE.has(v.status)) continue;
     const w = want(v);
-    const same = v.hook === w.hook && v.body === w.body && tagKey(v.hashtags) === tagKey(w.hashtags) && (w.callToAction === undefined || v.callToAction === w.callToAction);
+    const same = v.hook === w.hook && v.body === w.body && tagKey(v.hashtags) === tagKey(w.hashtags) && (w.callToAction === undefined || v.callToAction === w.callToAction) && (w.scheduledFor === undefined || v.scheduledFor?.getTime() === w.scheduledFor.getTime());
     if (same) continue;
     await updateVariant(db, { organizationId: input.organizationId, contentVariantId: v.id, actorUserId: input.actorUserId, expectedRevision: v.revision, changes: w });
     changed++;
@@ -749,8 +784,19 @@ export async function fillWeekPlanImages(db: Db, input: { organizationId: string
       let variants = await getVariantsOfItem(db, input, itemId);
       const ig = variants.find((v) => v.platform === "instagram" && !v.archivedAt);
       if (!ig) continue;
-      if (!ig.media.length) {
-        if (!RESCHEDULABLE.has(ig.status)) continue;
+      // An image that isn't 4:5 gets cropped by Instagram (top and bottom lost): clear it on every version so it is remade.
+      if (ig.media.length && RESCHEDULABLE.has(ig.status) && (await isWrongShape(db, input.organizationId, ig.media[0]!.assetId))) {
+        const storyId0 = idFor.get(planMarker(plan.key, `${post.key}-story`));
+        const all = [...variants, ...(storyId0 ? await getVariantsOfItem(db, input, storyId0) : [])];
+        for (const v of all) {
+          if (v.archivedAt || !v.media.length || !RESCHEDULABLE.has(v.status)) continue;
+          await updateVariant(db, { organizationId: input.organizationId, contentVariantId: v.id, actorUserId: input.actorUserId, expectedRevision: v.revision, changes: { media: [] } });
+        }
+        variants = await getVariantsOfItem(db, input, itemId);
+      }
+      const igNow = variants.find((v) => v.id === ig.id) ?? ig;
+      if (!igNow.media.length) {
+        if (!RESCHEDULABLE.has(igNow.status)) continue;
         try {
           await regenerateVariantPart(db, { organizationId: input.organizationId, contentVariantId: ig.id, actorUserId: input.actorUserId, part: "image" });
           out.generated++;
@@ -777,6 +823,18 @@ export async function fillWeekPlanImages(db: Db, input: { organizationId: string
     }
   }
   return out;
+}
+
+
+/** True when a feed image's stored dimensions are taller than 4:5 (Instagram would crop it). Unknown dimensions count as fine. */
+async function isWrongShape(db: Db, organizationId: string, assetId: string): Promise<boolean> {
+  try {
+    const row = await resolveAssetRow(db, organizationId, assetId);
+    if (!row.width || !row.height) return false;
+    return row.width / row.height < 0.78;
+  } catch {
+    return false;
+  }
 }
 
 async function getVariantRevision(db: Db, organizationId: string, actorUserId: string, contentVariantId: string) {
