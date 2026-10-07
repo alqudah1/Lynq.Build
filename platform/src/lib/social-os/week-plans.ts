@@ -5,7 +5,7 @@ import { marketingChannelAccounts, marketingContentItems } from "@/db/schema";
 import { resolveAssetRow } from "./assets";
 import { createBrand, listBrands } from "./brands";
 import { updateAccount } from "./connections";
-import { archiveContentItem, createContentItem, getContentItemForUser, getVariantForUser, updateVariant, type SocialContentItem } from "./content";
+import { archiveContentItem, createContentItem, getContentItemForUser, getVariantForUser, updateContentItem, updateVariant, type SocialContentItem } from "./content";
 import { regenerateVariantPart, zonedDateTimeToUtc } from "./studio";
 import type { BrandProfileInput, SocialContentBrief, SocialContentKind, SocialOrganicPlatform, SocialVariantPlatformOptions } from "./validation";
 
@@ -141,7 +141,7 @@ export const WEEK_PLANS: WeekPlan[] = [
     key: "2026-10-12",
     label: "Week of Oct 6 — LYNQ + CodeIt",
     weekStart: "2026-10-07",
-    retired: ["lynq-wed", "lynq-sat", "lynq-mon", "codeit-mon"],
+    retired: ["lynq-wed", "lynq-sat", "lynq-mon", "codeit-mon", "lynq-mon-r"],
     highlights: {
       LYNQ: ["START HERE", "WORK", "RESULTS", "PRICING", "BEHIND"],
       CodeIt: ["START HERE", "BUILDS", "LESSONS", "PRICING", "ABOUT"],
@@ -149,13 +149,13 @@ export const WEEK_PLANS: WeekPlan[] = [
     feed: [
       // ── LYNQ — grid rows read PROOF → TEACH → OFFER/FOUNDER. Series names repeat every week so people learn them.
       {
-        key: "lynq-mon-r", brand: LYNQ, day: "2026-10-07", time: "12:15", pillar: "PROOF", storyHighlight: "WORK",
-        title: "LYNQ · PROOF 01 — Kingsbridge Group", kind: "image_post", platforms: ["instagram", "facebook"],
-        hook: "Two people visit a property manager's website. Only one of them is a customer yet.",
-        body: "Two people visit a property manager's website.\n\nOne owns a building and is deciding who to trust with it. The other is a tenant with a leak at 11pm.\n\nKingsbridge Group's site has to work for both. The owner needs to feel confident. The tenant needs to find help fast.\n\nWe designed it, built it, and we still look after it.\n\nRunning a local business with a site that isn't pulling its weight? DM \"AUDIT\" and I'll send you a free 5 minute review.",
-        facebookBody: "Two people visit a property manager's website. One owns a building and is deciding who to trust with it. The other is a tenant with a leak at 11pm.\n\nKingsbridge Group's site has to work for both. We designed it, built it, and still look after it.\n\nWant a free 5 minute review of your own site? Send us a message.",
-        hashtags: ["PropertyManagement", ...LYNQ_TAGS], callToAction: "DM AUDIT",
-        creativeDirection: `Two brass keys on one ring lying on black stone under a single hard light — a small paper tag on one reads "OWNER", the other "TENANT", the tenant tag lit lime. "PROOF 01 · Kingsbridge Group" small at the top, "One site. Two visitors." large in white. ${HONEST_CARD} ${LYNQ_LOOK}`,
+        key: "lynq-intro", brand: LYNQ, day: "2026-10-07", time: "12:15", pillar: "FOUNDER", storyHighlight: "START HERE",
+        title: "LYNQ · WHO WE ARE — Let me introduce us properly", kind: "image_post", platforms: ["instagram", "facebook"],
+        hook: "I'm Mustafa. This is what LYNQ actually does, and how we work.",
+        body: "Let me introduce us properly.\n\nI'm Mustafa, and LYNQ is the studio I run out of Toronto.\n\nWe build websites and the systems behind them for local businesses. Property managers, restaurants, event companies, trades. The kind of business where the owner is also the receptionist, the bookkeeper, and the person answering messages at 11pm.\n\nHere's how we work. We don't sell packages. We look at your business, work out what the site actually has to do for you, and give you a written quote for that. Then we build it, launch it, and keep looking after it.\n\nFollow this page and you'll see the work, the small fixes that make a big difference, and what goes on behind the scenes.\n\nGot a site that isn't pulling its weight? DM \"AUDIT\" and I'll send you a free 5 minute review.",
+        facebookBody: "Let me introduce us properly. I'm Mustafa, and LYNQ is the studio I run out of Toronto.\n\nWe build websites and the systems behind them for local businesses: property managers, restaurants, event companies, trades.\n\nWe don't sell packages. We look at your business, work out what the site has to do for you, and give you a written quote for that. Then we build it, launch it, and keep looking after it.\n\nWant a free 5 minute review of your site? Send us a message.",
+        hashtags: ["Toronto", ...LYNQ_TAGS], callToAction: "DM AUDIT",
+        creativeDirection: `A dark studio desk at night under one warm desk lamp: an open notebook with a lime pen, a mug, and a small stack of three plain kraft job folders with handwritten tabs "property", "restaurant", "events". "Hi, we're LYNQ." large in thin white editorial type across the middle of the frame, "Websites. Systems. Automation. For local businesses in the GTA." small in lime beneath it. All text and objects in the middle 70% of the frame, nothing in the top or bottom 15%. ${HONEST_CARD} ${LYNQ_LOOK}`,
               },
       {
         key: "lynq-tue", brand: LYNQ, day: "2026-10-08", time: "07:30", pillar: "TEACH", storyHighlight: null,
@@ -229,7 +229,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "\"A game where a cat catches falling pizza.\"\n\nThat one sentence is all it takes. CodeIt builds a working first version, and then the real part starts.\n\nYour kid makes it faster. Changes the colours. Adds a score. And every change shows them the code behind it.\n\nStart with their idea, end with their code.\n\nFree to start, no card needed. Ages 5 to 18.\nLink in bio: codeitlearn.com",
         facebookBody: "\"A game where a cat catches falling pizza.\"\n\nOne sentence, and CodeIt builds a working first version. Then your kid makes it faster, changes the colours, adds a score, and sees the code behind every change.\n\nFree to start, no card needed, ages 5 to 18: codeitlearn.com",
         hashtags: CODEIT_TAGS, callToAction: "Link in bio",
-        creativeDirection: `The mascot surfing a giant pizza slice through its own bright 2D game world that bursts out of the laptop screen; a sticky note on the laptop reads "a cat catches falling pizza". Headline "One sentence in. One game out." ${CODEIT_LOOK}`,
+        creativeDirection: `The mascot surfing a giant pizza slice through its own bright 2D game world that bursts out of the laptop screen; a sticky note on the laptop reads "a cat catches falling pizza". Headline "One sentence in. One game out." set in the middle of the frame. No logo, badge, wordmark or label anywhere; the top 15% and bottom 15% of the image are plain cream background with nothing in them. ${CODEIT_LOOK}`,
       },
       {
         key: "codeit-tue", brand: CODEIT, day: "2026-10-08", time: "19:30", pillar: "LEARN", storyHighlight: "LESSONS",
@@ -558,6 +558,19 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
         if (refreshed) {
           item = await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId: existingId, actorUserId: input.actorUserId });
           report.scheduled.push(`${item.title}: caption updated`);
+        }
+        // Changed art direction on an untouched post: store it and drop the old image (post + story) so the cron remakes it.
+        const wantArt = p.creativeDirection ?? "";
+        if (wantArt && item.brief.creativeDirection !== wantArt && item.variants.every((v) => v.archivedAt || RESCHEDULABLE.has(v.status))) {
+          await updateContentItem(db, { organizationId: input.organizationId, contentItemId: item.id, actorUserId: input.actorUserId, expectedRevision: item.revision, changes: { brief: { creativeDirection: wantArt } } });
+          const storyId = await findMarkedItem(db, input.organizationId, planMarker(plan.key, `${post.key}-story`));
+          const all = [...item.variants, ...(storyId ? await getVariantsOfItem(db, input, storyId) : [])];
+          for (const v of all) {
+            if (v.archivedAt || !v.media.length || !RESCHEDULABLE.has(v.status)) continue;
+            await updateVariant(db, { organizationId: input.organizationId, contentVariantId: v.id, actorUserId: input.actorUserId, expectedRevision: v.revision, changes: { media: [] } });
+          }
+          item = await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId: existingId, actorUserId: input.actorUserId });
+          report.scheduled.push(`${item.title}: image will be remade`);
         }
       } else {
         const brief: SocialContentBrief = {
