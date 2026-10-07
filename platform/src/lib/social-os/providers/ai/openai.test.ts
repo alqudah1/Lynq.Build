@@ -134,3 +134,15 @@ describe("OpenAI image provider", () => {
     expect(e).toBeInstanceOf(SocialGenerationFailedError);
   });
 });
+
+describe("Instagram feed images are exactly 4:5", () => {
+  it("centre-crops the 1024x1536 render to 1024x1280 so Instagram doesn't cut the design", async () => {
+    const sharp = (await import("sharp")).default;
+    const tall = await sharp({ create: { width: 1024, height: 1536, channels: 3, background: { r: 255, g: 246, b: 236 } } }).jpeg().toBuffer();
+    const { fetchImpl } = makeFakeFetch([modelsRoute(["gpt-image-1.5"]), { match: (u) => u === OPENAI_IMAGES_URL, respond: () => ({ json: { data: [{ b64_json: tall.toString("base64") }] } }) }]);
+    const r = await createOpenAiImageProvider({ OPENAI_API_KEY: "k" }, { fetchImpl }).generateImage({ prompt: "x", aspectRatio: "4:5" });
+    expect([r.width, r.height]).toEqual([1024, 1280]);
+    const meta = await sharp(Buffer.from(r.bytes)).metadata();
+    expect([meta.width, meta.height]).toEqual([1024, 1280]);
+  });
+});

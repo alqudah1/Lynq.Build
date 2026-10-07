@@ -123,6 +123,21 @@ const IMAGE_SIZES: Record<ImageGenerationRequest["aspectRatio"], { size: string;
 };
 
 /** Estimated medium-quality price per image (USD): ~$0.04 square, ~$0.06 for the larger portrait/landscape canvases. */
+
+/** Centre-crops to `ratio` (width / height). Falls back to the original bytes if the image library is unavailable. */
+async function centreCrop(bytes: Uint8Array<ArrayBuffer>, width: number, height: number, ratio: number, format: "png" | "jpeg"): Promise<{ bytes: Uint8Array<ArrayBuffer>; width: number; height: number }> {
+  const targetHeight = Math.round(width / ratio);
+  if (targetHeight >= height) return { bytes, width, height };
+  try {
+    const sharp = (await import("sharp")).default;
+    const top = Math.round((height - targetHeight) / 2);
+    const out = await sharp(Buffer.from(bytes)).extract({ left: 0, top, width, height: targetHeight }).toFormat(format).toBuffer();
+    return { bytes: new Uint8Array(out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength) as ArrayBuffer), width, height: targetHeight };
+  } catch {
+    return { bytes, width, height };
+  }
+}
+
 export function estimateOpenAiImageCostUsd(aspectRatio: ImageGenerationRequest["aspectRatio"]): number {
   return IMAGE_SIZES[aspectRatio].size === "1024x1024" ? 0.04 : 0.06;
 }
@@ -177,15 +192,24 @@ export function createOpenAiImageProvider(env: SocialAiEnv, deps?: ProviderDeps 
       }
       const b64 = raw.data?.[0]?.b64_json;
       if (!b64) throw new SocialGenerationFailedError(LABEL, "the provider returned no image", true);
-      const bytes = new Uint8Array(Buffer.from(b64, "base64"));
+      let bytes: Uint8Array<ArrayBuffer> = new Uint8Array(Buffer.from(b64, "base64"));
       if (bytes.byteLength === 0) throw new SocialGenerationFailedError(LABEL, "the provider returned an empty image", true);
+      // OpenAI only renders 1:1, 2:3 and 3:2. A 4:5 request (Instagram feed) is rendered at 2:3 and centre-cropped here,
+      // otherwise Instagram crops it itself and cuts the top and bottom of the design.
+      let { width, height } = size;
+      if (request.aspectRatio === "4:5") {
+        const cropped = await centreCrop(bytes, size.width, size.height, 4 / 5, outputFormat);
+        bytes = cropped.bytes;
+        width = cropped.width;
+        height = cropped.height;
+      }
       return {
         provider: "openai",
         model,
         bytes,
         contentType: outputFormat === "png" ? "image/png" : "image/jpeg",
-        width: size.width,
-        height: size.height,
+        width,
+        height,
         usage: { units: 1, costUsd: estimateOpenAiImageCostUsd(request.aspectRatio), estimated: true },
       };
     },

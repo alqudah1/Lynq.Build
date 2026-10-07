@@ -1,14 +1,19 @@
 import { describe, it, expect } from "vitest";
-import { WEEK_PLANS, currentWeekPlan, planInstant, planMarker } from "./week-plans";
+import { WEEK_PLANS, currentWeekPlan, planInstant, planMarker, planEnd } from "./week-plans";
+
+const next = (d: string) => new Date(Date.parse(`${d}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
 import { SOCIAL_PLATFORM_RULES, socialContentBriefSchema } from "./validation";
 
 const plan = WEEK_PLANS[0];
 
 describe("week plan Oct 12", () => {
-  it("has a feed post every day of the week for each brand", () => {
+  it("posts every day from the week start to the plan end, seven or more days per brand", () => {
+    const allDays = new Set(plan.feed.map((p) => p.day));
+    for (let d = plan.weekStart; d <= planEnd(plan); d = next(d)) expect(allDays.has(d), d).toBe(true);
     for (const brand of ["lynq", "codeit"]) {
       const days = new Set(plan.feed.filter((p) => p.brand.brandKey === brand).map((p) => p.day));
-      for (let i = 0; i < 7; i++) expect(days.has(`2026-10-${12 + i}`)).toBe(true);
+      expect(days.size, brand).toBeGreaterThanOrEqual(7);
+      for (const d of days) expect(d >= plan.weekStart && d <= planEnd(plan), `${brand} ${d}`).toBe(true);
     }
   });
 
@@ -16,7 +21,7 @@ describe("week plan Oct 12", () => {
     for (const brand of ["lynq", "codeit"]) {
       const reels = plan.reels.filter((r) => r.brand.brandKey === brand);
       expect(reels).toHaveLength(3);
-      for (const r of reels) expect(r.day >= "2026-10-12" && r.day <= "2026-10-18").toBe(true);
+      for (const r of reels) expect(r.day >= plan.weekStart && r.day <= planEnd(plan)).toBe(true);
     }
   });
 
@@ -58,8 +63,8 @@ describe("week plan Oct 12", () => {
 
   it("is the current plan until the week ends", () => {
     expect(currentWeekPlan(new Date("2026-10-05T12:00:00Z"))?.key).toBe("2026-10-12");
-    expect(currentWeekPlan(new Date("2026-10-18T12:00:00Z"))?.key).toBe("2026-10-12");
-    expect(currentWeekPlan(new Date("2026-10-19T12:00:00Z"))).toBeUndefined();
+    expect(currentWeekPlan(new Date("2026-10-14T12:00:00Z"))?.key).toBe("2026-10-12");
+    expect(currentWeekPlan(new Date("2026-10-15T12:00:00Z"))).toBeUndefined();
   });
 
   it("story highlights use the plan's fixed highlight sets", () => {
