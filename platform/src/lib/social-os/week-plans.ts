@@ -140,8 +140,8 @@ export const WEEK_PLANS: WeekPlan[] = [
   {
     key: "2026-10-12",
     label: "Week of Oct 6 — LYNQ + CodeIt",
-    weekStart: "2026-10-06",
-    retired: ["lynq-wed", "lynq-sat"],
+    weekStart: "2026-10-07",
+    retired: ["lynq-wed", "lynq-sat", "lynq-mon", "codeit-mon"],
     highlights: {
       LYNQ: ["START HERE", "WORK", "RESULTS", "PRICING", "BEHIND"],
       CodeIt: ["START HERE", "BUILDS", "LESSONS", "PRICING", "ABOUT"],
@@ -149,7 +149,7 @@ export const WEEK_PLANS: WeekPlan[] = [
     feed: [
       // ── LYNQ — grid rows read PROOF → TEACH → OFFER/FOUNDER. Series names repeat every week so people learn them.
       {
-        key: "lynq-mon", brand: LYNQ, day: "2026-10-06", time: "12:15", pillar: "PROOF", storyHighlight: "WORK",
+        key: "lynq-mon-r", brand: LYNQ, day: "2026-10-07", time: "12:15", pillar: "PROOF", storyHighlight: "WORK",
         title: "LYNQ · PROOF 01 — Kingsbridge Group", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "Two people visit a property manager's website. Only one of them is a customer yet.",
         body: "Two people visit a property manager's website.\n\nOne owns a building and is deciding who to trust with it. The other is a tenant with a leak at 11pm.\n\nKingsbridge Group's site has to work for both. The owner needs to feel confident. The tenant needs to find help fast.\n\nWe designed it, built it, and we still look after it.\n\nRunning a local business with a site that isn't pulling its weight? DM \"AUDIT\" and I'll send you a free 5 minute review.",
@@ -223,7 +223,7 @@ export const WEEK_PLANS: WeekPlan[] = [
 
       // ── CodeItLearn — keeps the mascot world from the existing grid. Rows read BUILD → LEARN → HOW/FOUNDER/OFFER.
       {
-        key: "codeit-mon", brand: CODEIT, day: "2026-10-07", time: "19:30", pillar: "BUILD", storyHighlight: "BUILDS",
+        key: "codeit-mon-r", brand: CODEIT, day: "2026-10-07", time: "19:30", pillar: "BUILD", storyHighlight: "BUILDS",
         title: "CodeIt · One sentence in. One game out.", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "Your kid types one sentence. A minute later, they're playing it.",
         body: "\"A game where a cat catches falling pizza.\"\n\nThat one sentence is all it takes. CodeIt builds a working first version, and then the real part starts.\n\nYour kid makes it faster. Changes the colours. Adds a score. And every change shows them the code behind it.\n\nStart with their idea, end with their code.\n\nFree to start, no card needed. Ages 5 to 18.\nLink in bio: codeitlearn.com",

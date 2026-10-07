@@ -62,7 +62,7 @@ describe("week plan Oct 12", () => {
   });
 
   it("is the current plan until the week ends", () => {
-    expect(currentWeekPlan(new Date("2026-10-05T12:00:00Z"))?.key).toBe("2026-10-12");
+    expect(currentWeekPlan(new Date("2026-10-06T12:00:00Z"))?.key).toBe("2026-10-12");
     expect(currentWeekPlan(new Date("2026-10-14T12:00:00Z"))?.key).toBe("2026-10-12");
     expect(currentWeekPlan(new Date("2026-10-15T12:00:00Z"))).toBeUndefined();
   });
