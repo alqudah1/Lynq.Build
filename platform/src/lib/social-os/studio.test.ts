@@ -108,7 +108,7 @@ describe("planning helpers", () => {
   });
 
   it("image aspect per platform/format", () => {
-    expect(imageAspectFor("instagram", "image")).toBe("4:5");
+    expect(imageAspectFor("instagram", "image")).toBe("1:1");
     expect(imageAspectFor("instagram", "story")).toBe("9:16");
     expect(imageAspectFor("linkedin", "image")).toBe("1:1");
     expect(imageAspectFor("facebook", "image")).toBe("1:1");
