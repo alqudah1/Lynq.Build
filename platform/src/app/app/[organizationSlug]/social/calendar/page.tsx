@@ -251,9 +251,9 @@ function WeekPlanPanel({ planLabel, planKey, status, loaded, action, timeZone, i
           <p className="text-sm text-foreground">{planLabel}</p>
           <p className="text-xs text-subtle">{loaded ? `On the calendar.${open ? ` ${open} thing${open === 1 ? "" : "s"} need you.` : ""} Each morning at 8 (${timeZone}) that day's posts go to your Telegram.` : "Feed posts, stories (with their highlight) and reels for every brand, one click. Nothing posts until you approve it."}</p>
         </div>
-        <form action={action as unknown as (fd: FormData) => void}>
+        <form action={action as unknown as (fd: FormData) => void} className="w-full sm:w-auto">
           <input type="hidden" name="planKey" value={planKey} />
-          <button type="submit" className="lynq-glass lynq-transition min-h-11 rounded-sm px-4 text-xs font-medium uppercase tracking-[0.08em] text-foreground hover:border-border-strong">{loaded ? "Re-load plan" : "Load week plan"}</button>
+          <button type="submit" className="lynq-glass lynq-transition min-h-11 w-full rounded-sm px-4 sm:w-auto text-xs font-medium uppercase tracking-[0.08em] text-foreground hover:border-border-strong">{loaded ? "Re-load plan" : "Load week plan"}</button>
         </form>
       </div>
       {loaded ? (
@@ -270,7 +270,7 @@ function WeekPlanPanel({ planLabel, planKey, status, loaded, action, timeZone, i
                       <span className="text-[0.65rem] uppercase tracking-[0.08em]">{e.needs ? <span className="text-amber-300">{NEEDS_LABEL[e.needs]}</span> : <span className="text-subtle">{VARIANT_STATUS_LABEL[e.status ?? ""] ?? (e.status ? e.status : "Not loaded")}</span>}</span>
                     </span>
                   );
-                  return <li key={e.key}>{e.contentItemId ? <Link href={itemHref(e.contentItemId)} className="lynq-transition block rounded-sm px-1 py-0.5 hover:bg-white/[0.03]">{body}</Link> : body}</li>;
+                  return <li key={e.key}>{e.contentItemId ? <Link href={itemHref(e.contentItemId)} className="lynq-transition block min-h-11 rounded-sm px-2 py-1.5 hover:bg-white/[0.03]">{body}</Link> : body}</li>;
                 })}
               </ul>
             </li>

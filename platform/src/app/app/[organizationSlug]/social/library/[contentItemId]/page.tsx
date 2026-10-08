@@ -298,7 +298,7 @@ function VariantWorkspace({
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
       <div className="flex flex-col gap-4">
-        <section aria-label="Preview" className="flex flex-col gap-2">
+        <section aria-label="Preview" className="flex flex-col gap-2 lg:order-none">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-xs uppercase tracking-[0.1em] text-subtle">Preview</h2>
             <div className="flex flex-wrap items-center gap-2">
@@ -329,7 +329,8 @@ function VariantWorkspace({
           </section>
         ) : null}
 
-        <section aria-label="Post actions" className="flex flex-col gap-2">
+        {/* On a phone the actions sit at the top so approving or posting never means scrolling past the whole preview. */}
+        <section aria-label="Post actions" className="order-first flex flex-col gap-2 lg:order-none">
           <h2 className="text-xs uppercase tracking-[0.1em] text-subtle">Next step</h2>
           <Card variant="surface" padding="sm" className="flex flex-col gap-3">
             {v.archivedAt ? <p className="text-sm text-subtle">Archived.</p> : null}
