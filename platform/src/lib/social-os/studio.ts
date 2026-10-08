@@ -10,6 +10,7 @@ import { assembleBrandContext, buildBrandContextText, requireActiveBrand, resolv
 import { createGeneratedAsset, resolveAssetBytes, resolveAssetRow } from "./assets";
 import { computeStoredVariantWarnings, createContentItem, getContentItemForUser, getVariantForUser, normalizeHashtags, resolveVariantRow, syncContentItemStatus, updateContentItem, updateVariant, type SocialContentItem, type SocialVariant } from "./content";
 import { InvalidSocialTransitionError, SocialVariantNotPublishableError } from "./errors";
+import { checkImageEdges, edgeRetryInstruction, worstEdge } from "./image-check";
 import { beginGeneration, completeGeneration, errorCodeFor, errorMessageFor, failGeneration, generateTextRecorded, recordProviderTask, withPrimaryMedia, type SocialGenerationDeps } from "./generation";
 import { composeCaption } from "./providers/social/http";
 import { estimateImageCostUsd, loadSocialAiEnv, resolveImageProvider, resolveVideoProvider } from "./providers/ai/registry";
@@ -744,7 +745,21 @@ async function regenerateImage(
   let assetId: string;
   try {
     const references = await loadBrandReferences(db, input.organizationId, input.scope.brandProfileId);
-    const image = await provider.generateImage({ prompt, aspectRatio, idempotencyKey: generation.id, ...(references.length ? { references } : {}) });
+    // Every feed image is inspected before it is attached: if a logo, badge or headline sits on an edge, the image is
+    // regenerated with a stricter instruction (up to IMAGE_EDGE_RETRIES more times) and the cleanest attempt is kept.
+    let image = await provider.generateImage({ prompt, aspectRatio, idempotencyKey: generation.id, ...(references.length ? { references } : {}) });
+    let report = await checkImageEdges(image.bytes);
+    let attempts = 1;
+    for (let retry = 1; !report.ok && retry <= IMAGE_EDGE_RETRIES; retry++) {
+      const stricter = `${prompt}\n\n${edgeRetryInstruction(report)}`;
+      const again = await provider.generateImage({ prompt: stricter, aspectRatio, idempotencyKey: `${generation.id}:${retry}`, ...(references.length ? { references } : {}) });
+      const againReport = await checkImageEdges(again.bytes);
+      attempts++;
+      if (worstEdge(againReport) < worstEdge(report)) {
+        image = again;
+        report = againReport;
+      }
+    }
     const asset = await createGeneratedAsset(db, {
       organizationId: input.organizationId,
       brandProfileId: input.scope.brandProfileId,
@@ -761,7 +776,7 @@ async function regenerateImage(
       storage: input.deps?.storage,
     });
     assetId = asset.id;
-    await completeGeneration(db, { organizationId: input.organizationId, generationId: generation.id, output: { assetId: asset.id, width: image.width ?? null, height: image.height ?? null, contentType: image.contentType }, usage: image.usage, assetId: asset.id, model: image.model });
+    await completeGeneration(db, { organizationId: input.organizationId, generationId: generation.id, output: { assetId: asset.id, width: image.width ?? null, height: image.height ?? null, contentType: image.contentType, edgeCheck: { ok: report.ok, attempts, worst: Number(worstEdge(report).toFixed(2)) } }, usage: image.usage, assetId: asset.id, model: image.model });
   } catch (err) {
     await failGeneration(db, { organizationId: input.organizationId, generationId: generation.id, errorCode: errorCodeFor(err), errorMessage: errorMessageFor(err) });
     throw err;
@@ -771,6 +786,9 @@ async function regenerateImage(
   await setLastGeneration(db, input.organizationId, variant.id, generation.id);
   return { generationId: generation.id, variant: { ...updated, lastGenerationId: generation.id }, pending: false };
 }
+
+/** Extra generations allowed when the edge check fails (each costs one image). */
+const IMAGE_EDGE_RETRIES = 2;
 
 const VIDEO_DURATION_SECONDS: VideoGenerationRequest["durationSeconds"] = 5;
 
