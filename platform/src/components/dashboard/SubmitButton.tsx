@@ -22,17 +22,20 @@ export function SubmitButton({
   variant = "primary",
   name,
   value,
+  className = "",
 }: {
   children: React.ReactNode;
   pendingLabel?: string;
   variant?: keyof typeof VARIANT;
   name?: string;
   value?: string;
+  /** Extra layout classes (e.g. `w-full sm:w-auto`); never a variant override. */
+  className?: string;
 }) {
   const { pending } = useFormStatus();
 
   return (
-    <button type="submit" name={name} value={value} disabled={pending} className={`${BASE} ${VARIANT[variant]}`}>
+    <button type="submit" name={name} value={value} disabled={pending} className={`${BASE} ${VARIANT[variant]} ${className}`}>
       {pending ? (
         <>
           <span aria-hidden="true" className="h-3 w-3 shrink-0 animate-spin rounded-full border-[1.5px] border-current border-t-transparent" />

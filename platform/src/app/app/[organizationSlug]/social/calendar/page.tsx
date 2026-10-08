@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SubmitButton } from "@/components/dashboard/SubmitButton";
 import { listBrands } from "@/lib/social-os/brands";
 import { getInstagramGridPreview, getSocialCalendar, type InstagramGridTile } from "@/lib/social-os/calendar";
 import { assetPreviewPath } from "@/lib/social-os/assets";
@@ -251,9 +252,10 @@ function WeekPlanPanel({ planLabel, planKey, status, loaded, action, timeZone, i
           <p className="text-sm text-foreground">{planLabel}</p>
           <p className="text-xs text-subtle">{loaded ? `On the calendar.${open ? ` ${open} thing${open === 1 ? "" : "s"} need you.` : ""} Each morning at 8 (${timeZone}) that day's posts go to your Telegram.` : "Feed posts, stories (with their highlight) and reels for every brand, one click. Nothing posts until you approve it."}</p>
         </div>
-        <form action={action as unknown as (fd: FormData) => void}>
+        <form action={action as unknown as (fd: FormData) => void} className="w-full sm:w-auto">
           <input type="hidden" name="planKey" value={planKey} />
-          <button type="submit" className="lynq-glass lynq-transition min-h-11 rounded-sm px-4 text-xs font-medium uppercase tracking-[0.08em] text-foreground hover:border-border-strong">{loaded ? "Re-load plan" : "Load week plan"}</button>
+          {/* Loading touches every post in the plan and can take close to a minute: the button shows that, so a tap never looks ignored. */}
+          <SubmitButton variant="glass" className="w-full sm:w-auto" pendingLabel={loaded ? "Re-loading… up to a minute" : "Loading… up to a minute"}>{loaded ? "Re-load plan" : "Load week plan"}</SubmitButton>
         </form>
       </div>
       {loaded ? (

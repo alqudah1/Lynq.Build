@@ -7,6 +7,7 @@ import { getOrganizationBySlugForUser } from "@/lib/organizations/organizations"
 import { TenantResourceNotFoundError, AuthzError } from "@/lib/authz/errors";
 import { listPendingApprovals } from "@/lib/social-os/content";
 import { SocialSectionNav, type SocialSectionItem } from "@/components/social/SocialSectionNav";
+import { SocialMobileTabs, type SocialMobileTab } from "@/components/social/SocialMobileTabs";
 
 export const dynamic = "force-dynamic";
 
@@ -52,12 +53,24 @@ export default async function SocialLayout({ children, params }: { children: Rea
     { label: "Settings", path: "/social/settings" },
   ];
 
+  const tabs: SocialMobileTab[] = [
+    { label: "Home", path: "/social", icon: "home" },
+    { label: "Calendar", path: "/social/calendar", icon: "calendar" },
+    { label: "Approve", path: "/social/approvals", icon: "check", count: pendingCount },
+    { label: "Posts", path: "/social/library", icon: "grid" },
+    { label: "Inbox", path: "/social/inbox", icon: "inbox" },
+  ];
+
   return (
-    <div className="flex flex-1 flex-col">
+    // Bottom padding on phones keeps the last content clear of the floating tab bar.
+    <div className="flex flex-1 flex-col pb-24 md:pb-0">
       <Suspense fallback={<div className="min-h-11 border-b border-glass-border" />}>
         <SocialSectionNav organizationSlug={organizationSlug} items={items} />
       </Suspense>
       {children}
+      <Suspense fallback={null}>
+        <SocialMobileTabs organizationSlug={organizationSlug} tabs={tabs} />
+      </Suspense>
     </div>
   );
 }
