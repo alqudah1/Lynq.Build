@@ -12,6 +12,7 @@ import { getActiveBags } from "@/lib/repository";
 import { framesForColour, resolveMedia, altFor } from "@/lib/product-media";
 import ContactForm from "./ContactForm";
 import { pageUrls } from "@/lib/seo";
+import { INSTAGRAM_HANDLE, INSTAGRAM_URL } from "@/lib/social";
 
 export const dynamic = "force-dynamic";
 
@@ -47,8 +48,8 @@ export default async function ContactPage() {
             success state. */}
         <p className="ct-ig">
           Fastest reply is on Instagram.{" "}
-          <a href="https://instagram.com/arcubedlabel" target="_blank" rel="noreferrer">
-            @arcubedlabel
+          <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer">
+            @{INSTAGRAM_HANDLE}
           </a>
         </p>
 

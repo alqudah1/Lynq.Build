@@ -1,6 +1,7 @@
 import Link from "next/link";
 import FooterGroup from "./FooterGroup";
 import { faqAnchor } from "@/lib/faq-anchors";
+import { INSTAGRAM_URL } from "@/lib/social";
 
 // Editorial footer: the wordmark IS the graphic, links are typographic.
 // No decorative image. A gold material crop used to sit in the top right
@@ -50,7 +51,7 @@ export default function Footer() {
           <Link href="/contact">Contact</Link>
           {/* Only routes that exist are linked. Instagram is the one external
               destination the client has confirmed. */}
-          <a href="https://instagram.com/arcubedlabel" target="_blank" rel="noreferrer">
+          <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer">
             Instagram
           </a>
         </FooterGroup>

@@ -10,6 +10,7 @@
 
 import { useState } from "react";
 import { submitInquiry } from "./actions";
+import { INSTAGRAM_HANDLE, INSTAGRAM_URL } from "@/lib/social";
 
 const TOPICS = ["Custom order", "Colours & yarns", "Shipping", "Ready for Delivery", "An existing order"];
 
@@ -49,7 +50,7 @@ export default function ContactForm() {
         <p className="ct-sent-line">Message received.</p>
         <p className="ct-sent-note">
           We&rsquo;ll come back to you by email. For a faster reply, message{" "}
-          <a href="https://instagram.com/arcubedlabel" target="_blank" rel="noreferrer">@arcubedlabel</a>.
+          <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer">@{INSTAGRAM_HANDLE}</a>.
         </p>
       </div>
     );
