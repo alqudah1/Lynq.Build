@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { OrganizationSwitcher } from "./OrganizationSwitcher";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 import { NavList } from "./NavList";
@@ -14,6 +15,11 @@ import type { SidebarProps } from "./Sidebar";
  * least 44px (`min-h-11 min-w-11`). Escape closes and returns focus to the
  * trigger button; opening moves focus to the drawer's close button; body
  * scroll is locked while open.
+ *
+ * The drawer is portalled to <body>: the mobile top bar it lives in uses
+ * backdrop-filter, which turns that bar into the containing block for
+ * `position: fixed`, so without the portal `inset-0` only filled the bar
+ * (an empty strip reading "Menu ×" with the page still visible below it).
  */
 export function MobileNav({ user, organizations, currentOrganizationSlug, workspaces, navItems, dashboardHref, isLeadership = true }: SidebarProps) {
   const [open, setOpen] = useState(false);
@@ -60,7 +66,7 @@ export function MobileNav({ user, organizations, currentOrganizationSlug, worksp
         <span aria-hidden="true">☰</span>
       </button>
 
-      {open ? (
+      {open && typeof document !== "undefined" ? createPortal(
         <div id="mobile-dashboard-nav" role="dialog" aria-modal="true" aria-label="Navigation" className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[#0b0b0c] text-foreground shadow-2xl motion-safe:animate-[lynq-fade-in_150ms_var(--lynq-ease)]">
           <div className="flex items-center justify-between border-b border-border p-4">
             <span className="text-xs uppercase tracking-[0.2em] text-subtle">Menu</span>
@@ -96,7 +102,8 @@ export function MobileNav({ user, organizations, currentOrganizationSlug, worksp
               <LogoutButton />
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       ) : null}
     </div>
   );
