@@ -103,7 +103,7 @@ export interface WeekPlan {
 
 const LYNQ: PlanBrandRef = { brandKey: "lynq", matchName: /^lynq\b/i };
 const LYNQ_TAGS = ["TorontoSmallBusiness", "WebDesign", "GTA"];
-const LYNQ_LOOK = "LYNQ's look, matching @lynqbuild: a cinematic photoreal night scene, near-black with one acid-lime light source, one hero object as the metaphor, shallow depth of field, film grain, the kind of frame a premium brand would run as a billboard. Headline in large thin white editorial type with one word in lime, placed in the clear part of the frame. The LYNQ mascot (a small black hooded robot with glowing lime eyes, as in the reference images) may appear as the brand character. No stock people, no faces, no clip-art icons, no gradients, nothing touching the top or bottom edge.";
+const LYNQ_LOOK = "LYNQ's look, matching @lynqbuild: a cinematic photoreal night scene, near-black with one acid-lime light source, one hero object as the metaphor, shallow depth of field, film grain, the kind of frame a premium brand would run as a billboard. Headline in large thin white editorial type with one word in lime, placed in the clear part of the frame. The LYNQ mascot (a small black hooded robot with glowing lime eyes, as in the reference images) may appear as the brand character. No stock people, no faces, no clip-art icons, no gradients, nothing touching any edge; square frame, everything inside a 10% safe margin.";
 const HONEST_CARD = "Honest design card: no website screens, no logos, no people or faces — it must never pass for the client's real site, premises or customers.";
 
 const CODEIT_PROFILE: BrandProfileInput = {
@@ -928,12 +928,12 @@ export async function fillWeekPlanImages(db: Db, input: { organizationId: string
       let variants = await getVariantsOfItem(db, input, itemId);
       const ig = variants.find((v) => v.platform === "instagram" && !v.archivedAt);
       if (!ig) continue;
-      // An image that isn't 4:5 gets cropped by Instagram (top and bottom lost): clear it on every version so it is remade.
-      if (ig.media.length && RESCHEDULABLE.has(ig.status) && (await isWrongShape(db, input.organizationId, ig.media[0]!.assetId))) {
+      // A feed image that isn't square came from the old portrait render (edges cut): clear it on every version so it is remade.
+      if (ig.media.length && REMAKEABLE.has(ig.status) && (await isWrongShape(db, input.organizationId, ig.media[0]!.assetId))) {
         const storyId0 = idFor.get(planMarker(plan.key, `${post.key}-story`));
         const all = [...variants, ...(storyId0 ? await getVariantsOfItem(db, input, storyId0) : [])];
         for (const v of all) {
-          if (v.archivedAt || !v.media.length || !RESCHEDULABLE.has(v.status)) continue;
+          if (v.archivedAt || !v.media.length || !REMAKEABLE.has(v.status)) continue;
           await updateVariant(db, { organizationId: input.organizationId, contentVariantId: v.id, actorUserId: input.actorUserId, expectedRevision: v.revision, changes: { media: [] } });
         }
         variants = await getVariantsOfItem(db, input, itemId);
@@ -970,12 +970,12 @@ export async function fillWeekPlanImages(db: Db, input: { organizationId: string
 }
 
 
-/** True when a feed image's stored dimensions are taller than 4:5 (Instagram would crop it). Unknown dimensions count as fine. */
+/** True when a feed image isn't square (every earlier portrait render had its top or bottom cut; feed images are 1:1 now). Unknown dimensions count as fine. */
 async function isWrongShape(db: Db, organizationId: string, assetId: string): Promise<boolean> {
   try {
     const row = await resolveAssetRow(db, organizationId, assetId);
     if (!row.width || !row.height) return false;
-    return row.width / row.height < 0.78;
+    return Math.abs(row.width / row.height - 1) > 0.02;
   } catch {
     return false;
   }

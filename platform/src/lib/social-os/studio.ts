@@ -612,7 +612,9 @@ export function imageAspectFor(platform: SocialOrganicPlatform, format: string):
   if (format === "story" || format === "reel" || format === "short_video") return "9:16";
   switch (platform) {
     case "instagram":
-      return "4:5";
+      // Square. The image model only renders 1:1 or 2:3, and any crop of the 2:3 render to 4:5 lost whatever sat on
+      // an edge (logos, headlines). Instagram shows 1:1 in full in the feed, so nothing is ever cut.
+      return "1:1";
     case "tiktok":
       return "9:16";
     case "youtube":
