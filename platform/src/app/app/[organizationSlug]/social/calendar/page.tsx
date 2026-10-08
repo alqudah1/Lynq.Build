@@ -157,7 +157,7 @@ export default async function SocialCalendarPage({ params, searchParams }: { par
 
       {planNotice ? <StatusMessage tone="success" message={`Week plan loaded: ${planNotice[1]} posts, stories and reels are on the calendar as drafts${planNotice[2] !== "0" ? ` — ${planNotice[2]} need something from you (below)` : ""}. New images are being made now; refresh in a few minutes. Each morning at 8, that day's posts are sent to your Telegram to approve.`} /> : null}
 
-      {plan && planStatus ? <WeekPlanPanel planLabel={plan.label} planKey={plan.key} status={planStatus.entries} loaded={planStatus.loaded} action={loadWeekPlanAction.bind(null, organizationSlug)} timeZone={timeZone} itemHref={(id) => href(`/social/library/${id}`)} /> : null}
+      {plan && planStatus ? <WeekPlanPanel planLabel={plan.label} planKey={plan.key} status={planStatus.entries} loaded={planStatus.loaded} action={loadWeekPlanAction.bind(null, organizationSlug)} timeZone={timeZone} itemHref={(id) => href(`/social/library/${id}`)} organizationId={organization.id} /> : null}
 
       {grids.length ? <InstagramGridPanel grids={grids.map((g) => ({ ...g, tiles: g.tiles.map((t) => ({ ...t, imageUrl: t.imageAssetId ? assetPreviewPath(organization.id, t.imageAssetId) : null, href: href(`/social/library/${t.contentItemId}`, { variant: t.variantId }), when: t.at ? formatDateTime(t.at, timeZone) : "" })) }))} /> : null}
 
@@ -239,18 +239,22 @@ export default async function SocialCalendarPage({ params, searchParams }: { par
 const NEEDS_LABEL: Record<NonNullable<WeekPlanEntryStatus["needs"]>, string> = { video: "Film & upload video", photo: "Upload a real photo", image: "Image being made", account: "Link account" };
 const KIND_LABEL: Record<WeekPlanEntryStatus["kind"], string> = { post: "Post", story: "Story", reel: "Reel", linkedin: "LinkedIn" };
 
-function WeekPlanPanel({ planLabel, planKey, status, loaded, action, timeZone, itemHref }: { planLabel: string; planKey: string; status: WeekPlanEntryStatus[]; loaded: boolean; action: (formData: FormData) => Promise<unknown>; timeZone: string; itemHref: (id: string) => string }) {
+function WeekPlanPanel({ planLabel, planKey, status, loaded, action, timeZone, itemHref, organizationId }: { planLabel: string; planKey: string; status: WeekPlanEntryStatus[]; loaded: boolean; action: (formData: FormData) => Promise<unknown>; timeZone: string; itemHref: (id: string) => string; organizationId: string }) {
   const days = [...new Set(status.map((e) => e.day))];
-  const dayFmt = new Intl.DateTimeFormat("en-CA", { timeZone: "UTC", weekday: "short", month: "short", day: "numeric" });
+  const dayFmt = new Intl.DateTimeFormat("en-CA", { timeZone: "UTC", weekday: "long", month: "short", day: "numeric" });
   const label = (day: string) => { const [y, m, d] = day.split("-").map(Number); return dayFmt.format(new Date(Date.UTC(y, m - 1, d))); };
   const open = status.filter((e) => e.needs && e.needs !== "image").length;
+  const today = localDayKey(new Date(), timeZone);
+  // Stories ride under their post: the card shows the post, with "+ story → HIGHLIGHT" as a line, not a second card.
+  const storyFor = new Map(status.filter((e) => e.kind === "story").map((e) => [e.key.replace(/-story$/, ""), e]));
+  const cards = status.filter((e) => e.kind !== "story");
   return (
-    <section aria-labelledby="week-plan" className="flex flex-col gap-4 rounded-md border border-border p-5">
+    <section aria-labelledby="week-plan" className="flex flex-col gap-4 rounded-md border border-border p-4 sm:p-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-col gap-1">
-          <h2 id="week-plan" className="text-xs uppercase tracking-[0.1em] text-subtle">Week plan</h2>
+        <div className="flex min-w-0 flex-col gap-1">
+          <h2 id="week-plan" className="text-xs uppercase tracking-[0.1em] text-subtle">What&apos;s going out</h2>
           <p className="text-sm text-foreground">{planLabel}</p>
-          <p className="text-xs text-subtle">{loaded ? `On the calendar.${open ? ` ${open} thing${open === 1 ? "" : "s"} need you.` : ""} Each morning at 8 (${timeZone}) that day's posts go to your Telegram.` : "Feed posts, stories (with their highlight) and reels for every brand, one click. Nothing posts until you approve it."}</p>
+          <p className="text-xs text-subtle">{loaded ? `${open ? `${open} thing${open === 1 ? "" : "s"} need you. ` : ""}Each morning at 8 (${timeZone}) that day's posts go to your Telegram. Tap a card to open the post.` : "Feed posts, stories (with their highlight) and reels for every brand, one click. Nothing posts until you approve it."}</p>
         </div>
         <form action={action as unknown as (fd: FormData) => void} className="w-full sm:w-auto">
           <input type="hidden" name="planKey" value={planKey} />
@@ -259,20 +263,41 @@ function WeekPlanPanel({ planLabel, planKey, status, loaded, action, timeZone, i
         </form>
       </div>
       {loaded ? (
-        <ol className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <ol className="flex flex-col gap-4">
           {days.map((day) => (
-            <li key={day} className="flex flex-col gap-2 rounded-sm border border-border p-3">
-              <span className="text-xs uppercase tracking-[0.08em] text-subtle">{label(day)}</span>
-              <ul className="flex flex-col gap-1.5">
-                {status.filter((e) => e.day === day).map((e) => {
-                  const body = (
-                    <span className="flex flex-col">
-                      <span className="text-xs text-foreground">{e.time} · {e.brand} · {KIND_LABEL[e.kind]}{e.pillar ? ` · ${e.pillar}` : ""}{e.highlight ? ` → ${e.highlight}` : ""}</span>
-                      <span className="truncate text-xs text-subtle">{e.title}</span>
-                      <span className="text-[0.65rem] uppercase tracking-[0.08em]">{e.needs ? <span className="text-amber-300">{NEEDS_LABEL[e.needs]}</span> : <span className="text-subtle">{VARIANT_STATUS_LABEL[e.status ?? ""] ?? (e.status ? e.status : "Not loaded")}</span>}</span>
+            <li key={day} className="flex min-w-0 flex-col gap-2">
+              <h3 className={`text-xs uppercase tracking-[0.1em] ${day === today ? "text-foreground" : "text-subtle"}`}>{label(day)}{day === today ? " · Today" : ""}</h3>
+              <ul className="grid min-w-0 gap-2 md:grid-cols-2 xl:grid-cols-3">
+                {cards.filter((e) => e.day === day).map((e) => {
+                  const story = storyFor.get(e.key);
+                  const statusText = e.needs ? NEEDS_LABEL[e.needs] : VARIANT_STATUS_LABEL[e.status ?? ""] ?? (e.status ? e.status : "Not loaded");
+                  const tone = e.needs ? "text-amber-300" : e.status === "published" ? "text-success" : e.status === "ready_for_review" || e.status === "approved" || e.status === "scheduled" ? "text-foreground" : "text-subtle";
+                  const card = (
+                    <span className="flex min-w-0 gap-3">
+                      <span className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-sm border border-border bg-elevated">
+                        {e.assetId ? (
+                          // eslint-disable-next-line @next/next/no-img-element -- private asset streamed from the authenticated assets API; no image loader applies.
+                          <img src={assetPreviewPath(organizationId, e.assetId)} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                        ) : (
+                          <span className="px-1 text-center text-[0.6rem] uppercase tracking-[0.08em] text-subtle">{e.kind === "reel" ? "Your video" : e.kind === "linkedin" ? "Text post" : "Image soon"}</span>
+                        )}
+                      </span>
+                      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                        <span className="truncate text-[0.65rem] uppercase tracking-[0.08em] text-subtle">{e.time} · {e.brand} · {KIND_LABEL[e.kind]}{e.pillar ? ` · ${e.pillar}` : ""}</span>
+                        <span className="line-clamp-2 text-sm text-foreground">{e.hook ?? e.title}</span>
+                        <span className="truncate text-xs text-subtle">
+                          {e.platforms.length ? e.platforms.map((pl) => PLATFORM_SHORT_LABEL[pl as keyof typeof PLATFORM_SHORT_LABEL] ?? pl).join(" + ") : "—"}
+                          {story ? ` · story${story.highlight ? ` → ${story.highlight}` : ""}` : ""}
+                        </span>
+                        <span className={`text-[0.65rem] uppercase tracking-[0.08em] ${tone}`}>{statusText}</span>
+                      </span>
                     </span>
                   );
-                  return <li key={e.key}>{e.contentItemId ? <Link href={itemHref(e.contentItemId)} className="lynq-transition block rounded-sm px-1 py-0.5 hover:bg-white/[0.03]">{body}</Link> : body}</li>;
+                  return (
+                    <li key={e.key} className="min-w-0">
+                      {e.contentItemId ? <Link href={itemHref(e.contentItemId)} className="lynq-transition block min-w-0 rounded-sm border border-border p-2 hover:border-border-strong">{card}</Link> : <span className="block min-w-0 rounded-sm border border-dashed border-border p-2">{card}</span>}
+                    </li>
+                  );
                 })}
               </ul>
             </li>
