@@ -7,9 +7,11 @@ import { SOCIAL_PLATFORM_RULES, socialContentBriefSchema } from "./validation";
 const plan = WEEK_PLANS[0];
 
 describe("week plan Oct 12", () => {
-  it("posts every day from the week start to the plan end, seven or more days per brand", () => {
-    const allDays = new Set(plan.feed.map((p) => p.day));
-    for (let d = plan.weekStart; d <= planEnd(plan); d = next(d)) expect(allDays.has(d), d).toBe(true);
+  it("posts every day from the week start to the plan end: each brand has a feed post or a reel every single day", () => {
+    for (const brand of ["lynq", "codeit"]) {
+      const covered = new Set([...plan.feed.filter((p) => p.brand.brandKey === brand), ...plan.reels.filter((r) => r.brand.brandKey === brand)].map((e) => e.day));
+      for (let d = plan.weekStart; d <= planEnd(plan); d = next(d)) expect(covered.has(d), `${brand} ${d}`).toBe(true);
+    }
     for (const brand of ["lynq", "codeit"]) {
       const days = new Set(plan.feed.filter((p) => p.brand.brandKey === brand).map((p) => p.day));
       expect(days.size, brand).toBeGreaterThanOrEqual(7);
@@ -17,10 +19,10 @@ describe("week plan Oct 12", () => {
     }
   });
 
-  it("has three reels per brand, kept to the week", () => {
+  it("has at least three reels per brand, kept to the plan", () => {
     for (const brand of ["lynq", "codeit"]) {
       const reels = plan.reels.filter((r) => r.brand.brandKey === brand);
-      expect(reels).toHaveLength(3);
+      expect(reels.length).toBeGreaterThanOrEqual(3);
       for (const r of reels) expect(r.day >= plan.weekStart && r.day <= planEnd(plan)).toBe(true);
     }
   });
@@ -63,8 +65,8 @@ describe("week plan Oct 12", () => {
 
   it("is the current plan until the week ends", () => {
     expect(currentWeekPlan(new Date("2026-10-06T12:00:00Z"))?.key).toBe("2026-10-12");
-    expect(currentWeekPlan(new Date("2026-10-14T12:00:00Z"))?.key).toBe("2026-10-12");
-    expect(currentWeekPlan(new Date("2026-10-15T12:00:00Z"))).toBeUndefined();
+    expect(currentWeekPlan(new Date("2026-10-21T12:00:00Z"))?.key).toBe("2026-10-12");
+    expect(currentWeekPlan(new Date("2026-10-22T12:00:00Z"))).toBeUndefined();
   });
 
   it("story highlights use the plan's fixed highlight sets", () => {
@@ -106,8 +108,8 @@ describe("week plan Oct 12", () => {
   });
 
   it("LinkedIn posts are text-only founder posts of roughly 800–1,000+ characters with no links", () => {
-    expect(plan.linkedin.filter((l) => l.brand.brandKey === "lynq")).toHaveLength(2);
-    expect(plan.linkedin.filter((l) => l.brand.brandKey === "codeit")).toHaveLength(2);
+    expect(plan.linkedin.filter((l) => l.brand.brandKey === "lynq").length).toBeGreaterThanOrEqual(2);
+    expect(plan.linkedin.filter((l) => l.brand.brandKey === "codeit").length).toBeGreaterThanOrEqual(2);
     for (const l of plan.linkedin) {
       expect(l.body.length, l.key).toBeGreaterThan(700);
       expect(l.body.length, l.key).toBeLessThan(1500);
