@@ -1002,6 +1002,12 @@ export interface WeekPlanEntryStatus {
   /** Lowest-progress status across the entry's platform versions. */
   status: string | null;
   needs: "video" | "photo" | "image" | "account" | null;
+  /** The image that will go out (first media of the Instagram version, else the first version with media). */
+  assetId: string | null;
+  /** First line of the caption as it will be posted. */
+  hook: string | null;
+  /** Platforms this entry posts to, in display order. */
+  platforms: string[];
 }
 
 const PROGRESS = ["draft", "changes_requested", "generating", "ready_for_review", "approved", "scheduled", "publishing", "published", "failed", "rejected"];
@@ -1020,14 +1026,17 @@ export async function getWeekPlanStatus(db: Db, input: { organizationId: string;
       return null;
     }
   };
-  const summarize = (item: SocialContentItem | null, kind: WeekPlanEntryStatus["kind"], realPhoto = false): Pick<WeekPlanEntryStatus, "status" | "needs" | "contentItemId"> => {
-    if (!item) return { status: null, needs: null, contentItemId: null };
+  const summarize = (item: SocialContentItem | null, kind: WeekPlanEntryStatus["kind"], realPhoto = false): Pick<WeekPlanEntryStatus, "status" | "needs" | "contentItemId" | "assetId" | "hook" | "platforms"> => {
+    if (!item) return { status: null, needs: null, contentItemId: null, assetId: null, hook: null, platforms: [] };
     const live = item.variants.filter((v) => !v.archivedAt);
     const status = live.map((v) => v.status as string).sort((a, b) => PROGRESS.indexOf(a) - PROGRESS.indexOf(b))[0] ?? null;
     const missingMedia = live.some((v) => !v.media.length && v.platform !== "linkedin");
     const missingAccount = live.some((v) => !v.channelAccountId);
     const needs = missingAccount ? "account" : missingMedia ? (kind === "reel" ? "video" : realPhoto ? "photo" : "image") : null;
-    return { status, needs, contentItemId: item.id };
+    const lead = live.find((v) => v.platform === "instagram") ?? live.find((v) => v.media.length) ?? live[0] ?? null;
+    const assetId = lead?.media[0]?.assetId ?? live.find((v) => v.media.length)?.media[0]?.assetId ?? null;
+    const hook = (lead?.hook || lead?.body.split("\n")[0] || "").trim() || null;
+    return { status, needs, contentItemId: item.id, assetId, hook, platforms: live.map((v) => v.platform) };
   };
   // One query for every item the plan created, then load them in parallel.
   const marked = await db
