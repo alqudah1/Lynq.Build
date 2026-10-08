@@ -103,7 +103,7 @@ export interface WeekPlan {
 
 const LYNQ: PlanBrandRef = { brandKey: "lynq", matchName: /^lynq\b/i };
 const LYNQ_TAGS = ["TorontoSmallBusiness", "WebDesign", "GTA"];
-const LYNQ_LOOK = "LYNQ's look, matching @lynqbuild: near-black background, one acid-lime accent, large thin editorial type, generous margins, cinematic and calm. Real screens and objects, not illustrations. No stock people, no glossy 3D, no gradients, no clip-art icons.";
+const LYNQ_LOOK = "LYNQ's look, matching @lynqbuild: a cinematic photoreal night scene, near-black with one acid-lime light source, one hero object as the metaphor, shallow depth of field, film grain, the kind of frame a premium brand would run as a billboard. Headline in large thin white editorial type with one word in lime, placed in the clear part of the frame. The LYNQ mascot (a small black hooded robot with glowing lime eyes, as in the reference images) may appear as the brand character. No stock people, no faces, no clip-art icons, no gradients, nothing touching the top or bottom edge.";
 const HONEST_CARD = "Honest design card: no website screens, no logos, no people or faces — it must never pass for the client's real site, premises or customers.";
 
 const CODEIT_PROFILE: BrandProfileInput = {
@@ -155,7 +155,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "Let me introduce us properly.\n\nI'm Mustafa, and LYNQ is the studio I run out of Toronto.\n\nWe build websites and the systems behind them for local businesses. Property managers, restaurants, event companies, trades. The kind of business where the owner is also the receptionist, the bookkeeper, and the person answering messages at 11pm.\n\nHere's how we work. We don't sell packages. We look at your business, work out what the site actually has to do for you, and give you a written quote for that. Then we build it, launch it, and keep looking after it.\n\nFollow this page and you'll see the work, the small fixes that make a big difference, and what goes on behind the scenes.\n\nGot a site that isn't pulling its weight? DM \"AUDIT\" and I'll send you a free 5 minute review.",
         facebookBody: "Let me introduce us properly. I'm Mustafa, and LYNQ is the studio I run out of Toronto.\n\nWe build websites and the systems behind them for local businesses: property managers, restaurants, event companies, trades.\n\nWe don't sell packages. We look at your business, work out what the site has to do for you, and give you a written quote for that. Then we build it, launch it, and keep looking after it.\n\nWant a free 5 minute review of your site? Send us a message.",
         hashtags: ["Toronto", ...LYNQ_TAGS], callToAction: "DM AUDIT",
-        creativeDirection: `A dark studio desk at night under one warm desk lamp: an open notebook with a lime pen, a mug, and a small stack of three plain kraft job folders with handwritten tabs "property", "restaurant", "events". "Hi, we're LYNQ." large in thin white editorial type across the middle of the frame, "Websites. Systems. Automation. For local businesses in the GTA." small in lime beneath it. All text and objects in the middle 70% of the frame, nothing in the top or bottom 15%. ${HONEST_CARD} ${LYNQ_LOOK}`,
+        creativeDirection: `A rain-wet Toronto side street at night, a giant acid-lime neon "LYNQ" wordmark glowing on a dark brick wall and reflected in the puddles, a streetcar's blurred light trail passing behind; the LYNQ mascot stands small in the foreground looking up at the sign, lime eyes glowing. Headline "Hi, we're LYNQ." large in thin white type in the dark sky above the sign, "Websites. Systems. Automation. For local businesses in the GTA." small in lime under it. No real people, no faces, no website screens. ${LYNQ_LOOK}`,
               },
       {
         key: "lynq-tue", brand: LYNQ, day: "2026-10-08", time: "07:30", pillar: "TEACH", storyHighlight: null,
@@ -173,7 +173,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "WHAT YOU GET with a LYNQ site:\n\n1. Built for phones first, with the booking or call button at the top of every page\n2. Your Google Business Profile set up properly, so people find you before they find your competitor\n3. A form that replies by text and email in under a minute, with your booking link inside\n4. We keep it running after launch. Hours change, photos change, we update it\n\nWhat you don't get: hourly billing or surprise invoices. You get a written quote for your business before anything starts.\n\nTrades, clinics and restaurants across the GTA.\n\nDM \"SITE\" and I'll tell you what it would take for yours.",
         facebookBody: "A LYNQ site comes with four things:\n\n1. Phone first, booking or call button at the top of every page\n2. Google Business Profile set up properly\n3. A form that replies by text and email in under a minute\n4. We keep it running after launch\n\nNo hourly billing, no surprise invoices. A written quote for your business before anything starts. Message us to see what yours would take.",
         hashtags: LYNQ_TAGS, callToAction: "DM SITE",
-        creativeDirection: `A matte black clipboard on a dark desk under one hard side light, a single sheet with four lime check marks beside short lines of text: "Phone first", "Google profile", "Replies in 60s", "Kept running". "WHAT YOU GET" small in lime at the top. No prices, no dollar signs. ${HONEST_CARD} ${LYNQ_LOOK}`,
+        creativeDirection: `Four objects floating in a row above still black water at night, each lit by its own lime spotlight and mirrored in the water: a brass telephone handset, a map pin, a speech bubble cut from frosted glass, a chrome wrench. Headline "What you get." large in white above them, the four words "Phone first · Found on Google · Replies in 60s · Kept running" small in lime below. No prices, no dollar signs. ${HONEST_CARD} ${LYNQ_LOOK}`,
       },
       {
         key: "lynq-thu", brand: LYNQ, day: "2026-10-10", time: "12:15", pillar: "PROOF", storyHighlight: "WORK",
@@ -182,7 +182,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "People open a restaurant's website for three things: the menu, the hours, and a way to book.\n\nEverything else is decoration.\n\nFor Nasma we started with those three, then made the whole thing look as good as the food.\n\nOwn a restaurant in the GTA? DM \"AUDIT\" for a free 5 minute review of your site.",
         facebookBody: "Diners open a restaurant's website for three things: the menu, the hours, and a way to book. For Nasma we started there, then made it look as good as the food.\n\nWant a free 5 minute review of your restaurant's site? Send us a message.",
         hashtags: ["TorontoRestaurants", ...LYNQ_TAGS], callToAction: "DM AUDIT",
-        creativeDirection: `Three objects in a row on a near-black table, each in its own pool of warm light: a folded blank menu card, a small brass clock, a silver reservation bell with a lime glint. "PROOF 02 · Nasma" small at the top, "Menu. Hours. Book." large in white with lime dots. ${HONEST_CARD} ${LYNQ_LOOK}`,
+        creativeDirection: `A long dark restaurant table after closing, one chair pulled out, a single lime spotlight from above landing on a brass reservation bell at the far end, its long shadow running down the table; a blank folded menu card and a small brass clock sit in the half-light beside it. Headline "Menu. Hours. Book." large in white, "PROOF 02 · Nasma" small in lime. ${HONEST_CARD} ${LYNQ_LOOK}`,
               },
       {
         key: "lynq-fri", brand: LYNQ, day: "2026-10-11", time: "12:15", pillar: "TEACH", storyHighlight: null,
@@ -191,7 +191,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "FIX THIS: your Google Business Profile.\n\nBefore anyone sees your website, they see this. And most local businesses leave half of it empty:\n\n1. Business description\n2. Services (with prices if you can)\n3. Hours, including holidays\n4. Photos of the real place and real work\n5. A booking or website link\n\nIt's free, it takes an hour, and it's often the first impression you make.\n\nSave this and do it this weekend.",
         facebookBody: "Before anyone sees your website, they see your Google Business Profile. Five fields most owners leave empty: description, services, hours (holidays too), real photos, and a booking link.\n\nFree, one hour, and often your first impression. Worth doing this weekend.",
         hashtags: ["GoogleBusinessProfile", "LocalSEO", ...LYNQ_TAGS.slice(0, 2)], callToAction: "Save this",
-        creativeDirection: `A shopfront window at night with five empty lit picture frames hanging on the glass, each labelled in small lime type: description, services, hours, photos, booking. "FIX THIS" small in lime. ${LYNQ_LOOK}`,
+        creativeDirection: `An empty parking lot at night in front of a closed, dark storefront; a giant three-metre map pin stands in the middle of the lot glowing lime, lighting the wet asphalt, half of its face blank. Headline "Half of it is empty." large in white, "FIX THIS · your Google profile" small in lime. ${LYNQ_LOOK}`,
       },
       {
         key: "lynq-founder-2", brand: LYNQ, day: "2026-10-12", time: "10:00", pillar: "FOUNDER", storyHighlight: "BEHIND",
@@ -200,7 +200,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "I have a habit. When I look at a local business website, I fill in the contact form at 9pm and wait.\n\nMost of the time, nothing. A reply the next afternoon if I'm lucky. By then the person who needed a plumber, a table or an appointment has already booked with someone else.\n\nThat's why every LYNQ site replies on its own. Form in, text and email out, with the booking link, in under a minute. Then the owner follows up in the morning like normal.\n\nIt's also how we run LYNQ itself. Every post you see here was drafted, checked and approved from my phone before it went out. Nothing ships without a human saying yes.\n\nI'm Mustafa. Ask me anything, the comments are open.",
         facebookBody: "I fill in local business contact forms at 9pm to see who answers. Almost nobody does. By the next afternoon the customer has booked with someone else.\n\nSo every LYNQ site replies on its own, by text and email, in under a minute. The owner follows up in the morning.\n\nI'm Mustafa. Questions welcome in the comments.",
         hashtags: ["Founder", ...LYNQ_TAGS.slice(0, 2)], callToAction: "Comments open",
-        creativeDirection: `Pull-quote card: lime quotation marks, the line "The business that replies first gets the job." set large in thin editorial type, "— Mustafa, LYNQ" small underneath; a phone face-down on a dark desk with a single notification glow, clock reading 9:04. ${HONEST_CARD} ${LYNQ_LOOK}`,
+        creativeDirection: `A phone lying face-down on a dark desk at night, one sliver of lime notification light leaking out from under it across the wood; a desk clock in the background reads 9:04; the LYNQ mascot sits on the edge of the desk watching the phone. Headline "The business that replies first gets the job." large in thin white type, "Mustafa, LYNQ" small in lime. ${HONEST_CARD} ${LYNQ_LOOK}`,
       },
       {
         key: "lynq-sun", brand: LYNQ, day: "2026-10-13", time: "12:15", pillar: "PROOF", storyHighlight: "WORK",
@@ -209,7 +209,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "An events business needs its website to do exactly one thing: get the date request.\n\nFinding Amy runs a photo booth for events. Their customers want to see the booth at a real party, see what's included, and ask about their date, fast.\n\nSo the whole site walks that one path.\n\nWant your site built around the one thing that pays you? DM \"AUDIT\".",
         facebookBody: "An events business needs its website to do one thing: get the date request. We built Finding Amy's site around that one path. See the booth, see what's included, ask about your date.\n\nWant yours built around the one thing that pays you? Send us a message.",
         hashtags: ["TorontoEvents", ...LYNQ_TAGS], callToAction: "DM AUDIT",
-        creativeDirection: `A single glowing lime line drawn across a dark event-hall floor, scattered with gold confetti, ending at a desk calendar with one date circled; an empty instant-photo strip with blank frames lies beside it. "PROOF 03 · Finding Amy" small at the top, "One path." large in white. ${HONEST_CARD} ${LYNQ_LOOK}`,
+        creativeDirection: `A dark empty event hall; at the far end a photo-booth curtain glows acid lime from inside, the only light in the room; a single straight trail of gold confetti on the floor leads from the camera to the curtain. Headline "One path." large in white, "PROOF 03 · Finding Amy" small in lime. ${HONEST_CARD} ${LYNQ_LOOK}`,
               },
       {
         key: "lynq-mon2", brand: LYNQ, day: "2026-10-14", time: "07:30", pillar: "TEACH", storyHighlight: null,
@@ -218,7 +218,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "FIX THIS: slow replies.\n\nSomeone fills in your contact form. They also filled in two others.\n\nThe business that answers first usually gets the job. At 9pm, that's rarely you.\n\nThe fix isn't working later. It's an instant reply: a text and an email that go out the moment the form is sent, with your booking link inside.\n\nThat's what our Lead Engine sets up.\n\nSend this to a business owner who's always \"getting back to people.\"",
         facebookBody: "Someone fills in your contact form, and two others. The business that answers first usually gets the job.\n\nThe fix isn't working later. It's an instant text and email the moment the form is sent, with your booking link inside. That's what our Lead Engine sets up.",
         hashtags: ["SmallBusinessTips", ...LYNQ_TAGS.slice(0, 2)], callToAction: "Send to a business owner",
-        creativeDirection: `A pile of white paper airplanes (contact forms) crash-landed on an empty desk at night, a wall clock reading 9:04, and one lime paper airplane flying straight back out. "FIX THIS" small in lime. ${LYNQ_LOOK}`,
+        creativeDirection: `Dozens of white paper airplanes crash-landed in a heap on a dark office floor at night, lit by a single window; one acid-lime paper airplane is caught mid-air flying back out toward the camera, trailing a thin light streak. Headline "They also filled in two others." large in white, "FIX THIS · slow replies" small in lime. ${LYNQ_LOOK}`,
       },
 
       // ── CodeItLearn — keeps the mascot world from the existing grid. Rows read BUILD → LEARN → HOW/FOUNDER/OFFER.
@@ -453,6 +453,8 @@ async function findMarkedItem(db: Db, organizationId: string, marker: string): P
 }
 
 const RESCHEDULABLE = new Set(["draft", "changes_requested"]);
+/** Statuses whose image may be remade when the plan's art direction changes: anything not yet approved. */
+const REMAKEABLE = new Set(["draft", "changes_requested", "ready_for_review"]);
 
 /**
  * Loads a week plan into the organization as dated drafts. Returns what it
@@ -561,12 +563,13 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
         }
         // Changed art direction on an untouched post: store it and drop the old image (post + story) so the cron remakes it.
         const wantArt = p.creativeDirection ?? "";
-        if (wantArt && item.brief.creativeDirection !== wantArt && item.variants.every((v) => v.archivedAt || RESCHEDULABLE.has(v.status))) {
+        if (wantArt && item.brief.creativeDirection !== wantArt && item.variants.every((v) => v.archivedAt || REMAKEABLE.has(v.status))) {
           await updateContentItem(db, { organizationId: input.organizationId, contentItemId: item.id, actorUserId: input.actorUserId, expectedRevision: item.revision, changes: { brief: { creativeDirection: wantArt } } });
           const storyId = await findMarkedItem(db, input.organizationId, planMarker(plan.key, `${post.key}-story`));
           const all = [...item.variants, ...(storyId ? await getVariantsOfItem(db, input, storyId) : [])];
           for (const v of all) {
-            if (v.archivedAt || !v.media.length || !RESCHEDULABLE.has(v.status)) continue;
+            if (v.archivedAt || !v.media.length || !REMAKEABLE.has(v.status)) continue;
+            // Clearing the image on a post in review returns it to draft (content.ts), so nobody approves a version that no longer exists.
             await updateVariant(db, { organizationId: input.organizationId, contentVariantId: v.id, actorUserId: input.actorUserId, expectedRevision: v.revision, changes: { media: [] } });
           }
           item = await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId: existingId, actorUserId: input.actorUserId });
