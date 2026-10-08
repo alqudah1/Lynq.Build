@@ -134,7 +134,7 @@ const CODEIT_PROFILE: BrandProfileInput = {
 const CODEIT: PlanBrandRef = { brandKey: "codeit", matchName: /^code\s?it/i, createWith: CODEIT_PROFILE };
 
 const CODEIT_TAGS = ["KidsWhoCode", "PythonForKids", "TorontoParents"];
-const CODEIT_LOOK = "Match @codeitlearn exactly: warm cream background, the orange fluffy clay-style mascot with big eyes wearing a yellow hoodie, cozy desk scene with a laptop, sticky notes and a sketchbook, soft daylight, small doodles (stars, arrows, </> brackets). Chunky rounded navy-and-orange headline type only where described. Never show a real child.";
+const CODEIT_LOOK = "Match @codeitlearn exactly: warm cream background, the orange fluffy clay-style mascot with big eyes wearing a yellow hoodie, cozy desk scene with a laptop, sticky notes and a sketchbook, soft daylight, small doodles (stars, arrows, </> brackets). Chunky rounded navy-and-orange headline type only where described. The CodeIt badge, if shown, sits inside the scene well below the top edge, never touching it. Never show a real child.";
 
 export const WEEK_PLANS: WeekPlan[] = [
   {

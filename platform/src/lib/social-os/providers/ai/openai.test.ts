@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createOpenAiImageProvider, createOpenAiTextProvider, OPENAI_IMAGE_EDITS_URL, OPENAI_IMAGES_URL, OPENAI_MODELS_URL, OPENAI_RESPONSES_URL, pickAvailableModel, OPENAI_TEXT_MODEL_PREFERENCE, readResponsesText } from "./openai";
+import { pickCropTop, createOpenAiImageProvider, createOpenAiTextProvider, OPENAI_IMAGE_EDITS_URL, OPENAI_IMAGES_URL, OPENAI_MODELS_URL, OPENAI_RESPONSES_URL, pickAvailableModel, OPENAI_TEXT_MODEL_PREFERENCE, readResponsesText } from "./openai";
 import { SocialGenerationFailedError, SocialProviderNotConfiguredError } from "../../errors";
 import { makeFakeFetch } from "./test-fetch";
 
@@ -144,5 +144,29 @@ describe("Instagram feed images are exactly 4:5", () => {
     expect([r.width, r.height]).toEqual([1024, 1280]);
     const meta = await sharp(Buffer.from(r.bytes)).metadata();
     expect([meta.width, meta.height]).toEqual([1024, 1280]);
+  });
+
+  it("keeps a badge on the top edge instead of slicing it off: the crop follows the detail", async () => {
+    const sharp = (await import("sharp")).default;
+    // Cream canvas, a busy "badge" in the top 120 rows, nothing else: the crop must start at row 0.
+    const noise = Buffer.alloc(1024 * 120 * 3);
+    for (let i = 0; i < noise.length; i++) noise[i] = (i * 7919) % 256;
+    const tall = await sharp({ create: { width: 1024, height: 1536, channels: 3, background: { r: 255, g: 246, b: 236 } } })
+      .composite([{ input: noise, raw: { width: 1024, height: 120, channels: 3 }, top: 0, left: 0 }])
+      .png()
+      .toBuffer();
+    const { fetchImpl } = makeFakeFetch([modelsRoute(["gpt-image-1.5"]), { match: (u) => u === OPENAI_IMAGES_URL, respond: () => ({ json: { data: [{ b64_json: tall.toString("base64") }] } }) }]);
+    const r = await createOpenAiImageProvider({ OPENAI_API_KEY: "k" }, { fetchImpl }).generateImage({ prompt: "x", aspectRatio: "4:5" });
+    const { data, info } = await sharp(Buffer.from(r.bytes)).greyscale().raw().toBuffer({ resolveWithObject: true });
+    expect([info.width, info.height]).toEqual([1024, 1280]);
+    let topRowSpread = 0;
+    for (let x = 1; x < info.width; x++) topRowSpread += Math.abs(data[x]! - data[x - 1]!);
+    expect(topRowSpread).toBeGreaterThan(10_000);
+  });
+
+  it("pickCropTop: centres on plain images, follows detail otherwise", () => {
+    expect(pickCropTop(new Array(100).fill(1), 80)).toBe(10);
+    const bottomHeavy = new Array(100).fill(0).map((_, y) => (y > 90 ? 50 : 1));
+    expect(pickCropTop(bottomHeavy, 80)).toBe(20);
   });
 });

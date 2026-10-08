@@ -124,13 +124,49 @@ const IMAGE_SIZES: Record<ImageGenerationRequest["aspectRatio"], { size: string;
 
 /** Estimated medium-quality price per image (USD): ~$0.04 square, ~$0.06 for the larger portrait/landscape canvases. */
 
-/** Centre-crops to `ratio` (width / height). Falls back to the original bytes if the image library is unavailable. */
+/**
+ * Picks the crop window (top offset) that cuts the least detail: rows are scored by how much
+ * they change from pixel to pixel (text, logos and objects score high; plain background scores
+ * near zero), and the window keeping the most of that score wins. A badge sitting on the top
+ * edge therefore pulls the window up instead of being sliced off by a blind centre crop.
+ */
+export function pickCropTop(rowEnergy: number[], targetRows: number): number {
+  const rows = rowEnergy.length;
+  if (targetRows >= rows) return 0;
+  let inside = 0;
+  for (let y = 0; y < targetRows; y++) inside += rowEnergy[y]!;
+  const centre = (rows - targetRows) / 2;
+  let best = inside;
+  let bestTop = 0;
+  for (let top = 1; top + targetRows <= rows; top++) {
+    inside += rowEnergy[top + targetRows - 1]! - rowEnergy[top - 1]!;
+    // Ties (plain images) go to the window nearest the centre.
+    if (inside > best + 1e-9 || (Math.abs(inside - best) <= 1e-9 && Math.abs(top - centre) < Math.abs(bestTop - centre))) {
+      best = inside;
+      bestTop = top;
+    }
+  }
+  return bestTop;
+}
+
+/** Crops to `ratio` (width / height), keeping the rows with the most detail. Falls back to the original bytes if the image library is unavailable. */
 async function centreCrop(bytes: Uint8Array<ArrayBuffer>, width: number, height: number, ratio: number, format: "png" | "jpeg"): Promise<{ bytes: Uint8Array<ArrayBuffer>; width: number; height: number }> {
   const targetHeight = Math.round(width / ratio);
   if (targetHeight >= height) return { bytes, width, height };
   try {
     const sharp = (await import("sharp")).default;
-    const top = Math.round((height - targetHeight) / 2);
+    // Row detail on a small greyscale copy (one sample row per source row, 1/4 width).
+    const sw = Math.max(8, Math.round(width / 4));
+    const { data, info } = await sharp(Buffer.from(bytes)).greyscale().resize({ width: sw, height, fit: "fill" }).raw().toBuffer({ resolveWithObject: true });
+    const energy: number[] = new Array(info.height).fill(0);
+    for (let y = 0; y < info.height; y++) {
+      const row = y * info.width;
+      let e = 0;
+      for (let x = 1; x < info.width; x++) e += Math.abs(data[row + x]! - data[row + x - 1]!);
+      if (y > 0) for (let x = 0; x < info.width; x++) e += Math.abs(data[row + x]! - data[row - info.width + x]!);
+      energy[y] = e;
+    }
+    const top = pickCropTop(energy, targetHeight);
     const out = await sharp(Buffer.from(bytes)).extract({ left: 0, top, width, height: targetHeight }).toFormat(format).toBuffer();
     return { bytes: new Uint8Array(out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength) as ArrayBuffer), width, height: targetHeight };
   } catch {
