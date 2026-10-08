@@ -26,7 +26,7 @@ export interface ResolvedMedia {
   shownColour: string;
 }
 
-function productKey(bag: Pick<Bag, "slug" | "name">): string {
+export function productKey(bag: Pick<Bag, "slug" | "name">): string {
   return (bag.slug || bag.name).trim().toLowerCase().replace(/\s+/g, "-");
 }
 
