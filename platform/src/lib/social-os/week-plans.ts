@@ -152,26 +152,8 @@ export const WEEK_PLANS: WeekPlan[] = [
         key: "lynq-intro", brand: LYNQ, day: "2026-10-07", time: "12:15", pillar: "FOUNDER", storyHighlight: "START HERE",
         title: "LYNQ · WHO WE ARE — Hi, we're LYNQ", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "Hi, we're LYNQ. Two cities, one standard, and how we actually work.",
-        body: "Hi, we're LYNQ.
-
-You've seen what we build here: websites, systems, automation. This is the part the page hasn't said yet.
-
-We work from two cities, Toronto and Amman, for businesses anywhere. Kingsbridge Group in Toronto. Nasma, Finding Amy and Arcubed Label in Amman. Same team, same standard.
-
-The standard: your site has to be found, it has to answer, and it has to get the booking or the order. Everything else is decoration.
-
-How we work: no packages. We look at your business, work out what it actually needs, give you a written quote, then build it, launch it, and keep looking after it.
-
-Built for the business where the owner is also the person answering messages at 11pm.
-
-Site not pulling its weight? DM \"AUDIT\" for a free 5 minute review.",
-        facebookBody: "Hi, we're LYNQ. We build websites, systems and automation from two cities, Toronto and Amman, for businesses anywhere. Kingsbridge Group in Toronto. Nasma, Finding Amy and Arcubed Label in Amman.
-
-The standard: your site has to be found, it has to answer, and it has to get the booking or the order.
-
-No packages. A written quote for your business, then we build it, launch it and keep looking after it.
-
-Site not pulling its weight? Message us for a free 5 minute review.",
+        body: "Hi, we're LYNQ.\n\nYou've seen what we build here: websites, systems, automation. This is the part the page hasn't said yet.\n\nWe work from two cities, Toronto and Amman, for businesses anywhere. Kingsbridge Group in Toronto. Nasma, Finding Amy and Arcubed Label in Amman. Same team, same standard.\n\nThe standard: your site has to be found, it has to answer, and it has to get the booking or the order. Everything else is decoration.\n\nHow we work: no packages. We look at your business, work out what it actually needs, give you a written quote, then build it, launch it, and keep looking after it.\n\nBuilt for the business where the owner is also the person answering messages at 11pm.\n\nSite not pulling its weight? DM \"AUDIT\" for a free 5 minute review.",
+        facebookBody: "Hi, we're LYNQ. We build websites, systems and automation from two cities, Toronto and Amman, for businesses anywhere. Kingsbridge Group in Toronto. Nasma, Finding Amy and Arcubed Label in Amman.\n\nThe standard: your site has to be found, it has to answer, and it has to get the booking or the order.\n\nNo packages. A written quote for your business, then we build it, launch it and keep looking after it.\n\nSite not pulling its weight? Message us for a free 5 minute review.",
         hashtags: ["Toronto", "Amman", "WebDesign", "SmallBusiness"], callToAction: "DM AUDIT",
         creativeDirection: `Seen from high above at night: the dark curve of the Earth with a soft atmosphere glow, two small clusters of city lights far apart on the surface, and one thin acid-lime line of light arcing between them like a signal; the LYNQ mascot stands small on the horizon line looking out, lime eyes glowing. No landmarks, no map labels, no flags. Headline "Hi, we're LYNQ." large in thin white type in the black sky, "Two cities. One standard." small in lime beneath it. No real people, no faces, no website screens. ${LYNQ_LOOK}`,
               },
