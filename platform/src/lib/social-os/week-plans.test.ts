@@ -121,3 +121,13 @@ describe("week plan Oct 12", () => {
     for (const r of plan.reels) expect(r.hook.length, r.key).toBeLessThanOrEqual(90);
   });
 });
+
+describe("catch-up for slots already in the past", () => {
+  it("keeps a future slot, moves a past one to the next quarter-hour at least 20 minutes out", async () => {
+    const { catchUp } = await import("./week-plans");
+    const now = new Date("2026-10-09T17:12:00Z");
+    expect(catchUp(new Date("2026-10-09T18:00:00Z"), now).toISOString()).toBe("2026-10-09T18:00:00.000Z");
+    expect(catchUp(new Date("2026-10-07T23:30:00Z"), now).toISOString()).toBe("2026-10-09T17:45:00.000Z");
+    expect(catchUp(new Date("2026-10-09T17:20:00Z"), now).toISOString()).toBe("2026-10-09T17:45:00.000Z");
+  });
+});
