@@ -21,6 +21,8 @@ import { toRenderInput, resolveProductImages } from "@/lib/pricing";
 import { framesForColour, resolveMedia, altFor, type Frame } from "@/lib/product-media";
 import { previewFor } from "@/lib/colour-previews";
 import BagArt from "../BagArt";
+import RecolourStage from "./RecolourStage";
+import type { PreviewColour, YarnProfile } from "@/lib/recolour/engine";
 import BagViewer3D from "../three/BagViewer3D";
 
 /** Everything that decides which file the stage downloads, in one place, so
@@ -215,10 +217,36 @@ function Photos({ bag, selection }: { bag: Bag; selection: Selection }) {
   );
 }
 
-export default function ProductGallery({ bag, selection }: { bag: Bag; selection: Selection }) {
+/** A colour preview to draw instead of photography — admin colour lab only. */
+export interface RecolourRequest {
+  frame: string;
+  colour: PreviewColour;
+  profiles: YarnProfile[];
+  sourceColour: string;
+}
+
+export default function ProductGallery({ bag, selection, recolour }: { bag: Bag; selection: Selection; recolour?: RecolourRequest }) {
   // NOT keyed on the colourway any more — see the thumbnail state in Photos.
   usePreloadColourways(bag);
   const fallback = <Photos bag={bag} selection={selection} />;
+
+  if (recolour) {
+    return (
+      <div className="product-media">
+        <div className="pg">
+          <div className="pg-main is-cut">
+            <RecolourStage
+              frame={recolour.frame}
+              colour={recolour.colour}
+              profiles={recolour.profiles}
+              fallback={fallback}
+              alt={`Colour preview of ${bag.name} in ${recolour.colour.name}, recoloured from a photograph of the ${recolour.sourceColour} ${bag.name}`}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!bag.model3D) return <div className="product-media">{fallback}</div>;
 

@@ -2858,3 +2858,24 @@ html { overflow-anchor: none; }
 .add-to-bag, .sticky-bar .btn, .drawer-actions a, .drawer-keep { touch-action: manipulation; }
 .drawer-line-qty { color: var(--muted); font-weight: 400; }
 .opt-note-either { margin: -14px 0 26px; }
+
+/* ---------- admin colour lab: preview swatches + canvas stage ---------- */
+.rc-stage { position: relative; }
+.rc-canvas { width: 100%; height: auto; display: block; }
+.rc-previews { margin-top: 18px; }
+.rc-swatch .csw-name { display: inline-flex; align-items: center; gap: 8px; }
+.rc-dot { width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15); flex: none; }
+.cl-head { padding: 28px 20px 8px; max-width: 1200px; margin: 0 auto; }
+.cl-lede, .cl-note { max-width: 70ch; font-size: 14px; line-height: 1.55; color: var(--muted); }
+.cl-sources { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 6px; }
+.cl-sources button { padding: 8px 14px; border: 1px solid var(--line); background: transparent; color: var(--navy); font: inherit; cursor: pointer; }
+.cl-sources button.is-on { box-shadow: inset 0 0 0 2px var(--navy); }
+.cl-section { padding: 32px 20px; max-width: 1200px; margin: 0 auto; }
+.cl-h2 { font-size: 15px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--navy); margin: 0 0 12px; }
+.cl-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.cl-pairs { grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); }
+.cl-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.cl-still { margin: 0; background: var(--pink); }
+.cl-canvas { width: 100%; height: auto; display: block; }
+.cl-still figcaption { font-size: 12px; padding: 6px 8px; background: #fff; color: var(--navy); }
+.cl-ms { color: var(--muted); }

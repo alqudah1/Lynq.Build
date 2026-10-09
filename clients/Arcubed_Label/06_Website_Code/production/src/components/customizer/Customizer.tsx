@@ -13,12 +13,23 @@ import StrapHandleSelector from "./StrapHandleSelector";
 import AddonSelector from "./AddonSelector";
 import PriceDisplay from "./PriceDisplay";
 import { AddToCartInline, AddToCartStickyBar } from "./AddToCartControls";
+import type { PreviewColour, YarnProfile } from "@/lib/recolour/engine";
+
+/** Admin colour lab only: recoloured previews of colours with no photograph. */
+export interface CustomizerPreview {
+  colours: PreviewColour[];
+  frame: string;
+  profiles: YarnProfile[];
+  /** The real colourway the source photograph shows, for the label. */
+  sourceColour: string;
+}
 
 export default function Customizer({
   bag,
   initialColourId,
   editingLine,
   productionTimeLabel,
+  preview,
 }: {
   bag: Bag;
   /** Colourway from the URL, resolved server-side. See src/lib/variant.ts. */
@@ -29,6 +40,8 @@ export default function Customizer({
   // DB-backed fact (public.store_settings) now, not hardcoded copy. Null
   // when the settings read failed; the accordion falls back to generic copy.
   productionTimeLabel: string | null;
+  /** Never passed on the storefront. */
+  preview?: CustomizerPreview;
 }) {
   const router = useRouter();
   const { addOrUpdateLine, openCartDrawer } = useCart();
@@ -50,10 +63,20 @@ export default function Customizer({
       : defaultSelectionFor(bag, initialColourId)
   );
 
+  // A preview colour is shown ON TOP of the configuration: size, handle,
+  // strap/chain stay exactly as chosen, and picking a real colour again
+  // simply drops the preview. It is never part of what can be ordered.
+  const [previewKey, setPreviewKey] = useState<string | null>(null);
+  const activePreview = preview?.colours.find((c) => c.key === previewKey) ?? null;
+
   const price = computeUnitPrice(bag, selection);
-  const actionLabel = editingLine ? "Save Changes" : "Add to Cart";
+  const actionLabel = activePreview ? "Preview only" : editingLine ? "Save Changes" : "Add to Cart";
 
   function handleAdd() {
+    if (activePreview) {
+      showToast("Preview colours are not available to order.");
+      return;
+    }
     const now = Date.now();
     if (now - addLock.current < 800) return;
     addLock.current = now;
@@ -126,13 +149,19 @@ export default function Customizer({
         {/* Product name as composition: oversized, sitting behind the object. */}
         <p className="pd-name" aria-hidden="true">{bag.name}</p>
         <div className="pd-object">
-          <ProductGallery bag={bag} selection={selection} />
+          <ProductGallery
+            bag={bag}
+            selection={selection}
+            recolour={activePreview && preview ? { frame: preview.frame, colour: activePreview, profiles: preview.profiles, sourceColour: preview.sourceColour } : undefined}
+          />
         </div>
         {/* Names exactly what the photograph shows. Colour is the one choice
             with a photographic answer, so saying so plainly is what keeps the
             image honest without a disclaimer. */}
         <p className="pd-caption">
-          Pictured in {bag.colours.find((c) => c.id === selection.colourId)?.name ?? ""}
+          {activePreview && preview
+            ? `Colour preview: ${activePreview.name}. Recoloured from a photograph of the ${preview.sourceColour} ${bag.name}, not a photograph of this colour.`
+            : `Pictured in ${bag.colours.find((c) => c.id === selection.colourId)?.name ?? ""}`}
         </p>
       </section>
 
@@ -163,17 +192,43 @@ export default function Customizer({
               showLabel
               bag={bag}
               colours={bag.colours}
-              selectedId={selection.colourId}
-              onSelect={(colourId) =>
+              selectedId={activePreview ? "" : selection.colourId}
+              onSelect={(colourId) => {
+                setPreviewKey(null);
                 setSelection((prev) => ({
                   ...prev,
                   colourId,
                   // Two-tone is the colourway itself, so the secondary zone
                   // follows the choice instead of being a separate control.
                   secondaryColourId: bag.colours.find((c) => c.id === colourId)?.isTwoTone ? colourId : null,
-                }))
-              }
+                }));
+              }}
             />
+            {preview?.colours.length ? (
+              <div className="opt-group rc-previews">
+                <p className="opt-label">Preview colours · not for sale</p>
+                <div className="swatch-row" style={{ ["--n" as string]: preview.colours.length }}>
+                  {preview.colours.map((c) => {
+                    const on = c.key === previewKey;
+                    return (
+                      <button
+                        key={c.key}
+                        type="button"
+                        className={`csw csw-named rc-swatch${on ? " is-on" : ""}`}
+                        aria-label={`${c.name} (colour preview)`}
+                        aria-pressed={on}
+                        onClick={() => setPreviewKey(c.key)}
+                      >
+                        <span className="csw-name">
+                          <span className="rc-dot" style={{ background: c.swatch }} aria-hidden="true" />
+                          {c.name}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
             {bag.sizes ? (
               <SizeSelector
                 sizes={bag.sizes}
@@ -189,11 +244,18 @@ export default function Customizer({
               {/* This read "crocheted in. The photograph shows the colour." —
                   a sentence with its subject missing, on every product page.
                   It names the chosen colourway now. */}
-              <p className="pd-opt-note">
-                Crocheted to order in{" "}
-                {bag.colours.find((c) => c.id === selection.colourId)?.name ?? "your chosen colour"}.
-                The photograph shows the colour you will receive.
-              </p>
+              {activePreview ? (
+                <p className="pd-opt-note">
+                  Showing a colour preview of {activePreview.name}, which is not available to order. Choose a
+                  colour above to see its photograph and order it.
+                </p>
+              ) : (
+                <p className="pd-opt-note">
+                  Crocheted to order in{" "}
+                  {bag.colours.find((c) => c.id === selection.colourId)?.name ?? "your chosen colour"}.
+                  The photograph shows the colour you will receive.
+                </p>
+              )}
               {bag.straps ? (
                 <StrapHandleSelector label="Strap" kind="strap" bag={bag} options={bag.straps}
                   selectedId={selection.strapId} colourId={selection.colourId}
