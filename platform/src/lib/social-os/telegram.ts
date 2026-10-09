@@ -6,7 +6,8 @@ import { marketingBrandProfiles, marketingContentItems, organizationMemberships,
 import { loadAuthEnv } from "@/lib/auth/env";
 import { loadEnv } from "@/lib/env";
 import { assetPublicUrl } from "./assets";
-import { decideVariantApproval, listDraftsAwaitingReview, listPendingApprovals, submitVariantForReview, type SocialPendingApproval } from "./content";
+import { decideVariantApproval, listDraftsAwaitingReview, listPendingApprovals, submitVariantForReview, updateVariant, type SocialPendingApproval } from "./content";
+import { catchUp } from "./week-plans";
 import { zonedDateTimeToUtc } from "./studio";
 import { SOCIAL_PLATFORM_LABELS } from "./validation";
 
@@ -236,7 +237,10 @@ function friendlyError(err: unknown): string {
   const name = err instanceof Error ? err.name : "";
   if (name === "StaleSocialUpdateError") return "This post changed since it was sent. Use /pending for the latest version.";
   if (name === "InvalidSocialTransitionError") return "This post was already decided.";
-  if (name === "SocialVariantNotPublishableError") return "Blocked: the post has a problem to fix in LYNQ first (account or media).";
+  if (name === "SocialVariantNotPublishableError") {
+    const blockers = (err as { blockers?: string[] }).blockers ?? [];
+    return blockers.length ? `Blocked: ${blockers.join("; ")}. Fix it in LYNQ, then try again.` : "Blocked: the post has a problem to fix in LYNQ first (account or media).";
+  }
   if (/Authority|Forbidden|Capability|Permission/i.test(name)) return "The approver account isn't allowed to approve or publish this.";
   return "Couldn't complete that — open LYNQ Approvals to finish.";
 }
@@ -332,9 +336,19 @@ export async function handleTelegramUpdate(db: Db, env: TelegramEnv, update: Tel
   } else {
     try {
       const decision = parsed.decision;
+      // A planned time that has already passed would block the submit: move it to the next slot at least 20 minutes out first.
+      const ensureFutureSlot = async (contentVariantId: string, expectedRevision: number): Promise<number> => {
+        const [row] = await db.select({ scheduledFor: socialContentVariants.scheduledFor }).from(socialContentVariants).where(eq(socialContentVariants.id, contentVariantId)).limit(1);
+        if (!row?.scheduledFor) return expectedRevision;
+        const at = catchUp(row.scheduledFor);
+        if (at.getTime() === row.scheduledFor.getTime()) return expectedRevision;
+        const updated = await updateVariant(db, { organizationId: variant.organizationId, contentVariantId, actorUserId: approver.userId, expectedRevision, changes: { scheduledFor: at } });
+        return updated.revision;
+      };
       const applyTo = async (contentVariantId: string, expectedRevision: number) => {
         if (decision === "submit") {
-          await submitVariantForReview(db, { organizationId: variant.organizationId, contentVariantId, actorUserId: approver.userId, expectedRevision, summary: "Sent for review from Telegram" });
+          const revision = await ensureFutureSlot(contentVariantId, expectedRevision);
+          await submitVariantForReview(db, { organizationId: variant.organizationId, contentVariantId, actorUserId: approver.userId, expectedRevision: revision, summary: "Sent for review from Telegram" });
         } else {
           await decideVariantApproval(db, {
             organizationId: variant.organizationId,
