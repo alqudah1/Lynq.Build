@@ -557,6 +557,27 @@ export function planInstant(day: string, time: string, plusMinutes = 0): Date {
   return new Date(zonedDateTimeToUtc(y, m, d, hh, mm, PLAN_TZ).getTime() + plusMinutes * 60_000);
 }
 
+/** Minutes of lead a caught-up post gets, so it clears every platform's "too soon" rule and the next cron tick picks it up. */
+const CATCH_UP_LEAD_MINUTES = 20;
+
+/**
+ * A plan slot that is already in the past (the plan was loaded late, or a post
+ * waited a day for its image) can't be submitted or approved: the schedule
+ * check blocks it. Such slots move to the next quarter-hour at least 20 minutes
+ * from now, so the post can go out today instead of being stuck.
+ */
+export function catchUp(at: Date, now: Date = new Date()): Date {
+  const earliest = now.getTime() + CATCH_UP_LEAD_MINUTES * 60_000;
+  if (at.getTime() >= earliest) return at;
+  const quarter = 15 * 60_000;
+  return new Date(Math.ceil(earliest / quarter) * quarter);
+}
+
+/** The instant a plan entry goes out: its planned slot, or a caught-up slot when that has already passed. */
+function planSlot(day: string, time: string, plusMinutes = 0): Date {
+  return catchUp(planInstant(day, time, plusMinutes));
+}
+
 export function planMarker(planKey: string, entryKey: string): string {
   return `weekplan:${planKey}:${entryKey}`;
 }
@@ -652,7 +673,7 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
   for (const post of plan.feed) {
     const brandProfileId = brandIds.get(post.brand.brandKey);
     if (!brandProfileId) continue;
-    const at = planInstant(post.day, post.time);
+    const at = planSlot(post.day, post.time);
     let item: SocialContentItem | null = null;
 
     let useExisting = false;
@@ -747,13 +768,13 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
         const story = await getVariantsOfItem(db, input, existingStoryId);
         for (const sv of story) {
           if (sv.archivedAt || !RESCHEDULABLE.has(sv.status)) continue;
-          const storyAt = planInstant(post.day, post.time, 10);
+          const storyAt = planSlot(post.day, post.time, 10);
           const changes = { ...(sv.media.length ? {} : { media: igFeed.media.slice(0, 1).map((m) => ({ ...m, position: 0, role: "primary" as const })) }), ...(sv.scheduledFor?.getTime() === storyAt.getTime() ? {} : { scheduledFor: storyAt }) };
           if (Object.keys(changes).length) await updateVariant(db, { organizationId: input.organizationId, contentVariantId: sv.id, actorUserId: input.actorUserId, expectedRevision: sv.revision, changes });
         }
       } else {
         const story = await getVariantsOfItem(db, input, existingStoryId);
-        const storyAt = planInstant(post.day, post.time, 10);
+        const storyAt = planSlot(post.day, post.time, 10);
         for (const sv of story) {
           if (sv.archivedAt || !RESCHEDULABLE.has(sv.status) || sv.scheduledFor?.getTime() === storyAt.getTime()) continue;
           await updateVariant(db, { organizationId: input.organizationId, contentVariantId: sv.id, actorUserId: input.actorUserId, expectedRevision: sv.revision, changes: { scheduledFor: storyAt } });
@@ -773,12 +794,12 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
           researchNotes: storyMarker,
         },
         platforms: ["instagram"],
-        scheduledFor: planInstant(post.day, post.time, 10),
+        scheduledFor: planSlot(post.day, post.time, 10),
       });
       const igStory = story.variants[0];
       const igFeed = item.variants.find((v) => v.platform === "instagram" && !v.archivedAt);
       if (igStory) {
-        await updateVariant(db, { organizationId: input.organizationId, contentVariantId: igStory.id, actorUserId: input.actorUserId, expectedRevision: igStory.revision, changes: { format: "story", scheduledFor: planInstant(post.day, post.time, 10), ...(!igStory.channelAccountId && igFeed?.channelAccountId ? { channelAccountId: igFeed.channelAccountId } : {}), ...(igFeed?.media.length ? { media: igFeed.media.slice(0, 1).map((m) => ({ ...m, position: 0, role: "primary" as const })) } : {}) } });
+        await updateVariant(db, { organizationId: input.organizationId, contentVariantId: igStory.id, actorUserId: input.actorUserId, expectedRevision: igStory.revision, changes: { format: "story", scheduledFor: planSlot(post.day, post.time, 10), ...(!igStory.channelAccountId && igFeed?.channelAccountId ? { channelAccountId: igFeed.channelAccountId } : {}), ...(igFeed?.media.length ? { media: igFeed.media.slice(0, 1).map((m) => ({ ...m, position: 0, role: "primary" as const })) } : {}) } });
         const queued = report.imagesQueued.find((q) => q.contentItemId === item!.id);
         if (queued) queued.copyTo.push(igStory.id);
       }
@@ -794,10 +815,10 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
     const existingReelId = await findMarkedItem(db, input.organizationId, marker);
     if (existingReelId) {
       const existing = await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId: existingReelId, actorUserId: input.actorUserId });
-      if (await refreshPlanCopy(db, input, existing, (v) => ({ hook: reel.hook, body: v.platform === "facebook" ? (reel.facebookBody ?? reel.body) : reel.body, hashtags: reel.hashtags, callToAction: reel.callToAction, scheduledFor: planInstant(reel.day, reel.time) }))) report.scheduled.push(`${existing.title}: updated`);
+      if (await refreshPlanCopy(db, input, existing, (v) => ({ hook: reel.hook, body: v.platform === "facebook" ? (reel.facebookBody ?? reel.body) : reel.body, hashtags: reel.hashtags, callToAction: reel.callToAction, scheduledFor: planSlot(reel.day, reel.time) }))) report.scheduled.push(`${existing.title}: updated`);
       continue;
     }
-    const at = planInstant(reel.day, reel.time);
+    const at = planSlot(reel.day, reel.time);
     const item = await createContentItem(db, {
       organizationId: input.organizationId,
       actorUserId: input.actorUserId,
@@ -830,10 +851,10 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
     const existingLiId = await findMarkedItem(db, input.organizationId, marker);
     if (existingLiId) {
       const existing = await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId: existingLiId, actorUserId: input.actorUserId });
-      if (await refreshPlanCopy(db, input, existing, () => ({ hook: li.body.split("\n")[0] ?? "", body: li.body, hashtags: [], scheduledFor: planInstant(li.day, li.time) }))) report.scheduled.push(`${existing.title}: updated`);
+      if (await refreshPlanCopy(db, input, existing, () => ({ hook: li.body.split("\n")[0] ?? "", body: li.body, hashtags: [], scheduledFor: planSlot(li.day, li.time) }))) report.scheduled.push(`${existing.title}: updated`);
       continue;
     }
-    const at = planInstant(li.day, li.time);
+    const at = planSlot(li.day, li.time);
     const item = await createContentItem(db, {
       organizationId: input.organizationId,
       actorUserId: input.actorUserId,
