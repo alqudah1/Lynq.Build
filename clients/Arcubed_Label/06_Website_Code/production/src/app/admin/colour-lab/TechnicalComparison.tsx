@@ -1,6 +1,6 @@
 "use client";
 
-// The renderer's diagnostics, kept apart from the Colour Studio: source
+// The renderer's diagnostics, kept apart from the Atelier studio: source
 // photographs (including evaluation-only ones), every test colour beside the
 // original, and each real colourway predicted with its own reference left
 // out, beside its real photograph. Render times per image.

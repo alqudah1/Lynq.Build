@@ -2261,14 +2261,12 @@ html { overflow-anchor: none; }
    matter what colour it was. Scoped to the buy band so no other surface
    changes. */
 .pd-buy .chip-row,
-.cs-options .chip-row,
-.pd-buy .pill-row, .cs-options .pill-row {
+.pd-buy .pill-row {
   display: grid; gap: 0; margin-top: 14px;
   border-top: 1px solid var(--line);
 }
 .pd-buy .opt-chip,
-.cs-options .opt-chip,
-.pd-buy .pill, .cs-options .pill {
+.pd-buy .pill {
   display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px;
   width: 100%; padding: 15px 0 15px 24px; min-height: 0;
   border: 0; border-bottom: 1px solid var(--line); border-radius: 0;
@@ -2282,24 +2280,20 @@ html { overflow-anchor: none; }
    read as an unticked checkbox on every row. Selection is a filled navy
    square that scales in; nothing else on the row is a control shape. */
 .pd-buy .opt-chip::before,
-.cs-options .opt-chip::before,
-.pd-buy .pill::before, .cs-options .pill::before {
+.pd-buy .pill::before {
   content: ""; position: absolute; left: 0; top: 50%; width: 10px; height: 10px;
   transform: translateY(-50%) scale(0); background: var(--navy);
   transition: transform 0.24s var(--ease-ui);
 }
 .pd-buy .opt-chip:hover:not(:disabled),
-.cs-options .opt-chip:hover:not(:disabled),
-.pd-buy .pill:hover, .cs-options .pill:hover { color: var(--navy); }
+.pd-buy .pill:hover { color: var(--navy); }
 .pd-buy .opt-chip.selected,
-.cs-options .opt-chip.selected,
-.pd-buy .pill.selected, .cs-options .pill.selected { color: var(--navy); background: none; }
+.pd-buy .pill.selected { color: var(--navy); background: none; }
 .pd-buy .opt-chip.selected::before,
-.cs-options .opt-chip.selected::before,
-.pd-buy .pill.selected::before, .cs-options .pill.selected::before { transform: translateY(-50%) scale(1); }
-.pd-buy .opt-chip-delta, .cs-options .opt-chip-delta { font-size: 10.5px; letter-spacing: 0.12em; opacity: 0.85; }
+.pd-buy .pill.selected::before { transform: translateY(-50%) scale(1); }
+.pd-buy .opt-chip-delta { font-size: 10.5px; letter-spacing: 0.12em; opacity: 0.85; }
 @media (prefers-reduced-motion: reduce) {
-.pd-buy .opt-chip::before, .pd-buy .pill::before, .cs-options .opt-chip::before, .cs-options .pill::before { transition: none; }
+  .pd-buy .opt-chip::before, .pd-buy .pill::before { transition: none; }
 }
 
 /* ---------- HANDLE: a product decision, not a utility row ----------
@@ -2308,23 +2302,23 @@ html { overflow-anchor: none; }
    the customer picks between — the only two-up control in the buy band.
    Scoped to the handle group, so Strap/Chain/Size keep the quiet row
    language and the band does not turn into a wall of boxes. */
-.pd-buy .opt-group-handle .chip-row, .cs-options .opt-group-handle .chip-row {
+.pd-buy .opt-group-handle .chip-row {
   grid-template-columns: 1fr 1fr; gap: 10px;
   border-top: 0; margin-top: 12px;
 }
-.pd-buy .opt-group-handle .opt-chip, .cs-options .opt-group-handle .opt-chip {
+.pd-buy .opt-group-handle .opt-chip {
   display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end;
   gap: 6px; min-height: clamp(72px, 9vh, 92px);
   padding: 16px 16px 15px; border-bottom: 0;
   box-shadow: inset 0 0 0 1px var(--line);
   transition: box-shadow 0.2s var(--ease-ui), color 0.2s var(--ease-ui), background 0.2s var(--ease-ui);
 }
-.pd-buy .opt-group-handle .opt-chip::before, .cs-options .opt-group-handle .opt-chip::before { content: none; }
-.pd-buy .opt-group-handle .opt-chip:hover:not(:disabled), .cs-options .opt-group-handle .opt-chip:hover:not(:disabled) { box-shadow: inset 0 0 0 1px var(--navy); }
-.pd-buy .opt-group-handle .opt-chip.selected, .cs-options .opt-group-handle .opt-chip.selected {
+.pd-buy .opt-group-handle .opt-chip::before { content: none; }
+.pd-buy .opt-group-handle .opt-chip:hover:not(:disabled) { box-shadow: inset 0 0 0 1px var(--navy); }
+.pd-buy .opt-group-handle .opt-chip.selected {
   background: var(--navy); color: var(--pink); box-shadow: inset 0 0 0 1px var(--navy);
 }
-.pd-buy .opt-group-handle .opt-chip.selected .opt-chip-delta, .cs-options .opt-group-handle .opt-chip.selected .opt-chip-delta { color: var(--pink); }
+.pd-buy .opt-group-handle .opt-chip.selected .opt-chip-delta { color: var(--pink); }
 
 /* ---------- Add to Bag: an action, not a SaaS bar ---------- */
 .pd-buy .add-to-bag {
@@ -2874,146 +2868,200 @@ html { overflow-anchor: none; }
 .rc-swatch.is-off { opacity: 0.38; cursor: not-allowed; }
 .rc-label { margin-top: 10px; }
 
-/* ---------- admin Colour Studio (/admin/colour-lab) ----------
-   Editorial, square, navy on white with the pale pink stage. Every rule is
-   scoped to .cl / .cs / .tc so the shop's own pages are untouched. --hdr is
-   the sticky site header's height, so sticky elements sit below it. */
-.cl { --hdr: 78px; max-width: 1320px; margin: 0 auto; padding: 0 20px 72px; color: var(--navy); }
+/* ---------- admin Atelier (/admin/colour-lab) ----------
+   A campaign stage beside one compact rail. Navy, pale pink and white;
+   sharp edges everywhere except the swatches, which are circles of real
+   yarn. Every rule is scoped to .cl / .at / .tc so the shop's own pages are
+   untouched. --hdr is the sticky site header's height. */
+.cl { --hdr: 78px; --gut: 20px; max-width: 1440px; margin: 0 auto; padding: 0 var(--gut) 64px; color: var(--navy); }
 @media (max-width: 759px) { .cl { --hdr: 67px; } }
-.cl-bar {
-  display: grid; grid-template-columns: auto 1fr auto; align-items: end; gap: 12px 40px;
-  padding: 28px 0 18px; border-bottom: 1px solid var(--line); margin-bottom: 32px;
+@media (min-width: 1100px) { .cl { --gut: 40px; } }
+
+/* Top bar: one quiet line — title, bag index, view. */
+.at-top { display: flex; flex-wrap: wrap; align-items: center; gap: 0 28px; padding: 10px 0 12px; }
+.at-title {
+  margin: 0; display: flex; align-items: baseline; gap: 12px;
+  font-family: var(--font-display); font-weight: 400; font-size: 26px; line-height: 1; letter-spacing: -0.01em;
 }
-.cl-kicker, .cs-kicker {
-  margin: 0 0 6px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase; opacity: 0.6;
+.at-title-note { font-family: var(--font-body); font-size: 9.5px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--opt-idle); }
+.at-bags { display: flex; gap: 0 24px; margin-left: auto; }
+.at-views { display: flex; gap: 0 18px; padding-left: 24px; border-left: 1px solid var(--line); }
+.at-bags button, .at-views button {
+  position: relative; appearance: none; background: none; border: 0; margin: 0; padding: 12px 0; min-height: 44px; cursor: pointer;
+  font: inherit; font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--opt-idle);
+  transition: color 0.2s var(--ease);
 }
-.cl-title { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 30px; line-height: 1; }
-.cl-bags, .cl-views, .tc-tabs { display: flex; flex-wrap: wrap; gap: 4px 22px; }
-.cl-bags button, .cl-views button, .tc-tabs button {
-  appearance: none; background: none; border: 0; padding: 12px 0 8px; min-height: 44px; cursor: pointer;
-  font: inherit; font-size: 11.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
-  color: var(--opt-idle); box-shadow: inset 0 -1px 0 transparent; transition: color 0.2s var(--ease), box-shadow 0.2s var(--ease);
+.at-bags button::after, .at-views button::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 9px; height: 1px; background: var(--navy);
+  transform: scaleX(0); transform-origin: left; transition: transform 0.35s var(--ease);
 }
-.cl-bags button:hover, .cl-views button:hover, .tc-tabs button:hover { color: var(--navy); }
-.cl-bags button.is-on, .cl-views button.is-on, .tc-tabs button.is-on { color: var(--navy); box-shadow: inset 0 -2px 0 var(--navy); }
-.cl-bags button:focus-visible, .cl-views button:focus-visible, .tc-tabs button:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
-.cl-bags { justify-content: flex-end; }
-.cl-views { padding-left: 22px; border-left: 1px solid var(--line); }
-/* Under 1100 the title takes its own row and the two tab sets share the
-   next, so neither the title nor a tab ever wraps. */
-@media (min-width: 768px) and (max-width: 1099px) {
-  .cl-bar { grid-template-columns: 1fr auto; }
-  .cl-bar-title { grid-column: 1 / -1; }
-  .cl-bags { justify-content: flex-start; }
+.at-bags button:hover, .at-views button:hover, .at-bags button.is-on, .at-views button.is-on { color: var(--navy); }
+.at-bags button.is-on::after, .at-views button.is-on::after { transform: scaleX(1); }
+.at-bags button:focus-visible, .at-views button:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+.at-bag-n { margin-right: 7px; font-size: 9px; letter-spacing: 0.08em; opacity: 0.55; }
+
+/* The stage: the bag anchored low on the pink field, its colour name set
+   large in white behind it, four small corner notes. */
+.at { display: grid; }
+.at-media { min-width: 0; }
+.at-stage { position: relative; width: 100%; aspect-ratio: var(--at-ar, 1); background: var(--pink); overflow: hidden; container-type: inline-size; }
+.at-word {
+  position: absolute; z-index: 0; left: 5.5%; right: 5%; top: max(8.5%, 42px); margin: 0; pointer-events: none;
+  font-family: var(--font-display); font-weight: 400; color: #fff; font-size: 18.5cqi; line-height: 0.86; letter-spacing: -0.035em;
+  animation: at-word 0.5s var(--ease) both;
+}
+@keyframes at-word { from { opacity: 0; } to { opacity: 1; } }
+.at-frame { position: absolute; z-index: 1; left: 3%; right: 3%; top: 19%; bottom: 46px; }
+.at-frame .rc-stage { position: absolute; inset: 0; }
+.at-frame .at-photo, .at-frame .rc-canvas, .at-ghost {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%;
+}
+.at-ghost { z-index: 2; opacity: 0; pointer-events: none; }
+.at-meta {
+  position: absolute; z-index: 3; margin: 0; display: flex; gap: 6px;
+  font-size: 9.5px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--navy);
+}
+.at-meta-tl { top: 18px; left: 5.5%; }
+.at-meta-tr { top: 14px; right: 5%; padding: 4px 0; }
+.at-meta-tr.is-preview { padding: 4px 8px; background: var(--navy); color: #fff; }
+.at-meta-bl { bottom: 16px; left: 5.5%; }
+.at-meta-br { bottom: 16px; right: 5%; opacity: 0.5; }
+.at-meta-dim { opacity: 0.45; }
+
+/* The rail. */
+.at-rail { min-width: 0; container-type: inline-size; }
+.at-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+.at-name { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(40px, 4.4vw, 64px); line-height: 0.95; letter-spacing: -0.02em; }
+.at-price { margin: 0; font-family: var(--font-display); font-size: 22px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+.at-colour { margin-top: 26px; }
+.at-line { display: flex; align-items: baseline; gap: 10px; min-height: 24px; margin: 0 0 12px; white-space: nowrap; overflow: hidden; }
+.at-line-label { font-size: 9.5px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--opt-idle); }
+.at-line-name { font-size: 17px; font-weight: 500; color: var(--navy); }
+.at-line-name.is-hover { color: var(--opt-idle); }
+.at-line-kind { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 11.5px; color: var(--opt-idle); }
+
+/* One palette: photographed colours, then previews (dashed ring). */
+.at-palette { display: grid; gap: 6px; }
+.at-swatches { display: flex; flex-wrap: wrap; gap: 6px; margin-left: -5px; }
+.at-sw {
+  --sw: 44px; --dot: 34px;
+  position: relative; display: grid; place-items: center; width: var(--sw); height: var(--sw); padding: 0; margin: 0;
+  appearance: none; background: none; border: 0; border-radius: 50%; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.at-dot {
+  display: block; width: var(--dot); height: var(--dot); border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(20, 53, 98, 0.14); background-repeat: no-repeat;
+  transition: transform 0.28s var(--ease);
+}
+.at-sw::after {
+  content: ""; position: absolute; inset: 2px; border-radius: 50%; border: 1px solid transparent; pointer-events: none;
+  transition: border-color 0.22s var(--ease), border-width 0.22s var(--ease);
+}
+.at-sw:hover .at-dot { transform: scale(1.06); }
+.at-sw:active .at-dot { transform: scale(0.94); }
+.at-sw.is-exp::after { border: 1px dashed rgba(20, 53, 98, 0.5); }
+.at-sw.is-on .at-dot { transform: scale(0.86); }
+.at-sw.is-on::after { border: 1.5px solid var(--navy); }
+.at-sw.is-exp.is-on::after { border: 1.5px dashed var(--navy); }
+.at-sw:focus-visible { outline: 2px solid var(--navy); outline-offset: 1px; }
+.at-sw.is-off { cursor: not-allowed; }
+.at-sw.is-off .at-dot { opacity: 0.32; transform: none; }
+.at-sw.is-off::before {
+  content: ""; position: absolute; z-index: 1; left: 50%; top: 7px; bottom: 7px; width: 1px; background: var(--navy); transform: rotate(45deg);
+}
+.at-legend { display: flex; align-items: center; gap: 8px; margin: 10px 0 0; font-size: 11px; line-height: 1.45; color: var(--opt-idle); }
+.at-legend-ring { flex: none; width: 11px; height: 11px; border-radius: 50%; border: 1px dashed var(--navy); }
+
+/* Options: one compact row per choice. */
+.at-options { margin-top: 26px; border-top: 1px solid var(--line); }
+.at-opt { display: grid; grid-template-columns: 62px minmax(0, 1fr); align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.at-opt:has(+ .at-note) { border-bottom: 0; padding-bottom: 6px; }
+.at-opt-label { font-size: 9.5px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--opt-idle); }
+.at-seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.at-seg button {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; margin: 0; cursor: pointer;
+  appearance: none; background: var(--paper); border: 1px solid var(--line); color: var(--navy);
+  font: inherit; font-size: 12px; font-weight: 500; letter-spacing: 0.01em; white-space: nowrap;
+  transition: background-color 0.2s var(--ease), color 0.2s var(--ease), border-color 0.2s var(--ease);
+}
+.at-seg button:hover:not(:disabled) { border-color: var(--navy); }
+.at-seg button.is-on { background: var(--navy); border-color: var(--navy); color: #fff; }
+.at-seg button:disabled { opacity: 0.4; cursor: not-allowed; }
+.at-seg button:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+.at-delta { font-size: 10.5px; opacity: 0.7; }
+.at-note { margin: 0; padding: 0 0 10px 74px; font-size: 11.5px; line-height: 1.45; color: var(--opt-idle); border-bottom: 1px solid var(--line); }
+.at-options > .at-note:last-child { border-bottom: 0; padding-top: 10px; }
+@container (max-width: 330px) {
+  .at-opt { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .at-note { padding-left: 0; }
 }
 
-/* The studio: stage and panel. */
-.cs { display: grid; gap: 28px; align-items: start; }
-.cs-media { min-width: 0; }
-.cs-stage {
-  position: relative; width: 100%; aspect-ratio: var(--cs-ratio, 1.4); background: var(--pink); overflow: hidden;
-}
-/* Breathing room inside the stage, the same for every bag: the image is
-   contained, never cropped or stretched, whatever its proportions. */
-.cs-frame { position: absolute; inset: 7% 8%; }
-.cs-frame .rc-stage { position: absolute; inset: 0; }
-.cs-frame .cs-photo, .cs-frame .rc-canvas { object-fit: contain; }
-.cs-frame .rc-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-.cs-caption { margin: 12px 0 0; font-size: 13px; line-height: 1.5; color: var(--muted); }
-.cs-tag {
-  display: inline-block; margin-right: 10px; font-size: 10px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--navy);
-}
-.cs-caption.is-preview .cs-tag { padding: 3px 7px; box-shadow: inset 0 0 0 1px var(--navy); }
+.at-status { margin: 18px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--navy); }
+.at-status strong { font-weight: 600; }
+.at-status.is-preview { padding: 12px 14px; background: var(--pink); }
+.at-link { color: var(--navy); text-decoration: underline; text-underline-offset: 3px; }
 
-.cs-panel { min-width: 0; }
-.cs-titlerow { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
-.cs-name { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(40px, 4.6vw, 60px); line-height: 0.95; }
-.cs-price { margin: 0; font-family: var(--font-display); font-size: 24px; white-space: nowrap; }
-.cs-group { margin-top: 32px; }
-.cs-label { margin: 0; font-size: 11px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
-.cs-label-value { font-size: 15px; font-weight: 500; letter-spacing: 0; text-transform: none; }
-.cs-badge {
-  font-size: 9.5px; font-weight: 600; letter-spacing: 0.16em; padding: 4px 8px; box-shadow: inset 0 0 0 1px var(--navy); white-space: nowrap;
-}
-
-/* ONE swatch system for photographed and experimental colours: the same
-   square, the same grid, the same selected state. Columns are sized for
-   the longest name ("Champagne", "Silver & Gold"), so names wrap inside
-   their own column and never meet a neighbour. */
-.cs-swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 18px 8px; margin-top: 16px; }
-.cs-sw {
-  appearance: none; background: none; border: 0; padding: 6px 0 2px; margin: 0; cursor: pointer; font: inherit; color: var(--navy);
-  display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 0;
-}
-.cs-chip {
-  position: relative; display: block; width: 46px; height: 46px; box-shadow: inset 0 0 0 1px rgba(20, 53, 98, 0.18);
-  transition: outline-offset 0.18s var(--ease);
-}
-.cs-sw:hover .cs-chip { outline: 1px solid rgba(20, 53, 98, 0.45); outline-offset: 3px; }
-.cs-sw.is-on .cs-chip { outline: 2px solid var(--navy); outline-offset: 4px; }
-.cs-sw:focus-visible { outline: none; }
-.cs-sw:focus-visible .cs-chip { outline: 2px solid var(--navy); outline-offset: 4px; }
-.cs-sw-name {
-  display: block; max-width: 100%; text-align: center; font-size: 10.5px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;
-  line-height: 1.35; color: var(--opt-idle); overflow-wrap: break-word;
-}
-.cs-sw.is-on .cs-sw-name { color: var(--navy); font-weight: 600; }
-.cs-sw.is-off { cursor: not-allowed; }
-.cs-sw.is-off .cs-chip { opacity: 0.4; }
-.cs-sw.is-off .cs-chip::after {
-  content: ""; position: absolute; inset: 0;
-  background: linear-gradient(to top right, transparent calc(50% - 0.75px), var(--navy) calc(50% - 0.75px), var(--navy) calc(50% + 0.75px), transparent calc(50% + 0.75px));
-}
-.cs-sw.is-off .cs-sw-name { opacity: 0.55; }
-.cs-exp { padding-top: 28px; border-top: 1px solid var(--line); }
-.cs-note { margin: 14px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--muted); }
-.cs-options { margin-top: 32px; border-top: 1px solid var(--line); }
-.cs-options .opt-group:first-child { margin-top: 24px; }
-.cs-status { margin-top: 32px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 13.5px; line-height: 1.55; }
-.cs-status p { margin: 0; }
-.cs-status-h { font-size: 11px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 6px !important; }
-.cs-status.is-preview { padding: 18px 20px; border-top: 0; background: var(--pink); }
-.cs-link { color: var(--navy); text-decoration: underline; text-underline-offset: 3px; }
-
-/* Phones: the bag first and kept in view (sticky under the site header,
-   at most 44% of the screen), colour immediately beneath it. */
+/* Phones: the same stage, edge to edge and not pinned, the palette right
+   beneath it. */
 @media (max-width: 767px) {
-  .cl-bar { grid-template-columns: 1fr; gap: 6px; padding-top: 22px; margin-bottom: 0; border-bottom: 0; }
-  .cl-bags { justify-content: flex-start; }
-  .cl-views { padding-left: 0; border-left: 0; }
-  .cs { gap: 0; }
-  .cs-media { position: sticky; top: var(--hdr); z-index: 5; background: var(--paper); padding: 8px 0 10px; margin: 0 -20px; padding-inline: 20px; box-shadow: 0 1px 0 var(--line); }
-  .cs-stage { aspect-ratio: auto; height: min(calc((100vw - 40px) / var(--cs-ratio, 1.4)), 44svh); }
-  .cs-caption { margin-top: 8px; font-size: 12px; }
-  .cs-panel { padding-top: 22px; }
-  .cs-name { font-size: 40px; }
+  .at-top { gap: 0 16px; padding-top: 6px; }
+  .at-title { font-size: 22px; }
+  .at-views { margin-left: auto; padding-left: 0; border-left: 0; }
+  .at-bags { order: 3; width: 100%; margin-left: 0; justify-content: space-between; border-top: 1px solid var(--line); }
+  .at-media { margin: 0 calc(-1 * var(--gut)); }
+  .at-stage { aspect-ratio: var(--at-ar-phone, 1); max-height: 56svh; }
+  .at-frame { bottom: 40px; }
+  .at-meta-tl, .at-meta-bl { left: var(--gut); }
+  .at-meta-tr, .at-meta-br { right: var(--gut); }
+  .at-rail { padding-top: 18px; }
+  .at-name { font-size: 40px; }
+  .at-colour { margin-top: 16px; }
+  .at-seg button { min-height: 44px; }
 }
-/* Tablets and small laptops (768-1099): the bag across the full width,
-   sticky under the header, with the panel beneath in two columns
-   (photographed colours | experimental colours). Beside a panel the bag
-   could be no wider than ~450px here. */
+@media (max-width: 399px) { .at-bag-n { display: none; } }
+@media (min-width: 768px) and (max-width: 899px) {
+  .at-top { gap: 0 20px; }
+  .at-bags { gap: 0 18px; }
+  .at-views { padding-left: 18px; gap: 0 14px; }
+  .at-bag-n, .at-title-note { display: none; }
+}
+
+/* Tablets and up: the editorial split. The stage stays beside the rail. */
+@media (min-width: 768px) {
+  .at { grid-template-columns: minmax(0, 62fr) minmax(286px, 38fr); align-items: start; }
+  .at-media { position: sticky; top: calc(var(--hdr) + 12px); }
+  .at-stage { max-height: calc(100svh - var(--hdr) - 28px); }
+  .at-rail { padding: 6px 0 0 clamp(22px, 3.2vw, 56px); }
+}
 @media (min-width: 768px) and (max-width: 1099px) {
-  .cs { gap: 0; }
-  .cs-media { position: sticky; top: var(--hdr); z-index: 5; background: var(--paper); padding: 12px 0 14px; box-shadow: 0 1px 0 var(--line); }
-  .cs-stage { aspect-ratio: auto; height: min(calc((100vw - 40px) / var(--cs-ratio, 1.4)), 42vh); }
-  .cs-frame { inset: 6% 10%; }
-  .cs-panel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 48px; align-items: start; padding-top: 28px; }
-  .cs-kicker, .cs-titlerow, .cs-options, .cs-status { grid-column: 1 / -1; }
-  .cs-exp { padding-top: 0; border-top: 0; padding-left: 48px; margin-left: -48px; box-shadow: inset 1px 0 0 var(--line); }
-  .cs-options .opt-group { max-width: 520px; }
+  .at-sw { --sw: 40px; --dot: 31px; }
+  .at-swatches { gap: 5px; }
 }
-/* Desktop: two columns, a square stage on the left that stays in view
-   while the panel scrolls. */
 @media (min-width: 1100px) {
-  .cs { grid-template-columns: minmax(0, 7fr) minmax(360px, 5fr); gap: 64px; }
-  .cs-media { position: sticky; top: calc(var(--hdr) + 20px); }
-  .cs-stage { aspect-ratio: 1; max-height: calc(100vh - var(--hdr) - 110px); }
+  .at { grid-template-columns: minmax(0, 64fr) minmax(340px, 36fr); }
+  .at-rail { max-width: 500px; }
 }
+@media (prefers-reduced-motion: reduce) {
+  .at-word { animation: none; }
+  .at-dot, .at-sw::after, .at-seg button, .at-bags button::after, .at-views button::after { transition: none; }
+}
+
+/* Technical comparison sits under the same top bar. */
+.tc { padding-top: 12px; }
+.tc-tabs { display: flex; flex-wrap: wrap; gap: 0 22px; }
+.tc-tabs button {
+  position: relative; appearance: none; background: none; border: 0; margin: 0; padding: 12px 0; min-height: 44px; cursor: pointer;
+  font: inherit; font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--opt-idle);
+}
+.tc-tabs button:hover, .tc-tabs button.is-on { color: var(--navy); }
+.tc-tabs button.is-on { box-shadow: inset 0 -1px 0 var(--navy); }
+.tc-tabs button:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
 
 /* Technical comparison. */
 .tc-section { margin-top: 36px; }
 .tc-section:first-child { margin-top: 0; }
-.tc-h { margin: 0 0 14px; font-size: 11px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; }
+.tc-h { margin: 0 0 14px; font-family: var(--font-body); font-size: 11px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; }
 .tc-note { max-width: 72ch; margin: 12px 0 0; font-size: 13px; line-height: 1.55; color: var(--muted); }
 .tc-facts { margin: 16px 0 0; display: grid; gap: 6px; font-size: 13px; }
 .tc-facts div { display: grid; grid-template-columns: minmax(140px, auto) 1fr; gap: 12px; }

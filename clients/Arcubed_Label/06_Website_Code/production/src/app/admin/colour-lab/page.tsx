@@ -10,7 +10,7 @@ import { getBagBySlug } from "@/lib/repository";
 import ColourLab from "./ColourLab";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Colour Studio | Arcubed", robots: { index: false, follow: false } };
+export const metadata = { title: "Atelier | Arcubed", robots: { index: false, follow: false } };
 
 export default async function ColourLabPage() {
   if (!(await isAdmin())) redirect("/admin");

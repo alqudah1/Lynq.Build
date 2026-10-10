@@ -2,7 +2,7 @@
 
 Show a bag in a confirmed colour that has not been photographed yet, by
 recolouring the yarn of an authentic photograph in the browser. Status
-2026-10-10: working for all four bags in the admin Colour Studio
+2026-10-10: working for all four bags in the admin Atelier
 (`/admin/colour-lab`); **nothing is approved, so the storefront shows
 photography only**. No AI service or network request is involved per colour.
 
@@ -21,27 +21,29 @@ A preview is only ever attached to a colour that is already confirmed and
 purchasable in the catalogue (Supabase `product_colours`). Nothing in this
 system creates a colour or makes one orderable.
 
-## The admin Colour Studio (`/admin/colour-lab`)
+## The admin Atelier (`/admin/colour-lab`)
 
-Admin-only (redirects to `/admin` sign-in), noindex. Two views per bag:
+Admin-only (redirects to `/admin` sign-in), noindex. A top bar picks the bag
+and the view.
 
-- **Studio** (default): the bag as the customer would see it, on the pale
-  pink stage, with the bag's photographed colours and, beneath them,
-  **Experimental colours** labelled "Admin review · not for sale". Both use
-  one swatch system: photographed colours show a crop of their real yarn,
-  experimental ones a crop rendered by the same engine. Experimental colours
-  the bag's photograph cannot show convincingly are crossed out. Size,
-  handle, strap and chain work as on the shop and set the price. There is no
-  add-to-cart: a status panel says "Not available to order" for an
-  experimental colour, or links to the shop page for a photographed one.
-  Layout: phones stack the bag (sticky under the header) over the colours;
-  768–1099px keep the bag full-width and sticky with the panel in two
-  columns beneath; 1100px and up put a square sticky stage beside the
-  panel.
-- **Technical comparison**: source photograph picker (including evaluation
-  sources), material references and lightness limit, original vs recoloured
-  stills with render times, and validation pairs (each real colour predicted
-  with its own reference left out, beside its real photograph).
+- **Studio** (default): an editorial split. The stage (about 62% of the
+  width) shows the bag's cut-out anchored low on the pale pink field, its
+  colour name set large in white behind it, with four small corner notes
+  (bag number, Photograph / Digital preview, material, Arcubed Atelier).
+  The stage takes its proportion from the bag's photograph so wide bags
+  never float in empty pink. The rail beside it: name and price; the
+  selected colour (with "Photographed" or "Preview · not for sale"); one
+  palette of circular yarn swatches, photographed colours first, digital
+  previews second with a dashed ring (crossed out where the photograph
+  cannot show them); compact size / handle / strap / chain rows that set
+  the price exactly as on the shop; one status line. No add-to-cart.
+  Colour changes crossfade the bag (off under reduced motion). Tablets and
+  up keep the stage sticky beside the rail; phones show the same stage edge
+  to edge, unpinned, with the palette directly beneath it.
+- **Technical**: source photograph picker (including evaluation sources),
+  material references and lightness limit, original vs recoloured stills
+  with render times, and validation pairs (each real colour predicted with
+  its own reference left out, beside its real photograph).
 
 ## How it works
 
@@ -84,8 +86,8 @@ Admin-only (redirects to `/admin` sign-in), noindex. Two views per bag:
 1. Rand confirms the colour and it is added to the catalogue (purchasable).
 2. Photograph a flat swatch of the actual yarn under the studio lights; its
    mid-tone (40th–60th percentile of brightness) is the `value`.
-3. Review it in the Colour Studio (add the value to `PREVIEW_COLOURS` on a
-   review build, check it in Studio and Technical comparison). Rand or
+3. Review it in the Atelier (add the value to `PREVIEW_COLOURS` on a
+   review build, check it in Studio and Technical). Rand or
    Mustafa approves the exact image.
 4. Add one entry to `APPROVED_PREVIEWS` in `src/lib/colour-previews.ts`:
    ```ts

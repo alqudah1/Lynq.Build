@@ -8,6 +8,8 @@ export const PROFILES = generated.profiles as Record<string, YarnProfile[]>;
 const FAMILY_OF = generated.familyOf as Record<string, string>;
 /** The references a bag's previews may borrow from: its own material only. */
 export const profilesFor = (slug: string): YarnProfile[] => PROFILES[FAMILY_OF[slug]] ?? [];
+/** A bag's material family, e.g. "metallic-raffia". */
+export const familyOf = (slug: string): string | undefined => FAMILY_OF[slug];
 export const SOURCES = generated.sources as Record<string, { slug: string; width: number; height: number }>;
 export const MAP_WIDTH = generated.width as number;
 

@@ -1,38 +1,44 @@
 "use client";
 
-// Arcubed Colour Studio — the customer-facing composition of the colour
-// preview work, reviewed behind admin sign-in before anything reaches the
-// shop. The bag is the hero; colour is chosen beside it, so the result of a
-// choice is always in view.
+// Arcubed Atelier — the customer-facing composition of the colour preview
+// work, reviewed behind admin sign-in before anything reaches the shop.
 //
-// It deliberately does NOT reuse the shop's product-page Customizer layout:
-// that layout stacks the stage above the options (the bag scrolled away
-// while choosing), fits colour swatches to 62px photo-tile columns
-// (experimental colour labels overflowed their columns and overlapped), and
-// carries a fixed purchase bar that covered content. The shop's product page
-// is untouched by this file.
+// Composition: a campaign stage (the bag cut-out anchored low on the pale
+// pink field, its colour name set large in white behind it) beside one
+// compact rail: name and price, the selected colour, a single palette of
+// circular material swatches, compact options, one status line. Product ->
+// colour -> result -> configuration, with the bag always beside its
+// controls. Phones keep the same stage, unpinned, with the palette directly
+// beneath it.
 //
-// Nothing here can be ordered: there is no cart action at all. A
-// photographed colour links to its real page on the shop.
+// The shop's product page is untouched by this file. Nothing here can be
+// ordered: there is no cart action at all. A photographed colour links to
+// its real page on the shop; an experimental colour is marked as a digital
+// preview that is not for sale everywhere it appears.
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image, { getImageProps } from "next/image";
 import Link from "next/link";
 import type { Bag, Selection } from "@/lib/types";
-import { computeUnitPrice, defaultSelectionFor, money } from "@/lib/pricing";
+import { computeUnitPrice, defaultSelectionFor, isOptIn, money } from "@/lib/pricing";
 import { framesForColour, altFor, type Frame } from "@/lib/product-media";
 import RecolourStage, { loadSource } from "@/components/customizer/RecolourStage";
-import SizeSelector from "@/components/customizer/SizeSelector";
-import StrapHandleSelector from "@/components/customizer/StrapHandleSelector";
-import { profilesFor, SOURCES } from "@/lib/recolour/data";
+import { familyOf, profilesFor, SOURCES } from "@/lib/recolour/data";
 import { labToSrgb, srgbToLab, hexToRgb, buildLut, renderInto, type YarnProfile } from "@/lib/recolour/engine";
 import { PREVIEW_COLOURS, PREVIEW_SOURCES } from "@/lib/recolour/preview-colours";
 import { variantHref } from "@/lib/variant";
 
 const toHex = (rgb: number[]) => "#" + rgb.map((v) => v.toString(16).padStart(2, "0")).join("");
 
-/** A real colourway's swatch: the measured mid-tone of Rand's photographed
- *  yarn, never a guessed value. Two-tone colourways split the swatch. */
+const MATERIAL: Record<string, string> = {
+  "metallic-raffia": "Metallic raffia",
+  "matte-cord": "Matte cord",
+  "fringe-cord": "Fringe cord",
+};
+
+/** A real colourway's flat tone (shown until its texture loads): the
+ *  measured mid-tone of Rand's photographed yarn, never a guessed value.
+ *  Two-tone colourways split the swatch. */
 function realSwatch(name: string, refs: YarnProfile[], slug: string, fallback: string | null): string {
   const tone = (n: string) => {
     const p = refs.find((r) => r.product === slug && r.colour.toLowerCase() === n.trim().toLowerCase());
@@ -59,11 +65,11 @@ function stageSrc(frame: Frame, failed: Set<string> = new Set()): string {
 const SWATCH_FOCUS: Record<string, [number, number]> = {
   nova: [0.5, 0.56], "mini-luna": [0.5, 0.74], vault: [0.5, 0.62], loco: [0.5, 0.34],
 };
-/** Width of the close-up, as a fraction of the photograph: about three
- *  stitches across, so the swatch shows the material, not a flat colour. */
-const SWATCH_SPAN = 0.1;
+/** Width of the close-up, as a fraction of the photograph: a few stitches
+ *  across, so the swatch shows the material, not a flat colour. */
+const SWATCH_SPAN = 0.08;
 
-const STAGE_SIZES = "(max-width: 767px) 100vw, (max-width: 1099px) 56vw, 60vw";
+const STAGE_SIZES = "(max-width: 767px) 100vw, 62vw";
 
 /** A photographed colour's swatch: a close-up of its own photograph's
  *  stitches, over its measured mid-tone (shown until the image loads). */
@@ -84,8 +90,37 @@ function realChip(bag: Bag, name: string, flat: string, fx: number, fy: number):
 }
 
 type Choice = { kind: "real"; colourId: string } | { kind: "exp"; key: string };
+type SegOption = { id: string | null; label: string; delta: number; disabled?: boolean };
 
-export default function ColourStudio({ bag }: { bag: Bag }) {
+/** One option group as a compact segmented row: label, then the choices. */
+function Segment({ label, options, value, onPick }: { label: string; options: SegOption[]; value: string | null; onPick: (id: string | null) => void }) {
+  return (
+    <div className="at-opt" role="group" aria-label={label}>
+      <span className="at-opt-label" aria-hidden="true">{label}</span>
+      <div className="at-seg">
+        {options.map((o) => {
+          const on = o.id === value;
+          return (
+            <button
+              key={o.id ?? "none"}
+              type="button"
+              className={on ? "is-on" : undefined}
+              aria-pressed={on}
+              disabled={o.disabled}
+              aria-label={`${label}: ${o.label}${o.delta ? `, plus ${money(o.delta)}` : ""}${o.disabled ? ", unavailable in this colour" : ""}`}
+              onClick={() => onPick(o.id)}
+            >
+              {o.label}
+              {o.delta ? <span className="at-delta">+{o.delta}</span> : null}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export default function ColourStudio({ bag, index, total }: { bag: Bag; index: number; total: number }) {
   const refs = profilesFor(bag.slug);
   const source = (PREVIEW_SOURCES[bag.slug] ?? []).find((s) => !s.evaluation);
   const experimental = PREVIEW_COLOURS.filter(
@@ -97,17 +132,71 @@ export default function ColourStudio({ bag }: { bag: Bag }) {
   const [choice, setChoice] = useState<Choice>(() => ({ kind: "real", colourId: selection.colourId }));
   const [failed, setFailed] = useState<Set<string>>(() => new Set());
   const [expSwatches, setExpSwatches] = useState<Record<string, string>>({});
+  const [hover, setHover] = useState<string | null>(null);
   const [fx, fy] = SWATCH_FOCUS[bag.slug] ?? [0.5, 0.55];
   const price = computeUnitPrice(bag, selection);
 
   const realColour = bag.colours.find((c) => c.id === selection.colourId)!;
   const expColour = choice.kind === "exp" ? experimental.find((c) => c.key === choice.key) ?? null : null;
   const frame = framesForColour(bag, realColour.name)[0] ?? null;
+  const shownName = expColour ? expColour.name : realColour.name;
+  const choiceKey = choice.kind === "exp" ? `exp:${choice.key}` : `real:${choice.colourId}`;
 
-  // The stage keeps one proportion per bag (from its photographs), so a
-  // colour change never resizes it: Nova is wide, Mini Luna nearly square.
-  const srcInfo = source ? SOURCES[source.frame] : null;
-  const ratio = Math.min(1.6, Math.max(1.15, srcInfo ? srcInfo.width / srcInfo.height : 1.4));
+  // Crossfade: the outgoing bag is copied onto a canvas above the stage and
+  // faded out once the incoming one is on screen, so a colour change reads
+  // as the bag changing colour, never as a blank or a jump.
+  const frameRef = useRef<HTMLDivElement>(null);
+  const ghostRef = useRef<HTMLCanvasElement>(null);
+  const pending = useRef<{ kind: "exp" } | { kind: "real"; frameId: string } | null>(null);
+
+  const snapshot = () => {
+    const box = frameRef.current, g = ghostRef.current;
+    if (!box || !g || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const shown = [...box.querySelectorAll<HTMLCanvasElement | HTMLImageElement>(".rc-canvas, img")].find((el) =>
+      getComputedStyle(el).visibility !== "hidden" &&
+      (el instanceof HTMLCanvasElement ? el.width > 0 : el.complete && el.naturalWidth > 0));
+    if (!shown) return;
+    const W = box.clientWidth, H = box.clientHeight, dpr = Math.min(2, window.devicePixelRatio || 1);
+    const iw = shown instanceof HTMLCanvasElement ? shown.width : shown.naturalWidth;
+    const ih = shown instanceof HTMLCanvasElement ? shown.height : shown.naturalHeight;
+    const s = Math.min(W / iw, H / ih), dw = iw * s, dh = ih * s;
+    g.width = Math.round(W * dpr); g.height = Math.round(H * dpr);
+    const ctx = g.getContext("2d")!;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    // the same placement as the CSS: contained, centred, standing on the floor
+    ctx.drawImage(shown, (W - dw) / 2, H - dh, dw, dh);
+    g.style.transition = "none";
+    g.style.opacity = "1";
+  };
+
+  useEffect(() => {
+    const p = pending.current, g = ghostRef.current, box = frameRef.current;
+    pending.current = null;
+    if (!p || !g || !box) return;
+    let off = false;
+    const fade = () => requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (off) return;
+      g.style.transition = "opacity 0.36s cubic-bezier(0.2, 0.6, 0.2, 1)";
+      g.style.opacity = "0";
+    }));
+    if (p.kind === "exp" && source) {
+      // RecolourStage draws as soon as the (cached) source resolves; this
+      // waits on the same promise, so the fade starts after the new colour.
+      loadSource(source.frame).then(fade, fade);
+    } else if (p.kind === "real") {
+      let frames = 0; // give up waiting after ~1.5s of frames
+      const tick = () => {
+        if (off) return;
+        frames++;
+        const img = [...box.querySelectorAll("img")].find((i) => (i.currentSrc || i.src).includes(p.frameId));
+        if ((img && img.complete && img.naturalWidth > 0) || frames > 90) fade();
+        else requestAnimationFrame(tick);
+      };
+      tick();
+    } else fade();
+    return () => { off = true; };
+  }, [choiceKey, source]);
 
   // Warm every photographed colourway's stage image once the page is idle,
   // with the same derivative the stage asks for, so switching is instant.
@@ -163,6 +252,10 @@ export default function ColourStudio({ bag }: { bag: Bag }) {
   }, [bag.slug, source?.frame]);
 
   const pickReal = (colourId: string) => {
+    if (choice.kind === "real" && choice.colourId === colourId) return;
+    const f = framesForColour(bag, bag.colours.find((c) => c.id === colourId)?.name)[0];
+    snapshot();
+    pending.current = f ? { kind: "real", frameId: f.frameId } : null;
     setChoice({ kind: "real", colourId });
     setSelection((prev) => ({
       ...prev,
@@ -170,11 +263,16 @@ export default function ColourStudio({ bag }: { bag: Bag }) {
       secondaryColourId: bag.colours.find((c) => c.id === colourId)?.isTwoTone ? colourId : null,
     }));
   };
+  const pickExp = (key: string) => {
+    if (choice.kind === "exp" && choice.key === key) return;
+    snapshot();
+    pending.current = { kind: "exp" };
+    setChoice({ kind: "exp", key });
+  };
   // Strap or chain, not both — the same rule as the shop.
   const pickStrap = (strapId: string | null) => setSelection((p) => ({ ...p, strapId, chainId: strapId ? null : p.chainId }));
   const pickChain = (chainId: string | null) => setSelection((p) => ({ ...p, chainId, strapId: chainId ? null : p.strapId }));
 
-  const shownName = expColour ? expColour.name : realColour.name;
   const photo = frame ? (
     <Image
       key="photo"
@@ -185,139 +283,159 @@ export default function ColourStudio({ bag }: { bag: Bag }) {
       sizes={STAGE_SIZES}
       quality={90}
       priority
-      className="cs-photo"
+      className="at-photo"
     />
   ) : null;
 
+  const opts = (list: { id: string; label: string; priceDelta: number; compatibleWith?: string[] }[], strip?: RegExp): SegOption[] =>
+    list.map((o) => ({
+      id: o.id,
+      label: strip ? o.label.replace(strip, "").trim() || o.label : o.label,
+      delta: o.priceDelta,
+      disabled: !!o.compatibleWith && !o.compatibleWith.includes(selection.colourId),
+    }));
+  const withNone = (list: { priceDelta: number }[], o: SegOption[]) => (isOptIn(list) ? [{ id: null, label: "None", delta: 0 }, ...o] : o);
+  const sizeNote = bag.sizes?.find((s) => s.id === selection.sizeId)?.note;
+  const material = MATERIAL[familyOf(bag.slug) ?? ""];
+  // The stage takes its proportion from the bag's photograph: wide bags get
+  // a wider stage, so the field never turns into empty pink around them.
+  const srcInfo = source ? SOURCES[source.frame] : null;
+  const r = (srcInfo ? srcInfo.width / srcInfo.height : 1.4) * 0.6;
+  const ar = Math.min(1.15, Math.max(0.82, r));
+  // Phones: never taller than wide-ish, so the palette stays right below.
+  const arPhone = Math.min(1.15, Math.max(0.98, r));
+  // Hovering another swatch previews its name in the colour line.
+  const hovered = hover && hover !== shownName ? hover : null;
+
   return (
-    <div className="cs" style={{ ["--cs-ratio" as string]: ratio }}>
-      <div className="cs-media">
-        <div className="cs-stage" aria-live="polite">
-          <div className="cs-frame">
-          {expColour && source ? (
-            <RecolourStage
-              frame={source.frame}
-              colour={expColour}
-              profiles={refs}
-              fallback={photo}
-              alt={`Digital colour preview of the ${bag.name} in ${expColour.name}`}
-            />
-          ) : (
-            photo
-          )}
+    <div className="at" style={{ ["--at-ar" as string]: ar.toFixed(3), ["--at-ar-phone" as string]: arPhone.toFixed(3) }}>
+      <div className="at-media">
+        <div className="at-stage">
+          <p className="at-meta at-meta-tl">
+            <span>Nº {String(index + 1).padStart(2, "0")}</span>
+            <span className="at-meta-dim">/ {String(total).padStart(2, "0")}</span>
+          </p>
+          <p className={`at-meta at-meta-tr${expColour ? " is-preview" : ""}`}>{expColour ? "Digital preview" : "Photograph"}</p>
+          <p key={shownName} className="at-word" aria-hidden="true">{shownName}</p>
+          <div className="at-frame" ref={frameRef}>
+            {expColour && source ? (
+              <RecolourStage
+                frame={source.frame}
+                colour={expColour}
+                profiles={refs}
+                fallback={photo}
+                alt={`Digital colour preview of the ${bag.name} in ${expColour.name}`}
+              />
+            ) : (
+              photo
+            )}
+            <canvas ref={ghostRef} className="at-ghost" aria-hidden="true" />
           </div>
+          {material ? <p className="at-meta at-meta-bl">{material}</p> : null}
+          <p className="at-meta at-meta-br">Arcubed Atelier</p>
         </div>
-        <p className={`cs-caption${expColour ? " is-preview" : ""}`}>
-          {expColour && source ? (
-            <>
-              <span className="cs-tag">Digital colour preview</span>
-              Recoloured from a photograph of the {source.colour} {bag.name}. Not a photograph of {expColour.name}.
-            </>
-          ) : (
-            <>
-              <span className="cs-tag">Photograph</span>
-              {bag.name} in {realColour.name}, as it is made.
-            </>
-          )}
-        </p>
       </div>
 
-      <div className="cs-panel">
-        <p className="cs-kicker">Colour Studio</p>
-        <div className="cs-titlerow">
-          <h2 className="cs-name">{bag.name}</h2>
-          <p className="cs-price">{money(price)}</p>
+      <div className="at-rail">
+        <div className="at-head">
+          <h2 className="at-name">{bag.name}</h2>
+          <p className="at-price" aria-label={`Price ${money(price)}`}>{money(price)}</p>
         </div>
 
-        <section className="cs-group" aria-labelledby="cs-colour-h">
-          <h3 id="cs-colour-h" className="cs-label">
-            Colour <span className="cs-label-value">{shownName}</span>
-          </h3>
-          <div className="cs-swatches" role="group" aria-label={`${bag.name} colours, photographed`}>
-            {bag.colours.map((c) => {
-              const on = choice.kind === "real" && c.id === selection.colourId;
-              return (
-                <button key={c.id} type="button" className={`cs-sw${on ? " is-on" : ""}`} aria-pressed={on} onClick={() => pickReal(c.id)}>
-                  <span className="cs-chip" style={realChip(bag, c.name, realSwatch(c.name, refs, bag.slug, c.hex ?? null), fx, fy)} aria-hidden="true" />
-                  <span className="cs-sw-name">{c.name}</span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        {experimental.length && source ? (
-          <section className="cs-group cs-exp" aria-labelledby="cs-exp-h">
-            <h3 id="cs-exp-h" className="cs-label">
-              Experimental colours <span className="cs-badge">Admin review · not for sale</span>
-            </h3>
-            <div className="cs-swatches" role="group" aria-label="Experimental colours, digital previews">
-              {experimental.map((c) => {
-                const off = tooLight(c.value);
-                const on = choice.kind === "exp" && choice.key === c.key;
+        <section className="at-colour" aria-label="Colour">
+          <p className="at-line">
+            <span className="at-line-label">Colour</span>
+            <span className={`at-line-name${hovered ? " is-hover" : ""}`}>{hovered ?? shownName}</span>
+            {!hovered ? <span className="at-line-kind">{expColour ? "Preview · not for sale" : "Photographed"}</span> : null}
+          </p>
+          <div className="at-palette">
+            <div className="at-swatches" role="group" aria-label={`${bag.name} colours, photographed`}>
+              {bag.colours.map((c) => {
+                const on = choice.kind === "real" && c.id === selection.colourId;
                 return (
                   <button
-                    key={c.key}
+                    key={c.id}
                     type="button"
-                    className={`cs-sw${on ? " is-on" : ""}${off ? " is-off" : ""}`}
+                    className={`at-sw${on ? " is-on" : ""}`}
                     aria-pressed={on}
-                    disabled={off}
-                    aria-label={off ? `${c.name}: no reliable preview for this bag` : `${c.name}, digital preview`}
-                    onClick={() => setChoice({ kind: "exp", key: c.key })}
+                    aria-label={`${c.name}, photographed colour`}
+                    title={c.name}
+                    onClick={() => pickReal(c.id)}
+                    onMouseEnter={() => setHover(c.name)}
+                    onMouseLeave={() => setHover(null)}
                   >
-                    <span
-                      className="cs-chip"
-                      style={{ background: c.swatch, backgroundImage: expSwatches[c.key] ? `url(${expSwatches[c.key]})` : undefined, backgroundSize: "cover" }}
-                      aria-hidden="true"
-                    />
-                    <span className="cs-sw-name">{c.name}</span>
+                    <span className="at-dot" style={realChip(bag, c.name, realSwatch(c.name, refs, bag.slug, c.hex ?? null), fx, fy)} />
                   </button>
                 );
               })}
             </div>
-            {experimental.some((c) => tooLight(c.value)) ? (
-              <p className="cs-note">
-                Crossed-out colours have no reliable preview: this bag&rsquo;s photograph is too dark to show them convincingly.
-              </p>
+            {experimental.length && source ? (
+              <div className="at-swatches at-swatches-exp" role="group" aria-label="Experimental colours, digital previews, not for sale">
+                {experimental.map((c) => {
+                  const off = tooLight(c.value);
+                  const on = choice.kind === "exp" && choice.key === c.key;
+                  return (
+                    <button
+                      key={c.key}
+                      type="button"
+                      className={`at-sw is-exp${on ? " is-on" : ""}${off ? " is-off" : ""}`}
+                      aria-pressed={on}
+                      disabled={off}
+                      aria-label={off ? `${c.name}: no reliable preview for this bag` : `${c.name}, digital preview, not for sale`}
+                      title={off ? `${c.name} — no reliable preview` : `${c.name} — digital preview`}
+                      onClick={() => pickExp(c.key)}
+                      onMouseEnter={() => setHover(c.name)}
+                      onMouseLeave={() => setHover(null)}
+                    >
+                      <span
+                        className="at-dot"
+                        style={{ background: c.swatch, backgroundImage: expSwatches[c.key] ? `url(${expSwatches[c.key]})` : undefined, backgroundSize: "cover" }}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
             ) : null}
-          </section>
-        ) : null}
+          </div>
+          {experimental.length && source ? (
+            <p className="at-legend">
+              <span className="at-legend-ring" aria-hidden="true" />
+              Digital previews · admin review, not for sale
+              {experimental.some((c) => tooLight(c.value)) ? <> · crossed out: too light for this photograph</> : null}
+            </p>
+          ) : null}
+        </section>
 
-        <div className="cs-options">
-          {bag.sizes ? (
-            <SizeSelector sizes={bag.sizes} selectedId={selection.sizeId} onSelect={(sizeId) => setSelection((p) => ({ ...p, sizeId }))} />
+        <div className="at-options">
+          {bag.sizes?.length ? (
+            <Segment label="Size" options={opts(bag.sizes)} value={selection.sizeId} onPick={(sizeId) => sizeId && setSelection((p) => ({ ...p, sizeId }))} />
           ) : null}
-          {bag.handles ? (
-            <StrapHandleSelector label="Handle" kind="handle" bag={bag} options={bag.handles} selectedId={selection.handleId}
-              colourId={selection.colourId} onSelect={(handleId) => setSelection((p) => ({ ...p, handleId }))} />
+          {sizeNote ? <p className="at-note">{sizeNote}</p> : null}
+          {bag.handles?.length ? (
+            <Segment label="Handle" options={withNone(bag.handles, opts(bag.handles))} value={selection.handleId}
+              onPick={(handleId) => setSelection((p) => ({ ...p, handleId }))} />
           ) : null}
-          {bag.straps ? (
-            <StrapHandleSelector label="Strap" kind="strap" bag={bag} options={bag.straps} selectedId={selection.strapId}
-              colourId={selection.colourId} onSelect={pickStrap} />
+          {bag.straps?.length ? (
+            <Segment label="Strap" options={withNone(bag.straps, opts(bag.straps, /\s*strap$/i))} value={selection.strapId} onPick={pickStrap} />
           ) : null}
-          {bag.chains ? (
-            <StrapHandleSelector label="Chain" kind="chain" bag={bag} options={bag.chains} selectedId={selection.chainId}
-              colourId={selection.colourId} onSelect={pickChain} />
+          {bag.chains?.length ? (
+            <Segment label="Chain" options={withNone(bag.chains, opts(bag.chains, /\s*chain$/i))} value={selection.chainId} onPick={pickChain} />
           ) : null}
-          {bag.straps?.length && bag.chains?.length ? <p className="cs-note">Choose a strap or a chain, not both.</p> : null}
+          {bag.straps?.length && bag.chains?.length ? <p className="at-note">A strap or a chain, not both.</p> : null}
         </div>
 
-        <div className={`cs-status${expColour ? " is-preview" : ""}`} role="status">
-          {expColour ? (
+        <p className={`at-status${expColour ? " is-preview" : ""}`} role="status">
+          {expColour && source ? (
             <>
-              <p className="cs-status-h">Not available to order</p>
-              <p>{expColour.name} is an experimental colour shown only in this admin studio. Rand has not confirmed it.</p>
+              <strong>Not available to order.</strong> {expColour.name} is an unconfirmed colour, recoloured from the {source.colour} {bag.name} photograph.
             </>
           ) : (
             <>
-              <p className="cs-status-h">On the shop</p>
-              <p>
-                {bag.name} in {realColour.name} is a confirmed colour.{" "}
-                <Link href={variantHref(bag.slug, realColour.name)} className="cs-link">View it on the shop</Link>
-              </p>
+              <strong>Confirmed colour.</strong>{" "}
+              <Link href={variantHref(bag.slug, realColour.name)} className="at-link">View {realColour.name} on the shop</Link>
             </>
           )}
-        </div>
+        </p>
       </div>
     </div>
   );
