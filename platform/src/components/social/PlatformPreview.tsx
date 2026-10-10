@@ -43,8 +43,8 @@ export function PlatformPreview({
   const first = media[0];
   const isVideo = first?.contentType.startsWith("video/");
   const verticalFormats = ["story", "reel", "short_video"];
-  // The preview never crops: Instagram feed images are 4:5, vertical formats 9:16 (capped in height on tall screens), the rest 4:3.
-  const aspect = verticalFormats.includes(format) ? "aspect-[9/16] max-h-[28rem]" : platform === "instagram" ? "aspect-[4/5]" : "aspect-[4/3]";
+  // The preview never crops: Instagram feed images are square, vertical formats 9:16 (capped in height on tall screens), the rest 4:3.
+  const aspect = verticalFormats.includes(format) ? "aspect-[9/16] max-h-[28rem]" : platform === "instagram" ? "aspect-square" : "aspect-[4/3]";
   const mediaFirst = platform === "instagram" || platform === "tiktok" || platform === "youtube";
   const hasText = Boolean(hook.trim() || body.trim());
 

@@ -101,8 +101,11 @@ export default async function SocialContentItemPage({ params, searchParams }: { 
   const draftable = variants.some((v) => v.status === "draft" || v.status === "changes_requested");
 
   return (
-    <div className="flex flex-col gap-8 px-6 py-8 md:px-10">
-      <Breadcrumbs items={socialBreadcrumbs(organization.name, organizationSlug, [{ label: "Library", href: href("/social/library") }, { label: item.title }])} />
+    <div className="flex flex-col gap-6 px-4 py-5 md:gap-8 md:px-10 md:py-8">
+      {/* Breadcrumbs are desktop wayfinding; on a phone the bottom tabs do that job and the title needs the room. */}
+      <div className="hidden md:block">
+        <Breadcrumbs items={socialBreadcrumbs(organization.name, organizationSlug, [{ label: "Library", href: href("/social/library") }, { label: item.title }])} />
+      </div>
       <PageHeader
         title={item.title}
         description={[item.brandName, item.campaignName, humanize(item.brief.kind), humanize(item.brief.objective)].filter(Boolean).join(" · ")}
@@ -128,8 +131,8 @@ export default async function SocialContentItemPage({ params, searchParams }: { 
         <EmptyState title="No platform versions." description="This item has no active posts. Create a new one from the Content Studio." />
       ) : (
         <>
-          <nav aria-label="Platform versions" className="-mx-1 overflow-x-auto">
-            <ul className="flex gap-2 px-1">
+          <nav aria-label="Platform versions" className="-mx-1">
+            <ul className="flex flex-wrap gap-2 px-1">
               {variants.map((v) => {
                 const active = v.id === selected.id;
                 return (
