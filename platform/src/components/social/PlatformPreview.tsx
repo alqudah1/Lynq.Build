@@ -43,6 +43,7 @@ export function PlatformPreview({
   const first = media[0];
   const isVideo = first?.contentType.startsWith("video/");
   const verticalFormats = ["story", "reel", "short_video"];
+  // The preview never crops: Instagram feed images are square, vertical formats 9:16 (capped in height on tall screens), the rest 4:3.
   const aspect = verticalFormats.includes(format) ? "aspect-[9/16] max-h-[28rem]" : platform === "instagram" ? "aspect-square" : "aspect-[4/3]";
   const mediaFirst = platform === "instagram" || platform === "tiktok" || platform === "youtube";
   const hasText = Boolean(hook.trim() || body.trim());
@@ -50,10 +51,10 @@ export function PlatformPreview({
   const mediaBlock = first ? (
     <div className={`relative w-full overflow-hidden rounded-sm bg-black ${aspect}`}>
       {isVideo ? (
-        <video controls preload="metadata" src={first.previewUrl} className="h-full w-full object-cover" aria-label={first.title} />
+        <video controls preload="metadata" src={first.previewUrl} className="h-full w-full object-contain" aria-label={first.title} />
       ) : (
         // eslint-disable-next-line @next/next/no-img-element -- private asset streamed from the authenticated assets API; no image loader applies.
-        <img src={first.previewUrl} alt={first.title} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+        <img src={first.previewUrl} alt={first.title} loading="lazy" decoding="async" className="h-full w-full object-contain" />
       )}
       {media.length > 1 ? <span className="absolute right-2 top-2 rounded-sm bg-background/80 px-2 py-0.5 text-[0.65rem] text-foreground">1 / {media.length}</span> : null}
     </div>

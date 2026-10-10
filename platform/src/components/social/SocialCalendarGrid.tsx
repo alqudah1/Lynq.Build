@@ -154,7 +154,7 @@ export function SocialCalendarGrid({
           value={entry.dayKey}
           disabled={isPending}
           onChange={(event) => move(entry, event.target.value)}
-          className="min-h-9 min-w-0 flex-1 rounded-sm border border-border bg-elevated px-2 text-xs text-foreground"
+          className="min-h-11 min-w-0 flex-1 rounded-sm border border-border bg-elevated px-2 text-xs text-foreground"
         >
           {days.some((d) => d.key === entry.dayKey) ? null : <option value={entry.dayKey}>{entry.dayKey}</option>}
           {days.map((d) => (
@@ -181,7 +181,7 @@ export function SocialCalendarGrid({
         </div>
         {renderMove(entry)}
         {entry.pendingApproval && canApprove ? (
-          <button type="button" disabled={isPending || entry.blocking} onClick={() => approveEntry(entry)} className="min-h-9 rounded-sm bg-foreground px-3 text-[0.65rem] font-medium uppercase tracking-[0.08em] text-background hover:opacity-90 disabled:opacity-50">
+          <button type="button" disabled={isPending || entry.blocking} onClick={() => approveEntry(entry)} className="min-h-11 rounded-sm bg-foreground px-3 text-xs font-medium uppercase tracking-[0.08em] text-background hover:opacity-90 disabled:opacity-50">
             Approve
           </button>
         ) : null}
@@ -204,7 +204,7 @@ export function SocialCalendarGrid({
         {list.map((g) => (
           <li key={g.platform} className="flex min-h-11 items-center justify-between gap-2 rounded-sm border border-dashed border-border px-2.5 py-1.5 text-xs text-subtle">
             <span>No approved {g.platformLabel} post</span>
-            <Link href={g.createHref} className="shrink-0 text-foreground hover:underline">+ Create</Link>
+            <Link href={g.createHref} className="flex min-h-11 shrink-0 items-center px-2 text-foreground hover:underline">+ Create</Link>
           </li>
         ))}
       </ul>
@@ -220,7 +220,20 @@ export function SocialCalendarGrid({
 
       {view === "month" ? (
         <>
-          <div className="overflow-x-auto">
+          {/* Phones: the month as a list of days (the 7-column grid needs sideways scrolling and its cells are too small to tap). */}
+          <ol className="flex flex-col gap-3 md:hidden" aria-label="This month">
+            {days.filter((d) => d.inMonth && (!d.isPast || d.isToday || (byDay.get(d.key) ?? []).length)).map((d) => {
+              const list = byDay.get(d.key) ?? [];
+              return (
+                <li key={`m-${d.key}`} className={`flex flex-col gap-2 rounded-md border p-2 ${d.isToday ? "border-border-strong" : "border-border"}`}>
+                  <h3 className={`text-xs uppercase tracking-[0.1em] ${d.isToday ? "text-foreground" : "text-subtle"}`}>{d.label}{d.isToday ? " · Today" : ""}</h3>
+                  {list.length ? <ul className="flex flex-col gap-2">{list.map((e) => <li key={e.variantId}>{renderEntry(e)}</li>)}</ul> : null}
+                  {!d.isPast ? renderGaps(d.key) : null}
+                </li>
+              );
+            })}
+          </ol>
+          <div className="hidden overflow-x-auto md:block">
             <div className="grid min-w-[44rem] grid-cols-7 overflow-hidden rounded-md border border-border">
               {days.slice(0, 7).map((d) => (
                 <div key={`h-${d.key}`} aria-hidden="true" className="border-b border-border bg-elevated px-2 py-2 text-[0.65rem] uppercase tracking-[0.1em] text-subtle">{d.weekday}</div>
@@ -265,7 +278,7 @@ export function SocialCalendarGrid({
             </div>
           </div>
           {selected ? (
-            <div className="flex flex-col gap-2 rounded-md border border-border-strong p-3 sm:max-w-md">
+            <div className="hidden flex-col gap-2 rounded-md border border-border-strong p-3 sm:max-w-md md:flex">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs uppercase tracking-[0.1em] text-subtle">Selected post</p>
                 <button type="button" onClick={() => setSelectedId(null)} className="min-h-9 px-2 text-xs text-muted hover:text-foreground">Close</button>
@@ -273,7 +286,7 @@ export function SocialCalendarGrid({
               {renderEntry(selected)}
             </div>
           ) : (
-            <p className="text-xs text-subtle">Drag a post to another day, or select it to move or approve it.</p>
+            <p className="hidden text-xs text-subtle md:block">Drag a post to another day, or select it to move or approve it.</p>
           )}
         </>
       ) : (

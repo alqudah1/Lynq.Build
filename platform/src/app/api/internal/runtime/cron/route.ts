@@ -7,7 +7,7 @@ import { timingSafeEqualStrings } from "@/lib/communications-os/secrets";
 import { pollAndProcess } from "@/lib/runtime/worker";
 import { enqueueDueAutomationRules } from "@/lib/social-os/automation";
 import { loadTelegramEnv, resolveTelegramActor, runMorningTelegramSend } from "@/lib/social-os/telegram";
-import { fillWeekPlanImages } from "@/lib/social-os/week-plans";
+import { applyWeekPlan, currentWeekPlan, fillWeekPlanImages, generatePlanImages, getWeekPlanStatus } from "@/lib/social-os/week-plans";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 800;
@@ -33,6 +33,24 @@ export async function GET(request: Request) {
   } catch (err) {
     console.error("telegram morning send failed", err instanceof Error ? err.message.split(":")[0] : "unknown error");
   }
+  // Social: once an hour, re-apply the current week plan wherever it is already loaded, so caption, date, art and
+  // highlight changes land on their own (nobody has to press Re-load). Never blocks job processing.
+  let planApplied = 0;
+  try {
+    const plan = currentWeekPlan();
+    const actor = await resolveTelegramActor(db, loadTelegramEnv());
+    if (plan && actor && new Date().getMinutes() < 15) {
+      for (const organizationId of actor.organizationIds) {
+        const status = await getWeekPlanStatus(db, { organizationId, actorUserId: actor.userId, planKey: plan.key });
+        if (!status.loaded) continue;
+        const report = await applyWeekPlan(db, { organizationId, actorUserId: actor.userId, planKey: plan.key });
+        planApplied++;
+        if (report.imagesQueued.length) await generatePlanImages(db, { organizationId, actorUserId: actor.userId, queue: report.imagesQueued.slice(0, 3) });
+      }
+    }
+  } catch (err) {
+    console.error("week plan auto-apply failed", err instanceof Error ? err.message.slice(0, 200) : "unknown error");
+  }
   // Social: finish week-plan images the load-time job didn't get to (a few per run). Never blocks job processing.
   let planImages = 0;
   try {
@@ -50,5 +68,5 @@ export async function GET(request: Request) {
     processed.push(...result.processed.map((job) => job.id));
     if (result.processed.length === 0) break;
   }
-  return Response.json({ ok: true, processed: processed.length, automationEnqueued, telegramSent, planImages });
+  return Response.json({ ok: true, processed: processed.length, automationEnqueued, telegramSent, planApplied, planImages });
 }
