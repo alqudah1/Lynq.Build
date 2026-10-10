@@ -8,6 +8,8 @@ const nextConfig: NextConfig = {
       "./node_modules/ffmpeg-static/ffmpeg",
       "./public/content-studio/codeitlearn/**/*",
       "./public/content-studio/lynq/**/*",
+      // Story cards and highlight covers render text through librsvg; the fonts must travel with the function.
+      "./src/assets/fonts/**/*",
     ],
   },
   // This repo also contains an unrelated static site (and its own
