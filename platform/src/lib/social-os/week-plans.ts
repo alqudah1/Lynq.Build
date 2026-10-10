@@ -2,7 +2,8 @@ import "server-only";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { marketingChannelAccounts, marketingContentItems } from "@/db/schema";
-import { resolveAssetRow } from "./assets";
+import { createUploadedAsset, resolveAssetBytes, resolveAssetRow } from "./assets";
+import { composeStoryCard, type StoryBrand } from "./story-card";
 import { createBrand, listBrands } from "./brands";
 import { updateAccount } from "./connections";
 import { archiveContentItem, createContentItem, getContentItemForUser, getVariantForUser, updateContentItem, updateVariant, type SocialContentItem } from "./content";
@@ -143,8 +144,9 @@ export const WEEK_PLANS: WeekPlan[] = [
     weekStart: "2026-10-07",
     retired: ["lynq-wed", "lynq-sat", "lynq-mon", "codeit-mon", "lynq-mon-r", "lynq-reel-tue"],
     highlights: {
-      LYNQ: ["START HERE", "WORK", "RESULTS", "PRICING", "BEHIND"],
-      CodeIt: ["START HERE", "BUILDS", "LESSONS", "PRICING", "ABOUT"],
+      // LYNQ: each client keeps its own highlight (the profile already has KINGSBRIDGE, NASMA, AMY); series get one each.
+      LYNQ: ["START HERE", "KINGSBRIDGE", "NASMA", "AMY", "ARCUBED", "FIX THIS", "WHAT YOU GET", "OFFICE", "BEHIND"],
+      CodeIt: ["START HERE", "BUILDS", "LESSONS", "ASK THE TEACHER", "FREE", "ABOUT"],
     },
     feed: [
       // ── LYNQ — grid rows read PROOF → TEACH → OFFER/FOUNDER. Series names repeat every week so people learn them.
@@ -158,7 +160,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `A dark gallery at night, four plinths in a row each under its own acid-lime spotlight, one object on each: a brass house key on a ring, a brass reservation bell, a small folded photo-booth curtain in deep velvet, a handmade crochet tote. Polished black floor reflecting the four pools of light; the LYNQ mascot stands at the end of the row looking at them. Headline "Built by LYNQ." large in thin white type above the plinths, "Four businesses. Two cities. One standard." small in lime beneath. No real people, no faces, no website screens, no logos. ${LYNQ_LOOK}`,
               },
       {
-        key: "lynq-tue", brand: LYNQ, day: "2026-10-08", time: "07:30", pillar: "TEACH", storyHighlight: null,
+        key: "lynq-tue", brand: LYNQ, day: "2026-10-08", time: "07:30", pillar: "TEACH", storyHighlight: "FIX THIS",
         title: "LYNQ · FIX THIS — Your menu is a PDF", kind: "carousel", platforms: ["instagram", "facebook"],
         hook: "Your menu is a PDF. That's costing you tables.",
         body: "FIX THIS: your menu is a PDF.\n\nOn a phone, a PDF menu opens tiny, loads slowly, and makes people pinch and zoom. Someone hungry at 6:40pm doesn't zoom. They go back and tap the next restaurant.\n\nThe fix takes an afternoon:\n1. A real menu page (text, not a file)\n2. A booking button at the top of every page\n3. Hours and phone number you can see without scrolling\n\nSave this for your next website update, or send it to the restaurant owner who needs it.",
@@ -167,7 +169,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `A real paper restaurant menu folded down into a tiny unreadable square, sitting on a giant phone screen like a postage stamp; a lime magnifying glass hovers over it. "FIX THIS" small in lime, "Your menu is a PDF." large in white. ${LYNQ_LOOK}`,
       },
       {
-        key: "lynq-offer-2", brand: LYNQ, day: "2026-10-11", time: "12:15", pillar: "OFFER", storyHighlight: "PRICING",
+        key: "lynq-offer-2", brand: LYNQ, day: "2026-10-11", time: "12:15", pillar: "OFFER", storyHighlight: "WHAT YOU GET",
         title: "LYNQ · WHAT YOU GET — A site that answers", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "A website that gets you customers has four parts. Most local sites have one.",
         body: "WHAT YOU GET with a LYNQ site:\n\n1. Built for phones first, with the booking or call button at the top of every page\n2. Your Google Business Profile set up properly, so people find you before they find your competitor\n3. A form that replies by text and email in under a minute, with your booking link inside\n4. We keep it running after launch. Hours change, photos change, we update it\n\nWhat you don't get: hourly billing or surprise invoices. You get a written quote for your business before anything starts.\n\nTrades, clinics and restaurants across the GTA.\n\nDM \"SITE\" and I'll tell you what it would take for yours.",
@@ -176,7 +178,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `Four objects floating in a row above still black water at night, each lit by its own lime spotlight and mirrored in the water: a brass telephone handset, a map pin, a speech bubble cut from frosted glass, a chrome wrench. Headline "What you get." large in white above them, the four words "Phone first · Found on Google · Replies in 60s · Kept running" small in lime below. No prices, no dollar signs. ${HONEST_CARD} ${LYNQ_LOOK}`,
       },
       {
-        key: "lynq-thu", brand: LYNQ, day: "2026-10-15", time: "12:15", pillar: "PROOF", storyHighlight: "WORK",
+        key: "lynq-thu", brand: LYNQ, day: "2026-10-15", time: "12:15", pillar: "PROOF", storyHighlight: "NASMA",
         title: "LYNQ · PROOF 02 — Nasma", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "People open a restaurant's website for three things. We built Nasma's in Amman around them.",
         body: "People open a restaurant's website for three things: the menu, the hours, and a way to book.\n\nEverything else is decoration.\n\nFor Nasma, a restaurant in Amman, we started with those three, then made the whole thing look as good as the food.\n\nWe build in Toronto and Amman. Own a restaurant in either city? DM \"AUDIT\" for a free 5 minute review of your site.",
@@ -185,7 +187,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `A long dark restaurant table after closing, one chair pulled out, a single lime spotlight from above landing on a brass reservation bell at the far end, its long shadow running down the table; a blank folded menu card and a small brass clock sit in the half-light beside it. Headline "Menu. Hours. Book." large in white, "PROOF 02 · Nasma" small in lime. ${HONEST_CARD} ${LYNQ_LOOK}`,
               },
       {
-        key: "lynq-fri", brand: LYNQ, day: "2026-10-13", time: "12:15", pillar: "TEACH", storyHighlight: null,
+        key: "lynq-fri", brand: LYNQ, day: "2026-10-13", time: "12:15", pillar: "TEACH", storyHighlight: "FIX THIS",
         title: "LYNQ · FIX THIS — 5 empty fields on your Google profile", kind: "carousel", platforms: ["instagram", "facebook"],
         hook: "Before anyone sees your website, they see this. Most owners leave half of it empty.",
         body: "FIX THIS: your Google Business Profile.\n\nBefore anyone sees your website, they see this. And most local businesses leave half of it empty:\n\n1. Business description\n2. Services (with prices if you can)\n3. Hours, including holidays\n4. Photos of the real place and real work\n5. A booking or website link\n\nIt's free, it takes an hour, and it's often the first impression you make.\n\nSave this and do it this weekend.",
@@ -203,7 +205,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `A phone lying face-down on a dark desk at night, one sliver of lime notification light leaking out from under it across the wood; a desk clock in the background reads 9:04; the LYNQ mascot sits on the edge of the desk watching the phone. Headline "The business that replies first gets the job." large in thin white type, "Mustafa, LYNQ" small in lime. ${HONEST_CARD} ${LYNQ_LOOK}`,
       },
       {
-        key: "lynq-sun", brand: LYNQ, day: "2026-10-20", time: "12:15", pillar: "PROOF", storyHighlight: "WORK",
+        key: "lynq-sun", brand: LYNQ, day: "2026-10-20", time: "12:15", pillar: "PROOF", storyHighlight: "AMY",
         title: "LYNQ · PROOF 03 — Finding Amy", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "An events business needs its website to do one thing: get the date request.",
         body: "An events business needs its website to do exactly one thing: get the date request.\n\nFinding Amy rents photo booths for events in Amman. Their customers want to see the booth at a real party, see what's included, and ask about their date, fast.\n\nSo the whole site walks that one path.\n\nWant your site built around the one thing that pays you? DM \"AUDIT\".",
@@ -212,7 +214,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `A dark empty event hall; at the far end a photo-booth curtain glows acid lime from inside, the only light in the room; a single straight trail of gold confetti on the floor leads from the camera to the curtain. Headline "One path." large in white, "PROOF 03 · Finding Amy" small in lime. ${HONEST_CARD} ${LYNQ_LOOK}`,
               },
       {
-        key: "lynq-mon2", brand: LYNQ, day: "2026-10-17", time: "12:15", pillar: "TEACH", storyHighlight: null,
+        key: "lynq-mon2", brand: LYNQ, day: "2026-10-17", time: "12:15", pillar: "TEACH", storyHighlight: "FIX THIS",
         title: "LYNQ · FIX THIS — Slow replies lose the job", kind: "carousel", platforms: ["instagram", "facebook"],
         hook: "They filled in your form. They also filled in two others.",
         body: "FIX THIS: slow replies.\n\nSomeone fills in your contact form. They also filled in two others.\n\nThe business that answers first usually gets the job. At 9pm, that's rarely you.\n\nThe fix isn't working later. It's an instant reply: a text and an email that go out the moment the form is sent, with your booking link inside.\n\nThat's what our Lead Engine sets up.\n\nSend this to a business owner who's always \"getting back to people.\"",
@@ -277,7 +279,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `Quote card: the mascot standing at a small whiteboard with a marker, having just written "Start with their idea. End with their code." in chunky navy type; "— Mustafa, founder" small in orange underneath. No real people. ${CODEIT_LOOK}`,
       },
       {
-        key: "codeit-sun", brand: CODEIT, day: "2026-10-13", time: "19:30", pillar: "OFFER", storyHighlight: "PRICING",
+        key: "codeit-sun", brand: CODEIT, day: "2026-10-13", time: "19:30", pillar: "OFFER", storyHighlight: "FREE",
         title: "CodeIt · Free means free", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "Free to start. No card. Here's exactly what's included.",
         body: "\"Free\" usually means \"free until we ask for your card.\" Not with CodeIt.\n\nFree for everyone:\n✓ 31 beginner Python lessons\n✓ The Python playground\n✓ 10 AI assisted builds a month\nNo card needed.\n\nFamily plan: CA$12/month.\n\nBuilt for ages 5 to 18.\nStart free at codeitlearn.com (link in bio)",
@@ -286,7 +288,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `The mascot cheerfully pushing away a giant credit card wearing a "no card needed" sticker, while holding a golden ticket that says FREE; a small card in the corner reads "Family plan CA$12/month". Headline "Free means free." ${CODEIT_LOOK}`,
       },
       {
-        key: "lynq-w2-arcubed", brand: LYNQ, day: "2026-10-10", time: "12:15", pillar: "PROOF", storyHighlight: "WORK",
+        key: "lynq-w2-arcubed", brand: LYNQ, day: "2026-10-10", time: "12:15", pillar: "PROOF", storyHighlight: "ARCUBED",
         title: "LYNQ · PROOF 04 — Arcubed Label", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "A made-to-order shop has one job online: take the order without a DM.",
         body: "A made-to-order shop has one job online: take the order without a DM.\n\nArcubed Label makes crochet bags in Amman. Before the site, every order was a conversation: colour, size, deposit, delivery, all in messages, all by hand.\n\nSo we built the store end to end. Pick the bag, pick the colour, pay, done. The owner sees the order, not a chat.\n\nWe build in Toronto and Amman. Selling something you make by hand? DM \"AUDIT\" and I'll show you what your store is missing.",
@@ -295,7 +297,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `A single handmade crochet tote in a deep natural colour hanging from a brass hook against a dark wall, lit by one acid-lime spotlight from above; on the floor beneath it, a neat stack of plain kraft order slips with a lime wax seal. Headline "Take the order." large in white, "PROOF 04 · Arcubed Label" small in lime. ${HONEST_CARD} ${LYNQ_LOOK}`,
       },
       {
-        key: "lynq-w2-office", brand: LYNQ, day: "2026-10-18", time: "12:15", pillar: "OFFER", storyHighlight: "PRICING",
+        key: "lynq-w2-office", brand: LYNQ, day: "2026-10-18", time: "12:15", pillar: "OFFER", storyHighlight: "OFFICE",
         title: "LYNQ · LYNQ OFFICE — Your business on one screen", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "Six logins to run one small business. That's where the hours go.",
         body: "Count the logins you open to run your business. Email, invoices, the booking tool, the spreadsheet, two social apps.\n\nThat's where the hours go. Not into the work, into moving between the tools.\n\nLYNQ Office puts it on one screen: your customers, your projects, what needs you today, and automations that do the repeat work. Posts go out after you approve them from your phone. Leads get a reply before you've seen them.\n\nIt's built per business, so there's no price list. We look at what you run, then quote it in writing.\n\nDM \"OFFICE\" and I'll walk you through it.",
@@ -313,7 +315,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `Night panorama split down the middle by one thin acid-lime line: on the left the CN Tower and Toronto skyline over dark water, on the right the stone hills and lit stairways of Amman, both under the same deep black sky, the lime line arcing across like a signal between them. Headline "Toronto. Amman." large in white, "Same rules." small in lime. No real people, no website screens. ${LYNQ_LOOK}`,
       },
       {
-        key: "codeit-w2-askteacher", brand: CODEIT, day: "2026-10-15", time: "19:30", pillar: "LEARN", storyHighlight: "LESSONS",
+        key: "codeit-w2-askteacher", brand: CODEIT, day: "2026-10-15", time: "19:30", pillar: "LEARN", storyHighlight: "ASK THE TEACHER",
         title: "CodeIt · Ask the teacher: does my kid still need coding if AI writes it?", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "\"Do kids still need to learn coding if AI can write it?\" I teach this. Here's my honest answer.",
         body: "ASK THE TEACHER: \"Do kids still need to learn coding if AI can write it?\"\n\nI teach kids to code, so I get this one a lot. Honest answer: yes, but a different version of it.\n\nWhen AI writes the first draft, the skill moves to:\n1. Saying clearly what you want\n2. Reading what came back\n3. Spotting the line that's wrong\n\nThat's exactly what a kid does in CodeIt. Describe the game, get a version, change it, see the code, answer questions about it.\n\nGot a question for the teacher? Put it in the comments and I'll answer it in a post.",
@@ -589,7 +591,7 @@ export interface WeekPlanReport {
   created: string[];
   skipped: string[];
   needsYou: string[];
-  imagesQueued: { contentItemId: string; igVariantId: string; copyTo: string[] }[];
+  imagesQueued: { contentItemId: string; igVariantId: string; copyTo: string[]; story?: { variantId: string; meta: StoryMeta; brandProfileId: string | null } }[];
 }
 
 async function findMarkedItem(db: Db, organizationId: string, marker: string): Promise<string | null> {
@@ -604,6 +606,48 @@ async function findMarkedItem(db: Db, organizationId: string, marker: string): P
 const RESCHEDULABLE = new Set(["draft", "changes_requested"]);
 /** Statuses whose image may be remade when the plan's art direction changes: anything not yet approved. */
 const REMAKEABLE = new Set(["draft", "changes_requested", "ready_for_review"]);
+
+/** What a post's story card says: the series label (its highlight), one caption line, the next step. */
+export interface StoryMeta { brand: StoryBrand; series: string; line: string; cta: string; title: string }
+
+export function storyMetaFor(post: PlanFeedPost): StoryMeta {
+  const p = { ...post, ...(post.fallback ?? {}) };
+  return {
+    brand: post.brand.brandKey === "codeit" ? "codeit" : "lynq",
+    series: post.storyHighlight ?? (post.pillar === "TEACH" ? "FIX THIS" : post.pillar),
+    line: (p.hook ?? p.body?.split("\n")[0] ?? p.title ?? "").trim(),
+    cta: p.callToAction ?? "New post",
+    title: p.title ?? post.key,
+  };
+}
+
+/**
+ * The story never re-posts the raw square: it gets a composed 9:16 card
+ * (brand wordmark, series label, the post image, one line, one next step),
+ * so every story on the profile reads the same way. Composed once per
+ * feed image; the card is stored as an uploaded asset tagged story-card.
+ */
+async function storyCardMedia(db: Db, input: { organizationId: string; actorUserId: string }, feedAssetId: string, meta: StoryMeta, brandProfileId: string | null): Promise<SocialContentItem["variants"][number]["media"]> {
+  try {
+    const { bytes } = await resolveAssetBytes(db, { organizationId: input.organizationId, assetId: feedAssetId });
+    const card = await composeStoryCard({ brand: meta.brand, image: bytes, series: meta.series, line: meta.line, cta: meta.cta });
+    const asset = await createUploadedAsset(db, {
+      organizationId: input.organizationId,
+      actorUserId: input.actorUserId,
+      brandProfileId,
+      assetType: "image",
+      title: `Story card · ${meta.title}`.slice(0, 200),
+      altText: meta.line.slice(0, 1000),
+      tags: ["story-card", `from:${feedAssetId}`],
+      file: { bytes: card.bytes, contentType: card.contentType, filename: "story.png" },
+      platformHint: "instagram",
+    });
+    return [{ assetId: asset.id, position: 0, role: "primary" as const }];
+  } catch (err) {
+    console.error("[week-plan] story card failed, using the feed image:", err instanceof Error ? err.message.slice(0, 200) : "unknown");
+    return [{ assetId: feedAssetId, position: 0, role: "primary" as const }];
+  }
+}
 
 /**
  * Loads a week plan into the organization as dated drafts. Returns what it
@@ -769,7 +813,9 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
         for (const sv of story) {
           if (sv.archivedAt || !RESCHEDULABLE.has(sv.status)) continue;
           const storyAt = planSlot(post.day, post.time, 10);
-          const changes = { ...(sv.media.length ? {} : { media: igFeed.media.slice(0, 1).map((m) => ({ ...m, position: 0, role: "primary" as const })) }), ...(sv.scheduledFor?.getTime() === storyAt.getTime() ? {} : { scheduledFor: storyAt }) };
+          // No media yet, or still the raw feed square from before story cards existed: give it the composed card.
+          const needsCard = !sv.media.length || sv.media[0]!.assetId === igFeed.media[0]!.assetId;
+          const changes = { ...(needsCard ? { media: await storyCardMedia(db, input, igFeed.media[0]!.assetId, storyMetaFor(post), brandProfileId) } : {}), ...(sv.scheduledFor?.getTime() === storyAt.getTime() ? {} : { scheduledFor: storyAt }) };
           if (Object.keys(changes).length) await updateVariant(db, { organizationId: input.organizationId, contentVariantId: sv.id, actorUserId: input.actorUserId, expectedRevision: sv.revision, changes });
         }
       } else {
@@ -799,9 +845,9 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
       const igStory = story.variants[0];
       const igFeed = item.variants.find((v) => v.platform === "instagram" && !v.archivedAt);
       if (igStory) {
-        await updateVariant(db, { organizationId: input.organizationId, contentVariantId: igStory.id, actorUserId: input.actorUserId, expectedRevision: igStory.revision, changes: { format: "story", scheduledFor: planSlot(post.day, post.time, 10), ...(!igStory.channelAccountId && igFeed?.channelAccountId ? { channelAccountId: igFeed.channelAccountId } : {}), ...(igFeed?.media.length ? { media: igFeed.media.slice(0, 1).map((m) => ({ ...m, position: 0, role: "primary" as const })) } : {}) } });
+        await updateVariant(db, { organizationId: input.organizationId, contentVariantId: igStory.id, actorUserId: input.actorUserId, expectedRevision: igStory.revision, changes: { format: "story", scheduledFor: planSlot(post.day, post.time, 10), ...(!igStory.channelAccountId && igFeed?.channelAccountId ? { channelAccountId: igFeed.channelAccountId } : {}), ...(igFeed?.media.length ? { media: await storyCardMedia(db, input, igFeed.media[0]!.assetId, storyMetaFor(post), brandProfileId) } : {}) } });
         const queued = report.imagesQueued.find((q) => q.contentItemId === item!.id);
-        if (queued) queued.copyTo.push(igStory.id);
+        if (queued) queued.story = { variantId: igStory.id, meta: storyMetaFor(post), brandProfileId };
       }
       report.created.push(`${story.title}`);
     }
@@ -889,6 +935,10 @@ export async function generatePlanImages(db: Db, input: { organizationId: string
         const target = await getVariantRevision(db, input.organizationId, input.actorUserId, targetId);
         if (target && !target.media.length) await updateVariant(db, { organizationId: input.organizationId, contentVariantId: targetId, actorUserId: input.actorUserId, expectedRevision: target.revision, changes: { media } });
       }
+      if (job.story) {
+        const target = await getVariantRevision(db, input.organizationId, input.actorUserId, job.story.variantId);
+        if (target && !target.media.length) await updateVariant(db, { organizationId: input.organizationId, contentVariantId: target.id, actorUserId: input.actorUserId, expectedRevision: target.revision, changes: { media: await storyCardMedia(db, input, media[0]!.assetId, job.story.meta, job.story.brandProfileId) } });
+      }
       done++;
     } catch (err) {
       failed++;
@@ -975,11 +1025,16 @@ export async function fillWeekPlanImages(db: Db, input: { organizationId: string
       const media = primary(variants.find((v) => v.id === ig.id)?.media ?? []);
       if (!media.length) continue;
       const storyId = idFor.get(planMarker(plan.key, `${post.key}-story`));
-      const targets = [...variants.filter((v) => v.id !== ig.id && !v.archivedAt && v.platform !== "linkedin"), ...(storyId ? await getVariantsOfItem(db, input, storyId) : [])];
+      const storyVariants = storyId ? await getVariantsOfItem(db, input, storyId) : [];
+      const storyIds = new Set(storyVariants.map((v) => v.id));
+      const targets = [...variants.filter((v) => v.id !== ig.id && !v.archivedAt && v.platform !== "linkedin"), ...storyVariants];
+      const brandProfileId = await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId: itemId, actorUserId: input.actorUserId }).then((i) => i.brandProfileId ?? null).catch(() => null);
       for (const t of targets) {
         if (t.archivedAt || t.media.length || !RESCHEDULABLE.has(t.status)) continue;
         try {
-          await updateVariant(db, { organizationId: input.organizationId, contentVariantId: t.id, actorUserId: input.actorUserId, expectedRevision: t.revision, changes: { media } });
+          // Stories get the composed 9:16 card; the Facebook version gets the square itself.
+          const changes = { media: storyIds.has(t.id) ? await storyCardMedia(db, input, media[0]!.assetId, storyMetaFor(post), brandProfileId) : media };
+          await updateVariant(db, { organizationId: input.organizationId, contentVariantId: t.id, actorUserId: input.actorUserId, expectedRevision: t.revision, changes });
           out.copied++;
         } catch (err) {
           console.error("[week-plan] image copy failed:", err instanceof Error ? err.message.slice(0, 200) : "unknown");
