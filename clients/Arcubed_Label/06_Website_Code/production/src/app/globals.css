@@ -2261,12 +2261,14 @@ html { overflow-anchor: none; }
    matter what colour it was. Scoped to the buy band so no other surface
    changes. */
 .pd-buy .chip-row,
-.pd-buy .pill-row {
+.cs-options .chip-row,
+.pd-buy .pill-row, .cs-options .pill-row {
   display: grid; gap: 0; margin-top: 14px;
   border-top: 1px solid var(--line);
 }
 .pd-buy .opt-chip,
-.pd-buy .pill {
+.cs-options .opt-chip,
+.pd-buy .pill, .cs-options .pill {
   display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px;
   width: 100%; padding: 15px 0 15px 24px; min-height: 0;
   border: 0; border-bottom: 1px solid var(--line); border-radius: 0;
@@ -2280,20 +2282,24 @@ html { overflow-anchor: none; }
    read as an unticked checkbox on every row. Selection is a filled navy
    square that scales in; nothing else on the row is a control shape. */
 .pd-buy .opt-chip::before,
-.pd-buy .pill::before {
+.cs-options .opt-chip::before,
+.pd-buy .pill::before, .cs-options .pill::before {
   content: ""; position: absolute; left: 0; top: 50%; width: 10px; height: 10px;
   transform: translateY(-50%) scale(0); background: var(--navy);
   transition: transform 0.24s var(--ease-ui);
 }
 .pd-buy .opt-chip:hover:not(:disabled),
-.pd-buy .pill:hover { color: var(--navy); }
+.cs-options .opt-chip:hover:not(:disabled),
+.pd-buy .pill:hover, .cs-options .pill:hover { color: var(--navy); }
 .pd-buy .opt-chip.selected,
-.pd-buy .pill.selected { color: var(--navy); background: none; }
+.cs-options .opt-chip.selected,
+.pd-buy .pill.selected, .cs-options .pill.selected { color: var(--navy); background: none; }
 .pd-buy .opt-chip.selected::before,
-.pd-buy .pill.selected::before { transform: translateY(-50%) scale(1); }
-.pd-buy .opt-chip-delta { font-size: 10.5px; letter-spacing: 0.12em; opacity: 0.85; }
+.cs-options .opt-chip.selected::before,
+.pd-buy .pill.selected::before, .cs-options .pill.selected::before { transform: translateY(-50%) scale(1); }
+.pd-buy .opt-chip-delta, .cs-options .opt-chip-delta { font-size: 10.5px; letter-spacing: 0.12em; opacity: 0.85; }
 @media (prefers-reduced-motion: reduce) {
-  .pd-buy .opt-chip::before, .pd-buy .pill::before { transition: none; }
+.pd-buy .opt-chip::before, .pd-buy .pill::before, .cs-options .opt-chip::before, .cs-options .pill::before { transition: none; }
 }
 
 /* ---------- HANDLE: a product decision, not a utility row ----------
@@ -2302,23 +2308,23 @@ html { overflow-anchor: none; }
    the customer picks between — the only two-up control in the buy band.
    Scoped to the handle group, so Strap/Chain/Size keep the quiet row
    language and the band does not turn into a wall of boxes. */
-.pd-buy .opt-group-handle .chip-row {
+.pd-buy .opt-group-handle .chip-row, .cs-options .opt-group-handle .chip-row {
   grid-template-columns: 1fr 1fr; gap: 10px;
   border-top: 0; margin-top: 12px;
 }
-.pd-buy .opt-group-handle .opt-chip {
+.pd-buy .opt-group-handle .opt-chip, .cs-options .opt-group-handle .opt-chip {
   display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end;
   gap: 6px; min-height: clamp(72px, 9vh, 92px);
   padding: 16px 16px 15px; border-bottom: 0;
   box-shadow: inset 0 0 0 1px var(--line);
   transition: box-shadow 0.2s var(--ease-ui), color 0.2s var(--ease-ui), background 0.2s var(--ease-ui);
 }
-.pd-buy .opt-group-handle .opt-chip::before { content: none; }
-.pd-buy .opt-group-handle .opt-chip:hover:not(:disabled) { box-shadow: inset 0 0 0 1px var(--navy); }
-.pd-buy .opt-group-handle .opt-chip.selected {
+.pd-buy .opt-group-handle .opt-chip::before, .cs-options .opt-group-handle .opt-chip::before { content: none; }
+.pd-buy .opt-group-handle .opt-chip:hover:not(:disabled), .cs-options .opt-group-handle .opt-chip:hover:not(:disabled) { box-shadow: inset 0 0 0 1px var(--navy); }
+.pd-buy .opt-group-handle .opt-chip.selected, .cs-options .opt-group-handle .opt-chip.selected {
   background: var(--navy); color: var(--pink); box-shadow: inset 0 0 0 1px var(--navy);
 }
-.pd-buy .opt-group-handle .opt-chip.selected .opt-chip-delta { color: var(--pink); }
+.pd-buy .opt-group-handle .opt-chip.selected .opt-chip-delta, .cs-options .opt-group-handle .opt-chip.selected .opt-chip-delta { color: var(--pink); }
 
 /* ---------- Add to Bag: an action, not a SaaS bar ---------- */
 .pd-buy .add-to-bag {
@@ -2865,19 +2871,158 @@ html { overflow-anchor: none; }
 .rc-previews { margin-top: 18px; }
 .rc-swatch .csw-name { display: inline-flex; align-items: center; gap: 8px; }
 .rc-dot { width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15); flex: none; }
-.cl-head { padding: 28px 20px 8px; max-width: 1200px; margin: 0 auto; }
-.cl-lede, .cl-note { max-width: 70ch; font-size: 14px; line-height: 1.55; color: var(--muted); }
-.cl-sources { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 6px; }
-.cl-sources button { padding: 8px 14px; border: 1px solid var(--line); background: transparent; color: var(--navy); font: inherit; cursor: pointer; }
-.cl-sources button.is-on { box-shadow: inset 0 0 0 2px var(--navy); }
-.cl-section { padding: 32px 20px; max-width: 1200px; margin: 0 auto; }
-.cl-h2 { font-size: 15px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--navy); margin: 0 0 12px; }
-.cl-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
-.cl-pairs { grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); }
-.cl-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.cl-still { margin: 0; background: var(--pink); }
-.cl-canvas { width: 100%; height: auto; display: block; }
-.cl-still figcaption { font-size: 12px; padding: 6px 8px; background: #fff; color: var(--navy); }
-.cl-ms { color: var(--muted); }
 .rc-swatch.is-off { opacity: 0.38; cursor: not-allowed; }
 .rc-label { margin-top: 10px; }
+
+/* ---------- admin Colour Studio (/admin/colour-lab) ----------
+   Editorial, square, navy on white with the pale pink stage. Every rule is
+   scoped to .cl / .cs / .tc so the shop's own pages are untouched. --hdr is
+   the sticky site header's height, so sticky elements sit below it. */
+.cl { --hdr: 78px; max-width: 1320px; margin: 0 auto; padding: 0 20px 72px; color: var(--navy); }
+@media (max-width: 759px) { .cl { --hdr: 67px; } }
+.cl-bar {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: end; gap: 12px 40px;
+  padding: 28px 0 18px; border-bottom: 1px solid var(--line); margin-bottom: 32px;
+}
+.cl-kicker, .cs-kicker {
+  margin: 0 0 6px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase; opacity: 0.6;
+}
+.cl-title { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 30px; line-height: 1; }
+.cl-bags, .cl-views, .tc-tabs { display: flex; flex-wrap: wrap; gap: 4px 22px; }
+.cl-bags button, .cl-views button, .tc-tabs button {
+  appearance: none; background: none; border: 0; padding: 12px 0 8px; min-height: 44px; cursor: pointer;
+  font: inherit; font-size: 11.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--opt-idle); box-shadow: inset 0 -1px 0 transparent; transition: color 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+.cl-bags button:hover, .cl-views button:hover, .tc-tabs button:hover { color: var(--navy); }
+.cl-bags button.is-on, .cl-views button.is-on, .tc-tabs button.is-on { color: var(--navy); box-shadow: inset 0 -2px 0 var(--navy); }
+.cl-bags button:focus-visible, .cl-views button:focus-visible, .tc-tabs button:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+.cl-bags { justify-content: flex-end; }
+.cl-views { padding-left: 22px; border-left: 1px solid var(--line); }
+/* Under 1100 the title takes its own row and the two tab sets share the
+   next, so neither the title nor a tab ever wraps. */
+@media (min-width: 768px) and (max-width: 1099px) {
+  .cl-bar { grid-template-columns: 1fr auto; }
+  .cl-bar-title { grid-column: 1 / -1; }
+  .cl-bags { justify-content: flex-start; }
+}
+
+/* The studio: stage and panel. */
+.cs { display: grid; gap: 28px; align-items: start; }
+.cs-media { min-width: 0; }
+.cs-stage {
+  position: relative; width: 100%; aspect-ratio: var(--cs-ratio, 1.4); background: var(--pink); overflow: hidden;
+}
+/* Breathing room inside the stage, the same for every bag: the image is
+   contained, never cropped or stretched, whatever its proportions. */
+.cs-frame { position: absolute; inset: 7% 8%; }
+.cs-frame .rc-stage { position: absolute; inset: 0; }
+.cs-frame .cs-photo, .cs-frame .rc-canvas { object-fit: contain; }
+.cs-frame .rc-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.cs-caption { margin: 12px 0 0; font-size: 13px; line-height: 1.5; color: var(--muted); }
+.cs-tag {
+  display: inline-block; margin-right: 10px; font-size: 10px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--navy);
+}
+.cs-caption.is-preview .cs-tag { padding: 3px 7px; box-shadow: inset 0 0 0 1px var(--navy); }
+
+.cs-panel { min-width: 0; }
+.cs-titlerow { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+.cs-name { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(40px, 4.6vw, 60px); line-height: 0.95; }
+.cs-price { margin: 0; font-family: var(--font-display); font-size: 24px; white-space: nowrap; }
+.cs-group { margin-top: 32px; }
+.cs-label { margin: 0; font-size: 11px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
+.cs-label-value { font-size: 15px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+.cs-badge {
+  font-size: 9.5px; font-weight: 600; letter-spacing: 0.16em; padding: 4px 8px; box-shadow: inset 0 0 0 1px var(--navy); white-space: nowrap;
+}
+
+/* ONE swatch system for photographed and experimental colours: the same
+   square, the same grid, the same selected state. Columns are sized for
+   the longest name ("Champagne", "Silver & Gold"), so names wrap inside
+   their own column and never meet a neighbour. */
+.cs-swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 18px 8px; margin-top: 16px; }
+.cs-sw {
+  appearance: none; background: none; border: 0; padding: 6px 0 2px; margin: 0; cursor: pointer; font: inherit; color: var(--navy);
+  display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 0;
+}
+.cs-chip {
+  position: relative; display: block; width: 46px; height: 46px; box-shadow: inset 0 0 0 1px rgba(20, 53, 98, 0.18);
+  transition: outline-offset 0.18s var(--ease);
+}
+.cs-sw:hover .cs-chip { outline: 1px solid rgba(20, 53, 98, 0.45); outline-offset: 3px; }
+.cs-sw.is-on .cs-chip { outline: 2px solid var(--navy); outline-offset: 4px; }
+.cs-sw:focus-visible { outline: none; }
+.cs-sw:focus-visible .cs-chip { outline: 2px solid var(--navy); outline-offset: 4px; }
+.cs-sw-name {
+  display: block; max-width: 100%; text-align: center; font-size: 10.5px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;
+  line-height: 1.35; color: var(--opt-idle); overflow-wrap: break-word;
+}
+.cs-sw.is-on .cs-sw-name { color: var(--navy); font-weight: 600; }
+.cs-sw.is-off { cursor: not-allowed; }
+.cs-sw.is-off .cs-chip { opacity: 0.4; }
+.cs-sw.is-off .cs-chip::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(to top right, transparent calc(50% - 0.75px), var(--navy) calc(50% - 0.75px), var(--navy) calc(50% + 0.75px), transparent calc(50% + 0.75px));
+}
+.cs-sw.is-off .cs-sw-name { opacity: 0.55; }
+.cs-exp { padding-top: 28px; border-top: 1px solid var(--line); }
+.cs-note { margin: 14px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--muted); }
+.cs-options { margin-top: 32px; border-top: 1px solid var(--line); }
+.cs-options .opt-group:first-child { margin-top: 24px; }
+.cs-status { margin-top: 32px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 13.5px; line-height: 1.55; }
+.cs-status p { margin: 0; }
+.cs-status-h { font-size: 11px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 6px !important; }
+.cs-status.is-preview { padding: 18px 20px; border-top: 0; background: var(--pink); }
+.cs-link { color: var(--navy); text-decoration: underline; text-underline-offset: 3px; }
+
+/* Phones: the bag first and kept in view (sticky under the site header,
+   at most 44% of the screen), colour immediately beneath it. */
+@media (max-width: 767px) {
+  .cl-bar { grid-template-columns: 1fr; gap: 6px; padding-top: 22px; margin-bottom: 0; border-bottom: 0; }
+  .cl-bags { justify-content: flex-start; }
+  .cl-views { padding-left: 0; border-left: 0; }
+  .cs { gap: 0; }
+  .cs-media { position: sticky; top: var(--hdr); z-index: 5; background: var(--paper); padding: 8px 0 10px; margin: 0 -20px; padding-inline: 20px; box-shadow: 0 1px 0 var(--line); }
+  .cs-stage { aspect-ratio: auto; height: min(calc((100vw - 40px) / var(--cs-ratio, 1.4)), 44svh); }
+  .cs-caption { margin-top: 8px; font-size: 12px; }
+  .cs-panel { padding-top: 22px; }
+  .cs-name { font-size: 40px; }
+}
+/* Tablets and small laptops (768-1099): the bag across the full width,
+   sticky under the header, with the panel beneath in two columns
+   (photographed colours | experimental colours). Beside a panel the bag
+   could be no wider than ~450px here. */
+@media (min-width: 768px) and (max-width: 1099px) {
+  .cs { gap: 0; }
+  .cs-media { position: sticky; top: var(--hdr); z-index: 5; background: var(--paper); padding: 12px 0 14px; box-shadow: 0 1px 0 var(--line); }
+  .cs-stage { aspect-ratio: auto; height: min(calc((100vw - 40px) / var(--cs-ratio, 1.4)), 42vh); }
+  .cs-frame { inset: 6% 10%; }
+  .cs-panel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 48px; align-items: start; padding-top: 28px; }
+  .cs-kicker, .cs-titlerow, .cs-options, .cs-status { grid-column: 1 / -1; }
+  .cs-exp { padding-top: 0; border-top: 0; padding-left: 48px; margin-left: -48px; box-shadow: inset 1px 0 0 var(--line); }
+  .cs-options .opt-group { max-width: 520px; }
+}
+/* Desktop: two columns, a square stage on the left that stays in view
+   while the panel scrolls. */
+@media (min-width: 1100px) {
+  .cs { grid-template-columns: minmax(0, 7fr) minmax(360px, 5fr); gap: 64px; }
+  .cs-media { position: sticky; top: calc(var(--hdr) + 20px); }
+  .cs-stage { aspect-ratio: 1; max-height: calc(100vh - var(--hdr) - 110px); }
+}
+
+/* Technical comparison. */
+.tc-section { margin-top: 36px; }
+.tc-section:first-child { margin-top: 0; }
+.tc-h { margin: 0 0 14px; font-size: 11px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; }
+.tc-note { max-width: 72ch; margin: 12px 0 0; font-size: 13px; line-height: 1.55; color: var(--muted); }
+.tc-facts { margin: 16px 0 0; display: grid; gap: 6px; font-size: 13px; }
+.tc-facts div { display: grid; grid-template-columns: minmax(140px, auto) 1fr; gap: 12px; }
+.tc-facts dt { color: var(--muted); }
+.tc-facts dd { margin: 0; }
+.tc-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); }
+.tc-pairs { grid-template-columns: repeat(auto-fill, minmax(min(380px, 100%), 1fr)); }
+.tc-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tc-still { margin: 0; background: var(--pink); display: flex; flex-direction: column; }
+.tc-canvas { width: 100%; height: auto; display: block; aspect-ratio: auto; }
+.tc-still figcaption { margin-top: auto; display: flex; justify-content: space-between; gap: 8px; padding: 7px 9px; background: var(--paper); font-size: 12px; }
+.tc-meta { color: var(--muted); }

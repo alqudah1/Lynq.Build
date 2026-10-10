@@ -6,18 +6,17 @@
 
 import { redirect, notFound } from "next/navigation";
 import { isAdmin } from "@/lib/admin-auth";
-import { getBagBySlug, getStoreSettings } from "@/lib/repository";
-import { plainText } from "@/lib/site-settings";
+import { getBagBySlug } from "@/lib/repository";
 import ColourLab from "./ColourLab";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Colour lab | Arcubed", robots: { index: false, follow: false } };
+export const metadata = { title: "Colour Studio | Arcubed", robots: { index: false, follow: false } };
 
 export default async function ColourLabPage() {
   if (!(await isAdmin())) redirect("/admin");
   const slugs = ["nova", "mini-luna", "vault", "loco"];
-  const [settings, ...found] = await Promise.all([getStoreSettings(), ...slugs.map((s) => getBagBySlug(s))]);
+  const found = await Promise.all(slugs.map((s) => getBagBySlug(s)));
   const bags = found.filter((b): b is NonNullable<typeof b> => Boolean(b));
   if (!bags.length) notFound();
-  return <ColourLab bags={bags} productionTimeLabel={settings?.productionTimeLabel ? plainText(settings.productionTimeLabel) : null} />;
+  return <ColourLab bags={bags} />;
 }

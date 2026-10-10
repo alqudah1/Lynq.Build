@@ -347,8 +347,8 @@ function labToRgb(L, a, b) {
   return [g(3.2404542 * X - 1.5371385 * Y - 0.4985314 * Z), g(-0.969266 * X + 1.8760108 * Y + 0.041556 * Z), g(0.0556434 * X - 0.2040259 * Y + 1.0572252 * Z)];
 }
 
-async function rgba(frame, width) {
-  const { data, info } = await sharp(`${MEDIA}/${frame}-cut-2600.webp`)
+async function rgba(frame, width, kind = "cut") {
+  const { data, info } = await sharp(`${MEDIA}/${frame}-${kind}-2600.webp`)
     .resize({ width }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   return { data, w: info.width, h: info.height };
 }
@@ -359,8 +359,16 @@ fs.mkdirSync(OUT, { recursive: true });
 const sourceInfo = {};
 for (const [slug, frames] of Object.entries(SOURCES)) {
   for (const frame of frames) {
+    // The yarn's pixels come from the cut-out (what every rule above was
+    // tuned and checked on). EVERYTHING OUTSIDE the yarn comes from the
+    // field-safe tile of the same frame (same size and framing): the
+    // cut-out's cast shadow read as a white glow beside the bag on the pale
+    // pink stage. The tile's own yarn is not used: its deeper, blockier
+    // shadows turned into black squares once recoloured.
     const { data, w, h } = await rgba(frame, W);
     const body = yarnBody(data, w, h, YARN_RULE[frame] ?? { energy: 0.35 }, FLOOR[frame]);
+    const { data: tile } = await rgba(frame, W, "tile");
+    for (let p = 0; p < w * h; p++) if (!body[p]) for (let k = 0; k < 4; k++) data[p * 4 + k] = tile[p * 4 + k];
     const mask = Buffer.alloc(w * h);
     const ex = EXCLUDE[frame] ?? [];
     for (let i = 0, p = 0; p < w * h; p++, i += 4) {

@@ -2,7 +2,7 @@
 
 Show a bag in a confirmed colour that has not been photographed yet, by
 recolouring the yarn of an authentic photograph in the browser. Status
-2026-10-09: working for all four bags in the admin colour lab
+2026-10-10: working for all four bags in the admin Colour Studio
 (`/admin/colour-lab`); **nothing is approved, so the storefront shows
 photography only**. No AI service or network request is involved per colour.
 
@@ -19,14 +19,37 @@ The product page always prefers, in order:
 
 A preview is only ever attached to a colour that is already confirmed and
 purchasable in the catalogue (Supabase `product_colours`). Nothing in this
-system creates a colour or makes one orderable. The lab's "Storefront
-simulation" mode shows exactly this experience without saving anything.
+system creates a colour or makes one orderable.
+
+## The admin Colour Studio (`/admin/colour-lab`)
+
+Admin-only (redirects to `/admin` sign-in), noindex. Two views per bag:
+
+- **Studio** (default): the bag as the customer would see it, on the pale
+  pink stage, with the bag's photographed colours and, beneath them,
+  **Experimental colours** labelled "Admin review · not for sale". Both use
+  one swatch system: photographed colours show a crop of their real yarn,
+  experimental ones a crop rendered by the same engine. Experimental colours
+  the bag's photograph cannot show convincingly are crossed out. Size,
+  handle, strap and chain work as on the shop and set the price. There is no
+  add-to-cart: a status panel says "Not available to order" for an
+  experimental colour, or links to the shop page for a photographed one.
+  Layout: phones stack the bag (sticky under the header) over the colours;
+  768–1099px keep the bag full-width and sticky with the panel in two
+  columns beneath; 1100px and up put a square sticky stage beside the
+  panel.
+- **Technical comparison**: source photograph picker (including evaluation
+  sources), material references and lightness limit, original vs recoloured
+  stills with render times, and validation pairs (each real colour predicted
+  with its own reference left out, beside its real photograph).
 
 ## How it works
 
 1. `node scripts/build-recolour-maps.mjs` (Node 22) prepares, from Rand's
    photographs:
-   - `public/media/recolour/<frame>-src-1600.webp` — the source cut-out (q97)
+   - `public/media/recolour/<frame>-src-1600.webp` — the source (q97): yarn
+     pixels from the frame's cut-out, everything else (floor shadow, rims)
+     from its field-safe tile, so no pale halo shows on the pink stage
    - `public/media/recolour/<frame>-mask-1600.png` — how much of each pixel
      is yarn. Solid body; crochet texture separates yarn from smooth shadow;
      only small holes are filled (a handle's arch stays backdrop); per-source
@@ -61,8 +84,9 @@ simulation" mode shows exactly this experience without saving anything.
 1. Rand confirms the colour and it is added to the catalogue (purchasable).
 2. Photograph a flat swatch of the actual yarn under the studio lights; its
    mid-tone (40th–60th percentile of brightness) is the `value`.
-3. Review it in the lab (Preview colours mode with that value, then
-   Storefront simulation). Rand or Mustafa approves the exact image.
+3. Review it in the Colour Studio (add the value to `PREVIEW_COLOURS` on a
+   review build, check it in Studio and Technical comparison). Rand or
+   Mustafa approves the exact image.
 4. Add one entry to `APPROVED_PREVIEWS` in `src/lib/colour-previews.ts`:
    ```ts
    nova: { Navy: { value: "#263a63", frame: "DSC04868", sourceColour: "Silver", approvedBy: "Rand", approvedOn: "2026-11-02" } }
