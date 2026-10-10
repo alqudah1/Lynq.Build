@@ -19,7 +19,8 @@ import Image, { getImageProps } from "next/image";
 import type { Bag, Selection } from "@/lib/types";
 import { toRenderInput, resolveProductImages } from "@/lib/pricing";
 import { framesForColour, resolveMedia, altFor, type Frame } from "@/lib/product-media";
-import { previewFor } from "@/lib/colour-previews";
+import { previewFor, isPreviewOnly, APPROVED_PREVIEWS, type ApprovedPreview } from "@/lib/colour-previews";
+import { profilesFor } from "@/lib/recolour/data";
 import BagArt from "../BagArt";
 import RecolourStage from "./RecolourStage";
 import type { PreviewColour, YarnProfile } from "@/lib/recolour/engine";
@@ -70,7 +71,7 @@ function usePreloadColourways(bag: Bag) {
     const run = () => {
       if (cancelled) return;
       for (const colour of bag.colours) {
-        const frame = framesForColour(bag, colour.name)[0] ?? previewFor(bag, colour.name)?.frames[0];
+        const frame = framesForColour(bag, colour.name)[0];
         if (!frame) continue;
         const { props } = getImageProps({ ...stageImage(frame), alt: "" });
         const img = new window.Image();
@@ -108,7 +109,7 @@ function usePreloadColourways(bag: Bag) {
 function Photos({ bag, selection }: { bag: Bag; selection: Selection }) {
   const colourName = bag.colours.find((c) => c.id === selection.colourId)?.name ?? null;
 
-  const { frames, exact, shown, previewOf } = useMemo(() => {
+  const { frames, exact, shown } = useMemo(() => {
     // Imported database photography wins outright when it exists.
     const db = resolveProductImages(bag, selection);
     if (db.length) {
@@ -119,17 +120,14 @@ function Photos({ bag, selection }: { bag: Bag; selection: Selection }) {
         })),
         exact: true,
         shown: colourName,
-        previewOf: null,
       };
     }
     const own = framesForColour(bag, colourName);
-    if (own.length) return { frames: own, exact: true, shown: colourName, previewOf: null };
-    const preview = previewFor(bag, colourName);
-    if (preview?.frames.length) return { frames: preview.frames, exact: true, shown: colourName, previewOf: preview.sourceColour };
+    if (own.length) return { frames: own, exact: true, shown: colourName };
     const fallback = resolveMedia(bag, colourName);
     return fallback
-      ? { frames: [fallback.frame], exact: false, shown: fallback.shownColour, previewOf: null }
-      : { frames: [], exact: false, shown: null, previewOf: null };
+      ? { frames: [fallback.frame], exact: false, shown: fallback.shownColour }
+      : { frames: [], exact: false, shown: null };
   }, [bag, selection, colourName]);
 
   // Selected thumbnail, reset to the first shot when the colour changes.
@@ -174,12 +172,6 @@ function Photos({ bag, selection }: { bag: Bag; selection: Selection }) {
         />
       </div>
 
-      {previewOf ? (
-        <p className="pg-note">
-          Colour preview of <strong>{shown}</strong>, made from a photograph of the {previewOf}{" "}
-          {bag.name}. Not a photograph of this colourway.
-        </p>
-      ) : null}
       {!exact && shown ? (
         <p className="pg-note">
           Pictured in <strong>{shown}</strong>. Photography of this colourway is coming. The bag
@@ -225,10 +217,48 @@ export interface RecolourRequest {
   sourceColour: string;
 }
 
-export default function ProductGallery({ bag, selection, recolour }: { bag: Bag; selection: Selection; recolour?: RecolourRequest }) {
+export default function ProductGallery({
+  bag,
+  selection,
+  recolour,
+  approved = APPROVED_PREVIEWS,
+}: {
+  bag: Bag;
+  selection: Selection;
+  /** Admin colour lab only: an unapproved preview colour shown on top. */
+  recolour?: RecolourRequest;
+  /** Approved previews; the lab passes a simulated set, the shop never does. */
+  approved?: Record<string, Record<string, ApprovedPreview>>;
+}) {
   // NOT keyed on the colourway any more — see the thumbnail state in Photos.
   usePreloadColourways(bag);
   const fallback = <Photos bag={bag} selection={selection} />;
+
+  // A confirmed colourway with no photograph yet, but an approved digital
+  // preview: show it, and say plainly what it is.
+  const colour = bag.colours.find((c) => c.id === selection.colourId);
+  const approvedPreview = colour && isPreviewOnly(bag, colour.name, approved) ? previewFor(bag, colour.name, approved) : null;
+  if (approvedPreview && colour) {
+    return (
+      <div className="product-media">
+        <div className="pg">
+          <div className="pg-main is-cut">
+            <RecolourStage
+              frame={approvedPreview.frame}
+              colour={{ key: `approved-${colour.id}`, name: colour.name, swatch: approvedPreview.value, value: approvedPreview.value, products: [bag.slug], render: approvedPreview.render }}
+              profiles={profilesFor(bag.slug)}
+              fallback={fallback}
+              alt={`Digital colour preview of the ${bag.name} in ${colour.name}`}
+            />
+          </div>
+          <p className="pg-note rc-label">
+            <strong>Digital colour preview.</strong> {colour.name} has not been photographed yet: this is a photograph
+            of the {approvedPreview.sourceColour} {bag.name} with the yarn recoloured. The finished bag may differ slightly.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (recolour) {
     return (

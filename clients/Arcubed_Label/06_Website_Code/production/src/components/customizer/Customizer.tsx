@@ -13,7 +13,8 @@ import StrapHandleSelector from "./StrapHandleSelector";
 import AddonSelector from "./AddonSelector";
 import PriceDisplay from "./PriceDisplay";
 import { AddToCartInline, AddToCartStickyBar } from "./AddToCartControls";
-import type { PreviewColour, YarnProfile } from "@/lib/recolour/engine";
+import { srgbToLab, hexToRgb, type PreviewColour, type YarnProfile } from "@/lib/recolour/engine";
+import { isPreviewOnly, APPROVED_PREVIEWS, type ApprovedPreview } from "@/lib/colour-previews";
 
 /** Admin colour lab only: recoloured previews of colours with no photograph. */
 export interface CustomizerPreview {
@@ -22,6 +23,8 @@ export interface CustomizerPreview {
   profiles: YarnProfile[];
   /** The real colourway the source photograph shows, for the label. */
   sourceColour: string;
+  /** Lightest yarn (L*) this source can show convincingly; lighter swatches are disabled. */
+  maxLightness?: number;
 }
 
 export default function Customizer({
@@ -30,6 +33,8 @@ export default function Customizer({
   editingLine,
   productionTimeLabel,
   preview,
+  approved = APPROVED_PREVIEWS,
+  orderBlockedReason,
 }: {
   bag: Bag;
   /** Colourway from the URL, resolved server-side. See src/lib/variant.ts. */
@@ -42,6 +47,10 @@ export default function Customizer({
   productionTimeLabel: string | null;
   /** Never passed on the storefront. */
   preview?: CustomizerPreview;
+  /** Approved digital previews. The lab passes a simulated set; the shop uses the real one. */
+  approved?: Record<string, Record<string, ApprovedPreview>>;
+  /** Lab only: refuse ordering with this message. */
+  orderBlockedReason?: string;
 }) {
   const router = useRouter();
   const { addOrUpdateLine, openCartDrawer } = useCart();
@@ -70,11 +79,18 @@ export default function Customizer({
   const activePreview = preview?.colours.find((c) => c.key === previewKey) ?? null;
 
   const price = computeUnitPrice(bag, selection);
-  const actionLabel = activePreview ? "Preview only" : editingLine ? "Save Changes" : "Add to Cart";
+  const actionLabel = activePreview ? "Preview only" : orderBlockedReason ? "Lab only" : editingLine ? "Save Changes" : "Add to Cart";
+  const colourName = bag.colours.find((c) => c.id === selection.colourId)?.name ?? "";
+  // A confirmed colour shown as an approved digital preview (no photograph yet).
+  const previewOnly = !activePreview && isPreviewOnly(bag, colourName, approved);
 
   function handleAdd() {
     if (activePreview) {
       showToast("Preview colours are not available to order.");
+      return;
+    }
+    if (orderBlockedReason) {
+      showToast(orderBlockedReason);
       return;
     }
     const now = Date.now();
@@ -153,6 +169,7 @@ export default function Customizer({
             bag={bag}
             selection={selection}
             recolour={activePreview && preview ? { frame: preview.frame, colour: activePreview, profiles: preview.profiles, sourceColour: preview.sourceColour } : undefined}
+            approved={approved}
           />
         </div>
         {/* Names exactly what the photograph shows. Colour is the one choice
@@ -161,7 +178,9 @@ export default function Customizer({
         <p className="pd-caption">
           {activePreview && preview
             ? `Colour preview: ${activePreview.name}. Recoloured from a photograph of the ${preview.sourceColour} ${bag.name}, not a photograph of this colour.`
-            : `Pictured in ${bag.colours.find((c) => c.id === selection.colourId)?.name ?? ""}`}
+            : previewOnly
+              ? `Digital colour preview in ${colourName}, not a photograph`
+              : `Pictured in ${colourName}`}
         </p>
       </section>
 
@@ -210,13 +229,19 @@ export default function Customizer({
                 <div className="swatch-row" style={{ ["--n" as string]: preview.colours.length }}>
                   {preview.colours.map((c) => {
                     const on = c.key === previewKey;
+                    // A source photograph only carries so much: Loco's dark
+                    // cord cannot become a light colour convincingly, so those
+                    // swatches are refused rather than shown badly.
+                    const tooLight = preview.maxLightness !== undefined && srgbToLab(...hexToRgb(c.value))[0] > preview.maxLightness;
                     return (
                       <button
                         key={c.key}
                         type="button"
-                        className={`csw csw-named rc-swatch${on ? " is-on" : ""}`}
-                        aria-label={`${c.name} (colour preview)`}
+                        className={`csw csw-named rc-swatch${on ? " is-on" : ""}${tooLight ? " is-off" : ""}`}
+                        aria-label={`${c.name} (colour preview${tooLight ? ", no reliable preview for this bag" : ""})`}
                         aria-pressed={on}
+                        disabled={tooLight}
+                        title={tooLight ? "No reliable preview: this bag's photograph is too dark to show a colour this light" : undefined}
                         onClick={() => setPreviewKey(c.key)}
                       >
                         <span className="csw-name">
@@ -251,9 +276,10 @@ export default function Customizer({
                 </p>
               ) : (
                 <p className="pd-opt-note">
-                  Crocheted to order in{" "}
-                  {bag.colours.find((c) => c.id === selection.colourId)?.name ?? "your chosen colour"}.
-                  The photograph shows the colour you will receive.
+                  Crocheted to order in {colourName || "your chosen colour"}.{" "}
+                  {previewOnly
+                    ? "Shown as a digital colour preview until it is photographed; the finished bag may differ slightly."
+                    : "The photograph shows the colour you will receive."}
                 </p>
               )}
               {bag.straps ? (

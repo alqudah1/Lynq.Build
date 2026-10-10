@@ -33,6 +33,10 @@ export interface YarnProfile {
   median: number;
   quantiles: number[];
   chromaShape: number[] | null;
+  /** Hue drift from shadow to highlight, radians from the mid-tone hue. */
+  hueShape: number[] | null;
+  /** Which bag the reference photograph is of. */
+  product: string;
   /** The yarn's mid-tone as Lab — what a PreviewColour's value describes. */
   midLab: number[];
 }
@@ -148,12 +152,33 @@ export function targetCurve(profiles: YarnProfile[], Lt: number): number[] {
   return base.map((v) => (v > 92 ? 92 + 8 * (1 - Math.exp(-(v - 92) / 8)) : Math.max(0, v)));
 }
 
-/** Shadow-to-highlight colour strength, averaged over the real chromatic yarns. */
-export function chromaShape(profiles: YarnProfile[]): number[] {
-  const shaped = profiles.filter((p) => p.chromaShape);
-  if (!shaped.length) return new Array(33).fill(1);
-  return shaped[0].chromaShape!.map((_, k) => shaped.reduce((s, p) => s + p.chromaShape![k], 0) / shaped.length);
+/**
+ * Shadow-to-highlight colour strength and hue drift, from the real chromatic
+ * yarns WEIGHTED BY HOW CLOSE THEIR HUE IS to the target. A red preview
+ * learns from Rand's real red yarn (its glints run orange and stay
+ * saturated) rather than from an average dominated by golds.
+ */
+export function colourShape(profiles: YarnProfile[], hue: number): { chroma: number[]; hue: number[] } {
+  const shaped = profiles.filter((p) => p.chromaShape && p.hueShape);
+  if (!shaped.length) return { chroma: new Array(33).fill(1), hue: new Array(33).fill(0) };
+  const weights = shaped.map((p) => {
+    const h = Math.atan2(p.midLab[2], p.midLab[1]);
+    const d = Math.atan2(Math.sin(h - hue), Math.cos(h - hue));
+    return Math.exp(-((d / 0.6) ** 2)) + 0.02; // ~35° falloff, never exactly zero
+  });
+  const total = weights.reduce((s, v) => s + v, 0);
+  const at = (k: number, key: "chromaShape" | "hueShape") => shaped.reduce((s, p, i) => s + p[key]![k] * weights[i], 0) / total;
+  return {
+    chroma: shaped[0].chromaShape!.map((_, k) => at(k, "chromaShape")),
+    hue: shaped[0].hueShape!.map((_, k) => at(k, "hueShape")),
+  };
 }
+
+/** Steepest lightness rise allowed per source bin (bins are 0.098 L* apart):
+ *  4x. Where many source pixels share a narrow brightness band, matching
+ *  ranks would stretch that band — and the photograph's compression blocks
+ *  with it — into visible squares. */
+const MAX_STEP = 0.098 * 4;
 
 /** 1024 x RGB lookup from source lightness bin to the new yarn colour. */
 export function buildLut(colour: PreviewColour, profiles: YarnProfile[], src: SourceAnalysis): Uint8ClampedArray {
@@ -162,13 +187,23 @@ export function buildLut(colour: PreviewColour, profiles: YarnProfile[], src: So
   const h = Math.atan2(bt, at);
   const contrast = colour.render?.contrast ?? 1;
   const curve = targetCurve(profiles, Lt);
-  const shape = chromaShape(profiles);
+  const shape = colourShape(profiles, h);
+  const Ls = new Float32Array(BINS);
+  for (let k = 0; k < BINS; k++) Ls[k] = Math.min(100, Math.max(0, Lt + (curveAt(curve, src.rank[k]) - Lt) * contrast));
+  // Limit the stretch, then pull the curve back to the target median so the
+  // limit does not move the colour's overall lightness.
+  for (let k = 1; k < BINS; k++) Ls[k] = Math.min(Ls[k], Ls[k - 1] + MAX_STEP);
+  for (let k = BINS - 2; k >= 0; k--) Ls[k] = Math.max(Ls[k], Ls[k + 1] - MAX_STEP);
+  let mid = 0;
+  while (mid < BINS - 1 && src.rank[mid] < 0.5) mid++;
+  const shift = Lt - Ls[mid];
   const lut = new Uint8ClampedArray(BINS * 3);
   for (let k = 0; k < BINS; k++) {
     const p = src.rank[k];
-    const L = Math.min(100, Math.max(0, Lt + (curveAt(curve, p) - Lt) * contrast));
-    const C = Ct * curveAt(shape, p);
-    const [r, gg, b] = labToSrgb(L, C * Math.cos(h), C * Math.sin(h));
+    const L = Math.min(100, Math.max(0, Ls[k] + shift));
+    const C = Ct * curveAt(shape.chroma, p);
+    const hh = h + curveAt(shape.hue, p);
+    const [r, gg, b] = labToSrgb(L, C * Math.cos(hh), C * Math.sin(hh));
     lut[k * 3] = r; lut[k * 3 + 1] = gg; lut[k * 3 + 2] = b;
   }
   return lut;

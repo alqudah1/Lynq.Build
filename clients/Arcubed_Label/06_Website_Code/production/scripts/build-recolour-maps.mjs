@@ -36,10 +36,24 @@ const OUT = `${MEDIA}/recolour`;
 const W = 1600;
 const Q = 33;
 
+// Material families. A preview borrows lightness and colour behaviour only
+// from real yarns of the SAME material: Nova and Mini Luna are crocheted in
+// the same metallic raffia (pooled, so Mini Luna's real Red teaches every
+// red preview how red foil yarn behaves), Vault in a matte cotton cord, Loco
+// in a matte cord with a fringe. A family is never borrowed across.
+const FAMILIES = {
+  "metallic-raffia": ["nova", "mini-luna"],
+  "matte-cord": ["vault"],
+  "fringe-cord": ["loco"],
+};
+
 // Source frames the renderer may recolour. Front views only: they lead the
 // gallery, and a front view is what a preview has to stand in for.
 const SOURCES = {
   nova: ["DSC05786", "DSC04868", "DSC05780", "DSC05782"], // Gold, Silver, Black fronts; Black open (hardware test)
+  "mini-luna": ["DSC04875"],             // Silver: neutral yarn and shadow
+  vault: ["DSC05790"],                   // Light Brown: the lightest Vault yarn
+  loco: ["DSC05772"],                    // Burgundy: the lighter Loco yarn
 };
 
 // How the yarn is told apart from the contact shadow, per source:
@@ -56,6 +70,14 @@ const YARN_RULE = {
   // white dots inside the bag. Black yarn's sheen never passes L* ~42, so
   // anything brighter than 70 is light, not yarn, and keeps its own pixels.
   DSC05782: { energy: 0.6, keepAbove: 70 },
+  // Loco: fringe strands, with backdrop showing between them. Texture is
+  // everywhere in a fringe (strand edges), so texture cannot separate yarn
+  // from the gaps; darkness can — the cord is dark, the seamless is light.
+  // Weight ramps from 1 at L* 45 to 0 at L* 62.
+  DSC05772: { dark: [45, 62] },
+  // Vault: matte cord, evenly textured to the floor, so the automatic floor
+  // trim (below) separates it from its contact shadow cleanly.
+  DSC05790: { energy: 0.35, trim: true },
 };
 
 // Hand-traced floor lines, [x, y] in 0..1 of the frame: everything below the
@@ -63,6 +85,9 @@ const YARN_RULE = {
 // separates them — on the Black front the yarn and its shadow are equally
 // dark and smooth. Traced at 2x zoom from the source photograph.
 const FLOOR = {
+  // Mini Luna Silver front.
+  DSC04875: [[0, 0.80], [0.10, 0.82], [0.14, 0.875], [0.18, 0.905], [0.22, 0.918], [0.30, 0.928], [0.40, 0.932],
+             [0.52, 0.932], [0.60, 0.927], [0.66, 0.92], [0.70, 0.905], [0.72, 0.89], [0.75, 0.86], [0.80, 0.80], [1, 0.78]],
   // Gold front: light bouncing off the gold yarn warms its contact shadow,
   // so the colour rule alone pulled the shadow in.
   DSC05786: [[0, 0.70], [0.18, 0.70], [0.20, 0.73], [0.24, 0.77], [0.28, 0.80], [0.32, 0.81], [0.36, 0.818],
@@ -124,6 +149,18 @@ function yarnBody(data, w, h, rule, floor) {
   inside.sort((a, b) => a - b);
   const thr = rule.energy * inside[Math.floor(inside.length / 2)];
   let m = new Uint8Array(n);
+  if (rule.dark) {
+    // Strand-level weights straight from lightness; no closing or filling,
+    // which would bridge the gaps between strands.
+    const [lo, hi] = rule.dark, out = new Uint8Array(n);
+    const fy = floorLineY(floor, w, h);
+    for (let p = 0; p < n; p++) {
+      if (!solid[p] || Math.floor(p / w) >= fy[p % w]) continue;
+      const L = lab(data[p * 4], data[p * 4 + 1], data[p * 4 + 2])[0];
+      out[p] = Math.round(Math.min(1, Math.max(0, (hi - L) / (hi - lo))) * 255);
+    }
+    return out;
+  }
   for (let p = 0; p < n; p++) {
     if (!solid[p]) continue;
     if (energy[p] > thr) { m[p] = 1; continue; }
@@ -135,6 +172,22 @@ function yarnBody(data, w, h, rule, floor) {
     }
   }
   m = fillAndKeepLargest(morph(morph(m, w, h, 5, true), w, h, 5, false), w, h);
+  // FLOOR TRIM, automatic: closing the mask bridges the bottom row of
+  // stitches onto the smooth contact shadow below it. Walking up each column
+  // from the bottom, mask pixels are dropped while the surface is smooth,
+  // stopping at the first crochet texture.
+  // Opt-in per source: on a metallic yarn the smooth highlights and dimly
+  // lit bottom stitches read as "smooth" too, and the trim removed real yarn
+  // (Gold Nova, Silver Mini Luna) — those use a traced floor line instead.
+  const trim = 0.6 * inside[Math.floor(inside.length / 2)];
+  if (rule.trim) for (let x = 0; x < w; x++) {
+    for (let y = h - 1; y >= 0; y--) {
+      const p = y * w + x;
+      if (!m[p]) continue;
+      if (energy[p] >= trim) break;
+      m[p] = 0;
+    }
+  }
   if (floor) {
     for (let x = 0; x < w; x++) {
       const fx = x / w;
@@ -148,6 +201,50 @@ function yarnBody(data, w, h, rule, floor) {
   const out = new Uint8Array(n);
   for (let p = 0; p < n; p++) out[p] = Math.round(Math.min(1, soft[p]) * 255);
   return out;
+}
+
+// y (pixels) of the traced floor line at every x, or Infinity without one.
+function floorLineY(floor, w, h) {
+  const out = new Float32Array(w).fill(Infinity);
+  if (!floor) return out;
+  for (let x = 0; x < w; x++) {
+    const fx = x / w;
+    const k = Math.max(0, floor.findIndex(([px]) => px >= fx) - 1);
+    const [x0, y0] = floor[k], [x1, y1] = floor[Math.min(k + 1, floor.length - 1)];
+    out[x] = (y0 + (x1 > x0 ? ((fx - x0) / (x1 - x0)) * (y1 - y0) : 0)) * h;
+  }
+  return out;
+}
+
+// EDGE CLEAN-UP. Silhouette pixels are part bag, part studio backdrop, so
+// their colour is the yarn mixed with light grey. Recoloured as they are,
+// they read as a pale rim round a dark preview (seen on Navy at 2x). Here
+// the yarn colour of the interior is pushed outward into those pixels
+// (three passes of neighbour averaging), their alpha is kept, and they are
+// marked as yarn. Only pixels LIGHTER than the yarn beside them are touched
+// — the backdrop is light, a contact shadow is dark — and never below a
+// traced floor line.
+function cleanEdges(data, mask, w, h, floorY) {
+  const n = w * h;
+  const isYarn = (p) => mask[p] >= 200;
+  for (let pass = 0; pass < 3; pass++) {
+    const fill = [];
+    for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+      const p = y * w + x, a = data[p * 4 + 3];
+      if (mask[p] >= 200 || a === 0 || a >= 250 || y >= floorY[x]) continue;
+      let r = 0, g = 0, b = 0, c = 0;
+      for (const q of [p - 1, p + 1, p - w, p + w, p - w - 1, p - w + 1, p + w - 1, p + w + 1]) {
+        if (isYarn(q)) { r += data[q * 4]; g += data[q * 4 + 1]; b += data[q * 4 + 2]; c++; }
+      }
+      if (!c) continue;
+      const own = lab(data[p * 4], data[p * 4 + 1], data[p * 4 + 2])[0];
+      const near = lab(r / c, g / c, b / c)[0];
+      if (own <= near + 5) continue;
+      fill.push([p, r / c, g / c, b / c]);
+    }
+    for (const [p, r, g, b] of fill) { data[p * 4] = r; data[p * 4 + 1] = g; data[p * 4 + 2] = b; mask[p] = 255; }
+  }
+  return n;
 }
 
 function boxBlur(src, w, h, r) {
@@ -211,8 +308,21 @@ function fillAndKeepLargest(m, w, h) {
     const p = stack.pop(), x = p % w, y = (p - x) / w;
     if (x > 0) push(p - 1); if (x < w - 1) push(p + 1); if (y > 0) push(p - w); if (y < h - 1) push(p + w);
   }
+  // Fill only SMALL holes (gaps between stitches). A large enclosed hole is
+  // the backdrop seen through a handle's arch: filling it would recolour the
+  // background. "Large" = more than 0.4% of the frame.
   const solid = new Uint8Array(n);
   for (let p = 0; p < n; p++) solid[p] = outside[p] ? 0 : 1;
+  const seen = new Uint8Array(n), maxHole = n * 0.004;
+  for (let s = 0; s < n; s++) {
+    if (m[s] || outside[s] || seen[s]) continue;
+    const comp = [], st = [s]; seen[s] = 1;
+    while (st.length) {
+      const p = st.pop(), x = p % w; comp.push(p);
+      for (const q of [x > 0 ? p - 1 : -1, x < w - 1 ? p + 1 : -1, p - w, p + w]) if (q >= 0 && q < n && !m[q] && !outside[q] && !seen[q]) { seen[q] = 1; st.push(q); }
+    }
+    if (comp.length > maxHole) for (const p of comp) solid[p] = 0;
+  }
   // largest component
   const label = new Int32Array(n); let best = 0, bestSize = 0, next = 1;
   for (let s = 0; s < n; s++) {
@@ -280,7 +390,10 @@ for (const [slug, frames] of Object.entries(SOURCES)) {
       }
       mask[p] = Math.round(wgt * 255);
     }
-    await sharp(data, { raw: { width: w, height: h, channels: 4 } }).webp({ quality: 92, alphaQuality: 100 }).toFile(`${OUT}/${frame}-src-${W}.webp`);
+    cleanEdges(data, mask, w, h, floorLineY(FLOOR[frame], w, h));
+    // q97: the renderer stretches the source's lightness, so compression
+    // blocks in a q92 file became visible squares in bright highlights.
+    await sharp(data, { raw: { width: w, height: h, channels: 4 } }).webp({ quality: 97, alphaQuality: 100, smartSubsample: true }).toFile(`${OUT}/${frame}-src-${W}.webp`);
     await sharp(mask, { raw: { width: w, height: h, channels: 1 } }).png({ compressionLevel: 9 }).toFile(`${OUT}/${frame}-mask-${W}.png`);
     sourceInfo[frame] = { slug, width: w, height: h };
     console.log(`source ${frame}: ${w}x${h}`);
@@ -289,9 +402,9 @@ for (const [slug, frames] of Object.entries(SOURCES)) {
 
 // 2. yarn profiles from every real colourway's first frame
 const profiles = {};
-for (const slug of Object.keys(SOURCES)) {
-  profiles[slug] = [];
-  for (const [colour, frames] of Object.entries(COLOUR_MEDIA[slug] ?? {})) {
+for (const [family, slugs] of Object.entries(FAMILIES)) {
+  profiles[family] = [];
+  for (const slug of slugs) for (const [colour, frames] of Object.entries(COLOUR_MEDIA[slug] ?? {})) {
     // A two-tone colourway mixes two yarns, so its lightness spread describes
     // neither of them.
     if (colour.includes("&")) continue;
@@ -311,30 +424,37 @@ for (const slug of Object.keys(SOURCES)) {
     // desaturated shadows and understates the yarn's colour.
     let ma = 0, mb = 0; const m0 = Math.floor(n * 0.4), m1 = Math.floor(n * 0.6);
     for (let j = m0; j < m1; j++) { ma += As[order[j]]; mb += Bs[order[j]]; }
-    const quant = [], chroma = [];
+    const quant = [], chroma = [], hueAt = [];
     for (let k = 0; k < Q; k++) {
       const lo = Math.floor((k / Q) * n), hi = Math.max(lo + 1, Math.floor(((k + 1) / Q) * n));
-      let sL = 0, sC = 0;
-      for (let j = lo; j < hi; j++) { sL += Ls[order[j]]; sC += Cs[order[j]]; }
-      quant.push(+(sL / (hi - lo)).toFixed(2)); chroma.push(+(sC / (hi - lo)).toFixed(2));
+      let sL = 0, sC = 0, sa = 0, sb = 0;
+      for (let j = lo; j < hi; j++) { sL += Ls[order[j]]; sC += Cs[order[j]]; sa += As[order[j]]; sb += Bs[order[j]]; }
+      quant.push(+(sL / (hi - lo)).toFixed(2)); chroma.push(+(sC / (hi - lo)).toFixed(2)); hueAt.push(Math.atan2(sb, sa));
     }
+    const midHue = Math.atan2(mb, ma);
     const median = quant[(Q - 1) / 2];
     const midChroma = chroma[(Q - 1) / 2];
-    profiles[slug].push({
+    profiles[family].push({
       colour, frame, median,
       quantiles: quant,
       // Colour strength by lightness, relative to the mid-tone. Only
       // meaningful for chromatic yarns; neutral ones are flagged.
       chromaShape: midChroma > 8 ? chroma.map((c) => +(c / midChroma).toFixed(3)) : null,
+      // How the hue drifts from shadow to highlight (radians from the mid-
+      // tone's hue): real red foil runs orange in its glints, gold runs
+      // yellow. Chromatic yarns only.
+      hueShape: midChroma > 8 ? hueAt.map((hh) => +Math.atan2(Math.sin(hh - midHue), Math.cos(hh - midHue)).toFixed(3)) : null,
+      product: slug,
       midLab: [median, ma / (m1 - m0), mb / (m1 - m0)].map((v) => +v.toFixed(2)),
     });
-    console.log(`profile ${slug}/${colour} (${frame}): median L ${median}, mid chroma ${midChroma}`);
+    console.log(`profile ${family}: ${slug}/${colour} (${frame}): median L ${median}, mid chroma ${midChroma}`);
   }
-  profiles[slug].sort((a, b) => a.median - b.median);
+  profiles[family].sort((a, b) => a.median - b.median);
 }
+const familyOf = Object.fromEntries(Object.entries(FAMILIES).flatMap(([f, ss]) => ss.map((s) => [s, f])));
 
 fs.writeFileSync(
   "src/lib/recolour/profiles.generated.json",
-  JSON.stringify({ generatedBy: "scripts/build-recolour-maps.mjs", width: W, sources: sourceInfo, profiles }, null, 1) + "\n"
+  JSON.stringify({ generatedBy: "scripts/build-recolour-maps.mjs", width: W, sources: sourceInfo, familyOf, profiles }, null, 1) + "\n"
 );
 console.log("wrote src/lib/recolour/profiles.generated.json");

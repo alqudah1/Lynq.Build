@@ -2879,3 +2879,5 @@ html { overflow-anchor: none; }
 .cl-canvas { width: 100%; height: auto; display: block; }
 .cl-still figcaption { font-size: 12px; padding: 6px 8px; background: #fff; color: var(--navy); }
 .cl-ms { color: var(--muted); }
+.rc-swatch.is-off { opacity: 0.38; cursor: not-allowed; }
+.rc-label { margin-top: 10px; }

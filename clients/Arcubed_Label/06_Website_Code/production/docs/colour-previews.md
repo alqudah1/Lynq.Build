@@ -1,96 +1,105 @@
-# Colour previews (prototype)
+# Colour previews
 
-Show a bag in a colour that has not been photographed, by recolouring the
-yarn of an authentic photograph in the browser. Status 2026-10-09: working
-prototype for Nova, **admin-only** at `/admin/colour-lab`, not on the
-storefront. Nothing is orderable in a preview colour, and no AI service or
-network request is involved per colour.
+Show a bag in a confirmed colour that has not been photographed yet, by
+recolouring the yarn of an authentic photograph in the browser. Status
+2026-10-09: working for all four bags in the admin colour lab
+(`/admin/colour-lab`); **nothing is approved, so the storefront shows
+photography only**. No AI service or network request is involved per colour.
+
+## What a customer sees (once a preview is approved)
+
+The product page always prefers, in order:
+
+1. a real photograph of the selected colourway
+2. an approved digital colour preview (`src/lib/colour-previews.ts`), drawn
+   by `RecolourStage`, captioned "Digital colour preview in …, not a
+   photograph" with a note naming the photograph it was made from and that
+   the finished bag may differ slightly
+3. another colourway's photograph, labelled as such
+
+A preview is only ever attached to a colour that is already confirmed and
+purchasable in the catalogue (Supabase `product_colours`). Nothing in this
+system creates a colour or makes one orderable. The lab's "Storefront
+simulation" mode shows exactly this experience without saving anything.
 
 ## How it works
 
 1. `node scripts/build-recolour-maps.mjs` (Node 22) prepares, from Rand's
    photographs:
-   - `public/media/recolour/<frame>-src-1600.webp` — the source cut-out
-   - `public/media/recolour/<frame>-mask-1600.png` — 0..255 per pixel: how
-     much of it is yarn. Built from the bag's solid body, kept only where the
-     surface has crochet texture (a shadow is smooth), with per-source rules
-     (`YARN_RULE`), hand-traced floor lines (`FLOOR`) and hardware search
-     areas (`EXCLUDE`) — see the comments in the script.
-   - `src/lib/recolour/profiles.generated.json` — for every real photographed
-     colourway: its yarn's lightness distribution (33 quantiles), how its
-     colour strength varies from shadow to highlight, and its mid-tone.
-2. `src/lib/recolour/engine.ts` (browser): each source pixel keeps its
-   brightness RANK; the new yarn gets the lightness distribution interpolated
-   from the real yarns nearest it in lightness, and colour strength shaped
-   like the real chromatic yarns. One 1024-entry lookup table per colour, one
-   pass over the pixels.
-3. `src/components/customizer/RecolourStage.tsx` draws it on a canvas, keeps
-   the real photograph until the first preview exists and the previous
-   colour until the next is drawn, and caches the last six colours.
-4. `Customizer` takes an optional `preview` prop (only the lab passes it):
-   a "Preview colours · not for sale" row, the caption names it a preview and
-   the photograph it came from, size/handle/strap/chain are untouched, and
-   ordering is refused while a preview is shown.
+   - `public/media/recolour/<frame>-src-1600.webp` — the source cut-out (q97)
+   - `public/media/recolour/<frame>-mask-1600.png` — how much of each pixel
+     is yarn. Solid body; crochet texture separates yarn from smooth shadow;
+     only small holes are filled (a handle's arch stays backdrop); per-source
+     rules (`YARN_RULE`: texture threshold, colour rescue, darkness for
+     Loco's fringe, keep-bright for backlit gaps, automatic floor trim for
+     Vault); hand-traced floor lines (`FLOOR`); hardware search areas
+     (`EXCLUDE`); edge clean-up so silhouettes take the new colour instead of
+     a pale rim.
+   - `src/lib/recolour/profiles.generated.json` — every real photographed
+     colourway, grouped by MATERIAL family: lightness distribution (33
+     quantiles), colour strength and hue drift from shadow to highlight, and
+     its mid-tone.
+2. `src/lib/recolour/engine.ts`: each pixel keeps its brightness RANK in the
+   source; the new yarn gets the lightness distribution interpolated from
+   the real yarns of the same material nearest it in lightness, and colour
+   strength + hue drift from the real yarns nearest it in hue. The lightness
+   stretch is capped (4x) so compression blocks are not magnified.
+3. `RecolourStage` draws it on a canvas, keeps the photograph until the
+   first preview exists and the previous colour until the next is drawn, and
+   caches the last six colours.
 
-A colour with real photography is never previewed: the gallery always
-prefers the photograph.
+## Material families
 
-## Adding a colour
+| Family | Bags | Real references | Status |
+|---|---|---|---|
+| Metallic raffia | Nova, Mini Luna | Nova Gold, Black, Champagne, Silver, Rose Gold; Mini Luna Red, Silver, Gold, Black | Convincing for all test colours. Red checked against Rand's real red yarn: matches pixel values at every brightness rank |
+| Matte cord | Vault | Brown, Light Brown, Olive Green | Convincing including light colours at 1:1, but every reference is a dark earth tone: light colours are extrapolated |
+| Fringe cord | Loco | Brown, Burgundy | Dark and mid colours only. Above L* 45 the dark source turns speckled and washed out, so lighter swatches are refused (`maxLightness`) |
 
-One entry in `src/lib/recolour/preview-colours.ts` — no rendering code:
+## Adding an approved preview
 
-```ts
-{ key: "navy", name: "Navy", swatch: "#263a63", value: "#263a63", products: ["nova"], approved: false }
-```
-
-`value` must be MEASURED: photograph a flat swatch of the actual yarn under
-the studio lights and take the colour of the middle band of its brightness
-(what `midLab` records for the real yarns). A guessed hex gives a guessed
-preview. `render: { chroma, contrast }` can fine-tune (default 1).
-
-## Adding a bag
-
-Add its front frame(s) to `SOURCES` in the build script, check the mask
-visually (blue overlay), add floor lines / hardware areas where needed,
-rebuild, then add the frame to `PREVIEW_SOURCES`. The bag's own photographed
-colourways become its profiles automatically.
-
-| Bag | Fit | Why |
-|---|---|---|
-| Nova | Working | Metallic raffia; 5 single-yarn references (Black, Rose Gold, Champagne, Gold, Silver) |
-| Mini Luna | Good fit, not built | Same metallic raffia; Red, Silver, Gold, Black references; crocheted handle recolours with the body |
-| Vault | Partial | Matte cotton cord — gets its own profiles (never Nova's sheen), but all 3 references are dark earth tones: light or bright colours would be extrapolation |
-| Loco | Not ready | Fringe strands with backdrop between them; the site already rejected Loco's cut-out for this. Needs a hand-made mask |
+1. Rand confirms the colour and it is added to the catalogue (purchasable).
+2. Photograph a flat swatch of the actual yarn under the studio lights; its
+   mid-tone (40th–60th percentile of brightness) is the `value`.
+3. Review it in the lab (Preview colours mode with that value, then
+   Storefront simulation). Rand or Mustafa approves the exact image.
+4. Add one entry to `APPROVED_PREVIEWS` in `src/lib/colour-previews.ts`:
+   ```ts
+   nova: { Navy: { value: "#263a63", frame: "DSC04868", sourceColour: "Silver", approvedBy: "Rand", approvedOn: "2026-11-02" } }
+   ```
+5. Release normally (see docs/deployment.md). When the colour is later
+   photographed, the photograph replaces the preview automatically.
 
 ## Measured limitations
 
-- **Material, not just colour.** Every Nova yarn photographed is metallic
-  raffia, so every preview is metallic raffia. A matte, glitter, bouclé or
-  two-tone yarn needs its own photographed reference.
-- **Outside the photographed range is extrapolation.** Leave-one-out tests:
-  Rose Gold and Champagne predicted from Silver match the real yarns
-  (lightness spread and colour strength within ~1–3 units); Gold matches in
-  colour but lacks its brightest glints when its own profile is withheld;
-  Black cannot be predicted without a dark reference (its bright sheen on a
-  near-black body is unlike anything lighter).
-- **Source matters.** A mid-tone neutral source (Silver front) is cleanest. A
-  dark source stores little shadow detail, so light previews from it are
-  grainy. A gold source tints its own floor shadow (neutralised in the build).
-- **Hardware** is protected only where a search area is drawn
-  (`EXCLUDE`): tested on the open Black Nova's two rim clasps. No Arcubed
-  photograph shows a chain or strap, so those are untested.
-- **Open, backlit views fail**: light through stitch gaps inside the bag gets
-  tinted. Use closed front views as sources.
-- **Performance** (Chromium, phone viewport, 1600px source): first preview
-  ~0.4s including one-time analysis at 4–6x CPU throttle; each new colour
-  24–40ms to render, ~100–150ms tap to screen; a cached colour 1–2ms.
-  Download: ~290kB once (Silver source + mask).
+- **Colour, not material.** Previews inherit the source yarn's material:
+  metallic raffia, matte cord or fringe cord. A different yarn type needs
+  its own photographed references.
+- **The source sets the glints.** Recolouring cannot add highlights the
+  source photograph does not have: the Silver Nova's soft sheen gives a
+  softer red than the hard-lit Red Mini Luna photograph, though the colour
+  values match.
+- **Light previews from dark sources** degrade (Loco: refused above L* 45).
+- **Hardware** is protected only where a search area is drawn (tested on the
+  open Black Nova's clasps). No Arcubed photograph shows a chain or strap.
+- **Open, backlit views fail** (light through stitch gaps gets tinted); only
+  closed front views are offered as sources for approval.
+- **Authentic glints**: the Silver sources carry tiny bright foil facets
+  that read as pale flecks on dark previews at 2x zoom. They are in Rand's
+  photographs, not added.
+- **Performance** (Chrome, Android viewport, 6x CPU throttle): first preview
+  0.23–0.28s including one-time analysis; each new colour 141–186ms tap to
+  screen (48–78ms rendering); cached colour 77–225ms. WebKit/iPhone and
+  desktop pass all interaction checks. Download once per bag: 0.3–0.6MB.
 
-## Reviewing locally
+## Reviewing
+
+Review builds live at https://arcubed-review.vercel.app (admin sign-in, then
+`/admin/colour-lab`). Locally:
 
 ```
 cd clients/Arcubed_Label/06_Website_Code/production
 node scripts/build-recolour-maps.mjs        # only if sources/masks change
 npm run build && ARCUBED_ADMIN_PASSPHRASE=<any local value> npx next start -p 4312
-# open http://localhost:4312/admin, sign in with that value, then /admin/colour-lab
+# http://localhost:4312/admin, sign in with that value, then /admin/colour-lab
 ```

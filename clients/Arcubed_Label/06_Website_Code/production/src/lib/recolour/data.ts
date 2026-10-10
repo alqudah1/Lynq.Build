@@ -3,7 +3,11 @@
 import generated from "./profiles.generated.json";
 import type { YarnProfile } from "./engine";
 
+/** Real-yarn references by material family (see FAMILIES in the build script). */
 export const PROFILES = generated.profiles as Record<string, YarnProfile[]>;
+const FAMILY_OF = generated.familyOf as Record<string, string>;
+/** The references a bag's previews may borrow from: its own material only. */
+export const profilesFor = (slug: string): YarnProfile[] => PROFILES[FAMILY_OF[slug]] ?? [];
 export const SOURCES = generated.sources as Record<string, { slug: string; width: number; height: number }>;
 export const MAP_WIDTH = generated.width as number;
 

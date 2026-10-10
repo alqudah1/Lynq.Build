@@ -15,7 +15,9 @@ export const metadata = { title: "Colour lab | Arcubed", robots: { index: false,
 
 export default async function ColourLabPage() {
   if (!(await isAdmin())) redirect("/admin");
-  const [bag, settings] = await Promise.all([getBagBySlug("nova"), getStoreSettings()]);
-  if (!bag) notFound();
-  return <ColourLab bag={bag} productionTimeLabel={settings?.productionTimeLabel ? plainText(settings.productionTimeLabel) : null} />;
+  const slugs = ["nova", "mini-luna", "vault", "loco"];
+  const [settings, ...found] = await Promise.all([getStoreSettings(), ...slugs.map((s) => getBagBySlug(s))]);
+  const bags = found.filter((b): b is NonNullable<typeof b> => Boolean(b));
+  if (!bags.length) notFound();
+  return <ColourLab bags={bags} productionTimeLabel={settings?.productionTimeLabel ? plainText(settings.productionTimeLabel) : null} />;
 }

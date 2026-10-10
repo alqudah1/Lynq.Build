@@ -1,41 +1,57 @@
-// Approved colour previews — the tier BELOW real photography.
+// Approved colour previews — what a CUSTOMER sees for a confirmed colourway
+// that has not been photographed yet.
 //
-// A colour preview is an authentic Arcubed photograph with only the yarn
-// colour changed (same pixels, same silhouette, stitches, shadows and
-// perspective). It exists for one case: a confirmed colourway Rand offers
-// before it has been photographed. It is never shown when a real photograph
-// of that colourway exists, and never shown unlabelled — the gallery names it
-// a preview and says which photograph it was made from.
+// The order of preference on the product page never changes:
+//   1. a real photograph of the selected colourway (always wins)
+//   2. an APPROVED digital colour preview, defined here: an authentic
+//      photograph of the same bag with only the yarn recoloured in the
+//      browser (src/lib/recolour/), labelled as a digital preview
+//   3. another colourway's photograph, labelled as such
 //
-// HAND-MAINTAINED AND EMPTY ON PURPOSE. As of 2026-10-08 every confirmed
-// colourway of all four bags has real photography (src/lib/media-manifest.ts),
-// so there is nothing for a preview to stand in for. Add an entry only when
-// ALL of these hold:
-//   1. the colour is confirmed by Rand and active in the catalogue
-//   2. no real photograph of it exists yet
-//   3. Rand has looked at this exact image and approved it
-// The October 2026 proof of concept (Nova Gold -> Champagne / Silver) found
-// small shifts within the same yarn family convincing and large ones not:
-// Gold -> Silver read as dull pewter beside the real Silver yarn. Judge every
-// preview against a real swatch of the yarn before proposing it.
+// HOW A COLOUR GETS HERE. Never by adding a colour on its own:
+//   - the colour must already be a confirmed, purchasable colour of that bag
+//     in the catalogue (Supabase product_colours) — this file never creates
+//     a colour, so nothing here can make an unconfirmed colour orderable
+//   - `value` is MEASURED from a swatch photograph of the real yarn (see
+//     docs/colour-previews.md), not picked
+//   - Rand (or Mustafa) has looked at that exact preview in the admin colour
+//     lab and approved it; `approvedBy` and `approvedOn` record that
+//
+// Empty on purpose: every confirmed colourway of all four bags is
+// photographed today.
 
-import type { Frame } from "./media-manifest";
-import { productKey } from "./product-media";
 import type { Bag } from "./types";
+import { productKey, framesForColour } from "./product-media";
 
-export interface ColourPreview {
-  frames: Frame[];
-  /** The real colourway the source photograph shows, named in the label. */
+export interface ApprovedPreview {
+  /** The yarn's measured mid-tone, sRGB hex. */
+  value: string;
+  /** Optional renderer tuning (chroma/contrast multipliers). */
+  render?: { chroma?: number; contrast?: number };
+  /** Source photograph (see PREVIEW_SOURCES) and the colourway it shows. */
+  frame: string;
   sourceColour: string;
-  /** Who approved it and when — an unapproved preview does not belong here. */
   approvedBy: string;
   approvedOn: string;
 }
 
 /** product slug -> catalogue colour name -> approved preview. */
-export const APPROVED_PREVIEWS: Record<string, Record<string, ColourPreview>> = {};
+export const APPROVED_PREVIEWS: Record<string, Record<string, ApprovedPreview>> = {};
 
-export function previewFor(bag: Pick<Bag, "slug" | "name">, colourName: string | null | undefined): ColourPreview | null {
+export function previewFor(
+  bag: Pick<Bag, "slug" | "name">,
+  colourName: string | null | undefined,
+  approved: Record<string, Record<string, ApprovedPreview>> = APPROVED_PREVIEWS,
+): ApprovedPreview | null {
   if (!colourName) return null;
-  return APPROVED_PREVIEWS[productKey(bag)]?.[colourName] ?? null;
+  return approved[productKey(bag)]?.[colourName] ?? null;
+}
+
+/** True when the customer will see a digital preview, not a photograph. */
+export function isPreviewOnly(
+  bag: Pick<Bag, "slug" | "name">,
+  colourName: string | null | undefined,
+  approved: Record<string, Record<string, ApprovedPreview>> = APPROVED_PREVIEWS,
+): boolean {
+  return framesForColour(bag, colourName).length === 0 && previewFor(bag, colourName, approved) !== null;
 }
