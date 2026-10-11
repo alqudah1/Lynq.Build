@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { assignWeekSlots, buildAnalysisPrompt, buildImagePrompt, buildIdeasPrompt, buildPartPrompt, buildReplyPrompt, buildVariantGenerationPrompt, fitVariantToPlatform, hasPerformanceData, imageAspectFor, normalizeIdea, variantGenerationOutputSchema, zonedDateTimeToUtc, type PerformanceEvidence } from "./studio";
+import { assignWeekSlots, buildAnalysisPrompt, buildImagePrompt, usesReferenceImages, buildIdeasPrompt, buildPartPrompt, buildReplyPrompt, buildVariantGenerationPrompt, fitVariantToPlatform, hasPerformanceData, imageAspectFor, normalizeIdea, variantGenerationOutputSchema, zonedDateTimeToUtc, type PerformanceEvidence } from "./studio";
 import { composeCaption } from "./providers/social/http";
 import { socialContentBriefSchema } from "./validation";
 import type { BrandContext, SocialBrand } from "./brands";
@@ -131,6 +131,11 @@ describe("buildImagePrompt", () => {
     const p = buildImagePrompt({ brand: socialBrand, brief: withDirection, title: "Nasma", hook: "Menu to reservation", platform: "instagram" });
     expect(p.split("\n")[0]).toBe("Art direction: One ceramic plate on black.");
     expect(p).toContain("VISUAL RULES: Scenes with a concept.");
+  });
+
+  it("a brand whose visual rules say \"no reference images\" is drawn without its logo/mascot or old posts as references", () => {
+    expect(usesReferenceImages(socialBrand)).toBe(true);
+    expect(usesReferenceImages({ visualRules: "Product photography. No reference images: the look starts from this description alone." })).toBe(false);
   });
 
   it("a regenerate instruction replaces the old art direction instead of trailing it", () => {

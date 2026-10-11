@@ -1,10 +1,10 @@
 import "server-only";
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
-import { marketingChannelAccounts, marketingContentItems } from "@/db/schema";
-import { createUploadedAsset, resolveAssetBytes, resolveAssetRow } from "./assets";
+import { marketingChannelAccounts, marketingContentItems, socialAssets, socialContentVariants } from "@/db/schema";
+import { archiveAsset, createUploadedAsset, resolveAssetBytes, resolveAssetRow } from "./assets";
 import { composeStoryCard, type StoryBrand } from "./story-card";
-import { createBrand, listBrands } from "./brands";
+import { createBrand, listBrands, updateBrand } from "./brands";
 import { updateAccount } from "./connections";
 import { archiveContentItem, createContentItem, getContentItemForUser, getVariantForUser, updateContentItem, updateVariant, type SocialContentItem } from "./content";
 import { regenerateVariantPart, zonedDateTimeToUtc } from "./studio";
@@ -32,6 +32,8 @@ interface PlanBrandRef {
   brandKey: string;
   matchName: RegExp;
   createWith?: BrandProfileInput;
+  /** The visual system the plan is built on; written onto the brand on every load so image prompts and the plan agree. */
+  visual?: { visualRules: string; notes: string };
 }
 
 interface PlanFeedPost {
@@ -102,18 +104,20 @@ export interface WeekPlan {
   retired?: string[];
 }
 
-const LYNQ: PlanBrandRef = { brandKey: "lynq", matchName: /^lynq\b/i };
+const LYNQ_VISUAL_RULES = "Product photography, Teenage Engineering and Bang & Olufsen spirit: one real object on matte near-black, hard light from the upper left, acid lime #C7FF3D exactly once as a small detail, thin white editorial type or no text. No mascot, no character, no robot, no figure of any kind, no people, no scenes, no gradients, no clip-art. No reference images: ignore any earlier LYNQ visuals, the look starts from this description alone.";
+const LYNQ: PlanBrandRef = { brandKey: "lynq", matchName: /^lynq\b/i, visual: { visualRules: LYNQ_VISUAL_RULES, notes: "Near-black #0B0B0C background, white type, lime #C7FF3D once per image. No mascot." } };
 const LYNQ_TAGS = ["SmallBusiness", "WebDesign", "LYNQ"];
 const LYNQ_LOOK = "LYNQ's look, in the spirit of Teenage Engineering and Bang & Olufsen product photography: a single real object shot like a premium product on a plain matte near-black studio background, centred, with generous empty space around it; one hard directional light from the upper left giving crisp edges and one clean shadow; matte materials, no scene, no environment, no mascot, no people, no faces, no clip-art, no gradients. Acid lime appears exactly once per image as a small detail on the object (a tag, a glow, a switch, a thread). Text, when asked for, is one short line in thin white editorial type with generous letter spacing, set small and well inside the frame; otherwise no text at all. Square frame, everything inside a 12% safe margin, nothing touching any edge. The grid must read as one series: same background tone, same light, same framing every time. Reference images show only the brand colours; ignore any character, scene or rendering style in them.";
 const HONEST_CARD = "Honest design card: no website screens, no logos, no people or faces — it must never pass for the client's real site, premises or customers.";
 
+const CODEIT_VISUAL_RULES = "Flat 2D vector illustration, Toca Boca and Headspace spirit: bold rounded shapes, one or two flat colours per image from cream #FFF6EC, orange #F97316, navy #1E2A44, sky blue and mint; no 3D, no clay, no gradients, no desk scenes. The round orange mascot in a yellow hoodie appears in about half the images, drawn flat; the rest use one big flat object as the hero. Chunky rounded navy or orange headline only where asked; no names or signatures. Never a real child or a real face.";
 const CODEIT_PROFILE: BrandProfileInput = {
   brandKey: "codeit",
   name: "CodeIt",
   positioning: "A free, browser-based coding studio for ages 5–18: kids describe a site, game or quiz, get a working first version, then edit it and see the code. Plus 31 beginner Python lessons and a Python playground that run with no AI involved.",
   audience: "Parents of kids aged 5–18 in Toronto and across Canada who want screen time that builds something; homeschool families; teachers looking for beginner Python.",
   voice: "Warm, playful, plain-spoken. Talks to parents, never down to kids. Short sentences, real examples, a little humour, no hype.",
-  visualRules: "Match @codeitlearn: warm cream background, the orange fluffy clay-style mascot in a yellow hoodie, cozy desk scenes (laptop, sticky notes, sketchbook), chunky rounded navy and orange headline type, small doodles (stars, arrows, code brackets). Never show real children's faces.",
+  visualRules: CODEIT_VISUAL_RULES,
   productContext: "Free to start, no card required: 10 AI-assisted builds a month, 31 beginner Python lessons and the Python playground are free for everyone. Paid family plan: CA$12/month. Lead differentiator: comprehension is checked against the child's own project — questions are generated from their code, wrong options come from other real values in the same file, and only first-time-correct answers count.",
   claimsGuardrails: "Prices only in CAD (CA$12/month). Never claim Mustafa is a parent or homeschooler. No invented testimonials, user counts, results or partnerships. Example projects are labelled as examples.",
   callsToAction: ["Start free at codeitlearn.com", "Link in bio", "Save this for later"],
@@ -121,7 +125,7 @@ const CODEIT_PROFILE: BrandProfileInput = {
   companyInfo: "CodeIt (codeitlearn.com), founded by Mustafa in Toronto. First workshop ran at Northcrest's Community Sundays.",
   brandStory: "Mustafa teaches kids to code and built the tool he wanted: start from the kid's own idea, build the first version with them, then make sure they understand every line.",
   writingStyle: "Lead with what the kid does, then why it matters to the parent. One idea per post. End with one clear next step.",
-  visualIdentity: { colors: [{ name: "CodeIt orange", hex: "#F97316", role: "accent" }, { name: "Cream", hex: "#FFF6EC", role: "background" }, { name: "Navy", hex: "#1E2A44", role: "text" }], typography: { heading: "Baloo 2", body: "Nunito" }, logoAssetIds: [], notes: "The orange mascot appears in every visual." },
+  visualIdentity: { colors: [{ name: "CodeIt orange", hex: "#F97316", role: "accent" }, { name: "Cream", hex: "#FFF6EC", role: "background" }, { name: "Navy", hex: "#1E2A44", role: "text" }], typography: { heading: "Baloo 2", body: "Nunito" }, logoAssetIds: [], notes: "The mascot is flat and appears in about half the visuals, never in a desk scene." },
   websites: ["https://codeitlearn.com"],
   competitors: ["CodeCombat", "Tynker", "Scratch"],
   contentPillars: ["BUILD — what kids make", "LEARN — parent tips and mini Python lessons", "HOW IT WORKS — the comprehension check", "OFFER — free to start, CA$12 family plan", "FOUNDER — Mustafa teaching"],
@@ -132,7 +136,7 @@ const CODEIT_PROFILE: BrandProfileInput = {
   objectives: [],
 };
 
-const CODEIT: PlanBrandRef = { brandKey: "codeit", matchName: /^code\s?it/i, createWith: CODEIT_PROFILE };
+const CODEIT: PlanBrandRef = { brandKey: "codeit", matchName: /^code\s?it/i, createWith: CODEIT_PROFILE, visual: { visualRules: CODEIT_VISUAL_RULES, notes: "The mascot is flat and appears in about half the visuals, never in a desk scene." } };
 
 const CODEIT_TAGS = ["KidsWhoCode", "PythonForKids", "ParentingTips"];
 const CODEIT_LOOK = "CodeIt's look, in the spirit of Toca Boca and Headspace: flat 2D vector illustration with bold simple rounded shapes, thick clean outlines or no outlines, no 3D, no clay, no gradients, no photo textures. One or two flat background colours per image chosen from cream #FFF6EC, CodeIt orange #F97316, navy #1E2A44, sky blue and mint; big playful composition with one clear idea and lots of breathing room. The CodeIt mascot (round orange fluffy character in a yellow hoodie) appears in about half the images as a flat illustrated character, never in a desk scene; the other images use big flat objects (a laptop, a dinosaur, a pizza slice, a rocket, a speech bubble) as the hero. Headline only where described, in chunky rounded navy or orange type, well inside the frame; no names, no signatures, no other text. Square frame, everything inside a 12% safe margin. Never show a real child, never a real face. Reference images show only the mascot's colours and proportions; do not copy their 3D rendering or their desk scenes.";
@@ -594,13 +598,42 @@ export interface WeekPlanReport {
   imagesQueued: { contentItemId: string; igVariantId: string; copyTo: string[]; story?: { variantId: string; meta: StoryMeta; brandProfileId: string | null } }[];
 }
 
+/**
+ * Markers are stored verbatim in `brief.researchNotes`, so the match is exact.
+ * (A substring match let `…:lynq-proof-4` find the story `…:lynq-proof-4-story`
+ * too, which then got treated as the feed post: its card was re-carded every
+ * hour and the copy refresh landed on the wrong item.)
+ */
 async function findMarkedItem(db: Db, organizationId: string, marker: string): Promise<string | null> {
   const [row] = await db
     .select({ id: marketingContentItems.id })
     .from(marketingContentItems)
-    .where(and(eq(marketingContentItems.organizationId, organizationId), isNull(marketingContentItems.archivedAt), sql`${marketingContentItems.brief}->>'researchNotes' like ${`%${marker}%`}`))
+    .where(and(eq(marketingContentItems.organizationId, organizationId), isNull(marketingContentItems.archivedAt), sql`${marketingContentItems.brief}->>'researchNotes' = ${marker}`))
+    .orderBy(marketingContentItems.createdAt)
     .limit(1);
   return row?.id ?? null;
+}
+
+const STORY_CARD_TAG = "story-card";
+const fromTag = (feedAssetId: string) => `from:${feedAssetId}`;
+
+/**
+ * True when a story still needs a composed card for the current feed image:
+ * no media, the raw feed square, or a card made from a different (older)
+ * feed image. A card made from this feed image is kept.
+ */
+async function storyNeedsCard(db: Db, organizationId: string, storyMedia: SocialContentItem["variants"][number]["media"], feedAssetId: string): Promise<boolean> {
+  const current = storyMedia[0]?.assetId;
+  if (!current) return true;
+  if (current === feedAssetId) return true;
+  try {
+    const row = await resolveAssetRow(db, organizationId, current);
+    const tags = Array.isArray(row.tags) ? (row.tags as unknown[]).filter((t): t is string => typeof t === "string") : [];
+    if (!tags.includes(STORY_CARD_TAG)) return false; // an owner-chosen image: leave it
+    return !tags.includes(fromTag(feedAssetId));
+  } catch {
+    return true;
+  }
 }
 
 const RESCHEDULABLE = new Set(["draft", "changes_requested"]);
@@ -629,6 +662,17 @@ export function storyMetaFor(post: PlanFeedPost): StoryMeta {
  */
 async function storyCardMedia(db: Db, input: { organizationId: string; actorUserId: string }, feedAssetId: string, meta: StoryMeta, brandProfileId: string | null): Promise<SocialContentItem["variants"][number]["media"]> {
   try {
+    // A card for this feed image may already exist (the hourly re-apply runs often): reuse it instead of composing another.
+    const [existing] = await db
+      .select({ id: socialAssets.id })
+      .from(socialAssets)
+      .where(and(eq(socialAssets.organizationId, input.organizationId), isNull(socialAssets.archivedAt), sql`${socialAssets.tags} @> ${JSON.stringify([STORY_CARD_TAG, fromTag(feedAssetId)])}::jsonb`))
+      .orderBy(desc(socialAssets.createdAt))
+      .limit(1);
+    if (existing) return [{ assetId: existing.id, position: 0, role: "primary" as const }];
+    const source = await resolveAssetRow(db, input.organizationId, feedAssetId);
+    const sourceTags = Array.isArray(source.tags) ? (source.tags as unknown[]) : [];
+    if (sourceTags.includes(STORY_CARD_TAG)) throw new Error("source is already a story card");
     const { bytes } = await resolveAssetBytes(db, { organizationId: input.organizationId, assetId: feedAssetId });
     const card = await composeStoryCard({ brand: meta.brand, image: bytes, series: meta.series, line: meta.line, cta: meta.cta });
     const asset = await createUploadedAsset(db, {
@@ -638,7 +682,7 @@ async function storyCardMedia(db: Db, input: { organizationId: string; actorUser
       assetType: "image",
       title: `Story card · ${meta.title}`.slice(0, 200),
       altText: meta.line.slice(0, 1000),
-      tags: ["story-card", `from:${feedAssetId}`],
+      tags: [STORY_CARD_TAG, fromTag(feedAssetId)],
       file: { bytes: card.bytes, contentType: card.contentType, filename: "story.png" },
       platformHint: "instagram",
     });
@@ -675,6 +719,16 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
       continue;
     }
     brandIds.set(ref.brandKey, brand.id);
+    // The plan's visual system is the brand's visual system: keep the brand profile in step so the image prompt
+    // (which quotes the brand's visual rules) never contradicts the art direction.
+    if (ref.visual && (brand.visualRules !== ref.visual.visualRules || brand.visualIdentity.notes !== ref.visual.notes)) {
+      try {
+        brand = await updateBrand(db, { organizationId: input.organizationId, brandProfileId: brand.id, actorUserId: input.actorUserId, expectedRevision: brand.revision, changes: { visualRules: ref.visual.visualRules, visualIdentity: { ...brand.visualIdentity, notes: ref.visual.notes } } });
+        report.scheduled.push(`${brand.name}: visual rules updated`);
+      } catch (err) {
+        console.error("[week-plan] brand visual sync failed:", err instanceof Error ? err.message.slice(0, 200) : "unknown");
+      }
+    }
     const accountsLinked: string[] = [];
     if (ref.createWith) {
       // Move any connected Instagram/Facebook account named like this brand onto it (e.g. a CodeIt page filed under LYNQ).
@@ -814,7 +868,7 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
           if (sv.archivedAt || !RESCHEDULABLE.has(sv.status)) continue;
           const storyAt = planSlot(post.day, post.time, 10);
           // No media yet, or still the raw feed square from before story cards existed: give it the composed card.
-          const needsCard = !sv.media.length || sv.media[0]!.assetId === igFeed.media[0]!.assetId;
+          const needsCard = await storyNeedsCard(db, input.organizationId, sv.media, igFeed.media[0]!.assetId);
           const changes = { ...(needsCard ? { media: await storyCardMedia(db, input, igFeed.media[0]!.assetId, storyMetaFor(post), brandProfileId) } : {}), ...(sv.scheduledFor?.getTime() === storyAt.getTime() ? {} : { scheduledFor: storyAt }) };
           if (Object.keys(changes).length) await updateVariant(db, { organizationId: input.organizationId, contentVariantId: sv.id, actorUserId: input.actorUserId, expectedRevision: sv.revision, changes });
         }
@@ -916,7 +970,38 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
     report.created.push(`${li.title} · ${li.day} ${li.time}`);
   }
 
+  // 5. Story cards nothing points at any more (older versions, and the ones the hourly re-card made) leave the library.
+  const pruned = await pruneOrphanStoryCards(db, input);
+  if (pruned) report.scheduled.push(`${pruned} unused story card${pruned === 1 ? "" : "s"} archived`);
+
   return report;
+}
+
+/** Archives story-card assets (older than an hour) that no live variant uses. Bounded per run. */
+async function pruneOrphanStoryCards(db: Db, input: { organizationId: string; actorUserId: string }, limit = 150): Promise<number> {
+  const cutoff = new Date(Date.now() - 60 * 60 * 1000);
+  const cards = await db
+    .select({ id: socialAssets.id })
+    .from(socialAssets)
+    .where(and(eq(socialAssets.organizationId, input.organizationId), isNull(socialAssets.archivedAt), sql`${socialAssets.tags} @> ${JSON.stringify([STORY_CARD_TAG])}::jsonb`, sql`${socialAssets.createdAt} < ${cutoff}`))
+    .orderBy(socialAssets.createdAt)
+    .limit(limit);
+  let archived = 0;
+  for (const card of cards) {
+    const [used] = await db
+      .select({ id: socialContentVariants.id })
+      .from(socialContentVariants)
+      .where(and(eq(socialContentVariants.organizationId, input.organizationId), isNull(socialContentVariants.archivedAt), sql`${socialContentVariants.media} @> ${JSON.stringify([{ assetId: card.id }])}::jsonb`))
+      .limit(1);
+    if (used) continue;
+    try {
+      await archiveAsset(db, { organizationId: input.organizationId, assetId: card.id, actorUserId: input.actorUserId });
+      archived++;
+    } catch {
+      // Already archived by another run, or not ours to archive: skip.
+    }
+  }
+  return archived;
 }
 
 /** Runs the queued image generations one at a time, then copies each image onto the post's Facebook version and its story. Best-effort. */
