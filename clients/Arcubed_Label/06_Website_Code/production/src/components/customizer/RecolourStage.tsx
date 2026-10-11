@@ -7,8 +7,8 @@
 //   - each source photograph and its yarn mask are fetched and analysed once
 //     per page (module cache), then every colour is a 1024-entry lookup table
 //     plus one pass over the pixels
-//   - finished colours are kept as ImageBitmaps (last 6), so going back to a
-//     colour is a single draw
+//   - finished colours are kept as ImageBitmaps (last 12: every colour one
+//     bag offers), so going back to a colour is a single draw
 //   - the canvas keeps its previous picture until the next one is drawn, and
 //     `fallback` (the real photography) is shown until the very first preview
 //     exists, so the stage is never empty
@@ -29,7 +29,11 @@ interface Source {
 
 const sources = new Map<string, Promise<Source>>();
 const bitmaps = new Map<string, ImageBitmap>();
-const MAX_BITMAPS = 6;
+const MAX_BITMAPS = 12;
+
+/** Pass a colour with this key to draw the source photograph itself,
+ *  unchanged, through the same canvas (no swap of elements, no shift). */
+export const SOURCE_COLOUR_KEY = "source";
 
 function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -116,8 +120,8 @@ export default function RecolourStage({
         if (!scratch.current || scratch.current.width !== src.w || scratch.current.height !== src.h) {
           scratch.current = new ImageData(src.w, src.h);
         }
-        const lut = buildLut(colour, profiles, src.analysis);
-        renderInto(scratch.current.data, src.rgba, src.mask, src.analysis, lut);
+        if (colour.key === SOURCE_COLOUR_KEY) scratch.current.data.set(src.rgba);
+        else renderInto(scratch.current.data, src.rgba, src.mask, src.analysis, buildLut(colour, profiles, src.analysis));
         ctx.putImageData(scratch.current, 0, 0);
         setTiming({ ms: performance.now() - t0, cached: false });
         if ("createImageBitmap" in window) {

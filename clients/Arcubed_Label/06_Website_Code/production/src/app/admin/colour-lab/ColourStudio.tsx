@@ -3,6 +3,15 @@
 // Arcubed Atelier — the customer-facing composition of the colour preview
 // work, reviewed behind admin sign-in before anything reaches the shop.
 //
+// ONE BAG, ONE PHOTOGRAPH. Each bag has a locked photograph (chosen from
+// all of Rand's frames, see PREVIEW_SOURCES). Every swatch — a confirmed
+// colourway or an experimental one — recolours that same image, so the
+// angle, silhouette, handle and background never change; only the yarn
+// does. Confirmed colourways are calibrated to Rand's own photographed yarn
+// of that colour; the locked photograph's own colour is shown unchanged.
+// Two-tone colourways cannot be produced from a single-yarn photograph and
+// are marked as such.
+//
 // Composition: a campaign stage (the bag cut-out anchored low on the pale
 // pink field, its colour name set large in white behind it) beside one
 // compact rail: name and price, the selected colour, a single palette of
@@ -17,14 +26,14 @@
 // preview that is not for sale everywhere it appears.
 
 import { useEffect, useRef, useState } from "react";
-import Image, { getImageProps } from "next/image";
+import Image from "next/image";
 import Link from "next/link";
 import type { Bag, Selection } from "@/lib/types";
 import { computeUnitPrice, defaultSelectionFor, isOptIn, money } from "@/lib/pricing";
-import { framesForColour, altFor, type Frame } from "@/lib/product-media";
-import RecolourStage, { loadSource } from "@/components/customizer/RecolourStage";
+import { framesForColour } from "@/lib/product-media";
+import RecolourStage, { loadSource, SOURCE_COLOUR_KEY } from "@/components/customizer/RecolourStage";
 import { familyOf, profilesFor, SOURCES } from "@/lib/recolour/data";
-import { labToSrgb, srgbToLab, hexToRgb, buildLut, renderInto, type YarnProfile } from "@/lib/recolour/engine";
+import { labToSrgb, srgbToLab, hexToRgb, buildLut, renderInto, type PreviewColour, type YarnProfile } from "@/lib/recolour/engine";
 import { PREVIEW_COLOURS, PREVIEW_SOURCES } from "@/lib/recolour/preview-colours";
 import { variantHref } from "@/lib/variant";
 
@@ -49,15 +58,6 @@ function realSwatch(name: string, refs: YarnProfile[], slug: string, fallback: s
     if (a && b) return `linear-gradient(135deg, ${a} 0 50%, ${b} 50% 100%)`;
   }
   return tone(name) ?? fallback ?? "#d8d8d8";
-}
-
-/** The image the stage shows for a photographed colourway: the field-safe
- *  tile cut-out (made for coloured backgrounds), else the cut-out, else the
- *  framed photograph. `failed` lists sources that did not load. */
-function stageSrc(frame: Frame, failed: Set<string> = new Set()): string {
-  const tile = `/media/${frame.frameId}-tile-2600.webp`;
-  if (!failed.has(tile)) return tile;
-  return frame.cutOk && !failed.has(frame.cut) ? frame.cut : frame.photo;
 }
 
 /** Where each bag's swatch close-up is taken (fractions of the photograph):
@@ -120,26 +120,61 @@ function Segment({ label, options, value, onPick }: { label: string; options: Se
   );
 }
 
+/** Why a confirmed colourway cannot be shown on the locked photograph, or null. */
+function realLimit(name: string, profile: YarnProfile | undefined, maxLightness: number | undefined): string | null {
+  if (name.includes("&")) return "two yarns, which one single-yarn photograph cannot show";
+  if (!profile) return "no photographed yarn reference";
+  if (maxLightness !== undefined && profile.midLab[0] > maxLightness) return "too light for this photograph";
+  return null;
+}
+
 export default function ColourStudio({ bag, index, total }: { bag: Bag; index: number; total: number }) {
   const refs = profilesFor(bag.slug);
-  const source = (PREVIEW_SOURCES[bag.slug] ?? []).find((s) => !s.evaluation);
+  const sources = PREVIEW_SOURCES[bag.slug] ?? [];
+  const source = sources.find((s) => s.locked) ?? sources.find((s) => !s.evaluation);
+  const profileOf = (name: string) => refs.find((r) => r.product === bag.slug && r.colour.toLowerCase() === name.toLowerCase());
+  const limitOf = (name: string) => realLimit(name, profileOf(name), source?.maxLightness);
+  const isSourceColour = (name: string) => !!source && name.toLowerCase() === source.colour.toLowerCase();
   const experimental = PREVIEW_COLOURS.filter(
     (c) => c.products.includes(bag.slug) && !bag.colours.some((bc) => bc.name.toLowerCase() === c.name.toLowerCase()),
   );
   const tooLight = (hex: string) => source?.maxLightness !== undefined && srgbToLab(...hexToRgb(hex))[0] > source.maxLightness;
 
-  const [selection, setSelection] = useState<Selection>(() => defaultSelectionFor(bag));
-  const [choice, setChoice] = useState<Choice>(() => ({ kind: "real", colourId: selection.colourId }));
-  const [failed, setFailed] = useState<Set<string>>(() => new Set());
+  const [selection, setSelection] = useState<Selection>(() => {
+    const sel = defaultSelectionFor(bag);
+    const def = bag.colours.find((c) => c.id === sel.colourId);
+    if (def && !realLimit(def.name, profilesFor(bag.slug).find((r) => r.product === bag.slug && r.colour === def.name), undefined)) return sel;
+    const src = (PREVIEW_SOURCES[bag.slug] ?? []).find((s) => s.locked);
+    const alt = bag.colours.find((c) => c.name === src?.colour);
+    return alt ? { ...sel, colourId: alt.id, secondaryColourId: null } : sel;
+  });
+  // Start on the default colourway when it can be shown, else on the locked
+  // photograph's own colour.
+  const [choice, setChoice] = useState<Choice>(() => {
+    const def = bag.colours.find((c) => c.id === selection.colourId);
+    const fallback = bag.colours.find((c) => isSourceColour(c.name));
+    return { kind: "real", colourId: def && !limitOf(def.name) ? def.id : fallback?.id ?? selection.colourId };
+  });
   const [expSwatches, setExpSwatches] = useState<Record<string, string>>({});
   const [hover, setHover] = useState<string | null>(null);
   const [fx, fy] = SWATCH_FOCUS[bag.slug] ?? [0.5, 0.55];
   const price = computeUnitPrice(bag, selection);
 
-  const realColour = bag.colours.find((c) => c.id === selection.colourId)!;
+  const realColour = bag.colours.find((c) => c.id === (choice.kind === "real" ? choice.colourId : selection.colourId))!;
   const expColour = choice.kind === "exp" ? experimental.find((c) => c.key === choice.key) ?? null : null;
-  const frame = framesForColour(bag, realColour.name)[0] ?? null;
   const shownName = expColour ? expColour.name : realColour.name;
+  const identity = !expColour && isSourceColour(realColour.name);
+  // What the stage draws: the locked photograph unchanged, recoloured to a
+  // confirmed colourway's own measured yarn, or to an experimental colour.
+  const realProfile = profileOf(realColour.name);
+  const stageColour: PreviewColour | null = expColour
+    ? expColour
+    : identity
+      ? { key: SOURCE_COLOUR_KEY, name: realColour.name, swatch: "", value: "#000000", products: [bag.slug] }
+      : realProfile
+        ? { key: `real-${realColour.name}`, name: realColour.name, swatch: "", value: toHex(labToSrgb(realProfile.midLab[0], realProfile.midLab[1], realProfile.midLab[2])), products: [bag.slug] }
+        : null;
+  const stageProfiles = expColour || identity || !realProfile ? refs : [realProfile];
   const choiceKey = choice.kind === "exp" ? `exp:${choice.key}` : `real:${choice.colourId}`;
 
   // Crossfade: the outgoing bag is copied onto a canvas above the stage and
@@ -147,7 +182,7 @@ export default function ColourStudio({ bag, index, total }: { bag: Bag; index: n
   // as the bag changing colour, never as a blank or a jump.
   const frameRef = useRef<HTMLDivElement>(null);
   const ghostRef = useRef<HTMLCanvasElement>(null);
-  const pending = useRef<{ kind: "exp" } | { kind: "real"; frameId: string } | null>(null);
+  const pending = useRef(false);
 
   const snapshot = () => {
     const box = frameRef.current, g = ghostRef.current;
@@ -171,51 +206,21 @@ export default function ColourStudio({ bag, index, total }: { bag: Bag; index: n
   };
 
   useEffect(() => {
-    const p = pending.current, g = ghostRef.current, box = frameRef.current;
-    pending.current = null;
-    if (!p || !g || !box) return;
+    const g = ghostRef.current;
+    if (!pending.current || !g) return;
+    pending.current = false;
     let off = false;
+    // Same photograph, same placement: only the yarn changes, so a short
+    // dissolve is enough. RecolourStage draws as soon as the (cached) source
+    // resolves; this waits on the same promise, so it fades after the draw.
     const fade = () => requestAnimationFrame(() => requestAnimationFrame(() => {
       if (off) return;
-      g.style.transition = "opacity 0.36s cubic-bezier(0.2, 0.6, 0.2, 1)";
+      g.style.transition = "opacity 0.18s ease-out";
       g.style.opacity = "0";
     }));
-    if (p.kind === "exp" && source) {
-      // RecolourStage draws as soon as the (cached) source resolves; this
-      // waits on the same promise, so the fade starts after the new colour.
-      loadSource(source.frame).then(fade, fade);
-    } else if (p.kind === "real") {
-      let frames = 0; // give up waiting after ~1.5s of frames
-      const tick = () => {
-        if (off) return;
-        frames++;
-        const img = [...box.querySelectorAll("img")].find((i) => (i.currentSrc || i.src).includes(p.frameId));
-        if ((img && img.complete && img.naturalWidth > 0) || frames > 90) fade();
-        else requestAnimationFrame(tick);
-      };
-      tick();
-    } else fade();
+    if (source) loadSource(source.frame).then(fade, fade); else fade();
     return () => { off = true; };
   }, [choiceKey, source]);
-
-  // Warm every photographed colourway's stage image once the page is idle,
-  // with the same derivative the stage asks for, so switching is instant.
-  useEffect(() => {
-    const warmed: HTMLImageElement[] = [];
-    const id = window.setTimeout(() => {
-      for (const c of bag.colours) {
-        const f = framesForColour(bag, c.name)[0];
-        if (!f) continue;
-        const { props } = getImageProps({ src: stageSrc(f), alt: "", fill: true, sizes: STAGE_SIZES, quality: 90 });
-        const img = new window.Image();
-        if (props.sizes) img.sizes = props.sizes;
-        if (props.srcSet) img.srcset = props.srcSet;
-        img.src = props.src;
-        warmed.push(img);
-      }
-    }, 900);
-    return () => { window.clearTimeout(id); for (const img of warmed) img.src = ""; };
-  }, [bag]);
 
   // Experimental swatches: the same close-up, recoloured by the engine from
   // the source photograph, so photographed and experimental colours share
@@ -253,9 +258,8 @@ export default function ColourStudio({ bag, index, total }: { bag: Bag; index: n
 
   const pickReal = (colourId: string) => {
     if (choice.kind === "real" && choice.colourId === colourId) return;
-    const f = framesForColour(bag, bag.colours.find((c) => c.id === colourId)?.name)[0];
     snapshot();
-    pending.current = f ? { kind: "real", frameId: f.frameId } : null;
+    pending.current = true;
     setChoice({ kind: "real", colourId });
     setSelection((prev) => ({
       ...prev,
@@ -266,19 +270,20 @@ export default function ColourStudio({ bag, index, total }: { bag: Bag; index: n
   const pickExp = (key: string) => {
     if (choice.kind === "exp" && choice.key === key) return;
     snapshot();
-    pending.current = { kind: "exp" };
+    pending.current = true;
     setChoice({ kind: "exp", key });
   };
   // Strap or chain, not both — the same rule as the shop.
   const pickStrap = (strapId: string | null) => setSelection((p) => ({ ...p, strapId, chainId: strapId ? null : p.chainId }));
   const pickChain = (chainId: string | null) => setSelection((p) => ({ ...p, chainId, strapId: chainId ? null : p.strapId }));
 
-  const photo = frame ? (
+  // Shown only until the first canvas draw: the locked photograph itself,
+  // in exactly the canvas's placement.
+  const lockedPhoto = source ? (
     <Image
-      key="photo"
-      src={stageSrc(frame, failed)}
-      onError={() => setFailed((prev) => new Set(prev).add(stageSrc(frame, prev)))}
-      alt={altFor(bag, realColour.name, true)}
+      key="locked"
+      src={`/media/${source.frame}-tile-2600.webp`}
+      alt={`${bag.name} in ${source.colour}, photograph`}
       fill
       sizes={STAGE_SIZES}
       quality={90}
@@ -315,19 +320,23 @@ export default function ColourStudio({ bag, index, total }: { bag: Bag; index: n
             <span>Nº {String(index + 1).padStart(2, "0")}</span>
             <span className="at-meta-dim">/ {String(total).padStart(2, "0")}</span>
           </p>
-          <p className={`at-meta at-meta-tr${expColour ? " is-preview" : ""}`}>{expColour ? "Digital preview" : "Photograph"}</p>
+          <p className={`at-meta at-meta-tr${expColour ? " is-preview" : ""}`}>{expColour ? "Digital preview" : identity ? "Photograph" : "Real yarn · recoloured"}</p>
           <p key={shownName} className="at-word" aria-hidden="true">{shownName}</p>
-          <div className="at-frame" ref={frameRef}>
-            {expColour && source ? (
+          <div className="at-frame" ref={frameRef} data-frame={source?.frame}>
+            {source && stageColour ? (
               <RecolourStage
                 frame={source.frame}
-                colour={expColour}
-                profiles={refs}
-                fallback={photo}
-                alt={`Digital colour preview of the ${bag.name} in ${expColour.name}`}
+                colour={stageColour}
+                profiles={stageProfiles}
+                fallback={lockedPhoto}
+                alt={expColour
+                  ? `Digital colour preview of the ${bag.name} in ${expColour.name}`
+                  : identity
+                    ? `${bag.name} in ${realColour.name}, photograph`
+                    : `${bag.name} in ${realColour.name}, recoloured from the ${source.colour} photograph`}
               />
             ) : (
-              photo
+              lockedPhoto
             )}
             <canvas ref={ghostRef} className="at-ghost" aria-hidden="true" />
           </div>
@@ -346,20 +355,22 @@ export default function ColourStudio({ bag, index, total }: { bag: Bag; index: n
           <p className="at-line">
             <span className="at-line-label">Colour</span>
             <span className={`at-line-name${hovered ? " is-hover" : ""}`}>{hovered ?? shownName}</span>
-            {!hovered ? <span className="at-line-kind">{expColour ? "Preview · not for sale" : "Photographed"}</span> : null}
+            {!hovered ? <span className="at-line-kind">{expColour ? "Preview · not for sale" : "Confirmed colour"}</span> : null}
           </p>
           <div className="at-palette">
             <div className="at-swatches" role="group" aria-label={`${bag.name} colours, photographed`}>
               {bag.colours.map((c) => {
-                const on = choice.kind === "real" && c.id === selection.colourId;
+                const on = choice.kind === "real" && c.id === choice.colourId;
+                const limit = limitOf(c.name);
                 return (
                   <button
                     key={c.id}
                     type="button"
-                    className={`at-sw${on ? " is-on" : ""}`}
+                    className={`at-sw${on ? " is-on" : ""}${limit ? " is-off" : ""}`}
                     aria-pressed={on}
-                    aria-label={`${c.name}, photographed colour`}
-                    title={c.name}
+                    disabled={!!limit}
+                    aria-label={limit ? `${c.name}: ${limit}` : `${c.name}, confirmed colour`}
+                    title={limit ? `${c.name} — ${limit}` : c.name}
                     onClick={() => pickReal(c.id)}
                     onMouseEnter={() => setHover(c.name)}
                     onMouseLeave={() => setHover(null)}
@@ -397,6 +408,11 @@ export default function ColourStudio({ bag, index, total }: { bag: Bag; index: n
               </div>
             ) : null}
           </div>
+          {bag.colours.some((c) => limitOf(c.name)) ? (
+            <p className="at-legend at-legend-limit">
+              {bag.colours.filter((c) => limitOf(c.name)).map((c) => `${c.name}: ${limitOf(c.name)}`).join(" · ")}
+            </p>
+          ) : null}
           {experimental.length && source ? (
             <p className="at-legend">
               <span className="at-legend-ring" aria-hidden="true" />
@@ -432,6 +448,9 @@ export default function ColourStudio({ bag, index, total }: { bag: Bag; index: n
           ) : (
             <>
               <strong>Confirmed colour.</strong>{" "}
+              {identity
+                ? <>Rand&rsquo;s photograph of the {bag.name} in {realColour.name}. </>
+                : source ? <>The {source.colour} photograph, recoloured to Rand&rsquo;s photographed {realColour.name} yarn. </> : null}
               <Link href={variantHref(bag.slug, realColour.name)} className="at-link">View {realColour.name} on the shop</Link>
             </>
           )}

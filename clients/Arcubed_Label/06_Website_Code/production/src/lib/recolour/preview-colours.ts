@@ -47,23 +47,32 @@ export interface PreviewSource {
   maxLightness?: number;
   /** Evaluation only: never offered for an approved preview. */
   evaluation?: boolean;
+  /** The bag's LOCKED photograph: every colour, real or previewed, is shown
+   *  by recolouring this one image (first entry of each bag). */
+  locked?: boolean;
 }
 
-/** Which photograph each bag's previews are recoloured from, and why. */
+/** Which photograph each bag's colours are recoloured from, and why. The
+ *  locked photographs were chosen on 2026-10-11 by scoring and inspecting
+ *  every authentic frame of each bag (sharpness, clipped highlights and
+ *  crushed shadows, angle, handle visibility, mask quality) and validating
+ *  every real colourway rendered from them against Rand's own photograph
+ *  of that colour (docs/colour-previews.md). */
 export const PREVIEW_SOURCES: Record<string, PreviewSource[]> = {
   nova: [
-    { frame: "DSC04868", colour: "Silver", label: "Silver front", note: "Default. Neutral yarn and a neutral shadow: nothing tints the result, and the cleanest mask." },
-    { frame: "DSC05786", colour: "Gold", label: "Gold front", note: "The hero angle. Its shadow was neutralised for previews (gold bounce light tinted it)." },
+    { frame: "DSC05776", colour: "Gold", label: "Gold front, handle", locked: true, note: "Locked. The sharpest crochet of all 19 Nova frames and the handle in view (With Handle is the default). Its floor shadow is neutralised (gold bounce light tinted it) and the tile's matte keeps the space under the handle as backdrop." },
+    { frame: "DSC04868", colour: "Silver", label: "Silver front", note: "Alternative. Neutral yarn and the cleanest light, but no handle in view." },
+    { frame: "DSC05786", colour: "Gold", label: "Gold front", note: "Alternative. The hero angle without the handle. Its shadow was neutralised for previews (gold bounce light tinted it)." },
     { frame: "DSC05780", colour: "Black", label: "Black front", evaluation: true, note: "Evaluation only. A dark photograph stores little shadow detail, so light colours come out grainy." },
     { frame: "DSC05782", colour: "Black", label: "Black open (hardware test)", evaluation: true, note: "Evaluation only. The two metal clasps on the rim stay metal while the yarn around them recolours. Known failure: studio light shining through the stitch gaps inside the bag is tinted by the new colour — open, backlit views are not usable as preview sources." },
   ],
   "mini-luna": [
-    { frame: "DSC04875", colour: "Silver", label: "Silver front", note: "Same metallic raffia as Nova, calibrated with Nova's and Mini Luna's real yarns together. The handle is crochet and recolours with the body; the space inside the handle stays backdrop." },
+    { frame: "DSC04875", colour: "Silver", label: "Silver front", locked: true, note: "Locked. Same metallic raffia as Nova, calibrated with Nova's and Mini Luna's real yarns together. The handle is crochet and recolours with the body; the space inside the handle stays backdrop." },
   ],
   vault: [
-    { frame: "DSC05790", colour: "Light Brown", label: "Light Brown front", note: "Matte cotton cord, calibrated only against Vault's own three yarns (never Nova's metallic sheen). All three are dark earth tones, so light colours are extrapolated — check them against a real swatch." },
+    { frame: "DSC05790", colour: "Light Brown", label: "Light Brown front", locked: true, note: "Locked. Matte cotton cord, calibrated only against Vault's own three yarns (never Nova's metallic sheen). All three are dark earth tones, so light colours are extrapolated — check them against a real swatch." },
   ],
   loco: [
-    { frame: "DSC05772", colour: "Burgundy", label: "Burgundy front", maxLightness: 45, note: "Fringe cord. The strands are masked by darkness so the backdrop between them never changes. The source is dark and both reference yarns are dark: colours lighter than L* 45 (pink, cream, dusty rose) came out speckled and washed out, so they are refused." },
+    { frame: "DSC05772", colour: "Burgundy", label: "Burgundy front", locked: true, maxLightness: 45, note: "Locked. Fringe cord. The strands are masked by darkness so the backdrop between them never changes. The source is dark and both reference yarns are dark: colours lighter than L* 45 (pink, cream, dusty rose) came out speckled and washed out, so they are refused." },
   ],
 };

@@ -50,10 +50,13 @@ const FAMILIES = {
 // Source frames the renderer may recolour. Front views only: they lead the
 // gallery, and a front view is what a preview has to stand in for.
 const SOURCES = {
-  nova: ["DSC05786", "DSC04868", "DSC05780", "DSC05782"], // Gold, Silver, Black fronts; Black open (hardware test)
-  "mini-luna": ["DSC04875"],             // Silver: neutral yarn and shadow
-  vault: ["DSC05790"],                   // Light Brown: the lightest Vault yarn
-  loco: ["DSC05772"],                    // Burgundy: the lighter Loco yarn
+  // The first of each is the bag's LOCKED photograph (chosen 2026-10-11 from
+  // every frame of the bag, see docs/colour-previews.md); the rest are
+  // alternatives and evaluation sources for the Technical view.
+  nova: ["DSC05776", "DSC04868", "DSC05786", "DSC05780", "DSC05782"],
+  "mini-luna": ["DSC04875"],
+  vault: ["DSC05790"],
+  loco: ["DSC05772"],
 };
 
 // How the yarn is told apart from the contact shadow, per source:
@@ -78,6 +81,11 @@ const YARN_RULE = {
   // Vault: matte cord, evenly textured to the floor, so the automatic floor
   // trim (below) separates it from its contact shadow cleanly.
   DSC05790: { energy: 0.35, trim: true },
+  // Gold front with handle (Nova's locked photograph). Colour rescues the
+  // dim bottom row (the floor trim cut it off); 22, not 14, so the gold
+  // bounce light in the contact shadow is not taken for yarn. The tile's
+  // matte decides the backdrop under the handle (see tileMatte below).
+  DSC05776: { energy: 0.35, minChroma: 22, tileMatte: 230 },
 };
 
 // Hand-traced floor lines, [x, y] in 0..1 of the frame: everything below the
@@ -85,6 +93,11 @@ const YARN_RULE = {
 // separates them — on the Black front the yarn and its shadow are equally
 // dark and smooth. Traced at 2x zoom from the source photograph.
 const FLOOR = {
+  // Nova Gold front with handle (locked): the smooth dark contact band under
+  // the base is shadow, not the bottom row of stitches. Traced on the mask
+  // overlay with a 0.01 grid.
+  DSC05776: [[0, 0.79], [0.10, 0.80], [0.15, 0.82], [0.20, 0.848], [0.25, 0.857], [0.30, 0.863], [0.40, 0.868],
+             [0.50, 0.870], [0.60, 0.866], [0.65, 0.860], [0.70, 0.851], [0.75, 0.844], [0.80, 0.836], [0.85, 0.825], [0.90, 0.805], [1, 0.79]],
   // Mini Luna Silver front.
   DSC04875: [[0, 0.80], [0.10, 0.82], [0.14, 0.875], [0.18, 0.905], [0.22, 0.918], [0.30, 0.928], [0.40, 0.932],
              [0.52, 0.932], [0.60, 0.927], [0.66, 0.92], [0.70, 0.905], [0.72, 0.89], [0.75, 0.86], [0.80, 0.80], [1, 0.78]],
@@ -101,7 +114,7 @@ const FLOOR = {
 // a gold bag tints its shadow warm). A Navy preview casting a gold-tinted
 // shadow reads wrong, so for these the non-yarn pixels lose 85% of their
 // chroma. Only the preview source is changed, never the published photograph.
-const NEUTRALISE_SHADOW = new Set(["DSC05786"]);
+const NEUTRALISE_SHADOW = new Set(["DSC05786", "DSC05776"]);
 
 // Hand-placed hardware search areas, as ellipses in 0..1 frame coordinates:
 // [cx, cy, rx, ry, metalAbove?]. Inside one, pixels brighter than
@@ -389,8 +402,22 @@ for (const [slug, frames] of Object.entries(SOURCES)) {
           if (((fx - cx) / rx) ** 2 + ((fy - cy) / ry) ** 2 <= 1 && lab(data[i], data[i + 1], data[i + 2])[0] > metalAbove) wgt = 0;
         }
       }
-      // Yarn is opaque: lift the matte's alpha to the yarn weight.
-      data[i + 3] = Math.max(data[i + 3], Math.round(wgt * 255));
+      // tileMatte sources: where the field-safe tile's matte says backdrop
+      // (alpha under `tileMatte`), the tile wins: its pixel, its
+      // transparency, its share of yarn. The cut-out keeps the backdrop
+      // under a handle and round a warm rim solid, which was then lifted to
+      // opaque below and recoloured into a halo. Not used on the silver
+      // sources: their brightest highlights are partly transparent in the
+      // tile and would become holes.
+      const tm = (YARN_RULE[frame] ?? {}).tileMatte;
+      if (tm && tile[i + 3] < tm) {
+        const ta = tile[i + 3];
+        data[i] = tile[i]; data[i + 1] = tile[i + 1]; data[i + 2] = tile[i + 2]; data[i + 3] = ta;
+        wgt *= ta / tm;
+      } else {
+        // Yarn is opaque: lift the matte's alpha to the yarn weight.
+        data[i + 3] = Math.max(data[i + 3], Math.round(wgt * 255));
+      }
       if (NEUTRALISE_SHADOW.has(frame) && wgt < 0.5 && data[i + 3] > 0) {
         const [L, a, b] = lab(data[i], data[i + 1], data[i + 2]);
         const [r, g, bb] = labToRgb(L, a * 0.15, b * 0.15);
@@ -418,11 +445,27 @@ for (const [family, slugs] of Object.entries(FAMILIES)) {
     if (colour.includes("&")) continue;
     const frame = frames.find((f) => !f.detail)?.frameId;
     if (!frame) continue;
-    const { data } = await rgba(frame, 1300);
+    // Which pixels are yarn: where this frame is also a recolour source, its
+    // yarn mask (measured, highlights included). Otherwise the cut-out's
+    // opaque pixels. The cut-out made the brightest silver highlights partly
+    // transparent, so on the Silver yarns "opaque" dropped exactly the
+    // highlights: their profiles came out ~7-11 L* too dark at the median
+    // and ~13 at the 90th percentile, and every light preview (which
+    // borrows the lightest real yarn) inherited that. Every other yarn
+    // agreed with its mask within ~1-4 L*.
+    let data, keep;
+    if (sourceInfo[frame]) {
+      data = (await sharp(`${OUT}/${frame}-src-${W}.webp`).ensureAlpha().raw().toBuffer());
+      const m = await sharp(`${OUT}/${frame}-mask-${W}.png`).extractChannel(0).raw().toBuffer();
+      keep = (i) => m[i / 4] === 255;
+    } else {
+      ({ data } = await rgba(frame, 1300));
+      keep = (i) => data[i + 3] > 242;
+    }
     const Ls = [], Cs = [], As = [], Bs = [];
     let n = 0;
     for (let i = 0; i < data.length; i += 4) {
-      if (data[i + 3] <= 242) continue;
+      if (!keep(i)) continue;
       const [L, a, b] = lab(data[i], data[i + 1], data[i + 2]);
       Ls.push(L); Cs.push(Math.hypot(a, b)); As.push(a); Bs.push(b); n++;
     }
