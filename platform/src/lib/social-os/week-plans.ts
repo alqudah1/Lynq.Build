@@ -955,7 +955,8 @@ const tagKey = (tags: string[]) => tags.map((t) => t.replace(/^#/, "").toLowerCa
 async function refreshPlanCopy(db: Db, input: { organizationId: string; actorUserId: string }, item: SocialContentItem, want: (v: SocialContentItem["variants"][number]) => PlanCopy): Promise<number> {
   let changed = 0;
   for (const v of item.variants) {
-    if (v.archivedAt || !RESCHEDULABLE.has(v.status)) continue;
+    // Posts in review (not yet approved) take copy changes too: the edit returns them to draft, so the new text is what gets reviewed.
+    if (v.archivedAt || !REMAKEABLE.has(v.status)) continue;
     const w = want(v);
     const same = v.hook === w.hook && v.body === w.body && tagKey(v.hashtags) === tagKey(w.hashtags) && (w.callToAction === undefined || v.callToAction === w.callToAction) && (w.scheduledFor === undefined || v.scheduledFor?.getTime() === w.scheduledFor.getTime());
     if (same) continue;
