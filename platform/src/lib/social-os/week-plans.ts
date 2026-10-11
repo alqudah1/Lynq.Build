@@ -104,7 +104,7 @@ export interface WeekPlan {
 
 const LYNQ: PlanBrandRef = { brandKey: "lynq", matchName: /^lynq\b/i };
 const LYNQ_TAGS = ["SmallBusiness", "WebDesign", "LYNQ"];
-const LYNQ_LOOK = "LYNQ's look, matching @lynqbuild: a cinematic photoreal night scene, near-black with one acid-lime light source, one hero object as the metaphor, shallow depth of field, film grain, the kind of frame a premium brand would run as a billboard. Headline in large thin white editorial type with one word in lime, placed in the clear part of the frame. The LYNQ mascot (a small black hooded robot with glowing lime eyes, as in the reference images) may appear as the brand character. No stock people, no faces, no clip-art icons, no gradients, nothing touching any edge; square frame, everything inside a 10% safe margin.";
+const LYNQ_LOOK = "LYNQ's look, in the spirit of Teenage Engineering and Bang & Olufsen product photography: a single real object shot like a premium product on a plain matte near-black studio background, centred, with generous empty space around it; one hard directional light from the upper left giving crisp edges and one clean shadow; matte materials, no scene, no environment, no mascot, no people, no faces, no clip-art, no gradients. Acid lime appears exactly once per image as a small detail on the object (a tag, a glow, a switch, a thread). Text, when asked for, is one short line in thin white editorial type with generous letter spacing, set small and well inside the frame; otherwise no text at all. Square frame, everything inside a 12% safe margin, nothing touching any edge. The grid must read as one series: same background tone, same light, same framing every time. Reference images show only the brand colours; ignore any character, scene or rendering style in them.";
 const HONEST_CARD = "Honest design card: no website screens, no logos, no people or faces — it must never pass for the client's real site, premises or customers.";
 
 const CODEIT_PROFILE: BrandProfileInput = {
@@ -135,7 +135,7 @@ const CODEIT_PROFILE: BrandProfileInput = {
 const CODEIT: PlanBrandRef = { brandKey: "codeit", matchName: /^code\s?it/i, createWith: CODEIT_PROFILE };
 
 const CODEIT_TAGS = ["KidsWhoCode", "PythonForKids", "ParentingTips"];
-const CODEIT_LOOK = "Match @codeitlearn exactly: warm cream background, the orange fluffy clay-style mascot with big eyes wearing a yellow hoodie, cozy desk scene with a laptop, sticky notes and a sketchbook, soft daylight, small doodles (stars, arrows, </> brackets). Chunky rounded navy-and-orange headline type only where described. Never show a real child.";
+const CODEIT_LOOK = "CodeIt's look, in the spirit of Toca Boca and Headspace: flat 2D vector illustration with bold simple rounded shapes, thick clean outlines or no outlines, no 3D, no clay, no gradients, no photo textures. One or two flat background colours per image chosen from cream #FFF6EC, CodeIt orange #F97316, navy #1E2A44, sky blue and mint; big playful composition with one clear idea and lots of breathing room. The CodeIt mascot (round orange fluffy character in a yellow hoodie) appears in about half the images as a flat illustrated character, never in a desk scene; the other images use big flat objects (a laptop, a dinosaur, a pizza slice, a rocket, a speech bubble) as the hero. Headline only where described, in chunky rounded navy or orange type, well inside the frame; no names, no signatures, no other text. Square frame, everything inside a 12% safe margin. Never show a real child, never a real face. Reference images show only the mascot's colours and proportions; do not copy their 3D rendering or their desk scenes.";
 
 export const WEEK_PLANS: WeekPlan[] = [
   {
@@ -157,7 +157,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "Four businesses. Two cities. One standard.\n\nKingsbridge Group, Toronto. Custom homes and property management. A site that has to win an owner's trust and calm a tenant with a leak, on the same page.\n\nNasma, Amman. A restaurant. Menu, hours, a way to book, in ten seconds on a phone.\n\nFinding Amy, Amman. Photo booth rentals. One path from \"that looks fun\" to \"is my date free?\"\n\nArcubed Label, Amman. Handmade crochet bags. A store that takes the order without a single DM.\n\nThat's what we do. Websites, the systems behind them, and the automation that keeps them answering when nobody is at the desk. Built per business, quoted in writing, looked after once it's live.\n\nFrom Toronto and Amman, for businesses anywhere.\n\nYour site not doing its job? DM \"AUDIT\" for a free 5 minute review.",
         facebookBody: "Four businesses. Two cities. One standard.\n\nKingsbridge Group in Toronto, custom homes and property management. Nasma, a restaurant in Amman. Finding Amy, photo booth rentals in Amman. Arcubed Label, handmade crochet bags in Amman.\n\nThat's what LYNQ does: websites, the systems behind them, and the automation that keeps them answering. Built per business, quoted in writing, looked after once it's live.\n\nYour site not doing its job? Message us for a free 5 minute review.",
         hashtags: ["WebDesign", "SmallBusiness", "Automation", "LYNQ"], callToAction: "DM AUDIT",
-        creativeDirection: `A dark gallery at night, four plinths in a row each under its own acid-lime spotlight, one object on each: a brass house key on a ring, a brass reservation bell, a small folded photo-booth curtain in deep velvet, a handmade crochet tote. Polished black floor reflecting the four pools of light; the LYNQ mascot stands at the end of the row looking at them. Headline "Built by LYNQ." large in thin white type above the plinths, "Four businesses. Two cities. One standard." small in lime beneath. No real people, no faces, no website screens, no logos. ${LYNQ_LOOK}`,
+        creativeDirection: `Four small objects in a neat row on the black studio floor, evenly spaced, each with the same hard light and shadow: a brass house key, a brass reservation bell, a folded square of deep velvet, a small handmade crochet tote; one acid-lime thread runs along the floor linking all four. One line of thin white type above them: "Built by LYNQ". ${HONEST_CARD} ${LYNQ_LOOK}`,
               },
       {
         key: "lynq-tue", brand: LYNQ, day: "2026-10-08", time: "07:30", pillar: "TEACH", storyHighlight: "FIX THIS",
@@ -171,56 +171,56 @@ export const WEEK_PLANS: WeekPlan[] = [
       {
         key: "lynq-offer-2", brand: LYNQ, day: "2026-10-11", time: "12:15", pillar: "OFFER", storyHighlight: "WHAT YOU GET",
         title: "LYNQ · WHAT YOU GET — A site that answers", kind: "image_post", platforms: ["instagram", "facebook"],
-        hook: "A website that gets you customers has four parts. Most local sites have one.",
-        body: "WHAT YOU GET with a LYNQ site:\n\n1. Built for phones first, with the booking or call button at the top of every page\n2. Your Google Business Profile set up properly, so people find you before they find your competitor\n3. A form that replies by text and email in under a minute, with your booking link inside\n4. We keep it running after launch. Hours change, photos change, we update it\n\nWhat you don't get: hourly billing or surprise invoices. You get a written quote for your business before anything starts.\n\nTrades, clinics and restaurants across the GTA.\n\nDM \"SITE\" and I'll tell you what it would take for yours.",
-        facebookBody: "A LYNQ site comes with four things:\n\n1. Phone first, booking or call button at the top of every page\n2. Google Business Profile set up properly\n3. A form that replies by text and email in under a minute\n4. We keep it running after launch\n\nNo hourly billing, no surprise invoices. A written quote for your business before anything starts. Message us to see what yours would take.",
+        hook: "Your site is open 24/7. Is anyone home?",
+        body: "Your site is open 24/7. Is anyone home?\n\nAt 11pm a customer taps your site. What happens next decides whether they book or move on.\n\nA LYNQ site answers for you:\n1. Phone and book button first, before anything else\n2. Found on Google, because the profile is done properly\n3. A reply by text and email in under a minute\n4. Kept running after launch, not handed over and forgotten\n\nNo packages, no hourly meter. A written quote for your business, then we build it.\n\nDM \"SITE\" and we will tell you what yours would take.",
+        facebookBody: "Your site is open 24/7. Is anyone home?\n\nA LYNQ site answers for you: phone and book button first, found on Google, a reply in under a minute, and kept running after launch. No packages. A written quote for your business.\n\nMessage us to see what yours would take.",
         hashtags: LYNQ_TAGS, callToAction: "DM SITE",
-        creativeDirection: `Four objects floating in a row above still black water at night, each lit by its own lime spotlight and mirrored in the water: a brass telephone handset, a map pin, a speech bubble cut from frosted glass, a chrome wrench. Headline "What you get." large in white above them, the four words "Phone first · Found on Google · Replies in 60s · Kept running" small in lime below. No prices, no dollar signs. ${HONEST_CARD} ${LYNQ_LOOK}`,
+        creativeDirection: `A matte black telephone handset lying on the black studio floor, cord coiled neatly, hard light from the upper left; its tiny indicator light glows acid lime. One line of thin white type: "Open 24/7". ${HONEST_CARD} ${LYNQ_LOOK}`,
       },
       {
         key: "lynq-thu", brand: LYNQ, day: "2026-10-15", time: "12:15", pillar: "PROOF", storyHighlight: "NASMA",
         title: "LYNQ · PROOF 02 — Nasma", kind: "image_post", platforms: ["instagram", "facebook"],
-        hook: "People open a restaurant's website for three things. We built Nasma's in Amman around them.",
+        hook: "Hungry people give a restaurant site ten seconds. Nasma uses them well.",
         body: "People open a restaurant's website for three things: the menu, the hours, and a way to book.\n\nEverything else is decoration.\n\nFor Nasma, a restaurant in Amman, we started with those three, then made the whole thing look as good as the food.\n\nWe build in Toronto and Amman. Own a restaurant in either city? DM \"AUDIT\" for a free 5 minute review of your site.",
         facebookBody: "Diners open a restaurant's website for three things: the menu, the hours, and a way to book. For Nasma in Amman we started there, then made it look as good as the food.\n\nWant a free 5 minute review of your restaurant's site? Send us a message.",
         hashtags: ["RestaurantMarketing", "WebDesign", "SmallBusiness"], callToAction: "DM AUDIT",
-        creativeDirection: `A long dark restaurant table after closing, one chair pulled out, a single lime spotlight from above landing on a brass reservation bell at the far end, its long shadow running down the table; a blank folded menu card and a small brass clock sit in the half-light beside it. Headline "Menu. Hours. Book." large in white, "PROOF 02 · Nasma" small in lime. ${HONEST_CARD} ${LYNQ_LOOK}`,
+        creativeDirection: `A brass reservation bell, polished, centred on the black studio floor, hard light from the upper left and one clean shadow; a single acid-lime glint on its button. One line of thin white type: "Menu. Hours. Book." ${HONEST_CARD} ${LYNQ_LOOK}`,
               },
       {
         key: "lynq-fri", brand: LYNQ, day: "2026-10-13", time: "12:15", pillar: "TEACH", storyHighlight: "FIX THIS",
         title: "LYNQ · FIX THIS — 5 empty fields on your Google profile", kind: "carousel", platforms: ["instagram", "facebook"],
-        hook: "Before anyone sees your website, they see this. Most owners leave half of it empty.",
+        hook: "Half of your Google profile is empty. It is the first thing customers see.",
         body: "FIX THIS: your Google Business Profile.\n\nBefore anyone sees your website, they see this. And most local businesses leave half of it empty:\n\n1. Business description\n2. Services (with prices if you can)\n3. Hours, including holidays\n4. Photos of the real place and real work\n5. A booking or website link\n\nIt's free, it takes an hour, and it's often the first impression you make.\n\nSave this and do it this weekend.",
         facebookBody: "Before anyone sees your website, they see your Google Business Profile. Five fields most owners leave empty: description, services, hours (holidays too), real photos, and a booking link.\n\nFree, one hour, and often your first impression. Worth doing this weekend.",
         hashtags: ["GoogleBusinessProfile", "LocalSEO", ...LYNQ_TAGS.slice(0, 2)], callToAction: "Save this",
-        creativeDirection: `An empty parking lot at night in front of a closed, dark storefront; a giant three-metre map pin stands in the middle of the lot glowing lime, lighting the wet asphalt, half of its face blank. Headline "Half of it is empty." large in white, "FIX THIS · your Google profile" small in lime. ${LYNQ_LOOK}`,
+        creativeDirection: `A plain matte black index card standing upright on the black studio floor like a product, half of it printed with crisp white form lines and half left blank; one acid-lime pin holds it. One line of thin white type: "Half of you is missing". ${LYNQ_LOOK}`,
       },
       {
         key: "lynq-founder-2", brand: LYNQ, day: "2026-10-14", time: "10:00", pillar: "FOUNDER", storyHighlight: "BEHIND",
         title: "LYNQ · FOUNDER — The 9pm test", kind: "image_post", platforms: ["instagram", "facebook"],
-        hook: "I fill in contact forms at 9pm to see who answers. Almost nobody does.",
+        hook: "We fill in contact forms at 9pm to see who answers. Almost nobody does.",
         body: "I have a habit. When I look at a local business website, I fill in the contact form at 9pm and wait.\n\nMost of the time, nothing. A reply the next afternoon if I'm lucky. By then the person who needed a plumber, a table or an appointment has already booked with someone else.\n\nThat's why every LYNQ site replies on its own. Form in, text and email out, with the booking link, in under a minute. Then the owner follows up in the morning like normal.\n\nIt's also how we run LYNQ itself. Every post you see here was drafted, checked and approved from my phone before it went out. Nothing ships without a human saying yes.\n\nI'm Mustafa. Ask me anything, the comments are open.",
         facebookBody: "I fill in local business contact forms at 9pm to see who answers. Almost nobody does. By the next afternoon the customer has booked with someone else.\n\nSo every LYNQ site replies on its own, by text and email, in under a minute. The owner follows up in the morning.\n\nI'm Mustafa. Questions welcome in the comments.",
         hashtags: ["Founder", ...LYNQ_TAGS.slice(0, 2)], callToAction: "Comments open",
-        creativeDirection: `A phone lying face-down on a dark desk at night, one sliver of lime notification light leaking out from under it across the wood; a desk clock in the background reads 9:04; the LYNQ mascot sits on the edge of the desk watching the phone. Headline "The business that replies first gets the job." large in thin white type, "Mustafa, LYNQ" small in lime. ${HONEST_CARD} ${LYNQ_LOOK}`,
+        creativeDirection: `A smartphone lying face-down on the black studio floor, hard light from the upper left, a thin acid-lime line of light leaking from under one edge. One line of thin white type: "9:04 pm". ${HONEST_CARD} ${LYNQ_LOOK}`,
       },
       {
         key: "lynq-sun", brand: LYNQ, day: "2026-10-20", time: "12:15", pillar: "PROOF", storyHighlight: "AMY",
         title: "LYNQ · PROOF 03 — Finding Amy", kind: "image_post", platforms: ["instagram", "facebook"],
-        hook: "An events business needs its website to do one thing: get the date request.",
+        hook: "An events site has one job: answer \"is my date free?\" before they ask.",
         body: "An events business needs its website to do exactly one thing: get the date request.\n\nFinding Amy rents photo booths for events in Amman. Their customers want to see the booth at a real party, see what's included, and ask about their date, fast.\n\nSo the whole site walks that one path.\n\nWant your site built around the one thing that pays you? DM \"AUDIT\".",
         facebookBody: "An events business needs its website to do one thing: get the date request. We built Finding Amy's site in Amman around that one path. See the booth, see what's included, ask about your date.\n\nWant yours built around the one thing that pays you? Send us a message.",
         hashtags: ["EventPlanning", "WebDesign", "SmallBusiness"], callToAction: "DM AUDIT",
-        creativeDirection: `A dark empty event hall; at the far end a photo-booth curtain glows acid lime from inside, the only light in the room; a single straight trail of gold confetti on the floor leads from the camera to the curtain. Headline "One path." large in white, "PROOF 03 · Finding Amy" small in lime. ${HONEST_CARD} ${LYNQ_LOOK}`,
+        creativeDirection: `A small desk calendar standing on the black studio floor, matte black pages, one date circled in acid lime, hard light from the upper left and one clean shadow. One line of thin white type: "Is my date free?" ${HONEST_CARD} ${LYNQ_LOOK}`,
               },
       {
         key: "lynq-mon2", brand: LYNQ, day: "2026-10-17", time: "12:15", pillar: "TEACH", storyHighlight: "FIX THIS",
         title: "LYNQ · FIX THIS — Slow replies lose the job", kind: "carousel", platforms: ["instagram", "facebook"],
-        hook: "They filled in your form. They also filled in two others.",
+        hook: "They filled in your form. They also filled in two others. First reply wins.",
         body: "FIX THIS: slow replies.\n\nSomeone fills in your contact form. They also filled in two others.\n\nThe business that answers first usually gets the job. At 9pm, that's rarely you.\n\nThe fix isn't working later. It's an instant reply: a text and an email that go out the moment the form is sent, with your booking link inside.\n\nThat's what our Lead Engine sets up.\n\nSend this to a business owner who's always \"getting back to people.\"",
         facebookBody: "Someone fills in your contact form, and two others. The business that answers first usually gets the job.\n\nThe fix isn't working later. It's an instant text and email the moment the form is sent, with your booking link inside. That's what our Lead Engine sets up.",
         hashtags: ["SmallBusinessTips", ...LYNQ_TAGS.slice(0, 2)], callToAction: "Send to a business owner",
-        creativeDirection: `Dozens of white paper airplanes crash-landed in a heap on a dark office floor at night, lit by a single window; one acid-lime paper airplane is caught mid-air flying back out toward the camera, trailing a thin light streak. Headline "They also filled in two others." large in white, "FIX THIS · slow replies" small in lime. ${LYNQ_LOOK}`,
+        creativeDirection: `Three identical white paper airplanes in a row on the black studio floor, hard light from the upper left; the first one is acid lime and sits one body length ahead of the other two. One line of thin white type: "First reply wins". ${LYNQ_LOOK}`,
       },
 
       // ── CodeItLearn — keeps the mascot world from the existing grid. Rows read BUILD → LEARN → HOW/FOUNDER/OFFER.
@@ -231,7 +231,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "\"A game where a cat catches falling pizza.\"\n\nThat one sentence is all it takes. CodeIt builds a working first version, and then the real part starts.\n\nYour kid makes it faster. Changes the colours. Adds a score. And every change shows them the code behind it.\n\nStart with their idea, end with their code.\n\nFree to start, no card needed. Ages 5 to 18.\nLink in bio: codeitlearn.com",
         facebookBody: "\"A game where a cat catches falling pizza.\"\n\nOne sentence, and CodeIt builds a working first version. Then your kid makes it faster, changes the colours, adds a score, and sees the code behind every change.\n\nFree to start, no card needed, ages 5 to 18: codeitlearn.com",
         hashtags: CODEIT_TAGS, callToAction: "Link in bio",
-        creativeDirection: `The mascot surfing a giant pizza slice through its own bright 2D game world that bursts out of the laptop screen; a sticky note on the laptop reads "a cat catches falling pizza". Headline "One sentence in. One game out." set in the middle of the frame. No logo, badge, wordmark or label anywhere; the top 15% and bottom 15% of the image are plain cream background with nothing in them. ${CODEIT_LOOK}`,
+        creativeDirection: `Flat vector: a huge speech bubble in cream on an orange background containing a tiny pizza slice and a cat; from the bubble a simple arrow points to a bold flat game screen shape in navy showing the same cat and pizza as big simple shapes. No mascot. Headline "One sentence in. One game out." in chunky cream type. ${CODEIT_LOOK}`,
       },
       {
         key: "codeit-tue", brand: CODEIT, day: "2026-10-08", time: "19:30", pillar: "LEARN", storyHighlight: "LESSONS",
@@ -240,7 +240,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "Same 20 minutes. Same screen.\n\nOne kid watched someone else play a game.\nOne kid made one.\n\nScreen time isn't the problem. Passive screen time is. Three questions that tell you which kind it was:\n\n1. \"What did you make?\"\n2. \"What would you change about it?\"\n3. \"Can you show me how it works?\"\n\nIf they can answer number 3, they learned something.\n\nSave this for after dinner tonight.",
         facebookBody: "Same 20 minutes, same screen: one kid watched a game, one kid made one.\n\nThree questions that tell you which kind of screen time it was:\n1. What did you make?\n2. What would you change?\n3. Can you show me how it works?\n\nIf they can answer number 3, they learned something.",
         hashtags: ["ScreenTime", ...CODEIT_TAGS.slice(1)], callToAction: "Save this",
-        creativeDirection: `Mirror composition with one wall clock showing 20 minutes: left half grey and sleepy, the mascot slumped on a couch with a tablet; right half bright and warm, the same mascot building a rocket out of colourful code blocks. Headline "Same 20 minutes." ${CODEIT_LOOK}`,
+        creativeDirection: `Flat vector, split exactly in half: left side navy with the mascot slumped on a flat sofa shape holding a tablet, right side orange with the mascot standing proudly on a flat block tower; a single flat clock shape centred on the dividing line. Headline "Same 20 minutes." in chunky cream type. ${CODEIT_LOOK}`,
       },
       {
         key: "codeit-wed", brand: CODEIT, day: "2026-10-10", time: "19:30", pillar: "HOW IT WORKS", storyHighlight: "START HERE",
@@ -249,7 +249,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "Our bio says \"Kids can code. We prove it.\" This is the proof part.\n\nA lot of coding apps only check whether the code runs. That's easy to fake. Copy, paste, done.\n\nCodeIt checks whether your kid understands it. After a build, it asks questions made from their own project. The wrong answers come from other real values in that same file, so guessing doesn't work. Only answers that are right the first time count.\n\nCopying isn't learning. Explaining is.\n\nTry it free, link in bio.",
         facebookBody: "A lot of coding apps only check whether the code runs. CodeIt checks whether your kid understands it.\n\nAfter each build, it asks questions made from their own project. The wrong answers come from their own code too, so guessing doesn't work.\n\nKids can code. We prove it. Try it free: codeitlearn.com",
         hashtags: CODEIT_TAGS, callToAction: "Start free at codeitlearn.com",
-        creativeDirection: `The mascot as a detective in a tiny trench coat with a magnifying glass, inspecting one giant highlighted line of code; a quiz card pinned like evidence on a corkboard with red string. Headline "We prove it." ${CODEIT_LOOK}`,
+        creativeDirection: `Flat vector on mint: one giant magnifying glass shape in navy over a single line of simple code blocks in orange, a big flat check mark in cream inside the lens. No mascot. Headline "We prove it." in chunky navy type. ${CODEIT_LOOK}`,
       },
       {
         key: "codeit-thu", brand: CODEIT, day: "2026-10-14", time: "19:30", pillar: "BUILD", storyHighlight: "BUILDS",
@@ -258,7 +258,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "Dinosaurs. Football. Minecraft. Their favourite snack.\n\nWhatever your kid won't stop talking about can become a quiz app they built themselves.\n\nThey describe it. CodeIt builds the first version. Then they make it theirs with new questions, new colours, a harder level, and they see the code behind every change.\n\nWhat would your kid build first? (Example project shown.)\n\nAges 5 to 18. Free to start.",
         facebookBody: "Dinosaurs, football, Minecraft, whatever your kid won't stop talking about can become a quiz app they build themselves. They describe it, CodeIt builds the first version, and they make it theirs.\n\nWhat would your kid build first?",
         hashtags: CODEIT_TAGS, callToAction: "Link in bio",
-        creativeDirection: `The mascot wearing a dinosaur-costume hood, proudly holding up a tablet with a bright dinosaur quiz app (big rounded orange answer buttons) while a toy T-rex cheers on the desk. Small label "example project". ${CODEIT_LOOK}`,
+        creativeDirection: `Flat vector on sky blue: one enormous flat green dinosaur shape filling the frame, and on its back a small navy tablet showing three big rounded orange answer buttons; the mascot sits on the dinosaur holding the tablet. Headline "Their obsession, their app." in chunky navy type. ${CODEIT_LOOK}`,
       },
       {
         key: "codeit-fri", brand: CODEIT, day: "2026-10-20", time: "19:30", pillar: "LEARN", storyHighlight: "LESSONS",
@@ -267,7 +267,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "Lesson 1 of 31: print()\n\nprint(\"Hello!\")\n\nThat's the first line of Python almost every coder ever wrote. It tells the computer: show this on the screen.\n\nTry it with your kid tonight. Change \"Hello!\" to their name. Press run. That's programming.\n\nAll 31 beginner lessons and the Python playground are free for everyone, with no AI involved, so the learning is theirs.\n\nSave this for the weekend.",
         facebookBody: "Lesson 1 of 31: print(\"Hello!\")\n\nThe first line of Python almost every coder wrote. Try it tonight. Change \"Hello!\" to your kid's name and press run.\n\nAll 31 beginner lessons and the Python playground are free at codeitlearn.com.",
         hashtags: ["LearnPython", ...CODEIT_TAGS.slice(1)], callToAction: "Save this",
-        creativeDirection: `The mascot shouting through a megaphone made of curly code brackets; the speech bubble print("Hello!") turns into the word Hello! in big bouncy letters. Headline "Lesson 1 of 31". ${CODEIT_LOOK}`,
+        creativeDirection: `Flat vector on cream: a giant flat orange megaphone shape, and bursting out of it the word "Hello!" in huge chunky navy type with three small flat stars. No mascot. Headline "Lesson 1 of 31" small in orange. ${CODEIT_LOOK}`,
       },
       {
         key: "codeit-sat", brand: CODEIT, day: "2026-10-11", time: "10:00", pillar: "FOUNDER", storyHighlight: "ABOUT",
@@ -276,7 +276,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "I'm Mustafa. I teach kids to code in Toronto, and I ran CodeIt's first workshop at Northcrest's Community Sundays.\n\nWhat I see in class: kids light up when they build something that's theirs, and tune out when it's another worksheet.\n\nSo CodeIt starts with their idea, builds the first version with them, then makes sure they understand every line.\n\nParents and teachers: what would you want it to do next? Comments are open.",
         facebookBody: "I'm Mustafa. I teach kids to code in Toronto, and I ran CodeIt's first workshop at Northcrest's Community Sundays.\n\nKids light up when they build something that's theirs. So CodeIt starts with their idea and makes sure they understand every line.\n\nParents and teachers: what would you want it to do next?",
         hashtags: ["EdTech", ...CODEIT_TAGS.slice(1)], callToAction: "Comments open",
-        creativeDirection: `Quote card: the mascot standing at a small whiteboard with a marker, having just written "Start with their idea. End with their code." in chunky navy type; "— Mustafa, founder" small in orange underneath. No real people. ${CODEIT_LOOK}`,
+        creativeDirection: `Flat vector on cream: a big orange lightbulb shape whose filament is a tiny flat dinosaur; three small flat arrows run from the bulb to a simple navy laptop shape. No mascot. Headline "Your idea first." in chunky navy type. No names, no signature, no real people. ${CODEIT_LOOK}`,
       },
       {
         key: "codeit-sun", brand: CODEIT, day: "2026-10-13", time: "19:30", pillar: "OFFER", storyHighlight: "FREE",
@@ -285,7 +285,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "\"Free\" usually means \"free until we ask for your card.\" Not with CodeIt.\n\nFree for everyone:\n✓ 31 beginner Python lessons\n✓ The Python playground\n✓ 10 AI assisted builds a month\nNo card needed.\n\nFamily plan: CA$12/month.\n\nBuilt for ages 5 to 18.\nStart free at codeitlearn.com (link in bio)",
         facebookBody: "Free for everyone: 31 beginner Python lessons, the Python playground, and 10 AI assisted builds a month. No card needed.\n\nFamily plan: CA$12/month. Ages 5 to 18.\n\nStart free: codeitlearn.com",
         hashtags: CODEIT_TAGS, callToAction: "Start free at codeitlearn.com",
-        creativeDirection: `The mascot cheerfully pushing away a giant credit card wearing a "no card needed" sticker, while holding a golden ticket that says FREE; a small card in the corner reads "Family plan CA$12/month". Headline "Free means free." ${CODEIT_LOOK}`,
+        creativeDirection: `Flat vector on orange: a giant cream price-tag shape with nothing written on it but a big flat zero, the mascot peeking from behind it with a thumbs up; a tiny crossed-out credit card shape in the corner. Headline "Free means free." in chunky navy type. ${CODEIT_LOOK}`,
       },
       {
         key: "lynq-w2-arcubed", brand: LYNQ, day: "2026-10-10", time: "12:15", pillar: "PROOF", storyHighlight: "ARCUBED",
@@ -294,16 +294,16 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "Every bag is made by hand. Every order used to be, too.\n\nColour? Size? Deposit? Delivery? Arcubed Label answered all of it in DMs, one bag at a time, while the crochet hook sat waiting.\n\nNow the store does the talking. Pick the bag, pick the colour, pay. The order lands in a list, not a chat. The hands go back to the hook.\n\nBuilt end to end by LYNQ for a maker in Amman.\n\nIf you sell something you make, your site should take the order so you can keep making. DM \"AUDIT\" and we'll show you where yours drops the thread.",
         facebookBody: "Every bag is made by hand. Every order used to be, too.\n\nArcubed Label answered colour, size, deposit and delivery in DMs, one bag at a time. Now the store does the talking: pick the bag, pick the colour, pay. The order lands in a list, not a chat.\n\nBuilt end to end by LYNQ. Sell something you make? Message us and we'll show you where your site drops the thread.",
         hashtags: ["Handmade", "Ecommerce", "WebDesign", "SmallBusiness"], callToAction: "DM AUDIT",
-        creativeDirection: `A single handmade crochet tote in a deep natural colour hanging from a brass hook against a dark wall, lit by one acid-lime spotlight from above; on the floor beneath it, a neat stack of plain kraft order slips with a lime wax seal. Headline "Every bag by hand. Not every order." large in white, "Arcubed Label" small in lime. ${HONEST_CARD} ${LYNQ_LOOK}`,
+        creativeDirection: `One handmade crochet tote in natural undyed cotton, standing upright and centred on the black studio floor, hard light from the upper left, a single acid-lime paper order tag tied to its handle. No text. ${HONEST_CARD} ${LYNQ_LOOK}`,
       },
       {
         key: "lynq-w2-office", brand: LYNQ, day: "2026-10-18", time: "12:15", pillar: "OFFER", storyHighlight: "OFFICE",
         title: "LYNQ · LYNQ OFFICE — Your business on one screen", kind: "image_post", platforms: ["instagram", "facebook"],
-        hook: "Six logins to run one small business. That's where the hours go.",
+        hook: "Six logins to run one small business. That is where the hours go.",
         body: "Count the logins you open to run your business. Email, invoices, the booking tool, the spreadsheet, two social apps.\n\nThat's where the hours go. Not into the work, into moving between the tools.\n\nLYNQ Office puts it on one screen: your customers, your projects, what needs you today, and automations that do the repeat work. Posts go out after you approve them from your phone. Leads get a reply before you've seen them.\n\nIt's built per business, so there's no price list. We look at what you run, then quote it in writing.\n\nDM \"OFFICE\" and I'll walk you through it.",
         facebookBody: "Count the logins you open to run your business. That's where the hours go, into moving between tools.\n\nLYNQ Office puts it on one screen: customers, projects, what needs you today, and automations that do the repeat work. Built per business, quoted in writing.\n\nMessage us and we'll walk you through it.",
         hashtags: ["BusinessAutomation", ...LYNQ_TAGS.slice(0, 2)], callToAction: "DM OFFICE",
-        creativeDirection: `A dark control room at night: six old monitors stacked along a wall are switched off and dusty, and in front of them one sleek screen glows acid lime on a clean black desk with the LYNQ mascot sitting beside it. No readable interface, just light. Headline "One screen." large in white, "LYNQ Office" small in lime. ${HONEST_CARD} ${LYNQ_LOOK}`,
+        creativeDirection: `One slim matte black tablet standing upright on the black studio floor like a product, hard light from the upper left, its edge trimmed with a thin acid-lime line; beside it, six small dull grey keys scattered loose. One line of thin white type: "One screen". ${HONEST_CARD} ${LYNQ_LOOK}`,
       },
       {
         key: "lynq-w2-twocities", brand: LYNQ, day: "2026-10-21", time: "10:00", pillar: "FOUNDER", storyHighlight: "BEHIND",
@@ -312,7 +312,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "LYNQ works out of Toronto and Amman.\n\nIt started because that's where our people are. It stayed because it works: a Toronto client gets the design conversation in their afternoon and wakes up to the build already moved on.\n\nThe standards don't change with the city. A site has to be found, has to answer, and has to get the booking or the order. Kingsbridge in Toronto. Nasma, Finding Amy and Arcubed in Amman. Same rules.\n\nI'm Mustafa. If you run a business in either city and your site isn't doing one of those three things, DM \"AUDIT\".",
         facebookBody: "LYNQ works out of Toronto and Amman. It started because that's where our people are. It stayed because it works.\n\nThe standards don't change with the city: a site has to be found, has to answer, and has to get the booking or the order.\n\nI'm Mustafa. Run a business in either city? Message us for a free review of your site.",
         hashtags: ["WebDesign", "SmallBusiness", "LYNQ"], callToAction: "DM AUDIT",
-        creativeDirection: `Night panorama split down the middle by one thin acid-lime line: on the left the CN Tower and Toronto skyline over dark water, on the right the stone hills and lit stairways of Amman, both under the same deep black sky, the lime line arcing across like a signal between them. Headline "Toronto. Amman." large in white, "Same rules." small in lime. No real people, no website screens. ${LYNQ_LOOK}`,
+        creativeDirection: `Two identical matte black cubes side by side on the black studio floor with a small gap between them, hard light from the upper left, one acid-lime thread stretched taut between their nearest corners. One line of thin white type: "Two cities. One standard." No real people, no website screens. ${LYNQ_LOOK}`,
       },
       {
         key: "codeit-w2-askteacher", brand: CODEIT, day: "2026-10-15", time: "19:30", pillar: "LEARN", storyHighlight: "ASK THE TEACHER",
@@ -321,7 +321,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "ASK THE TEACHER: \"Do kids still need to learn coding if AI can write it?\"\n\nI teach kids to code, so I get this one a lot. Honest answer: yes, but a different version of it.\n\nWhen AI writes the first draft, the skill moves to:\n1. Saying clearly what you want\n2. Reading what came back\n3. Spotting the line that's wrong\n\nThat's exactly what a kid does in CodeIt. Describe the game, get a version, change it, see the code, answer questions about it.\n\nGot a question for the teacher? Put it in the comments and I'll answer it in a post.",
         facebookBody: "\"Do kids still need to learn coding if AI can write it?\" I teach kids to code. Honest answer: yes, a different version of it. Saying clearly what you want, reading what came back, spotting the line that's wrong.\n\nGot a question for the teacher? Ask in the comments.",
         hashtags: ["AIForKids", ...CODEIT_TAGS.slice(1)], callToAction: "Comments open",
-        creativeDirection: `The mascot in round teacher glasses sitting on a tall stool beside a small chalkboard that reads "Ask the teacher" in chunky navy chalk letters; a paper question card with a big "?" leans against the laptop. Headline "Still need coding?" ${CODEIT_LOOK}`,
+        creativeDirection: `Flat vector on navy: a huge cream question mark shape, and a small flat robot shape and a small flat child-sized backpack shape (no child) sitting on its curve. No mascot. Headline "Still need coding?" in chunky orange type. ${CODEIT_LOOK}`,
       },
       {
         key: "codeit-w2-question", brand: CODEIT, day: "2026-10-17", time: "19:30", pillar: "HOW IT WORKS", storyHighlight: "START HERE",
@@ -330,7 +330,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "The game works. Now comes the part most apps skip.\n\nOne question, made from your kid's own code: \"What makes the character jump?\"\n\nThe answer options aren't random. They're other real values from their project, so a guess looks just as plausible as the right answer. Only a first time right answer counts.\n\nThat's how we know they understood it, not just ran it.\n\nKids can code. We prove it. Free to start, link in bio.",
         facebookBody: "The game works. Now one question, made from your kid's own code: what makes the character jump? The wrong answers come from their own project, so guessing doesn't work.\n\nThat's how we know they understood it. Free to start: codeitlearn.com",
         hashtags: CODEIT_TAGS, callToAction: "Link in bio",
-        creativeDirection: `A big friendly quiz card floating above the laptop like a speech bubble: "What makes the character jump?" with three rounded orange answer buttons, the mascot pointing at it with one finger on its chin, thinking; a tiny 2D platformer character mid-jump on the laptop screen. Headline "Prove it." ${CODEIT_LOOK}`,
+        creativeDirection: `Flat vector on orange: a big flat cream quiz card with a bold navy question "What makes the character jump?" and three rounded navy answer buttons, a tiny flat pixel character mid-jump above it. No mascot. Headline "Prove it." in chunky navy type. ${CODEIT_LOOK}`,
       },
       {
         key: "codeit-w2-sunday", brand: CODEIT, day: "2026-10-18", time: "10:00", pillar: "FOUNDER", storyHighlight: "ABOUT",
@@ -339,7 +339,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "The first CodeIt workshop was at Northcrest's Community Sundays. A room, some laptops, kids who'd never written a line of code.\n\nWhat I learned in two hours:\n\nNobody wanted the example project. Every kid wanted their own thing: a cat game, a quiz about their brother, a page for their lemonade stand.\n\nSo that's what CodeIt became. It starts with the kid's idea, not ours.\n\nI'm Mustafa. If you run a community program or a school club in the GTA and want a session, message me. The tool is free, and so is the first session.",
         facebookBody: "The first CodeIt workshop was at Northcrest's Community Sundays. What I learned: nobody wanted the example project. Every kid wanted their own thing.\n\nSo that's what CodeIt became. It starts with the kid's idea, not ours.\n\nRun a community program or school club in the GTA? Message me.",
         hashtags: ["KidsCoding", ...CODEIT_TAGS.slice(1)], callToAction: "Comments open",
-        creativeDirection: `A cozy community-room scene with no real people: a row of small desks with laptops, each screen showing a different tiny kid-made project (a cat, a quiz, a lemonade stand page), the mascot at the front holding a marker beside a flip chart that reads "Your idea first". No real children, no faces. ${CODEIT_LOOK}`,
+        creativeDirection: `Flat vector on mint: a row of five simple flat laptop shapes in navy, each screen a different tiny flat project (a cat, a quiz card, a lemonade cup, a rocket, a star); the mascot stands at the end of the row pointing at them. No real people, no faces. Headline "Your idea first." in chunky navy type. ${CODEIT_LOOK}`,
       },
       {
         key: "codeit-w2-challenge", brand: CODEIT, day: "2026-10-21", time: "19:30", pillar: "BUILD", storyHighlight: "BUILDS",
@@ -348,7 +348,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "OCTOBER CHALLENGE: build a game about your favourite snack.\n\nPizza that falls from the sky. A samosa that has to dodge the fork. Popcorn you catch in a bucket. Any snack, any idea.\n\nHow it works:\n1. Your kid describes the game in one sentence on codeitlearn.com\n2. CodeIt builds the first version\n3. They change one thing and make it theirs\n\nSend us the game (no faces needed, just the screen) and we'll share our favourites with first name and age, with your permission.\n\nFree to enter, free to build. Ages 5 to 18.",
         facebookBody: "OCTOBER CHALLENGE: build a game about your favourite snack. Your kid describes it in one sentence on codeitlearn.com, CodeIt builds the first version, they make it theirs.\n\nSend us the game (just the screen, no faces) and we'll share our favourites with your permission. Free to enter, free to build.",
         hashtags: ["KidsChallenge", ...CODEIT_TAGS.slice(0, 2)], callToAction: "Start free at codeitlearn.com",
-        creativeDirection: `The mascot holding a giant slice of pizza like a trophy under a hand-painted paper banner reading "OCTOBER CHALLENGE", surrounded by doodled snacks (popcorn, a samosa, a donut) each with tiny game controller arms; a laptop shows a bright snack-catching game. Headline "Your favourite snack. Now a game." ${CODEIT_LOOK}`,
+        creativeDirection: `Flat vector on orange: a big flat gold trophy shape holding a giant pizza slice, confetti as simple flat triangles, the mascot hugging the trophy. Headline "October challenge" in chunky cream type. ${CODEIT_LOOK}`,
       },
     ],
     reels: [
