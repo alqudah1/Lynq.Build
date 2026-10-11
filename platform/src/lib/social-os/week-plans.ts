@@ -144,8 +144,8 @@ const CODEIT_LOOK = "CodeIt's look, in the spirit of Toca Boca and Headspace: fl
 export const WEEK_PLANS: WeekPlan[] = [
   {
     key: "2026-10-12",
-    label: "Oct 7 to Oct 21 — LYNQ + CodeIt, one post a day each",
-    weekStart: "2026-10-07",
+    label: "Oct 11 to Oct 21 — LYNQ + CodeIt, one post a day each",
+    weekStart: "2026-10-11",
     retired: ["lynq-wed", "lynq-sat", "lynq-mon", "codeit-mon", "lynq-mon-r", "lynq-reel-tue"],
     highlights: {
       // LYNQ: each client keeps its own highlight (the profile already has KINGSBRIDGE, NASMA, AMY); series get one each.
@@ -155,12 +155,12 @@ export const WEEK_PLANS: WeekPlan[] = [
     feed: [
       // ── LYNQ — grid rows read PROOF → TEACH → OFFER/FOUNDER. Series names repeat every week so people learn them.
       {
-        key: "lynq-intro", brand: LYNQ, day: "2026-10-07", time: "12:15", pillar: "FOUNDER", storyHighlight: "START HERE",
-        title: "LYNQ · BUILT BY LYNQ — Four businesses, two cities, one standard", kind: "image_post", platforms: ["instagram", "facebook"],
-        hook: "Four businesses. Two cities. One standard. This is what LYNQ does.",
-        body: "Four businesses. Two cities. One standard.\n\nKingsbridge Group, Toronto. Custom homes and property management. A site that has to win an owner's trust and calm a tenant with a leak, on the same page.\n\nNasma, Amman. A restaurant. Menu, hours, a way to book, in ten seconds on a phone.\n\nFinding Amy, Amman. Photo booth rentals. One path from \"that looks fun\" to \"is my date free?\"\n\nArcubed Label, Amman. Handmade crochet bags. A store that takes the order without a single DM.\n\nThat's what we do. Websites, the systems behind them, and the automation that keeps them answering when nobody is at the desk. Built per business, quoted in writing, looked after once it's live.\n\nFrom Toronto and Amman, for businesses anywhere.\n\nYour site not doing its job? DM \"AUDIT\" for a free 5 minute review.",
-        facebookBody: "Four businesses. Two cities. One standard.\n\nKingsbridge Group in Toronto, custom homes and property management. Nasma, a restaurant in Amman. Finding Amy, photo booth rentals in Amman. Arcubed Label, handmade crochet bags in Amman.\n\nThat's what LYNQ does: websites, the systems behind them, and the automation that keeps them answering. Built per business, quoted in writing, looked after once it's live.\n\nYour site not doing its job? Message us for a free 5 minute review.",
-        hashtags: ["WebDesign", "SmallBusiness", "Automation", "LYNQ"], callToAction: "DM AUDIT",
+        key: "lynq-intro", brand: LYNQ, day: "2026-10-12", time: "12:15", pillar: "FOUNDER", storyHighlight: "START HERE",
+        title: "LYNQ · BUILT BY LYNQ — What we build", kind: "image_post", platforms: ["instagram", "facebook"],
+        hook: "Built by LYNQ. Four businesses, one standard.",
+        body: "Built by LYNQ.\n\nKingsbridge Group. Custom homes and property management. A site that earns an owner's trust and answers a tenant at midnight, on the same page.\n\nNasma. A restaurant. Menu, hours and a table booked in ten seconds on a phone.\n\nFinding Amy. Photo booth rentals. One clear path from \"that looks fun\" to \"is my date free?\"\n\nArcubed Label. Handmade crochet bags. A store that takes the order so the maker can keep making.\n\nLYNQ designs and builds websites, the systems behind them, and the automation that keeps a business answering when nobody is at the desk. Each one built for that business, quoted in writing, looked after once it is live.\n\nIf your site is not doing its job, DM \"AUDIT\" for a free five minute review.",
+        facebookBody: "Built by LYNQ.\n\nKingsbridge Group, custom homes and property management. Nasma, a restaurant. Finding Amy, photo booth rentals. Arcubed Label, handmade crochet bags.\n\nLYNQ designs and builds websites, the systems behind them, and the automation that keeps a business answering. Built for your business, quoted in writing, looked after once it is live.\n\nIf your site is not doing its job, message us for a free five minute review.",
+        hashtags: LYNQ_TAGS, callToAction: "DM AUDIT",
         creativeDirection: `Four small objects in a neat row on the black studio floor, evenly spaced, each with the same hard light and shadow: a brass house key, a brass reservation bell, a folded square of deep velvet, a small handmade crochet tote; one acid-lime thread runs along the floor linking all four. One line of thin white type above them: "Built by LYNQ". ${HONEST_CARD} ${LYNQ_LOOK}`,
               },
       {
@@ -182,11 +182,11 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `A matte black telephone handset lying on the black studio floor, cord coiled neatly, hard light from the upper left; its tiny indicator light glows acid lime. One line of thin white type: "Open 24/7". ${HONEST_CARD} ${LYNQ_LOOK}`,
       },
       {
-        key: "lynq-thu", brand: LYNQ, day: "2026-10-15", time: "12:15", pillar: "PROOF", storyHighlight: "NASMA",
+        key: "lynq-thu", brand: LYNQ, day: "2026-10-14", time: "12:15", pillar: "PROOF", storyHighlight: "NASMA",
         title: "LYNQ · PROOF 02 — Nasma", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "Hungry people give a restaurant site ten seconds. Nasma uses them well.",
-        body: "People open a restaurant's website for three things: the menu, the hours, and a way to book.\n\nEverything else is decoration.\n\nFor Nasma, a restaurant in Amman, we started with those three, then made the whole thing look as good as the food.\n\nWe build in Toronto and Amman. Own a restaurant in either city? DM \"AUDIT\" for a free 5 minute review of your site.",
-        facebookBody: "Diners open a restaurant's website for three things: the menu, the hours, and a way to book. For Nasma in Amman we started there, then made it look as good as the food.\n\nWant a free 5 minute review of your restaurant's site? Send us a message.",
+        body: "People open a restaurant's website for three things: the menu, the hours, and a way to book.\n\nEverything else is decoration.\n\nFor Nasma, a restaurant, we started with those three, then made the whole thing look as good as the food.\n\nOwn a restaurant? DM \"AUDIT\" for a free five minute review of your site.",
+        facebookBody: "Diners open a restaurant's website for three things: the menu, the hours, and a way to book. For Nasma we started there, then made it look as good as the food.\n\nWant a free 5 minute review of your restaurant's site? Send us a message.",
         hashtags: ["RestaurantMarketing", "WebDesign", "SmallBusiness"], callToAction: "DM AUDIT",
         creativeDirection: `A brass reservation bell, polished, centred on the black studio floor, hard light from the upper left and one clean shadow; a single acid-lime glint on its button. One line of thin white type: "Menu. Hours. Book." ${HONEST_CARD} ${LYNQ_LOOK}`,
               },
@@ -200,7 +200,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `A plain matte black index card standing upright on the black studio floor like a product, half of it printed with crisp white form lines and half left blank; one acid-lime pin holds it. One line of thin white type: "Half of you is missing". ${LYNQ_LOOK}`,
       },
       {
-        key: "lynq-founder-2", brand: LYNQ, day: "2026-10-14", time: "10:00", pillar: "FOUNDER", storyHighlight: "BEHIND",
+        key: "lynq-founder-2", brand: LYNQ, day: "2026-10-15", time: "12:15", pillar: "FOUNDER", storyHighlight: "BEHIND",
         title: "LYNQ · FOUNDER — The 9pm test", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "We fill in contact forms at 9pm to see who answers. Almost nobody does.",
         body: "I have a habit. When I look at a local business website, I fill in the contact form at 9pm and wait.\n\nMost of the time, nothing. A reply the next afternoon if I'm lucky. By then the person who needed a plumber, a table or an appointment has already booked with someone else.\n\nThat's why every LYNQ site replies on its own. Form in, text and email out, with the booking link, in under a minute. Then the owner follows up in the morning like normal.\n\nIt's also how we run LYNQ itself. Every post you see here was drafted, checked and approved from my phone before it went out. Nothing ships without a human saying yes.\n\nI'm Mustafa. Ask me anything, the comments are open.",
@@ -209,11 +209,11 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `A smartphone lying face-down on the black studio floor, hard light from the upper left, a thin acid-lime line of light leaking from under one edge. One line of thin white type: "9:04 pm". ${HONEST_CARD} ${LYNQ_LOOK}`,
       },
       {
-        key: "lynq-sun", brand: LYNQ, day: "2026-10-20", time: "12:15", pillar: "PROOF", storyHighlight: "AMY",
+        key: "lynq-sun", brand: LYNQ, day: "2026-10-18", time: "12:15", pillar: "PROOF", storyHighlight: "AMY",
         title: "LYNQ · PROOF 03 — Finding Amy", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "An events site has one job: answer \"is my date free?\" before they ask.",
-        body: "An events business needs its website to do exactly one thing: get the date request.\n\nFinding Amy rents photo booths for events in Amman. Their customers want to see the booth at a real party, see what's included, and ask about their date, fast.\n\nSo the whole site walks that one path.\n\nWant your site built around the one thing that pays you? DM \"AUDIT\".",
-        facebookBody: "An events business needs its website to do one thing: get the date request. We built Finding Amy's site in Amman around that one path. See the booth, see what's included, ask about your date.\n\nWant yours built around the one thing that pays you? Send us a message.",
+        body: "An events business needs its website to do exactly one thing: get the date request.\n\nFinding Amy rents photo booths for events. Their customers want to see the booth at a real party, see what's included, and ask about their date, fast.\n\nSo the whole site walks that one path.\n\nWant your site built around the one thing that pays you? DM \"AUDIT\".",
+        facebookBody: "An events business needs its website to do one thing: get the date request. We built Finding Amy's site around that one path. See the booth, see what's included, ask about your date.\n\nWant yours built around the one thing that pays you? Send us a message.",
         hashtags: ["EventPlanning", "WebDesign", "SmallBusiness"], callToAction: "DM AUDIT",
         creativeDirection: `A small desk calendar standing on the black studio floor, matte black pages, one date circled in acid lime, hard light from the upper left and one clean shadow. One line of thin white type: "Is my date free?" ${HONEST_CARD} ${LYNQ_LOOK}`,
               },
@@ -229,7 +229,7 @@ export const WEEK_PLANS: WeekPlan[] = [
 
       // ── CodeItLearn — keeps the mascot world from the existing grid. Rows read BUILD → LEARN → HOW/FOUNDER/OFFER.
       {
-        key: "codeit-mon-r", brand: CODEIT, day: "2026-10-07", time: "19:30", pillar: "BUILD", storyHighlight: "BUILDS",
+        key: "codeit-mon-r", brand: CODEIT, day: "2026-10-11", time: "19:30", pillar: "BUILD", storyHighlight: "BUILDS",
         title: "CodeIt · One sentence in. One game out.", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "Your kid types one sentence. A minute later, they're playing it.",
         body: "\"A game where a cat catches falling pizza.\"\n\nThat one sentence is all it takes. CodeIt builds a working first version, and then the real part starts.\n\nYour kid makes it faster. Changes the colours. Adds a score. And every change shows them the code behind it.\n\nStart with their idea, end with their code.\n\nFree to start, no card needed. Ages 5 to 18.\nLink in bio: codeitlearn.com",
@@ -274,7 +274,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `Flat vector on cream: a giant flat orange megaphone shape, and bursting out of it the word "Hello!" in huge chunky navy type with three small flat stars. No mascot. Headline "Lesson 1 of 31" small in orange. ${CODEIT_LOOK}`,
       },
       {
-        key: "codeit-sat", brand: CODEIT, day: "2026-10-11", time: "10:00", pillar: "FOUNDER", storyHighlight: "ABOUT",
+        key: "codeit-sat", brand: CODEIT, day: "2026-10-12", time: "19:30", pillar: "FOUNDER", storyHighlight: "ABOUT",
         title: "CodeIt · Why I'm building CodeIt", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "I teach kids to code. Here's the moment that made me build CodeIt.",
         body: "I'm Mustafa. I teach kids to code in Toronto, and I ran CodeIt's first workshop at Northcrest's Community Sundays.\n\nWhat I see in class: kids light up when they build something that's theirs, and tune out when it's another worksheet.\n\nSo CodeIt starts with their idea, builds the first version with them, then makes sure they understand every line.\n\nParents and teachers: what would you want it to do next? Comments are open.",
@@ -292,16 +292,16 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `Flat vector on orange: a giant cream price-tag shape with nothing written on it but a big flat zero, the mascot peeking from behind it with a thumbs up; a tiny crossed-out credit card shape in the corner. Headline "Free means free." in chunky navy type. ${CODEIT_LOOK}`,
       },
       {
-        key: "lynq-w2-arcubed", brand: LYNQ, day: "2026-10-10", time: "12:15", pillar: "PROOF", storyHighlight: "ARCUBED",
+        key: "lynq-w2-arcubed", brand: LYNQ, day: "2026-10-21", time: "12:15", pillar: "PROOF", storyHighlight: "ARCUBED",
         title: "LYNQ · PROOF 04 — Arcubed Label", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "Every bag is made by hand. Every order used to be, too.",
-        body: "Every bag is made by hand. Every order used to be, too.\n\nColour? Size? Deposit? Delivery? Arcubed Label answered all of it in DMs, one bag at a time, while the crochet hook sat waiting.\n\nNow the store does the talking. Pick the bag, pick the colour, pay. The order lands in a list, not a chat. The hands go back to the hook.\n\nBuilt end to end by LYNQ for a maker in Amman.\n\nIf you sell something you make, your site should take the order so you can keep making. DM \"AUDIT\" and we'll show you where yours drops the thread.",
+        body: "Every bag is made by hand. Every order used to be, too.\n\nColour? Size? Deposit? Delivery? Arcubed Label answered all of it in DMs, one bag at a time, while the crochet hook sat waiting.\n\nNow the store does the talking. Pick the bag, pick the colour, pay. The order lands in a list, not a chat. The hands go back to the hook.\n\nBuilt end to end by LYNQ for a maker who would rather be making.\n\nIf you sell something you make, your site should take the order so you can keep making. DM \"AUDIT\" and we'll show you where yours drops the thread.",
         facebookBody: "Every bag is made by hand. Every order used to be, too.\n\nArcubed Label answered colour, size, deposit and delivery in DMs, one bag at a time. Now the store does the talking: pick the bag, pick the colour, pay. The order lands in a list, not a chat.\n\nBuilt end to end by LYNQ. Sell something you make? Message us and we'll show you where your site drops the thread.",
         hashtags: ["Handmade", "Ecommerce", "WebDesign", "SmallBusiness"], callToAction: "DM AUDIT",
         creativeDirection: `One handmade crochet tote in natural undyed cotton, standing upright and centred on the black studio floor, hard light from the upper left, a single acid-lime paper order tag tied to its handle. No text. ${HONEST_CARD} ${LYNQ_LOOK}`,
       },
       {
-        key: "lynq-w2-office", brand: LYNQ, day: "2026-10-18", time: "12:15", pillar: "OFFER", storyHighlight: "OFFICE",
+        key: "lynq-w2-office", brand: LYNQ, day: "2026-10-19", time: "12:15", pillar: "OFFER", storyHighlight: "OFFICE",
         title: "LYNQ · LYNQ OFFICE — Your business on one screen", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "Six logins to run one small business. That is where the hours go.",
         body: "Count the logins you open to run your business. Email, invoices, the booking tool, the spreadsheet, two social apps.\n\nThat's where the hours go. Not into the work, into moving between the tools.\n\nLYNQ Office puts it on one screen: your customers, your projects, what needs you today, and automations that do the repeat work. Posts go out after you approve them from your phone. Leads get a reply before you've seen them.\n\nIt's built per business, so there's no price list. We look at what you run, then quote it in writing.\n\nDM \"OFFICE\" and I'll walk you through it.",
@@ -310,13 +310,13 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `One slim matte black tablet standing upright on the black studio floor like a product, hard light from the upper left, its edge trimmed with a thin acid-lime line; beside it, six small dull grey keys scattered loose. One line of thin white type: "One screen". ${HONEST_CARD} ${LYNQ_LOOK}`,
       },
       {
-        key: "lynq-w2-twocities", brand: LYNQ, day: "2026-10-21", time: "10:00", pillar: "FOUNDER", storyHighlight: "BEHIND",
-        title: "LYNQ · FOUNDER — Toronto and Amman", kind: "image_post", platforms: ["instagram", "facebook"],
-        hook: "We build in two cities. Here's why that's good for you.",
-        body: "LYNQ works out of Toronto and Amman.\n\nIt started because that's where our people are. It stayed because it works: a Toronto client gets the design conversation in their afternoon and wakes up to the build already moved on.\n\nThe standards don't change with the city. A site has to be found, has to answer, and has to get the booking or the order. Kingsbridge in Toronto. Nasma, Finding Amy and Arcubed in Amman. Same rules.\n\nI'm Mustafa. If you run a business in either city and your site isn't doing one of those three things, DM \"AUDIT\".",
-        facebookBody: "LYNQ works out of Toronto and Amman. It started because that's where our people are. It stayed because it works.\n\nThe standards don't change with the city: a site has to be found, has to answer, and has to get the booking or the order.\n\nI'm Mustafa. Run a business in either city? Message us for a free review of your site.",
+        key: "lynq-w2-twocities", brand: LYNQ, day: "2026-10-20", time: "12:15", pillar: "FOUNDER", storyHighlight: "BEHIND",
+        title: "LYNQ · BEHIND — How we work", kind: "image_post", platforms: ["instagram", "facebook"],
+        hook: "No packages. No hourly meter. Here is how LYNQ works.",
+        body: "No packages. No hourly meter.\n\nEvery business we work with gets the same three questions first: how do customers find you, what do they need to do once they land, and who answers when they reach out at 9pm.\n\nThe answers become the build. A written quote for your business, not a menu of tiers. Then we design it, build it, connect the systems behind it, and keep it running once it is live.\n\nKingsbridge Group, Nasma, Finding Amy and Arcubed Label were all built this way. Different businesses, same standard.\n\nIf you want to know what yours would take, DM \"SITE\".",
+        facebookBody: "No packages. No hourly meter.\n\nEvery business we work with gets the same three questions first: how do customers find you, what do they need to do once they land, and who answers when they reach out at 9pm. The answers become the build, with a written quote for your business.\n\nWant to know what yours would take? Send us a message.",
         hashtags: ["WebDesign", "SmallBusiness", "LYNQ"], callToAction: "DM AUDIT",
-        creativeDirection: `Two identical matte black cubes side by side on the black studio floor with a small gap between them, hard light from the upper left, one acid-lime thread stretched taut between their nearest corners. One line of thin white type: "Two cities. One standard." No real people, no website screens. ${LYNQ_LOOK}`,
+        creativeDirection: `A matte black clipboard lying on the black studio floor holding one white sheet with three short printed lines and a single acid-lime tick beside the third; hard light from the upper left. One line of thin white type: "Three questions first." ${HONEST_CARD} ${LYNQ_LOOK}`,
       },
       {
         key: "codeit-w2-askteacher", brand: CODEIT, day: "2026-10-15", time: "19:30", pillar: "LEARN", storyHighlight: "ASK THE TEACHER",
@@ -389,11 +389,11 @@ export const WEEK_PLANS: WeekPlan[] = [
       {
         key: "lynq-reel-sat", brand: LYNQ, day: "2026-10-09", time: "18:30", series: "FIX THIS",
         title: "LYNQ Reel · FIX THIS — 60 seconds on a clinic's website",
-        hook: "60 seconds on a GTA clinic's website. Watch where the bookings leak.",
-        body: "FIX THIS: 60 seconds on a GTA clinic's website (name hidden).\n\nThe three things I check first on every clinic site:\n1. Can a patient on a phone find \"Book\" without scrolling?\n2. Are the hours and phone number on every page?\n3. Do the Google reviews show up on the site?\n\nWatch what this one gets wrong.\n\nWant me to do yours? DM \"AUDIT\". It's free.",
-        facebookBody: "60 seconds on a GTA clinic's website: can a patient find \"Book\" without scrolling, are hours and phone on every page, do the reviews show up? Watch what this one gets wrong. Want a free review of yours? Send us a message.",
+        hook: "60 seconds on a clinic's website. Watch where the bookings leak.",
+        body: "FIX THIS: 60 seconds on a clinic's website (name hidden).\n\nThe three things I check first on every clinic site:\n1. Can a patient on a phone find \"Book\" without scrolling?\n2. Are the hours and phone number on every page?\n3. Do the Google reviews show up on the site?\n\nWatch what this one gets wrong.\n\nWant me to do yours? DM \"AUDIT\". It's free.",
+        facebookBody: "60 seconds on a clinic's website: can a patient find \"Book\" without scrolling, are hours and phone on every page, do the reviews show up? Watch what this one gets wrong. Want a free review of yours? Send us a message.",
         hashtags: ["ClinicMarketing", ...LYNQ_TAGS], callToAction: "DM AUDIT",
-        script: "Screen-record a real GTA clinic site in a phone-sized window, name and logo blurred. Walk the three checks in order and say what you actually find. Only claim what's on screen. 30–45 seconds.",
+        script: "Screen-record a real clinic site in a phone-sized window, name and logo blurred. Walk the three checks in order and say what you actually find. Only claim what's on screen. 30–45 seconds.",
         shots: [
           { timing: "0–2s", visual: "Clinic homepage on a phone frame, name blurred, timer '0:60'", onScreenText: "60-second audit" },
           { timing: "2–15s", visual: "Scrolling to find the Book button", onScreenText: "1. Where's 'Book'?" },
@@ -448,9 +448,9 @@ export const WEEK_PLANS: WeekPlan[] = [
       {
         key: "lynq-w2-reel-rebuilt", brand: LYNQ, day: "2026-10-12", time: "18:30", series: "REBUILT",
         title: "LYNQ Reel · REBUILT — a plumber's homepage in 10 minutes",
-        hook: "I rebuilt a GTA plumber's homepage in 10 minutes. Here's what changed.",
-        body: "REBUILT: a GTA plumber's homepage in 10 minutes (name hidden).\n\nWhat changed:\n1. \"Call now\" at the top, not under three paragraphs\n2. Service area and hours on the first screen\n3. The Google reviews they already had, finally on the site\n\nOld on the left, new on the right at the end.\n\nWant yours done? DM \"REBUILD\" and I'll send you the before and after of your own homepage.",
-        facebookBody: "I rebuilt a GTA plumber's homepage in 10 minutes. Call now at the top, service area and hours on the first screen, their Google reviews on the site. Old and new side by side at the end. Want yours? Send us a message.",
+        hook: "I rebuilt a plumber's homepage in 10 minutes. Here's what changed.",
+        body: "REBUILT: a plumber's homepage in 10 minutes (name hidden).\n\nWhat changed:\n1. \"Call now\" at the top, not under three paragraphs\n2. Service area and hours on the first screen\n3. The Google reviews they already had, finally on the site\n\nOld on the left, new on the right at the end.\n\nWant yours done? DM \"REBUILD\" and I'll send you the before and after of your own homepage.",
+        facebookBody: "I rebuilt a plumber's homepage in 10 minutes. Call now at the top, service area and hours on the first screen, their Google reviews on the site. Old and new side by side at the end. Want yours? Send us a message.",
         hashtags: ["Plumbers", ...LYNQ_TAGS.slice(0, 2)], callToAction: "DM REBUILD",
         script: "Screen-record the rebuild as a timelapse: the real homepage (name and logo blurred) on the left, a blank page on the right that fills in. Speed up to 30 to 45 seconds. Freeze on old vs new for the last 4 seconds. Say the three changes out loud while they appear. Only show what you really built.",
         shots: [
@@ -464,11 +464,11 @@ export const WEEK_PLANS: WeekPlan[] = [
       {
         key: "lynq-w2-reel-fixthis-restaurant", brand: LYNQ, day: "2026-10-19", time: "18:30", series: "FIX THIS",
         title: "LYNQ Reel · FIX THIS — a restaurant's site on a phone, 60 seconds",
-        hook: "60 seconds on a Toronto restaurant's website, on a phone, hungry. Watch where I give up.",
-        body: "FIX THIS: 60 seconds on a Toronto restaurant's website (name hidden), on a phone, hungry.\n\nI'm looking for three things: the menu, the hours, a way to book. Watch where I give up.\n\nThe fixes are small: a real menu page instead of a PDF, hours on the first screen, a book button that stays on screen.\n\nOwn a restaurant? DM \"AUDIT\" and I'll do yours. It's free.",
-        facebookBody: "60 seconds on a Toronto restaurant's website, on a phone, hungry. Menu, hours, book. Watch where I give up. Own a restaurant? Send us a message for a free review of your site.",
+        hook: "60 seconds on a restaurant's website, on a phone, hungry. Watch where I give up.",
+        body: "FIX THIS: 60 seconds on a restaurant's website (name hidden), on a phone, hungry.\n\nI'm looking for three things: the menu, the hours, a way to book. Watch where I give up.\n\nThe fixes are small: a real menu page instead of a PDF, hours on the first screen, a book button that stays on screen.\n\nOwn a restaurant? DM \"AUDIT\" and I'll do yours. It's free.",
+        facebookBody: "60 seconds on a restaurant's website, on a phone, hungry. Menu, hours, book. Watch where I give up. Own a restaurant? Send us a message for a free review of your site.",
         hashtags: ["RestaurantMarketing", "WebDesign", "SmallBusiness"], callToAction: "DM AUDIT",
-        script: "Screen-record a real Toronto restaurant site in a phone frame, name blurred. Narrate as a hungry customer: find the menu, find the hours, try to book. Stop the clock where it breaks. 30 to 45 seconds. Only claim what's on screen.",
+        script: "Screen-record a real restaurant site in a phone frame, name blurred. Narrate as a hungry customer: find the menu, find the hours, try to book. Stop the clock where it breaks. 30 to 45 seconds. Only claim what's on screen.",
         shots: [
           { timing: "0–2s", visual: "Restaurant homepage on a phone, name blurred, timer 0:60", onScreenText: "I'm hungry. 60 seconds." },
           { timing: "2–18s", visual: "Hunting for the menu, PDF opens tiny", onScreenText: "1. Where's the menu?" },
@@ -519,8 +519,8 @@ export const WEEK_PLANS: WeekPlan[] = [
       },
       {
         key: "lynq-w2-li-cities", brand: LYNQ, day: "2026-10-20", time: "08:15", pillar: "FOUNDER",
-        title: "LinkedIn · Mustafa — Building in Toronto and Amman",
-        body: "LYNQ builds websites and business systems out of two cities: Toronto and Amman.\n\nIt wasn't a strategy at first. It's where our people are. It became a strength quickly.\n\nA Toronto client has the design conversation in their afternoon, and by the time they wake up the build has moved on. An Amman client gets the same. The work doesn't sit still for a whole night.\n\nMore important: local business is local business in both places. A restaurant in Amman needs the same three things a restaurant in Scarborough needs. Menu, hours, a way to book, visible on a phone in ten seconds. A property manager in Toronto and a made to order shop in Amman both lose customers at the same spot: the moment the site makes someone wait or guess.\n\nSo the rules don't change with the city. Found on Google. Answers in under a minute. Gets the booking or the order. Everything else is taste.\n\nIf you run a business in either city and want an honest look at your site, send me a message. Five minutes, no pitch.",
+        title: "LinkedIn · Mustafa — What LYNQ actually builds",
+        body: "People ask what LYNQ does. The short answer is websites. The honest answer is longer.\n\nA website that looks good and does nothing is a brochure. We build the part that works: found on Google, answers in under a minute, gets the booking or the order. The design sits on top of that, not instead of it.\n\nFor a property management company, that meant one page that wins an owner's trust and calms a tenant with a leak at midnight. For a restaurant, it meant the menu, the hours and a table booked in ten seconds on a phone. For a maker selling handmade bags, it meant a store that takes the order so she can stop answering DMs and get back to the hook.\n\nSame rules every time. Found. Answers. Converts. Everything else is taste.\n\nWe don't sell packages and we don't run an hourly meter. You get a written quote for your business, we build it, and we look after it once it's live.\n\nIf you run a business and want an honest look at your site, send me a message. Five minutes, no pitch.",
       },
       {
         key: "codeit-w2-li-guilt", brand: CODEIT, day: "2026-10-16", time: "08:15", pillar: "LEARN",
@@ -579,9 +579,20 @@ export function catchUp(at: Date, now: Date = new Date()): Date {
   return new Date(Math.ceil(earliest / quarter) * quarter);
 }
 
-/** The instant a plan entry goes out: its planned slot, or a caught-up slot when that has already passed. */
-function planSlot(day: string, time: string, plusMinutes = 0): Date {
-  return catchUp(planInstant(day, time, plusMinutes));
+/** Today's date in the plan's timezone, YYYY-MM-DD. */
+export function planToday(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: PLAN_TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+}
+
+/**
+ * The instant a plan entry goes out: its planned slot, or, for an entry planned
+ * for today whose time has passed, the next quarter-hour. An entry from an
+ * earlier day is never pulled forward (that piled every missed post onto one
+ * afternoon); it stays in the past and `applyWeekPlan` retires it as missed.
+ */
+function planSlot(day: string, time: string, plusMinutes = 0, now: Date = new Date()): Date {
+  const at = planInstant(day, time, plusMinutes);
+  return day < planToday(now) ? at : catchUp(at, now);
 }
 
 export function planMarker(planKey: string, entryKey: string): string {
@@ -773,6 +784,30 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
     if (!brandProfileId) continue;
     const at = planSlot(post.day, post.time);
     let item: SocialContentItem | null = null;
+
+    // A post planned for an earlier day that never went out is missed, not late: its untouched drafts (post + story)
+    // are archived so they stop showing up as "today", and the plan carries on with the entries still ahead.
+    if (post.day < planToday() && !post.existingContentItemId) {
+      const marker = planMarker(plan.key, post.key);
+      const existingId = await findMarkedItem(db, input.organizationId, marker);
+      if (existingId) {
+        const existing = await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId: existingId, actorUserId: input.actorUserId });
+        const live = existing.variants.filter((v) => !v.archivedAt);
+        if (live.length && live.every((v) => v.status === "draft")) {
+          for (const id of [existingId, await findMarkedItem(db, input.organizationId, planMarker(plan.key, `${post.key}-story`))]) {
+            if (!id) continue;
+            try {
+              const it = id === existingId ? existing : await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId: id, actorUserId: input.actorUserId });
+              await archiveContentItem(db, { organizationId: input.organizationId, contentItemId: id, actorUserId: input.actorUserId, expectedRevision: it.revision });
+            } catch {
+              // Someone touched it since: leave it.
+            }
+          }
+          report.skipped.push(`${existing.title}: missed (${post.day}), archived`);
+          continue;
+        }
+      }
+    }
 
     let useExisting = false;
     if (post.existingContentItemId) {
