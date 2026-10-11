@@ -744,7 +744,8 @@ async function regenerateImage(
   });
   let assetId: string;
   try {
-    const references = await loadBrandReferences(db, input.organizationId, input.scope.brandProfileId);
+    // A brand whose visual rules say "no reference images" is drawn from its description alone (its logo or old posts would pull a mascot back in).
+    const references = usesReferenceImages(brand) ? await loadBrandReferences(db, input.organizationId, input.scope.brandProfileId) : [];
     // Every feed image is inspected before it is attached: if a logo, badge or headline sits on an edge, the image is
     // regenerated with a stricter instruction (up to IMAGE_EDGE_RETRIES more times) and the cleanest attempt is kept.
     let image = await provider.generateImage({ prompt, aspectRatio, idempotencyKey: generation.id, ...(references.length ? { references } : {}) });
@@ -1174,6 +1175,11 @@ export async function draftEngagementReply(
  * generation as references so a mascot stays the same character in every
  * post. Best-effort: a missing or unreadable file just means no reference.
  */
+/** Brand → Visual rules containing "no reference images" switches the logo/mascot and Instagram references off for image generation. */
+export function usesReferenceImages(brand: Pick<SocialBrand, "visualRules">): boolean {
+  return !/no reference images/i.test(brand.visualRules);
+}
+
 async function loadBrandReferences(db: Db, organizationId: string, brandProfileId: string): Promise<{ bytes: Uint8Array; contentType: string; tag: string }[]> {
   try {
     const rows = await db

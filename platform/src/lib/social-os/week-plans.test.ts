@@ -117,6 +117,19 @@ describe("week plan Oct 12", () => {
     }
   });
 
+  it("the brands carry the visual system the posts are written for: LYNQ without a mascot or references, CodeIt flat", () => {
+    const lynq = plan.feed.find((p) => p.brand.brandKey === "lynq")!.brand;
+    const codeit = plan.feed.find((p) => p.brand.brandKey === "codeit")!.brand;
+    expect(lynq.visual?.visualRules).toMatch(/no mascot/i);
+    expect(lynq.visual?.visualRules).toMatch(/no reference images/i);
+    expect(codeit.visual?.visualRules).toMatch(/flat 2d/i);
+    expect(codeit.createWith?.visualRules).toBe(codeit.visual?.visualRules);
+  });
+
+  it("a feed marker is never a prefix of another entry's marker by accident: the story marker is the post's marker plus -story", () => {
+    for (const p of plan.feed) expect(planMarker(plan.key, `${p.key}-story`)).toBe(`${planMarker(plan.key, p.key)}-story`);
+  });
+
   it("reel hooks are short enough to land in the first three seconds", () => {
     for (const r of plan.reels) expect(r.hook.length, r.key).toBeLessThanOrEqual(90);
   });
