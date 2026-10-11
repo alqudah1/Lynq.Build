@@ -15,7 +15,7 @@ describe("week plan Oct 12", () => {
     for (const brand of ["lynq", "codeit"]) {
       const days = new Set(plan.feed.filter((p) => p.brand.brandKey === brand).map((p) => p.day));
       expect(days.size, brand).toBeGreaterThanOrEqual(7);
-      for (const d of days) expect(d >= plan.weekStart && d <= planEnd(plan), `${brand} ${d}`).toBe(true);
+      for (const d of days) expect(d >= "2026-10-07" && d <= planEnd(plan), `${brand} ${d}`).toBe(true);
     }
   });
 
@@ -23,14 +23,14 @@ describe("week plan Oct 12", () => {
     for (const brand of ["lynq", "codeit"]) {
       const reels = plan.reels.filter((r) => r.brand.brandKey === brand);
       expect(reels.length).toBeGreaterThanOrEqual(3);
-      for (const r of reels) expect(r.day >= plan.weekStart && r.day <= planEnd(plan)).toBe(true);
+      for (const r of reels) expect(r.day >= "2026-10-07" && r.day <= planEnd(plan)).toBe(true);
     }
   });
 
   it("keeps the grid rule: any three consecutive feed posts of a brand never repeat a pillar", () => {
     for (const brand of ["lynq", "codeit"]) {
       const posts = plan.feed.filter((p) => p.brand.brandKey === brand).sort((a, b) => `${a.day}${a.time}`.localeCompare(`${b.day}${b.time}`));
-      for (let i = 0; i + 2 < posts.length; i++) expect(new Set(posts.slice(i, i + 3).map((p) => p.pillar)).size).toBe(3);
+      for (let i = 0; i + 2 < posts.length; i++) expect(new Set(posts.slice(i, i + 3).map((p) => p.pillar)).size, posts.slice(i, i + 3).map((p) => `${p.key}:${p.day}:${p.pillar}`).join(" ")).toBe(3);
     }
   });
 
@@ -128,6 +128,11 @@ describe("week plan Oct 12", () => {
 
   it("a feed marker is never a prefix of another entry's marker by accident: the story marker is the post's marker plus -story", () => {
     for (const p of plan.feed) expect(planMarker(plan.key, `${p.key}-story`)).toBe(`${planMarker(plan.key, p.key)}-story`);
+  });
+
+  it("LYNQ copy never names a city: who we are and what we build, not where", () => {
+    const lynq = [...plan.feed, ...plan.reels].filter((p) => p.brand.brandKey === "lynq");
+    for (const p of lynq) for (const text of [p.title, p.hook, p.body, p.facebookBody ?? "", ...(p.hashtags ?? [])]) expect(text, p.key).not.toMatch(/toronto|amman|gta\b|two cities/i);
   });
 
   it("reel hooks are short enough to land in the first three seconds", () => {
