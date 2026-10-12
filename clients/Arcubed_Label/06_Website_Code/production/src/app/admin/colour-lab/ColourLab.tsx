@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { Bag } from "@/lib/types";
 import ColourStudio from "./ColourStudio";
 import TechnicalComparison from "./TechnicalComparison";
 
-export default function ColourLab({ bags }: { bags: Bag[] }) {
+export default function ColourLab({ bags, productionTime }: { bags: Bag[]; productionTime: string | null }) {
   const [bagIdx, setBagIdx] = useState(0);
   const [view, setView] = useState<"studio" | "technical">("studio");
   const bag = bags[bagIdx];
@@ -13,24 +14,27 @@ export default function ColourLab({ bags }: { bags: Bag[] }) {
   return (
     <div className="cl">
       <header className="at-top">
-        <h1 className="at-title">
-          Atelier <span className="at-title-note">Admin review</span>
-        </h1>
+        <nav className="at-crumbs" aria-label="Breadcrumb">
+          <Link href="/admin">Admin</Link>
+          <span aria-hidden="true">/</span>
+          <span aria-current="page">Colour Studio</span>
+        </nav>
+        {/* Not in the reference (which shows one bag): the studio covers all
+            four, so the bag is chosen here, as quietly as the breadcrumb. */}
         <nav className="at-bags" aria-label="Bag">
           {bags.map((b, i) => (
             <button key={b.slug} type="button" aria-pressed={i === bagIdx} className={i === bagIdx ? "is-on" : ""} onClick={() => setBagIdx(i)}>
-              <span className="at-bag-n" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
               {b.name}
             </button>
           ))}
         </nav>
         <div className="at-views" role="group" aria-label="View">
-          <button type="button" aria-pressed={view === "studio"} className={view === "studio" ? "is-on" : ""} onClick={() => setView("studio")}>Studio</button>
-          <button type="button" aria-pressed={view === "technical"} className={view === "technical" ? "is-on" : ""} onClick={() => setView("technical")}>Technical</button>
+          <button type="button" aria-pressed={view === "studio"} className={view === "studio" ? "is-on" : ""} onClick={() => setView("studio")}>Colour Studio</button>
+          <button type="button" aria-pressed={view === "technical"} className={view === "technical" ? "is-on" : ""} onClick={() => setView("technical")}>Technical Comparison</button>
         </div>
       </header>
       {view === "studio" ? (
-        <ColourStudio key={bag.slug} bag={bag} index={bagIdx} total={bags.length} />
+        <ColourStudio key={bag.slug} bag={bag} productionTime={productionTime} />
       ) : (
         <TechnicalComparison key={bag.slug} bag={bag} />
       )}

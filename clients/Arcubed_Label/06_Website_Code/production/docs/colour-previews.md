@@ -59,17 +59,24 @@ mid-tone ΔE and lightness-curve error measured in the browser (all under
 from the locked photograph, so the remaining difference is the photograph
 (angle, lighting), not the colour.
 
-### Studio
+### Colour Studio (layout, 2026-10-12)
 
-An editorial split: the stage (about 62% of the width) shows the locked
-photograph on the pale pink field, its colour name set large in white behind
-it, with four corner notes. The rail beside it: name and price; the selected
-colour; one palette of circular yarn swatches (confirmed colours first,
-digital previews second with a dashed ring, crossed out where the photograph
-cannot show them); compact size / handle / strap / chain rows that set the
-price exactly as on the shop; one status line. No add-to-cart. A colour
-change is a short dissolve on the same image (off under reduced motion);
-the last 12 renders are cached, so returning to a colour is one draw.
+Built to Mustafa's approved reference image. A breadcrumb bar (Admin /
+Colour Studio, the bag, and Colour Studio | Technical Comparison tabs); a
+pink photographic set on the left (~60%) with the bag's name oversized in
+white behind the bag and four corner notes (the live configured price,
+Handmade in Jordan, Arcubed Atelier, One bag endless colours); a white panel
+on the right: name, price, "Make it yours.", "Handmade to order" with the
+store's production time; Real colours and Preview colours (pink marker,
+"Admin review · Not for sale") as circular yarn swatches; Size (with a size
+guide from the catalogue's notes), Handle, and one Strap or chain group
+(mutually exclusive, catalogue prices); a pink notice ("Preview only" for
+an experimental colour, the truthful status for a real one). The set is CSS
+(wall, window light, floor); the bag is Rand's photograph, its contact
+shadow re-tinted rose in the map build so it sits on pink instead of white.
+Tablets keep the split (55/45, sticky stage); phones stack header, stage,
+name and price, colours, options, notice. Swatch rows follow the panel's
+width (six, five or four) so no name ever breaks.
 
 ### Technical
 

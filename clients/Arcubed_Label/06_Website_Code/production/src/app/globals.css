@@ -2868,184 +2868,230 @@ html { overflow-anchor: none; }
 .rc-swatch.is-off { opacity: 0.38; cursor: not-allowed; }
 .rc-label { margin-top: 10px; }
 
-/* ---------- admin Atelier (/admin/colour-lab) ----------
-   A campaign stage beside one compact rail. Navy, pale pink and white;
-   sharp edges everywhere except the swatches, which are circles of real
-   yarn. Every rule is scoped to .cl / .at / .tc so the shop's own pages are
-   untouched. --hdr is the sticky site header's height. */
-.cl { --hdr: 78px; --gut: 20px; max-width: 1440px; margin: 0 auto; padding: 0 var(--gut) 64px; color: var(--navy); }
-@media (max-width: 759px) { .cl { --hdr: 67px; } }
-@media (min-width: 1100px) { .cl { --gut: 40px; } }
+/* ---------- admin Colour Studio (/admin/colour-lab) ----------
+   Built to Mustafa's approved reference (2026-10-12): a pink photographic
+   set on the left with the bag's name oversized behind it, a white panel on
+   the right. Every rule is scoped to .cl / .at / .tc so the shop's own pages
+   are untouched. --hdr is the sticky site header, --sub this page's bar. */
+.cl { --hdr: 78px; --sub: 58px; --gut: 32px; --hair: #e9e4ec; --idle: #6d7e99; max-width: 1680px; margin: 0 auto; padding: 0 var(--gut) 56px; color: var(--navy); }
+@media (max-width: 759px) { .cl { --hdr: 67px; --gut: 20px; } }
 
-/* Top bar: one quiet line — title, bag index, view. */
-.at-top { display: flex; flex-wrap: wrap; align-items: center; gap: 0 28px; padding: 10px 0 12px; }
-.at-title {
-  margin: 0; display: flex; align-items: baseline; gap: 12px;
-  font-family: var(--font-display); font-weight: 400; font-size: 26px; line-height: 1; letter-spacing: -0.01em;
+/* Secondary bar: breadcrumb, bag, view. */
+.at-top {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 28px; min-height: var(--sub);
+  margin: 0 calc(-1 * var(--gut)); padding: 8px var(--gut); border-bottom: 1px solid var(--hair);
 }
-.at-title-note { font-family: var(--font-body); font-size: 9.5px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--opt-idle); }
-.at-bags { display: flex; gap: 0 24px; margin-left: auto; }
-.at-views { display: flex; gap: 0 18px; padding-left: 24px; border-left: 1px solid var(--line); }
-.at-bags button, .at-views button {
-  position: relative; appearance: none; background: none; border: 0; margin: 0; padding: 12px 0; min-height: 44px; cursor: pointer;
-  font: inherit; font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--opt-idle);
-  transition: color 0.2s var(--ease);
+.at-crumbs { display: flex; gap: 10px; font-size: 14px; color: var(--idle); }
+.at-crumbs a { color: var(--idle); text-decoration: none; }
+.at-crumbs a:hover { color: var(--navy); }
+.at-crumbs [aria-current] { color: var(--navy); }
+.at-bags { display: flex; gap: 4px 22px; margin-left: auto; }
+.at-bags button {
+  appearance: none; background: none; border: 0; padding: 10px 0; min-height: 40px; cursor: pointer; font: inherit;
+  font-size: 13.5px; color: var(--idle); box-shadow: inset 0 -1px 0 transparent; transition: color 0.2s var(--ease), box-shadow 0.2s var(--ease);
 }
-.at-bags button::after, .at-views button::after {
-  content: ""; position: absolute; left: 0; right: 0; bottom: 9px; height: 1px; background: var(--navy);
-  transform: scaleX(0); transform-origin: left; transition: transform 0.35s var(--ease);
+.at-bags button:hover, .at-bags button.is-on { color: var(--navy); }
+.at-bags button.is-on { box-shadow: inset 0 -1px 0 var(--navy); }
+.at-views { display: flex; padding: 3px; border: 1px solid var(--hair); border-radius: 9px; background: #faf8fa; }
+.at-views button {
+  appearance: none; border: 0; background: none; border-radius: 7px; padding: 0 22px; min-height: 36px; cursor: pointer;
+  font: inherit; font-size: 14px; color: var(--idle); transition: background-color 0.2s var(--ease), color 0.2s var(--ease);
 }
-.at-bags button:hover, .at-views button:hover, .at-bags button.is-on, .at-views button.is-on { color: var(--navy); }
-.at-bags button.is-on::after, .at-views button.is-on::after { transform: scaleX(1); }
-.at-bags button:focus-visible, .at-views button:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
-.at-bag-n { margin-right: 7px; font-size: 9px; letter-spacing: 0.08em; opacity: 0.55; }
+.at-views button.is-on { background: #fde4f0; color: var(--navy); }
+.at-bags button:focus-visible, .at-views button:focus-visible, .at-crumbs a:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
 
-/* The stage: the bag anchored low on the pink field, its colour name set
-   large in white behind it, four small corner notes. */
-.at { display: grid; }
-.at-media { min-width: 0; }
-.at-stage { position: relative; width: 100%; aspect-ratio: var(--at-ar, 1); background: var(--pink); overflow: hidden; container-type: inline-size; }
+/* The composition: stage about 60%, panel about 40%, top-aligned. */
+.at { display: grid; align-items: start; }
+.at-media { min-width: 0; margin: 0 calc(-1 * var(--gut)); }
+.at-stage { position: relative; overflow: hidden; container-type: inline-size; aspect-ratio: 1 / 1.04; max-height: 74svh; }
+
+/* The set: a pink studio wall with soft window light from the upper right,
+   and a lighter floor that catches the light. Layered from the top. */
+.at-set {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(116deg, transparent 50%, rgba(255, 255, 255, 0.14) 57%, transparent 63%, rgba(255, 255, 255, 0.1) 69%, transparent 75%),
+    radial-gradient(110% 75% at 82% -6%, rgba(255, 255, 255, 0.5), transparent 58%),
+    linear-gradient(to bottom, transparent 58%, rgba(168, 86, 124, 0.09) 63.5%, transparent 66%),
+    linear-gradient(to bottom, transparent 62%, rgba(255, 236, 244, 0.38) 67%, rgba(255, 240, 247, 0.55) 100%),
+    radial-gradient(95% 75% at 50% 42%, transparent 52%, rgba(150, 72, 112, 0.11) 100%),
+    linear-gradient(to bottom, #f1c3d8 0%, #f5cee1 44%, #f6d3e4 62%, #f9dbea 100%);
+}
 .at-word {
-  position: absolute; z-index: 0; left: 5.5%; right: 5%; top: max(8.5%, 42px); margin: 0; pointer-events: none;
-  font-family: var(--font-display); font-weight: 400; color: #fff; font-size: 18.5cqi; line-height: 0.86; letter-spacing: -0.035em;
-  animation: at-word 0.5s var(--ease) both;
+  position: absolute; z-index: 1; left: 50%; top: var(--word-top, 12.5%); transform: translateX(-50%); margin: 0; pointer-events: none; white-space: nowrap;
+  font-family: var(--font-display); font-weight: 400; font-size: var(--word, 36cqi); line-height: 0.82; letter-spacing: -0.02em; color: #fff;
+  font-variation-settings: "opsz" 96;
 }
-@keyframes at-word { from { opacity: 0; } to { opacity: 1; } }
-.at-frame { position: absolute; z-index: 1; left: 3%; right: 3%; top: 19%; bottom: 46px; }
+.at[data-bag="nova"] { --word: 37cqi; }
+.at[data-bag="mini-luna"] { --word: 21cqi; }
+.at[data-bag="vault"] { --word: 31cqi; }
+.at[data-bag="loco"] { --word: 32cqi; --word-top: 7%; }
+.at[data-bag="mini-luna"] .at-frame { top: 25%; }
+.at[data-bag="loco"] .at-frame { top: 27%; }
+.at-frame { position: absolute; z-index: 2; left: 6%; right: 6%; top: 29%; bottom: 22%; }
 .at-frame .rc-stage { position: absolute; inset: 0; }
 .at-frame .at-photo, .at-frame .rc-canvas, .at-ghost {
   position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%;
 }
-.at-ghost { z-index: 2; opacity: 0; pointer-events: none; }
+.at-ghost { z-index: 3; opacity: 0; pointer-events: none; }
 .at-meta {
-  position: absolute; z-index: 3; margin: 0; display: flex; gap: 6px;
-  font-size: 9.5px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--navy);
+  position: absolute; z-index: 4; margin: 0; font-size: 12px; font-weight: 500; line-height: 1.65; letter-spacing: 0.32em;
+  text-transform: uppercase; color: rgba(20, 53, 98, 0.82);
 }
-.at-meta-tl { top: 18px; left: 5.5%; }
-.at-meta-tr { top: 14px; right: 5%; padding: 4px 0; }
-.at-meta-tr.is-preview { padding: 4px 8px; background: var(--navy); color: #fff; }
-.at-meta-bl { bottom: 16px; left: 5.5%; }
-.at-meta-br { bottom: 16px; right: 5%; opacity: 0.5; }
-.at-meta-dim { opacity: 0.45; }
+.at-meta-tl { top: 4.4%; left: 4.2%; }
+.at-meta-tr { top: 4.4%; right: 4.2%; text-align: right; }
+.at-meta-bl { bottom: 4.4%; left: 4.2%; }
+.at-meta-br { bottom: 4.4%; right: 4.2%; text-align: right; }
 
-/* The rail. */
-.at-rail { min-width: 0; container-type: inline-size; }
-.at-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
-.at-name { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(40px, 4.4vw, 64px); line-height: 0.95; letter-spacing: -0.02em; }
-.at-price { margin: 0; font-family: var(--font-display); font-size: 22px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* The panel. */
+.at-rail { min-width: 0; padding-top: 18px; container-type: inline-size; }
+.at-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; column-gap: 20px; padding-bottom: 22px; border-bottom: 1px solid var(--hair); }
+.at-head .at-price { align-self: center; text-align: right; }
+.at-head .at-tag { align-self: start; }
+.at-head .at-lead { align-self: start; text-align: right; }
+.at-name {
+  margin: 0; font-family: var(--font-display); font-weight: 600; font-size: clamp(46px, 4.3vw, 66px); line-height: 0.98; letter-spacing: -0.025em;
+  font-variation-settings: "opsz" 72;
+}
+.at-tag { margin: 16px 0 0; white-space: nowrap; font-size: 13px; font-weight: 600; letter-spacing: 0.3em; text-transform: uppercase; }
+.at-price { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: 30px; line-height: 1; font-variant-numeric: lining-nums; }
+.at-lead { margin: 14px 0 0; font-size: 11px; font-weight: 500; line-height: 1.6; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(20, 53, 98, 0.85); }
 
-.at-colour { margin-top: 26px; }
-.at-line { display: flex; align-items: baseline; gap: 10px; min-height: 24px; margin: 0 0 12px; white-space: nowrap; overflow: hidden; }
-.at-line-label { font-size: 9.5px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--opt-idle); }
-.at-line-name { font-size: 17px; font-weight: 500; color: var(--navy); }
-.at-line-name.is-hover { color: var(--opt-idle); }
-.at-line-kind { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 11.5px; color: var(--opt-idle); }
+.at-colour { padding: 22px 0 18px; border-bottom: 1px solid var(--hair); }
+.at-group { padding: 18px 0 14px; border-bottom: 1px solid var(--hair); }
+.at-group:last-of-type { border-bottom: 0; }
+.at-group-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.at-h { margin: 0; font-family: var(--font-body); font-size: 13px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; }
+.at-info {
+  display: inline-flex; align-items: center; gap: 7px; appearance: none; background: none; border: 0; padding: 4px 0; cursor: pointer;
+  font: inherit; font-size: 12.5px; color: var(--navy);
+}
+.at-info span { text-decoration: underline; text-underline-offset: 3px; }
+.at-info:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+.at-sub { margin: 16px 0 12px; font-size: 15px; font-weight: 500; letter-spacing: 0.05em; }
+.at-sub-dim { color: var(--idle); font-weight: 400; }
+.at-note { margin: 10px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--idle); }
+.at-note-limit { margin-top: 8px; }
 
-/* One palette: photographed colours, then previews (dashed ring). */
-.at-palette { display: grid; gap: 6px; }
-.at-swatches { display: flex; flex-wrap: wrap; gap: 6px; margin-left: -5px; }
+/* Swatches: real yarn in a circle; the selected one gets a navy ring. */
+.at-swatches { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px 8px; }
+/* The grid follows the panel's own width: six to a row only with room for
+   the longest name (Champagne, Burgundy) whole. */
+@container (max-width: 500px) { .at-swatches { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+@container (max-width: 320px) { .at-swatches { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .at-sw {
-  --sw: 44px; --dot: 34px;
-  position: relative; display: grid; place-items: center; width: var(--sw); height: var(--sw); padding: 0; margin: 0;
-  appearance: none; background: none; border: 0; border-radius: 50%; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  --d: 64px;
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 9px; min-width: 0;
+  appearance: none; background: none; border: 0; padding: 4px 0 0; margin: 0; cursor: pointer; color: var(--navy); font: inherit;
+  -webkit-tap-highlight-color: transparent;
 }
 .at-dot {
-  display: block; width: var(--dot); height: var(--dot); border-radius: 50%;
-  box-shadow: inset 0 0 0 1px rgba(20, 53, 98, 0.14); background-repeat: no-repeat;
-  transition: transform 0.28s var(--ease);
+  position: relative; display: block; width: var(--d); height: var(--d); border-radius: 50%; background-repeat: no-repeat;
+  box-shadow: 0 0 0 1px #ede6ee, 0 1px 2px rgba(20, 53, 98, 0.12);
+  transition: box-shadow 0.22s var(--ease), transform 0.22s var(--ease);
 }
-.at-sw::after {
-  content: ""; position: absolute; inset: 2px; border-radius: 50%; border: 1px solid transparent; pointer-events: none;
-  transition: border-color 0.22s var(--ease), border-width 0.22s var(--ease);
+.at-sw:hover .at-dot { transform: scale(1.04); }
+.at-sw.is-on .at-dot { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--navy); }
+.at-sw:focus-visible { outline: none; }
+.at-sw:focus-visible .at-dot { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--navy); }
+.at-sw-name {
+  display: block; max-width: 100%; text-align: center; font-size: 10px; font-weight: 500; line-height: 1.3; letter-spacing: 0.1em;
+  text-transform: uppercase; overflow-wrap: normal; word-break: keep-all;
 }
-.at-sw:hover .at-dot { transform: scale(1.06); }
-.at-sw:active .at-dot { transform: scale(0.94); }
-.at-sw.is-exp::after { border: 1px dashed rgba(20, 53, 98, 0.5); }
-.at-sw.is-on .at-dot { transform: scale(0.86); }
-.at-sw.is-on::after { border: 1.5px solid var(--navy); }
-.at-sw.is-exp.is-on::after { border: 1.5px dashed var(--navy); }
-.at-sw:focus-visible { outline: 2px solid var(--navy); outline-offset: 1px; }
+.at-sw.is-on .at-sw-name { font-weight: 600; }
+/* Preview colours: the reference's small pink marker. */
+.at-sw.is-exp .at-dot::before {
+  content: ""; position: absolute; z-index: 1; top: -5px; left: 50%; width: 11px; height: 11px; margin-left: -5.5px; border-radius: 50%;
+  background: #f6c3dc; box-shadow: 0 0 0 2px #fff;
+}
 .at-sw.is-off { cursor: not-allowed; }
-.at-sw.is-off .at-dot { opacity: 0.32; transform: none; }
-.at-sw.is-off::before {
-  content: ""; position: absolute; z-index: 1; left: 50%; top: 7px; bottom: 7px; width: 1px; background: var(--navy); transform: rotate(45deg);
+.at-sw.is-off .at-dot { opacity: 0.35; transform: none; }
+.at-sw.is-off .at-dot::after {
+  content: ""; position: absolute; left: 50%; top: 10%; bottom: 10%; width: 1px; background: var(--navy); transform: rotate(45deg);
 }
-.at-legend { display: flex; align-items: center; gap: 8px; margin: 10px 0 0; font-size: 11px; line-height: 1.45; color: var(--opt-idle); }
-.at-legend-limit { margin-top: 8px; }
-.at-legend-ring { flex: none; width: 11px; height: 11px; border-radius: 50%; border: 1px dashed var(--navy); }
+.at-sw.is-off .at-sw-name { opacity: 0.5; }
 
-/* Options: one compact row per choice. */
-.at-options { margin-top: 26px; border-top: 1px solid var(--line); }
-.at-opt { display: grid; grid-template-columns: 62px minmax(0, 1fr); align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
-.at-opt:has(+ .at-note) { border-bottom: 0; padding-bottom: 6px; }
-.at-opt-label { font-size: 9.5px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--opt-idle); }
-.at-seg { display: flex; flex-wrap: wrap; gap: 6px; }
-.at-seg button {
-  display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; margin: 0; cursor: pointer;
-  appearance: none; background: var(--paper); border: 1px solid var(--line); color: var(--navy);
-  font: inherit; font-size: 12px; font-weight: 500; letter-spacing: 0.01em; white-space: nowrap;
-  transition: background-color 0.2s var(--ease), color 0.2s var(--ease), border-color 0.2s var(--ease);
+/* Option pills: slim, outlined; the chosen one in navy. */
+.at-pills { display: flex; flex-wrap: wrap; gap: 10px 12px; margin-top: 12px; }
+.at-pill {
+  appearance: none; background: #fff; border: 1px solid #e2dfe6; border-radius: 999px; padding: 0 22px; min-height: 40px; cursor: pointer;
+  font: inherit; font-size: 14px; color: var(--idle); white-space: nowrap;
+  transition: border-color 0.2s var(--ease), color 0.2s var(--ease), box-shadow 0.2s var(--ease);
 }
-.at-seg button:hover:not(:disabled) { border-color: var(--navy); }
-.at-seg button.is-on { background: var(--navy); border-color: var(--navy); color: #fff; }
-.at-seg button:disabled { opacity: 0.4; cursor: not-allowed; }
-.at-seg button:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
-.at-delta { font-size: 10.5px; opacity: 0.7; }
-.at-note { margin: 0; padding: 0 0 10px 74px; font-size: 11.5px; line-height: 1.45; color: var(--opt-idle); border-bottom: 1px solid var(--line); }
-.at-options > .at-note:last-child { border-bottom: 0; padding-top: 10px; }
-@container (max-width: 330px) {
-  .at-opt { grid-template-columns: minmax(0, 1fr); gap: 8px; }
-  .at-note { padding-left: 0; }
-}
+.at-pill:hover:not(:disabled) { border-color: rgba(20, 53, 98, 0.45); color: var(--navy); }
+.at-pill.is-on { border-color: var(--navy); box-shadow: inset 0 0 0 0.5px var(--navy); color: var(--navy); font-weight: 500; }
+.at-pill:disabled { opacity: 0.4; cursor: not-allowed; }
+.at-pill:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+.at-guide { margin: -8px 0 0; padding: 0 0 18px; display: grid; gap: 4px; font-size: 12.5px; color: var(--idle); border-bottom: 1px solid var(--hair); }
+.at-guide div { display: flex; gap: 10px; }
+.at-guide dt { color: var(--navy); min-width: 64px; }
+.at-guide dd { margin: 0; }
 
-.at-status { margin: 18px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--navy); }
-.at-status strong { font-weight: 600; }
-.at-status.is-preview { padding: 12px 14px; background: var(--pink); }
+/* The notice. */
+.at-notice {
+  display: flex; align-items: center; gap: 18px; margin-top: 8px; padding: 18px 24px; border-radius: 12px; background: #fde7f2; color: var(--navy);
+  font-size: 14px; line-height: 1.5;
+}
+.at-notice svg { flex: none; }
+.at-notice p { margin: 0; color: var(--idle); }
+.at-notice .at-notice-h { margin-bottom: 2px; font-size: 17px; font-weight: 600; color: var(--navy); }
 .at-link { color: var(--navy); text-decoration: underline; text-underline-offset: 3px; }
 
-/* Phones: the same stage, edge to edge and not pinned, the palette right
-   beneath it. */
-@media (max-width: 767px) {
-  .at-top { gap: 0 16px; padding-top: 6px; }
-  .at-title { font-size: 22px; }
-  .at-views { margin-left: auto; padding-left: 0; border-left: 0; }
-  .at-bags { order: 3; width: 100%; margin-left: 0; justify-content: space-between; border-top: 1px solid var(--line); }
-  .at-media { margin: 0 calc(-1 * var(--gut)); }
-  .at-stage { aspect-ratio: var(--at-ar-phone, 1); max-height: 56svh; }
-  .at-frame { bottom: 40px; }
-  .at-meta-tl, .at-meta-bl { left: var(--gut); }
-  .at-meta-tr, .at-meta-br { right: var(--gut); }
-  .at-rail { padding-top: 18px; }
-  .at-name { font-size: 40px; }
-  .at-colour { margin-top: 16px; }
-  .at-seg button { min-height: 44px; }
-}
-@media (max-width: 399px) { .at-bag-n { display: none; } }
-@media (min-width: 768px) and (max-width: 899px) {
-  .at-top { gap: 0 20px; }
-  .at-bags { gap: 0 18px; }
-  .at-views { padding-left: 18px; gap: 0 14px; }
-  .at-bag-n, .at-title-note { display: none; }
-}
-
-/* Tablets and up: the editorial split. The stage stays beside the rail. */
-@media (min-width: 768px) {
-  .at { grid-template-columns: minmax(0, 62fr) minmax(286px, 38fr); align-items: start; }
-  .at-media { position: sticky; top: calc(var(--hdr) + 12px); }
-  .at-stage { max-height: calc(100svh - var(--hdr) - 28px); }
-  .at-rail { padding: 6px 0 0 clamp(22px, 3.2vw, 56px); }
-}
-@media (min-width: 768px) and (max-width: 1099px) {
-  .at-sw { --sw: 40px; --dot: 31px; }
-  .at-swatches { gap: 5px; }
-}
+/* Desktop: the stage fills the height below the bars and stays in view. */
 @media (min-width: 1100px) {
-  .at { grid-template-columns: minmax(0, 64fr) minmax(340px, 36fr); }
-  .at-rail { max-width: 500px; }
+  .at { grid-template-columns: minmax(0, 61fr) minmax(400px, 39fr); column-gap: 40px; }
+  .at-media { margin: 0; position: sticky; top: var(--hdr); }
+  .at-stage { aspect-ratio: auto; height: calc(100svh - var(--hdr) - var(--sub) - 24px); min-height: 600px; max-height: none; }
+  .at-rail { max-width: 560px; padding-right: 8px; }
+}
+/* Tablets and small laptops: the same split, rebalanced so the panel keeps
+   room for its swatches (five to a row) and the bag stays large. */
+@media (min-width: 768px) and (max-width: 1099px) {
+  .at { grid-template-columns: minmax(0, 55fr) minmax(0, 45fr); column-gap: 28px; }
+  .at-media { margin: 0; position: sticky; top: var(--hdr); }
+  .at-stage { aspect-ratio: 4 / 5; max-height: calc(100svh - var(--hdr) - var(--sub)); }
+  .at-meta { font-size: 10px; letter-spacing: 0.26em; }
+  .at-sw { --d: 50px; }
+  .at-sw-name { font-size: 9px; letter-spacing: 0.04em; }
+  .at-name { font-size: 46px; }
+  .at[data-bag="mini-luna"] .at-name { font-size: 38px; }
+  .at-price { font-size: 26px; }
+  .at-tag { font-size: 11.5px; letter-spacing: 0.22em; }
+  .at-lead { font-size: 10px; letter-spacing: 0.12em; }
+  .at-pill { padding: 0 18px; min-height: 40px; font-size: 13.5px; }
+  .at-pills { gap: 10px; }
+}
+@media (min-width: 768px) and (max-width: 899px) {
+  .at-top { gap: 8px 18px; }
+  .at-bags { order: 3; width: 100%; margin-left: 0; }
+  .at-views { margin-left: auto; }
+  .at-views button { padding: 0 14px; }
+}
+/* Phones: header, stage, then the panel in order. */
+@media (max-width: 767px) {
+  .at-top { gap: 6px 12px; }
+  .at-crumbs { font-size: 13px; }
+  .at-views { margin-left: auto; }
+  .at-views button { padding: 0 10px; font-size: 12.5px; min-height: 34px; }
+  .at-bags { order: 3; width: 100%; margin-left: 0; justify-content: space-between; }
+  .at-stage { aspect-ratio: 1 / 1.06; }
+  .at-meta { font-size: 9.5px; letter-spacing: 0.24em; }
+  .at-rail { padding-top: 22px; }
+  .at-name { font-size: 44px; }
+  .at[data-bag="mini-luna"] .at-name { font-size: 38px; }
+  .at-price { font-size: 26px; }
+  .at-head { padding-bottom: 22px; }
+  .at-swatches { gap: 14px 4px; }
+  .at-sw { --d: 50px; }
+  .at-sw-name { font-size: 9px; letter-spacing: 0.05em; }
+  .at-tag { font-size: 11px; letter-spacing: 0.2em; }
+  .at-lead { font-size: 9.5px; letter-spacing: 0.1em; }
+  .at-pill { padding: 0 18px; min-height: 44px; font-size: 14px; }
+  .at-pills { gap: 10px; }
+  .at-notice { padding: 16px 18px; gap: 14px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .at-word { animation: none; }
-  .at-dot, .at-sw::after, .at-seg button, .at-bags button::after, .at-views button::after { transition: none; }
+  .at-dot, .at-pill, .at-bags button, .at-views button { transition: none; }
 }
 
 /* Technical comparison sits under the same top bar. */

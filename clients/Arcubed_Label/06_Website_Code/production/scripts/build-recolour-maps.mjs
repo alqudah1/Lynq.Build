@@ -114,6 +114,9 @@ const FLOOR = {
 // a gold bag tints its shadow warm). A Navy preview casting a gold-tinted
 // shadow reads wrong, so for these the non-yarn pixels lose 85% of their
 // chroma. Only the preview source is changed, never the published photograph.
+/** The colour of a shadow on the studio's pink set (see the shadow pass below). */
+const SHADOW_ROSE = [138, 78, 108];
+
 const NEUTRALISE_SHADOW = new Set(["DSC05786", "DSC05776"]);
 
 // Hand-placed hardware search areas, as ellipses in 0..1 frame coordinates:
@@ -426,6 +429,36 @@ for (const [slug, frames] of Object.entries(SOURCES)) {
       mask[p] = Math.round(wgt * 255);
     }
     cleanEdges(data, mask, w, h, floorLineY(FLOOR[frame], w, h));
+    // The studio stage is a pink set, and these photographs were taken on a
+    // white seamless: their contact shadows are neutral grey and would sit on
+    // the pink like a grey smudge. Every shadow pixel outside the yarn (the
+    // floor shadow, stray fibres) keeps its exact shape and density
+    // but takes the colour of a shadow on pink: a dusky rose whose opacity
+    // follows the pixel's darkness. Light specks therefore all but vanish.
+    // The bag itself (yarn and anything opaque) is untouched.
+    for (let i = 0, p = 0; p < w * h; p++, i += 4) {
+      const a = data[i + 3];
+      // Partly transparent pixels anywhere, and opaque ones outside the bag's
+      // body (the photograph's floor right at the contact line, the backdrop
+      // seen through a handle). Opaque pixels inside the body stay as shot.
+      if (mask[p] || a === 0 || (a >= 250 && body[p])) continue;
+      const L = lab(data[i], data[i + 1], data[i + 2])[0];
+      const dark = Math.min(1, Math.max(0, (1 - L / 100) * 1.6));
+      data[i] = SHADOW_ROSE[0]; data[i + 1] = SHADOW_ROSE[1]; data[i + 2] = SHADOW_ROSE[2];
+      data[i + 3] = Math.round(a * dark);
+    }
+    // Soften the shadow's outer edge (the cut-out's matte left it ragged):
+    // a 7px blur of the shadow's opacity, applied only outside the bag.
+    {
+      const outside = (p) => !mask[p] && !body[p];
+      const sa = new Float32Array(w * h);
+      for (let p = 0; p < w * h; p++) if (outside(p)) sa[p] = data[p * 4 + 3];
+      const soft = boxBlur(sa, w, h, 3);
+      for (let p = 0; p < w * h; p++) if (outside(p)) {
+        data[p * 4] = SHADOW_ROSE[0]; data[p * 4 + 1] = SHADOW_ROSE[1]; data[p * 4 + 2] = SHADOW_ROSE[2];
+        data[p * 4 + 3] = Math.round(soft[p]);
+      }
+    }
     // q97: the renderer stretches the source's lightness, so compression
     // blocks in a q92 file became visible squares in bright highlights.
     await sharp(data, { raw: { width: w, height: h, channels: 4 } }).webp({ quality: 97, alphaQuality: 100, smartSubsample: true }).toFile(`${OUT}/${frame}-src-${W}.webp`);

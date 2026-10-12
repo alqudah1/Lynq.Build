@@ -32,18 +32,13 @@ import type { Bag, Selection } from "@/lib/types";
 import { computeUnitPrice, defaultSelectionFor, isOptIn, money } from "@/lib/pricing";
 import { framesForColour } from "@/lib/product-media";
 import RecolourStage, { loadSource, SOURCE_COLOUR_KEY } from "@/components/customizer/RecolourStage";
-import { familyOf, profilesFor, SOURCES } from "@/lib/recolour/data";
+import { profilesFor } from "@/lib/recolour/data";
 import { labToSrgb, srgbToLab, hexToRgb, buildLut, renderInto, type PreviewColour, type YarnProfile } from "@/lib/recolour/engine";
 import { PREVIEW_COLOURS, PREVIEW_SOURCES } from "@/lib/recolour/preview-colours";
 import { variantHref } from "@/lib/variant";
 
 const toHex = (rgb: number[]) => "#" + rgb.map((v) => v.toString(16).padStart(2, "0")).join("");
 
-const MATERIAL: Record<string, string> = {
-  "metallic-raffia": "Metallic raffia",
-  "matte-cord": "Matte cord",
-  "fringe-cord": "Fringe cord",
-};
 
 /** A real colourway's flat tone (shown until its texture loads): the
  *  measured mid-tone of Rand's photographed yarn, never a guessed value.
@@ -90,36 +85,6 @@ function realChip(bag: Bag, name: string, flat: string, fx: number, fy: number):
 }
 
 type Choice = { kind: "real"; colourId: string } | { kind: "exp"; key: string };
-type SegOption = { id: string | null; label: string; delta: number; disabled?: boolean };
-
-/** One option group as a compact segmented row: label, then the choices. */
-function Segment({ label, options, value, onPick }: { label: string; options: SegOption[]; value: string | null; onPick: (id: string | null) => void }) {
-  return (
-    <div className="at-opt" role="group" aria-label={label}>
-      <span className="at-opt-label" aria-hidden="true">{label}</span>
-      <div className="at-seg">
-        {options.map((o) => {
-          const on = o.id === value;
-          return (
-            <button
-              key={o.id ?? "none"}
-              type="button"
-              className={on ? "is-on" : undefined}
-              aria-pressed={on}
-              disabled={o.disabled}
-              aria-label={`${label}: ${o.label}${o.delta ? `, plus ${money(o.delta)}` : ""}${o.disabled ? ", unavailable in this colour" : ""}`}
-              onClick={() => onPick(o.id)}
-            >
-              {o.label}
-              {o.delta ? <span className="at-delta">+{o.delta}</span> : null}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 /** Why a confirmed colourway cannot be shown on the locked photograph, or null. */
 function realLimit(name: string, profile: YarnProfile | undefined, maxLightness: number | undefined): string | null {
   if (name.includes("&")) return "two yarns, which one single-yarn photograph cannot show";
@@ -128,7 +93,52 @@ function realLimit(name: string, profile: YarnProfile | undefined, maxLightness:
   return null;
 }
 
-export default function ColourStudio({ bag, index, total }: { bag: Bag; index: number; total: number }) {
+type PillOption = { id: string | null; label: string; delta: number; disabled?: boolean };
+
+/** One option group: a heading and slim outlined pills (the reference's
+ *  controls). Price differences are the catalogue's, never the reference's. */
+function Pills({ label, options, value, onPick, aside }: {
+  label: string; options: PillOption[]; value: string | null; onPick: (id: string | null) => void; aside?: React.ReactNode;
+}) {
+  return (
+    <div className="at-group" role="group" aria-label={label}>
+      <div className="at-group-head">
+        <h3 className="at-h">{label}</h3>
+        {aside}
+      </div>
+      <div className="at-pills">
+        {options.map((o) => {
+          const on = o.id === value;
+          return (
+            <button
+              key={o.id ?? "none"}
+              type="button"
+              className={`at-pill${on ? " is-on" : ""}`}
+              aria-pressed={on}
+              disabled={o.disabled}
+              title={o.disabled ? "Unavailable in this colour" : undefined}
+              onClick={() => onPick(o.id)}
+            >
+              {o.label}{o.delta ? ` (+${money(o.delta)})` : ""}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** A small "about" toggle beside a heading, opening a note in place. */
+function Info({ label, open, onToggle, controls }: { label: string; open: boolean; onToggle: () => void; controls: string }) {
+  return (
+    <button type="button" className="at-info" aria-expanded={open} aria-controls={controls} onClick={onToggle}>
+      <span>{label}</span>
+      <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" strokeWidth="1.1" /><path d="M8 7v4.2M8 4.6v.1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" /></svg>
+    </button>
+  );
+}
+
+export default function ColourStudio({ bag, productionTime }: { bag: Bag; productionTime: string | null }) {
   const refs = profilesFor(bag.slug);
   const sources = PREVIEW_SOURCES[bag.slug] ?? [];
   const source = sources.find((s) => s.locked) ?? sources.find((s) => !s.evaluation);
@@ -156,13 +166,13 @@ export default function ColourStudio({ bag, index, total }: { bag: Bag; index: n
     return { kind: "real", colourId: def && !limitOf(def.name) ? def.id : fallback?.id ?? selection.colourId };
   });
   const [expSwatches, setExpSwatches] = useState<Record<string, string>>({});
-  const [hover, setHover] = useState<string | null>(null);
+  const [aboutColours, setAboutColours] = useState(false);
+  const [sizeGuide, setSizeGuide] = useState(false);
   const [fx, fy] = SWATCH_FOCUS[bag.slug] ?? [0.5, 0.55];
   const price = computeUnitPrice(bag, selection);
 
   const realColour = bag.colours.find((c) => c.id === (choice.kind === "real" ? choice.colourId : selection.colourId))!;
   const expColour = choice.kind === "exp" ? experimental.find((c) => c.key === choice.key) ?? null : null;
-  const shownName = expColour ? expColour.name : realColour.name;
   const identity = !expColour && isSourceColour(realColour.name);
   // What the stage draws: the locked photograph unchanged, recoloured to a
   // confirmed colourway's own measured yarn, or to an experimental colour.
@@ -292,36 +302,34 @@ export default function ColourStudio({ bag, index, total }: { bag: Bag; index: n
     />
   ) : null;
 
-  const opts = (list: { id: string; label: string; priceDelta: number; compatibleWith?: string[] }[], strip?: RegExp): SegOption[] =>
-    list.map((o) => ({
-      id: o.id,
-      label: strip ? o.label.replace(strip, "").trim() || o.label : o.label,
-      delta: o.priceDelta,
-      disabled: !!o.compatibleWith && !o.compatibleWith.includes(selection.colourId),
-    }));
-  const withNone = (list: { priceDelta: number }[], o: SegOption[]) => (isOptIn(list) ? [{ id: null, label: "None", delta: 0 }, ...o] : o);
-  const sizeNote = bag.sizes?.find((s) => s.id === selection.sizeId)?.note;
-  const material = MATERIAL[familyOf(bag.slug) ?? ""];
-  // The stage takes its proportion from the bag's photograph: wide bags get
-  // a wider stage, so the field never turns into empty pink around them.
-  const srcInfo = source ? SOURCES[source.frame] : null;
-  const r = (srcInfo ? srcInfo.width / srcInfo.height : 1.4) * 0.6;
-  const ar = Math.min(1.15, Math.max(0.82, r));
-  // Phones: never taller than wide-ish, so the palette stays right below.
-  const arPhone = Math.min(1.15, Math.max(0.98, r));
-  // Hovering another swatch previews its name in the colour line.
-  const hovered = hover && hover !== shownName ? hover : null;
+  const opt = (o: { id: string; label: string; priceDelta: number; compatibleWith?: string[] }): PillOption => ({
+    id: o.id, label: o.label, delta: o.priceDelta,
+    disabled: !!o.compatibleWith && !o.compatibleWith.includes(selection.colourId),
+  });
+  // Strap and chain are one choice (a bag takes one or the other), so one
+  // group: None, each strap, each chain. Ids are prefixed by kind.
+  const straps = bag.straps ?? [], chains = bag.chains ?? [];
+  const carryLabel = straps.length && chains.length ? "Strap or chain" : straps.length ? "Strap" : "Chain";
+  const carryValue = selection.strapId ? `s:${selection.strapId}` : selection.chainId ? `c:${selection.chainId}` : null;
+  const carryOptions: PillOption[] = [
+    { id: null, label: "None", delta: 0 },
+    ...straps.map((o) => ({ ...opt(o), id: `s:${o.id}` })),
+    ...chains.map((o) => ({ ...opt(o), id: `c:${o.id}` })),
+  ];
+  const pickCarry = (id: string | null) => {
+    if (!id) { pickStrap(null); pickChain(null); return; }
+    if (id.startsWith("s:")) pickStrap(id.slice(2)); else pickChain(id.slice(2));
+  };
+  const handleOptions = bag.handles?.length ? (isOptIn(bag.handles) ? [{ id: null, label: "None", delta: 0 }, ...bag.handles.map(opt)] : bag.handles.map(opt)) : [];
+  const limited = bag.colours.filter((c) => limitOf(c.name));
+  const refused = experimental.filter((c) => tooLight(c.value));
 
   return (
-    <div className="at" style={{ ["--at-ar" as string]: ar.toFixed(3), ["--at-ar-phone" as string]: arPhone.toFixed(3) }}>
+    <div className="at" data-bag={bag.slug}>
       <div className="at-media">
         <div className="at-stage">
-          <p className="at-meta at-meta-tl">
-            <span>Nº {String(index + 1).padStart(2, "0")}</span>
-            <span className="at-meta-dim">/ {String(total).padStart(2, "0")}</span>
-          </p>
-          <p className={`at-meta at-meta-tr${expColour ? " is-preview" : ""}`}>{expColour ? "Digital preview" : identity ? "Photograph" : "Real yarn · recoloured"}</p>
-          <p key={shownName} className="at-word" aria-hidden="true">{shownName}</p>
+          <div className="at-set" aria-hidden="true" />
+          <p className="at-word" aria-hidden="true">{bag.name}</p>
           <div className="at-frame" ref={frameRef} data-frame={source?.frame}>
             {source && stageColour ? (
               <RecolourStage
@@ -340,48 +348,62 @@ export default function ColourStudio({ bag, index, total }: { bag: Bag; index: n
             )}
             <canvas ref={ghostRef} className="at-ghost" aria-hidden="true" />
           </div>
-          {material ? <p className="at-meta at-meta-bl">{material}</p> : null}
-          <p className="at-meta at-meta-br">Arcubed Atelier</p>
+          <p className="at-meta at-meta-tl">{money(price)}</p>
+          <p className="at-meta at-meta-tr">Handmade<br />in Jordan</p>
+          <p className="at-meta at-meta-bl">Arcubed<br />Atelier</p>
+          <p className="at-meta at-meta-br">One bag<br />endless colours</p>
         </div>
       </div>
 
       <div className="at-rail">
         <div className="at-head">
           <h2 className="at-name">{bag.name}</h2>
-          <p className="at-price" aria-label={`Price ${money(price)}`}>{money(price)}</p>
+          <p className="at-price">{money(price)}</p>
+          <p className="at-tag">Make it yours.</p>
+          <p className="at-lead">Handmade to order{productionTime ? <><br />{productionTime}</> : null}</p>
         </div>
 
-        <section className="at-colour" aria-label="Colour">
-          <p className="at-line">
-            <span className="at-line-label">Colour</span>
-            <span className={`at-line-name${hovered ? " is-hover" : ""}`}>{hovered ?? shownName}</span>
-            {!hovered ? <span className="at-line-kind">{expColour ? "Preview · not for sale" : "Confirmed colour"}</span> : null}
-          </p>
-          <div className="at-palette">
-            <div className="at-swatches" role="group" aria-label={`${bag.name} colours, photographed`}>
-              {bag.colours.map((c) => {
-                const on = choice.kind === "real" && c.id === choice.colourId;
-                const limit = limitOf(c.name);
-                return (
-                  <button
-                    key={c.id}
-                    type="button"
-                    className={`at-sw${on ? " is-on" : ""}${limit ? " is-off" : ""}`}
-                    aria-pressed={on}
-                    disabled={!!limit}
-                    aria-label={limit ? `${c.name}: ${limit}` : `${c.name}, confirmed colour`}
-                    title={limit ? `${c.name} — ${limit}` : c.name}
-                    onClick={() => pickReal(c.id)}
-                    onMouseEnter={() => setHover(c.name)}
-                    onMouseLeave={() => setHover(null)}
-                  >
-                    <span className="at-dot" style={realChip(bag, c.name, realSwatch(c.name, refs, bag.slug, c.hex ?? null), fx, fy)} />
-                  </button>
-                );
-              })}
-            </div>
-            {experimental.length && source ? (
-              <div className="at-swatches at-swatches-exp" role="group" aria-label="Experimental colours, digital previews, not for sale">
+        <section className="at-colour" aria-labelledby="at-colour-h">
+          <div className="at-group-head">
+            <h3 id="at-colour-h" className="at-h">Colour</h3>
+            <Info label="About our colours" open={aboutColours} onToggle={() => setAboutColours((v) => !v)} controls="at-about-colours" />
+          </div>
+          {aboutColours ? (
+            <p id="at-about-colours" className="at-note">
+              Every colour is shown on the same photograph of the {bag.name}{source ? ` (the ${source.colour} one)` : ""}: only the yarn changes.
+              Real colours are recoloured to Rand&rsquo;s own photographed yarn of that colour. Preview colours are digital, for admin
+              review, and cannot be ordered.
+              {limited.map((c) => ` ${c.name} is crossed out: ${limitOf(c.name)}.`).join("")}
+              {refused.length ? ` ${refused.map((c) => c.name).join(", ")} ${refused.length > 1 ? "are" : "is"} crossed out: too light for this photograph.` : ""}
+            </p>
+          ) : null}
+
+          <p className="at-sub">Real colours</p>
+          <div className="at-swatches" role="group" aria-label={`${bag.name} real colours`}>
+            {bag.colours.map((c) => {
+              const on = choice.kind === "real" && c.id === choice.colourId;
+              const limit = limitOf(c.name);
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  className={`at-sw${on ? " is-on" : ""}${limit ? " is-off" : ""}`}
+                  aria-pressed={on}
+                  disabled={!!limit}
+                  aria-label={limit ? `${c.name}: ${limit}` : `${c.name}, real colour`}
+                  title={limit ? `${c.name}: ${limit}` : undefined}
+                  onClick={() => pickReal(c.id)}
+                >
+                  <span className="at-dot" style={realChip(bag, c.name, realSwatch(c.name, refs, bag.slug, c.hex ?? null), fx, fy)} />
+                  <span className="at-sw-name">{c.name}</span>
+                </button>
+              );
+            })}
+          </div>
+          {experimental.length && source ? (
+            <>
+              <p className="at-sub">Preview colours <span className="at-sub-dim">· Admin review · Not for sale</span></p>
+              <div className="at-swatches" role="group" aria-label="Preview colours, digital, not for sale">
                 {experimental.map((c) => {
                   const off = tooLight(c.value);
                   const on = choice.kind === "exp" && choice.key === c.key;
@@ -392,69 +414,69 @@ export default function ColourStudio({ bag, index, total }: { bag: Bag; index: n
                       className={`at-sw is-exp${on ? " is-on" : ""}${off ? " is-off" : ""}`}
                       aria-pressed={on}
                       disabled={off}
-                      aria-label={off ? `${c.name}: no reliable preview for this bag` : `${c.name}, digital preview, not for sale`}
-                      title={off ? `${c.name} — no reliable preview` : `${c.name} — digital preview`}
+                      aria-label={off ? `${c.name}: too light for this photograph` : `${c.name}, digital preview, not for sale`}
+                      title={off ? `${c.name}: too light for this photograph` : undefined}
                       onClick={() => pickExp(c.key)}
-                      onMouseEnter={() => setHover(c.name)}
-                      onMouseLeave={() => setHover(null)}
                     >
                       <span
                         className="at-dot"
                         style={{ background: c.swatch, backgroundImage: expSwatches[c.key] ? `url(${expSwatches[c.key]})` : undefined, backgroundSize: "cover" }}
                       />
+                      <span className="at-sw-name">{c.name}</span>
                     </button>
                   );
                 })}
               </div>
-            ) : null}
-          </div>
-          {bag.colours.some((c) => limitOf(c.name)) ? (
-            <p className="at-legend at-legend-limit">
-              {bag.colours.filter((c) => limitOf(c.name)).map((c) => `${c.name}: ${limitOf(c.name)}`).join(" · ")}
-            </p>
-          ) : null}
-          {experimental.length && source ? (
-            <p className="at-legend">
-              <span className="at-legend-ring" aria-hidden="true" />
-              Digital previews · admin review, not for sale
-              {experimental.some((c) => tooLight(c.value)) ? <> · crossed out: too light for this photograph</> : null}
-            </p>
+            </>
           ) : null}
         </section>
 
-        <div className="at-options">
-          {bag.sizes?.length ? (
-            <Segment label="Size" options={opts(bag.sizes)} value={selection.sizeId} onPick={(sizeId) => sizeId && setSelection((p) => ({ ...p, sizeId }))} />
-          ) : null}
-          {sizeNote ? <p className="at-note">{sizeNote}</p> : null}
-          {bag.handles?.length ? (
-            <Segment label="Handle" options={withNone(bag.handles, opts(bag.handles))} value={selection.handleId}
-              onPick={(handleId) => setSelection((p) => ({ ...p, handleId }))} />
-          ) : null}
-          {bag.straps?.length ? (
-            <Segment label="Strap" options={withNone(bag.straps, opts(bag.straps, /\s*strap$/i))} value={selection.strapId} onPick={pickStrap} />
-          ) : null}
-          {bag.chains?.length ? (
-            <Segment label="Chain" options={withNone(bag.chains, opts(bag.chains, /\s*chain$/i))} value={selection.chainId} onPick={pickChain} />
-          ) : null}
-          {bag.straps?.length && bag.chains?.length ? <p className="at-note">A strap or a chain, not both.</p> : null}
-        </div>
+        {bag.sizes?.length ? (
+          <Pills
+            label="Size"
+            options={bag.sizes.map(opt)}
+            value={selection.sizeId}
+            onPick={(sizeId) => sizeId && setSelection((p) => ({ ...p, sizeId }))}
+            aside={bag.sizes.some((s) => s.note) ? <Info label="Size guide" open={sizeGuide} onToggle={() => setSizeGuide((v) => !v)} controls="at-size-guide" /> : null}
+          />
+        ) : null}
+        {sizeGuide && bag.sizes?.length ? (
+          <dl id="at-size-guide" className="at-guide">
+            {bag.sizes.filter((s) => s.note).map((s) => <div key={s.id}><dt>{s.label}</dt><dd>{s.note}</dd></div>)}
+          </dl>
+        ) : null}
+        {handleOptions.length ? (
+          <Pills label="Handle" options={handleOptions} value={selection.handleId} onPick={(handleId) => setSelection((p) => ({ ...p, handleId }))} />
+        ) : null}
+        {straps.length || chains.length ? (
+          <Pills label={carryLabel} options={carryOptions} value={carryValue} onPick={pickCarry} />
+        ) : null}
 
-        <p className={`at-status${expColour ? " is-preview" : ""}`} role="status">
-          {expColour && source ? (
-            <>
-              <strong>Not available to order.</strong> {expColour.name} is an unconfirmed colour, recoloured from the {source.colour} {bag.name} photograph.
-            </>
+        <div className={`at-notice${expColour ? " is-preview" : ""}`} role="status">
+          {expColour ? (
+            <svg viewBox="0 0 28 28" width="28" height="28" aria-hidden="true"><path d="M2.5 14S7 6.5 14 6.5 25.5 14 25.5 14 21 21.5 14 21.5 2.5 14 2.5 14Z" fill="none" stroke="currentColor" strokeWidth="1.5" /><circle cx="14" cy="14" r="4" fill="none" stroke="currentColor" strokeWidth="1.5" /><circle cx="14" cy="14" r="1.6" fill="currentColor" /></svg>
           ) : (
-            <>
-              <strong>Confirmed colour.</strong>{" "}
-              {identity
-                ? <>Rand&rsquo;s photograph of the {bag.name} in {realColour.name}. </>
-                : source ? <>The {source.colour} photograph, recoloured to Rand&rsquo;s photographed {realColour.name} yarn. </> : null}
-              <Link href={variantHref(bag.slug, realColour.name)} className="at-link">View {realColour.name} on the shop</Link>
-            </>
+            <svg viewBox="0 0 28 28" width="28" height="28" aria-hidden="true"><circle cx="14" cy="14" r="11" fill="none" stroke="currentColor" strokeWidth="1.5" /><path d="M9 14.3l3.3 3.2L19.2 10.6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
           )}
-        </p>
+          <div>
+            {expColour ? (
+              <>
+                <p className="at-notice-h">Preview only</p>
+                <p>This colour is a digital preview and is not available to order.</p>
+              </>
+            ) : (
+              <>
+                <p className="at-notice-h">{identity ? "Photographed colour" : "Confirmed colour"}</p>
+                <p>
+                  {identity
+                    ? <>Rand&rsquo;s photograph of the {bag.name} in {realColour.name}. </>
+                    : source ? <>Shown on the {source.colour} photograph, recoloured to Rand&rsquo;s {realColour.name} yarn. </> : null}
+                  <Link href={variantHref(bag.slug, realColour.name)} className="at-link">Order {realColour.name} on the shop</Link>
+                </p>
+              </>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
