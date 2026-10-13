@@ -2972,6 +2972,7 @@ html { overflow-anchor: none; }
 .at-sub-dim { color: var(--idle); font-weight: 400; }
 .at-note { margin: 10px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--idle); }
 .at-note-limit { margin-top: 8px; }
+.at-note-intro { margin: -4px 0 14px; max-width: 46ch; }
 
 /* Swatches: real yarn in a circle; the selected one gets a navy ring. */
 .at-swatches { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px 8px; }
@@ -3092,6 +3093,24 @@ html { overflow-anchor: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .at-dot, .at-pill, .at-bags button, .at-views button { transition: none; }
+}
+
+/* Client preview (/atelier-preview): the same studio under a short intro
+   instead of the admin bar. */
+.cl.ap { --sub: 92px; }
+.ap-intro {
+  display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 32px; min-height: var(--sub);
+  margin: 0 calc(-1 * var(--gut)); padding: 18px var(--gut) 14px; border-bottom: 1px solid var(--hair);
+}
+.ap-kicker { margin: 0 0 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.3em; text-transform: uppercase; }
+.ap-title { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(22px, 2.2vw, 30px); line-height: 1.15; letter-spacing: -0.01em; }
+.ap-bags { margin-left: 0; gap: 4px 26px; }
+.ap-bags button { font-size: 14px; letter-spacing: 0.04em; }
+@media (max-width: 767px) {
+  .cl.ap { --sub: 0px; }
+  .ap-intro { padding: 16px var(--gut) 0; gap: 10px; }
+  .ap-title { font-size: 21px; }
+  .ap-bags { width: 100%; justify-content: space-between; }
 }
 
 /* Technical comparison sits under the same top bar. */

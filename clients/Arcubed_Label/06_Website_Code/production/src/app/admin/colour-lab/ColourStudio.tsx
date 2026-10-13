@@ -138,7 +138,11 @@ function Info({ label, open, onToggle, controls }: { label: string; open: boolea
   );
 }
 
-export default function ColourStudio({ bag, productionTime }: { bag: Bag; productionTime: string | null }) {
+export default function ColourStudio({ bag, productionTime, client = false }: {
+  bag: Bag; productionTime: string | null;
+  /** The client preview (/atelier-preview): written for Rand, no shop link, no admin wording. */
+  client?: boolean;
+}) {
   const refs = profilesFor(bag.slug);
   const sources = PREVIEW_SOURCES[bag.slug] ?? [];
   const source = sources.find((s) => s.locked) ?? sources.find((s) => !s.evaluation);
@@ -366,9 +370,17 @@ export default function ColourStudio({ bag, productionTime }: { bag: Bag; produc
         <section className="at-colour" aria-labelledby="at-colour-h">
           <div className="at-group-head">
             <h3 id="at-colour-h" className="at-h">Colour</h3>
-            <Info label="About our colours" open={aboutColours} onToggle={() => setAboutColours((v) => !v)} controls="at-about-colours" />
+            <Info label={client ? "About these colours" : "About our colours"} open={aboutColours} onToggle={() => setAboutColours((v) => !v)} controls="at-about-colours" />
           </div>
-          {aboutColours ? (
+          {aboutColours && client ? (
+            <p id="at-about-colours" className="at-note">
+              Every colour is shown on the same photograph of your {bag.name}: only the yarn changes. Collection colours are
+              matched to your own photographs of each yarn. New colours are digital previews of how the bag could look, not
+              photographs of finished bags.
+              {limited.map((c) => ` ${c.name} isn\u2019t shown here: it uses two yarns, which a photograph of one yarn can\u2019t recreate faithfully.`).join("")}
+              {refused.length ? ` ${refused.map((c) => c.name).join(", ")} ${refused.length > 1 ? "aren\u2019t" : "isn\u2019t"} available for the ${bag.name} yet: its photograph is too dark to show light colours faithfully.` : ""}
+            </p>
+          ) : aboutColours ? (
             <p id="at-about-colours" className="at-note">
               Every colour is shown on the same photograph of the {bag.name}{source ? ` (the ${source.colour} one)` : ""}: only the yarn changes.
               Real colours are recoloured to Rand&rsquo;s own photographed yarn of that colour. Preview colours are digital, for admin
@@ -378,7 +390,7 @@ export default function ColourStudio({ bag, productionTime }: { bag: Bag; produc
             </p>
           ) : null}
 
-          <p className="at-sub">Real colours</p>
+          <p className="at-sub">{client ? "Collection colours" : "Real colours"}</p>
           <div className="at-swatches" role="group" aria-label={`${bag.name} real colours`}>
             {bag.colours.map((c) => {
               const on = choice.kind === "real" && c.id === choice.colourId;
@@ -402,8 +414,18 @@ export default function ColourStudio({ bag, productionTime }: { bag: Bag; produc
           </div>
           {experimental.length && source ? (
             <>
-              <p className="at-sub">Preview colours <span className="at-sub-dim">· Admin review · Not for sale</span></p>
-              <div className="at-swatches" role="group" aria-label="Preview colours, digital, not for sale">
+              {client ? (
+                <>
+                  <p className="at-sub">Explore new colours <span className="at-sub-dim">· Digital previews</span></p>
+                  <p className="at-note at-note-intro">
+                    These digital previews show how your bags could look in additional colours. Final colours can be confirmed
+                    before adding them to the collection.
+                  </p>
+                </>
+              ) : (
+                <p className="at-sub">Preview colours <span className="at-sub-dim">· Admin review · Not for sale</span></p>
+              )}
+              <div className="at-swatches" role="group" aria-label={client ? "New colours, digital previews" : "Preview colours, digital, not for sale"}>
                 {experimental.map((c) => {
                   const off = tooLight(c.value);
                   const on = choice.kind === "exp" && choice.key === c.key;
@@ -414,7 +436,7 @@ export default function ColourStudio({ bag, productionTime }: { bag: Bag; produc
                       className={`at-sw is-exp${on ? " is-on" : ""}${off ? " is-off" : ""}`}
                       aria-pressed={on}
                       disabled={off}
-                      aria-label={off ? `${c.name}: too light for this photograph` : `${c.name}, digital preview, not for sale`}
+                      aria-label={off ? `${c.name}: too light for this photograph` : `${c.name}, digital preview${client ? "" : ", not for sale"}`}
                       title={off ? `${c.name}: too light for this photograph` : undefined}
                       onClick={() => pickExp(c.key)}
                     >
@@ -459,10 +481,24 @@ export default function ColourStudio({ bag, productionTime }: { bag: Bag; produc
             <svg viewBox="0 0 28 28" width="28" height="28" aria-hidden="true"><circle cx="14" cy="14" r="11" fill="none" stroke="currentColor" strokeWidth="1.5" /><path d="M9 14.3l3.3 3.2L19.2 10.6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
           )}
           <div>
-            {expColour ? (
+            {expColour && client ? (
+              <>
+                <p className="at-notice-h">Digital preview</p>
+                <p>A digital example of the {bag.name} in {expColour.name}, not a photograph of a finished bag. It can be confirmed before it&rsquo;s added to the collection.</p>
+              </>
+            ) : expColour ? (
               <>
                 <p className="at-notice-h">Preview only</p>
                 <p>This colour is a digital preview and is not available to order.</p>
+              </>
+            ) : client ? (
+              <>
+                <p className="at-notice-h">In the collection</p>
+                <p>
+                  {identity
+                    ? <>Your photograph of the {bag.name} in {realColour.name}.</>
+                    : source ? <>Shown on the {source.colour} photograph, matched to your {realColour.name} yarn.</> : null}
+                </p>
               </>
             ) : (
               <>
