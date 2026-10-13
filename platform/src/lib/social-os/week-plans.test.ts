@@ -130,6 +130,10 @@ describe("week plan Oct 12", () => {
     for (const p of plan.feed) expect(planMarker(plan.key, `${p.key}-story`)).toBe(`${planMarker(plan.key, p.key)}-story`);
   });
 
+  it("feed captions never introduce the founder by name (LinkedIn posts from his own profile may)", () => {
+    for (const p of [...plan.feed.filter((p) => !(p.platforms ?? []).includes("linkedin")), ...plan.reels]) for (const text of [p.hook, p.body, p.facebookBody ?? ""]) expect(text, p.key).not.toMatch(/mustafa/i);
+  });
+
   it("LYNQ copy never names a city: who we are and what we build, not where", () => {
     const lynq = [...plan.feed, ...plan.reels].filter((p) => p.brand.brandKey === "lynq");
     for (const p of lynq) for (const text of [p.title, p.hook, p.body, p.facebookBody ?? "", ...(p.hashtags ?? [])]) expect(text, p.key).not.toMatch(/toronto|amman|gta\b|two cities/i);
