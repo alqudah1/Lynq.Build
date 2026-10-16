@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { approvalKeyboard, buildApprovalCaption, draftKeyboard, groupByPost, nextPostPerBrand, runMorningTelegramSend, encodeDecision, handleTelegramUpdate, parseDecision, registerTelegramWebhook, telegramEnabled, telegramWebhookSecret, verifyTelegramWebhookSecret, type TelegramEnv } from "./telegram";
+import { approvalKeyboard, attachTargets, buildApprovalCaption, draftKeyboard, encodeAttach, groupByPost, incomingMedia, nextPostPerBrand, parseAttach, TELEGRAM_FILE_LIMIT, runMorningTelegramSend, encodeDecision, handleTelegramUpdate, parseDecision, registerTelegramWebhook, telegramEnabled, telegramWebhookSecret, verifyTelegramWebhookSecret, type TelegramEnv } from "./telegram";
 
 const TOKEN = "123456789:AAH-abcdefghijklmnopqrstuvwxyz012345";
 const env: TelegramEnv = { TELEGRAM_BOT_TOKEN: TOKEN, TELEGRAM_CHAT_ID: "555", TELEGRAM_APPROVER_EMAIL: "owner@lynq.build", AUTH_SECRET: "s".repeat(40), AUTH_BASE_URL: "https://office.example" };
@@ -144,6 +144,49 @@ describe("/drafts default: the next post per brand", () => {
 
   it("is empty when nothing has an image yet", () => {
     expect(nextPostPerBrand([d({ item: "x", brand: "lynq", platform: "instagram", format: "image", at: "2026-10-12T16:15Z", assets: [] })])).toEqual([]);
+  });
+});
+
+describe("a video or picture sent to the bot", () => {
+  const img = [{ id: "a", title: "", assetType: "image", contentType: "image/png", width: 1, height: 1, previewUrl: "" }];
+  const d = (o: { item: string; brand: string; platform: string; format: string; at: string; assets?: typeof img }) =>
+    ({ contentItemId: o.item, brandProfileId: o.brand, brandName: o.brand, title: o.item, brief: {}, submittedAt: new Date(), assets: o.assets ?? [], variant: { id: `${o.item}-${o.platform}`, platform: o.platform, format: o.format, scheduledFor: new Date(o.at) } }) as unknown as Parameters<typeof attachTargets>[0][number];
+
+  it("recognises a video, a video sent as a file, and the largest photo size; ignores other files", () => {
+    expect(incomingMedia({ video: { file_id: "v", mime_type: "video/mp4" } })?.kind).toBe("video");
+    expect(incomingMedia({ document: { file_id: "d", mime_type: "video/quicktime" } })?.contentType).toBe("video/quicktime");
+    expect(incomingMedia({ document: { file_id: "d", mime_type: "application/pdf" } })).toBeNull();
+    const photo = incomingMedia({ photo: [{ file_id: "small", file_size: 10 }, { file_id: "big", file_size: 900 }] });
+    expect(photo?.file.file_id).toBe("big");
+    expect(photo?.kind).toBe("image");
+    expect(incomingMedia({ text: "hi" })).toBeNull();
+    expect(TELEGRAM_FILE_LIMIT).toBe(20 * 1024 * 1024);
+  });
+
+  it("attach buttons carry short id prefixes that fit Telegram's 64-byte limit and round-trip", () => {
+    const data = encodeAttach("6ce3d4e9-0d42-4f92-ab4b-dcf577e6f1de", "0d42f92a-6ce3-4f92-ab4b-dcf577e6f1de");
+    expect(Buffer.byteLength(data)).toBeLessThanOrEqual(64);
+    expect(parseAttach(data)).toEqual({ assetPrefix: "6ce3d4e9", variantPrefix: "0d42f92a" });
+    expect(parseAttach("att:zz:yy")).toBeNull();
+    expect(parseAttach("a:6ce3d4e9-0d42-4f92-ab4b-dcf577e6f1de:3")).toBeNull();
+  });
+
+  it("a video is offered to the reels and video posts still missing media, one per post, soonest first, at most six", () => {
+    const out = attachTargets(
+      [
+        d({ item: "reel-2", brand: "lynq", platform: "instagram", format: "reel", at: "2026-10-16T22:30Z" }),
+        d({ item: "reel-1", brand: "codeit", platform: "facebook", format: "video", at: "2026-10-16T20:30Z" }),
+        d({ item: "reel-1", brand: "codeit", platform: "instagram", format: "reel", at: "2026-10-16T20:30Z" }),
+        d({ item: "done", brand: "lynq", platform: "instagram", format: "reel", at: "2026-10-15T20:30Z", assets: img }),
+        d({ item: "post", brand: "lynq", platform: "instagram", format: "image", at: "2026-10-16T16:15Z" }),
+        d({ item: "li", brand: "lynq", platform: "linkedin", format: "video", at: "2026-10-16T08:00Z" }),
+      ],
+      "video"
+    );
+    expect(out.map((x) => x.variant.id)).toEqual(["reel-1-instagram", "reel-2-instagram"]);
+    expect(attachTargets([d({ item: "post", brand: "lynq", platform: "instagram", format: "image", at: "2026-10-16T16:15Z" })], "image").map((x) => x.contentItemId)).toEqual(["post"]);
+    const many = Array.from({ length: 9 }, (_, i) => d({ item: `r${i}`, brand: "lynq", platform: "instagram", format: "reel", at: `2026-10-${10 + i}T20:30Z` }));
+    expect(attachTargets(many, "video")).toHaveLength(6);
   });
 });
 
