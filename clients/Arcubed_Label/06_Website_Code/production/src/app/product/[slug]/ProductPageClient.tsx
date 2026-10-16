@@ -1,56 +1,48 @@
 "use client";
 
-// The product itself is already fetched server-side (page.tsx). This client
-// wrapper only handles the part that genuinely needs the browser: resolving
-// ?edit=<lineId> against the localStorage-backed cart. useSearchParams still
-// needs its own Suspense boundary per Next.js docs, so the page can prerender
-// around it.
+// The product itself is fetched server-side (page.tsx), and so is ?edit=: the
+// Atelier is in the first HTML, so nothing moves when the page hydrates. (It
+// used to read ?edit= with useSearchParams inside a Suspense boundary whose
+// fallback was empty: the page arrived without its product, the footer showed
+// at the top of the screen, and was then pushed away, a layout shift on every
+// product page.) Only the cart line being edited needs the browser, because
+// the cart lives in localStorage.
 
-import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
 import type { Bag } from "@/lib/types";
 import { useCart } from "@/lib/cart-context";
-import Customizer from "@/components/customizer/Customizer";
-
-function ProductPageInner({ bag, initialColourId, productionTimeLabel }: { bag: Bag; initialColourId: string | null; productionTimeLabel: string | null }) {
-  const searchParams = useSearchParams();
-  const { cart, hydrated } = useCart();
-
-  const editLineId = searchParams.get("edit");
-  // Only a made-to-order line is ever editable via the customizer — a
-  // Ready for Delivery line has no live configuration to reopen.
-  const found = editLineId ? cart.find((l) => l.lineId === editLineId) ?? null : null;
-  const editingLine = found && found.kind === "made_to_order" ? found : null;
-
-  // Waiting on the localStorage-backed cart to hydrate before mounting the
-  // customizer avoids a flash of default options when editing an existing line.
-  if (editLineId && !hydrated) {
-    return null;
-  }
-
-  return (
-    <Customizer
-      key={`${editingLine?.lineId ?? bag.id}:${initialColourId ?? ""}`}
-      bag={bag}
-      initialColourId={initialColourId}
-      editingLine={editingLine}
-      productionTimeLabel={productionTimeLabel}
-    />
-  );
-}
+import Atelier from "@/components/atelier/Atelier";
 
 export default function ProductPageClient({
   bag,
   initialColourId,
   productionTimeLabel,
+  editLineId,
 }: {
   bag: Bag;
   initialColourId: string | null;
   productionTimeLabel: string | null;
+  editLineId: string | null;
 }) {
+  const { cart, hydrated } = useCart();
+  // Only a made-to-order line is ever editable — a Ready for Delivery line
+  // has no live configuration to reopen.
+  const found = editLineId ? cart.find((l) => l.lineId === editLineId) ?? null : null;
+  const editingLine = found && found.kind === "made_to_order" ? found : null;
+  // Editing: wait for the cart before mounting, so the line's options (not
+  // the defaults) are what appears.
+  if (editLineId && !hydrated) return null;
+
   return (
-    <Suspense fallback={null}>
-      <ProductPageInner bag={bag} initialColourId={initialColourId} productionTimeLabel={productionTimeLabel} />
-    </Suspense>
+    // The Colour Atelier Rand approved (2026-10-13) is the product page.
+    <div className="cl at-shop">
+      <Atelier
+        key={`${editingLine?.lineId ?? bag.id}:${initialColourId ?? ""}`}
+        bag={bag}
+        mode="shop"
+        initialColourId={initialColourId}
+        editingLine={editingLine}
+        productionTime={productionTimeLabel}
+      />
+    </div>
   );
 }

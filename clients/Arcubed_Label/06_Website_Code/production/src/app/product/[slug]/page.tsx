@@ -57,6 +57,7 @@ export default async function ProductPage(props: PageProps<"/product/[slug]">) {
       bag={bag}
       initialColourId={initialColour?.id ?? null}
       productionTimeLabel={storeSettings?.productionTimeLabel ? plainText(storeSettings.productionTimeLabel) : null}
+      editLineId={typeof searchParams.edit === "string" ? searchParams.edit : null}
     />
   );
 }

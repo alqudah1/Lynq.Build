@@ -538,6 +538,8 @@ export interface OrderConfirmationLine {
   unitPrice: number;
   bagSlug: string | null;
   colourName: string | null;
+  /** The colour's yarn code at order time: draws the thumbnail of a colour with no photograph. */
+  colourHex: string | null;
 }
 
 export interface OrderConfirmation {
@@ -598,6 +600,7 @@ export async function getOrderByConfirmationToken(token: string): Promise<OrderC
       unitPrice: Number(it.unit_price),
       bagSlug: str("bagSlug"),
       colourName: str("colourName"),
+      colourHex: str("colourHex"),
     };
   });
 

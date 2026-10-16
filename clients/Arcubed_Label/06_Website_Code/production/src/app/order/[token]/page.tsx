@@ -10,12 +10,11 @@
 import { notFound } from "next/navigation";
 import { plainText } from "@/lib/site-settings";
 import Link from "next/link";
-import Image from "next/image";
 import { getOrderByConfirmationToken } from "@/lib/orders";
 import { getStoreSettings } from "@/lib/repository";
 import { formatMoney } from "@/lib/site-settings";
 import { paymentMethodLabel } from "@/lib/payment";
-import { mediaForSnapshot } from "@/lib/product-media";
+import SnapshotThumb from "@/components/atelier/SnapshotThumb";
 
 export const dynamic = "force-dynamic";
 
@@ -59,14 +58,10 @@ export default async function OrderConfirmationPage(props: { params: Promise<{ t
           <p className="co-legend">Your pieces</p>
           <ul className="oc-lines">
             {order.lines.map((l, i) => {
-              const frame = mediaForSnapshot(l.bagSlug, l.name, l.colourName);
               return (
                 <li key={i} className="oc-line">
                   <span className="co-thumb">
-                    {frame ? (
-                      <Image src={frame.photoSmall} alt="" width={160}
-                             height={Math.round(160 / frame.ratio)} sizes="72px" />
-                    ) : null}
+                    <SnapshotThumb bagSlug={l.bagSlug} bagName={l.name} colourName={l.colourName} colourHex={l.colourHex} width={160} sizes="72px" />
                   </span>
                   <span className="co-line-body">
                     <span className="co-line-name">{l.name}</span>

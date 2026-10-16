@@ -40,6 +40,7 @@ export default async function AdminInquiriesPage() {
       <nav className="adm-tabs" aria-label="Admin sections">
         <Link href="/admin/orders">Orders</Link>
         <Link href="/admin/inquiries" aria-current="page">
+        <Link href="/admin/colours">Colours</Link>
           Inquiries{unread ? ` (${unread})` : ""}
         </Link>
       </nav>

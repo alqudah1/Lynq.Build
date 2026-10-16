@@ -33,7 +33,6 @@
 // Exits non-zero on any failure, so it can gate a deploy.
 
 import sharp from "sharp";
-import { realDims } from "./lib-imagesize.mjs";
 
 const CDP = process.env.CDP || "http://127.0.0.1:9222";
 const BASE = process.env.BASE || "http://127.0.0.1:4311";
@@ -101,123 +100,52 @@ const ok = (name, cond, detail = "") => {
   console.log(`  ${cond ? "PASS" : "FAIL"}  ${name}${detail ? "  -> " + detail : ""}`);
 };
 
-/** A real finger, not element.click(): the thumbnails are touch targets. */
-async function tap(x, y) {
-  const point = [{ x, y, radiusX: 12, radiusY: 12, force: 1 }];
-  await send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: point });
-  await new Promise((r) => setTimeout(r, 45));
-  await send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-  await new Promise((r) => setTimeout(r, 320));
-}
-
+// PRODUCT PAGES (the Colour Atelier, 2026-10-15). The stage is one locked
+// photograph per bag drawn on a canvas; Rand's own photographs of the chosen
+// colour sit in a row beneath it. Checked: the stage is drawn at full
+// resolution for the box it sits in, and the photographs all load, are
+// different pictures, belong to the chosen colour and carry alt text.
 for (const slug of PRODUCTS) {
   for (const v of VIEWS) {
     console.log(`\n=== /product/${slug} @ ${v.w}css DPR${v.dpr} ===`);
-    await send("Emulation.setDeviceMetricsOverride", {
-      width: v.w, height: v.h, deviceScaleFactor: v.dpr, mobile: true,
-    });
+    await send("Emulation.setDeviceMetricsOverride", { width: v.w, height: v.h, deviceScaleFactor: v.dpr, mobile: true });
     await send("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 5 });
     await send("Page.navigate", { url: `${BASE}/product/${slug}` });
-    await new Promise((r) => setTimeout(r, 2600));
-
-    const n = (await send("Runtime.evaluate", {
-      returnByValue: true,
-      expression: `document.querySelectorAll('.pg-thumb').length`,
-    })).result.value;
-
-    if (!n) {
-      // A single-frame colourway renders no strip at all, which is correct.
-      const only = (await send("Runtime.evaluate", {
-        returnByValue: true, expression: `document.querySelector('.pg-img')?.currentSrc ?? ""`,
-      })).result.value;
-      ok("single-frame gallery renders its one image", Boolean(only));
-      continue;
+    let st = null;
+    for (let t = 0; t < 80; t++) {
+      await new Promise((r) => setTimeout(r, 200));
+      st = (await send("Runtime.evaluate", { returnByValue: true, expression: `(()=>{const f=document.querySelector('.at-frame');
+        if(!f)return null;const el=f.dataset.render==='photo'?f.querySelector('img'):f.querySelector('.rc-canvas[data-render-ms]');
+        if(!el)return null;if(el.tagName==='IMG'&&!(el.complete&&el.naturalWidth))return null;
+        const r=f.getBoundingClientRect();return {kind:el.tagName,w:el.tagName==='IMG'?el.naturalWidth:el.width,h:el.tagName==='IMG'?el.naturalHeight:el.height,
+        boxW:r.width,boxH:r.height,colour:document.querySelector('.at-sw.is-on')?.getAttribute('aria-label')};})()` })).result.value;
+      if (st) break;
     }
+    ok("stage draws the bag", Boolean(st), st ? `${st.kind} ${st.w}x${st.h}` : "nothing drawn");
+    if (!st) continue;
+    // object-fit: contain inside the frame box: the bag's drawn width in physical px
+    const drawnW = Math.min(st.boxW, st.boxH * (st.w / st.h)) * v.dpr;
+    const ppp = st.w / drawnW;
+    ok("stage drawn at full resolution", ppp >= 0.9, `ppp ${ppp.toFixed(2)} (${st.w}px source for ${Math.round(drawnW)} physical px)`);
 
-    const seenStems = [];
-    const seenUrls = [];
-    for (let i = 0; i < n; i++) {
-      // Scroll and MEASURE AFTERWARDS, as two steps. Selecting a portrait
-      // frame makes the main stage 220px taller, so the strip moves under
-      // the finger: a rect read in the same turn as the scroll is stale, and
-      // the tap lands on whatever slid into that spot.
-      await send("Runtime.evaluate", {
-        expression: `document.querySelectorAll('.pg-thumb')[${i}].scrollIntoView({block:'center'})`,
-      });
-      await new Promise((r) => setTimeout(r, 260));
-      const box = (await send("Runtime.evaluate", {
-        returnByValue: true,
-        expression: `(()=>{const r=document.querySelectorAll('.pg-thumb')[${i}].getBoundingClientRect();
-          return {x:r.left+r.width/2, y:r.top+r.height/2, w:r.width, h:r.height};})()`,
-      })).result.value;
-      await tap(box.x, box.y);
-
-      // The stage <img> is keyed on the frame, so selecting a thumbnail
-      // REMOUNTS it and currentSrc is briefly "". Wait for the new element
-      // to have actually resolved a candidate before reading anything off it.
-      for (let t = 0; t < 40; t++) {
-        const ready = (await send("Runtime.evaluate", {
-          returnByValue: true,
-          expression: `(()=>{const m=document.querySelector('.pg-img');
-            return Boolean(m && m.currentSrc && m.complete && m.naturalWidth);})()`,
-        })).result.value;
-        if (ready) break;
-        await new Promise((r) => setTimeout(r, 150));
-      }
-
-      const state = (await send("Runtime.evaluate", {
-        returnByValue: true,
-        expression: `(()=>{const m=document.querySelector('.pg-img');
-          const t=document.querySelectorAll('.pg-thumb')[${i}];
-          const r=m.getBoundingClientRect();
-          return {main:m.currentSrc, thumb:t.querySelector('img').currentSrc,
-                  on:t.classList.contains('is-on'),
-                  sel:t.getAttribute('aria-selected'),
-                  fit:getComputedStyle(m).objectFit,
-                  cssW:r.width, cssH:r.height, alt:m.alt};})()`,
-      })).result.value;
-
-      const mainStem = stemOf(state.main);
-      const thumbStem = stemOf(state.thumb);
-      ok(`thumb ${i + 1} selects its own frame`, mainStem === thumbStem, `${thumbStem} -> ${mainStem}`);
-      ok(`thumb ${i + 1} shows as selected`, state.on && state.sel === "true");
-      seenStems.push(mainStem);
-      seenUrls.push(state.main);
-
-      // Resolution, measured the way audit-image-detail.mjs measures it: the
-      // real bytes, not naturalWidth, which lies under a DPR override.
-      const d = await realDims(state.main);
-      const physW = state.cssW * v.dpr;
-      const boxAr = state.cssW / state.cssH;
-      const imgAr = d.w / d.h;
-      // contain reveals the whole source; cover keeps only the overlap.
-      const visW = state.fit === "cover" ? (imgAr > boxAr ? d.w * (boxAr / imgAr) : d.w) : d.w;
-      const ppp = visW / physW;
-      const crop = Math.round((1 - visW / d.w) * 100);
-      ok(`thumb ${i + 1} main image is resolved`, ppp >= 1.0,
-        `ppp ${ppp.toFixed(2)} (${d.w}x${d.h}, ${Math.round(physW)} phys, crop ${crop}%)`);
-      // The FIRST frame is the one that has to read as a whole bag. A macro
-      // detail is allowed to be a macro; a hero that has lost 30% of its
-      // width is the failure the client photographed.
-      if (i === 0) ok("lead frame is not hard-cropped", crop <= 12, `crop ${crop}%`);
-      if (state.alt) ok(`thumb ${i + 1} main image has alt text`, state.alt.trim().length > 8);
+    await send("Runtime.evaluate", { expression: `document.querySelector('.at-photos')?.scrollIntoView({block:'center'})` });
+    let photos = [];
+    for (let t = 0; t < 40; t++) {
+      await new Promise((r) => setTimeout(r, 200));
+      photos = (await send("Runtime.evaluate", { returnByValue: true, expression: `[...document.querySelectorAll('.at-photos img')].map(i=>({src:i.currentSrc,ok:i.complete&&i.naturalWidth>0,alt:i.alt}))` })).result.value ?? [];
+      if (photos.every((x) => x.ok)) break;
     }
-
-    ok("every thumbnail is a different frame", new Set(seenStems).size === n,
-      seenStems.join(", "));
-
-    // The real test: different FILES can still be the same PICTURE.
+    if (!photos.length) { ok("no photographs of this colour, so no row", true); continue; }
+    ok(`all ${photos.length} photographs load`, photos.every((x) => x.ok));
+    ok("photographs have alt text", photos.every((x) => x.alt && x.alt.trim().length > 8));
+    const stems = photos.map((x) => stemOf(x.src));
+    ok("every photograph is a different frame", new Set(stems).size === stems.length, stems.join(", "));
     let worst = { d: 999, pair: "" };
-    for (let a = 0; a < seenUrls.length; a++) {
-      for (let b = a + 1; b < seenUrls.length; b++) {
-        const diff = meanDiff(await fingerprint(seenUrls[a]), await fingerprint(seenUrls[b]));
-        if (diff < worst.d) worst = { d: diff, pair: `${seenStems[a]} vs ${seenStems[b]}` };
-      }
+    for (let i = 0; i < photos.length; i++) for (let j = i + 1; j < photos.length; j++) {
+      const d = meanDiff(await fingerprint(photos[i].src), await fingerprint(photos[j].src));
+      if (d < worst.d) worst = { d, pair: `${stems[i]} vs ${stems[j]}` };
     }
-    if (seenUrls.length > 1) {
-      ok("no two frames are near-duplicate pictures", worst.d >= MIN_DIFF,
-        `closest pair ${worst.pair} at ${worst.d.toFixed(1)} (floor ${MIN_DIFF})`);
-    }
+    if (photos.length > 1) ok("no two photographs are near-duplicate pictures", worst.d >= MIN_DIFF, `closest pair ${worst.pair} at ${worst.d.toFixed(1)} (floor ${MIN_DIFF})`);
   }
 }
 
@@ -256,12 +184,20 @@ for (const v of SWATCH_VIEWS) {
   // Product pages.
   for (const slug of PRODUCTS) {
     await send("Page.navigate", { url: `${BASE}/product/${slug}` });
-    await new Promise((r) => setTimeout(r, 2200));
+    for (let t = 0; t < 40; t++) {
+      await new Promise((r) => setTimeout(r, 250));
+      const n = (await send("Runtime.evaluate", { returnByValue: true, expression: `document.querySelectorAll('.at-swatches .at-sw').length` })).result.value;
+      if (n) break;
+    }
+    await new Promise((r) => setTimeout(r, 600));
     const got = JSON.parse((await send("Runtime.evaluate", {
       returnByValue: true,
-      expression: `JSON.stringify([...document.querySelectorAll('.csw')].map(b=>
-        [b.getAttribute('aria-label'), getComputedStyle(b.querySelector('.csw-img')).backgroundColor]))`,
+      // The Atelier's swatches are textured yarn close-ups: compare what is
+      // actually painted (texture source + position, over the flat tone).
+      expression: `JSON.stringify([...document.querySelectorAll('.at-swatches .at-sw')].map(b=>{const d=getComputedStyle(b.querySelector('.at-dot'));
+        return [b.getAttribute('aria-label'), d.backgroundColor + ' ' + d.backgroundImage.slice(0,120) + ' ' + d.backgroundPosition];}))`,
     })).result.value || "[]");
+    ok(`${slug} selector: swatches present`, got.length >= 2, String(got.length));
     const fields = got.map((g) => g[1]);
     ok(`${slug} selector: no two swatches share a field`,
       new Set(fields).size === fields.length, got.map((g) => `${g[0]}`).join(", "));

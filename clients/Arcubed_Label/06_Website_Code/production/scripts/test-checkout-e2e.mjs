@@ -1,6 +1,11 @@
 // End-to-end checkout in a real browser: product -> Add to Cart -> cart ->
 // checkout -> submit -> confirmation. Clicks real controls; does not simulate.
+//
+// THIS SUBMITS A REAL ORDER. It refuses to run against anything but a local
+// server; point that server at the private local test database
+// (scripts/atelier/README.md), never at the live Supabase project.
 const BASE = process.argv[2] || "http://127.0.0.1:4311";
+if (!/^http:\/\/(localhost|127\.0\.0\.1):\d+/.test(BASE)) { console.error("REFUSED: this test places an order; local servers only."); process.exit(2); }
 const CDP = "http://127.0.0.1:9222";
 let pass = 0, fail = 0;
 const t = (n, c, d = "") => { c ? pass++ : fail++; console.log(`  ${c ? "PASS" : "FAIL"}  ${n}${d ? "  -> " + d : ""}`); };
@@ -31,7 +36,7 @@ await session(async (send, events) => {
 
   // ---- 1. product page: pick a colour, add to cart
   await go(send, `${BASE}/product/nova`, 3000);
-  const price0 = await ev(send, `(document.querySelector('.pd-price')||{}).textContent`);
+  const price0 = await ev(send, `(document.querySelector('.at-price')||{}).textContent`);
   t("nova opens at base price (no pre-added extras)", /55/.test(price0 || ""), price0);
 
   // Targets the swatch by its accessible name rather than by a heading and an
@@ -39,22 +44,27 @@ await session(async (send, events) => {
   // product page started carrying that as a section rule, and locating the
   // group by that label silently stopped clicking anything.
   await ev(send, `(() => {
-    const b=[...document.querySelectorAll('.swatch-row button')]
+    const b=[...document.querySelectorAll('.at-swatches button')]
       .find(x=>((x.getAttribute('aria-label')||x.textContent||'').trim()==='Black'));
     if(!b) return 'no-black-swatch';
     b.click(); return 'ok';
   })()`);
   await new Promise(r => setTimeout(r, 600));
-  const blackFrame = await ev(send, `decodeURIComponent((document.querySelector('.pg-img')||{}).currentSrc||'').match(/DSC\\d+/)?.[0]`);
-  t("colour click changes photo", blackFrame === "DSC05780", String(blackFrame));
+  // The Atelier: the stage redraws the locked Nova photograph in Black yarn.
+  let black = null;
+  for (let i = 0; i < 40 && !black; i++) {
+    await new Promise(r => setTimeout(r, 150));
+    black = await ev(send, `(()=>{const c=document.querySelector('.at-stage .rc-canvas[data-render-ms]');return c&&/black/i.test(c.getAttribute('data-colour')||'')?c.getAttribute('data-colour'):null})()`);
+  }
+  t("colour click recolours the bag", Boolean(black), String(black));
 
   // add a paid chain to prove surcharge maths
   await ev(send, `(() => {
-    const g=[...document.querySelectorAll('.opt-group')].find(x=>/^chain/i.test((x.querySelector('.opt-label')||{}).textContent||''));
-    g.querySelectorAll('button')[1].click();
+    const g=document.querySelector('.at-group[aria-label="Strap or chain"]');
+    [...g.querySelectorAll('button')].find(b=>/Chain/.test(b.textContent)).click();
   })()`);
   await new Promise(r => setTimeout(r, 500));
-  const price1 = await ev(send, `(document.querySelector('.pd-price')||{}).textContent`);
+  const price1 = await ev(send, `(document.querySelector('.at-price')||{}).textContent`);
   t("adding a chain adds +5 (55 -> 60)", /60/.test(price1 || ""), price1);
 
   await ev(send, `[...document.querySelectorAll('button')].find(b=>/add to cart/i.test(b.textContent))?.click()`);

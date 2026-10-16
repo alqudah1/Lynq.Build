@@ -9,6 +9,7 @@
 const BASE = process.argv[2]?.startsWith("http") ? process.argv[2] : (process.env.BASE || "http://127.0.0.1:4311");
 const CDP = "http://127.0.0.1:9222";
 import { colourSlug } from "../src/lib/variant.ts";
+import { COLOUR_MEDIA } from "../src/lib/media-manifest.ts";
 
 const CASES = [
   { slug: "mini-luna", product: "Mini Luna", colour: "Silver", size: "Small", strap: "Crochet", chain: "Gold" },
@@ -40,7 +41,8 @@ async function session(fn) {
 
 /** Click the option button whose visible text starts with `label`. */
 const clickOpt = (group, label) => `(()=>{
-  const g=[...document.querySelectorAll('.opt-group')].find(x=>(x.querySelector('.opt-label')||{}).textContent?.trim().toLowerCase()==='${group}');
+  // The Atelier groups strap and chain as one choice ("Strap or chain").
+  const g=[...document.querySelectorAll('.at-group')].find(x=>(x.getAttribute('aria-label')||'').toLowerCase().split(' or ').includes('${group}'));
   if(!g) return 'no-group';
   const b=[...g.querySelectorAll('button')].find(x=>x.textContent.trim().toLowerCase().startsWith('${label.toLowerCase()}'));
   if(!b) return 'no-option';
@@ -58,11 +60,11 @@ for (const c of CASES) {
 
     // 1. product page via the exact Shop link
     await go(`${BASE}/product/${c.slug}?colour=${colourSlug(c.colour)}`);
-    const p = await evalp(`(()=>{const img=document.querySelector('.pg-img');
-      const sel=[...document.querySelectorAll('.swatch-row button')].find(b=>b.getAttribute('aria-pressed')==='true');
-      return {h1:(document.querySelector('.pd-h1')||{}).textContent,
+    const p = await evalp(`(()=>{
+      const sel=[...document.querySelectorAll('.at-swatches button')].find(b=>b.getAttribute('aria-pressed')==='true');
+      return {h1:(document.querySelector('h1')||{}).textContent,
               swatch:(sel?(sel.getAttribute('aria-label')||sel.textContent):'').trim(),
-              frame:(decodeURIComponent(img?img.currentSrc:'').match(/DSC\\d+/)||[])[0]};})()`);
+              frame:(document.querySelector('.at-frame')||{dataset:{}}).dataset.frame};})()`);
     steps.push(["product", p.h1?.trim() === c.product && p.swatch.toLowerCase().includes(c.colour.toLowerCase()), `${p.h1}/${p.swatch}/${p.frame}`]);
 
     // 2. configure
@@ -72,7 +74,7 @@ for (const c of CASES) {
       await new Promise((r) => setTimeout(r, 220));
       steps.push([`select ${group}`, r === "ok", String(r)]);
     }
-    const price = await evalp(`(document.querySelector('.pd-price')||{}).textContent`);
+    const price = await evalp(`(document.querySelector('.at-price')||{}).textContent`);
 
     // 3. add to cart
     await evalp(`(()=>{const b=[...document.querySelectorAll('button')].find(x=>/add to cart/i.test(x.textContent));if(!b)return 'no-btn';b.click();return 'ok';})()`);
@@ -99,10 +101,15 @@ for (const c of CASES) {
     const inCart = (s) => cart.text.toLowerCase().includes(s.toLowerCase());
     steps.push(["cart product", inCart(c.product), ""]);
     steps.push(["cart colour", inCart(c.colour), cart.text.slice(0, 90)]);
-    steps.push(["cart image = colour", cart.frame === p.frame, `${cart.frame} vs ${p.frame}`]);
+    // The cart shows Rand's photograph OF THAT COLOUR (not the product page's
+    // locked photograph, which is another colour recoloured).
+    const colourFrames = (COLOUR_MEDIA[c.slug]?.[c.colour] ?? []).map((f) => f.frameId);
+    steps.push(["cart image = colour", colourFrames.includes(cart.frame), `${cart.frame} vs ${colourFrames.join("/")}`]);
     if (c.size) steps.push(["cart size", inCart(c.size), ""]);
-    if (c.strap) steps.push(["cart strap", inCart(c.strap), ""]);
-    if (c.chain) steps.push(["cart chain", inCart(c.chain), ""]);
+    // A strap OR a chain: choosing the chain after the strap replaces it.
+    if (c.strap && !c.chain) steps.push(["cart strap", inCart(`${c.strap} Strap`), ""]);
+    if (c.strap && c.chain) steps.push(["chain replaced the strap", !inCart(`${c.strap} Strap`), ""]);
+    if (c.chain) steps.push(["cart chain", inCart(`${c.chain} Tone Chain`), ""]);
 
     // 5. checkout
     await go(`${BASE}/checkout`);

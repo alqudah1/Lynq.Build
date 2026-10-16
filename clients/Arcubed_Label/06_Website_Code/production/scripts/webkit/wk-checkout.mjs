@@ -43,23 +43,25 @@ const tap = async (loc) => {
   await p.waitForTimeout(150);
   if (MOB) await loc.tap(); else await loc.click();
 };
+// The Colour Atelier: option groups are headed by .at-h ("Size", "Handle",
+// "Strap or chain").
 const grp = (label) =>
-  p.locator(".opt-group").filter({ has: p.locator(".opt-label", { hasText: label }) }).first();
+  p.locator(".at-group").filter({ has: p.locator(".at-h", { hasText: new RegExp(label, "i") }) }).first();
 
 console.log(`\n=== checkout ${W}x${H} ${MOB ? "touch" : "pointer"}`);
 
 /* 1 — a Nova that is not the default: Black, Large, no handle, gold chain. */
 await p.goto(BASE + "/product/nova", { waitUntil: "load" });
 await p.waitForTimeout(1600);
-await tap(p.locator('.csw[aria-label="Black"]'));
+await tap(p.locator('.at-sw[aria-label="Black"]'));
 await p.waitForTimeout(700);
-await tap(p.locator(".pill", { hasText: "Large" }));
+await tap(grp("Size").locator(".at-pill", { hasText: "Large" }));
 await tap(grp("Handle").locator("button", { hasText: "Without Handle" }));
 await tap(grp("Chain").locator("button", { hasText: "Gold Tone Chain" }));
 await p.waitForTimeout(500);
 // 55 base + 10 for Large + 5 for the chain. The button carries the live price.
-ok("options are priced on the button", /70/.test(await txt(".add-to-bag")), await txt(".add-to-bag"));
-await tap(p.locator(".add-to-bag").first());
+ok("options are priced on the button", /70/.test(await txt(".at-add")), await txt(".at-add"));
+await tap(p.locator(".at-add").first());
 await p.waitForTimeout(1400);
 
 /* 2 — the panel is a cart, not a receipt. */
@@ -90,7 +92,7 @@ ok("remove empties the panel", /Nothing here yet/i.test(await txt(".cart-drawer"
 ok("badge clears", !(await p.locator(".cart-icon .badge").isVisible()));
 await tap(p.locator(".icon-btn[aria-label='Close cart']"));
 await p.waitForTimeout(600);
-await tap(p.locator(".add-to-bag").first());
+await tap(p.locator(".at-add").first());
 await p.waitForTimeout(1300);
 ok("re-adding keeps the configuration", /Black/.test(await txt(".drawer-line-opt")) &&
    /Gold Tone Chain/.test(await txt(".drawer-line-opt")));

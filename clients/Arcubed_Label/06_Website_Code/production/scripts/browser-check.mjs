@@ -98,7 +98,10 @@ for (const vp of VIEWPORTS) {
             smallTapTargets: small.slice(0, 5), smallTapCount: small.length,
             imgs: document.images.length,
             brokenImgs: [...document.images].filter(i => i.complete && i.naturalWidth === 0).map(i => i.currentSrc || i.src).slice(0,3),
-            canvases: document.querySelectorAll('canvas').length,
+            // The Colour Atelier draws the bag on canvases (.rc-canvas, the
+            // crossfade .at-ghost, recoloured .snap-thumb thumbnails): those are
+            // expected. Any OTHER canvas is still a finding (a stray 3D blockout).
+            canvases: [...document.querySelectorAll('canvas')].filter((c) => !c.matches('.rc-canvas, .at-ghost, .snap-thumb')).length,
             title: document.title,
           };
         })()`,

@@ -29,47 +29,40 @@ for (const slug of PRODUCTS) {
     await send("Page.navigate", { url: `${BASE}/product/${slug}` });
     await new Promise((r) => setTimeout(r, 2600));
 
-    const colours = await evalIn(send, `
-      [...document.querySelectorAll('.swatch, .colour-chip, [class*="swatch"] button, .opt-group button')]
-        .map(b => (b.getAttribute('aria-label') || b.title || b.textContent || '').trim()).filter(Boolean).slice(0,40)`);
-
-    // Find the colour control group by its label, then its buttons.
+    // The Colour Atelier (2026-10-15): one swatch row; every colour redraws
+    // the stage. Records what the stage shows for each colour.
     const info = await evalIn(send, `(() => {
-      const groups = [...document.querySelectorAll('.opt-group')];
-      const g = groups.find(x => /^colour/i.test((x.querySelector('.opt-label')||{}).textContent||''));
-      if (!g) return { found:false, groups: groups.map(x=>(x.querySelector('.opt-label')||{}).textContent) };
-      const btns = [...g.querySelectorAll('button')];
-      return { found:true, labels: btns.map(b => (b.getAttribute('aria-label')||b.textContent||'').trim()) };
+      const btns = [...document.querySelectorAll('.at-swatches .at-sw')];
+      if (!btns.length) return { found:false, groups: [...document.querySelectorAll('.at-group')].map(g=>g.getAttribute('aria-label')) };
+      return { found:true, labels: btns.map(b => (b.getAttribute('aria-label')||'').trim()) };
     })()`);
 
     const perColour = [];
     if (info?.found) {
       for (let i = 0; i < info.labels.length; i++) {
-        await evalIn(send, `(() => {
-          const g = [...document.querySelectorAll('.opt-group')].find(x => /^colour/i.test((x.querySelector('.opt-label')||{}).textContent||''));
-          g.querySelectorAll('button')[${i}].click();
-        })()`);
-        await new Promise((r) => setTimeout(r, 700));
-        const shown = await evalIn(send, `(() => {
-          const img = document.querySelector('.pg-img');
-          const src = img ? (img.currentSrc || img.src) : '';
-          const m = decodeURIComponent(src).match(/(DSC\\d+)/);
-          const note = document.querySelector('.pg-note');
-          const price = (document.querySelector('.price-inline')||{}).textContent || '';
-          return { frame: m ? m[1] : null, note: note ? note.textContent.trim().slice(0,80) : null, price: price.trim() };
-        })()`);
+        await evalIn(send, `document.querySelectorAll('.at-swatches .at-sw')[${i}].click()`);
+        let shown = null;
+        for (let t = 0; t < 40; t++) {
+          await new Promise((r) => setTimeout(r, 150));
+          shown = await evalIn(send, `(() => {
+            const f = document.querySelector('.at-frame');
+            const cv = f && f.querySelector('.rc-canvas[data-render-ms]');
+            const img = f && f.querySelector('img');
+            const drawn = f && (f.dataset.render === 'photo' ? !!(img && img.complete && img.naturalWidth) : !!cv);
+            return { frame: drawn ? f.dataset.frame : null, render: f ? f.dataset.render : null,
+                     note: f && f.dataset.render === 'photo' ? 'own photograph (cannot be recoloured)' : null,
+                     price: (document.querySelector('.at-price')||{}).textContent || '' };
+          })()`);
+          if (shown?.frame) break;
+        }
         perColour.push({ colour: info.labels[i], ...shown });
       }
     }
 
-    // Other controls: do they exist, and does the image respond?
+    // Other controls: the option groups and how many choices each offers.
     const others = await evalIn(send, `(() => {
       const out = {};
-      for (const g of document.querySelectorAll('.opt-group')) {
-        const label = ((g.querySelector('.opt-label')||{}).textContent||'').trim();
-        if (/^colour/i.test(label)) continue;
-        out[label] = g.querySelectorAll('button, [role="button"]').length;
-      }
+      for (const g of document.querySelectorAll('.at-group')) out[g.getAttribute('aria-label')] = g.querySelectorAll('button').length;
       return out;
     })()`);
 
@@ -81,7 +74,12 @@ for (const r of results) {
   console.log(`\n=== /product/${r.slug} ===`);
   if (!r.colours.length) { console.log("  no colour group found; groups:", r.groups); }
   for (const c of r.colours) {
-    console.log(`  ${String(c.colour).padEnd(16)} -> frame ${String(c.frame).padEnd(9)} ${c.note ? "NOTE: " + c.note : ""}`);
+    console.log(`  ${String(c.colour).padEnd(16)} -> ${String(c.render).padEnd(8)} frame ${String(c.frame).padEnd(9)} ${c.price.trim()} ${c.note ? "NOTE: " + c.note : ""}`);
   }
   console.log("  other controls:", JSON.stringify(r.others));
 }
+
+const rows = results.flatMap((r) => r.colours);
+const blank = rows.filter((c) => !c.frame);
+console.log(`\n${rows.length} colour rows, ${blank.length} with nothing drawn`);
+process.exit(blank.length || rows.length === 0 ? 1 : 0);

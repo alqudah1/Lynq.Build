@@ -45,6 +45,72 @@ export type Database = {
         }
         Relationships: []
       }
+      colour_candidates: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          calibration: Json
+          created_at: string
+          hex_value: string | null
+          id: string
+          material_family: string
+          measured_hex: string | null
+          measurement: Json | null
+          name: string
+          product_slugs: string[]
+          published_at: string | null
+          published_colour_id: string | null
+          reference_image: string | null
+          review_note: string | null
+          status: string
+          supplier_confirmed: boolean
+          supplier_note: string | null
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          calibration?: Json
+          created_at?: string
+          hex_value?: string | null
+          id?: string
+          material_family: string
+          measured_hex?: string | null
+          measurement?: Json | null
+          name: string
+          product_slugs?: string[]
+          published_at?: string | null
+          published_colour_id?: string | null
+          reference_image?: string | null
+          review_note?: string | null
+          status?: string
+          supplier_confirmed?: boolean
+          supplier_note?: string | null
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          calibration?: Json
+          created_at?: string
+          hex_value?: string | null
+          id?: string
+          material_family?: string
+          measured_hex?: string | null
+          measurement?: Json | null
+          name?: string
+          product_slugs?: string[]
+          published_at?: string | null
+          published_colour_id?: string | null
+          reference_image?: string | null
+          review_note?: string | null
+          status?: string
+          supplier_confirmed?: boolean
+          supplier_note?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       colours: {
         Row: {
           active: boolean
@@ -905,6 +971,14 @@ export type Database = {
       release_ready_for_delivery_stock: {
         Args: { p_item_id: string; p_quantity: number }
         Returns: number
+      }
+      publish_colour_candidate: {
+        Args: { p_candidate: string; p_product_ids: string[] }
+        Returns: string
+      }
+      set_product_colour_active: {
+        Args: { p_product: string; p_colour: string; p_active: boolean }
+        Returns: undefined
       }
     }
     Enums: {

@@ -7,6 +7,7 @@ import Image from "next/image";
 import { useCart } from "@/lib/cart-context";
 import { formatMoney } from "@/lib/site-settings";
 import { mediaForSnapshot } from "@/lib/product-media";
+import SnapshotThumb from "@/components/atelier/SnapshotThumb";
 import { submitOrder, type CheckoutResult } from "./actions";
 import { AVAILABLE_PAYMENT_METHODS } from "@/lib/payment";
 import type { CartLine, ShippingRule } from "@/lib/types";
@@ -302,15 +303,15 @@ export default function CheckoutClient({
           <ul className="co-lines">
             {cart.map((line) => {
               const parts = lineConfigParts(line);
-              const frame =
-                line.kind === "made_to_order"
-                  ? mediaForSnapshot(line.snapshot.bagSlug, line.snapshot.bagName, line.snapshot.colourName)
-                  : mediaForSnapshot(null, line.snapshot.productName, line.snapshot.colourName);
+              const frame = line.kind === "made_to_order" ? null : mediaForSnapshot(null, line.snapshot.productName, line.snapshot.colourName);
               const name = line.kind === "made_to_order" ? line.snapshot.bagName : line.snapshot.itemTitle;
               return (
                 <li key={line.lineId} className="co-line">
                   <span className="co-thumb">
-                    {frame ? (
+                    {line.kind === "made_to_order" ? (
+                      <SnapshotThumb bagSlug={line.snapshot.bagSlug} bagName={line.snapshot.bagName} colourName={line.snapshot.colourName}
+                        colourHex={line.snapshot.colourHex} width={160} sizes="72px" />
+                    ) : frame ? (
                       <Image src={frame.photoSmall} alt="" width={160}
                              height={Math.round(160 / frame.ratio)} sizes="72px" />
                     ) : null}

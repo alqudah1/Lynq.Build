@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { Bag } from "@/lib/types";
-import ColourStudio from "./ColourStudio";
+import Atelier from "@/components/atelier/Atelier";
 import TechnicalComparison from "./TechnicalComparison";
 
 export default function ColourLab({ bags, productionTime }: { bags: Bag[]; productionTime: string | null }) {
@@ -34,7 +34,7 @@ export default function ColourLab({ bags, productionTime }: { bags: Bag[]; produ
         </div>
       </header>
       {view === "studio" ? (
-        <ColourStudio key={bag.slug} bag={bag} productionTime={productionTime} />
+        <Atelier key={bag.slug} bag={bag} productionTime={productionTime} mode="admin" />
       ) : (
         <TechnicalComparison key={bag.slug} bag={bag} />
       )}

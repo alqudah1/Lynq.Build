@@ -6,20 +6,23 @@ recolouring the yarn of an authentic photograph in the browser. Status
 (`/admin/colour-lab`); **nothing is approved, so the storefront shows
 photography only**. No AI service or network request is involved per colour.
 
-## What a customer sees (once a preview is approved)
+## What a customer sees (2026-10-15: the product page is the Colour Atelier)
 
-The product page always prefers, in order:
+The product page (`src/components/atelier/Atelier.tsx`, mode "shop") shows
+each bag on its LOCKED photograph and recolours it for every catalogue
+colour:
 
-1. a real photograph of the selected colourway
-2. an approved digital colour preview (`src/lib/colour-previews.ts`), drawn
-   by `RecolourStage`, captioned "Digital colour preview in …, not a
-   photograph" with a note naming the photograph it was made from and that
-   the finished bag may differ slightly
-3. another colourway's photograph, labelled as such
+1. the locked photograph's own colour: the photograph itself
+2. a colour Rand photographed: recoloured to that photographed yarn
+3. a colour published from /admin/colours (docs/colour-workflow.md):
+   recoloured to its measured yarn colour (`colours.hex_value`)
+4. a colour the photograph cannot show (two-tone Silver & Gold): that
+   colour's own photograph, captioned "Pictured: …"
 
-A preview is only ever attached to a colour that is already confirmed and
-purchasable in the catalogue (Supabase `product_colours`). Nothing in this
-system creates a colour or makes one orderable.
+Rand's photographs of the chosen colour sit beneath the studio. Only active
+catalogue colours are offered; experimental previews never reach the shop.
+`APPROVED_PREVIEWS` (`src/lib/colour-previews.ts`) is superseded by the colour
+workflow and stays empty.
 
 ## The admin Atelier (`/admin/colour-lab`)
 

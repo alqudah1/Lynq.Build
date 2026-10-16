@@ -43,8 +43,8 @@ for (const [w, h] of PHONES) {
   await p.waitForURL((u) => u.pathname === "/product/mini-luna", { timeout: 8000 }).catch(() => {}); await settle(p);
   await p.waitForTimeout(900);
   ok("tapping Gold in the rail opens Mini Luna in Gold", path() === "/product/mini-luna" &&
-     (await p.locator('.csw[aria-pressed="true"]').getAttribute("aria-label")) === "Gold",
-     `${path()} / ${await p.locator('.csw[aria-pressed="true"]').getAttribute("aria-label").catch(() => "?")}`);
+     (await p.locator('.at-sw[aria-pressed="true"]').getAttribute("aria-label")) === "Gold",
+     `${path()} / ${await p.locator('.at-sw[aria-pressed="true"]').getAttribute("aria-label").catch(() => "?")}`);
 
   // ---- PHONE 3: changing colours never moves the page --------------------
   await go(p, BASE + "/shop"); await p.waitForTimeout(1200);
@@ -58,19 +58,21 @@ for (const [w, h] of PHONES) {
 
   // ---- PHONE 5, PC 4, PHONE 6: Nova options and the post-add decision ----
   await go(p, BASE + "/product/nova"); await p.waitForTimeout(1500);
-  const pills = await p.locator(".pill").allTextContents();
-  ok("every size says what it costs", pills.length === 3 && pills.every((t) => /Included|\+JOD/.test(t)), pills.join(" | "));
-  const grp = (l) => p.locator(".opt-group").filter({ has: p.locator(".opt-label", { hasText: l }) }).first();
-  const pressed = (l) => grp(l).locator('[aria-pressed="true"]').textContent();
-  await grp("Strap").locator("button", { hasText: "Crochet Strap" }).tap();
-  await grp("Chain").locator("button", { hasText: "Silver Tone Chain" }).tap();
-  ok("chain after strap clears the strap", /None/.test(await pressed("Strap")) && /Silver/.test(await pressed("Chain")));
-  await grp("Strap").locator("button", { hasText: "Crochet Strap" }).tap();
-  ok("strap after chain clears the chain", /Crochet/.test(await pressed("Strap")) && /None/.test(await pressed("Chain")));
-  await grp("Strap").locator("button", { hasText: "None" }).tap();
-  ok("a strap can be removed again", /None/.test(await pressed("Strap")));
-  await grp("Chain").locator("button", { hasText: "Gold Tone Chain" }).tap();
-  const add = p.locator(".add-to-bag").first();
+  // The Colour Atelier: Regular is the base price; every other size names its extra.
+  const pills = await p.locator('.at-group[aria-label="Size"] .at-pill').allTextContents();
+  ok("every size says what it costs", pills.length === 3 && pills.slice(1).every((t) => /\+JOD/.test(t)) && !/\+/.test(pills[0]), pills.join(" | "));
+  // Strap and chain are ONE choice in the Atelier ("Strap or chain"): exactly one is ever selected.
+  const carry = p.locator('.at-group[aria-label="Strap or chain"]');
+  const pressed = async () => (await carry.locator('[aria-pressed="true"]').allTextContents()).join("|");
+  await carry.locator("button", { hasText: "Crochet Strap" }).tap();
+  await carry.locator("button", { hasText: "Silver Tone Chain" }).tap();
+  ok("chain after strap replaces the strap", /^Silver Tone Chain/.test(await pressed()), await pressed());
+  await carry.locator("button", { hasText: "Crochet Strap" }).tap();
+  ok("strap after chain replaces the chain", /^Crochet Strap/.test(await pressed()), await pressed());
+  await carry.locator("button", { hasText: "None" }).tap();
+  ok("a strap can be removed again", (await pressed()) === "None");
+  await carry.locator("button", { hasText: "Gold Tone Chain" }).tap();
+  const add = p.locator(".at-add").first();
   await add.scrollIntoViewIfNeeded(); await p.waitForTimeout(300);
   const ay = await p.evaluate("scrollY"), url0 = p.url();
   ok("the button says Add to Cart", /Add to Cart/i.test(await add.textContent()));
@@ -110,22 +112,23 @@ for (const [w, h] of PHONES) {
        !(await p.locator(".mobile-menu.open").count()), path());
   }
 
-  // ---- Loco gallery: rapid taps, each thumbnail is its own frame ---------
+  // ---- Loco: the real photographs of the colour, and rapid colour taps ---
   await go(p, BASE + "/product/loco"); await p.waitForTimeout(1500);
-  const thumbs = p.locator(".pg-thumb");
-  const n = await thumbs.count();
-  ok("Loco Brown has three distinct views", n === 3, `${n}`);
+  const photos = p.locator(".at-photos img");
+  await p.locator(".at-photos").scrollIntoViewIfNeeded(); await p.waitForTimeout(600);
+  const n = await photos.count();
+  ok("Loco Brown shows its three photographs", n === 3, `${n}`);
   const seen = [];
-  for (let k = 0; k < n; k++) {
-    await thumbs.nth(k).scrollIntoViewIfNeeded(); await thumbs.nth(k).tap(); await p.waitForTimeout(500);
-    const main = stem(await p.locator(".pg-img").getAttribute("src"));
-    ok(`thumbnail ${k + 1} shows its own frame`, main === stem(await thumbs.nth(k).locator("img").getAttribute("src")), main);
-    seen.push(main);
-  }
+  for (let k = 0; k < n; k++) seen.push(stem(await photos.nth(k).getAttribute("src")));
   ok("no duplicate frames", new Set(seen).size === n && !seen.includes("DSC05764") && !seen.includes("DSC05766"), seen.join(", "));
-  for (let k = 0; k < 9; k++) await thumbs.nth(k % n).tap();
-  await p.waitForTimeout(700);
-  ok("rapid taps settle on the last one tapped", (await thumbs.nth(8 % n).getAttribute("aria-selected")) === "true");
+  const sws = p.locator(".at-swatches .at-sw:not([disabled])");
+  await sws.first().scrollIntoViewIfNeeded();
+  const y1 = await p.evaluate("scrollY");
+  for (let k = 0; k < 9; k++) await sws.nth(k % (await sws.count())).tap();
+  await p.waitForTimeout(900);
+  const last = (await sws.nth(8 % (await sws.count())).getAttribute("aria-label")) ?? "";
+  ok("rapid colour taps settle on the last one tapped", (await p.locator(".at-sw.is-on").getAttribute("aria-label")) === last, last);
+  ok("rapid colour taps leave the page still", Math.abs((await p.evaluate("scrollY")) - y1) <= 1);
 
   // ---- FAQ ----------------------------------------------------------------
   await go(p, BASE + "/faq"); await p.waitForTimeout(900);

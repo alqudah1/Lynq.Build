@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { Bag } from "@/lib/types";
-import ColourStudio from "../admin/colour-lab/ColourStudio";
+import Atelier from "@/components/atelier/Atelier";
 
 export default function AtelierPreview({ bags, productionTime }: { bags: Bag[]; productionTime: string | null }) {
   const [bagIdx, setBagIdx] = useState(0);
@@ -22,7 +22,7 @@ export default function AtelierPreview({ bags, productionTime }: { bags: Bag[]; 
           ))}
         </nav>
       </header>
-      <ColourStudio key={bag.slug} bag={bag} productionTime={productionTime} client />
+      <Atelier key={bag.slug} bag={bag} productionTime={productionTime} mode="client" />
     </div>
   );
 }
