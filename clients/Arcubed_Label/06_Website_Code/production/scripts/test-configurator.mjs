@@ -27,7 +27,12 @@ for (const slug of PRODUCTS) {
     await send("Runtime.enable"); await send("Page.enable");
     await send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
     await send("Page.navigate", { url: `${BASE}/product/${slug}` });
-    await new Promise((r) => setTimeout(r, 2600));
+    // Wait for the page itself, not a fixed delay (a fixed 2.6s read an empty
+    // page on a loaded machine and reported "no colour group").
+    for (let t = 0; t < 120; t++) {
+      await new Promise((r) => setTimeout(r, 250));
+      if (await evalIn(send, `document.querySelectorAll('.at-swatches .at-sw').length > 0 && !!document.querySelector('.at-stage .rc-canvas[data-render-ms]')`)) break;
+    }
 
     // The Colour Atelier (2026-10-15): one swatch row; every colour redraws
     // the stage. Records what the stage shows for each colour.
