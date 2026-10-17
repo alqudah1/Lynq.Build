@@ -570,6 +570,21 @@ async function handleAttach(db: Db, env: TelegramEnv, chatId: string, cb: NonNul
       attachedAssetId = asset.id;
       const [item] = await db.select({ brandProfileId: marketingContentItems.brandProfileId }).from(marketingContentItems).where(eq(marketingContentItems.id, variant.contentItemId)).limit(1);
       if (item?.brandProfileId) await db.update(socialAssets).set({ brandProfileId: item.brandProfileId, contentItemId: variant.contentItemId, updatedAt: new Date() }).where(eq(socialAssets.id, asset.id));
+      // A video belongs to one reel: if this upload was put on another post by mistake, take it off that post first (it returns to draft).
+      const elsewhere = await db
+        .select({ id: socialContentVariants.id, revision: socialContentVariants.revision, status: socialContentVariants.status, media: socialContentVariants.media, contentItemId: socialContentVariants.contentItemId })
+        .from(socialContentVariants)
+        .where(and(eq(socialContentVariants.organizationId, variant.organizationId), isNull(socialContentVariants.archivedAt), sql`${socialContentVariants.contentItemId} <> ${variant.contentItemId}`, sql`${socialContentVariants.media} @> ${JSON.stringify([{ assetId: asset.id }])}::jsonb`, inArray(socialContentVariants.status, ["draft", "changes_requested", "ready_for_review", "approved"])));
+      let moved = 0;
+      for (const other of elsewhere) {
+        const media = Array.isArray(other.media) ? (other.media as { assetId: string; position: number; role: "primary" | "carousel_item" | "cover" | "thumbnail" }[]) : [];
+        try {
+          await updateVariant(db, { organizationId: variant.organizationId, contentVariantId: other.id, actorUserId: approver.userId, expectedRevision: other.revision, changes: { media: media.filter((m) => m.assetId !== asset.id) } });
+          moved++;
+        } catch {
+          // Already changed by someone else; the attach below still goes ahead.
+        }
+      }
       // Every platform version of the post still waiting for media gets it, then the post goes out for review.
       const siblings = await db
         .select({ id: socialContentVariants.id, revision: socialContentVariants.revision, status: socialContentVariants.status, media: socialContentVariants.media, platform: socialContentVariants.platform, scheduledFor: socialContentVariants.scheduledFor })
@@ -589,7 +604,7 @@ async function handleAttach(db: Db, env: TelegramEnv, chatId: string, cb: NonNul
         }
       }
       ok = attached > 0;
-      result = ok ? `🎬 Attached to ${attached} version${attached === 1 ? "" : "s"} and sent for review — approve it below.${skipped.length ? `\n${skipped.join("\n")}` : ""}` : skipped.length ? skipped.join("\n") : "That post already has its media. Use /pending to see it.";
+      result = ok ? `🎬 Attached to ${attached} version${attached === 1 ? "" : "s"} and sent for review — approve it below.${moved ? ` (Taken off the other post it was on.)` : ""}${skipped.length ? `\n${skipped.join("\n")}` : ""}` : skipped.length ? skipped.join("\n") : "That post already has its media. Use /pending to see it.";
       if (ok) {
         const pending = (await listPendingApprovals(db, { organizationId: variant.organizationId, actorUserId: approver.userId })).filter((p) => p.contentItemId === variant.contentItemId);
         for (const next of groupByPost(pending)) await sendPending(db, env, chatId, next, deps).catch(() => undefined);
