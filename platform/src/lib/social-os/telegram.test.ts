@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { approvalKeyboard, attachTargets, buildApprovalCaption, draftKeyboard, encodeAttach, groupByPost, incomingMedia, nextPostPerBrand, parseAttach, TELEGRAM_FILE_LIMIT, runMorningTelegramSend, encodeDecision, handleTelegramUpdate, parseDecision, registerTelegramWebhook, telegramEnabled, telegramWebhookSecret, verifyTelegramWebhookSecret, type TelegramEnv } from "./telegram";
+import { approvalKeyboard, attachPrompt, attachButtonLabel, attachTargets, buildApprovalCaption, encodeDetach, parseDetach, titleFromBotMessage, draftKeyboard, encodeAttach, groupByPost, incomingMedia, nextPostPerBrand, parseAttach, TELEGRAM_FILE_LIMIT, runMorningTelegramSend, encodeDecision, handleTelegramUpdate, parseDecision, registerTelegramWebhook, telegramEnabled, telegramWebhookSecret, verifyTelegramWebhookSecret, type TelegramEnv } from "./telegram";
 
 const TOKEN = "123456789:AAH-abcdefghijklmnopqrstuvwxyz012345";
 const env: TelegramEnv = { TELEGRAM_BOT_TOKEN: TOKEN, TELEGRAM_CHAT_ID: "555", TELEGRAM_APPROVER_EMAIL: "owner@lynq.build", AUTH_SECRET: "s".repeat(40), AUTH_BASE_URL: "https://office.example" };
@@ -187,6 +187,31 @@ describe("a video or picture sent to the bot", () => {
     expect(attachTargets([d({ item: "post", brand: "lynq", platform: "instagram", format: "image", at: "2026-10-16T16:15Z" })], "image").map((x) => x.contentItemId)).toEqual(["post"]);
     const many = Array.from({ length: 9 }, (_, i) => d({ item: `r${i}`, brand: "lynq", platform: "instagram", format: "reel", at: `2026-10-${10 + i}T20:30Z` }));
     expect(attachTargets(many, "video")).toHaveLength(6);
+  });
+});
+
+describe("choosing the right post, and fixing a wrong choice", () => {
+  const d = (o: { item: string; brand: string; title: string; hook: string; at: string }) =>
+    ({ contentItemId: o.item, brandProfileId: o.brand, brandName: o.brand, title: o.title, brief: {}, submittedAt: new Date(), assets: [], variant: { id: `${o.item}-ig`, platform: "instagram", format: "reel", hook: o.hook, body: "", scheduledFor: new Date(o.at) } }) as unknown as Parameters<typeof attachTargets>[0][number];
+
+  it("the prompt lists each option with what the reel is about, and the buttons are numbered to match", () => {
+    const targets = [d({ item: "a", brand: "LYNQ", title: "LYNQ · REEL — Rebuilt", hook: "I rebuilt a plumber's homepage in 10 minutes.", at: "2026-10-17T22:30Z" }), d({ item: "b", brand: "CodeIt", title: "CodeIt · REEL — Idea to game", hook: "Type a sentence. Get a game.", at: "2026-10-17T20:30Z" })];
+    const text = attachPrompt(targets, "video");
+    expect(text).toContain("1. LYNQ · Rebuilt");
+    expect(text).toContain("\"I rebuilt a plumber's homepage in 10 minutes.\"");
+    expect(text).toContain("2. CodeIt · Idea to game");
+    expect(attachButtonLabel(targets[1]!, 1)).toBe("2 · CodeIt · Idea to game");
+  });
+
+  it("the wrong-post button round-trips and the post title is read back from a bot message", () => {
+    const data = encodeDetach("6ce3d4e9-0d42-4f92-ab4b-dcf577e6f1de", "0d42f92a-6ce3-4f92-ab4b-dcf577e6f1de");
+    expect(Buffer.byteLength(data)).toBeLessThanOrEqual(64);
+    expect(parseDetach(data)).toEqual({ assetPrefix: "6ce3d4e9", variantPrefix: "0d42f92a" });
+    expect(parseDetach("att:6ce3d4e9:0d42f92a")).toBeNull();
+    const caption = buildApprovalCaption({ title: "LYNQ · REEL — Rebuilt", brandName: "LYNQ", variant: { platform: "instagram", accountDisplayName: "lynq.build", body: "Body", hashtags: [], scheduledFor: null, format: "reel" } });
+    expect(titleFromBotMessage({ caption })).toBe("LYNQ · REEL — Rebuilt");
+    expect(titleFromBotMessage({ text: `📝 DRAFT — not sent for review yet\n${caption}` })).toBe("LYNQ · REEL — Rebuilt");
+    expect(titleFromBotMessage({ text: "hello" })).toBeNull();
   });
 });
 

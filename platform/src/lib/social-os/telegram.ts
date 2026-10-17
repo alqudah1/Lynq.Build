@@ -117,6 +117,30 @@ export function parseAttach(data: string | undefined): { assetPrefix: string; va
   return m ? { assetPrefix: m[1]!, variantPrefix: m[2]! } : null;
 }
 
+/** The text above the attach buttons: each option with what the post is about, so the right one is obvious. */
+export function attachPrompt(targets: SocialPendingApproval[], kind: "video" | "image"): string {
+  const lines = targets.map((d, i) => {
+    const what = (d.variant.hook || d.variant.body.split("\n")[0] || "").slice(0, 110);
+    return `${i + 1}. ${d.brandName ?? ""} · ${cleanTitle(d.title)}${d.variant.scheduledFor ? ` · ${formatLocal(d.variant.scheduledFor)}` : ""}\n   "${what}"`;
+  });
+  return `Got it. Which post is this ${kind === "video" ? "video" : "picture"} for? Tap the number. It attaches and goes for review; if it's wrong you can move it after.\n\n${lines.join("\n")}`.slice(0, 4000);
+}
+export function attachButtonLabel(d: SocialPendingApproval, index: number): string {
+  return `${index + 1} · ${d.brandName ?? ""} · ${cleanTitle(d.title)}`.slice(0, 60);
+}
+function cleanTitle(title: string): string {
+  return title.replace(/^(LYNQ|CodeIt) · /, "").replace(/^(REEL|Reel) — /, "");
+}
+
+/** "Wrong post": detaches an upload from every version of a post (back to draft) so it can be offered again. */
+export function encodeDetach(assetId: string, contentVariantId: string): string {
+  return `det:${assetId.slice(0, 8)}:${contentVariantId.slice(0, 8)}`;
+}
+export function parseDetach(data: string | undefined): { assetPrefix: string; variantPrefix: string } | null {
+  const m = /^det:([0-9a-f]{8}):([0-9a-f]{8})$/.exec(data ?? "");
+  return m ? { assetPrefix: m[1]!, variantPrefix: m[2]! } : null;
+}
+
 /**
  * Which drafts an upload can go to: the posts still missing their media, of the matching kind
  * (a video to reels and video posts, a picture to image posts and stories), one button per post,
@@ -279,7 +303,7 @@ export async function notifyTelegramOfReview(db: Db, env: TelegramEnv, input: { 
 
 interface TelegramFile { file_id: string; file_size?: number; mime_type?: string; file_name?: string; width?: number; height?: number }
 interface TelegramUpdate {
-  message?: { message_id?: number; chat?: { id?: number | string }; text?: string; caption?: string; video?: TelegramFile; document?: TelegramFile; photo?: TelegramFile[]; animation?: TelegramFile };
+  message?: { message_id?: number; chat?: { id?: number | string }; text?: string; caption?: string; video?: TelegramFile; document?: TelegramFile; photo?: TelegramFile[]; animation?: TelegramFile; reply_to_message?: { text?: string; caption?: string; from?: { is_bot?: boolean } } };
   callback_query?: { id: string; data?: string; message?: { chat?: { id?: number | string }; message_id?: number; caption?: string; text?: string } };
 }
 
@@ -313,8 +337,9 @@ export async function handleTelegramUpdate(db: Db, env: TelegramEnv, update: Tel
     if (chatId !== allowed) return { action: "ignored_chat" };
     const media = incomingMedia(update.message);
     if (media) return handleIncomingMedia(db, env, chatId, update.message, media, deps);
+    if (text && !text.startsWith("/") && update.message.reply_to_message) return handleCaptionReply(db, env, chatId, update.message, text, deps);
     if (/^\/(start|help)\b/.test(text)) {
-      await telegram(env, "sendMessage", { chat_id: chatId, text: "LYNQ approvals are on.\nEvery morning at 8, that day's posts arrive here — approve them for their time or post now.\nSend a video or a picture here and pick the post it belongs to.\n/week — the next 7 days at a glance\n/pending — posts waiting for your approval\n/drafts — the next post for each brand, ready to send for review\n/drafts all — every draft" }, deps);
+      await telegram(env, "sendMessage", { chat_id: chatId, text: "LYNQ approvals are on.\nEvery morning at 8, that day's posts arrive here — approve them for their time or post now.\nSend a video or a picture here and pick the post it belongs to.\nReply to any post here with text to replace its caption.\n/week — the next 7 days at a glance\n/pending — posts waiting for your approval\n/drafts — the next post for each brand, ready to send for review\n/drafts all — every draft" }, deps);
       return { action: "help" };
     }
     if (/^\/pending\b/.test(text)) {
@@ -377,6 +402,8 @@ export async function handleTelegramUpdate(db: Db, env: TelegramEnv, update: Tel
   }
   const attach = parseAttach(cb.data);
   if (attach) return handleAttach(db, env, chatId, cb, attach, deps);
+  const detach = parseDetach(cb.data);
+  if (detach) return handleDetach(db, env, chatId, cb, detach, deps);
   const parsed = parseDecision(cb.data);
   if (!parsed) {
     await telegram(env, "answerCallbackQuery", { callback_query_id: cb.id }, deps).catch(() => undefined);
@@ -506,12 +533,11 @@ async function handleIncomingMedia(db: Db, env: TelegramEnv, chatId: string, mes
     await say(`Saved to the LYNQ library. No ${media.kind === "video" ? "reel or video post" : "post"} is waiting for ${media.kind === "video" ? "a video" : "a picture"} right now; attach it from LYNQ → Library when you need it.`);
     return { action: "media_saved_no_target" };
   }
-  const label = (d: SocialPendingApproval) => `${d.brandName ?? ""} · ${d.title.replace(/^(LYNQ|CodeIt) · /, "")}${d.variant.scheduledFor ? ` · ${formatLocal(d.variant.scheduledFor)}` : ""}`.slice(0, 60);
   await telegram(env, "sendMessage", {
     chat_id: chatId,
-    text: `Got it. Which post is this ${media.kind === "video" ? "video" : "picture"} for? One tap attaches it and sends the post for review.`,
+    text: attachPrompt(targets, media.kind),
     ...(message.message_id ? { reply_parameters: { message_id: message.message_id } } : {}),
-    reply_markup: { inline_keyboard: targets.map((d) => [{ text: label(d), callback_data: encodeAttach(asset.id, d.variant.id) }]) },
+    reply_markup: { inline_keyboard: targets.map((d, i) => [{ text: attachButtonLabel(d, i), callback_data: encodeAttach(asset.id, d.variant.id) }]) },
   }, deps);
   return { action: `media_saved:${targets.length}` };
 }
@@ -520,6 +546,8 @@ async function handleAttach(db: Db, env: TelegramEnv, chatId: string, cb: NonNul
   const approver = await resolveApprover(db, env);
   let result: string;
   let ok = false;
+  let attachedVariantId: string | null = null;
+  let attachedAssetId: string | null = null;
   if ("error" in approver) {
     result = approver.error;
   } else {
@@ -527,6 +555,8 @@ async function handleAttach(db: Db, env: TelegramEnv, chatId: string, cb: NonNul
       const [asset] = await db.select({ id: socialAssets.id, organizationId: socialAssets.organizationId }).from(socialAssets).where(and(inArray(socialAssets.organizationId, approver.organizationIds), isNull(socialAssets.archivedAt), sql`${socialAssets.id}::text like ${`${attach.assetPrefix}%`}`)).limit(1);
       const [variant] = await db.select({ id: socialContentVariants.id, organizationId: socialContentVariants.organizationId, contentItemId: socialContentVariants.contentItemId }).from(socialContentVariants).where(and(inArray(socialContentVariants.organizationId, approver.organizationIds), isNull(socialContentVariants.archivedAt), sql`${socialContentVariants.id}::text like ${`${attach.variantPrefix}%`}`)).limit(1);
       if (!asset || !variant || asset.organizationId !== variant.organizationId) throw new Error("not_found");
+      attachedVariantId = variant.id;
+      attachedAssetId = asset.id;
       const [item] = await db.select({ brandProfileId: marketingContentItems.brandProfileId }).from(marketingContentItems).where(eq(marketingContentItems.id, variant.contentItemId)).limit(1);
       if (item?.brandProfileId) await db.update(socialAssets).set({ brandProfileId: item.brandProfileId, contentItemId: variant.contentItemId, updatedAt: new Date() }).where(eq(socialAssets.id, asset.id));
       // Every platform version of the post still waiting for media gets it, then the post goes out for review.
@@ -560,9 +590,121 @@ async function handleAttach(db: Db, env: TelegramEnv, chatId: string, cb: NonNul
   await telegram(env, "answerCallbackQuery", { callback_query_id: cb.id, text: result.slice(0, 190) }, deps).catch(() => undefined);
   if (cb.message?.message_id) {
     await telegram(env, "editMessageReplyMarkup", { chat_id: chatId, message_id: cb.message.message_id, reply_markup: { inline_keyboard: [] } }, deps).catch(() => undefined);
-    await telegram(env, "sendMessage", { chat_id: chatId, text: result, reply_parameters: { message_id: cb.message.message_id } }, deps).catch(() => undefined);
+    await telegram(env, "sendMessage", {
+      chat_id: chatId,
+      text: ok ? `${result}\n\nWrong post? Tap below to take it off and choose again. Wrong caption? Reply to the post's message with the new caption.` : result,
+      reply_parameters: { message_id: cb.message.message_id },
+      ...(ok && attachedVariantId ? { reply_markup: { inline_keyboard: [[{ text: "↩️ Wrong post — choose again", callback_data: encodeDetach(attachedAssetId ?? attach.assetPrefix, attachedVariantId) }]] } } : {}),
+    }, deps).catch(() => undefined);
   }
   return { action: `attached:${ok ? "ok" : "failed"}` };
+}
+
+/** The post a bot message was about: the approval caption's second line is the post title. */
+export function titleFromBotMessage(message: { text?: string; caption?: string } | undefined): string | null {
+  const lines = (message?.caption ?? message?.text ?? "").split("\n").map((l) => l.trim()).filter(Boolean);
+  const start = lines.findIndex((l) => / · /.test(l) && !/^📝/.test(l));
+  return start >= 0 && lines[start + 1] ? lines[start + 1]! : null;
+}
+
+/**
+ * Replying to a post's message with plain text replaces that post's caption (every platform
+ * version, first line as the hook) and sends it for review again. Hashtags in the text are kept
+ * as hashtags; without any, the post's existing hashtags stay.
+ */
+async function handleCaptionReply(db: Db, env: TelegramEnv, chatId: string, message: NonNullable<TelegramUpdate["message"]>, text: string, deps: TelegramDeps): Promise<{ action: string }> {
+  const say = (t: string) => telegram(env, "sendMessage", { chat_id: chatId, text: t, ...(message.message_id ? { reply_parameters: { message_id: message.message_id } } : {}) }, deps).catch(() => undefined);
+  const title = titleFromBotMessage(message.reply_to_message);
+  if (!title) return { action: "ignored_text" };
+  const approver = await resolveApprover(db, env);
+  if ("error" in approver) {
+    await say(approver.error);
+    return { action: "no_approver" };
+  }
+  const tags = [...new Set((text.match(/#[\p{L}\p{N}_]+/gu) ?? []).map((t) => t.replace(/^#/, "")))];
+  const body = text.replace(/(^|\s)#[\p{L}\p{N}_]+/gu, "").replace(/[ \t]+\n/g, "\n").trim();
+  const hook = body.split("\n")[0]?.trim().slice(0, 400) ?? "";
+  let changed = 0;
+  for (const organizationId of approver.organizationIds) {
+    const rows = await db
+      .select({ id: socialContentVariants.id, revision: socialContentVariants.revision, status: socialContentVariants.status, platform: socialContentVariants.platform, hashtags: socialContentVariants.hashtags, contentItemId: socialContentVariants.contentItemId })
+      .from(socialContentVariants)
+      .innerJoin(marketingContentItems, and(eq(marketingContentItems.id, socialContentVariants.contentItemId), eq(marketingContentItems.organizationId, socialContentVariants.organizationId)))
+      .where(and(eq(socialContentVariants.organizationId, organizationId), isNull(socialContentVariants.archivedAt), isNull(marketingContentItems.archivedAt), eq(marketingContentItems.title, title), inArray(socialContentVariants.status, ["draft", "changes_requested", "ready_for_review", "approved"])));
+    for (const row of rows) {
+      try {
+        const updated = await updateVariant(db, { organizationId, contentVariantId: row.id, actorUserId: approver.userId, expectedRevision: row.revision, changes: { hook, body, ...(tags.length ? { hashtags: tags } : {}) } });
+        try {
+          await submitVariantForReview(db, { organizationId, contentVariantId: updated.id, actorUserId: approver.userId, expectedRevision: updated.revision, summary: "Caption replaced from Telegram" });
+        } catch {
+          // Still missing media or an account: stays a draft with the new caption.
+        }
+        changed++;
+      } catch {
+        // Another version may have moved on; the rest still get the caption.
+      }
+    }
+    if (changed) {
+      const pending = (await listPendingApprovals(db, { organizationId, actorUserId: approver.userId }).catch(() => [])).filter((p) => p.title === title);
+      for (const next of groupByPost(pending)) await sendPending(db, env, chatId, next, deps).catch(() => undefined);
+      if (!pending.length) await say(`Caption updated on ${changed} version${changed === 1 ? "" : "s"}. The post still needs its media or an account before it can be reviewed.`);
+      break;
+    }
+  }
+  if (!changed) await say(`Couldn't find a post called "${title}" that can still be edited.`);
+  return { action: `caption:${changed}` };
+}
+
+/** Takes an upload back off every version of a post (they return to draft) and offers the other posts again. */
+async function handleDetach(db: Db, env: TelegramEnv, chatId: string, cb: NonNullable<TelegramUpdate["callback_query"]>, detach: { assetPrefix: string; variantPrefix: string }, deps: TelegramDeps): Promise<{ action: string }> {
+  const approver = await resolveApprover(db, env);
+  let result: string;
+  let ok = false;
+  let kind: "video" | "image" = "video";
+  let assetId: string | null = null;
+  if ("error" in approver) {
+    result = approver.error;
+  } else {
+    try {
+      const [asset] = await db.select({ id: socialAssets.id, organizationId: socialAssets.organizationId, assetType: socialAssets.assetType }).from(socialAssets).where(and(inArray(socialAssets.organizationId, approver.organizationIds), isNull(socialAssets.archivedAt), sql`${socialAssets.id}::text like ${`${detach.assetPrefix}%`}`)).limit(1);
+      const [variant] = await db.select({ id: socialContentVariants.id, organizationId: socialContentVariants.organizationId, contentItemId: socialContentVariants.contentItemId }).from(socialContentVariants).where(and(inArray(socialContentVariants.organizationId, approver.organizationIds), isNull(socialContentVariants.archivedAt), sql`${socialContentVariants.id}::text like ${`${detach.variantPrefix}%`}`)).limit(1);
+      if (!asset || !variant || asset.organizationId !== variant.organizationId) throw new Error("not_found");
+      assetId = asset.id;
+      kind = asset.assetType === "video" ? "video" : "image";
+      const siblings = await db
+        .select({ id: socialContentVariants.id, revision: socialContentVariants.revision, status: socialContentVariants.status, media: socialContentVariants.media, platform: socialContentVariants.platform })
+        .from(socialContentVariants)
+        .where(and(eq(socialContentVariants.organizationId, variant.organizationId), eq(socialContentVariants.contentItemId, variant.contentItemId), isNull(socialContentVariants.archivedAt)));
+      let removed = 0;
+      for (const sib of siblings) {
+        const media = Array.isArray(sib.media) ? (sib.media as { assetId: string; position: number; role: "primary" | "carousel_item" | "cover" | "thumbnail" }[]) : [];
+        if (!media.some((m) => m.assetId === asset.id)) continue;
+        if (!["draft", "changes_requested", "ready_for_review", "approved"].includes(sib.status)) continue;
+        // Clearing the media on a post in review returns it to draft, so nothing stale stays approvable.
+        await updateVariant(db, { organizationId: variant.organizationId, contentVariantId: sib.id, actorUserId: approver.userId, expectedRevision: sib.revision, changes: { media: media.filter((m) => m.assetId !== asset.id) } });
+        removed++;
+      }
+      ok = removed > 0;
+      result = ok ? "Taken off that post; it is back to draft." : "That upload isn't on this post any more.";
+    } catch (err) {
+      result = err instanceof Error && err.message === "not_found" ? "Couldn't find that upload or post any more. Send the file again." : friendlyError(err);
+    }
+  }
+  await telegram(env, "answerCallbackQuery", { callback_query_id: cb.id, text: result.slice(0, 190) }, deps).catch(() => undefined);
+  if (cb.message?.message_id) await telegram(env, "editMessageReplyMarkup", { chat_id: chatId, message_id: cb.message.message_id, reply_markup: { inline_keyboard: [] } }, deps).catch(() => undefined);
+  if (ok && assetId && !("error" in approver)) {
+    const drafts: SocialPendingApproval[] = [];
+    for (const orgId of approver.organizationIds) drafts.push(...(await listDraftsAwaitingReview(db, { organizationId: orgId, actorUserId: approver.userId }).catch(() => [])));
+    const targets = attachTargets(drafts, kind);
+    if (targets.length) {
+      await telegram(env, "sendMessage", { chat_id: chatId, text: attachPrompt(targets, kind), reply_markup: { inline_keyboard: targets.map((d, i) => [{ text: attachButtonLabel(d, i), callback_data: encodeAttach(assetId!, d.variant.id) }]) } }, deps).catch(() => undefined);
+    } else {
+      await telegram(env, "sendMessage", { chat_id: chatId, text: `${result} No other post is waiting for ${kind === "video" ? "a video" : "a picture"}; it stays in the library.` }, deps).catch(() => undefined);
+    }
+  } else {
+    await telegram(env, "sendMessage", { chat_id: chatId, text: result }, deps).catch(() => undefined);
+  }
+  return { action: `detached:${ok ? "ok" : "failed"}` };
 }
 
 /** Points the bot's webhook at this deployment. Called by the signed-in owner from LYNQ. */
