@@ -448,10 +448,10 @@ export const WEEK_PLANS: WeekPlan[] = [
       {
         key: "lynq-w2-reel-rebuilt", brand: LYNQ, day: "2026-10-12", time: "18:30", series: "REBUILT",
         title: "LYNQ Reel · REBUILT — a plumber's homepage in 10 minutes",
-        hook: "I rebuilt a plumber's homepage in 10 minutes. Here's what changed.",
-        body: "REBUILT: a plumber's homepage in 10 minutes (name hidden).\n\nWhat changed:\n1. \"Call now\" at the top, not under three paragraphs\n2. Service area and hours on the first screen\n3. The Google reviews they already had, finally on the site\n\nOld on the left, new on the right at the end.\n\nWant yours done? DM \"REBUILD\" and I'll send you the before and after of your own homepage.",
-        facebookBody: "I rebuilt a plumber's homepage in 10 minutes. Call now at the top, service area and hours on the first screen, their Google reviews on the site. Old and new side by side at the end. Want yours? Send us a message.",
-        hashtags: ["Plumbers", ...LYNQ_TAGS.slice(0, 2)], callToAction: "DM REBUILD",
+        hook: "Your customer came to book, not solve a maze.",
+        body: "Your customer came to book, not solve a maze.\n\nA clear website helps people understand what you offer, find what they need, and take the next step.\n\nLYNQ. Built to move businesses forward.\n\nDM \"REBUILD\" and we will send you the before and after of your own homepage.",
+        facebookBody: "Your customer came to book, not solve a maze.\n\nA clear website helps people understand what you offer, find what they need, and take the next step.\n\nLYNQ. Built to move businesses forward.\n\nMessage us and we will send you the before and after of your own homepage.",
+        hashtags: LYNQ_TAGS, callToAction: "DM REBUILD",
         script: "Screen-record the rebuild as a timelapse: the real homepage (name and logo blurred) on the left, a blank page on the right that fills in. Speed up to 30 to 45 seconds. Freeze on old vs new for the last 4 seconds. Say the three changes out loud while they appear. Only show what you really built.",
         shots: [
           { timing: "0–2s", visual: "Old homepage on a phone frame, name blurred, timer reads 10:00", onScreenText: "Rebuilt in 10 minutes" },
