@@ -406,6 +406,16 @@ export async function handleTelegramUpdate(db: Db, env: TelegramEnv, update: Tel
           const revision = await ensureFutureSlot(contentVariantId, expectedRevision);
           await submitVariantForReview(db, { organizationId: variant.organizationId, contentVariantId, actorUserId: approver.userId, expectedRevision: revision, summary: "Sent for review from Telegram" });
         } else {
+          // Approving a post whose planned time has passed: approve it for the next slot (an explicit schedule), otherwise it
+          // sits "approved" with no publish job and the message "it will post at its planned time" is a lie.
+          let scheduledFor: Date | undefined;
+          if (decision === "approve") {
+            const [row] = await db.select({ scheduledFor: socialContentVariants.scheduledFor }).from(socialContentVariants).where(eq(socialContentVariants.id, contentVariantId)).limit(1);
+            if (row?.scheduledFor) {
+              const at = catchUp(row.scheduledFor);
+              if (at.getTime() !== row.scheduledFor.getTime()) scheduledFor = at;
+            }
+          }
           await decideVariantApproval(db, {
             organizationId: variant.organizationId,
             contentVariantId,
@@ -413,6 +423,7 @@ export async function handleTelegramUpdate(db: Db, env: TelegramEnv, update: Tel
             expectedRevision,
             decision: decision === "publish" || decision === "approve" ? "approve" : decision === "reject" ? "reject" : "request_changes",
             publishNow: decision === "publish",
+            ...(scheduledFor ? { scheduledFor } : {}),
             note: "Decided from Telegram",
           });
         }
