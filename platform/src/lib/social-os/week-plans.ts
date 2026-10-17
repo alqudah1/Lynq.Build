@@ -446,6 +446,16 @@ export const WEEK_PLANS: WeekPlan[] = [
         ],
       },
       {
+        key: "lynq-reel-maze", brand: LYNQ, day: "2026-10-17", time: "18:30", series: "FIX THIS",
+        title: "LYNQ Reel · Not a maze — the arrow finds the Book button",
+        hook: "Your customer came to book, not solve a maze.",
+        body: "Your customer came to book, not solve a maze.\n\nA clear website helps people understand what you offer, find what they need, and take the next step.\n\nLYNQ. Built to move businesses forward.\n\nDM \"REBUILD\" and we will send you the before and after of your own homepage.",
+        facebookBody: "Your customer came to book, not solve a maze.\n\nA clear website helps people understand what you offer, find what they need, and take the next step.\n\nLYNQ. Built to move businesses forward.\n\nMessage us and we will send you the before and after of your own homepage.",
+        hashtags: LYNQ_TAGS, callToAction: "DM REBUILD",
+        script: "Animated: a single arrow travels through a cluttered homepage, hits dead ends, then the page clears and the arrow lands on the Book button. 15 to 25 seconds, no voice needed.",
+        shots: [{ timing: "0-3s", visual: "Arrow enters a cluttered page", onScreenText: "Your customer came to book", audio: "" }, { timing: "3-15s", visual: "Dead ends, back-tracking", onScreenText: "not solve a maze", audio: "" }, { timing: "15-25s", visual: "Page clears, arrow lands on Book", onScreenText: "LYNQ", audio: "" }],
+      },
+      {
         key: "lynq-w2-reel-rebuilt", brand: LYNQ, day: "2026-10-12", time: "18:30", series: "REBUILT",
         title: "LYNQ Reel · REBUILT — a plumber's homepage in 10 minutes",
         hook: "I rebuilt a plumber's homepage in 10 minutes. Here's what changed.",
