@@ -79,6 +79,8 @@ interface PlanReel {
   callToAction: string;
   script: string;
   shots: { timing: string; visual: string; onScreenText?: string; audio?: string }[];
+  /** The owner already sent this reel's video to the Telegram bot: attach the newest Telegram video in the workspace when the reel has none. */
+  videoFromTelegram?: boolean;
 }
 
 /** A text post for Mustafa's personal LinkedIn (no images: founder text posts, 800–1,000 characters, no links). */
@@ -446,7 +448,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         ],
       },
       {
-        key: "lynq-reel-maze", brand: LYNQ, day: "2026-10-17", time: "18:30", series: "FIX THIS",
+        key: "lynq-reel-maze", brand: LYNQ, day: "2026-10-21", time: "18:30", series: "FIX THIS", videoFromTelegram: true,
         title: "LYNQ Reel · Not a maze — the arrow finds the Book button",
         hook: "Your customer came to book, not solve a maze.",
         body: "Your customer came to book, not solve a maze.\n\nA clear website helps people understand what you offer, find what they need, and take the next step.\n\nLYNQ. Built to move businesses forward.\n\nDM \"REBUILD\" and we will send you the before and after of your own homepage.",
@@ -961,6 +963,7 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
     if (existingReelId) {
       const existing = await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId: existingReelId, actorUserId: input.actorUserId });
       if (await refreshPlanCopy(db, input, existing, (v) => ({ hook: reel.hook, body: v.platform === "facebook" ? (reel.facebookBody ?? reel.body) : reel.body, hashtags: reel.hashtags, callToAction: reel.callToAction, scheduledFor: planSlot(reel.day, reel.time) }))) report.scheduled.push(`${existing.title}: updated`);
+      if (reel.videoFromTelegram && (await attachTelegramVideo(db, input, existingReelId))) report.scheduled.push(`${existing.title}: video from Telegram attached`);
       continue;
     }
     const at = planSlot(reel.day, reel.time);
@@ -985,7 +988,8 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
       await updateVariant(db, { organizationId: input.organizationId, contentVariantId: v.id, actorUserId: input.actorUserId, expectedRevision: v.revision, changes: { format: v.platform === "instagram" ? "reel" : "video", hook: reel.hook, body: v.platform === "facebook" ? (reel.facebookBody ?? reel.body) : reel.body, hashtags: reel.hashtags, callToAction: reel.callToAction, platformOptions, scheduledFor: at, ...(account ? { channelAccountId: account } : {}) } });
     }
     report.created.push(`${reel.title} · ${reel.day} ${reel.time}`);
-    report.needsYou.push(`${reel.title}: film it from the script and upload the video before ${reel.day}.`);
+    if (reel.videoFromTelegram && (await attachTelegramVideo(db, input, item.id))) report.scheduled.push(`${reel.title}: video from Telegram attached`);
+    else report.needsYou.push(`${reel.title}: film it from the script and upload the video before ${reel.day}.`);
   }
 
   // 4. LinkedIn: text posts for Mustafa's profile (drafts until LinkedIn is connected; copy them from Telegram or the Library meanwhile).
@@ -1020,6 +1024,30 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
   if (pruned) report.scheduled.push(`${pruned} unused story card${pruned === 1 ? "" : "s"} archived`);
 
   return report;
+}
+
+/** Puts the newest video sent to the Telegram bot on every version of a reel that still has no media. True when something was attached. */
+async function attachTelegramVideo(db: Db, input: { organizationId: string; actorUserId: string }, contentItemId: string): Promise<boolean> {
+  const variants = await getVariantsOfItem(db, input, contentItemId);
+  const empty = variants.filter((v) => !v.archivedAt && !v.media.length && RESCHEDULABLE.has(v.status) && v.platform !== "linkedin");
+  if (!empty.length) return false;
+  const [video] = await db
+    .select({ id: socialAssets.id })
+    .from(socialAssets)
+    .where(and(eq(socialAssets.organizationId, input.organizationId), isNull(socialAssets.archivedAt), eq(socialAssets.assetType, "video"), sql`${socialAssets.tags} @> ${JSON.stringify(["telegram"])}::jsonb`))
+    .orderBy(desc(socialAssets.createdAt))
+    .limit(1);
+  if (!video) return false;
+  let attached = 0;
+  for (const v of empty) {
+    try {
+      await updateVariant(db, { organizationId: input.organizationId, contentVariantId: v.id, actorUserId: input.actorUserId, expectedRevision: v.revision, changes: { media: [{ assetId: video.id, position: 0, role: "primary" as const }] } });
+      attached++;
+    } catch (err) {
+      console.error("[week-plan] telegram video attach failed:", err instanceof Error ? err.message.slice(0, 200) : "unknown");
+    }
+  }
+  return attached > 0;
 }
 
 /** Archives story-card assets (older than an hour) that no live variant uses. Bounded per run. */
