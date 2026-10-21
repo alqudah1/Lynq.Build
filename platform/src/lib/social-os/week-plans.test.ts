@@ -4,9 +4,8 @@ import { WEEK_PLANS, currentWeekPlan, planInstant, planMarker, planEnd } from ".
 const next = (d: string) => new Date(Date.parse(`${d}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
 import { SOCIAL_PLATFORM_RULES, socialContentBriefSchema } from "./validation";
 
-const plan = WEEK_PLANS[0];
 
-describe("week plan Oct 12", () => {
+describe.each(WEEK_PLANS)("week plan $key", (plan) => {
   it("posts every day from the week start to the plan end: each brand has a feed post or a reel every single day", () => {
     for (const brand of ["lynq", "codeit"]) {
       const covered = new Set([...plan.feed.filter((p) => p.brand.brandKey === brand), ...plan.reels.filter((r) => r.brand.brandKey === brand)].map((e) => e.day));
@@ -66,7 +65,9 @@ describe("week plan Oct 12", () => {
   it("is the current plan until the week ends", () => {
     expect(currentWeekPlan(new Date("2026-10-06T12:00:00Z"))?.key).toBe("2026-10-12");
     expect(currentWeekPlan(new Date("2026-10-21T12:00:00Z"))?.key).toBe("2026-10-12");
-    expect(currentWeekPlan(new Date("2026-10-22T12:00:00Z"))).toBeUndefined();
+    expect(currentWeekPlan(new Date("2026-10-22T12:00:00Z"))?.key).toBe("2026-11-02");
+    expect(currentWeekPlan(new Date("2026-11-04T12:00:00Z"))?.key).toBe("2026-11-02");
+    expect(currentWeekPlan(new Date("2026-11-05T12:00:00Z"))).toBeUndefined();
   });
 
   it("story highlights use the plan's fixed highlight sets", () => {
