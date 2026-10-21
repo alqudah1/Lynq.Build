@@ -1359,6 +1359,8 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
     if (existingLiId) {
       const existing = await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId: existingLiId, actorUserId: input.actorUserId });
       if (await refreshPlanCopy(db, input, existing, () => ({ hook: li.body.split("\n")[0] ?? "", body: li.body, hashtags: [], scheduledFor: planSlot(li.day, li.time) }))) report.scheduled.push(`${existing.title}: updated`);
+      // LinkedIn connected after the post was made: the profile takes every brand's LinkedIn posts.
+      if (await linkLinkedInProfile(db, input, existing)) report.scheduled.push(`${existing.title}: LinkedIn profile linked`);
       continue;
     }
     const at = planSlot(li.day, li.time);
@@ -1382,6 +1384,28 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
   if (pruned) report.scheduled.push(`${pruned} unused story card${pruned === 1 ? "" : "s"} archived`);
 
   return report;
+}
+
+/** Gives a LinkedIn post without an account the organization's connected LinkedIn profile (any brand). True when something was linked. */
+async function linkLinkedInProfile(db: Db, input: { organizationId: string; actorUserId: string }, item: SocialContentItem): Promise<boolean> {
+  const empty = item.variants.filter((v) => !v.archivedAt && v.platform === "linkedin" && !v.channelAccountId && RESCHEDULABLE.has(v.status));
+  if (!empty.length) return false;
+  const rows = await db
+    .select({ id: marketingChannelAccounts.id })
+    .from(marketingChannelAccounts)
+    .where(and(eq(marketingChannelAccounts.organizationId, input.organizationId), eq(marketingChannelAccounts.platform, "linkedin"), eq(marketingChannelAccounts.connectionStatus, "connected"), sql`${marketingChannelAccounts.accountKind} <> 'paid'`, isNull(marketingChannelAccounts.archivedAt)))
+    .limit(2);
+  if (rows.length !== 1) return false;
+  let linked = 0;
+  for (const v of empty) {
+    try {
+      await updateVariant(db, { organizationId: input.organizationId, contentVariantId: v.id, actorUserId: input.actorUserId, expectedRevision: v.revision, changes: { channelAccountId: rows[0]!.id } });
+      linked++;
+    } catch (err) {
+      console.error("[week-plan] linkedin link failed:", err instanceof Error ? err.message.slice(0, 200) : "unknown");
+    }
+  }
+  return linked > 0;
 }
 
 /** Puts the newest video sent to the Telegram bot on every version of a reel that still has no media. True when something was attached. */
