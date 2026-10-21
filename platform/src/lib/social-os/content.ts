@@ -483,22 +483,36 @@ export async function syncContentItemStatus(db: Db, organizationId: string, cont
 // Account auto-pick + validation
 // ---------------------------------------------------------------------------
 
+/**
+ * A LinkedIn personal profile belongs to a person, not a brand: the founder posts about every brand from
+ * the same profile. So a LinkedIn organic account may carry any brand's LinkedIn post, and is picked for
+ * a brand that has no LinkedIn account of its own. (Pages, once connected, still bind to their brand.)
+ */
+function isPersonalProfile(account: { platform: string; accountKind: string }): boolean {
+  return account.platform === "linkedin" && account.accountKind !== "paid";
+}
+
 async function autoPickAccount(db: Db, organizationId: string, brandProfileId: string, platform: SocialOrganicPlatform): Promise<string | null> {
   const rows = await db
-    .select({ id: marketingChannelAccounts.id, connectionStatus: marketingChannelAccounts.connectionStatus, accountKind: marketingChannelAccounts.accountKind })
+    .select({ id: marketingChannelAccounts.id, connectionStatus: marketingChannelAccounts.connectionStatus, accountKind: marketingChannelAccounts.accountKind, brandProfileId: marketingChannelAccounts.brandProfileId })
     .from(marketingChannelAccounts)
-    .where(and(eq(marketingChannelAccounts.organizationId, organizationId), eq(marketingChannelAccounts.brandProfileId, brandProfileId), eq(marketingChannelAccounts.platform, platform), isNull(marketingChannelAccounts.archivedAt)));
-  const organic = rows.filter((r) => r.accountKind !== "paid");
-  const connected = organic.filter((r) => r.connectionStatus === "connected");
-  if (connected.length === 1) return connected[0].id;
-  if (organic.length === 1) return organic[0].id;
-  return null;
+    .where(and(eq(marketingChannelAccounts.organizationId, organizationId), eq(marketingChannelAccounts.platform, platform), isNull(marketingChannelAccounts.archivedAt)));
+  const pick = (candidates: typeof rows) => {
+    const organic = candidates.filter((r) => r.accountKind !== "paid");
+    const connected = organic.filter((r) => r.connectionStatus === "connected");
+    if (connected.length === 1) return connected[0]!.id;
+    if (organic.length === 1) return organic[0]!.id;
+    return null;
+  };
+  const own = pick(rows.filter((r) => r.brandProfileId === brandProfileId));
+  if (own || platform !== "linkedin") return own;
+  return pick(rows);
 }
 
 async function assertAccountFor(db: Db, organizationId: string, channelAccountId: string, platform: SocialOrganicPlatform, brandProfileId: string | null): Promise<AccountRow> {
   const account = await resolveAccountRow(db, organizationId, channelAccountId);
   if (account.platform !== platform) throw new SocialPlatformMismatchError();
-  if (brandProfileId && account.brandProfileId !== brandProfileId) throw new SocialAccountBrandMismatchError();
+  if (brandProfileId && account.brandProfileId !== brandProfileId && !isPersonalProfile(account)) throw new SocialAccountBrandMismatchError();
   return account;
 }
 
