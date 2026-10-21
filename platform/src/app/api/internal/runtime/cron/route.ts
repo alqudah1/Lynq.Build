@@ -7,7 +7,7 @@ import { timingSafeEqualStrings } from "@/lib/communications-os/secrets";
 import { pollAndProcess } from "@/lib/runtime/worker";
 import { enqueueDueAutomationRules } from "@/lib/social-os/automation";
 import { loadTelegramEnv, resolveTelegramActor, runMorningTelegramSend } from "@/lib/social-os/telegram";
-import { applyWeekPlan, currentWeekPlan, fillWeekPlanImages, generatePlanImages, getWeekPlanStatus } from "@/lib/social-os/week-plans";
+import { applyWeekPlan, currentWeekPlan, fillWeekPlanImages, generatePlanImages, getWeekPlanStatus, WEEK_PLANS } from "@/lib/social-os/week-plans";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 800;
@@ -42,7 +42,8 @@ export async function GET(request: Request) {
     if (plan && actor && new Date().getMinutes() < 15) {
       for (const organizationId of actor.organizationIds) {
         const status = await getWeekPlanStatus(db, { organizationId, actorUserId: actor.userId, planKey: plan.key });
-        if (!status.loaded) continue;
+        // A new plan follows on from the last one without anyone pressing "load": once a workspace has used any plan, the next one loads itself.
+        if (!status.loaded && !(await anyPlanLoaded(db, organizationId, actor.userId, plan.key))) continue;
         const report = await applyWeekPlan(db, { organizationId, actorUserId: actor.userId, planKey: plan.key });
         planApplied++;
         if (report.imagesQueued.length) await generatePlanImages(db, { organizationId, actorUserId: actor.userId, queue: report.imagesQueued.slice(0, 3) });
@@ -69,4 +70,12 @@ export async function GET(request: Request) {
     if (result.processed.length === 0) break;
   }
   return Response.json({ ok: true, processed: processed.length, automationEnqueued, telegramSent, planApplied, planImages });
+}
+
+async function anyPlanLoaded(db: Parameters<typeof getWeekPlanStatus>[0], organizationId: string, actorUserId: string, exceptKey: string): Promise<boolean> {
+  for (const p of WEEK_PLANS) {
+    if (p.key === exceptKey) continue;
+    if ((await getWeekPlanStatus(db, { organizationId, actorUserId, planKey: p.key }).catch(() => ({ loaded: false }))).loaded) return true;
+  }
+  return false;
 }
