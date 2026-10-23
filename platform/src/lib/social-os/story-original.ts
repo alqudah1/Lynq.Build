@@ -34,7 +34,14 @@ export type StorySpec =
   | { kind: "tryTonight"; brand: "codeit"; eyebrow: string; headline: string; steps: string[]; code?: string }
   | { kind: "whichSite"; brand: "lynq"; eyebrow: string; headline: string[]; sticker: Extract<StickerSpec, { type: "poll" }> }
   | { kind: "checklist"; brand: "lynq"; eyebrow: string; headline: string[]; intro: string; items: { text: string; ok: boolean }[]; close: [string, string, string] }
-  | { kind: "oneFix"; brand: "lynq"; eyebrow: string; headline: string[]; fix: string; detail: string };
+  | { kind: "oneFix"; brand: "lynq"; eyebrow: string; headline: string[]; fix: string; detail: string }
+  // LYNQ editorial stories: magazine and product-sheet formats, no question asked.
+  | { kind: "specSheet"; brand: "lynq"; series: string; model: string; subtitle: string; specs: { label: string; value: string; accent?: boolean }[]; note: string }
+  | { kind: "statement"; brand: "lynq"; series: string; lines: string[]; accentWord: string; byline: string }
+  | { kind: "object"; brand: "lynq"; series: string; /** Feed image (a product shot) placed as the hero; bytes passed at render time. */ title: string; label: { k: string; v: string }[]; line: string }
+  | { kind: "index"; brand: "lynq"; series: string; headline: string; rows: { name: string; what: string; where?: string }[]; note: string }
+  | { kind: "process"; brand: "lynq"; series: string; headline: string; steps: { n: string; name: string; detail: string }[]; note: string }
+  | { kind: "teardown"; brand: "lynq"; series: string; headline: string; before: string[]; after: string[]; note: string };
 
 export type Icon = "car" | "paw" | "rocket" | "music" | "phone" | "form";
 
@@ -110,6 +117,20 @@ function wrapWords(t: string, maxChars: number): string[] {
   return out;
 }
 
+// LYNQ editorial: hairline frame, mono labels, one lime.
+const MONO = "JetBrains Mono";
+const eFrame = (series: string, folio: string) =>
+  `<rect width="${W}" height="${H}" fill="${BK}"/>
+<rect x="60" y="250" width="${W - 120}" height="${H - 250 - 300}" fill="none" stroke="#1f1f23" stroke-width="2"/>
+${T(90, 300, "LYNQ", { f: "Inter SemiBold", w: 600, s: 30, c: WH, ls: 10 })}
+${T(W / 2, 300, series.toUpperCase(), { f: MONO, w: 500, s: 22, c: MU, ls: 4, a: "middle" })}
+${T(W - 90, 300, folio, { f: MONO, w: 500, s: 22, c: MU, ls: 2, a: "end" })}
+<line x1="60" y1="328" x2="${W - 60}" y2="328" stroke="#1f1f23" stroke-width="2"/>
+<line x1="60" y1="${H - 360}" x2="${W - 60}" y2="${H - 360}" stroke="#1f1f23" stroke-width="2"/>
+${T(90, H - 318, "LYNQ.BUILD", { f: MONO, w: 500, s: 22, c: MU, ls: 4 })}
+${T(W - 90, H - 318, "WEBSITES · SYSTEMS · AUTOMATION", { f: MONO, w: 500, s: 20, c: "#5a5a60", ls: 3, a: "end" })}`;
+const mLabel = (x: number, y: number, t: string, c = MU, a: "start" | "end" | "middle" = "start") => T(x, y, t.toUpperCase(), { f: MONO, w: 500, s: 24, c, ls: 3, a });
+
 // ---------- Templates ----------
 export function storySvg(spec: StorySpec): string {
   switch (spec.kind) {
@@ -159,16 +180,69 @@ ${T(90, 1440, spec.close[0], { f: "Inter SemiBold", w: 600, s: 60, c: WH })}${T(
 ${phone(290, 700, 500, 700, (x, y, w) => `${bar(x, y, w, 60, "#1c1c20")}${T(x, y + 140, "Your business", { f: "Inter SemiBold", w: 600, s: 40, c: WH })}${bar(x, y + 170, w - 60, 18, "#1c1c20")}<rect x="${x}" y="${y + 230}" width="${w}" height="104" rx="52" fill="none" stroke="${LI}" stroke-width="4" stroke-dasharray="14 12"/>${T(x + w / 2, y + 296, spec.fix, { f: "Inter SemiBold", w: 600, s: 36, c: LI, a: "middle" })}${[0, 1, 2, 3].map((i) => bar(x, y + 380 + i * 44, w - (i % 2) * 60, 20, "#1c1c20")).join("")}`)}
 <path d="M840 1000 C 900 1000, 900 960, 800 960" fill="none" stroke="${LI}" stroke-width="5"/><path d="M816 946 L796 960 L816 974" fill="none" stroke="${LI}" stroke-width="5" stroke-linecap="round"/>
 ${lLines(1500, wrapWords(spec.detail, 34), 44, WH)}`;
+    case "specSheet": {
+      const rows = spec.specs.map((r, i) => {
+        const y = 760 + i * 118;
+        return `<line x1="90" y1="${y - 70}" x2="${W - 90}" y2="${y - 70}" stroke="#1f1f23" stroke-width="2"/>${mLabel(90, y, r.label)}${T(W - 90, y + 2, r.value, { f: "Inter Light", w: 300, s: 48, c: r.accent ? LI : WH, a: "end" })}`;
+      }).join("");
+      const last = 760 + spec.specs.length * 118 - 70;
+      return `${eFrame(spec.series, "SPEC")}
+${mLabel(90, 440, "Model")}${T(90, 540, spec.model, { f: "Inter SemiBold", w: 600, s: 96, c: WH, ls: -2 })}${T(90, 606, spec.subtitle, { f: "Inter Light", w: 300, s: 40, c: MU })}
+${rows}<line x1="90" y1="${last}" x2="${W - 90}" y2="${last}" stroke="#1f1f23" stroke-width="2"/>
+${lLines(last + 90, wrapWords(spec.note, 40), 36, MU)}`;
+    }
+    case "statement": {
+      const size = 92;
+      const top = 620;
+      const lines = spec.lines.map((l, i) => {
+        const y = top + i * (size + 22);
+        const at = l.indexOf(spec.accentWord);
+        if (at < 0) return T(90, y, l, { f: "Inter Light", w: 300, s: size, c: WH, ls: -2 });
+        // the accent word in lime, the rest white: drawn as one text with a tspan
+        return `<text x="90" y="${y}" font-family="Inter Light" font-weight="300" font-size="${size}" letter-spacing="-2" fill="${WH}" xml:space="preserve">${esc(l.slice(0, at))}<tspan fill="${LI}">${esc(spec.accentWord)}</tspan>${esc(l.slice(at + spec.accentWord.length))}</text>`;
+      }).join("");
+      const end = top + spec.lines.length * (size + 22);
+      return `${eFrame(spec.series, "NOTE")}${mLabel(90, 470, "Studio note")}${lines}<rect x="90" y="${end + 30}" width="120" height="4" fill="${LI}"/>${mLabel(90, end + 110, spec.byline)}`;
+    }
+    case "object":
+      return `${eFrame(spec.series, "OBJ")}
+${mLabel(90, 410, spec.title)}
+<rect x="90" y="440" width="${W - 180}" height="760" fill="#111113"/>
+<!-- the photo is composited into this square at render time -->
+${spec.label.map((r, i) => `<line x1="90" y1="${1250 + i * 64 - 42}" x2="${W - 90}" y2="${1250 + i * 64 - 42}" stroke="#1f1f23" stroke-width="2"/>${mLabel(90, 1250 + i * 64, r.k)}${T(W - 90, 1252 + i * 64, r.v, { f: "Inter Light", w: 300, s: 32, c: WH, a: "end" })}`).join("")}
+${T(90, 1250 + spec.label.length * 64 + 40, spec.line, { f: "Inter Light", w: 300, s: 44, c: LI })}`;
+    case "index": {
+      const rows = spec.rows.map((r, i) => {
+        const y = 680 + i * 150;
+        return `<line x1="90" y1="${y - 70}" x2="${W - 90}" y2="${y - 70}" stroke="#1f1f23" stroke-width="2"/>${mLabel(90, y - 20, String(i + 1).padStart(2, "0"), "#5a5a60")}${T(170, y, r.name, { f: "Inter Light", w: 300, s: 50, c: WH })}${T(170, y + 46, r.what, { f: "Inter Light", w: 300, s: 30, c: MU })}${r.where ? mLabel(W - 90, y - 20, r.where, "#5a5a60", "end") : ""}`;
+      }).join("");
+      const last = 680 + spec.rows.length * 150 - 70;
+      return `${eFrame(spec.series, "INDEX")}${mLabel(90, 440, "Index")}${T(90, 530, spec.headline, { f: "Inter Light", w: 300, s: 76, c: WH, ls: -1 })}${rows}<line x1="90" y1="${last}" x2="${W - 90}" y2="${last}" stroke="#1f1f23" stroke-width="2"/>${T(90, last + 80, spec.note, { f: "Inter Light", w: 300, s: 34, c: LI })}`;
+    }
+    case "process": {
+      const rows = spec.steps.map((st, i) => {
+        const y = 700 + i * 160;
+        const on = i === spec.steps.length - 1;
+        return `<circle cx="118" cy="${y - 14}" r="${on ? 14 : 10}" fill="${on ? LI : "none"}" stroke="${on ? LI : "#5a5a60"}" stroke-width="3"/>${i < spec.steps.length - 1 ? `<line x1="118" y1="${y + 6}" x2="118" y2="${y + 136}" stroke="#2a2a2e" stroke-width="2"/>` : ""}${mLabel(170, y - 34, st.n, "#5a5a60")}${T(170, y + 14, st.name, { f: "Inter Light", w: 300, s: 50, c: WH })}${T(170, y + 60, st.detail, { f: "Inter Light", w: 300, s: 30, c: MU })}`;
+      }).join("");
+      const last = 700 + spec.steps.length * 160;
+      return `${eFrame(spec.series, "PROC")}${mLabel(90, 440, "Process")}${T(90, 530, spec.headline, { f: "Inter Light", w: 300, s: 76, c: WH, ls: -1 })}${rows}${T(90, last + 10, spec.note, { f: "Inter Light", w: 300, s: 34, c: LI })}`;
+    }
+    case "teardown": {
+      const col = (x: number, title: string, items: string[], good: boolean) => `${mLabel(x, 700, title, good ? LI : MU)}<line x1="${x}" y1="724" x2="${x + 420}" y2="724" stroke="${good ? LI : "#2a2a2e"}" stroke-width="2"/>${items.map((t, i) => `${T(x, 800 + i * 96, good ? "+" : "−", { f: MONO, w: 500, s: 36, c: good ? LI : "#5a5a60" })}${wrapWords(t, 20).map((l, j) => T(x + 46, 800 + i * 96 + j * 40, l, { f: "Inter Light", w: 300, s: 34, c: good ? WH : MU })).join("")}`).join("")}`;
+      return `${eFrame(spec.series, "TEAR")}${mLabel(90, 440, "Teardown")}${T(90, 530, spec.headline, { f: "Inter Light", w: 300, s: 72, c: WH, ls: -1 })}${col(90, "Before", spec.before, false)}${col(570, "After", spec.after, true)}${lLines(1420, wrapWords(spec.note, 40), 34, MU)}`;
+    }
   }
 }
 
 const LOGO = path.join(process.cwd(), "src", "assets", "brand", "codeit-logo.png");
 
 /** Renders a story to a 1080×1920 JPEG. */
-export async function composeStory(spec: StorySpec): Promise<{ bytes: Uint8Array; width: number; height: number; contentType: "image/jpeg" }> {
+export async function composeStory(spec: StorySpec, photo?: Uint8Array): Promise<{ bytes: Uint8Array; width: number; height: number; contentType: "image/jpeg" }> {
   prepareFonts();
   const sharp = (await import("sharp")).default;
   const layers = [] as { input: Buffer; left: number; top: number }[];
+  if (spec.kind === "object" && photo) layers.push({ input: await sharp(Buffer.from(photo)).resize(W - 180, 760, { fit: "cover" }).toBuffer(), left: 90, top: 440 });
   if (spec.brand === "codeit") layers.push({ input: await sharp(readFileSync(LOGO)).resize({ width: 220 }).png().toBuffer(), left: (W - 220) / 2, top: 140 });
   const out = await sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${storySvg(spec)}</svg>`))
     .composite(layers)
