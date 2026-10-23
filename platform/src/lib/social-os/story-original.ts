@@ -14,6 +14,7 @@
  * Nunito, JetBrains Mono); LYNQ stories use the grid's (near-black, white,
  * one acid lime, Inter).
  */
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { prepareFonts } from "./story-card";
@@ -43,7 +44,12 @@ export type StorySpec =
   | { kind: "process"; brand: "lynq"; series: string; headline: string; steps: { n: string; name: string; detail: string }[]; note: string }
   | { kind: "teardown"; brand: "lynq"; series: string; headline: string; before: string[]; after: string[]; note: string };
 
-export type Icon = "car" | "paw" | "rocket" | "music" | "phone" | "form";
+export type Icon = "car" | "paw" | "rocket" | "music" | "phone" | "form" | "star" | "rock";
+
+/** Stable key for a spec: stored on the story so a changed spec re-renders the image. */
+export function storyKey(spec: StorySpec): string {
+  return `story-spec:${createHash("sha1").update(JSON.stringify(spec)).digest("hex").slice(0, 16)}`;
+}
 
 /** Whether the owner posts this story from the app (it needs a sticker). */
 export function needsSticker(spec: StorySpec): boolean {
@@ -76,8 +82,11 @@ const cCard = (x: number, y: number, w: number, h: number, f = CR, r = 36) => `<
 const cHead = (eyebrow: string) => `<rect width="${W}" height="${H}" fill="${CR}"/>${T(W / 2, 400, eyebrow.toUpperCase(), { w: 800, s: 34, c: ORT, ls: 8, a: "middle" })}`;
 const cTitle = (y: number, t: string, s = 80, c = BR) => T(W / 2, y, t, { f: "Baloo 2", s, c, a: "middle" });
 const cCode = (x: number, y: number, w: number, lines: string[]) => {
-  const h = 70 + lines.length * 78;
-  return cCard(x, y, w, h, DK) + lines.map((l, i) => T(x + 50, y + 92 + i * 78, l, { f: "JetBrains Mono", w: 500, s: 50, c: l.trim().startsWith("#") || /print|\(/.test(l) ? MI : CR })).join("");
+  // JetBrains Mono is 0.6 em wide: shrink long lines so they stay inside the card.
+  const size = Math.min(50, Math.floor((w - 100) / (0.6 * Math.max(...lines.map((l) => l.length)))));
+  const lh = Math.round(size * 1.56);
+  const h = 70 + lines.length * lh;
+  return cCard(x, y, w, h, DK) + lines.map((l, i) => T(x + 50, y + 42 + size + i * lh, l, { f: "JetBrains Mono", w: 500, s: size, c: l.trim().startsWith("#") || /print|\(/.test(l) ? MI : CR })).join("");
 };
 const cOpt = (x: number, y: number, w: number, h: number, letter: string, label: string, on = false) =>
   `${cCard(x, y, w, h, on ? OR : CR, h / 2)}<circle cx="${x + h / 2 + 6}" cy="${y + h / 2}" r="${h / 2 - 18}" fill="${on ? DK : OR}" stroke="${DK}" stroke-width="4"/>${T(x + h / 2 + 6, y + h / 2 + 17, letter, { f: "Baloo 2", s: 50, c: "#fff", a: "middle" })}${T(x + h + 26, y + h / 2 + 16, label, { f: "JetBrains Mono", w: 500, s: 46, c: on ? "#fff" : BR })}`;
@@ -91,6 +100,8 @@ function icon(kind: Icon, cx: number, cy: number, color: string, stroke: string)
     case "rocket": return `<path d="M${cx} ${cy - 100} q60 60 40 150 h-80 q-20 -90 40 -150 z" fill="${color}" ${s}/><circle cx="${cx}" cy="${cy - 20}" r="20" fill="#ffffff" ${s}/><path d="M${cx - 40} ${cy + 30} l-36 40 h36 z M${cx + 40} ${cy + 30} l36 40 h-36 z" fill="${color}" ${s}/>`;
     case "music": return `<path d="M${cx - 40} ${cy + 50} v-130 l100 -24 v130" fill="none" ${s}/><ellipse cx="${cx - 62}" cy="${cy + 50}" rx="28" ry="22" fill="${color}" ${s}/><ellipse cx="${cx + 38}" cy="${cy + 26}" rx="28" ry="22" fill="${color}" ${s}/>`;
     case "phone": return `<rect x="${cx - 50}" y="${cy - 90}" width="100" height="180" rx="20" fill="${color}" ${s}/><rect x="${cx - 18}" y="${cy + 60}" width="36" height="8" rx="4" fill="${stroke}"/>`;
+    case "star": return `<path d="M${cx} ${cy - 90} l26 56 l62 7 l-46 42 l13 61 l-55 -31 l-55 31 l13 -61 l-46 -42 l62 -7 z" fill="${color}" ${s}/>`;
+    case "rock": return `<path d="M${cx - 80} ${cy + 10} q-10 -70 50 -90 q40 -30 80 0 q60 10 50 80 q10 60 -60 80 q-50 20 -90 0 q-40 -20 -30 -70 z" fill="${color}" ${s}/><circle cx="${cx - 20}" cy="${cy - 20}" r="16" fill="none" ${s}/><circle cx="${cx + 34}" cy="${cy + 30}" r="12" fill="none" ${s}/>`;
     case "form": return `<rect x="${cx - 80}" y="${cy - 90}" width="160" height="180" rx="16" fill="${color}" ${s}/><path d="M${cx - 50} ${cy - 40} h100 M${cx - 50} ${cy} h100 M${cx - 50} ${cy + 40} h60" ${s}/>`;
   }
 }
@@ -138,16 +149,16 @@ export function storySvg(spec: StorySpec): string {
       return `${cHead(spec.eyebrow)}${cTitle(500, spec.headline)}${cCode(90, 570, 900, spec.code)}${T(W / 2, 1600, spec.footnote ?? "Answer in tomorrow's story.", { w: 800, s: 42, c: ORT, a: "middle" })}`;
     case "answer":
       return `${cHead(spec.eyebrow)}${cTitle(500, spec.headline)}${cOpt(90, 570, 900, 140, "✓", spec.answer, true)}
-${cCard(90, 770, 900, 140 + spec.why.length * 60 + 180)}${T(140, 860, "Why:", { f: "Baloo 2", s: 56, c: ORT })}
+${cCard(90, 770, 900, 140 + spec.why.length * 60 + 220)}${T(140, 860, "Why:", { f: "Baloo 2", s: 56, c: ORT })}
 ${spec.why.map((l, i) => T(140, 940 + i * 60, l, { s: 46 })).join("")}
 ${cCard(140, 960 + spec.why.length * 60, 800, 120, DK, 24)}${T(180, 1036 + spec.why.length * 60, spec.example, { f: "JetBrains Mono", w: 500, s: 44, c: MI })}
-${T(W / 2, 1260 + spec.why.length * 60 - 60, spec.tryThis, { w: 800, s: 44, c: ORT, a: "middle" })}
+${T(W / 2, 1290 + spec.why.length * 60 - 60, spec.tryThis, { w: 800, s: 44, c: ORT, a: "middle" })}
 ${cRun(1450, "Run it free at codeitlearn.com")}`;
     case "tryTonight":
       return `${cHead(spec.eyebrow)}${cTitle(500, spec.headline, 76)}
 ${spec.steps.map((st, i) => `<circle cx="150" cy="${640 + i * 190}" r="40" fill="${OR}" stroke="${DK}" stroke-width="5"/>${T(150, 657 + i * 190, String(i + 1), { f: "Baloo 2", s: 50, c: "#fff", a: "middle" })}${T(220, 656 + i * 190, st, { w: 700, s: 46 })}`).join("")}
-${spec.code ? cCode(90, 640 + spec.steps.length * 190 - 40, 900, [spec.code]) : ""}
-${cRun(1450, "Free, no account: codeitlearn.com")}`;
+${spec.code ? cCode(90, 640 + spec.steps.length * 190 - 40, 900, spec.code.split("\n")) : ""}
+${cRun(1450, "Free to start: codeitlearn.com")}`;
     case "thisOrThat": {
       const dark = spec.brand === "lynq";
       const bg = dark ? lHead(spec.eyebrow) : cHead(spec.eyebrow);
@@ -251,3 +262,76 @@ export async function composeStory(spec: StorySpec, photo?: Uint8Array): Promise
     .toBuffer();
   return { bytes: new Uint8Array(out.buffer, out.byteOffset, out.byteLength), width: W, height: H, contentType: "image/jpeg" };
 }
+
+// ---------- Highlight covers ----------
+/**
+ * Instagram crops a highlight cover to a circle from the middle of a story
+ * image, so the cover is a full 1080×1920 frame with the mark centred.
+ * CodeIt: cream, an orange disc with the site's dark outline and offset
+ * shadow. LYNQ: near-black, one hairline lime ring, a thin white mark.
+ */
+export type CoverMark = "play" | "rocket" | "code" | "ask" | "gift" | "heart" | "quiz" | "pip" | "wrench" | "box" | "eye" | "grid" | "letters";
+
+export function coverSvg(brand: StoryBrandKey, mark: CoverMark, letters = ""): string {
+  const cx = W / 2, cy = H / 2;
+  const dark = brand === "lynq";
+  const ink = dark ? WH : "#ffffff";
+  const st = (fill = "none") => `fill="${fill}" stroke="${ink}" stroke-width="${dark ? 10 : 18}" stroke-linecap="round" stroke-linejoin="round"`;
+  const s = st();
+  const glyph = (() => {
+    switch (mark) {
+      case "play": return `<path d="M${cx - 50} ${cy - 80} L${cx + 80} ${cy} L${cx - 50} ${cy + 80} Z" ${st(dark ? "none" : ink)}/>`;
+      case "rocket": return `<path d="M${cx} ${cy - 130} q80 80 52 200 h-104 q-28 -120 52 -200 z" ${s}/><circle cx="${cx}" cy="${cy - 20}" r="26" ${s}/><path d="M${cx - 52} ${cy + 40} l-46 56 h46 M${cx + 52} ${cy + 40} l46 56 h-46" ${s}/>`;
+      case "code": return `<path d="M${cx - 60} ${cy - 90} L${cx - 150} ${cy} L${cx - 60} ${cy + 90} M${cx + 60} ${cy - 90} L${cx + 150} ${cy} L${cx + 60} ${cy + 90} M${cx + 30} ${cy - 120} L${cx - 30} ${cy + 120}" ${s}/>`;
+      case "ask": return `<path d="M${cx - 140} ${cy - 110} h280 q30 0 30 30 v150 q0 30 -30 30 h-150 l-70 60 v-60 h-60 q-30 0 -30 -30 v-150 q0 -30 30 -30 z" ${s}/><path d="M${cx - 34} ${cy - 40} q0 -40 34 -40 q36 0 36 34 q0 26 -36 40 v20" ${s}/><circle cx="${cx}" cy="${cy + 72}" r="${dark ? 7 : 11}" fill="${ink}"/>`;
+      case "gift": return `<rect x="${cx - 130}" y="${cy - 40}" width="260" height="160" rx="16" ${s}/><rect x="${cx - 150}" y="${cy - 100}" width="300" height="60" rx="14" ${s}/><path d="M${cx} ${cy - 100} v220 M${cx} ${cy - 100} q-80 -70 -100 -10 q-6 20 100 10 q80 -70 100 -10 q6 20 -100 10" ${s}/>`;
+      case "heart": return `<path d="M${cx} ${cy + 120} C ${cx - 220} ${cy - 10}, ${cx - 120} ${cy - 170}, ${cx} ${cy - 70} C ${cx + 120} ${cy - 170}, ${cx + 220} ${cy - 10}, ${cx} ${cy + 120} Z" ${s}/>`;
+      case "quiz": return `<rect x="${cx - 130}" y="${cy - 130}" width="260" height="260" rx="40" ${s}/><path d="M${cx - 60} ${cy} l45 45 l80 -95" ${s}/>`;
+      case "pip": return `<circle cx="${cx}" cy="${cy}" r="140" ${s}/><circle cx="${cx - 48}" cy="${cy - 20}" r="${dark ? 12 : 20}" fill="${ink}"/><circle cx="${cx + 48}" cy="${cy - 20}" r="${dark ? 12 : 20}" fill="${ink}"/><path d="M${cx - 50} ${cy + 50} q50 40 100 0" ${s}/>`;
+      case "wrench": return `<path d="M${cx + 70} ${cy - 130} a80 80 0 0 0 -90 110 l-120 120 a34 34 0 0 0 48 48 l120 -120 a80 80 0 0 0 110 -90 l-50 50 l-50 -10 l-10 -50 z" ${s}/>`;
+      case "box": return `<path d="M${cx} ${cy - 140} l130 70 v150 l-130 70 l-130 -70 v-150 z M${cx - 130} ${cy - 70} l130 70 l130 -70 M${cx} ${cy} v150" ${s}/>`;
+      case "eye": return `<path d="M${cx - 170} ${cy} q170 -170 340 0 q-170 170 -340 0 z" ${s}/><circle cx="${cx}" cy="${cy}" r="50" ${s}/>`;
+      case "grid": return [0, 1].flatMap((i) => [0, 1].map((j) => `<rect x="${cx - 120 + i * 130}" y="${cy - 120 + j * 130}" width="110" height="110" rx="${dark ? 6 : 22}" ${s}/>`)).join("");
+      case "letters": return T(cx, cy + (dark ? 44 : 56), letters, { f: dark ? "Inter Light" : "Baloo 2", w: dark ? 300 : 800, s: dark ? 150 : 180, c: ink, a: "middle", ls: dark ? 6 : 0 });
+    }
+  })();
+  return dark
+    ? `<rect width="${W}" height="${H}" fill="${BK}"/><circle cx="${cx}" cy="${cy}" r="330" fill="#121214"/><circle cx="${cx}" cy="${cy}" r="330" fill="none" stroke="${LI}" stroke-width="4"/>${glyph}`
+    : `<rect width="${W}" height="${H}" fill="${CR}"/><circle cx="${cx + 16}" cy="${cy + 16}" r="330" fill="${DK}"/><circle cx="${cx}" cy="${cy}" r="330" fill="${OR}" stroke="${DK}" stroke-width="10"/>${glyph}`;
+}
+
+/** A highlight cover as a 1080×1920 JPEG (upload it as the cover in the Instagram app). */
+export async function composeCover(brand: StoryBrandKey, mark: CoverMark, letters = ""): Promise<Uint8Array> {
+  prepareFonts();
+  const sharp = (await import("sharp")).default;
+  const out = await sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${coverSvg(brand, mark, letters)}</svg>`))
+    .flatten({ background: brand === "codeit" ? CR : BK })
+    .jpeg({ quality: 92, chromaSubsampling: "4:4:4" })
+    .toBuffer();
+  return new Uint8Array(out.buffer, out.byteOffset, out.byteLength);
+}
+
+/** The cover for each highlight name, per brand. */
+export const HIGHLIGHT_COVERS: Record<StoryBrandKey, Record<string, { mark: CoverMark; letters?: string }>> = {
+  codeit: {
+    "START HERE": { mark: "play" },
+    BUILDS: { mark: "rocket" },
+    LESSONS: { mark: "code" },
+    "ASK THE TEACHER": { mark: "ask" },
+    FREE: { mark: "gift" },
+    ABOUT: { mark: "heart" },
+    QUIZ: { mark: "quiz" },
+    PIP: { mark: "pip" },
+  },
+  lynq: {
+    "START HERE": { mark: "play" },
+    KINGSBRIDGE: { mark: "letters", letters: "K" },
+    NASMA: { mark: "letters", letters: "N" },
+    AMY: { mark: "letters", letters: "A" },
+    ARCUBED: { mark: "letters", letters: "AR" },
+    "FIX THIS": { mark: "wrench" },
+    "WHAT YOU GET": { mark: "box" },
+    OFFICE: { mark: "grid" },
+    BEHIND: { mark: "eye" },
+  },
+};
