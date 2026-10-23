@@ -278,13 +278,13 @@ export function codeItCardSvg(spec: CodeItCard): string {
 
 const LOGO = path.join(process.cwd(), "src", "assets", "brand", "codeit-logo.png");
 
-/** Renders the card to a 1080×1080 PNG with the CodeIt logo in the corner. */
-export async function composeCodeItCard(spec: CodeItCard): Promise<{ bytes: Uint8Array; width: number; height: number; contentType: "image/png" }> {
+/** Renders the card to a 1080×1080 JPEG (Instagram only accepts JPEG feed images) with the CodeIt logo in the corner. */
+export async function composeCodeItCard(spec: CodeItCard): Promise<{ bytes: Uint8Array; width: number; height: number; contentType: "image/jpeg" }> {
   prepareFonts();
   const sharp = (await import("sharp")).default;
   const logo = await sharp(readFileSync(LOGO)).resize({ width: 176 }).png().toBuffer();
-  const out = await sharp(Buffer.from(codeItCardSvg(spec))).composite([{ input: logo, left: 72, top: 56 }]).png().toBuffer();
-  return { bytes: new Uint8Array(out.buffer, out.byteOffset, out.byteLength), width: W, height: W, contentType: "image/png" };
+  const out = await sharp(Buffer.from(codeItCardSvg(spec))).composite([{ input: logo, left: 72, top: 56 }]).flatten({ background: CREAM }).jpeg({ quality: 94, chromaSubsampling: "4:4:4" }).toBuffer();
+  return { bytes: new Uint8Array(out.buffer, out.byteOffset, out.byteLength), width: W, height: W, contentType: "image/jpeg" };
 }
 
 /** A stable fingerprint of a card spec, stored on the post so a changed spec remakes the image. */
