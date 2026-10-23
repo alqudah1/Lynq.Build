@@ -472,6 +472,11 @@ export async function handleTelegramUpdate(db: Db, env: TelegramEnv, update: Tel
         }
       }
       result = skipped.length ? `${OUTCOME[decision]}\n${skipped.join("\n")}` : OUTCOME[decision];
+      // The post's story follows the post: approved with it, 10 minutes after it goes out.
+      if (decision === "approve" || decision === "publish") {
+        const story = await followWithStory(db, variant.organizationId, variant.contentItemId, approver.userId).catch(() => null);
+        if (story) result += `\n${story}`;
+      }
       if (decision === "submit") {
         const pending = (await listPendingApprovals(db, { organizationId: variant.organizationId, actorUserId: approver.userId })).filter((p) => p.contentItemId === variant.contentItemId);
         for (const next of groupByPost(pending)) await sendPending(db, env, chatId, next, deps).catch(() => undefined);
@@ -731,6 +736,46 @@ async function handleDetach(db: Db, env: TelegramEnv, chatId: string, cb: NonNul
     await telegram(env, "sendMessage", { chat_id: chatId, text: result }, deps).catch(() => undefined);
   }
   return { action: `detached:${ok ? "ok" : "failed"}` };
+}
+
+/**
+ * Approves the story that belongs to a feed post (the plan marks it with the post's marker + "-story"),
+ * scheduled 10 minutes after the post. Returns a line for the reply, or null when the post has no story
+ * or the story isn't ready (no card yet).
+ */
+async function followWithStory(db: Db, organizationId: string, contentItemId: string, approverId: string): Promise<string | null> {
+  const [item] = await db.select({ brief: marketingContentItems.brief }).from(marketingContentItems).where(and(eq(marketingContentItems.id, contentItemId), eq(marketingContentItems.organizationId, organizationId))).limit(1);
+  const marker = (item?.brief as { researchNotes?: string } | null)?.researchNotes ?? "";
+  if (!/^weekplan:/.test(marker) || marker.endsWith("-story")) return null;
+  const [storyItem] = await db
+    .select({ id: marketingContentItems.id, brief: marketingContentItems.brief })
+    .from(marketingContentItems)
+    .where(and(eq(marketingContentItems.organizationId, organizationId), isNull(marketingContentItems.archivedAt), sql`${marketingContentItems.brief}->>'researchNotes' = ${`${marker}-story`}`))
+    .limit(1);
+  if (!storyItem) return null;
+  const [post] = await db.select({ scheduledFor: socialContentVariants.scheduledFor, status: socialContentVariants.status }).from(socialContentVariants).where(and(eq(socialContentVariants.contentItemId, contentItemId), eq(socialContentVariants.platform, "instagram"), isNull(socialContentVariants.archivedAt))).limit(1);
+  const rows = await db.select({ id: socialContentVariants.id, revision: socialContentVariants.revision, status: socialContentVariants.status, media: socialContentVariants.media }).from(socialContentVariants).where(and(eq(socialContentVariants.contentItemId, storyItem.id), isNull(socialContentVariants.archivedAt)));
+  const base = post?.status === "published" || post?.status === "publishing" || !post?.scheduledFor ? new Date() : post.scheduledFor;
+  const at = catchUp(new Date(base.getTime() + 10 * 60_000));
+  const highlight = ((storyItem.brief as { keyPoints?: string[] } | null)?.keyPoints ?? []).find((k) => /highlight/i.test(k))?.match(/the (.+?) highlight/)?.[1];
+  let done = 0;
+  for (const r of rows) {
+    if (!Array.isArray(r.media) || !r.media.length) continue;
+    let revision = r.revision;
+    let status = r.status;
+    if (status === "draft" || status === "changes_requested") {
+      const v = await updateVariant(db, { organizationId, contentVariantId: r.id, actorUserId: approverId, expectedRevision: revision, changes: { scheduledFor: at } });
+      const s2 = await submitVariantForReview(db, { organizationId, contentVariantId: r.id, actorUserId: approverId, expectedRevision: v.revision, summary: "Story follows its post" });
+      revision = s2.revision;
+      status = s2.status;
+    }
+    if (status === "ready_for_review") {
+      await decideVariantApproval(db, { organizationId, contentVariantId: r.id, actorUserId: approverId, expectedRevision: revision, decision: "approve", scheduledFor: at, note: "Story follows its post" });
+      done++;
+    }
+  }
+  if (!done) return null;
+  return `📲 Story goes out ${formatLocal(at)}${highlight ? ` — add it to the ${highlight} highlight in the Instagram app` : ""}.`;
 }
 
 /** Points the bot's webhook at this deployment. Called by the signed-in owner from LYNQ. */
