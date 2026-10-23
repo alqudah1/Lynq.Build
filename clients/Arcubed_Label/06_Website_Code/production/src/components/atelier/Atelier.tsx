@@ -25,7 +25,7 @@
 // authority as before (src/lib/orders.ts recomputes every amount).
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import Image, { getImageProps } from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Bag, CartItem, Selection } from "@/lib/types";
@@ -313,6 +313,28 @@ export default function Atelier({
     // `textured` derives from the bag and texturedKey; recomputed when either changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bag.slug, source?.frame, texturedKey]);
+
+  // Colours shown in their own photograph (two-tone Silver & Gold): fetch that
+  // photograph once the page is idle, with exactly the srcset the stage will
+  // ask for, so choosing it is instant. Without this the stage was empty for
+  // a moment while it downloaded (visibly so under reduced motion, where
+  // there is no crossfade to cover it).
+  const photoColours = bag.colours.filter((c) => renderOf(c).kind === "photo").map((c) => framesForColour(bag, c.name)[0]?.frameId).filter(Boolean).join(",");
+  useEffect(() => {
+    if (!photoColours) return;
+    const warmed: HTMLImageElement[] = [];
+    const id = window.setTimeout(() => {
+      for (const frameId of photoColours.split(",")) {
+        const { props } = getImageProps({ src: `/media/${frameId}-tile-2600.webp`, alt: "", fill: true, sizes: STAGE_SIZES, quality: 90 });
+        const img = new window.Image();
+        if (props.sizes) img.sizes = props.sizes;
+        if (props.srcSet) img.srcset = props.srcSet;
+        img.src = props.src;
+        warmed.push(img);
+      }
+    }, 1200);
+    return () => { window.clearTimeout(id); for (const img of warmed) img.src = ""; };
+  }, [photoColours]);
 
   const pickReal = (colourId: string) => {
     if (choice.kind === "real" && choice.colourId === colourId) return;
