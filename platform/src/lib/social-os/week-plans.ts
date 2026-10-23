@@ -4,6 +4,7 @@ import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { marketingChannelAccounts, marketingContentItems, socialAssets, socialContentVariants } from "@/db/schema";
 import { archiveAsset, createUploadedAsset, resolveAssetBytes, resolveAssetRow } from "./assets";
 import { composeStoryCard, type StoryBrand } from "./story-card";
+import { cardKey, composeCodeItCard, type CodeItCard } from "./codeit-card";
 import { createBrand, listBrands, updateBrand } from "./brands";
 import { updateAccount } from "./connections";
 import { archiveContentItem, createContentItem, getContentItemForUser, getVariantForUser, updateContentItem, updateVariant, type SocialContentItem } from "./content";
@@ -57,6 +58,8 @@ interface PlanFeedPost {
   hashtags?: string[];
   callToAction?: string;
   creativeDirection?: string;
+  /** Rendered card (no AI image): the CodeIt story card drawn from this spec. */
+  card?: CodeItCard;
   /** No AI image: the owner uploads a real photo or screenshot. */
   realPhotoOnly?: boolean;
   /** What to upload when realPhotoOnly (shown in the checklist and the morning reminder). */
@@ -662,6 +665,11 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "The game works. Now comes the part most apps skip.\n\nOne question, made from your kid's own code: \"What makes the character jump?\"\n\nThe answer options aren't random. They're other real values from their project, so a guess looks just as plausible as the right answer. Only a first time right answer counts.\n\nThat's how we know they understood it, not just ran it.\n\nKids can code. We prove it. Free to start, link in bio.",
         facebookBody: "The game works. Now one question, made from your kid's own code: what makes the character jump? The wrong answers come from their own project, so guessing doesn't work.\n\nThat's how we know they understood it. Free to start: codeitlearn.com",
         hashtags: CODEIT_TAGS, callToAction: "Link in bio",
+        card: { eyebrow: "We prove it", headline: "The game works.", sub: "Now, one question.", rows: [[0, 1], [2]], steps: [
+          { label: "Their game", panel: { type: "game", hero: "cat", item: "pizza", score: "12" } },
+          { label: "Their code", panel: { type: "code", lines: ["cat = Cat()", "pizza.fall()", "jump = 8", "cat.move_up(jump)"], highlight: 2 } },
+          { label: "The question, made from line 3", panel: { type: "question", prompt: "What makes the cat jump?", options: ["jump = 5", "jump = 8", "jump = 12"], correct: 1 } },
+        ], takeaway: "Wrong answers come from their own code. Only a first try counts.", tryThis: "Try tonight: ask your kid what makes their character move. If they can answer, they learned it." },
         creativeDirection: `Flat vector on orange: a big flat cream quiz card with a bold navy question "What makes the character jump?" and three rounded navy answer buttons, a tiny flat pixel character mid-jump above it. No mascot. Headline "Prove it." in chunky navy type. ${CODEIT_LOOK}`,
       },
       {
@@ -671,6 +679,11 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "OCTOBER CHALLENGE: build a game about your favourite snack.\n\nPizza that falls from the sky. A samosa that has to dodge the fork. Popcorn you catch in a bucket. Any snack, any idea.\n\nHow it works:\n1. Your kid describes the game in one sentence on codeitlearn.com\n2. CodeIt builds the first version\n3. They change one thing and make it theirs\n\nSend us the game (no faces needed, just the screen) and we'll share our favourites with first name and age, with your permission.\n\nFree to enter, free to build. Ages 5 to 18.",
         facebookBody: "OCTOBER CHALLENGE: build a game about your favourite snack. Your kid describes it in one sentence on codeitlearn.com, CodeIt builds the first version, they make it theirs.\n\nSend us the game (just the screen, no faces) and we'll share our favourites with your permission. Free to enter, free to build.",
         hashtags: ["KidsChallenge", ...CODEIT_TAGS.slice(0, 2)], callToAction: "Start free at codeitlearn.com",
+        card: { eyebrow: "October challenge", headline: "A game about", sub: "your favourite snack.", rows: [[0], [1, 2]], steps: [
+          { label: "Your kid types", panel: { type: "input", text: "a bunny that catches falling carrots" } },
+          { label: "CodeIt builds it", panel: { type: "game", hero: "bunny", item: "carrot", score: "7" } },
+          { label: "They make it theirs", panel: { type: "code", lines: ["speed = 4", "speed = 9", "# harder. theirs."], strike: 0, highlight: 1 } },
+        ], takeaway: "Send us the game (just the screen) and we share our favourites, with your permission.", tryThis: "Free to enter, free to build, ages 5 to 18. Until Oct 31 at codeitlearn.com." },
         creativeDirection: `Flat vector on orange: a big flat gold trophy shape holding a giant pizza slice, confetti as simple flat triangles, the mascot hugging the trophy. Headline "October challenge" in chunky cream type. ${CODEIT_LOOK}`,
       },
       {
@@ -680,6 +693,11 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "Lesson 1 of 31: print()\n\nprint(\"Hello!\")\n\nThat's the first line of Python almost every coder ever wrote. It tells the computer: show this on the screen.\n\nTry it with your kid tonight. Change \"Hello!\" to their name. Press run. That's programming.\n\nAll 31 beginner lessons and the Python playground are free for everyone, with no AI involved, so the learning is theirs.\n\nSave this for the weekend.",
         facebookBody: "Lesson 1 of 31: print(\"Hello!\")\n\nThe first line of Python almost every coder wrote. Try it tonight. Change \"Hello!\" to your kid's name and press run.\n\nAll 31 beginner lessons and the Python playground are free at codeitlearn.com.",
         hashtags: ["LearnPython", ...CODEIT_TAGS.slice(1)], callToAction: "Save this",
+        card: { eyebrow: "Lesson 1 of 31 · Python", headline: "Make the computer", sub: "say your name.", steps: [
+          { label: "Type one line", panel: { type: "code", lines: ['print("Hello, Sara!")'] } },
+          { label: "Press run", panel: { type: "run" } },
+          { label: "The computer answers", panel: { type: "terminal", text: "Hello, Sara!" } },
+        ], takeaway: "Change the name. Change the message. That is programming.", tryThis: "Free playground, no account, no AI: codeitlearn.com. Five minutes tonight." },
         creativeDirection: `Flat vector on cream: a giant flat orange megaphone shape, and bursting out of it the word "Hello!" in huge chunky navy type with three small flat stars. No mascot. Headline "Lesson 1 of 31" small in orange. ${CODEIT_LOOK}`,
       },
       {
@@ -689,6 +707,11 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "The first CodeIt workshop was at Northcrest's Community Sundays. A room, some laptops, kids who'd never written a line of code.\n\nWhat I learned in two hours:\n\nNobody wanted the example project. Every kid wanted their own thing: a cat game, a quiz about their brother, a page for their lemonade stand.\n\nSo that's what CodeIt became. It starts with the kid's idea, not ours.\n\nRun a community program or a school club and want a session? Message us. The tool is free, and so is the first session.",
         facebookBody: "The first CodeIt workshop was at Northcrest's Community Sundays. What I learned: nobody wanted the example project. Every kid wanted their own thing.\n\nSo that's what CodeIt became. It starts with the kid's idea, not ours.\n\nRun a community program or school club? Message us. The tool is free, and so is the first session.",
         hashtags: ["KidsCoding", ...CODEIT_TAGS.slice(1)], callToAction: "Comments open",
+        card: { eyebrow: "The first workshop", headline: "Nobody wanted", sub: "the example project.", steps: [
+          { label: "What we planned", panel: { type: "input", text: "a ball that bounces" } },
+          { label: "What the kids typed", panel: { type: "text", lines: ["a cat game", "a quiz about my brother", "a page for my lemonade stand"] } },
+          { label: "So CodeIt starts here", panel: { type: "terminal", text: "your idea first" } },
+        ], takeaway: "Kids light up when they build something that is theirs.", tryThis: "Run a community program or a school club? Message us. The tool is free, and so is the first session." },
         creativeDirection: `Flat vector on mint: a row of five simple flat laptop shapes in navy, each screen a different tiny flat project (a cat, a quiz card, a lemonade cup, a rocket, a star); the mascot stands at the end of the row pointing at them. No real people, no faces. Headline "Your idea first." in chunky navy type. ${CODEIT_LOOK}`,
       },
       {
@@ -698,6 +721,11 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "ASK THE TEACHER: is six too young for real code?\n\nNo. Six is too young for a blank editor and a textbook. It is not too young to type \"a cat that jumps over pizza\", see it happen, and change one thing.\n\nWhat a six year old gets out of it:\n1. The idea that the computer does exactly what you tell it\n2. One change at a time: faster, bigger, a different colour\n3. The habit of asking what makes it do that\n\nWhat they do not need yet: syntax drills, typing speed, or a certificate.\n\nThat is why CodeIt starts from the kid's idea and reads the code back to them one line at a time. Free to start, ages 5 to 18. Link in bio.",
         facebookBody: "Is six too young for real code? Too young for a blank editor, not too young to type a cat that jumps over pizza, see it happen and change one thing. CodeIt starts from the kid's idea and reads the code back one line at a time. Free to start, ages 5 to 18: codeitlearn.com",
         hashtags: CODEIT_TAGS, callToAction: "Link in bio",
+        card: { eyebrow: "Ask the teacher", headline: "Is six too young", sub: "for real code?", rows: [[0, 1], [2]], steps: [
+          { label: "Too young for this", panel: { type: "code", lines: ["def main():", "    pass", "# a blank editor"] } },
+          { label: "Not too young for this", panel: { type: "input", text: "a cat that jumps over pizza" } },
+          { label: "And then one change", panel: { type: "code", lines: ["jump = 8", "jump = 12", "# higher!"], strike: 0, highlight: 1 } },
+        ], takeaway: "Six is too young for a textbook. Not for an idea they can change.", tryThis: "CodeIt reads the code back one line at a time. Free to start, ages 5 to 18." },
         creativeDirection: `Flat vector on sky blue: one giant flat cream number 6 with a tiny flat orange cat sitting on top of it, a small flat laptop at its base. No mascot. Headline "Too young?" in chunky navy type. ${CODEIT_LOOK}`,
       },
       {
@@ -707,6 +735,11 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "Halloween build, tonight, before the doorbell starts.\n\nType one sentence on codeitlearn.com: \"A game where a ghost steals candy from a bowl and you have to tap it away.\"\n\nCodeIt builds the first version. Your kid makes the ghost faster, changes the candy, adds a score. Every change shows the code behind it.\n\nTwenty minutes, one game, and they can explain how it works.\n\nFree to start, no card. Ages 5 to 18. Link in bio.",
         facebookBody: "Halloween build before the doorbell starts: type one sentence on codeitlearn.com, a ghost steals candy and you tap it away. CodeIt builds the first version, your kid makes it theirs and sees the code. Free to start, ages 5 to 18.",
         hashtags: ["Halloween", ...CODEIT_TAGS.slice(0, 2)], callToAction: "Link in bio",
+        card: { eyebrow: "Halloween build", headline: "A ghost steals the candy.", sub: "Your kid writes the game.", rows: [[0], [1, 2]], steps: [
+          { label: "Type one sentence tonight", panel: { type: "input", text: "a ghost that steals candy from a bowl" } },
+          { label: "CodeIt builds it", panel: { type: "game", hero: "ghost", item: "candy", score: "13" } },
+          { label: "Make the ghost faster", panel: { type: "code", lines: ["ghost_speed = 3", "ghost_speed = 7", "# spookier."], strike: 0, highlight: 1 } },
+        ], takeaway: "Twenty minutes, one game, and they can explain how it works.", tryThis: "Before the doorbell starts: codeitlearn.com, free, no card, ages 5 to 18." },
         creativeDirection: `Flat vector on navy: a big round cream ghost shape with two dot eyes holding a flat orange candy bucket, three flat candies flying out; the mascot peeks from the bottom corner with a tiny witch hat. Headline "Boo. Build." in chunky orange type. ${CODEIT_LOOK}`,
       },
       {
@@ -716,6 +749,11 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "Most kids' coding quizzes can be guessed. One answer looks like code, the others look silly.\n\nCodeIt does it differently. After a build, the question is made from your kid's own project, and the wrong answers are other real values from the same file. Speed 5, speed 8, speed 12. All look right. Only one is the line that makes the character jump.\n\nSo a guess scores like a guess, and a real answer scores like a real answer. Only a first time right answer counts.\n\nThat is the whole idea: kids can code, and we can show you they understood it.\n\nFree to start, link in bio.",
         facebookBody: "Most kids' coding quizzes can be guessed. In CodeIt the question comes from your kid's own project and the wrong answers are other real values from the same file, so a guess scores like a guess. Only a first time right answer counts. Free to start: codeitlearn.com",
         hashtags: CODEIT_TAGS, callToAction: "Link in bio",
+        card: { eyebrow: "How it works", headline: "No trick questions.", sub: "Just their other code.", rows: [[0, 1], [2]], steps: [
+          { label: "Their code", panel: { type: "code", lines: ["speed = 5", "lives = 3", "jump = 8"], highlight: 2 } },
+          { label: "The question", panel: { type: "text", lines: ["Which line makes", "the character jump?"] } },
+          { label: "The wrong answers are real values from the same file", panel: { type: "question", prompt: "Pick the line", options: ["speed = 5", "lives = 3", "jump = 8"], correct: 2 } },
+        ], takeaway: "A guess scores like a guess. Only a first time right answer counts.", tryThis: "Kids can code. We can show you they understood it. Free to start at codeitlearn.com." },
         creativeDirection: `Flat vector on cream: three big rounded navy answer buttons stacked, each with a flat number (5, 8, 12), the middle one outlined in orange with a flat orange checkmark; a tiny flat pixel character mid-jump beside them. No mascot. Headline "No trick questions." in chunky navy type. ${CODEIT_LOOK}`,
       },
       {
@@ -725,6 +763,10 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "Free covers a lot: 31 Python lessons, the playground, and 10 AI assisted builds a month. No card.\n\nThe family plan is for when one kid builds ten games in a weekend and the other one wants a turn.\n\nCA$12/month, one plan, every kid in the house:\n1. More builds each month\n2. Separate projects for each child\n3. The same comprehension check on every build\n\nStart free, upgrade only if they run out of builds. Ages 5 to 18.\nLink in bio: codeitlearn.com",
         facebookBody: "Free covers 31 Python lessons, the playground and 10 builds a month, no card. The family plan is CA$12/month for every kid in the house: more builds, separate projects, the same comprehension check. Start free at codeitlearn.com and upgrade only if they run out of builds.",
         hashtags: CODEIT_TAGS, callToAction: "Start free at codeitlearn.com",
+        card: { eyebrow: "Free, then the family plan", headline: "One plan.", sub: "Every kid in the house.", steps: [
+          { label: "Free, for everyone", panel: { type: "text", lines: ["31 Python lessons", "The playground", "10 builds a month. No card."] } },
+          { label: "Family plan, CA$12/month", panel: { type: "text", lines: ["More builds each month", "Separate projects per child", "The same check on every build"] } },
+        ], takeaway: "Start free. Upgrade only if they run out of builds.", tryThis: "Ages 5 to 18, in the browser, nothing to install: codeitlearn.com" },
         creativeDirection: `Flat vector on mint: one big flat orange house shape with three round cream windows, a tiny flat laptop in each window; the mascot waves from the door. Headline "One plan. Every kid." in chunky navy type. ${CODEIT_LOOK}`,
       },
       {
@@ -734,6 +776,10 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "Twenty minutes watching someone play a game and twenty minutes making one look identical from the kitchen. They are not.\n\nThree questions that tell you which one just happened, no app needed:\n1. What did you make?\n2. What would you change about it?\n3. Can you show me how it works?\n\nIf they can answer the third one, that was a good twenty minutes.\n\nCodeIt is built so the answer to all three is easy: describe a game, get a working version, change it, see the code.\n\nSave this for tonight.",
         facebookBody: "Twenty minutes watching a game and twenty minutes making one look the same from the kitchen. Three questions tell you which one happened: what did you make, what would you change, can you show me how it works. If they can answer the third one, that was a good twenty minutes.",
         hashtags: CODEIT_TAGS, callToAction: "Save this",
+        card: { eyebrow: "Ask the teacher", headline: "Was that screen time", sub: "worth it?", steps: [
+          { label: "Three questions, no app needed", panel: { type: "text", lines: ["1. What did you make?", "2. What would you change about it?", "3. Can you show me how it works?"] } },
+          { label: "If they can answer the third one", panel: { type: "terminal", text: "that was a good twenty minutes" } },
+        ], takeaway: "Watching a game and making one look the same from the kitchen. They are not.", tryThis: "CodeIt is built so all three are easy: describe, build, change, see the code. Free to start." },
         creativeDirection: `Flat vector on cream: three big rounded speech bubbles in orange, navy and mint stacked diagonally, each with a flat number 1, 2, 3; the mascot sits at the bottom holding a tiny flat laptop. Headline "Ask these three." in chunky navy type. ${CODEIT_LOOK}`,
       },
     ],
@@ -968,7 +1014,7 @@ export interface WeekPlanReport {
   created: string[];
   skipped: string[];
   needsYou: string[];
-  imagesQueued: { contentItemId: string; igVariantId: string; copyTo: string[]; story?: { variantId: string; meta: StoryMeta; brandProfileId: string | null } }[];
+  imagesQueued: { contentItemId: string; igVariantId: string; copyTo: string[]; card?: CodeItCard; story?: { variantId: string; meta: StoryMeta; brandProfileId: string | null } }[];
 }
 
 /**
@@ -1206,7 +1252,7 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
           report.scheduled.push(`${item.title}: caption updated`);
         }
         // Changed art direction on an untouched post: store it and drop the old image (post + story) so the cron remakes it.
-        const wantArt = p.creativeDirection ?? "";
+        const wantArt = p.card ? cardKey(p.card) : (p.creativeDirection ?? "");
         if (wantArt && item.brief.creativeDirection !== wantArt && item.variants.every((v) => v.archivedAt || REMAKEABLE.has(v.status))) {
           await updateContentItem(db, { organizationId: input.organizationId, contentItemId: item.id, actorUserId: input.actorUserId, expectedRevision: item.revision, changes: { brief: { creativeDirection: wantArt } } });
           const storyId = await findMarkedItem(db, input.organizationId, planMarker(plan.key, `${post.key}-story`));
@@ -1227,7 +1273,7 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
           topic: `${p.pillar} post`,
           tone: "",
           callToAction: p.callToAction ?? "",
-          creativeDirection: p.creativeDirection ?? "",
+          creativeDirection: p.card ? cardKey(p.card) : (p.creativeDirection ?? ""),
           hook: p.hook ?? "",
           script: "",
           shots: [],
@@ -1247,7 +1293,7 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
       }
       const ig = item.variants.find((v) => v.platform === "instagram" && !v.archivedAt);
       if (p.realPhotoOnly) report.needsYou.push(`${item.title}: ${p.uploadNote ?? "upload a real photo (founder posts don't use AI images)."}`);
-      else if (ig && !ig.media.length) report.imagesQueued.push({ contentItemId: item.id, igVariantId: ig.id, copyTo: item.variants.filter((v) => v.id !== ig.id && !v.archivedAt && !v.media.length).map((v) => v.id) });
+      else if (ig && !ig.media.length) report.imagesQueued.push({ contentItemId: item.id, igVariantId: ig.id, copyTo: item.variants.filter((v) => v.id !== ig.id && !v.archivedAt && !v.media.length).map((v) => v.id), ...(p.card ? { card: p.card } : {}) });
     }
 
     if (!item) continue;
@@ -1376,6 +1422,28 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
   return report;
 }
 
+/** Renders a CodeIt story card and attaches it to the post's Instagram version (replacing nothing: callers only ask when there is no media). */
+async function attachCodeItCard(db: Db, input: { organizationId: string; actorUserId: string }, contentItemId: string, igVariantId: string, spec: CodeItCard): Promise<void> {
+  const item = await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId, actorUserId: input.actorUserId });
+  const ig = item.variants.find((v) => v.id === igVariantId);
+  if (!ig) throw new Error("variant not found");
+  const png = await composeCodeItCard(spec);
+  const asset = await createUploadedAsset(db, {
+    organizationId: input.organizationId,
+    actorUserId: input.actorUserId,
+    brandProfileId: item.brandProfileId ?? null,
+    contentItemId: item.id,
+    contentVariantId: ig.id,
+    assetType: "image",
+    title: `${item.title} — card`.slice(0, 200),
+    altText: `${spec.headline} ${spec.sub}`.slice(0, 1000),
+    tags: ["codeit-card"],
+    file: { bytes: png.bytes, contentType: png.contentType, filename: "card.png" },
+    platformHint: "instagram",
+  });
+  await updateVariant(db, { organizationId: input.organizationId, contentVariantId: ig.id, actorUserId: input.actorUserId, expectedRevision: ig.revision, changes: { media: [{ assetId: asset.id, position: 0, role: "primary" as const }], format: "image" } });
+}
+
 /** Puts the newest video sent to the Telegram bot on every version of a reel that still has no media. True when something was attached. */
 async function attachTelegramVideo(db: Db, input: { organizationId: string; actorUserId: string }, contentItemId: string): Promise<boolean> {
   const variants = await getVariantsOfItem(db, input, contentItemId);
@@ -1433,7 +1501,8 @@ export async function generatePlanImages(db: Db, input: { organizationId: string
   let failed = 0;
   for (const job of input.queue) {
     try {
-      await regenerateVariantPart(db, { organizationId: input.organizationId, contentVariantId: job.igVariantId, actorUserId: input.actorUserId, part: "image" });
+      if (job.card) await attachCodeItCard(db, input, job.contentItemId, job.igVariantId, job.card);
+      else await regenerateVariantPart(db, { organizationId: input.organizationId, contentVariantId: job.igVariantId, actorUserId: input.actorUserId, part: "image" });
       const item = await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId: job.contentItemId, actorUserId: input.actorUserId });
       const ig = item.variants.find((v) => v.id === job.igVariantId);
       const media = ig?.media.slice(0, 1).map((m) => ({ ...m, position: 0, role: "primary" as const })) ?? [];
@@ -1521,7 +1590,8 @@ export async function fillWeekPlanImages(db: Db, input: { organizationId: string
       if (!igNow.media.length) {
         if (!RESCHEDULABLE.has(igNow.status)) continue;
         try {
-          await regenerateVariantPart(db, { organizationId: input.organizationId, contentVariantId: ig.id, actorUserId: input.actorUserId, part: "image" });
+          if (p.card) await attachCodeItCard(db, input, itemId, ig.id, p.card);
+          else await regenerateVariantPart(db, { organizationId: input.organizationId, contentVariantId: ig.id, actorUserId: input.actorUserId, part: "image" });
           out.generated++;
           variants = await getVariantsOfItem(db, input, itemId);
         } catch (err) {
