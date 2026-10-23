@@ -550,6 +550,7 @@ export const WEEK_PLANS: WeekPlan[] = [
     key: "2026-11-02",
     label: "Oct 22 to Nov 4 — LYNQ + CodeIt, one post a day each",
     weekStart: "2026-10-22",
+    retired: ["n-codeit-free", "n-codeit-askteacher"],
     highlights: {
       LYNQ: ["START HERE", "KINGSBRIDGE", "NASMA", "AMY", "ARCUBED", "FIX THIS", "WHAT YOU GET", "OFFICE", "BEHIND"],
       CodeIt: ["START HERE", "BUILDS", "LESSONS", "ASK THE TEACHER", "FREE", "ABOUT"],
@@ -655,25 +656,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `Flat vector on cream: a big orange lightbulb shape whose filament is a tiny flat dinosaur; three small flat arrows run from the bulb to a simple navy laptop shape. No mascot. Headline "Your idea first." in chunky navy type. No names, no signature, no real people. ${CODEIT_LOOK}`,
       },
       {
-        key: "n-codeit-free", brand: CODEIT, day: "2026-10-23", time: "19:30", pillar: "OFFER", storyHighlight: "FREE",
-        title: "CodeIt · Free means free", kind: "image_post", platforms: ["instagram", "facebook"],
-        hook: "Free to start. No card. Here's exactly what's included.",
-        body: "\"Free\" usually means \"free until we ask for your card.\" Not with CodeIt.\n\nFree for everyone:\n✓ 31 beginner Python lessons\n✓ The Python playground\n✓ 10 AI assisted builds a month\nNo card needed.\n\nFamily plan: CA$12/month.\n\nBuilt for ages 5 to 18.\nStart free at codeitlearn.com (link in bio)",
-        facebookBody: "Free for everyone: 31 beginner Python lessons, the Python playground, and 10 AI assisted builds a month. No card needed.\n\nFamily plan: CA$12/month. Ages 5 to 18.\n\nStart free: codeitlearn.com",
-        hashtags: CODEIT_TAGS, callToAction: "Start free at codeitlearn.com",
-        creativeDirection: `Flat vector on orange: a giant cream price-tag shape with nothing written on it but a big flat zero, the mascot peeking from behind it with a thumbs up; a tiny crossed-out credit card shape in the corner. Headline "Free means free." in chunky navy type. ${CODEIT_LOOK}`,
-      },
-      {
-        key: "n-codeit-askteacher", brand: CODEIT, day: "2026-10-25", time: "19:30", pillar: "LEARN", storyHighlight: "ASK THE TEACHER",
-        title: "CodeIt · Ask the teacher: does my kid still need coding if AI writes it?", kind: "image_post", platforms: ["instagram", "facebook"],
-        hook: "\"Do kids still need to learn coding if AI can write it?\" I teach this. Here's my honest answer.",
-        body: "ASK THE TEACHER: \"Do kids still need to learn coding if AI can write it?\"\n\nI teach kids to code, so I get this one a lot. Honest answer: yes, but a different version of it.\n\nWhen AI writes the first draft, the skill moves to:\n1. Saying clearly what you want\n2. Reading what came back\n3. Spotting the line that's wrong\n\nThat's exactly what a kid does in CodeIt. Describe the game, get a version, change it, see the code, answer questions about it.\n\nGot a question for the teacher? Put it in the comments and I'll answer it in a post.",
-        facebookBody: "\"Do kids still need to learn coding if AI can write it?\" I teach kids to code. Honest answer: yes, a different version of it. Saying clearly what you want, reading what came back, spotting the line that's wrong.\n\nGot a question for the teacher? Ask in the comments.",
-        hashtags: ["AIForKids", ...CODEIT_TAGS.slice(1)], callToAction: "Comments open",
-        creativeDirection: `Flat vector on navy: a huge cream question mark shape, and a small flat robot shape and a small flat child-sized backpack shape (no child) sitting on its curve. No mascot. Headline "Still need coding?" in chunky orange type. ${CODEIT_LOOK}`,
-      },
-      {
-        key: "n-codeit-question", brand: CODEIT, day: "2026-10-26", time: "19:30", pillar: "HOW IT WORKS", storyHighlight: "START HERE",
+        key: "n-codeit-question", brand: CODEIT, day: "2026-10-23", time: "19:30", pillar: "HOW IT WORKS", storyHighlight: "START HERE",
         title: "CodeIt · The question after the build", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "The game works. Now one question: what makes the character jump?",
         body: "The game works. Now comes the part most apps skip.\n\nOne question, made from your kid's own code: \"What makes the character jump?\"\n\nThe answer options aren't random. They're other real values from their project, so a guess looks just as plausible as the right answer. Only a first time right answer counts.\n\nThat's how we know they understood it, not just ran it.\n\nKids can code. We prove it. Free to start, link in bio.",
@@ -682,7 +665,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `Flat vector on orange: a big flat cream quiz card with a bold navy question "What makes the character jump?" and three rounded navy answer buttons, a tiny flat pixel character mid-jump above it. No mascot. Headline "Prove it." in chunky navy type. ${CODEIT_LOOK}`,
       },
       {
-        key: "n-codeit-challenge", brand: CODEIT, day: "2026-10-27", time: "19:30", pillar: "BUILD", storyHighlight: "BUILDS",
+        key: "n-codeit-challenge", brand: CODEIT, day: "2026-10-26", time: "19:30", pillar: "BUILD", storyHighlight: "BUILDS",
         title: "CodeIt · October challenge: a game about your favourite snack", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "October challenge: build a game about your favourite snack. Free to enter, free to build.",
         body: "OCTOBER CHALLENGE: build a game about your favourite snack.\n\nPizza that falls from the sky. A samosa that has to dodge the fork. Popcorn you catch in a bucket. Any snack, any idea.\n\nHow it works:\n1. Your kid describes the game in one sentence on codeitlearn.com\n2. CodeIt builds the first version\n3. They change one thing and make it theirs\n\nSend us the game (no faces needed, just the screen) and we'll share our favourites with first name and age, with your permission.\n\nFree to enter, free to build. Ages 5 to 18.",
@@ -691,7 +674,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `Flat vector on orange: a big flat gold trophy shape holding a giant pizza slice, confetti as simple flat triangles, the mascot hugging the trophy. Headline "October challenge" in chunky cream type. ${CODEIT_LOOK}`,
       },
       {
-        key: "n-codeit-lesson1", brand: CODEIT, day: "2026-10-29", time: "19:30", pillar: "LEARN", storyHighlight: "LESSONS",
+        key: "n-codeit-lesson1", brand: CODEIT, day: "2026-10-25", time: "19:30", pillar: "LEARN", storyHighlight: "LESSONS",
         title: "CodeIt · Lesson 1 of 31: make the computer say your name", kind: "carousel", platforms: ["instagram", "facebook"],
         hook: "The first line of Python almost every coder ever wrote. Try it with your kid tonight.",
         body: "Lesson 1 of 31: print()\n\nprint(\"Hello!\")\n\nThat's the first line of Python almost every coder ever wrote. It tells the computer: show this on the screen.\n\nTry it with your kid tonight. Change \"Hello!\" to their name. Press run. That's programming.\n\nAll 31 beginner lessons and the Python playground are free for everyone, with no AI involved, so the learning is theirs.\n\nSave this for the weekend.",
@@ -700,13 +683,22 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `Flat vector on cream: a giant flat orange megaphone shape, and bursting out of it the word "Hello!" in huge chunky navy type with three small flat stars. No mascot. Headline "Lesson 1 of 31" small in orange. ${CODEIT_LOOK}`,
       },
       {
-        key: "n-codeit-workshop", brand: CODEIT, day: "2026-10-30", time: "19:30", pillar: "FOUNDER", storyHighlight: "ABOUT",
+        key: "n-codeit-workshop", brand: CODEIT, day: "2026-10-27", time: "19:30", pillar: "FOUNDER", storyHighlight: "ABOUT",
         title: "CodeIt · What a room full of kids taught me", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "The first CodeIt workshop taught me more than any plan did.",
         body: "The first CodeIt workshop was at Northcrest's Community Sundays. A room, some laptops, kids who'd never written a line of code.\n\nWhat I learned in two hours:\n\nNobody wanted the example project. Every kid wanted their own thing: a cat game, a quiz about their brother, a page for their lemonade stand.\n\nSo that's what CodeIt became. It starts with the kid's idea, not ours.\n\nRun a community program or a school club and want a session? Message us. The tool is free, and so is the first session.",
         facebookBody: "The first CodeIt workshop was at Northcrest's Community Sundays. What I learned: nobody wanted the example project. Every kid wanted their own thing.\n\nSo that's what CodeIt became. It starts with the kid's idea, not ours.\n\nRun a community program or school club? Message us. The tool is free, and so is the first session.",
         hashtags: ["KidsCoding", ...CODEIT_TAGS.slice(1)], callToAction: "Comments open",
         creativeDirection: `Flat vector on mint: a row of five simple flat laptop shapes in navy, each screen a different tiny flat project (a cat, a quiz card, a lemonade cup, a rocket, a star); the mascot stands at the end of the row pointing at them. No real people, no faces. Headline "Your idea first." in chunky navy type. ${CODEIT_LOOK}`,
+      },
+      {
+        key: "n-codeit-ask-age", brand: CODEIT, day: "2026-11-03", time: "19:30", pillar: "LEARN", storyHighlight: "ASK THE TEACHER",
+        title: "CodeIt · Ask the teacher: is six too young for real code?", kind: "image_post", platforms: ["instagram", "facebook"],
+        hook: "Is six too young for real code? The honest answer from someone who teaches it.",
+        body: "ASK THE TEACHER: is six too young for real code?\n\nNo. Six is too young for a blank editor and a textbook. It is not too young to type \"a cat that jumps over pizza\", see it happen, and change one thing.\n\nWhat a six year old gets out of it:\n1. The idea that the computer does exactly what you tell it\n2. One change at a time: faster, bigger, a different colour\n3. The habit of asking what makes it do that\n\nWhat they do not need yet: syntax drills, typing speed, or a certificate.\n\nThat is why CodeIt starts from the kid's idea and reads the code back to them one line at a time. Free to start, ages 5 to 18. Link in bio.",
+        facebookBody: "Is six too young for real code? Too young for a blank editor, not too young to type a cat that jumps over pizza, see it happen and change one thing. CodeIt starts from the kid's idea and reads the code back one line at a time. Free to start, ages 5 to 18: codeitlearn.com",
+        hashtags: CODEIT_TAGS, callToAction: "Link in bio",
+        creativeDirection: `Flat vector on sky blue: one giant flat cream number 6 with a tiny flat orange cat sitting on top of it, a small flat laptop at its base. No mascot. Headline "Too young?" in chunky navy type. ${CODEIT_LOOK}`,
       },
       {
         key: "n-codeit-halloween", brand: CODEIT, day: "2026-10-31", time: "10:00", pillar: "BUILD", storyHighlight: "BUILDS",
@@ -718,7 +710,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `Flat vector on navy: a big round cream ghost shape with two dot eyes holding a flat orange candy bucket, three flat candies flying out; the mascot peeks from the bottom corner with a tiny witch hat. Headline "Boo. Build." in chunky orange type. ${CODEIT_LOOK}`,
       },
       {
-        key: "n-codeit-wrong", brand: CODEIT, day: "2026-11-02", time: "19:30", pillar: "HOW IT WORKS", storyHighlight: "START HERE",
+        key: "n-codeit-wrong", brand: CODEIT, day: "2026-10-30", time: "19:30", pillar: "HOW IT WORKS", storyHighlight: "START HERE",
         title: "CodeIt · Why the wrong answers come from their own code", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "Our quiz has no trick questions. The wrong answers are just their other code.",
         body: "Most kids' coding quizzes can be guessed. One answer looks like code, the others look silly.\n\nCodeIt does it differently. After a build, the question is made from your kid's own project, and the wrong answers are other real values from the same file. Speed 5, speed 8, speed 12. All look right. Only one is the line that makes the character jump.\n\nSo a guess scores like a guess, and a real answer scores like a real answer. Only a first time right answer counts.\n\nThat is the whole idea: kids can code, and we can show you they understood it.\n\nFree to start, link in bio.",
@@ -727,7 +719,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `Flat vector on cream: three big rounded navy answer buttons stacked, each with a flat number (5, 8, 12), the middle one outlined in orange with a flat orange checkmark; a tiny flat pixel character mid-jump beside them. No mascot. Headline "No trick questions." in chunky navy type. ${CODEIT_LOOK}`,
       },
       {
-        key: "n-codeit-family", brand: CODEIT, day: "2026-11-03", time: "19:30", pillar: "OFFER", storyHighlight: "FREE",
+        key: "n-codeit-family", brand: CODEIT, day: "2026-11-02", time: "19:30", pillar: "OFFER", storyHighlight: "FREE",
         title: "CodeIt · The family plan, in one picture", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "Free covers a lot. CA$12/month covers the rest, for the whole family.",
         body: "Free covers a lot: 31 Python lessons, the playground, and 10 AI assisted builds a month. No card.\n\nThe family plan is for when one kid builds ten games in a weekend and the other one wants a turn.\n\nCA$12/month, one plan, every kid in the house:\n1. More builds each month\n2. Separate projects for each child\n3. The same comprehension check on every build\n\nStart free, upgrade only if they run out of builds. Ages 5 to 18.\nLink in bio: codeitlearn.com",
@@ -736,7 +728,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `Flat vector on mint: one big flat orange house shape with three round cream windows, a tiny flat laptop in each window; the mascot waves from the door. Headline "One plan. Every kid." in chunky navy type. ${CODEIT_LOOK}`,
       },
       {
-        key: "n-codeit-threeq", brand: CODEIT, day: "2026-11-04", time: "19:30", pillar: "LEARN", storyHighlight: "ASK THE TEACHER",
+        key: "n-codeit-threeq", brand: CODEIT, day: "2026-10-29", time: "19:30", pillar: "LEARN", storyHighlight: "ASK THE TEACHER",
         title: "CodeIt · Three questions after screen time", kind: "carousel", platforms: ["instagram", "facebook"],
         hook: "Three questions that tell you if the last twenty minutes were worth it.",
         body: "Twenty minutes watching someone play a game and twenty minutes making one look identical from the kitchen. They are not.\n\nThree questions that tell you which one just happened, no app needed:\n1. What did you make?\n2. What would you change about it?\n3. Can you show me how it works?\n\nIf they can answer the third one, that was a good twenty minutes.\n\nCodeIt is built so the answer to all three is easy: describe a game, get a working version, change it, see the code.\n\nSave this for tonight.",
