@@ -8,6 +8,9 @@ import { loadEnv } from "@/lib/env";
 import { assetPublicUrl, createUploadedAsset } from "./assets";
 import { decideVariantApproval, listDraftsAwaitingReview, listPendingApprovals, submitVariantForReview, updateVariant, type SocialPendingApproval } from "./content";
 import { catchUp } from "./week-plans";
+
+/** Marker of a story the owner posts by hand with a sticker (see week-plans `storyEntryKey`). */
+const MANUAL_STORY_LIKE = "weekplan:%:ms-%";
 import { zonedDateTimeToUtc } from "./studio";
 import { SOCIAL_PLATFORM_LABELS } from "./validation";
 
@@ -339,7 +342,7 @@ export async function handleTelegramUpdate(db: Db, env: TelegramEnv, update: Tel
     if (media) return handleIncomingMedia(db, env, chatId, update.message, media, deps);
     if (text && !text.startsWith("/") && update.message.reply_to_message) return handleCaptionReply(db, env, chatId, update.message, text, deps);
     if (/^\/(start|help)\b/.test(text)) {
-      await telegram(env, "sendMessage", { chat_id: chatId, text: "LYNQ approvals are on.\nEvery morning at 8, that day's posts arrive here — approve them for their time or post now.\nSend a video or a picture here and pick the post it belongs to.\nReply to any post here with text to replace its caption.\n/week — the next 7 days at a glance\n/pending — posts waiting for your approval\n/drafts — the next post for each brand, ready to send for review\n/drafts all — every draft" }, deps);
+      await telegram(env, "sendMessage", { chat_id: chatId, text: "LYNQ approvals are on.\nEvery morning at 8, that day's posts arrive here — approve them for their time or post now.\nSend a video or a picture here and pick the post it belongs to.\nReply to any post here with text to replace its caption.\n/stories — today's stories with a poll, quiz or slider for you to post\n/week — the next 7 days at a glance\n/pending — posts waiting for your approval\n/drafts — the next post for each brand, ready to send for review\n/drafts all — every draft" }, deps);
       return { action: "help" };
     }
     if (/^\/pending\b/.test(text)) {
@@ -356,6 +359,16 @@ export async function handleTelegramUpdate(db: Db, env: TelegramEnv, update: Tel
       if (!pending.length) await telegram(env, "sendMessage", { chat_id: chatId, text: "Nothing is waiting for review." }, deps);
       for (const p of groupByPost(pending).slice(0, 20)) await sendPending(db, env, chatId, p, deps);
       return { action: `pending:${pending.length}` };
+    }
+    if (/^\/stories\b/.test(text)) {
+      const approver = await resolveApprover(db, env);
+      if ("error" in approver) {
+        await telegram(env, "sendMessage", { chat_id: chatId, text: approver.error }, deps);
+        return { action: "no_approver" };
+      }
+      const n = await sendStickerStories(db, env, chatId, approver.organizationIds, deps.now?.() ?? new Date(), deps);
+      if (!n) await telegram(env, "sendMessage", { chat_id: chatId, text: "No sticker stories for you to post today." }, deps);
+      return { action: `stories:${n}` };
     }
     if (/^\/week\b/.test(text)) {
       const approver = await resolveApprover(db, env);
@@ -472,6 +485,11 @@ export async function handleTelegramUpdate(db: Db, env: TelegramEnv, update: Tel
         }
       }
       result = skipped.length ? `${OUTCOME[decision]}\n${skipped.join("\n")}` : OUTCOME[decision];
+      // The post's story follows the post: approved with it, 10 minutes after it goes out.
+      if (decision === "approve" || decision === "publish") {
+        const story = await followWithStory(db, variant.organizationId, variant.contentItemId, approver.userId).catch(() => null);
+        if (story) result += `\n${story}`;
+      }
       if (decision === "submit") {
         const pending = (await listPendingApprovals(db, { organizationId: variant.organizationId, actorUserId: approver.userId })).filter((p) => p.contentItemId === variant.contentItemId);
         for (const next of groupByPost(pending)) await sendPending(db, env, chatId, next, deps).catch(() => undefined);
@@ -733,6 +751,46 @@ async function handleDetach(db: Db, env: TelegramEnv, chatId: string, cb: NonNul
   return { action: `detached:${ok ? "ok" : "failed"}` };
 }
 
+/**
+ * Approves the story that belongs to a feed post (the plan marks it with the post's marker + "-story"),
+ * scheduled 10 minutes after the post. Returns a line for the reply, or null when the post has no story
+ * or the story isn't ready (no card yet).
+ */
+async function followWithStory(db: Db, organizationId: string, contentItemId: string, approverId: string): Promise<string | null> {
+  const [item] = await db.select({ brief: marketingContentItems.brief }).from(marketingContentItems).where(and(eq(marketingContentItems.id, contentItemId), eq(marketingContentItems.organizationId, organizationId))).limit(1);
+  const marker = (item?.brief as { researchNotes?: string } | null)?.researchNotes ?? "";
+  if (!/^weekplan:/.test(marker) || marker.endsWith("-story")) return null;
+  const [storyItem] = await db
+    .select({ id: marketingContentItems.id, brief: marketingContentItems.brief })
+    .from(marketingContentItems)
+    .where(and(eq(marketingContentItems.organizationId, organizationId), isNull(marketingContentItems.archivedAt), sql`${marketingContentItems.brief}->>'researchNotes' = ${`${marker}-story`}`))
+    .limit(1);
+  if (!storyItem) return null;
+  const [post] = await db.select({ scheduledFor: socialContentVariants.scheduledFor, status: socialContentVariants.status }).from(socialContentVariants).where(and(eq(socialContentVariants.contentItemId, contentItemId), eq(socialContentVariants.platform, "instagram"), isNull(socialContentVariants.archivedAt))).limit(1);
+  const rows = await db.select({ id: socialContentVariants.id, revision: socialContentVariants.revision, status: socialContentVariants.status, media: socialContentVariants.media }).from(socialContentVariants).where(and(eq(socialContentVariants.contentItemId, storyItem.id), isNull(socialContentVariants.archivedAt)));
+  const base = post?.status === "published" || post?.status === "publishing" || !post?.scheduledFor ? new Date() : post.scheduledFor;
+  const at = catchUp(new Date(base.getTime() + 10 * 60_000));
+  const highlight = ((storyItem.brief as { keyPoints?: string[] } | null)?.keyPoints ?? []).find((k) => /highlight/i.test(k))?.match(/the (.+?) highlight/)?.[1];
+  let done = 0;
+  for (const r of rows) {
+    if (!Array.isArray(r.media) || !r.media.length) continue;
+    let revision = r.revision;
+    let status = r.status;
+    if (status === "draft" || status === "changes_requested") {
+      const v = await updateVariant(db, { organizationId, contentVariantId: r.id, actorUserId: approverId, expectedRevision: revision, changes: { scheduledFor: at } });
+      const s2 = await submitVariantForReview(db, { organizationId, contentVariantId: r.id, actorUserId: approverId, expectedRevision: v.revision, summary: "Story follows its post" });
+      revision = s2.revision;
+      status = s2.status;
+    }
+    if (status === "ready_for_review") {
+      await decideVariantApproval(db, { organizationId, contentVariantId: r.id, actorUserId: approverId, expectedRevision: revision, decision: "approve", scheduledFor: at, note: "Story follows its post" });
+      done++;
+    }
+  }
+  if (!done) return null;
+  return `📲 Story goes out ${formatLocal(at)}${highlight ? ` — add it to the ${highlight} highlight in the Instagram app` : ""}.`;
+}
+
 /** Points the bot's webhook at this deployment. Called by the signed-in owner from LYNQ. */
 export interface TelegramWebhookStatus {
   url: string;
@@ -831,7 +889,7 @@ export async function runMorningTelegramSend(db: Db, env: TelegramEnv, deps: Tel
     .select({ id: socialContentVariants.id, organizationId: socialContentVariants.organizationId, revision: socialContentVariants.revision, title: marketingContentItems.title, at: socialContentVariants.scheduledFor, format: socialContentVariants.format })
     .from(socialContentVariants)
     .innerJoin(marketingContentItems, and(eq(marketingContentItems.id, socialContentVariants.contentItemId), eq(marketingContentItems.organizationId, socialContentVariants.organizationId)))
-    .where(and(inArray(socialContentVariants.organizationId, approver.organizationIds), eq(socialContentVariants.status, "draft"), isNull(socialContentVariants.archivedAt), isNull(marketingContentItems.archivedAt), gt(socialContentVariants.scheduledFor, soonest), lte(socialContentVariants.scheduledFor, endOfDay)))
+    .where(and(inArray(socialContentVariants.organizationId, approver.organizationIds), eq(socialContentVariants.status, "draft"), isNull(socialContentVariants.archivedAt), isNull(marketingContentItems.archivedAt), gt(socialContentVariants.scheduledFor, soonest), lte(socialContentVariants.scheduledFor, endOfDay), sql`coalesce(${marketingContentItems.brief}->>'researchNotes', '') not like ${MANUAL_STORY_LIKE}`))
     .orderBy(asc(socialContentVariants.scheduledFor))
     .limit(40);
   let sent = 0;
@@ -857,10 +915,54 @@ export async function runMorningTelegramSend(db: Db, env: TelegramEnv, deps: Tel
     }
   }
   const firstRunOfDay = hour === 8 && minute < 15;
+  if (firstRunOfDay) sent += await sendStickerStories(db, env, env.TELEGRAM_CHAT_ID, approver.organizationIds, now, deps).catch(() => 0);
   if (sent && firstRunOfDay) await telegram(env, "sendMessage", { chat_id: env.TELEGRAM_CHAT_ID, text: `☀️ Good morning — ${sent} post${sent === 1 ? "" : "s"} for today ${sent === 1 ? "is" : "are"} above. Approve each for its time, or post now.` }, deps).catch(() => undefined);
   if (blocked.length && firstRunOfDay) {
     const unique = [...new Set(blocked)];
     await telegram(env, "sendMessage", { chat_id: env.TELEGRAM_CHAT_ID, text: `Today, still needs you in LYNQ:\n${unique.join("\n")}`.slice(0, 4000) }, deps).catch(() => undefined);
   }
   return { sent, blocked: blocked.length };
+}
+
+/**
+ * Today's sticker stories: the picture, when to post it, and exactly what to
+ * type into the sticker. Instagram only allows poll, quiz and slider stickers
+ * from the app, so these are never published by the Office.
+ */
+export async function sendStickerStories(db: Db, env: TelegramEnv, chatId: string, organizationIds: string[], now: Date, deps: TelegramDeps = {}): Promise<number> {
+  if (!organizationIds.length) return 0;
+  const local = new Intl.DateTimeFormat("en-CA", { timeZone: TELEGRAM_TIMEZONE, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+  const [y, m, d] = local.split("-").map(Number);
+  const start = zonedDateTimeToUtc(y, m, d, 0, 0, TELEGRAM_TIMEZONE);
+  const end = zonedDateTimeToUtc(y, m, d + 1, 0, 0, TELEGRAM_TIMEZONE);
+  const rows = await db
+    .select({ media: socialContentVariants.media, at: socialContentVariants.scheduledFor, brief: marketingContentItems.brief, title: marketingContentItems.title })
+    .from(socialContentVariants)
+    .innerJoin(marketingContentItems, and(eq(marketingContentItems.id, socialContentVariants.contentItemId), eq(marketingContentItems.organizationId, socialContentVariants.organizationId)))
+    .where(and(inArray(socialContentVariants.organizationId, organizationIds), isNull(socialContentVariants.archivedAt), isNull(marketingContentItems.archivedAt), gt(socialContentVariants.scheduledFor, start), lte(socialContentVariants.scheduledFor, end), sql`${marketingContentItems.brief}->>'researchNotes' like ${MANUAL_STORY_LIKE}`))
+    .orderBy(asc(socialContentVariants.scheduledFor))
+    .limit(10);
+  let sent = 0;
+  for (const r of rows) {
+    const assetId = (r.media as { assetId?: string }[] | null)?.[0]?.assetId;
+    if (!assetId) continue;
+    const brief = (r.brief ?? {}) as { sourceText?: string; keyPoints?: string[] };
+    await telegram(env, "sendPhoto", { chat_id: chatId, photo: assetPublicUrl(env, assetId), caption: stickerStoryCaption({ title: r.title, at: r.at, sticker: brief.sourceText ?? "", keyPoints: brief.keyPoints ?? [] }) }, deps).catch(() => undefined);
+    sent++;
+  }
+  return sent;
+}
+
+export function stickerStoryCaption(p: { title: string; at: Date | null; sticker: string; keyPoints: string[] }): string {
+  const highlight = p.keyPoints.find((k) => /highlight/i.test(k))?.match(/the (.+?) highlight/)?.[1];
+  return [
+    `📲 Story for you to post${p.at ? ` around ${formatLocal(p.at)}` : " today"}`,
+    p.title.replace(/^Story · /, "").replace(/ \(sticker\)$/, ""),
+    "",
+    "1. Save this picture",
+    "2. Instagram → + → Story → pick it",
+    "3. Add the sticker in the empty space:",
+    p.sticker,
+    `4. Share${highlight ? `, then add it to the ${highlight} highlight` : ""}`,
+  ].join("\n").slice(0, CAPTION_LIMIT);
 }
