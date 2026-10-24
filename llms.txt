@@ -1,0 +1,27 @@
+# LYNQ
+
+> LYNQ is a web design, digital transformation and AI automation studio founded by Mustafa Alqudah, working with businesses in Toronto, Canada and Amman, Jordan. LYNQ builds premium websites and landing pages, connects scattered tools into one business system, runs its own operations workspace (LYNQ Office), and builds custom AI automation such as lead generation, customer support assistants and agentic workflows. Every project is scoped and priced individually.
+
+- Website: https://lynq.build
+- Email: mustafa@lynq.build
+- Start a project: https://lynq.build/book
+
+## Services
+
+- Websites and landing pages: strategy, design, copy and build for sites that turn attention into business, including brand and portfolio sites, strategic redesigns and professional landing pages.
+- AI-powered web products: custom web applications with AI at the core, such as interactive tools and educational platforms.
+- Web strategy and consulting: a second opinion on an existing site, a roadmap before building, or ongoing strategy.
+- [Digital transformation](https://lynq.build/digital-transformation): mapping the business, then replacing spreadsheets, email threads, WhatsApp and manual work with one connected system (CRM, forms, projects, reporting, communication).
+- [LYNQ Office and AI automation](https://lynq.build/office): a private operating workspace for projects, CRM, tasks, approvals, marketing and reporting, plus automation of repeatable work like intake, lead qualification, follow-up drafts and recurring reports.
+- AI lead generation and outreach: a pipeline that finds local businesses in a target market, qualifies them by website quality and hands off warm leads.
+- AI customer support: a chat assistant trained on a business's own services and hours, embedded on its site.
+- Agentic AI workflows: custom agents that take multi-step action, such as qualifying a lead and drafting a checked follow-up.
+- AI video and reels: short brand films, story ads and reels made with AI video for Instagram, TikTok and YouTube Shorts.
+
+## Work
+
+- [Portfolio](https://lynq.build/portfolio)
+- Kingsbridge Group (custom homes and commercial property management): https://www.kingsbridgegroup.ca
+- Nasma: https://nasmajo.com
+- Finding Amy: https://finding-amy.com
+- CodeIt, an AI platform that teaches kids to build websites and code in Python: https://codeitlearn.com
