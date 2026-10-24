@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { WEEK_PLANS, isManualStoryMarker, pipSeries, planEnd, planMarker, storyEntryKey } from "./week-plans";
+import { existsSync } from "node:fs";
+import path from "node:path";
+import { WEEK_PLANS, isManualStoryMarker, pipSeries, planEnd, planInstant, planMarker, storyEntryKey } from "./week-plans";
 import { HIGHLIGHT_COVERS, coverSvg, needsSticker, stickerZone, storyKey, storySvg } from "./story-original";
 import { videoSecondsFor } from "./studio";
 import { stickerStoryCaption } from "./telegram";
@@ -9,7 +11,8 @@ const withStories = WEEK_PLANS.filter((p) => p.stories?.length);
 describe.each(withStories)("stories in plan $key", (plan) => {
   it("one story a day for each brand, inside the plan", () => {
     for (const brand of ["lynq", "codeit"]) {
-      const days = plan.stories!.filter((s) => s.brand.brandKey === brand).map((s) => s.day);
+      // Case-study highlight runs post several frames in a row; the daily rule is for the rest.
+      const days = plan.stories!.filter((s) => s.brand.brandKey === brand && s.spec.kind !== "image").map((s) => s.day);
       expect(new Set(days).size, brand).toBe(days.length);
       for (const d of days) expect(d >= plan.weekStart && d <= planEnd(plan)).toBe(true);
     }
@@ -54,6 +57,18 @@ describe.each(withStories)("stories in plan $key", (plan) => {
       const z = stickerZone(s.spec);
       expect(z.y, s.key).toBeGreaterThanOrEqual(250);
       expect(z.y + z.h, s.key).toBeLessThanOrEqual(1600);
+    }
+  });
+
+  it("case-study frames are bundled, in order, five minutes apart", () => {
+    const runs = new Map<string, typeof plan.stories>();
+    for (const s of plan.stories!.filter((x) => x.spec.kind === "image")) runs.set(s.highlight ?? "", [...(runs.get(s.highlight ?? "") ?? []), s]);
+    for (const [, run] of runs) {
+      run!.forEach((s, i) => {
+        if (s.spec.kind !== "image") return;
+        expect(existsSync(path.join(process.cwd(), "src", "assets", "cases", s.spec.file)), s.spec.file).toBe(true);
+        if (i) expect(planInstant(s.day, s.time).getTime() - planInstant(run![i - 1]!.day, run![i - 1]!.time).getTime()).toBe(5 * 60_000);
+      });
     }
   });
 

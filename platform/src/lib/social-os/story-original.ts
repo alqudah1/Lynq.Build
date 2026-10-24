@@ -44,6 +44,8 @@ export type StorySpec =
   | { kind: "process"; brand: "lynq"; series: string; headline: string; steps: { n: string; name: string; detail: string }[]; note: string }
   | { kind: "teardown"; brand: "lynq"; series: string; headline: string; before: string[]; after: string[]; note: string }
   // A real screenshot of a client's site inside a rendered phone (bytes passed at render time; `crop` is the source y offset in px).
+  // A finished story image bundled with the app (src/assets/cases), e.g. a case-study highlight frame.
+  | { kind: "image"; brand: StoryBrandKey; file: string; alt: string }
   | { kind: "screen"; brand: "lynq"; series: string; folio?: string; step: string; headline: [string, string]; detail: string; crop?: number };
 
 export type Icon = "car" | "paw" | "rocket" | "music" | "phone" | "form" | "star" | "rock";
@@ -384,6 +386,8 @@ ${T(90, 1270 + spec.label.length * 70 + 50, spec.line, { f: "Inter Light", w: 30
       const last = 680 + spec.steps.length * 170;
       return `${lFrame(spec.series, "PROC")}${lBig(90, 470, spec.headline, 104)}${rows}${T(90, last + 10, spec.note, { f: "Inter Light", w: 300, s: 44, c: LI })}`;
     }
+    case "image":
+      return `<rect width="${W}" height="${H}" fill="${BK}"/>`;
     case "screen":
       return `${lFrame(spec.series, spec.folio ?? "SCREEN")}${mLabel(90, 400, spec.step, LI)}${lBig(90, 500, spec.headline[0], 96)}${lBig(90, 610, spec.headline[1], 96)}
 ${wrapWords(spec.detail, 44).slice(0, 2).map((l, i) => T(90, 690 + i * 48, l, { f: "Inter Light", w: 300, s: 36, c: MU })).join("")}
@@ -401,11 +405,17 @@ ${list(110, spec.before, false)}${list(570, spec.after, true)}`;
 }
 
 const LOGO = path.join(process.cwd(), "src", "assets", "brand", "codeit-logo.png");
+/** Finished case-study frames, rendered by case-render from the client's own photos and screenshots. */
+const CASES = path.join(process.cwd(), "src", "assets", "cases");
 
 /** Renders a story to a 1080×1920 JPEG. */
 export async function composeStory(spec: StorySpec, photo?: Uint8Array): Promise<{ bytes: Uint8Array; width: number; height: number; contentType: "image/jpeg" }> {
   prepareFonts();
   const sharp = (await import("sharp")).default;
+  if (spec.kind === "image") {
+    const out = await sharp(readFileSync(path.join(CASES, path.basename(spec.file)))).resize(W, H, { fit: "cover" }).jpeg({ quality: 92, chromaSubsampling: "4:4:4" }).toBuffer();
+    return { bytes: new Uint8Array(out.buffer, out.byteOffset, out.byteLength), width: W, height: H, contentType: "image/jpeg" };
+  }
   const layers = [] as { input: Buffer; left: number; top: number }[];
   if (spec.kind === "object" && photo) {
     layers.push({ input: await sharp(Buffer.from(photo)).resize(W, 880, { fit: "cover" }).toBuffer(), left: 0, top: 300 });
