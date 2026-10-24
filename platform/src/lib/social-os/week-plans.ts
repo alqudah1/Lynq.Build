@@ -1049,6 +1049,7 @@ async function storyNeedsCard(db: Db, organizationId: string, storyMedia: Social
     const row = await resolveAssetRow(db, organizationId, current);
     const tags = Array.isArray(row.tags) ? (row.tags as unknown[]).filter((t): t is string => typeof t === "string") : [];
     if (!tags.includes(STORY_CARD_TAG)) return false; // an owner-chosen image: leave it
+    if (row.contentType !== "image/jpeg") return true; // old PNG card: Instagram refuses it
     return !tags.includes(fromTag(feedAssetId));
   } catch {
     return true;
@@ -1085,7 +1086,7 @@ async function storyCardMedia(db: Db, input: { organizationId: string; actorUser
     const [existing] = await db
       .select({ id: socialAssets.id })
       .from(socialAssets)
-      .where(and(eq(socialAssets.organizationId, input.organizationId), isNull(socialAssets.archivedAt), sql`${socialAssets.tags} @> ${JSON.stringify([STORY_CARD_TAG, fromTag(feedAssetId)])}::jsonb`))
+      .where(and(eq(socialAssets.organizationId, input.organizationId), isNull(socialAssets.archivedAt), eq(socialAssets.contentType, "image/jpeg"), sql`${socialAssets.tags} @> ${JSON.stringify([STORY_CARD_TAG, fromTag(feedAssetId)])}::jsonb`))
       .orderBy(desc(socialAssets.createdAt))
       .limit(1);
     if (existing) return [{ assetId: existing.id, position: 0, role: "primary" as const }];
@@ -1577,7 +1578,7 @@ export async function fillWeekPlanImages(db: Db, input: { organizationId: string
       const ig = variants.find((v) => v.platform === "instagram" && !v.archivedAt);
       if (!ig) continue;
       // A feed image that isn't square came from the old portrait render (edges cut): clear it on every version so it is remade.
-      if (ig.media.length && REMAKEABLE.has(ig.status) && (await isWrongShape(db, input.organizationId, ig.media[0]!.assetId))) {
+      if (ig.media.length && REMAKEABLE.has(ig.status) && ((await isWrongShape(db, input.organizationId, ig.media[0]!.assetId)) || (await isPngCard(db, input.organizationId, ig.media[0]!.assetId)))) {
         const storyId0 = idFor.get(planMarker(plan.key, `${post.key}-story`));
         const all = [...variants, ...(storyId0 ? await getVariantsOfItem(db, input, storyId0) : [])];
         for (const v of all) {
@@ -1623,6 +1624,17 @@ export async function fillWeekPlanImages(db: Db, input: { organizationId: string
   return out;
 }
 
+
+/** True for a rendered card stored as PNG (before cards were JPEG): Instagram refuses it, so it is remade. */
+async function isPngCard(db: Db, organizationId: string, assetId: string): Promise<boolean> {
+  try {
+    const row = await resolveAssetRow(db, organizationId, assetId);
+    const tags = Array.isArray(row.tags) ? (row.tags as unknown[]) : [];
+    return row.contentType !== "image/jpeg" && (tags.includes("codeit-card") || tags.includes(STORY_CARD_TAG));
+  } catch {
+    return false;
+  }
+}
 
 /** True when a feed image isn't square (every earlier portrait render had its top or bottom cut; feed images are 1:1 now). Unknown dimensions count as fine. */
 async function isWrongShape(db: Db, organizationId: string, assetId: string): Promise<boolean> {
