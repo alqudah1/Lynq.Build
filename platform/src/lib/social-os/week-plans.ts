@@ -5,6 +5,7 @@ import { marketingChannelAccounts, marketingContentItems, socialAssets, socialCo
 import { archiveAsset, createUploadedAsset, resolveAssetBytes, resolveAssetRow } from "./assets";
 import { composeStoryCard, type StoryBrand } from "./story-card";
 import { cardKey, composeCodeItCard, type CodeItCard } from "./codeit-card";
+import { composeStory, needsSticker, stickerInstructions, storyKey, type StorySpec } from "./story-original";
 import { createBrand, listBrands, updateBrand } from "./brands";
 import { updateAccount } from "./connections";
 import { archiveContentItem, createContentItem, getContentItemForUser, getVariantForUser, updateContentItem, updateVariant, type SocialContentItem } from "./content";
@@ -84,6 +85,31 @@ interface PlanReel {
   shots: { timing: string; visual: string; onScreenText?: string; audio?: string }[];
   /** The owner already sent this reel's video to the Telegram bot: attach the newest Telegram video in the workspace when the reel has none. */
   videoFromTelegram?: boolean;
+  /**
+   * AI video, ready to make: the prompt is stored as the reel's art direction so
+   * Studio → Make video uses it. Nothing is generated (or spent) until the owner
+   * presses Make video.
+   */
+  aiVideo?: { prompt: string; seconds: 5 | 8 | 10 };
+}
+
+/**
+ * A story made only for stories (not a re-share of a feed post). Stories
+ * with a poll, quiz or slider sticker are posted by the owner from the app
+ * (Instagram's API can't add stickers): they are sent to Telegram in the
+ * morning with the exact sticker text and never published by the Office.
+ * The rest go through approval and publish like any post.
+ */
+export interface PlanStory {
+  key: string;
+  brand: PlanBrandRef;
+  day: string;
+  time: string;
+  /** Highlight to file it under once it's up (null = 24 hours only). */
+  highlight: string | null;
+  spec: StorySpec;
+  /** `object` stories: the feed post whose image is the hero. */
+  photoFrom?: string;
 }
 
 /** A text post for Mustafa's personal LinkedIn (no images: founder text posts, 800–1,000 characters, no links). */
@@ -104,6 +130,8 @@ export interface WeekPlan {
   feed: PlanFeedPost[];
   reels: PlanReel[];
   linkedin: PlanLinkedIn[];
+  /** Stories made only for stories. */
+  stories?: PlanStory[];
   highlights: Record<string, string[]>;
   /** Entry keys removed from the plan: their loaded drafts (and stories) are archived on the next load. */
   retired?: string[];
@@ -556,7 +584,7 @@ export const WEEK_PLANS: WeekPlan[] = [
     retired: ["n-codeit-free", "n-codeit-askteacher"],
     highlights: {
       LYNQ: ["START HERE", "KINGSBRIDGE", "NASMA", "AMY", "ARCUBED", "FIX THIS", "WHAT YOU GET", "OFFICE", "BEHIND"],
-      CodeIt: ["START HERE", "BUILDS", "LESSONS", "ASK THE TEACHER", "FREE", "ABOUT"],
+      CodeIt: ["START HERE", "BUILDS", "LESSONS", "ASK THE TEACHER", "FREE", "ABOUT", "QUIZ", "PIP"],
     },
     feed: [
       {
@@ -941,6 +969,108 @@ export const WEEK_PLANS: WeekPlan[] = [
         body: "CodeIt's first workshop ran at Northcrest's Community Sundays in Toronto. I walked in with a plan and an example project. The plan lasted about ten minutes.\n\nNobody wanted the example. Every kid wanted their own thing. A cat game. A quiz about a little brother. A page for a lemonade stand. The energy in the room came entirely from ownership, and it disappeared the moment I tried to steer everyone back to the same exercise.\n\nSo I stopped steering. Each kid described what they wanted, we built a first version together, and then they changed it. Faster. Different colours. A harder level. Every change showed them the code that made it happen.\n\nThat afternoon became the product. CodeIt starts from the kid's idea, builds the first version with them, and then checks that they understood it with questions made from their own code.\n\nIf you run a community program, a library session or a school club in the GTA and want a hands on coding session, message me. The tool is free, and so is the first session.",
       },
     ],
+    // Stories made for stories: one LYNQ and one CodeIt a day. LYNQ reads like a product sheet or a studio
+    // note (rarely a question); CodeIt is a quiz one day and its answer the next, with polls and "try tonight".
+    stories: [
+      // ---- LYNQ ----
+      {
+        key: "l-spec", brand: LYNQ, day: "2026-10-24", time: "09:30", highlight: "WHAT YOU GET",
+        spec: { kind: "specSheet", brand: "lynq", series: "What you get", model: "LYNQ Site", subtitle: "What ships with every build", specs: [{ label: "First screen", value: "Call · Book · Buy" }, { label: "New message", value: "Answered in a minute", accent: true }, { label: "Google profile", value: "Set up properly" }, { label: "After launch", value: "We keep it running" }, { label: "Quote", value: "In writing, up front" }], note: "No packages, no hourly meter. Designed for the business it runs." },
+      },
+      {
+        key: "l-brochure", brand: LYNQ, day: "2026-10-25", time: "09:30", highlight: "BEHIND",
+        spec: { kind: "statement", brand: "lynq", series: "Studio note", lines: ["A website is", "not a brochure.", "It is the first", "employee your", "customer meets."], accentWord: "employee", byline: "LYNQ studio" },
+      },
+      {
+        key: "l-process", brand: LYNQ, day: "2026-10-26", time: "09:30", highlight: "START HERE",
+        spec: { kind: "process", brand: "lynq", series: "How we work", headline: "How a build runs.", steps: [{ n: "01", name: "Look", detail: "We use your site like a customer would" }, { n: "02", name: "Plan", detail: "One page: what it has to do" }, { n: "03", name: "Build", detail: "Designed on a phone first" }, { n: "04", name: "Launch", detail: "Google, forms and replies wired up" }, { n: "05", name: "Keep", detail: "Updates and fixes stay with us" }], note: "Quoted in writing before step 03." },
+      },
+      {
+        key: "l-onefix", brand: LYNQ, day: "2026-10-27", time: "09:30", highlight: "FIX THIS",
+        spec: { kind: "oneFix", brand: "lynq", eyebrow: "One fix", headline: ["One fix", "for today."], fix: "Call now", detail: "A call button in the first screen on mobile, and it stays there while they scroll." },
+      },
+      {
+        key: "l-obj-stopwatch", brand: LYNQ, day: "2026-10-28", time: "14:00", highlight: "FIX THIS", photoFrom: "n-lynq-call",
+        spec: { kind: "object", brand: "lynq", series: "Objects", title: "Object 03 · The stopwatch", label: [{ k: "Test", v: "Three seconds" }, { k: "Task", v: "Call or book" }, { k: "Device", v: "Their phone" }], line: "If they can't in three, they leave." },
+      },
+      {
+        key: "l-which", brand: LYNQ, day: "2026-10-29", time: "09:30", highlight: "FIX THIS",
+        spec: { kind: "whichSite", brand: "lynq", eyebrow: "Poll", headline: ["Which one", "gets the call?"], sticker: { type: "poll", question: "Which one gets the call?", options: ["A", "B"] } },
+      },
+      {
+        key: "l-index-review", brand: LYNQ, day: "2026-10-30", time: "09:30", highlight: "WHAT YOU GET",
+        spec: { kind: "index", brand: "lynq", series: "The free review", headline: "Five checks.", rows: [{ name: "First screen", what: "Can they call or book", where: "Phone" }, { name: "Google", what: "Hours, photos, the link", where: "Maps" }, { name: "Forms", what: "What happens at 9pm", where: "Inbox" }, { name: "Speed", what: "Loads before they give up", where: "4G" }, { name: "Message", what: "What you do, in one line", where: "Hero" }], note: "DM AUDIT for yours." },
+      },
+      {
+        key: "l-teardown", brand: LYNQ, day: "2026-10-31", time: "09:30", highlight: "FIX THIS",
+        spec: { kind: "teardown", brand: "lynq", series: "Teardown", headline: "A typical homepage.", before: ["Slideshow first", "Phone number in the footer", "Contact form, no reply", "Three menus deep"], after: ["What you do, one line", "Call button on screen", "Reply in a minute", "Book from the first screen"], note: "Same business, same customers. Fewer steps between them and yes." },
+      },
+      {
+        key: "l-hours-check", brand: LYNQ, day: "2026-11-01", time: "09:30", highlight: "FIX THIS",
+        spec: { kind: "checklist", brand: "lynq", eyebrow: "Checklist", headline: ["Google hours,", "checked."], intro: "Ten minutes, today:", items: [{ text: "Real hours set", ok: true }, { text: "Early close day added", ok: true }, { text: "Holiday hours set now", ok: false }, { text: "Website matches Google", ok: false }], close: ["Two left?", "Do them before", "the next holiday."] },
+      },
+      {
+        key: "l-reply-slider", brand: LYNQ, day: "2026-11-02", time: "09:30", highlight: null,
+        spec: { kind: "slider", brand: "lynq", eyebrow: "Be honest", headline: "How fast do you", lines: ["answer a new lead?", "Left: next day. Right: under a minute."], sticker: { type: "slider", question: "How fast do you reply?", emoji: "⚡" } },
+      },
+      {
+        key: "l-obj-cubes", brand: LYNQ, day: "2026-11-03", time: "14:00", highlight: "WHAT YOU GET", photoFrom: "n-lynq-includes",
+        spec: { kind: "object", brand: "lynq", series: "Objects", title: "Object 04 · Four parts", label: [{ k: "Found", v: "Google, done properly" }, { k: "Answers", v: "Every message, in a minute" }, { k: "Converts", v: "Call, book or buy" }, { k: "Kept", v: "Hosting and fixes" }], line: "One build. Four jobs." },
+      },
+      {
+        key: "l-yes", brand: LYNQ, day: "2026-11-04", time: "09:30", highlight: "BEHIND",
+        spec: { kind: "statement", brand: "lynq", series: "Studio note", lines: ["Good design", "is the shortest", "path to yes."], accentWord: "yes.", byline: "LYNQ studio" },
+      },
+      // ---- CodeIt ----
+      {
+        key: "c-quiz-ha", brand: CODEIT, day: "2026-10-24", time: "17:00", highlight: "QUIZ",
+        spec: { kind: "quiz", brand: "codeit", eyebrow: "Quiz time", headline: "What does it print?", code: ['print("ha" * 3)'], sticker: { type: "quiz", question: "What does it print?", options: ["ha 3", "hahaha", "an error"], correct: 1 } },
+      },
+      {
+        key: "c-answer-ha", brand: CODEIT, day: "2026-10-25", time: "15:45", highlight: "QUIZ",
+        spec: { kind: "answer", brand: "codeit", eyebrow: "Yesterday's answer", headline: "It prints:", answer: "hahaha", why: ["* repeats text.", '"ha" three times is', "hahaha, no spaces."], example: 'print("boo " * 2)', tryThis: "Guess that one, then run it." },
+      },
+      {
+        key: "c-poll-build", brand: CODEIT, day: "2026-10-26", time: "17:00", highlight: "BUILDS",
+        spec: { kind: "thisOrThat", brand: "codeit", eyebrow: "You pick", headline: "What should we build?", a: { label: "Racing game", icon: "car" }, b: { label: "Pet game", icon: "paw" }, sticker: { type: "poll", question: "What should we build next?", options: ["Racing game", "Pet game"] } },
+      },
+      {
+        key: "c-try-name", brand: CODEIT, day: "2026-10-27", time: "15:45", highlight: "LESSONS",
+        spec: { kind: "tryTonight", brand: "codeit", eyebrow: "Try tonight", headline: "Make Python say hi", steps: ["Open the playground", "Type the line below", "Press Run, type your name"], code: 'print("Hi " + input("Name? "))' },
+      },
+      {
+        key: "c-quiz-x", brand: CODEIT, day: "2026-10-28", time: "17:00", highlight: "QUIZ",
+        spec: { kind: "quiz", brand: "codeit", eyebrow: "Quiz time", headline: "What does it print?", code: ["x = 5", "x = x + 2", "print(x)"], sticker: { type: "quiz", question: "What does it print?", options: ["5", "7", "x + 2"], correct: 1 } },
+      },
+      {
+        key: "c-answer-x", brand: CODEIT, day: "2026-10-29", time: "15:45", highlight: "QUIZ",
+        spec: { kind: "answer", brand: "codeit", eyebrow: "Yesterday's answer", headline: "It prints:", answer: "7", why: ["x starts at 5.", "Then x becomes x + 2,", "so x is now 7."], example: "score = score + 1", tryThis: "That line is every game's score." },
+      },
+      {
+        key: "c-slider-making", brand: CODEIT, day: "2026-10-30", time: "17:00", highlight: "ASK THE TEACHER",
+        spec: { kind: "slider", brand: "codeit", eyebrow: "Parents, be honest", headline: "Today's screen time:", lines: ["making or watching?", "Left: all watching. Right: all making."], sticker: { type: "slider", question: "How much was making?", emoji: "🛠️" } },
+      },
+      {
+        key: "c-try-spooky", brand: CODEIT, day: "2026-10-31", time: "15:45", highlight: "LESSONS",
+        spec: { kind: "tryTonight", brand: "codeit", eyebrow: "Halloween, try tonight", headline: "A spooky greeting", steps: ["Open the playground", "Type the line below", "Run it, then change Boo"], code: 'print("Boo, " + input("Who? "))' },
+      },
+      {
+        key: "c-quiz-loop", brand: CODEIT, day: "2026-11-01", time: "17:00", highlight: "QUIZ",
+        spec: { kind: "quiz", brand: "codeit", eyebrow: "Quiz time", headline: "How many boos?", code: ["for i in range(3):", '    print("boo")'], sticker: { type: "quiz", question: "How many times does it print boo?", options: ["1", "3", "4"], correct: 1 } },
+      },
+      {
+        key: "c-answer-loop", brand: CODEIT, day: "2026-11-02", time: "15:45", highlight: "QUIZ",
+        spec: { kind: "answer", brand: "codeit", eyebrow: "Yesterday's answer", headline: "It prints boo:", answer: "3 times", why: ["range(3) counts 0, 1, 2.", "That is three turns,", "one boo each turn."], example: "for i in range(10):", tryThis: "Change 3 to 10 and run it." },
+      },
+      {
+        key: "c-poll-make", brand: CODEIT, day: "2026-11-03", time: "17:00", highlight: "BUILDS",
+        spec: { kind: "thisOrThat", brand: "codeit", eyebrow: "You pick", headline: "Your kid would build:", a: { label: "A space game", icon: "rocket" }, b: { label: "A music maker", icon: "music" }, sticker: { type: "poll", question: "What would your kid build?", options: ["Space game", "Music maker"] } },
+      },
+      {
+        key: "c-try-dice", brand: CODEIT, day: "2026-11-04", time: "15:45", highlight: "LESSONS",
+        spec: { kind: "tryTonight", brand: "codeit", eyebrow: "Try tonight", headline: "Roll a dice in Python", steps: ["Open the playground", "Type the two lines", "Run it again and again"], code: "import random\nprint(random.randint(1, 6))" },
+      },
+    ],
   },
 ];
 
@@ -1006,6 +1136,55 @@ function planSlot(day: string, time: string, plusMinutes = 0, now: Date = new Da
 export function planMarker(planKey: string, entryKey: string): string {
   return `weekplan:${planKey}:${entryKey}`;
 }
+
+/** Entry key of a story-only story: `ms-` (the owner posts it with a sticker) or `st-` (the Office publishes it). */
+export function storyEntryKey(story: Pick<PlanStory, "key" | "spec">): string {
+  return `${needsSticker(story.spec) ? "ms" : "st"}-${story.key}`;
+}
+
+/** True for the marker of a story the owner posts by hand (it carries a sticker): the Office never submits or publishes it. */
+export function isManualStoryMarker(marker: string): boolean {
+  return /^weekplan:[^:]+:ms-/.test(marker);
+}
+
+/** Renders a story-only story into an uploaded JPEG. Null when its hero photo isn't there yet. */
+async function renderPlanStory(db: Db, input: { organizationId: string; actorUserId: string }, planKey: string, story: PlanStory, brandProfileId: string, contentItemId: string, variantId: string): Promise<string | null> {
+  let photo: Uint8Array | undefined;
+  if (story.spec.kind === "object") {
+    if (!story.photoFrom) return null;
+    const feedId = await findMarkedItem(db, input.organizationId, planMarker(planKey, story.photoFrom));
+    const feed = feedId ? await getVariantsOfItem(db, input, feedId) : [];
+    const assetId = feed.find((v) => v.platform === "instagram" && !v.archivedAt && v.media.length)?.media[0]?.assetId;
+    if (!assetId) return null;
+    photo = (await resolveAssetBytes(db, { organizationId: input.organizationId, assetId })).bytes;
+  }
+  const out = await composeStory(story.spec, photo);
+  const asset = await createUploadedAsset(db, {
+    organizationId: input.organizationId,
+    actorUserId: input.actorUserId,
+    brandProfileId,
+    contentItemId,
+    contentVariantId: variantId,
+    assetType: "image",
+    title: `Story · ${story.key}`.slice(0, 200),
+    altText: storyAltText(story.spec).slice(0, 1000),
+    tags: ["story-original", storyKey(story.spec)],
+    file: { bytes: out.bytes, contentType: out.contentType, filename: "story.jpg" },
+    platformHint: "instagram",
+  });
+  return asset.id;
+}
+
+function storyAltText(spec: StorySpec): string {
+  const s = spec as Record<string, unknown>;
+  const parts = [s.headline, s.model, s.title, Array.isArray(s.lines) ? (s.lines as string[]).join(" ") : null].flat().filter((x): x is string => typeof x === "string");
+  return parts.join(" ") || "Story";
+}
+
+const highlightNote = (h: string | null) => (h ? `After it posts, add this story to the ${h} highlight (Instagram app → story → Highlight).` : "24-hour story only — no highlight.");
+
+/** At most this many story images are rendered per load (each takes a moment); the hourly re-load finishes the rest. */
+const STORY_RENDERS_PER_LOAD = 8;
 
 export interface WeekPlanReport {
   planKey: string;
@@ -1351,6 +1530,67 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
     }
   }
 
+  // 2b. Story-only stories: rendered from their spec (no AI). Sticker stories stay drafts the owner posts from the app.
+  let storyRenders = 0;
+  for (const st of plan.stories ?? []) {
+    const brandProfileId = brandIds.get(st.brand.brandKey);
+    if (!brandProfileId) continue;
+    const manual = needsSticker(st.spec);
+    const marker = planMarker(plan.key, storyEntryKey(st));
+    const wantKey = storyKey(st.spec);
+    const at = planSlot(st.day, st.time);
+    let id = await findMarkedItem(db, input.organizationId, marker);
+    if (st.day < planToday()) {
+      // Its day is over: an untouched draft (always the case for sticker stories) leaves the Library.
+      if (!id) continue;
+      try {
+        const old = await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId: id, actorUserId: input.actorUserId });
+        if (old.variants.every((v) => v.archivedAt || v.status === "draft")) await archiveContentItem(db, { organizationId: input.organizationId, contentItemId: id, actorUserId: input.actorUserId, expectedRevision: old.revision });
+      } catch {
+        // Touched since: leave it.
+      }
+      continue;
+    }
+    const keyPoints = [highlightNote(st.highlight), ...(manual ? ["Post this one yourself from the Instagram app: it needs a sticker the API can't add."] : [])];
+    const sourceText = "sticker" in st.spec ? stickerInstructions(st.spec.sticker) : "";
+    if (!id) {
+      const created = await createContentItem(db, {
+        organizationId: input.organizationId,
+        actorUserId: input.actorUserId,
+        brandProfileId,
+        title: `Story · ${st.key}${st.highlight ? ` → ${st.highlight}` : ""}${manual ? " (sticker)" : ""}`,
+        brief: { kind: "story", objective: "engagement", audience: "", topic: "Story made for stories", tone: "", callToAction: "", hook: "", script: "", shots: [], sourceText, creativeDirection: "", keyPoints, researchNotes: marker },
+        platforms: ["instagram"],
+        scheduledFor: at,
+      });
+      id = created.id;
+      const v = created.variants[0];
+      const account = v && !v.channelAccountId ? accountFor.get(`${st.brand.brandKey}|instagram`) : undefined;
+      if (v) await updateVariant(db, { organizationId: input.organizationId, contentVariantId: v.id, actorUserId: input.actorUserId, expectedRevision: v.revision, changes: { format: "story", scheduledFor: at, ...(account ? { channelAccountId: account } : {}) } });
+      report.created.push(`${created.title} · ${st.day} ${st.time}`);
+    }
+    const item = await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId: id, actorUserId: input.actorUserId });
+    const v = item.variants.find((x) => x.platform === "instagram" && !x.archivedAt);
+    if (!v || !REMAKEABLE.has(v.status)) continue;
+    const changed = item.brief.creativeDirection !== wantKey;
+    const changes: Parameters<typeof updateVariant>[1]["changes"] = {};
+    if ((changed || !v.media.length) && storyRenders < STORY_RENDERS_PER_LOAD) {
+      try {
+        const assetId = await renderPlanStory(db, input, plan.key, st, brandProfileId, item.id, v.id);
+        storyRenders++;
+        if (assetId) {
+          changes.media = [{ assetId, position: 0, role: "primary" as const }];
+          await updateContentItem(db, { organizationId: input.organizationId, contentItemId: item.id, actorUserId: input.actorUserId, expectedRevision: item.revision, changes: { brief: { creativeDirection: wantKey, keyPoints, sourceText } } });
+          if (changed && v.media.length) report.scheduled.push(`${item.title}: image updated`);
+        }
+      } catch (err) {
+        console.error("[week-plan] story render failed:", err instanceof Error ? err.message.slice(0, 200) : "unknown");
+      }
+    }
+    if (RESCHEDULABLE.has(v.status) && v.scheduledFor?.getTime() !== at.getTime()) changes.scheduledFor = at;
+    if (Object.keys(changes).length) await updateVariant(db, { organizationId: input.organizationId, contentVariantId: v.id, actorUserId: input.actorUserId, expectedRevision: v.revision, changes });
+  }
+
   // 3. Reels: separate from the grid (not shared to feed); the owner films them from the script.
   for (const reel of plan.reels) {
     const brandProfileId = brandIds.get(reel.brand.brandKey);
@@ -1361,6 +1601,10 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
       const existing = await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId: existingReelId, actorUserId: input.actorUserId });
       if (await refreshPlanCopy(db, input, existing, (v) => ({ hook: reel.hook, body: v.platform === "facebook" ? (reel.facebookBody ?? reel.body) : reel.body, hashtags: reel.hashtags, callToAction: reel.callToAction, scheduledFor: planSlot(reel.day, reel.time) }))) report.scheduled.push(`${existing.title}: updated`);
       if (reel.videoFromTelegram && (await attachTelegramVideo(db, input, existingReelId))) report.scheduled.push(`${existing.title}: video from Telegram attached`);
+      if (reel.aiVideo && existing.brief.creativeDirection !== reel.aiVideo.prompt && existing.variants.every((v) => v.archivedAt || RESCHEDULABLE.has(v.status))) {
+        await updateContentItem(db, { organizationId: input.organizationId, contentItemId: existing.id, actorUserId: input.actorUserId, expectedRevision: existing.revision, changes: { brief: { creativeDirection: reel.aiVideo.prompt, keyPoints: reelKeyPoints(reel) } } });
+        report.scheduled.push(`${existing.title}: video prompt updated`);
+      }
       continue;
     }
     const at = planSlot(reel.day, reel.time);
@@ -1371,10 +1615,10 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
       title: reel.title,
       brief: {
         kind: "short_video_concept", objective: "awareness", audience: "", topic: `Reel series: ${reel.series}`, tone: "", callToAction: reel.callToAction,
-        creativeDirection: "Real screen recording, filmed by you. First frame shows a real screen or business name — never a tagline.",
+        creativeDirection: reel.aiVideo?.prompt ?? "Real screen recording, filmed by you. First frame shows a real screen or business name — never a tagline.",
         hook: reel.hook, script: reel.script,
         shots: reel.shots.map((s) => ({ timing: s.timing, visual: s.visual, onScreenText: s.onScreenText ?? "", audio: s.audio ?? "" })),
-        sourceText: "", keyPoints: [`Reel series: ${reel.series}`, "Reels stay off the grid (not shared to feed)."], researchNotes: marker,
+        sourceText: "", keyPoints: reelKeyPoints(reel), researchNotes: marker,
       },
       platforms: ["instagram", "facebook"],
       scheduledFor: at,
@@ -1386,6 +1630,7 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
     }
     report.created.push(`${reel.title} · ${reel.day} ${reel.time}`);
     if (reel.videoFromTelegram && (await attachTelegramVideo(db, input, item.id))) report.scheduled.push(`${reel.title}: video from Telegram attached`);
+    else if (reel.aiVideo) report.needsYou.push(`${reel.title}: AI video ready to make (${reel.aiVideo.seconds} s). Press Make video in Studio once video credits are set up; nothing is spent before that.`);
     else report.needsYou.push(`${reel.title}: film it from the script and upload the video before ${reel.day}.`);
   }
 
@@ -1421,6 +1666,10 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
   if (pruned) report.scheduled.push(`${pruned} unused story card${pruned === 1 ? "" : "s"} archived`);
 
   return report;
+}
+
+function reelKeyPoints(reel: PlanReel): string[] {
+  return [`Reel series: ${reel.series}`, "Reels stay off the grid (not shared to feed).", ...(reel.aiVideo ? [`AI video: ${reel.aiVideo.seconds} seconds. Made only when you press Make video.`] : [])];
 }
 
 /** Renders a CodeIt story card and attaches it to the post's Instagram version (replacing nothing: callers only ask when there is no media). */
@@ -1731,4 +1980,107 @@ export async function getWeekPlanStatus(db: Db, input: { organizationId: string;
   }
   entries.sort((a, b) => `${a.day} ${a.time} ${a.kind}`.localeCompare(`${b.day} ${b.time} ${b.kind}`));
   return { loaded: anyLoaded, entries };
+}
+
+// ---------------------------------------------------------------------------
+// "Pip builds a game": CodeIt's AI reel series, ready to make.
+//
+// Five 10-second episodes of the mascot building one game, with a story poll
+// between episodes so followers pick what happens next. Nothing here is in a
+// plan yet: once video credits are set up, the series is added to a plan with
+// `pipSeries(startDay)` and each episode is made from Studio → Make video.
+// ---------------------------------------------------------------------------
+
+const PIP = "Pip, CodeIt's mascot: a small round orange fluffy creature with big round eyes, tiny arms and a yellow hoodie. Flat 2D vector animation in the spirit of Toca Boca: bold rounded shapes, cream background, orange, navy and mint accents, soft bouncy motion, no 3D, no gradients, no words or letters, no logos, no people. Vertical 9:16, Pip centred and large.";
+
+const PIP_TAGS = ["KidsWhoCode", "PythonForKids", "CodeIt"];
+const PIP_BODY = (line: string) => `${line}\n\nPip is building a game, one episode at a time, and you pick what happens next in our story poll.\n\nYour kid can build one too: describe it, CodeIt makes the first version, they change it and see the code. Free to start, ages 5 to 18.\nLink in bio: codeitlearn.com`;
+
+const PIP_EPISODES: Omit<PlanReel, "day" | "time" | "brand">[] = [
+  {
+    key: "pip-1", series: "PIP BUILDS A GAME", title: "CodeIt · Pip builds a game, episode 1: the idea",
+    hook: "Pip has never made a game. Tonight that changes.",
+    body: PIP_BODY("Episode 1: Pip has an idea."), hashtags: PIP_TAGS, callToAction: "Link in bio",
+    script: "Pip opens a laptop, types one sentence, and a rocket pops out of the screen. Text on screen: 'Pip has never made a game.' then 'Tonight that changes.' End card: 'Ep 1 of 5. You pick what's next in our story.'",
+    shots: [
+      { timing: "0–3s", visual: "Pip sits on a cream floor with a navy laptop, typing fast", onScreenText: "Pip has never made a game." },
+      { timing: "3–7s", visual: "A flat orange rocket pops out of the screen and hovers", onScreenText: "One sentence in. A rocket out." },
+      { timing: "7–10s", visual: "Pip gasps, claps, looks straight at the camera", onScreenText: "Ep 1 of 5. You pick what's next." },
+    ],
+    aiVideo: { seconds: 10, prompt: `${PIP} Pip sits cross-legged on the floor with a small navy laptop and types quickly. A flat orange rocket pops out of the laptop screen and hovers in front of Pip, wobbling. Pip gasps, claps its tiny hands, then looks straight at the camera, delighted. Slow push in.` },
+  },
+  {
+    key: "pip-2", series: "PIP BUILDS A GAME", title: "CodeIt · Pip builds a game, episode 2: it doesn't work",
+    hook: "Every game breaks the first time. Watch Pip fix it.",
+    body: PIP_BODY("Episode 2: it doesn't work. Yet."), hashtags: PIP_TAGS, callToAction: "Link in bio",
+    script: "The rocket tries to take off and flops. Pip frowns, changes one thing, and the rocket flies a loop. Text: 'Every game breaks the first time.' then 'Change one line. Try again.'",
+    shots: [
+      { timing: "0–3s", visual: "The rocket wobbles up and flops onto the floor with a puff", onScreenText: "Every game breaks the first time." },
+      { timing: "3–7s", visual: "Pip frowns, leans to the laptop, taps one key", onScreenText: "Change one line." },
+      { timing: "7–10s", visual: "The rocket springs up and flies a loop; Pip cheers", onScreenText: "Try again. Ep 2 of 5." },
+    ],
+    aiVideo: { seconds: 10, prompt: `${PIP} A flat orange rocket tries to take off from the floor, wobbles and flops over with a small puff of cloud. Pip frowns, leans to a navy laptop and taps one key carefully. The rocket springs up and flies a happy loop around Pip, who throws both arms up and cheers.` },
+  },
+  {
+    key: "pip-3", series: "PIP BUILDS A GAME", title: "CodeIt · Pip builds a game, episode 3: make it harder",
+    hook: "You voted. Pip adds asteroids.",
+    body: PIP_BODY("Episode 3: you voted, so now it gets harder."), hashtags: PIP_TAGS, callToAction: "Link in bio",
+    script: "Made after the poll on episode 2. Asteroids won: grey rocks float in and the rocket dodges them while Pip steers. If stars won instead, use: 'Mint stars float in and the rocket zooms to collect them while Pip steers.' Text: 'You voted.' then 'Now it gets harder.'",
+    shots: [
+      { timing: "0–3s", visual: "Flat grey asteroids drift in from the sides", onScreenText: "You voted." },
+      { timing: "3–7s", visual: "Pip steers with the arrow keys; the rocket dodges", onScreenText: "Now it gets harder." },
+      { timing: "7–10s", visual: "Near miss; Pip bounces in its seat", onScreenText: "Ep 3 of 5." },
+    ],
+    aiVideo: { seconds: 10, prompt: `${PIP} Flat grey asteroids drift slowly in from both sides. Pip presses the arrow keys on a navy laptop, leaning left and right, and the flat orange rocket in front of it dodges each asteroid. One near miss; Pip bounces in its seat with excitement.` },
+  },
+  {
+    key: "pip-4", series: "PIP BUILDS A GAME", title: "CodeIt · Pip builds a game, episode 4: the score",
+    hook: "A game isn't a game until it keeps score.",
+    body: PIP_BODY("Episode 4: score = score + 1."), hashtags: PIP_TAGS, callToAction: "Link in bio",
+    script: "Numbers pop up each time the rocket gets past an asteroid, counting to 10. Pip dances. Text: 'A game needs a score.' then 'score = score + 1'.",
+    shots: [
+      { timing: "0–3s", visual: "The rocket passes an asteroid; a flat '1' pops up", onScreenText: "A game needs a score." },
+      { timing: "3–7s", visual: "Numbers count up quickly, bouncing", onScreenText: "score = score + 1" },
+      { timing: "7–10s", visual: "A big '10' lands; Pip dances", onScreenText: "Ep 4 of 5." },
+    ],
+    aiVideo: { seconds: 10, prompt: `${PIP} Each time the flat orange rocket flies past a grey asteroid, a chunky navy number pops up above it and bounces: 1, 2, 3, counting faster and faster. A big orange 10 lands with a bounce and Pip does a happy little dance beside the laptop.` },
+  },
+  {
+    key: "pip-5", series: "PIP BUILDS A GAME", title: "CodeIt · Pip builds a game, episode 5: prove it",
+    hook: "Pip built a game. Can Pip explain it?",
+    body: PIP_BODY("Episode 5: building it is half. Understanding it is the other half."), hashtags: PIP_TAGS, callToAction: "Link in bio",
+    script: "Pip turns the laptop to the camera. Three answer bubbles float up; Pip taps the right one and it turns orange with a tick. Confetti. Text: 'Building it is half.' then 'Understanding it is the other half.' End card: 'Your kid's turn: codeitlearn.com'.",
+    shots: [
+      { timing: "0–3s", visual: "Pip proudly turns the laptop toward the camera", onScreenText: "Building it is half." },
+      { timing: "3–7s", visual: "Three round answer bubbles float up; Pip taps the middle one", onScreenText: "Understanding it is the other half." },
+      { timing: "7–10s", visual: "It turns orange with a tick; orange and mint confetti", onScreenText: "Your kid's turn: codeitlearn.com" },
+    ],
+    aiVideo: { seconds: 10, prompt: `${PIP} Pip proudly turns a navy laptop toward the camera. Three round cream answer bubbles float up in a row; Pip thinks, then taps the middle one, which turns bright orange with a white tick. Flat orange and mint confetti falls and Pip throws its arms up.` },
+  },
+];
+
+/** The polls between episodes: each one decides the next episode. */
+const PIP_POLLS: Omit<PlanStory, "day" | "time" | "brand">[] = [
+  { key: "pip-poll-1", highlight: "PIP", spec: { kind: "thisOrThat", brand: "codeit", eyebrow: "Pip needs you", headline: "What should we add?", a: { label: "Asteroids", icon: "rock" }, b: { label: "Stars", icon: "star" }, sticker: { type: "poll", question: "What should Pip add next?", options: ["Asteroids", "Stars"] } } },
+  { key: "pip-quiz-2", highlight: "PIP", spec: { kind: "quiz", brand: "codeit", eyebrow: "Pip's code", headline: "What fixes the score?", code: ["score = 0", "# the rocket passes", "score = ???"], footnote: "Episode 4 shows the answer.", sticker: { type: "quiz", question: "What goes in ???", options: ["score + 1", "1", "score"], correct: 0 } } },
+];
+
+/**
+ * The series laid out from `startDay` (YYYY-MM-DD): an episode every two days at
+ * 16:30, the poll the day after episode 2, the code quiz the day after
+ * episode 3. Spread into a plan's `reels` and `stories`.
+ */
+export function pipSeries(startDay: string): { reels: PlanReel[]; stories: PlanStory[] } {
+  const day = (offset: number) => {
+    const d = new Date(`${startDay}T12:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + offset);
+    return d.toISOString().slice(0, 10);
+  };
+  return {
+    reels: PIP_EPISODES.map((e, i) => ({ ...e, brand: CODEIT, day: day(i * 2), time: "16:30" })),
+    stories: [
+      { ...PIP_POLLS[0]!, brand: CODEIT, day: day(3), time: "17:00" },
+      { ...PIP_POLLS[1]!, brand: CODEIT, day: day(5), time: "17:00" },
+    ],
+  };
 }
