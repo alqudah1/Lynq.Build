@@ -1102,7 +1102,7 @@ async function storyCardMedia(db: Db, input: { organizationId: string; actorUser
       title: `Story card · ${meta.title}`.slice(0, 200),
       altText: meta.line.slice(0, 1000),
       tags: [STORY_CARD_TAG, fromTag(feedAssetId)],
-      file: { bytes: card.bytes, contentType: card.contentType, filename: "story.png" },
+      file: { bytes: card.bytes, contentType: card.contentType, filename: "story.jpg" },
       platformHint: "instagram",
     });
     return [{ assetId: asset.id, position: 0, role: "primary" as const }];
@@ -1438,7 +1438,7 @@ async function attachCodeItCard(db: Db, input: { organizationId: string; actorUs
     title: `${item.title} — card`.slice(0, 200),
     altText: `${spec.headline} ${spec.sub}`.slice(0, 1000),
     tags: ["codeit-card"],
-    file: { bytes: png.bytes, contentType: png.contentType, filename: "card.png" },
+    file: { bytes: png.bytes, contentType: png.contentType, filename: "card.jpg" },
     platformHint: "instagram",
   });
   await updateVariant(db, { organizationId: input.organizationId, contentVariantId: ig.id, actorUserId: input.actorUserId, expectedRevision: ig.revision, changes: { media: [{ assetId: asset.id, position: 0, role: "primary" as const }], format: "image" } });
