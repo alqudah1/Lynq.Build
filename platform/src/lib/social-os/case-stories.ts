@@ -45,9 +45,9 @@ export const HOUSE_DEALS_CASE: CaseSet = {
       kind: "bento",
       headline: "One site, both sides.",
       tiles: [
-        { shot: { img: "home.png", y: 1280 }, label: "Seller form", sub: "Three short steps" },
-        { shot: { img: "sell.png", y: 3330 }, label: "How it works", sub: "Four steps, both sides" },
-        { shot: { img: "investors.png", y: 5050 }, label: "Investor list", sub: "What they buy" },
+        { shot: { img: "home.png" }, label: "Seller form", sub: "Three short steps" },
+        { shot: { img: "how.png" }, label: "How it works", sub: "Four steps, both sides" },
+        { shot: { img: "investors.png" }, label: "Investor list", sub: "What they buy" },
         { shot: { img: "faq.png" }, label: "FAQ", sub: "Sellers and investors" },
       ],
       note: "Built end to end by LYNQ.",

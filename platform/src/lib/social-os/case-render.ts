@@ -163,22 +163,24 @@ ${wrap(frame.detail, 46).slice(0, 2).map((l, i) => T(90, 690 + i * 48, l, { s: 3
       break;
     }
     case "bento": {
-      const cols = 2, gap = 24, tw = (W - 180 - gap) / cols, th = 420;
-      const y0 = 560;
-      for (const [i, t] of frame.tiles.slice(0, 4).entries()) {
-        const x = 90 + (i % cols) * (tw + gap), y = y0 + Math.floor(i / cols) * (th + gap);
-        const src = need(t.shot.img);
-        const meta = await sharp(src).metadata();
-        const scale = tw / (meta.width ?? tw);
-        const ih = th - 130;
-        const top = Math.min(Math.round((t.shot.y ?? 0) * scale), Math.max(0, Math.round((meta.height ?? ih) * scale) - ih));
-        const img = await sharp(src).resize({ width: Math.round(tw) }).extract({ left: 0, top, width: Math.round(tw), height: ih }).toBuffer();
-        const rounded = await sharp(img).composite([{ input: svg(`<rect width="${Math.round(tw)}" height="${ih}" rx="28" fill="#fff"/><rect y="40" width="${Math.round(tw)}" height="${ih - 40}" fill="#fff"/>`, Math.round(tw), ih), blend: "dest-in" }]).png().toBuffer();
-        layers.push({ input: rounded, left: Math.round(x), top: y });
-        over += `<path d="M${x} ${y + ih} H${x + tw} V${y + th - 28} a28 28 0 0 1 -28 28 H${x + 28} a28 28 0 0 1 -28 -28 Z" fill="#141417"/><rect x="${x}" y="${y}" width="${tw}" height="${th}" rx="28" fill="none" stroke="#2a2a2f" stroke-width="2"/>
-${mono(x + 28, y + ih + 56, `${String(i + 1).padStart(2, "0")}  ${t.label}`, LI, "start", 22)}${T(x + 28, y + ih + 98, t.sub, { s: 30, c: "#c4c4c8" })}`;
+      // A lineup of real screens: four phones, staggered and slightly turned, then the list of what each one is.
+      const pw = 290, ph = 595;
+      const spots = [{ x: 46, y: 650, r: -5 }, { x: 278, y: 605, r: -1.5 }, { x: 506, y: 605, r: 1.5 }, { x: 724, y: 650, r: 5 }];
+      const tiles = frame.tiles.slice(0, 4);
+      // outer phones first, the middle two on top
+      for (const i of [0, 3, 1, 2]) {
+        const t = tiles[i];
+        if (!t) continue;
+        const ph1 = await rotated(await phonePng(need(t.shot.img), pw, ph, t.shot.y), spots[i]!.r);
+        layers.push({ input: ph1.input, left: spots[i]!.x, top: spots[i]!.y });
       }
-      over += `${mono(90, 400, "What we built", LI)}${T(90, 500, frame.headline, { s: 96, ls: -3 })}${T(90, y0 + 2 * (th + gap) + 60, frame.note, { s: 44, c: LI })}`;
+      const listTop = 1340;
+      over = `${mono(90, 400, "What we built", LI)}${T(90, 500, frame.headline, { s: 96, ls: -3 })}
+${tiles.map((t, i) => {
+        const x = 90 + (i % 2) * 460, y = listTop + Math.floor(i / 2) * 120;
+        return `${mono(x, y, String(i + 1).padStart(2, "0"), LI, "start", 22)}${T(x + 56, y + 2, t.label, { f: "Inter SemiBold", w: 600, s: 40 })}${T(x + 56, y + 48, t.sub, { s: 30, c: "#a4a4aa" })}`;
+      }).join("")}
+${T(90, listTop + 262, frame.note, { s: 40, c: LI })}`;
       break;
     }
     case "cta": {
@@ -193,7 +195,7 @@ ${frame.lines.map((l, i) => accentLine(90, top + i * lh, l, frame.accentWord, si
     }
   }
   // Glows and shadows go under the phones, text over everything.
-  const behind = frame.kind === "phones" ? svg(`${defs(set.glow)}<rect width="${W}" height="${H}" fill="url(#spot)"/><circle cx="${W / 2}" cy="1260" r="520" fill="url(#glow)"/><ellipse cx="560" cy="1800" rx="420" ry="40" fill="#000" opacity="0.9" filter="url(#soft)"/>`) : svg(`${defs(set.glow)}${frame.kind === "bento" ? `<rect width="${W}" height="${H}" fill="url(#spot)"/>` : ""}`);
+  const behind = frame.kind === "phones" ? svg(`${defs(set.glow)}<rect width="${W}" height="${H}" fill="url(#spot)"/><circle cx="${W / 2}" cy="1260" r="520" fill="url(#glow)"/><ellipse cx="560" cy="1800" rx="420" ry="40" fill="#000" opacity="0.9" filter="url(#soft)"/>`) : svg(`${defs(set.glow)}${frame.kind === "bento" ? `<rect width="${W}" height="${H}" fill="url(#spot)"/><circle cx="${W / 2}" cy="930" r="560" fill="url(#glow)"/><ellipse cx="${W / 2}" cy="1290" rx="470" ry="34" fill="#000" opacity="0.9" filter="url(#soft)"/>` : ""}`);
   const out = await sharp(base)
     .composite([{ input: behind, left: 0, top: 0 }, ...layers, { input: svg(`${defs(set.glow)}${over}${chrome(set.series, folio, frame.kind !== "phones")}`), left: 0, top: 0 }])
     .flatten({ background: BK })
