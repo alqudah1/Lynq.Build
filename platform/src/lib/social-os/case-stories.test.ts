@@ -1,21 +1,20 @@
 import { describe, it, expect } from "vitest";
-import { ARCUBED_CASE } from "./case-stories";
-import { needsSticker, storySvg } from "./story-original";
+import { ARCUBED_CASE, HOUSE_DEALS_CASE } from "./case-stories";
 
-describe("Arcubed highlight set", () => {
-  it("is seven LYNQ stories numbered in order, none needing a sticker", () => {
-    expect(ARCUBED_CASE).toHaveLength(7);
-    ARCUBED_CASE.forEach((c, i) => {
-      expect(c.spec.brand).toBe("lynq");
-      expect(needsSticker(c.spec)).toBe(false);
-      expect(storySvg(c.spec)).toContain(`${String(i + 1).padStart(2, "0")} / 07`);
-    });
+describe.each([ARCUBED_CASE, HOUSE_DEALS_CASE])("case set $series", (set) => {
+  it("runs cover → brief → the build → what we built → the result", () => {
+    expect(set.frames[0]!.kind).toBe("cover");
+    expect(set.frames[1]!.kind).toBe("brief");
+    expect(set.frames.at(-1)!.kind).toBe("cta");
+    expect(set.frames.some((f) => f.kind === "bento")).toBe(true);
   });
 
-  it("uses real images only for the photo and screenshot frames, and never names a city", () => {
-    for (const c of ARCUBED_CASE) {
-      if (c.spec.kind === "object" || c.spec.kind === "screen") expect(c.image).toBeTruthy();
-      expect(JSON.stringify(c.spec)).not.toMatch(/Amman|Toronto|Jordan|GTA/);
-    }
+  it("names no city or region and quotes no one", () => {
+    const copy = JSON.stringify(set.frames.map((f) => ({ ...f, photo: undefined, shots: undefined, tiles: "tiles" in f ? f.tiles.map((t) => [t.label, t.sub]) : undefined })));
+    expect(copy).not.toMatch(/Toronto|Amman|Jordan|GTA|Ontario|Alberta|Calgary|Edmonton|“|"[^"]*said/);
+  });
+
+  it("keeps every headline line short enough for the frame", () => {
+    for (const f of set.frames) if (f.kind === "phones") for (const l of f.headline) expect(l.length, l).toBeLessThanOrEqual(19);
   });
 });

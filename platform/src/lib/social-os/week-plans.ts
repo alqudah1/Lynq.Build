@@ -583,7 +583,7 @@ export const WEEK_PLANS: WeekPlan[] = [
     weekStart: "2026-10-22",
     retired: ["n-codeit-free", "n-codeit-askteacher"],
     highlights: {
-      LYNQ: ["START HERE", "KINGSBRIDGE", "NASMA", "AMY", "ARCUBED", "FIX THIS", "WHAT YOU GET", "OFFICE", "BEHIND"],
+      LYNQ: ["START HERE", "KINGSBRIDGE", "NASMA", "AMY", "ARCUBED", "HOUSE DEALS", "FIX THIS", "WHAT YOU GET", "OFFICE", "BEHIND"],
       CodeIt: ["START HERE", "BUILDS", "LESSONS", "ASK THE TEACHER", "FREE", "ABOUT", "QUIZ", "PIP"],
     },
     feed: [
