@@ -120,51 +120,47 @@ const MONO = "JetBrains Mono";
 const mLabel = (x: number, y: number, t: string, c = MU, a: "start" | "end" | "middle" = "start") => T(x, y, t.toUpperCase(), { f: MONO, w: 500, s: 24, c, ls: 3, a });
 
 
-// ---------- CodeIt "playful" kit: full-bleed, layered, sticker-like ----------
-const star = (cx: number, cy: number, r: number, fill: string, rot = 0) => {
-  const pts = Array.from({ length: 10 }, (_, i) => {
-    const a = (Math.PI / 5) * i - Math.PI / 2;
-    const rr = i % 2 ? r * 0.45 : r;
-    return `${(cx + rr * Math.cos(a)).toFixed(1)},${(cy + rr * Math.sin(a)).toFixed(1)}`;
-  }).join(" ");
-  return `<polygon points="${pts}" fill="${fill}" stroke="${DK}" stroke-width="5" stroke-linejoin="round" transform="rotate(${rot} ${cx} ${cy})"/>`;
+// ---------- CodeIt modern kit: warm gradient, soft light, floating cards, no outlines ----------
+const cDefs = `<defs>
+<linearGradient id="cbg" x1="0" y1="0" x2="0.3" y2="1"><stop offset="0" stop-color="#fff8ee"/><stop offset="1" stop-color="#ffeedd"/></linearGradient>
+<filter id="blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="90"/></filter>
+<filter id="shadow" x="-20%" y="-20%" width="140%" height="160%"><feGaussianBlur stdDeviation="26"/></filter>
+<linearGradient id="orange" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9a3c"/><stop offset="1" stop-color="#ff6a00"/></linearGradient>
+<linearGradient id="code" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#33241a"/><stop offset="1" stop-color="#1f150d"/></linearGradient>
+</defs>`;
+/** Warm gradient with three soft light blooms: depth without doodles. */
+const cBackdrop = () => `${cDefs}<rect width="${W}" height="${H}" fill="url(#cbg)"/>
+<circle cx="${W - 60}" cy="260" r="300" fill="${OR}" opacity="0.35" filter="url(#blur)"/>
+<circle cx="40" cy="1060" r="280" fill="${YE}" opacity="0.45" filter="url(#blur)"/>
+<circle cx="${W - 120}" cy="${H - 160}" r="320" fill="${MI}" opacity="0.28" filter="url(#blur)"/>`;
+/** A card that floats: soft blurred shadow below, no outline. */
+const softCard = (x: number, y: number, w: number, h: number, fill = "#ffffff", r = 44, shade = 0.18) =>
+  `<rect x="${x + 10}" y="${y + 34}" width="${w - 20}" height="${h}" rx="${r}" fill="${BR}" opacity="${shade}" filter="url(#shadow)"/><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${fill}"/>`;
+const cPill = (cx: number, y: number, t: string) => {
+  const tw = t.length * 24.5;
+  const w = tw + 130;
+  return `<rect x="${cx - w / 2}" y="${y}" width="${w}" height="68" rx="34" fill="${OR}" opacity="0.14"/><circle cx="${cx - w / 2 + 42}" cy="${y + 34}" r="9" fill="${OR}"/>${T(cx + 18, y + 46, t.toUpperCase(), { f: "Nunito", w: 800, s: 30, c: ORT, a: "middle", ls: 5 })}`;
 };
-const plus = (cx: number, cy: number, r: number, fill: string) => `<path d="M${cx - r} ${cy} H${cx + r} M${cx} ${cy - r} V${cy + r}" stroke="${DK}" stroke-width="${r * 0.9}" stroke-linecap="round"/><path d="M${cx - r} ${cy} H${cx + r} M${cx} ${cy - r} V${cy + r}" stroke="${fill}" stroke-width="${r * 0.55}" stroke-linecap="round"/>`;
-const squiggle = (x: number, y: number, c: string) => `<path d="M${x} ${y} q20 -26 40 0 t40 0 t40 0 t40 0" fill="none" stroke="${c}" stroke-width="12" stroke-linecap="round"/>`;
-/** Big soft shapes that bleed off the frame, so the story never looks like a card floating on a page. */
-const cBackdrop = () => `<rect width="${W}" height="${H}" fill="${CR}"/>
-<circle cx="${W + 40}" cy="300" r="300" fill="${YE}" opacity="0.55"/>
-<circle cx="-60" cy="1000" r="260" fill="${MI}" opacity="0.28"/>
-<circle cx="${W - 40}" cy="${H + 40}" r="380" fill="${OR}" opacity="0.22"/>
-${[...Array(9)].map((_, r) => [...Array(6)].map((__, c) => `<circle cx="${90 + c * 180 + (r % 2) * 90}" cy="${120 + r * 215}" r="5" fill="${BR}" opacity="0.07"/>`).join("")).join("")}`;
-const cPill = (cx: number, y: number, t: string, bg = DK, fg = YE) => {
-  const w = t.length * 24 + 90;
-  return `<rect x="${cx - w / 2}" y="${y}" width="${w}" height="72" rx="36" fill="${bg}"/>${T(cx, y + 50, t.toUpperCase(), { f: "Baloo 2", w: 800, s: 38, c: fg, a: "middle", ls: 4 })}`;
-};
-/** A code editor window: title bar, file name, big code, offset orange shadow, a slight tilt. */
-const cWindow = (x: number, y: number, w: number, lines: string[], file = "quiz.py", tilt = -2, maxBottom = 1600) => {
-  const size = Math.min(76, Math.floor((w - 120) / (0.6 * Math.max(...lines.map((l) => l.length)))), Math.floor((maxBottom - y - 170) / (1.5 * lines.length)));
+/** A code editor window: frosted dark glass, file tab, big code, floating on a soft shadow. */
+const cWindow = (x: number, y: number, w: number, lines: string[], file = "quiz.py", maxBottom = 1600) => {
+  const size = Math.min(72, Math.floor((w - 140) / (0.6 * Math.max(...lines.map((l) => l.length)))), Math.floor((maxBottom - y - 170) / (1.5 * lines.length)));
   const lh = Math.round(size * 1.5);
   const h = 110 + 60 + lines.length * lh;
-  const cx = x + w / 2, cy = y + h / 2;
   const body = lines.map((l, i) => {
     const y0 = y + 110 + 30 + size + i * lh;
-    const num = T(x + 40, y0, String(i + 1), { f: "JetBrains Mono", w: 500, s: size * 0.6, c: "#7a6a58" });
-    return `${num}${T(x + 100, y0, l, { f: "JetBrains Mono", w: 500, s: size, c: l.trim().startsWith("#") ? "#a08c74" : MI })}`;
+    const num = T(x + 46, y0, String(i + 1), { f: "JetBrains Mono", w: 500, s: size * 0.55, c: "#6f5e4d" });
+    return `${num}${T(x + 104, y0, l, { f: "JetBrains Mono", w: 500, s: size, c: l.trim().startsWith("#") ? "#9c8670" : MI })}`;
   }).join("");
-  return `<g transform="rotate(${tilt} ${cx} ${cy})">
-<rect x="${x + 18}" y="${y + 18}" width="${w}" height="${h}" rx="34" fill="${OR}" stroke="${DK}" stroke-width="6"/>
-<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="34" fill="${DK}" stroke="${DK}" stroke-width="6"/>
-<rect x="${x}" y="${y}" width="${w}" height="92" rx="34" fill="#3a2a1c"/><rect x="${x}" y="${y + 60}" width="${w}" height="32" fill="#3a2a1c"/>
-<circle cx="${x + 54}" cy="${y + 46}" r="14" fill="#ff5f57"/><circle cx="${x + 96}" cy="${y + 46}" r="14" fill="${YE}"/><circle cx="${x + 138}" cy="${y + 46}" r="14" fill="${MI}"/>
-${T(cx, y + 58, file, { f: "JetBrains Mono", w: 500, s: 30, c: "#cdb89f", a: "middle" })}
-${body}</g>`;
+  return `${softCard(x, y, w, h, "url(#code)", 40, 0.35)}
+<circle cx="${x + 52}" cy="${y + 50}" r="12" fill="#ff5f57"/><circle cx="${x + 90}" cy="${y + 50}" r="12" fill="#febc2e"/><circle cx="${x + 128}" cy="${y + 50}" r="12" fill="#28c840"/>
+<rect x="${x + 170}" y="${y + 24}" width="${file.length * 19 + 48}" height="52" rx="14" fill="#ffffff" opacity="0.07"/>${T(x + 194, y + 60, file, { f: "JetBrains Mono", w: 500, s: 28, c: "#d8c4ad" })}
+<line x1="${x}" y1="${y + 100}" x2="${x + w}" y2="${y + 100}" stroke="#ffffff" stroke-opacity="0.06" stroke-width="2"/>
+${body}`;
 };
-/** A hand-drawn arrow pointing down into the sticker zone, with its call to action. */
-const cTapHint = (y: number, t: string) => `${T(W / 2 - 40, y, t, { f: "Baloo 2", w: 800, s: 52, c: BR, a: "middle" })}
-<path d="M${W / 2 + 200} ${y - 16} q70 -6 74 70" fill="none" stroke="${OR}" stroke-width="10" stroke-linecap="round"/><path d="M${W / 2 + 248} ${y + 34} l26 30 l24 -32" fill="none" stroke="${OR}" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>`;
-/** Where the Instagram sticker goes: a yellow pad with the site's dark outline and offset shadow. */
-const cStickerPad = (z: { x: number; y: number; w: number; h: number }) => `<rect x="${z.x - 30 + 14}" y="${z.y - 30 + 14}" width="${z.w + 60}" height="${z.h + 60}" rx="44" fill="${DK}"/><rect x="${z.x - 30}" y="${z.y - 30}" width="${z.w + 60}" height="${z.h + 60}" rx="44" fill="${YE}" stroke="${DK}" stroke-width="6"/>`;
+/** The call to action above the sticker, with a small chevron pointing at it. */
+const cTapHint = (y: number, t: string) => `${T(W / 2, y, t, { f: "Nunito", w: 800, s: 40, c: BR, a: "middle", op: 0.75 })}<path d="M${W / 2 - 18} ${y + 24} l18 16 l18 -16" fill="none" stroke="${OR}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>`;
+/** Where the Instagram sticker goes: a frosted white panel it sits on. */
+const cStickerPad = (z: { x: number; y: number; w: number; h: number }) => `<rect x="${z.x - 30}" y="${z.y - 20}" width="${z.w + 60}" height="${z.h + 40}" rx="48" fill="#ffffff" opacity="0.55" stroke="#ffffff" stroke-width="3"/>`;
 
 // ---------- LYNQ product render kit ----------
 /** A Teenage Engineering-style object: the "LYNQ Site" as a piece of hardware, lit from the upper left. */
@@ -240,43 +236,43 @@ export function storySvg(spec: StorySpec): string {
       const z = stickerZone(spec);
       const [l1, l2] = twoLines(spec.headline);
       return `${cBackdrop()}
-${star(150, 470, 44, YE, 12)}${plus(950, 620, 26, MI)}${squiggle(760, 230, OR)}${star(975, 1735, 34, MI, -10)}${plus(110, 1735, 22, OR)}
+
 ${cPill(W / 2, 330, spec.eyebrow)}
 ${cTitle(540, l1, 112)}${cTitle(660, l2, 112, ORT)}
-${cWindow(110, 720, 860, spec.code, "quiz.py", -2, 1090)}
+${cWindow(90, 730, 900, spec.code, "quiz.py", 1110)}
 ${cStickerPad(z)}
 ${cTapHint(z.y - 70, "Tap your answer")}
-${T(W / 2, z.y + z.h + 130, spec.footnote ?? "Answer in tomorrow's story", { f: "Baloo 2", w: 800, s: 44, c: ORT, a: "middle" })}`;
+${T(W / 2, z.y + z.h + 120, spec.footnote ?? "Answer in tomorrow's story", { f: "Nunito", w: 800, s: 38, c: ORT, a: "middle" })}`;
     }
     case "answer": {
       const whyH = 130 + spec.why.length * 64;
       const ansSize = fit(spec.answer, 84, 640, 0.6);
       return `${cBackdrop()}
-${star(965, 330, 40, MI, -8)}${squiggle(110, 230, OR)}${plus(120, 1640, 22, YE)}
+
 ${cPill(W / 2, 330, spec.eyebrow)}
 ${cTitle(530, spec.headline, 112)}
-<g transform="rotate(-2 540 680)"><rect x="124" y="604" width="860" height="160" rx="40" fill="${DK}"/><rect x="110" y="590" width="860" height="160" rx="40" fill="${OR}" stroke="${DK}" stroke-width="6"/>
-<circle cx="200" cy="670" r="50" fill="${MI}" stroke="${DK}" stroke-width="6"/><path d="M176 670 l18 20 l32 -40" fill="none" stroke="${DK}" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
-${T(290, 670 + ansSize * 0.36, spec.answer, { f: "JetBrains Mono", w: 500, s: ansSize, c: "#ffffff" })}</g>
-<rect x="124" y="834" width="860" height="${whyH}" rx="40" fill="${DK}"/><rect x="110" y="820" width="860" height="${whyH}" rx="40" fill="#ffffff" stroke="${DK}" stroke-width="6"/>
-${T(160, 900, "Why?", { f: "Baloo 2", w: 800, s: 60, c: ORT })}
-${spec.why.map((l, i) => T(160, 975 + i * 64, l, { s: 48, c: BR })).join("")}
-${cWindow(110, 820 + whyH + 70, 860, [spec.example], "try.py", 2)}
-${T(W / 2, 1640, spec.tryThis, { f: "Baloo 2", w: 800, s: 46, c: ORT, a: "middle" })}`;
+${softCard(90, 590, 900, 160, "url(#orange)", 44, 0.3)}
+<circle cx="180" cy="670" r="46" fill="#ffffff"/><path d="M158 670 l16 18 l30 -36" fill="none" stroke="${OR}" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+${T(260, 670 + ansSize * 0.36, spec.answer, { f: "JetBrains Mono", w: 500, s: ansSize, c: "#ffffff" })}
+${softCard(90, 820, 900, whyH)}
+${T(150, 900, "WHY", { f: "Nunito", w: 800, s: 30, c: ORT, ls: 5 })}
+${spec.why.map((l, i) => T(150, 975 + i * 64, l, { s: 48, c: BR })).join("")}
+${cWindow(90, 820 + whyH + 70, 900, [spec.example], "try.py")}
+${T(W / 2, 1640, spec.tryThis, { f: "Nunito", w: 800, s: 42, c: ORT, a: "middle" })}`;
     }
     case "tryTonight": {
       const [l1, l2] = twoLines(spec.headline);
       const code = spec.code ? spec.code.split("\n") : [];
       return `${cBackdrop()}
-${star(965, 330, 42, MI, 10)}${plus(110, 330, 24, MI)}${squiggle(760, 230, OR)}
+
 ${cPill(W / 2, 330, spec.eyebrow)}
 ${cTitle(540, l1, 108)}${cTitle(655, l2, 108, ORT)}
 ${spec.steps.map((st, i) => {
         const y = 790 + i * 120;
-        return `<circle cx="${170 + 8}" cy="${y + 8}" r="44" fill="${DK}"/><circle cx="170" cy="${y}" r="44" fill="${[OR, YE, MI][i % 3]}" stroke="${DK}" stroke-width="6"/>${T(170, y + 19, String(i + 1), { f: "Baloo 2", w: 800, s: 54, c: DK, a: "middle" })}${T(250, y + 18, st, { f: "Baloo 2", w: 800, s: 52, c: BR })}`;
+        return `<circle cx="150" cy="${y}" r="42" fill="${OR}" opacity="0.14"/>${T(150, y + 18, String(i + 1), { f: "Baloo 2", w: 800, s: 50, c: ORT, a: "middle" })}${T(225, y + 17, st, { f: "Nunito", w: 700, s: 48, c: BR })}`;
       }).join("")}
-${code.length ? cWindow(110, 790 + spec.steps.length * 120 + 10, 860, code, "tonight.py", -2) : ""}
-<rect x="${W / 2 - 330 + 10}" y="1560" width="660" height="96" rx="48" fill="${DK}"/><rect x="${W / 2 - 330}" y="1550" width="660" height="96" rx="48" fill="${YE}" stroke="${DK}" stroke-width="6"/>${T(W / 2, 1612, "Free to start: codeitlearn.com", { f: "Baloo 2", w: 800, s: 42, c: BR, a: "middle" })}`;
+${code.length ? cWindow(90, 790 + spec.steps.length * 120 + 10, 900, code, "tonight.py") : ""}
+${softCard(W / 2 - 330, 1530, 660, 100, "url(#orange)", 50, 0.3)}${T(W / 2, 1593, "Free to start: codeitlearn.com", { f: "Nunito", w: 800, s: 38, c: "#ffffff", a: "middle" })}`;
     }
     case "thisOrThat": {
       const z = stickerZone(spec);
@@ -285,13 +281,13 @@ ${code.length ? cWindow(110, 790 + spec.steps.length * 120 + 10, 860, code, "ton
         const tile = (x: number, label: string, ic: Icon, on: boolean) => `<rect x="${x}" y="600" width="420" height="460" rx="36" fill="url(#body)" stroke="#3a3a40" stroke-width="2"/>${icon(ic, x + 210, 800, on ? LI : WH, BK)}${T(x + 210, 1010, label, { f: "Inter Light", w: 300, s: 42, c: WH, a: "middle" })}`;
         return `${lFrame(spec.eyebrow, "POLL")}${lBig(90, 430, l1, 96)}${lBig(90, 540, l2, 96)}${tile(90, spec.a.label, spec.a.icon, false)}${tile(570, spec.b.label, spec.b.icon, true)}${lZone(z)}`;
       }
-      const card = (x: number, rot: number, label: string, ic: Icon, fill: string, col: string) => `<g transform="rotate(${rot} ${x + 200} 920)"><rect x="${x + 14}" y="${724}" width="400" height="420" rx="40" fill="${DK}"/><rect x="${x}" y="710" width="400" height="420" rx="40" fill="${fill}" stroke="${DK}" stroke-width="6"/>${icon(ic, x + 200, 880, col, DK)}${T(x + 200, 1080, label, { f: "Baloo 2", w: 800, s: 50, c: BR, a: "middle" })}</g>`;
+      const card = (x: number, _rot: number, label: string, ic: Icon, _fill: string, col: string) => `${softCard(x, 710, 420, 420)}<circle cx="${x + 210}" cy="880" r="120" fill="${col}" opacity="0.14"/>${icon(ic, x + 210, 880, col, BR)}${T(x + 210, 1080, label, { f: "Nunito", w: 800, s: 44, c: BR, a: "middle" })}`;
       return `${cBackdrop()}
-${star(150, 470, 40, YE, 12)}${plus(950, 470, 24, MI)}${squiggle(760, 230, OR)}
+
 ${cPill(W / 2, 330, spec.eyebrow)}
 ${cTitle(540, l1, 104)}${cTitle(650, l2, 104, ORT)}
-${card(90, -4, spec.a.label, spec.a.icon, "#ffffff", OR)}${card(590, 4, spec.b.label, spec.b.icon, "#fff0e0", MI)}
-<circle cx="548" cy="928" r="64" fill="${DK}"/><circle cx="540" cy="920" r="64" fill="${YE}" stroke="${DK}" stroke-width="6"/>${T(540, 940, "or", { f: "Baloo 2", w: 800, s: 56, c: BR, a: "middle" })}
+${card(80, 0, spec.a.label, spec.a.icon, "#ffffff", OR)}${card(580, 0, spec.b.label, spec.b.icon, "#ffffff", "#1fb97a")}
+<circle cx="540" cy="920" r="52" fill="${BR}"/>${T(540, 937, "or", { f: "Nunito", w: 800, s: 42, c: CR, a: "middle" })}
 ${cStickerPad(z)}${cTapHint(z.y - 70, "Vote")}`;
     }
     case "slider": {
@@ -305,12 +301,12 @@ ${cStickerPad(z)}${cTapHint(z.y - 70, "Vote")}`;
       }
       const size = fit([spec.headline, second ?? ""].sort((x, y) => y.length - x.length)[0]!, 100, 900, 0.56);
       return `${cBackdrop()}
-${star(150, 1560, 44, YE, 12)}${plus(950, 1560, 26, MI)}${squiggle(760, 230, OR)}
+
 ${cPill(W / 2, 330, spec.eyebrow)}
 ${cTitle(530, spec.headline, size)}${second ? cTitle(530 + size + 10, second, size, ORT) : ""}
-${notes.map((l, i) => T(W / 2, 760 + i * 52, l, { f: "Baloo 2", w: 800, s: 40, c: BR, a: "middle", op: 0.7 })).join("")}
+${notes.map((l, i) => T(W / 2, 760 + i * 52, l, { f: "Nunito", w: 700, s: 38, c: BR, a: "middle", op: 0.7 })).join("")}
 ${cStickerPad(z)}${cTapHint(z.y - 70, "Slide it")}
-${ends ? `${T(z.x - 10, z.y + z.h + 110, `← ${ends[0]}`, { f: "Baloo 2", w: 800, s: 42, c: BR })}${T(z.x + z.w + 10, z.y + z.h + 110, `${ends[1]} →`, { f: "Baloo 2", w: 800, s: 42, c: ORT, a: "end" })}` : ""}`;
+${ends ? `${T(z.x - 10, z.y + z.h + 110, `← ${ends[0]}`, { f: "Nunito", w: 800, s: 38, c: BR, op: 0.7 })}${T(z.x + z.w + 10, z.y + z.h + 110, `${ends[1]} →`, { f: "Nunito", w: 800, s: 38, c: ORT, a: "end" })}` : ""}`;
     }
     case "whichSite": {
       const z = stickerZone(spec);
@@ -451,7 +447,7 @@ export function coverSvg(brand: StoryBrandKey, mark: CoverMark, letters = ""): s
   })();
   return dark
     ? `<rect width="${W}" height="${H}" fill="${BK}"/><circle cx="${cx}" cy="${cy}" r="330" fill="#121214"/><circle cx="${cx}" cy="${cy}" r="330" fill="none" stroke="${LI}" stroke-width="4"/>${glyph}`
-    : `<rect width="${W}" height="${H}" fill="${CR}"/><circle cx="${cx + 16}" cy="${cy + 16}" r="330" fill="${DK}"/><circle cx="${cx}" cy="${cy}" r="330" fill="${OR}" stroke="${DK}" stroke-width="10"/>${glyph}`;
+    : `${cDefs}<rect width="${W}" height="${H}" fill="url(#cbg)"/><circle cx="${cx}" cy="${cy}" r="330" fill="url(#orange)"/>${glyph}`;
 }
 
 /** A highlight cover as a 1080×1920 JPEG (upload it as the cover in the Instagram app). */
