@@ -82,7 +82,7 @@ const T = (x: number, y: number, t: string, o: TextOpts = {}) =>
   `<text x="${x}" y="${y}" font-family="${o.f ?? "Nunito"}" font-weight="${o.w ?? 700}" font-size="${o.s ?? 40}" fill="${o.c ?? "#35220e"}" text-anchor="${o.a ?? "start"}" letter-spacing="${o.ls ?? 0}" opacity="${o.op ?? 1}" xml:space="preserve">${esc(t)}</text>`;
 
 // ---------- CodeIt ----------
-const CR = "#fff4e5", BR = "#35220e", OR = "#ff7a00", ORT = "#d46500", YE = "#f5d04a", DK = "#2b1d12", MI = "#3ddc97";
+const CR = "#fff4e5", BR = "#35220e", OR = "#ff7a00", ORT = "#d46500", YE = "#f5d04a", MI = "#3ddc97";
 const cTitle = (y: number, t: string, s = 80, c = BR) => T(W / 2, y, t, { f: "Baloo 2", s, c, a: "middle" });
 function icon(kind: Icon, cx: number, cy: number, color: string, stroke: string): string {
   const s = `stroke="${stroke}" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"`;
