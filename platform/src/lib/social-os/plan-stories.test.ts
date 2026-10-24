@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { WEEK_PLANS, isManualStoryMarker, pipSeries, planEnd, planMarker, storyEntryKey } from "./week-plans";
-import { HIGHLIGHT_COVERS, coverSvg, needsSticker, storyKey, storySvg } from "./story-original";
+import { HIGHLIGHT_COVERS, coverSvg, needsSticker, stickerZone, storyKey, storySvg } from "./story-original";
 import { videoSecondsFor } from "./studio";
 import { stickerStoryCaption } from "./telegram";
 
@@ -46,6 +46,14 @@ describe.each(withStories)("stories in plan $key", (plan) => {
       expect(a?.spec.kind, q.key).toBe("answer");
       const right = q.spec.sticker.options[q.spec.sticker.correct]!;
       if (a?.spec.kind === "answer") expect(a.spec.answer.startsWith(right), `${q.key}: ${right} vs ${a.spec.answer}`).toBe(true);
+    }
+  });
+
+  it("every sticker lands inside Instagram's safe area (below the top 250 px, above the bottom 320 px)", () => {
+    for (const s of plan.stories!.filter((x) => needsSticker(x.spec))) {
+      const z = stickerZone(s.spec);
+      expect(z.y, s.key).toBeGreaterThanOrEqual(250);
+      expect(z.y + z.h, s.key).toBeLessThanOrEqual(1600);
     }
   });
 

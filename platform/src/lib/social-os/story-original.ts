@@ -67,8 +67,13 @@ const W = 1080;
 const H = 1920;
 /** Where the sticker goes for each kind: the owner drops it here; nothing is drawn in this box. */
 export function stickerZone(spec: StorySpec): { x: number; y: number; w: number; h: number } {
-  const y = spec.kind === "whichSite" ? 1290 : spec.kind === "slider" ? 940 : spec.kind === "quiz" ? 1000 : 1090;
-  return { x: 140, y, w: 800, h: 360 };
+  switch (spec.kind) {
+    case "quiz": return { x: 140, y: 1240, w: 800, h: 360 };
+    case "thisOrThat": return { x: 140, y: 1300, w: 800, h: 300 };
+    case "whichSite": return { x: 140, y: 1310, w: 800, h: 280 };
+    case "slider": return spec.brand === "lynq" ? { x: 140, y: 800, w: 800, h: 300 } : { x: 140, y: 960, w: 800, h: 300 };
+    default: return { x: 140, y: 1090, w: 800, h: 360 };
+  }
 }
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -78,20 +83,7 @@ const T = (x: number, y: number, t: string, o: TextOpts = {}) =>
 
 // ---------- CodeIt ----------
 const CR = "#fff4e5", BR = "#35220e", OR = "#ff7a00", ORT = "#d46500", YE = "#f5d04a", DK = "#2b1d12", MI = "#3ddc97";
-const cCard = (x: number, y: number, w: number, h: number, f = CR, r = 36) => `<rect x="${x + 10}" y="${y + 10}" width="${w}" height="${h}" rx="${r}" fill="${DK}"/><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${f}" stroke="${DK}" stroke-width="5"/>`;
-const cHead = (eyebrow: string) => `<rect width="${W}" height="${H}" fill="${CR}"/>${T(W / 2, 400, eyebrow.toUpperCase(), { w: 800, s: 34, c: ORT, ls: 8, a: "middle" })}`;
 const cTitle = (y: number, t: string, s = 80, c = BR) => T(W / 2, y, t, { f: "Baloo 2", s, c, a: "middle" });
-const cCode = (x: number, y: number, w: number, lines: string[]) => {
-  // JetBrains Mono is 0.6 em wide: shrink long lines so they stay inside the card.
-  const size = Math.min(50, Math.floor((w - 100) / (0.6 * Math.max(...lines.map((l) => l.length)))));
-  const lh = Math.round(size * 1.56);
-  const h = 70 + lines.length * lh;
-  return cCard(x, y, w, h, DK) + lines.map((l, i) => T(x + 50, y + 42 + size + i * lh, l, { f: "JetBrains Mono", w: 500, s: size, c: l.trim().startsWith("#") || /print|\(/.test(l) ? MI : CR })).join("");
-};
-const cOpt = (x: number, y: number, w: number, h: number, letter: string, label: string, on = false) =>
-  `${cCard(x, y, w, h, on ? OR : CR, h / 2)}<circle cx="${x + h / 2 + 6}" cy="${y + h / 2}" r="${h / 2 - 18}" fill="${on ? DK : OR}" stroke="${DK}" stroke-width="4"/>${T(x + h / 2 + 6, y + h / 2 + 17, letter, { f: "Baloo 2", s: 50, c: "#fff", a: "middle" })}${T(x + h + 26, y + h / 2 + 16, label, { f: "JetBrains Mono", w: 500, s: 46, c: on ? "#fff" : BR })}`;
-const cRun = (y: number, label: string) => `<rect x="90" y="${y}" width="900" height="130" rx="30" fill="${YE}" stroke="${DK}" stroke-width="5"/><circle cx="170" cy="${y + 65}" r="26" fill="none" stroke="${BR}" stroke-width="6"/><path d="M162 ${y + 51} L188 ${y + 65} L162 ${y + 79} Z" fill="${BR}"/>${T(230, y + 84, label, { w: 800, s: 46 })}`;
-
 function icon(kind: Icon, cx: number, cy: number, color: string, stroke: string): string {
   const s = `stroke="${stroke}" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"`;
   switch (kind) {
@@ -108,12 +100,7 @@ function icon(kind: Icon, cx: number, cy: number, color: string, stroke: string)
 
 // ---------- LYNQ ----------
 const BK = "#0b0b0c", WH = "#ffffff", LI = "#c7ff3d", MU = "#8a8a8f", LN = "#2a2a2e";
-const lHead = (eyebrow: string) => `<rect width="${W}" height="${H}" fill="${BK}"/>${T(90, 330, "LYNQ", { f: "Inter SemiBold", w: 600, s: 38, c: WH, ls: 10 })}${T(W - 90, 330, eyebrow.toUpperCase(), { f: "Inter SemiBold", w: 600, s: 30, c: LI, ls: 6, a: "end" })}<rect x="90" y="356" width="${W - 180}" height="2" fill="${LI}" opacity="0.6"/>`;
-const lLines = (y: number, lines: string[], s = 76, c = WH) => lines.map((l, i) => T(90, y + i * (s + 18), l, { f: "Inter Light", w: 300, s, c })).join("");
 const bar = (x: number, y: number, w: number, h: number, c = LN, r = 10) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${c}"/>`;
-const phone = (x: number, y: number, w: number, h: number, inner: (x: number, y: number, w: number, h: number) => string) =>
-  `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="48" fill="#141416" stroke="#3a3a40" stroke-width="4"/><rect x="${x + w / 2 - 50}" y="${y + 18}" width="100" height="12" rx="6" fill="#3a3a40"/>${inner(x + 24, y + 50, w - 48, h - 80)}`;
-
 function wrapWords(t: string, maxChars: number): string[] {
   const out: string[] = [];
   let cur = "";
@@ -130,118 +117,281 @@ function wrapWords(t: string, maxChars: number): string[] {
 
 // LYNQ editorial: hairline frame, mono labels, one lime.
 const MONO = "JetBrains Mono";
-const eFrame = (series: string, folio: string) =>
-  `<rect width="${W}" height="${H}" fill="${BK}"/>
-<rect x="60" y="250" width="${W - 120}" height="${H - 250 - 300}" fill="none" stroke="#1f1f23" stroke-width="2"/>
-${T(90, 300, "LYNQ", { f: "Inter SemiBold", w: 600, s: 30, c: WH, ls: 10 })}
-${T(W / 2, 300, series.toUpperCase(), { f: MONO, w: 500, s: 22, c: MU, ls: 4, a: "middle" })}
-${T(W - 90, 300, folio, { f: MONO, w: 500, s: 22, c: MU, ls: 2, a: "end" })}
-<line x1="60" y1="328" x2="${W - 60}" y2="328" stroke="#1f1f23" stroke-width="2"/>
-<line x1="60" y1="${H - 360}" x2="${W - 60}" y2="${H - 360}" stroke="#1f1f23" stroke-width="2"/>
-${T(90, H - 318, "LYNQ.BUILD", { f: MONO, w: 500, s: 22, c: MU, ls: 4 })}
-${T(W - 90, H - 318, "WEBSITES · SYSTEMS · AUTOMATION", { f: MONO, w: 500, s: 20, c: "#5a5a60", ls: 3, a: "end" })}`;
 const mLabel = (x: number, y: number, t: string, c = MU, a: "start" | "end" | "middle" = "start") => T(x, y, t.toUpperCase(), { f: MONO, w: 500, s: 24, c, ls: 3, a });
+
+
+// ---------- CodeIt "playful" kit: full-bleed, layered, sticker-like ----------
+const star = (cx: number, cy: number, r: number, fill: string, rot = 0) => {
+  const pts = Array.from({ length: 10 }, (_, i) => {
+    const a = (Math.PI / 5) * i - Math.PI / 2;
+    const rr = i % 2 ? r * 0.45 : r;
+    return `${(cx + rr * Math.cos(a)).toFixed(1)},${(cy + rr * Math.sin(a)).toFixed(1)}`;
+  }).join(" ");
+  return `<polygon points="${pts}" fill="${fill}" stroke="${DK}" stroke-width="5" stroke-linejoin="round" transform="rotate(${rot} ${cx} ${cy})"/>`;
+};
+const plus = (cx: number, cy: number, r: number, fill: string) => `<path d="M${cx - r} ${cy} H${cx + r} M${cx} ${cy - r} V${cy + r}" stroke="${DK}" stroke-width="${r * 0.9}" stroke-linecap="round"/><path d="M${cx - r} ${cy} H${cx + r} M${cx} ${cy - r} V${cy + r}" stroke="${fill}" stroke-width="${r * 0.55}" stroke-linecap="round"/>`;
+const squiggle = (x: number, y: number, c: string) => `<path d="M${x} ${y} q20 -26 40 0 t40 0 t40 0 t40 0" fill="none" stroke="${c}" stroke-width="12" stroke-linecap="round"/>`;
+/** Big soft shapes that bleed off the frame, so the story never looks like a card floating on a page. */
+const cBackdrop = () => `<rect width="${W}" height="${H}" fill="${CR}"/>
+<circle cx="${W + 40}" cy="300" r="300" fill="${YE}" opacity="0.55"/>
+<circle cx="-60" cy="1000" r="260" fill="${MI}" opacity="0.28"/>
+<circle cx="${W - 40}" cy="${H + 40}" r="380" fill="${OR}" opacity="0.22"/>
+${[...Array(9)].map((_, r) => [...Array(6)].map((__, c) => `<circle cx="${90 + c * 180 + (r % 2) * 90}" cy="${120 + r * 215}" r="5" fill="${BR}" opacity="0.07"/>`).join("")).join("")}`;
+const cPill = (cx: number, y: number, t: string, bg = DK, fg = YE) => {
+  const w = t.length * 24 + 90;
+  return `<rect x="${cx - w / 2}" y="${y}" width="${w}" height="72" rx="36" fill="${bg}"/>${T(cx, y + 50, t.toUpperCase(), { f: "Baloo 2", w: 800, s: 38, c: fg, a: "middle", ls: 4 })}`;
+};
+/** A code editor window: title bar, file name, big code, offset orange shadow, a slight tilt. */
+const cWindow = (x: number, y: number, w: number, lines: string[], file = "quiz.py", tilt = -2, maxBottom = 1600) => {
+  const size = Math.min(76, Math.floor((w - 120) / (0.6 * Math.max(...lines.map((l) => l.length)))), Math.floor((maxBottom - y - 170) / (1.5 * lines.length)));
+  const lh = Math.round(size * 1.5);
+  const h = 110 + 60 + lines.length * lh;
+  const cx = x + w / 2, cy = y + h / 2;
+  const body = lines.map((l, i) => {
+    const y0 = y + 110 + 30 + size + i * lh;
+    const num = T(x + 40, y0, String(i + 1), { f: "JetBrains Mono", w: 500, s: size * 0.6, c: "#7a6a58" });
+    return `${num}${T(x + 100, y0, l, { f: "JetBrains Mono", w: 500, s: size, c: l.trim().startsWith("#") ? "#a08c74" : MI })}`;
+  }).join("");
+  return `<g transform="rotate(${tilt} ${cx} ${cy})">
+<rect x="${x + 18}" y="${y + 18}" width="${w}" height="${h}" rx="34" fill="${OR}" stroke="${DK}" stroke-width="6"/>
+<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="34" fill="${DK}" stroke="${DK}" stroke-width="6"/>
+<rect x="${x}" y="${y}" width="${w}" height="92" rx="34" fill="#3a2a1c"/><rect x="${x}" y="${y + 60}" width="${w}" height="32" fill="#3a2a1c"/>
+<circle cx="${x + 54}" cy="${y + 46}" r="14" fill="#ff5f57"/><circle cx="${x + 96}" cy="${y + 46}" r="14" fill="${YE}"/><circle cx="${x + 138}" cy="${y + 46}" r="14" fill="${MI}"/>
+${T(cx, y + 58, file, { f: "JetBrains Mono", w: 500, s: 30, c: "#cdb89f", a: "middle" })}
+${body}</g>`;
+};
+/** A hand-drawn arrow pointing down into the sticker zone, with its call to action. */
+const cTapHint = (y: number, t: string) => `${T(W / 2 - 40, y, t, { f: "Baloo 2", w: 800, s: 52, c: BR, a: "middle" })}
+<path d="M${W / 2 + 200} ${y - 16} q70 -6 74 70" fill="none" stroke="${OR}" stroke-width="10" stroke-linecap="round"/><path d="M${W / 2 + 248} ${y + 34} l26 30 l24 -32" fill="none" stroke="${OR}" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>`;
+/** Where the Instagram sticker goes: a yellow pad with the site's dark outline and offset shadow. */
+const cStickerPad = (z: { x: number; y: number; w: number; h: number }) => `<rect x="${z.x - 30 + 14}" y="${z.y - 30 + 14}" width="${z.w + 60}" height="${z.h + 60}" rx="44" fill="${DK}"/><rect x="${z.x - 30}" y="${z.y - 30}" width="${z.w + 60}" height="${z.h + 60}" rx="44" fill="${YE}" stroke="${DK}" stroke-width="6"/>`;
+
+// ---------- LYNQ product render kit ----------
+/** A Teenage Engineering-style object: the "LYNQ Site" as a piece of hardware, lit from the upper left. */
+const lDevice = (x: number, y: number, screen: [string, string], keys: string[], knobs: [string, string]) => {
+  const w = 900, h = 500;
+  const key = (i: number, label: string) => {
+    const kx = x + 70 + i * 120, ky = y + 360, on = i === 0;
+    return `<rect x="${kx}" y="${ky + 8}" width="96" height="84" rx="14" fill="#050506"/><rect x="${kx}" y="${ky}" width="96" height="84" rx="14" fill="${on ? LI : "url(#key)"}" stroke="${on ? "#a6d82f" : "#3c3c42"}" stroke-width="2"/>${T(kx + 48, ky + 52, label, { f: MONO, w: 500, s: 22, c: on ? BK : "#9a9aa0", a: "middle", ls: 1 })}`;
+  };
+  const knob = (cx: number, cy: number, label: string, deg: number) => `<circle cx="${cx + 4}" cy="${cy + 10}" r="66" fill="#050506" opacity="0.8"/><circle cx="${cx}" cy="${cy}" r="66" fill="url(#knob)" stroke="#4a4a50" stroke-width="2"/><circle cx="${cx}" cy="${cy}" r="48" fill="url(#knobTop)"/><line x1="${cx}" y1="${cy}" x2="${cx + 40 * Math.sin((deg * Math.PI) / 180)}" y2="${cy - 40 * Math.cos((deg * Math.PI) / 180)}" stroke="${WH}" stroke-width="6" stroke-linecap="round"/>${T(cx, cy + 108, label, { f: MONO, w: 500, s: 22, c: MU, a: "middle", ls: 3 })}`;
+  return `<ellipse cx="${x + w / 2 + 60}" cy="${y + h + 20}" rx="${w / 2}" ry="44" fill="#000" opacity="0.85" filter="url(#soft)"/>
+<rect x="${x}" y="${y + 16}" width="${w}" height="${h}" rx="40" fill="#08080a"/>
+<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="40" fill="url(#body)" stroke="#3a3a40" stroke-width="2"/>
+<path d="M${x + 40} ${y + 2} H${x + w - 40}" stroke="#5a5a62" stroke-width="2" opacity="0.8"/>
+<rect x="${x + 60}" y="${y + 60}" width="420" height="250" rx="18" fill="#060607" stroke="#2a2a30" stroke-width="2"/>
+${T(x + 90, y + 112, "● LIVE", { f: MONO, w: 500, s: 22, c: LI, ls: 2 })}${T(x + 450, y + 112, "01", { f: MONO, w: 500, s: 22, c: "#5a5a60", a: "end" })}
+${T(x + 90, y + 210, screen[0], { f: MONO, w: 500, s: 54, c: LI, ls: 2 })}${T(x + 90, y + 272, screen[1], { f: MONO, w: 500, s: 26, c: "#7c9a3a", ls: 2 })}
+${knob(x + 620, y + 160, knobs[0], -40)}${knob(x + 790, y + 160, knobs[1], 60)}
+${keys.map((k, i) => key(i, k)).join("")}
+${[...Array(5)].map((_, r) => [...Array(6)].map((__, c) => `<circle cx="${x + 596 + c * 44}" cy="${y + 380 + r * 22}" r="5" fill="#0a0a0c"/>`).join("")).join("")}
+${T(x + w - 40, y + h - 26, "LYNQ  SITE  /  01", { f: MONO, w: 500, s: 18, c: "#6a6a72", a: "end", ls: 3 })}`;
+};
+
+// ---------- LYNQ frame: full bleed, studio light, no floating box ----------
+const lDefs = `<defs>
+<radialGradient id="spot" cx="0.25" cy="0.18" r="0.85"><stop offset="0" stop-color="#ffffff" stop-opacity="0.10"/><stop offset="0.6" stop-color="#ffffff" stop-opacity="0.02"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+<linearGradient id="body" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="#2c2c31"/><stop offset="1" stop-color="#16161a"/></linearGradient>
+<linearGradient id="key" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a2a2f"/><stop offset="1" stop-color="#1b1b1f"/></linearGradient>
+<radialGradient id="knob" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stop-color="#4a4a52"/><stop offset="1" stop-color="#1a1a1e"/></radialGradient>
+<radialGradient id="knobTop" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stop-color="#3a3a40"/><stop offset="1" stop-color="#202024"/></radialGradient>
+<linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${BK}" stop-opacity="0"/><stop offset="1" stop-color="${BK}" stop-opacity="1"/></linearGradient>
+<linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1d1d21"/><stop offset="1" stop-color="#0c0c0e"/></linearGradient>
+<filter id="soft" x="-20%" y="-20%" width="140%" height="160%"><feGaussianBlur stdDeviation="28"/></filter>
+</defs>`;
+const lFrame = (series: string, folio: string) => `<rect width="${W}" height="${H}" fill="${BK}"/>${lDefs}<rect width="${W}" height="${H}" fill="url(#spot)"/>
+${T(90, 250, "LYNQ", { f: "Inter SemiBold", w: 600, s: 34, c: WH, ls: 12 })}${T(W - 90, 250, `${series.toUpperCase()}  ·  ${folio}`, { f: MONO, w: 500, s: 22, c: MU, ls: 4, a: "end" })}
+${T(90, 1680, "LYNQ.BUILD", { f: MONO, w: 500, s: 22, c: MU, ls: 4 })}${T(W - 90, 1680, "WEBSITES · SYSTEMS · AUTOMATION", { f: MONO, w: 500, s: 18, c: "#55555b", ls: 3, a: "end" })}`;
+const lBig = (x: number, y: number, t: string, s = 104, c = WH, f = "Inter Light") => T(x, y, t, { f, w: f === "Inter Light" ? 300 : 600, s, c, ls: -3 });
+const rule = (y: number, c = "#222226") => `<line x1="90" y1="${y}" x2="${W - 90}" y2="${y}" stroke="${c}" stroke-width="2"/>`;
+/** A phone rendered like hardware: graphite frame, glass, soft floor shadow. */
+const lPhone = (x: number, y: number, w: number, h: number, inner: (x: number, y: number, w: number, h: number) => string) =>
+  `<ellipse cx="${x + w / 2 + 30}" cy="${y + h + 10}" rx="${w / 2}" ry="30" fill="#000" opacity="0.9" filter="url(#soft)"/>
+<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="58" fill="url(#body)" stroke="#45454c" stroke-width="3"/>
+<rect x="${x + 14}" y="${y + 14}" width="${w - 28}" height="${h - 28}" rx="46" fill="url(#glass)"/>
+<rect x="${x + w / 2 - 54}" y="${y + 30}" width="108" height="26" rx="13" fill="#050506"/>
+${inner(x + 40, y + 90, w - 80, h - 130)}`;
+/** A hardware toggle: lime and right when on. */
+const toggle = (x: number, y: number, on: boolean) => `<rect x="${x}" y="${y}" width="120" height="64" rx="32" fill="${on ? LI : "#1c1c20"}" stroke="${on ? "#a6d82f" : "#3a3a40"}" stroke-width="2"/><circle cx="${on ? x + 88 : x + 32}" cy="${y + 32}" r="24" fill="${on ? BK : "url(#knob)"}" stroke="${on ? BK : "#4a4a50"}" stroke-width="2"/>`;
+/** Viewfinder corners in lime: where the Instagram sticker goes on LYNQ stories. */
+const lZone = (z: { x: number; y: number; w: number; h: number }) => {
+  const L = 44, x2 = z.x + z.w, y2 = z.y + z.h;
+  const p = `fill="none" stroke="${LI}" stroke-width="4" stroke-linecap="round"`;
+  return `<path d="M${z.x} ${z.y + L} V${z.y} H${z.x + L} M${x2 - L} ${z.y} H${x2} V${z.y + L} M${x2} ${y2 - L} V${y2} H${x2 - L} M${z.x + L} ${y2} H${z.x} V${y2 - L}" ${p}/>`;
+};
+const twoLines = (t: string): [string, string] => {
+  const words = t.split(" ");
+  const half = Math.ceil(words.length / 2);
+  return [words.slice(0, half).join(" "), words.slice(half).join(" ")];
+};
+/** "Left: next day. Right: under a minute." → the two ends of the slider. */
+const sliderEnds = (notes: string[]): { ends: [string, string] | null; rest: string[] } => {
+  const i = notes.findIndex((n) => /^Left: .+\. Right: .+\.?$/.test(n));
+  if (i < 0) return { ends: null, rest: notes };
+  const m = notes[i]!.match(/^Left: (.+?)\. Right: (.+?)\.?$/)!;
+  return { ends: [m[1]!, m[2]!], rest: notes.filter((_, j) => j !== i) };
+};
+const fit = (t: string, max: number, width = 900, em = 0.52) => Math.min(max, Math.floor(width / (em * Math.max(1, t.length))));
 
 // ---------- Templates ----------
 export function storySvg(spec: StorySpec): string {
   switch (spec.kind) {
-    case "quiz":
-      return `${cHead(spec.eyebrow)}${cTitle(500, spec.headline)}${cCode(90, 570, 900, spec.code)}${T(W / 2, 1600, spec.footnote ?? "Answer in tomorrow's story.", { w: 800, s: 42, c: ORT, a: "middle" })}`;
-    case "answer":
-      return `${cHead(spec.eyebrow)}${cTitle(500, spec.headline)}${cOpt(90, 570, 900, 140, "✓", spec.answer, true)}
-${cCard(90, 770, 900, 140 + spec.why.length * 60 + 220)}${T(140, 860, "Why:", { f: "Baloo 2", s: 56, c: ORT })}
-${spec.why.map((l, i) => T(140, 940 + i * 60, l, { s: 46 })).join("")}
-${cCard(140, 960 + spec.why.length * 60, 800, 120, DK, 24)}${T(180, 1036 + spec.why.length * 60, spec.example, { f: "JetBrains Mono", w: 500, s: 44, c: MI })}
-${T(W / 2, 1290 + spec.why.length * 60 - 60, spec.tryThis, { w: 800, s: 44, c: ORT, a: "middle" })}
-${cRun(1450, "Run it free at codeitlearn.com")}`;
-    case "tryTonight":
-      return `${cHead(spec.eyebrow)}${cTitle(500, spec.headline, 76)}
-${spec.steps.map((st, i) => `<circle cx="150" cy="${640 + i * 190}" r="40" fill="${OR}" stroke="${DK}" stroke-width="5"/>${T(150, 657 + i * 190, String(i + 1), { f: "Baloo 2", s: 50, c: "#fff", a: "middle" })}${T(220, 656 + i * 190, st, { w: 700, s: 46 })}`).join("")}
-${spec.code ? cCode(90, 640 + spec.steps.length * 190 - 40, 900, spec.code.split("\n")) : ""}
-${cRun(1450, "Free to start: codeitlearn.com")}`;
+    case "quiz": {
+      const z = stickerZone(spec);
+      const [l1, l2] = twoLines(spec.headline);
+      return `${cBackdrop()}
+${star(150, 470, 44, YE, 12)}${plus(950, 620, 26, MI)}${squiggle(760, 230, OR)}${star(975, 1735, 34, MI, -10)}${plus(110, 1735, 22, OR)}
+${cPill(W / 2, 330, spec.eyebrow)}
+${cTitle(540, l1, 112)}${cTitle(660, l2, 112, ORT)}
+${cWindow(110, 720, 860, spec.code, "quiz.py", -2, 1090)}
+${cStickerPad(z)}
+${cTapHint(z.y - 70, "Tap your answer")}
+${T(W / 2, z.y + z.h + 130, spec.footnote ?? "Answer in tomorrow's story", { f: "Baloo 2", w: 800, s: 44, c: ORT, a: "middle" })}`;
+    }
+    case "answer": {
+      const whyH = 130 + spec.why.length * 64;
+      const ansSize = fit(spec.answer, 84, 640, 0.6);
+      return `${cBackdrop()}
+${star(965, 330, 40, MI, -8)}${squiggle(110, 230, OR)}${plus(120, 1640, 22, YE)}
+${cPill(W / 2, 330, spec.eyebrow)}
+${cTitle(530, spec.headline, 112)}
+<g transform="rotate(-2 540 680)"><rect x="124" y="604" width="860" height="160" rx="40" fill="${DK}"/><rect x="110" y="590" width="860" height="160" rx="40" fill="${OR}" stroke="${DK}" stroke-width="6"/>
+<circle cx="200" cy="670" r="50" fill="${MI}" stroke="${DK}" stroke-width="6"/><path d="M176 670 l18 20 l32 -40" fill="none" stroke="${DK}" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+${T(290, 670 + ansSize * 0.36, spec.answer, { f: "JetBrains Mono", w: 500, s: ansSize, c: "#ffffff" })}</g>
+<rect x="124" y="834" width="860" height="${whyH}" rx="40" fill="${DK}"/><rect x="110" y="820" width="860" height="${whyH}" rx="40" fill="#ffffff" stroke="${DK}" stroke-width="6"/>
+${T(160, 900, "Why?", { f: "Baloo 2", w: 800, s: 60, c: ORT })}
+${spec.why.map((l, i) => T(160, 975 + i * 64, l, { s: 48, c: BR })).join("")}
+${cWindow(110, 820 + whyH + 70, 860, [spec.example], "try.py", 2)}
+${T(W / 2, 1640, spec.tryThis, { f: "Baloo 2", w: 800, s: 46, c: ORT, a: "middle" })}`;
+    }
+    case "tryTonight": {
+      const [l1, l2] = twoLines(spec.headline);
+      const code = spec.code ? spec.code.split("\n") : [];
+      return `${cBackdrop()}
+${star(965, 330, 42, MI, 10)}${plus(110, 330, 24, MI)}${squiggle(760, 230, OR)}
+${cPill(W / 2, 330, spec.eyebrow)}
+${cTitle(540, l1, 108)}${cTitle(655, l2, 108, ORT)}
+${spec.steps.map((st, i) => {
+        const y = 790 + i * 120;
+        return `<circle cx="${170 + 8}" cy="${y + 8}" r="44" fill="${DK}"/><circle cx="170" cy="${y}" r="44" fill="${[OR, YE, MI][i % 3]}" stroke="${DK}" stroke-width="6"/>${T(170, y + 19, String(i + 1), { f: "Baloo 2", w: 800, s: 54, c: DK, a: "middle" })}${T(250, y + 18, st, { f: "Baloo 2", w: 800, s: 52, c: BR })}`;
+      }).join("")}
+${code.length ? cWindow(110, 790 + spec.steps.length * 120 + 10, 860, code, "tonight.py", -2) : ""}
+<rect x="${W / 2 - 330 + 10}" y="1560" width="660" height="96" rx="48" fill="${DK}"/><rect x="${W / 2 - 330}" y="1550" width="660" height="96" rx="48" fill="${YE}" stroke="${DK}" stroke-width="6"/>${T(W / 2, 1612, "Free to start: codeitlearn.com", { f: "Baloo 2", w: 800, s: 42, c: BR, a: "middle" })}`;
+    }
     case "thisOrThat": {
-      const dark = spec.brand === "lynq";
-      const bg = dark ? lHead(spec.eyebrow) : cHead(spec.eyebrow);
-      const title = dark ? lLines(480, [spec.headline], 72) : cTitle(500, spec.headline, 76);
-      const tile = (x: number, letter: string, label: string, ic: Icon) => dark
-        ? `<rect x="${x}" y="580" width="420" height="420" rx="36" fill="#141416" stroke="${LN}" stroke-width="3"/>${icon(ic, x + 210, 760, letter === "A" ? WH : LI, BK)}${T(x + 210, 950, label, { f: "Inter Light", w: 300, s: 40, c: WH, a: "middle" })}`
-        : `${cCard(x, 580, 420, 420, letter === "A" ? "#ffffff" : "#fff0e0")}${icon(ic, x + 210, 760, letter === "A" ? OR : MI, DK)}${T(x + 210, 950, label, { f: "Baloo 2", s: 48, a: "middle" })}`;
-      return `${bg}${title}${tile(90, "A", spec.a.label, spec.a.icon)}${tile(570, "B", spec.b.label, spec.b.icon)}`;
+      const z = stickerZone(spec);
+      const [l1, l2] = twoLines(spec.headline);
+      if (spec.brand === "lynq") {
+        const tile = (x: number, label: string, ic: Icon, on: boolean) => `<rect x="${x}" y="600" width="420" height="460" rx="36" fill="url(#body)" stroke="#3a3a40" stroke-width="2"/>${icon(ic, x + 210, 800, on ? LI : WH, BK)}${T(x + 210, 1010, label, { f: "Inter Light", w: 300, s: 42, c: WH, a: "middle" })}`;
+        return `${lFrame(spec.eyebrow, "POLL")}${lBig(90, 430, l1, 96)}${lBig(90, 540, l2, 96)}${tile(90, spec.a.label, spec.a.icon, false)}${tile(570, spec.b.label, spec.b.icon, true)}${lZone(z)}`;
+      }
+      const card = (x: number, rot: number, label: string, ic: Icon, fill: string, col: string) => `<g transform="rotate(${rot} ${x + 200} 920)"><rect x="${x + 14}" y="${724}" width="400" height="420" rx="40" fill="${DK}"/><rect x="${x}" y="710" width="400" height="420" rx="40" fill="${fill}" stroke="${DK}" stroke-width="6"/>${icon(ic, x + 200, 880, col, DK)}${T(x + 200, 1080, label, { f: "Baloo 2", w: 800, s: 50, c: BR, a: "middle" })}</g>`;
+      return `${cBackdrop()}
+${star(150, 470, 40, YE, 12)}${plus(950, 470, 24, MI)}${squiggle(760, 230, OR)}
+${cPill(W / 2, 330, spec.eyebrow)}
+${cTitle(540, l1, 104)}${cTitle(650, l2, 104, ORT)}
+${card(90, -4, spec.a.label, spec.a.icon, "#ffffff", OR)}${card(590, 4, spec.b.label, spec.b.icon, "#fff0e0", MI)}
+<circle cx="548" cy="928" r="64" fill="${DK}"/><circle cx="540" cy="920" r="64" fill="${YE}" stroke="${DK}" stroke-width="6"/>${T(540, 940, "or", { f: "Baloo 2", w: 800, s: 56, c: BR, a: "middle" })}
+${cStickerPad(z)}${cTapHint(z.y - 70, "Vote")}`;
     }
     case "slider": {
-      // The headline and the first line are the question (both big); any further line is a small note.
-      const dark = spec.brand === "lynq";
-      const [second, ...notes] = spec.lines;
-      return dark
-        ? `${lHead(spec.eyebrow)}${lLines(500, [spec.headline, ...(second ? [second] : [])], 72)}${lLines(720, notes, 40, MU)}`
-        : `${cHead(spec.eyebrow)}${cTitle(520, spec.headline, 76)}${second ? cTitle(610, second, 76) : ""}${notes.map((l, i) => T(W / 2, 700 + i * 56, l, { s: 42, c: ORT, a: "middle" })).join("")}`;
+      const z = stickerZone(spec);
+      const [second, ...allNotes] = spec.lines;
+      const { ends, rest: notes } = sliderEnds(allNotes);
+      if (spec.brand === "lynq") {
+        const size = fit(second ?? spec.headline, 96);
+        const fader = (y: number) => `<rect x="140" y="${y}" width="800" height="22" rx="11" fill="#050506" stroke="#2c2c31" stroke-width="2"/>${[...Array(11)].map((_, i) => `<line x1="${140 + i * 80}" y1="${y + 44}" x2="${140 + i * 80}" y2="${y + (i % 5 ? 58 : 70)}" stroke="#3a3a40" stroke-width="2"/>`).join("")}<rect x="${140 + 620}" y="${y - 40}" width="70" height="102" rx="12" fill="url(#body)" stroke="#55555c" stroke-width="2"/><rect x="${140 + 620}" y="${y + 6}" width="70" height="8" fill="${LI}"/>${ends ? `${T(140, y + 120, ends[0].toUpperCase(), { f: MONO, w: 500, s: 22, c: MU, ls: 3 })}${T(940, y + 120, ends[1].toUpperCase(), { f: MONO, w: 500, s: 22, c: LI, ls: 3, a: "end" })}` : ""}`;
+        return `${lFrame(spec.eyebrow, "SLIDER")}${lBig(90, 440, spec.headline, size)}${lBig(90, 440 + size + 14, second ?? "", size)}${notes.map((n, i) => T(90, 640 + i * 50, n, { f: "Inter Light", w: 300, s: 36, c: MU })).join("")}${lZone(z)}${fader(1300)}`;
+      }
+      const size = fit([spec.headline, second ?? ""].sort((x, y) => y.length - x.length)[0]!, 100, 900, 0.56);
+      return `${cBackdrop()}
+${star(150, 1560, 44, YE, 12)}${plus(950, 1560, 26, MI)}${squiggle(760, 230, OR)}
+${cPill(W / 2, 330, spec.eyebrow)}
+${cTitle(530, spec.headline, size)}${second ? cTitle(530 + size + 10, second, size, ORT) : ""}
+${notes.map((l, i) => T(W / 2, 760 + i * 52, l, { f: "Baloo 2", w: 800, s: 40, c: BR, a: "middle", op: 0.7 })).join("")}
+${cStickerPad(z)}${cTapHint(z.y - 70, "Slide it")}
+${ends ? `${T(z.x - 10, z.y + z.h + 110, `← ${ends[0]}`, { f: "Baloo 2", w: 800, s: 42, c: BR })}${T(z.x + z.w + 10, z.y + z.h + 110, `${ends[1]} →`, { f: "Baloo 2", w: 800, s: 42, c: ORT, a: "end" })}` : ""}`;
     }
-    case "whichSite":
-      return `${lHead(spec.eyebrow)}${lLines(480, spec.headline, 72)}
-${phone(90, 630, 420, 580, (x, y, w) => `${bar(x, y, w, 150, "#222226")}${bar(x + 20, y + 30, 200, 26)}${bar(x + 20, y + 76, 300, 18, "#1c1c20")}${bar(x + 20, y + 106, 260, 18, "#1c1c20")}${[0, 1, 2, 3, 4, 5].map((i) => bar(x, y + 200 + i * 46, w - (i % 3) * 40, 22, "#1c1c20")).join("")}${bar(x, y + 430, w, 70, "#222226")}${T(x + w / 2, y + 500, "phone: see footer", { f: "Inter Light", w: 300, s: 24, c: MU, a: "middle" })}`)}
-${phone(570, 630, 420, 580, (x, y, w) => `${bar(x, y, w, 50, "#1c1c20")}${T(x, y + 120, "Plumber", { f: "Inter SemiBold", w: 600, s: 44, c: WH })}${T(x, y + 166, "Open now · 20 min away", { f: "Inter Light", w: 300, s: 26, c: MU })}<rect x="${x}" y="${y + 200}" width="${w}" height="100" rx="50" fill="${LI}"/>${T(x + w / 2, y + 264, "Call now", { f: "Inter SemiBold", w: 600, s: 38, c: BK, a: "middle" })}<rect x="${x}" y="${y + 320}" width="${w}" height="86" rx="43" fill="none" stroke="#3a3a40" stroke-width="3"/>${T(x + w / 2, y + 375, "Book a visit", { f: "Inter Light", w: 300, s: 32, c: WH, a: "middle" })}${T(x, y + 470, "★★★★★  48 reviews", { f: "Inter Light", w: 300, s: 26, c: WH })}`)}
-${T(300, 1262, "A", { f: "Inter SemiBold", w: 600, s: 64, c: WH, a: "middle" })}${T(780, 1262, "B", { f: "Inter SemiBold", w: 600, s: 64, c: LI, a: "middle" })}`;
+    case "whichSite": {
+      const z = stickerZone(spec);
+      const [h1, h2] = spec.headline;
+      const messy = (x: number, y: number, w: number) => `${bar(x, y, w, 170, "#26262b")}${T(x + w / 2, y + 96, "◀  SLIDESHOW  ▶", { f: MONO, w: 500, s: 20, c: "#6a6a70", a: "middle", ls: 2 })}${bar(x, y + 200, w * 0.7, 22, "#2a2a2e")}${[0, 1, 2, 3, 4, 5, 6].map((i) => bar(x, y + 244 + i * 34, w - (i % 3) * 40, 14, "#1f1f23")).join("")}${T(x + w / 2, y + 520, "phone in footer", { f: MONO, w: 500, s: 18, c: "#55555b", a: "middle" })}`;
+      const clean = (x: number, y: number, w: number) => `${T(x, y + 50, "Plumber", { f: "Inter SemiBold", w: 600, s: 44, c: WH })}${T(x, y + 92, "Open now · 20 min away", { f: "Inter Light", w: 300, s: 24, c: MU })}<rect x="${x}" y="${y + 130}" width="${w}" height="96" rx="48" fill="${LI}"/>${T(x + w / 2, y + 190, "Call now", { f: "Inter SemiBold", w: 600, s: 36, c: BK, a: "middle" })}<rect x="${x}" y="${y + 246}" width="${w}" height="84" rx="42" fill="none" stroke="#4a4a50" stroke-width="3"/>${T(x + w / 2, y + 300, "Book a visit", { f: "Inter Light", w: 300, s: 30, c: WH, a: "middle" })}${T(x, y + 390, "★★★★★  48 reviews", { f: "Inter Light", w: 300, s: 24, c: WH })}`;
+      return `${lFrame(spec.eyebrow, "POLL")}${lBig(90, 430, h1 ?? "", 96)}${lBig(90, 540, h2 ?? "", 96, LI)}
+${lPhone(110, 610, 400, 600, (x, y, w) => messy(x, y, w))}${lPhone(570, 610, 400, 600, (x, y, w) => clean(x, y, w))}
+${T(310, 1266, "A", { f: "Inter SemiBold", w: 600, s: 44, c: WH, a: "middle" })}${T(770, 1266, "B", { f: "Inter SemiBold", w: 600, s: 44, c: LI, a: "middle" })}${lZone(z)}`;
+    }
     case "checklist": {
-      const row = (y: number, txt: string, ok: boolean) => `<rect x="90" y="${y}" width="${W - 180}" height="120" rx="20" fill="#131315" stroke="${LN}" stroke-width="2"/><rect x="120" y="${y + 30}" width="60" height="60" rx="14" fill="none" stroke="${ok ? LI : "#5a5a60"}" stroke-width="4"/>${ok ? `<path d="M134 ${y + 60} l14 14 l26 -30" fill="none" stroke="${LI}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>` : ""}${T(220, y + 76, txt, { f: "Inter Light", w: 300, s: 40, c: WH })}`;
-      return `${lHead(spec.eyebrow)}${lLines(490, spec.headline, 80)}${T(90, 680, spec.intro, { f: "Inter Light", w: 300, s: 40, c: MU })}${spec.items.map((it, i) => row(740 + i * 150, it.text, it.ok)).join("")}
-${T(90, 1440, spec.close[0], { f: "Inter SemiBold", w: 600, s: 60, c: WH })}${T(90, 1520, spec.close[1], { f: "Inter Light", w: 300, s: 48, c: LI })}${T(90, 1586, spec.close[2], { f: "Inter Light", w: 300, s: 48, c: WH })}`;
+      const [h1, h2] = spec.headline;
+      return `${lFrame(spec.eyebrow, "CHECK")}${lBig(90, 440, h1 ?? "", 104)}${lBig(90, 556, h2 ?? "", 104, LI)}${T(90, 650, spec.intro, { f: "Inter Light", w: 300, s: 40, c: MU })}
+${spec.items.map((it, i) => { const y = 720 + i * 150; return `${rule(y)}${toggle(90, y + 42, it.ok)}${T(250, y + 90, it.text, { f: "Inter Light", w: 300, s: 46, c: it.ok ? WH : MU })}`; }).join("")}${rule(720 + spec.items.length * 150)}
+${T(90, 1420, spec.close[0], { f: "Inter SemiBold", w: 600, s: 64, c: WH })}${T(90, 1500, spec.close[1], { f: "Inter Light", w: 300, s: 52, c: LI })}${T(90, 1566, spec.close[2], { f: "Inter Light", w: 300, s: 52, c: WH })}`;
     }
-    case "oneFix":
-      return `${lHead(spec.eyebrow)}${lLines(490, spec.headline, 80)}
-${phone(290, 700, 500, 700, (x, y, w) => `${bar(x, y, w, 60, "#1c1c20")}${T(x, y + 140, "Your business", { f: "Inter SemiBold", w: 600, s: 40, c: WH })}${bar(x, y + 170, w - 60, 18, "#1c1c20")}<rect x="${x}" y="${y + 230}" width="${w}" height="104" rx="52" fill="none" stroke="${LI}" stroke-width="4" stroke-dasharray="14 12"/>${T(x + w / 2, y + 296, spec.fix, { f: "Inter SemiBold", w: 600, s: 36, c: LI, a: "middle" })}${[0, 1, 2, 3].map((i) => bar(x, y + 380 + i * 44, w - (i % 2) * 60, 20, "#1c1c20")).join("")}`)}
-<path d="M840 1000 C 900 1000, 900 960, 800 960" fill="none" stroke="${LI}" stroke-width="5"/><path d="M816 946 L796 960 L816 974" fill="none" stroke="${LI}" stroke-width="5" stroke-linecap="round"/>
-${lLines(1500, wrapWords(spec.detail, 34), 44, WH)}`;
+    case "oneFix": {
+      const [h1, h2] = spec.headline;
+      const screen = (x: number, y: number, w: number) => `${T(x, y + 70, "Your business", { f: "Inter SemiBold", w: 600, s: 40, c: WH })}${bar(x, y + 100, w - 60, 16, "#26262b")}${bar(x, y + 130, w - 120, 16, "#26262b")}<rect x="${x}" y="${y + 190}" width="${w}" height="100" rx="50" fill="${LI}"/>${T(x + w / 2, y + 252, spec.fix, { f: "Inter SemiBold", w: 600, s: 38, c: BK, a: "middle" })}${[0, 1, 2, 3, 4].map((i) => bar(x, y + 340 + i * 40, w - (i % 2) * 60, 16, "#1f1f23")).join("")}`;
+      return `${lFrame(spec.eyebrow, "FIX")}${lBig(90, 440, h1 ?? "", 104)}${lBig(90, 556, h2 ?? "", 104, LI)}
+${lPhone(250, 640, 460, 760, screen)}
+<path d="M760 960 C 860 960, 880 900, 880 860" fill="none" stroke="${LI}" stroke-width="5"/><path d="M712 960 l30 -18 v36 z" fill="${LI}"/>${T(890, 840, "here", { f: MONO, w: 500, s: 24, c: LI, a: "end", ls: 3 })}
+${wrapWords(spec.detail, 38).map((l, i) => T(90, 1490 + i * 54, l, { f: "Inter Light", w: 300, s: 42, c: WH })).join("")}`;
+    }
     case "specSheet": {
-      const rows = spec.specs.map((r, i) => {
-        const y = 760 + i * 118;
-        return `<line x1="90" y1="${y - 70}" x2="${W - 90}" y2="${y - 70}" stroke="#1f1f23" stroke-width="2"/>${mLabel(90, y, r.label)}${T(W - 90, y + 2, r.value, { f: "Inter Light", w: 300, s: 48, c: r.accent ? LI : WH, a: "end" })}`;
+      // A product launch, not a form: the build drawn as a piece of hardware, then its spec in big type.
+      const n = Math.min(5, spec.specs.length);
+      const rows = spec.specs.slice(0, n).map((r, i) => {
+        const y = 1250 + i * 76;
+        return `${rule(y - 50)}${mLabel(90, y, r.label)}${T(W - 90, y + 2, r.value, { f: "Inter Light", w: 300, s: 40, c: r.accent ? LI : WH, a: "end" })}`;
       }).join("");
-      const last = 760 + spec.specs.length * 118 - 70;
-      return `${eFrame(spec.series, "SPEC")}
-${mLabel(90, 440, "Model")}${T(90, 540, spec.model, { f: "Inter SemiBold", w: 600, s: 96, c: WH, ls: -2 })}${T(90, 606, spec.subtitle, { f: "Inter Light", w: 300, s: 40, c: MU })}
-${rows}<line x1="90" y1="${last}" x2="${W - 90}" y2="${last}" stroke="#1f1f23" stroke-width="2"/>
-${lLines(last + 90, wrapWords(spec.note, 40), 36, MU)}`;
+      return `${lFrame(spec.series, "SPEC")}
+${lDevice(90, 360, ["CALL NOW", "BOOK · BUY · ASK"], ["CALL", "BOOK", "BUY", "MSG"], ["FOUND", "KEPT"])}
+${T(90, 1030, spec.model, { f: "Inter SemiBold", w: 600, s: 118, c: WH, ls: -3 })}${T(90, 1100, spec.subtitle, { f: "Inter Light", w: 300, s: 42, c: MU })}
+${rows}${rule(1250 + n * 76 - 50)}`;
     }
     case "statement": {
-      const size = 92;
-      const top = 620;
+      const size = Math.min(124, ...spec.lines.map((l) => fit(l, 124, 900, 0.5)));
+      const lh = size + 20;
+      const top = Math.max(640, 1080 - (spec.lines.length * lh) / 2);
       const lines = spec.lines.map((l, i) => {
-        const y = top + i * (size + 22);
+        const y = top + i * lh;
         const at = l.indexOf(spec.accentWord);
-        if (at < 0) return T(90, y, l, { f: "Inter Light", w: 300, s: size, c: WH, ls: -2 });
+        if (at < 0) return T(90, y, l, { f: "Inter Light", w: 300, s: size, c: WH, ls: -3 });
         // the accent word in lime, the rest white: drawn as one text with a tspan
-        return `<text x="90" y="${y}" font-family="Inter Light" font-weight="300" font-size="${size}" letter-spacing="-2" fill="${WH}" xml:space="preserve">${esc(l.slice(0, at))}<tspan fill="${LI}">${esc(spec.accentWord)}</tspan>${esc(l.slice(at + spec.accentWord.length))}</text>`;
+        return `<text x="90" y="${y}" font-family="Inter Light" font-weight="300" font-size="${size}" letter-spacing="-3" fill="${WH}" xml:space="preserve">${esc(l.slice(0, at))}<tspan fill="${LI}">${esc(spec.accentWord)}</tspan>${esc(l.slice(at + spec.accentWord.length))}</text>`;
       }).join("");
-      const end = top + spec.lines.length * (size + 22);
-      return `${eFrame(spec.series, "NOTE")}${mLabel(90, 470, "Studio note")}${lines}<rect x="90" y="${end + 30}" width="120" height="4" fill="${LI}"/>${mLabel(90, end + 110, spec.byline)}`;
+      const end = top + (spec.lines.length - 1) * lh;
+      return `${lFrame(spec.series, "NOTE")}${mLabel(90, top - size - 40, "Studio note", LI)}${lines}<rect x="90" y="${end + 70}" width="140" height="5" fill="${LI}"/>${mLabel(90, end + 140, spec.byline)}`;
     }
     case "object":
-      return `${eFrame(spec.series, "OBJ")}
-${mLabel(90, 410, spec.title)}
-<rect x="90" y="440" width="${W - 180}" height="760" fill="#111113"/>
-<!-- the photo is composited into this square at render time -->
-${spec.label.map((r, i) => `<line x1="90" y1="${1250 + i * 64 - 42}" x2="${W - 90}" y2="${1250 + i * 64 - 42}" stroke="#1f1f23" stroke-width="2"/>${mLabel(90, 1250 + i * 64, r.k)}${T(W - 90, 1252 + i * 64, r.v, { f: "Inter Light", w: 300, s: 32, c: WH, a: "end" })}`).join("")}
-${T(90, 1250 + spec.label.length * 64 + 40, spec.line, { f: "Inter Light", w: 300, s: 44, c: LI })}`;
+      return `${lFrame(spec.series, "OBJ")}
+<rect x="0" y="300" width="${W}" height="880" fill="#111113"/>
+<!-- the photo is composited into this band at render time; the fade is drawn over it in composeStory -->
+${spec.label.map((r, i) => { const y = 1270 + i * 70; return `${rule(y - 50)}${mLabel(90, y, r.k)}${T(W - 90, y + 2, r.v, { f: "Inter Light", w: 300, s: 40, c: WH, a: "end" })}`; }).join("")}${rule(1270 + spec.label.length * 70 - 50)}
+${T(90, 1270 + spec.label.length * 70 + 50, spec.line, { f: "Inter Light", w: 300, s: 50, c: LI, ls: -1 })}`;
     case "index": {
       const rows = spec.rows.map((r, i) => {
-        const y = 680 + i * 150;
-        return `<line x1="90" y1="${y - 70}" x2="${W - 90}" y2="${y - 70}" stroke="#1f1f23" stroke-width="2"/>${mLabel(90, y - 20, String(i + 1).padStart(2, "0"), "#5a5a60")}${T(170, y, r.name, { f: "Inter Light", w: 300, s: 50, c: WH })}${T(170, y + 46, r.what, { f: "Inter Light", w: 300, s: 30, c: MU })}${r.where ? mLabel(W - 90, y - 20, r.where, "#5a5a60", "end") : ""}`;
+        const y = 680 + i * 160;
+        return `${rule(y - 76)}${mLabel(90, y - 22, String(i + 1).padStart(2, "0"), LI)}${T(170, y, r.name, { f: "Inter Light", w: 300, s: 62, c: WH, ls: -1 })}${T(170, y + 48, r.what, { f: "Inter Light", w: 300, s: 32, c: MU })}${r.where ? mLabel(W - 90, y - 22, r.where, "#5a5a60", "end") : ""}`;
       }).join("");
-      const last = 680 + spec.rows.length * 150 - 70;
-      return `${eFrame(spec.series, "INDEX")}${mLabel(90, 440, "Index")}${T(90, 530, spec.headline, { f: "Inter Light", w: 300, s: 76, c: WH, ls: -1 })}${rows}<line x1="90" y1="${last}" x2="${W - 90}" y2="${last}" stroke="#1f1f23" stroke-width="2"/>${T(90, last + 80, spec.note, { f: "Inter Light", w: 300, s: 34, c: LI })}`;
+      const last = 680 + spec.rows.length * 160 - 76;
+      return `${lFrame(spec.series, "INDEX")}${lBig(90, 470, spec.headline, 112)}${rows}${rule(last)}${T(90, last + 100, spec.note, { f: "Inter Light", w: 300, s: 46, c: LI })}`;
     }
     case "process": {
       const rows = spec.steps.map((st, i) => {
-        const y = 700 + i * 160;
+        const y = 680 + i * 170;
         const on = i === spec.steps.length - 1;
-        return `<circle cx="118" cy="${y - 14}" r="${on ? 14 : 10}" fill="${on ? LI : "none"}" stroke="${on ? LI : "#5a5a60"}" stroke-width="3"/>${i < spec.steps.length - 1 ? `<line x1="118" y1="${y + 6}" x2="118" y2="${y + 136}" stroke="#2a2a2e" stroke-width="2"/>` : ""}${mLabel(170, y - 34, st.n, "#5a5a60")}${T(170, y + 14, st.name, { f: "Inter Light", w: 300, s: 50, c: WH })}${T(170, y + 60, st.detail, { f: "Inter Light", w: 300, s: 30, c: MU })}`;
+        return `<circle cx="112" cy="${y - 18}" r="${on ? 16 : 11}" fill="${on ? LI : BK}" stroke="${on ? LI : "#6a6a70"}" stroke-width="3"/>${i < spec.steps.length - 1 ? `<line x1="112" y1="${y + 4}" x2="112" y2="${y + 140}" stroke="#2e2e33" stroke-width="2"/>` : ""}${mLabel(170, y - 40, st.n, on ? LI : "#6a6a70")}${T(170, y + 16, st.name, { f: "Inter Light", w: 300, s: 64, c: WH, ls: -1 })}${T(170, y + 64, st.detail, { f: "Inter Light", w: 300, s: 32, c: MU })}`;
       }).join("");
-      const last = 700 + spec.steps.length * 160;
-      return `${eFrame(spec.series, "PROC")}${mLabel(90, 440, "Process")}${T(90, 530, spec.headline, { f: "Inter Light", w: 300, s: 76, c: WH, ls: -1 })}${rows}${T(90, last + 10, spec.note, { f: "Inter Light", w: 300, s: 34, c: LI })}`;
+      const last = 680 + spec.steps.length * 170;
+      return `${lFrame(spec.series, "PROC")}${lBig(90, 470, spec.headline, 104)}${rows}${T(90, last + 10, spec.note, { f: "Inter Light", w: 300, s: 44, c: LI })}`;
     }
     case "teardown": {
-      const col = (x: number, title: string, items: string[], good: boolean) => `${mLabel(x, 700, title, good ? LI : MU)}<line x1="${x}" y1="724" x2="${x + 420}" y2="724" stroke="${good ? LI : "#2a2a2e"}" stroke-width="2"/>${items.map((t, i) => `${T(x, 800 + i * 96, good ? "+" : "−", { f: MONO, w: 500, s: 36, c: good ? LI : "#5a5a60" })}${wrapWords(t, 20).map((l, j) => T(x + 46, 800 + i * 96 + j * 40, l, { f: "Inter Light", w: 300, s: 34, c: good ? WH : MU })).join("")}`).join("")}`;
-      return `${eFrame(spec.series, "TEAR")}${mLabel(90, 440, "Teardown")}${T(90, 530, spec.headline, { f: "Inter Light", w: 300, s: 72, c: WH, ls: -1 })}${col(90, "Before", spec.before, false)}${col(570, "After", spec.after, true)}${lLines(1420, wrapWords(spec.note, 40), 34, MU)}`;
+      const before = (x: number, y: number, w: number) => `${bar(x, y, w, 150, "#26262b")}${T(x + w / 2, y + 84, "◀  SLIDESHOW  ▶", { f: MONO, w: 500, s: 18, c: "#6a6a70", a: "middle", ls: 2 })}${[0, 1, 2, 3, 4, 5].map((i) => bar(x, y + 180 + i * 30, w - (i % 3) * 40, 12, "#1f1f23")).join("")}${T(x + w / 2, y + 400, "menu · menu · menu", { f: MONO, w: 500, s: 16, c: "#55555b", a: "middle" })}`;
+      const after = (x: number, y: number, w: number) => `${T(x, y + 44, "What you do,", { f: "Inter SemiBold", w: 600, s: 30, c: WH })}${T(x, y + 82, "in one line.", { f: "Inter SemiBold", w: 600, s: 30, c: WH })}<rect x="${x}" y="${y + 120}" width="${w}" height="78" rx="39" fill="${LI}"/>${T(x + w / 2, y + 170, "Call now", { f: "Inter SemiBold", w: 600, s: 28, c: BK, a: "middle" })}<rect x="${x}" y="${y + 214}" width="${w}" height="70" rx="35" fill="none" stroke="#4a4a50" stroke-width="3"/>${T(x + w / 2, y + 258, "Book", { f: "Inter Light", w: 300, s: 26, c: WH, a: "middle" })}`;
+      const list = (x: number, items: string[], good: boolean) => items.map((t, i) => `${T(x, 1210 + i * 92, good ? "+" : "×", { f: MONO, w: 500, s: 34, c: good ? LI : "#6a6a70" })}${wrapWords(t, 18).map((l, j) => T(x + 44, 1210 + i * 92 + j * 38, l, { f: "Inter Light", w: 300, s: 34, c: good ? WH : MU })).join("")}`).join("");
+      return `${lFrame(spec.series, "TEAR")}${lBig(90, 440, spec.headline, fit(spec.headline, 96))}
+${mLabel(110, 540, "Before")}${mLabel(570, 540, "After", LI)}
+${lPhone(110, 570, 400, 540, before)}${lPhone(570, 570, 400, 540, after)}
+${list(110, spec.before, false)}${list(570, spec.after, true)}`;
     }
   }
 }
@@ -253,7 +403,11 @@ export async function composeStory(spec: StorySpec, photo?: Uint8Array): Promise
   prepareFonts();
   const sharp = (await import("sharp")).default;
   const layers = [] as { input: Buffer; left: number; top: number }[];
-  if (spec.kind === "object" && photo) layers.push({ input: await sharp(Buffer.from(photo)).resize(W - 180, 760, { fit: "cover" }).toBuffer(), left: 90, top: 440 });
+  if (spec.kind === "object" && photo) {
+    layers.push({ input: await sharp(Buffer.from(photo)).resize(W, 880, { fit: "cover" }).toBuffer(), left: 0, top: 300 });
+    // fade the photo into the page, and keep the title legible over it
+    layers.push({ input: Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="880"><defs><linearGradient id="f" x1="0" y1="0" x2="0" y2="1"><stop offset="0.6" stop-color="#0b0b0c" stop-opacity="0"/><stop offset="1" stop-color="#0b0b0c" stop-opacity="1"/></linearGradient></defs><rect width="${W}" height="880" fill="url(#f)"/><text x="90" y="840" font-family="JetBrains Mono" font-weight="500" font-size="24" letter-spacing="3" fill="#c7ff3d">${esc(spec.title.toUpperCase())}</text></svg>`), left: 0, top: 300 });
+  }
   if (spec.brand === "codeit") layers.push({ input: await sharp(readFileSync(LOGO)).resize({ width: 220 }).png().toBuffer(), left: (W - 220) / 2, top: 140 });
   const out = await sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${storySvg(spec)}</svg>`))
     .composite(layers)

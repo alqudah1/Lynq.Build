@@ -27,6 +27,6 @@ describe("story-only stories", () => {
   it("uses each brand's own system", () => {
     expect(storySvg(quiz)).toContain('fill="#fff4e5"');
     expect(storySvg(fix)).toContain('fill="#0b0b0c"');
-    expect(storySvg(fix)).toContain("Not in the footer.");
+    expect(storySvg(fix)).toContain("the footer.");
   });
 });
