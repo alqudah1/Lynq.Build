@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta name="robots" content="noindex">
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <meta name="description" content="Peak Renovations — Premium home renovation & contracting in Toronto and the GTA. Licensed, insured, 500+ projects completed."/>
-  <title>Peak Renovations — Home Renovation in Toronto & GTA</title>
+  <meta name="description" content="Concept design by LYNQ, not a real business. Peak Renovations — Premium home renovation & contracting in Toronto and the GTA. Licensed, insured, 500+ projects completed."/>
+  <title>Peak Renovations — Home Renovation in Toronto & GTA · LYNQ concept</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
   <style>
@@ -180,6 +181,18 @@
     .project-type { font-size: 0.62rem; letter-spacing: 2.5px; text-transform: uppercase; color: var(--amber); margin-bottom: 4px; font-weight: 600; }
     .project-name { font-size: 0.88rem; font-weight: 600; color: var(--white); }
 
+    /* ── ABOUT ── */
+    .about { padding: 120px 64px; }
+    .about-inner { max-width: 1200px; margin: 0 auto; }
+    .about-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 64px; align-items: start; }
+    .about-grid p { font-size: 0.95rem; color: var(--text); line-height: 1.85; font-weight: 300; margin-bottom: 20px; max-width: 520px; }
+    .about-highlight {
+      background: var(--bg2); border: 1px solid var(--border); padding: 36px;
+    }
+    .about-highlight-tag { font-size: 0.62rem; letter-spacing: 2.5px; text-transform: uppercase; color: var(--amber); font-weight: 600; margin-bottom: 16px; }
+    .about-highlight h4 { font-size: 1.15rem; font-weight: 700; color: var(--white); margin-bottom: 14px; letter-spacing: -0.3px; }
+    .about-highlight p { font-size: 0.85rem; color: var(--dim); line-height: 1.78; font-weight: 300; margin-bottom: 0; max-width: none; }
+
     /* ── PROCESS ── */
     .process { padding: 120px 64px; }
     .process-inner { max-width: 1200px; margin: 0 auto; }
@@ -268,6 +281,8 @@
       .stats-inner { grid-template-columns: repeat(2, 1fr); gap: 30px; }
       .projects { padding: 80px 20px; }
       .projects-grid { grid-template-columns: 1fr 1fr; }
+      .about { padding: 80px 20px; }
+      .about-grid { grid-template-columns: 1fr; gap: 32px; }
       .process { padding: 80px 20px; }
       .process-grid { grid-template-columns: 1fr 1fr; gap: 40px; }
       .process-grid::before { display: none; }
@@ -285,6 +300,7 @@
   <ul class="nav-links">
     <li><a href="#services">Services</a></li>
     <li><a href="#projects">Projects</a></li>
+    <li><a href="#about">About</a></li>
     <li><a href="#process">Process</a></li>
     <li><a href="#contact">Contact</a></li>
   </ul>
@@ -299,9 +315,9 @@
   <div class="hero-overlay"></div>
   <div class="hero-content">
     <div class="hero-badge">Licensed & Insured · Toronto & GTA</div>
-    <h1>Your Home,<span class="outline">Reimagined.</span></h1>
+    <h1>The Contractor<span class="outline">Who Shows Up.</span></h1>
     <div class="hero-bottom">
-      <p>From kitchen remodels to full home renovations — Peak delivers quality craftsmanship, on time and on budget. Serving Toronto and the GTA since 2010.</p>
+      <p>Founded in 2010 by a framer tired of watching other crews leave jobs half-finished, Peak built its name the slow way — one kitchen, one basement, one referral at a time. Still the crew Brampton calls when the last contractor didn't finish.</p>
       <div class="hero-btns">
         <a href="#contact" class="btn-amber">Get a Free Quote</a>
         <a href="#projects" class="btn-wire">View Our Work</a>
@@ -427,6 +443,23 @@
   </div>
 </section>
 
+<!-- ABOUT -->
+<section class="about" id="about">
+  <div class="about-inner">
+    <div class="eyebrow reveal">Who We Are</div>
+    <h2 class="section-heading reveal">Built On Sites,<br>Not In Boardrooms.</h2>
+    <div class="about-grid reveal">
+      <p>Peak started in 2010 with one truck and a framer's toolbelt. Before going out on his own, our founder spent twelve years finishing other contractors' abandoned jobs — the half-torn-out kitchens, the basements left in drywall dust for months. He built Peak on a simple bet: homeowners don't need a bigger sales pitch, they need someone who actually finishes.</p>
+      <p>That bet paid off in Brampton first, then spread by word of mouth across the GTA. No radio ads, no cold calls — just crews that show up when they say they will.</p>
+      <div class="about-highlight">
+        <div class="about-highlight-tag">Signature Job</div>
+        <h4>The Sandalwood Rebuild</h4>
+        <p>A Brampton family's full home renovation had stalled for four months under a previous contractor — permits lapsed, subfloor exposed. Peak's crew re-permitted, resequenced the trades, and closed it out in seven weeks. It's still the job our own guys bring up first.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- PROCESS -->
 <section class="process" id="process">
   <div class="process-inner">
@@ -506,7 +539,6 @@
       </div>
     </div>
     <a href="https://lynq.build/#contact" class="btn-amber reveal">Book Free Consultation</a>
-    <p style="margin-top:28px;font-size:0.7rem;color:var(--dim);letter-spacing:1px;text-transform:uppercase">Concept site by <a href="https://lynq.build" style="color:inherit;text-decoration:underline">LYNQ</a></p>
   </div>
 </section>
 
@@ -529,5 +561,7 @@
   }, { threshold: 0.07, rootMargin: '0px 0px -40px 0px' });
   document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 </script>
+<!-- lynq-concept -->
+<a href="https://lynq.build/portfolio" style="position:fixed;left:14px;bottom:14px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:rgba(11,11,12,.82);color:#fff;font:500 12px/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',Inter,sans-serif;letter-spacing:.02em;text-decoration:none;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 4px 18px rgba(0,0,0,.25)"><span style="width:7px;height:7px;border-radius:50%;background:#c7ff3d;display:inline-block"></span>Concept design by LYNQ · not a real business</a>
 </body>
 </html>

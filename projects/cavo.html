@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta name="robots" content="noindex">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Cavo — Private Yacht Charters · Mediterranean</title>
-<meta name="description" content="Private crewed yacht charters across the Mediterranean. Greece, Croatia, Amalfi, Ibiza. Bespoke itineraries, fully crewed vessels.">
+<title>Cavo — Private Yacht Charters · Mediterranean · LYNQ concept</title>
+<meta name="description" content="Concept design by LYNQ, not a real business. Private crewed yacht charters across the Mediterranean. Greece, Croatia, Amalfi, Ibiza. Bespoke itineraries, fully crewed vessels.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -638,8 +639,8 @@ footer {
     <h2 class="section-title"><span class="lr"><span>The routes.</span></span></h2>
   </div>
   <div class="dest-grid">
-    <div class="dest-card reveal">
-      <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=900&h=700&fit=crop&auto=format&q=88" alt="Greece">
+    <div class="dest-card reveal img-curtain">
+      <img src="https://images.unsplash.com/photo-1696519669474-3001c0e2b548?w=900&h=700&fit=crop&auto=format&q=88" alt="Greece">
       <div class="dest-overlay"></div>
       <div class="dest-info">
         <div class="dest-country">Greece</div>
@@ -647,8 +648,8 @@ footer {
         <div class="dest-nights">7 – 14 nights from Athens</div>
       </div>
     </div>
-    <div class="dest-card reveal">
-      <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=900&h=700&fit=crop&auto=format&q=88" alt="Croatia">
+    <div class="dest-card reveal img-curtain">
+      <img src="https://images.unsplash.com/photo-1750453835444-7f2d167b51b0?w=900&h=700&fit=crop&auto=format&q=88" alt="Croatia">
       <div class="dest-overlay"></div>
       <div class="dest-info">
         <div class="dest-country">Croatia</div>
@@ -656,8 +657,8 @@ footer {
         <div class="dest-nights">5 – 10 nights from Split</div>
       </div>
     </div>
-    <div class="dest-card reveal">
-      <img src="https://images.unsplash.com/photo-1533587851505-d119e13fa0d7?w=900&h=700&fit=crop&auto=format&q=88" alt="Amalfi">
+    <div class="dest-card reveal img-curtain">
+      <img src="https://images.unsplash.com/photo-1761309557902-3bbfedbe67ad?w=900&h=700&fit=crop&auto=format&q=88" alt="Amalfi">
       <div class="dest-overlay"></div>
       <div class="dest-info">
         <div class="dest-country">Italy</div>
@@ -678,8 +679,8 @@ footer {
   </div>
   <div class="vessels-strip">
     <div class="vessel-card reveal">
-      <div class="vessel-img">
-        <img src="https://images.unsplash.com/photo-1537819191377-d3305ffddce4?w=900&h=600&fit=crop&auto=format&q=88" alt="Albatross">
+      <div class="vessel-img img-curtain">
+        <img src="https://images.unsplash.com/photo-1533293046890-f1ab3e5e3af9?w=900&h=600&fit=crop&auto=format&q=88" alt="Albatross">
       </div>
       <div class="vessel-body">
         <div class="vessel-type">Sailing Yacht</div>
@@ -692,8 +693,8 @@ footer {
       </div>
     </div>
     <div class="vessel-card reveal">
-      <div class="vessel-img">
-        <img src="https://images.unsplash.com/photo-1467664631004-58beab1ece0d?w=900&h=600&fit=crop&auto=format&q=88" alt="Milos">
+      <div class="vessel-img img-curtain">
+        <img src="https://images.unsplash.com/photo-1747447724564-ee7bc64606f2?w=900&h=600&fit=crop&auto=format&q=88" alt="Milos">
       </div>
       <div class="vessel-body">
         <div class="vessel-type">Motor Yacht</div>
@@ -706,8 +707,8 @@ footer {
       </div>
     </div>
     <div class="vessel-card reveal">
-      <div class="vessel-img">
-        <img src="https://images.unsplash.com/photo-1500514966906-fe245eea9344?w=900&h=600&fit=crop&auto=format&q=88" alt="Thalassa">
+      <div class="vessel-img img-curtain">
+        <img src="https://images.unsplash.com/photo-1774031826492-3d859b950574?w=900&h=600&fit=crop&auto=format&q=88" alt="Thalassa">
       </div>
       <div class="vessel-body">
         <div class="vessel-type">Gulet</div>
@@ -724,8 +725,8 @@ footer {
 
 <!-- Experience -->
 <section class="experience">
-  <div class="exp-img reveal">
-    <img src="https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=1200&h=1400&fit=crop&auto=format&q=88" alt="On board">
+  <div class="exp-img reveal img-curtain">
+    <img src="https://images.unsplash.com/photo-1757036476057-0daad2fcfe13?w=1200&h=1400&fit=crop&auto=format&q=88" alt="On board">
   </div>
   <div class="exp-text">
     <div class="exp-tag reveal">On board</div>
@@ -769,5 +770,7 @@ reveals.forEach(el => io.observe(el));
 const _ao=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');_ao.unobserve(e.target)}})},{threshold:0.12});
 document.querySelectorAll('.lr,.img-curtain').forEach(el=>_ao.observe(el));
 </script>
+<!-- lynq-concept -->
+<a href="https://lynq.build/portfolio" style="position:fixed;left:14px;bottom:14px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:rgba(11,11,12,.82);color:#fff;font:500 12px/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',Inter,sans-serif;letter-spacing:.02em;text-decoration:none;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 4px 18px rgba(0,0,0,.25)"><span style="width:7px;height:7px;border-radius:50%;background:#c7ff3d;display:inline-block"></span>Concept design by LYNQ · not a real business</a>
 </body>
 </html>

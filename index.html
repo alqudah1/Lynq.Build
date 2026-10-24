@@ -2,546 +2,1467 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Mustafa Alqudah — Web Designer · Toronto</title>
-<meta name="description" content="Web designer based in Toronto. Art-forward websites for restaurants, creatives, and independent brands.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LYNQ — Web Design, Consulting &amp; AI Automation · Toronto &amp; Amman</title>
+<meta name="description" content="LYNQ designs websites, consults on web strategy, and builds AI automation software — lead generation, customer support, and custom agentic workflows — for businesses in Toronto and Amman.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://lynq.build">
+<meta property="og:title" content="LYNQ — Web Design, Consulting &amp; AI Automation">
+<meta property="og:description" content="LYNQ designs websites, consults on web strategy, and builds AI automation software — lead generation, customer support, and custom agentic workflows — for businesses in Toronto and Amman.">
+<meta property="og:image" content="https://lynq.build/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="LYNQ — Web Design, Consulting &amp; AI Automation">
+<meta name="twitter:description" content="LYNQ designs websites, consults on web strategy, and builds AI automation software — lead generation, customer support, and custom agentic workflows — for businesses in Toronto and Amman.">
+<meta name="twitter:image" content="https://lynq.build/og-image.png">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="canonical" href="https://lynq.build">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="gallery.css?v=6">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@graph": [
+  {
+   "@type": "ProfessionalService",
+   "@id": "https://lynq.build/#organization",
+   "name": "LYNQ",
+   "url": "https://lynq.build/",
+   "logo": "https://lynq.build/logo.svg",
+   "image": "https://lynq.build/og-image.png",
+   "email": "mustafa@lynq.build",
+   "founder": {
+    "@type": "Person",
+    "name": "Mustafa Alqudah"
+   },
+   "description": "Web design, digital transformation and AI automation studio. LYNQ builds premium websites and landing pages, connects scattered tools into one business system, runs its own operations workspace (LYNQ Office), and builds custom AI automation for lead generation, customer support and agentic workflows. Every project is scoped and priced individually.",
+   "areaServed": [
+    {
+     "@type": "City",
+     "name": "Toronto",
+     "containedInPlace": {
+      "@type": "Country",
+      "name": "Canada"
+     }
+    },
+    {
+     "@type": "City",
+     "name": "Amman",
+     "containedInPlace": {
+      "@type": "Country",
+      "name": "Jordan"
+     }
+    }
+   ],
+   "knowsAbout": [
+    "Web design",
+    "Landing pages",
+    "Website redesign",
+    "Digital transformation",
+    "CRM and business systems",
+    "AI automation",
+    "AI lead generation",
+    "AI customer support chatbots",
+    "Agentic AI workflows",
+    "AI video and reels"
+   ],
+   "hasOfferCatalog": {
+    "@type": "OfferCatalog",
+    "name": "LYNQ services",
+    "itemListElement": [
+     {
+      "@type": "Offer",
+      "itemOffered": {
+       "@type": "Service",
+       "name": "Websites and landing pages",
+       "description": "Strategy, design, copy and build for websites and landing pages that turn attention into business.",
+       "provider": {
+        "@id": "https://lynq.build/#organization"
+       }
+      }
+     },
+     {
+      "@type": "Offer",
+      "itemOffered": {
+       "@type": "Service",
+       "name": "AI-powered web products",
+       "description": "Custom web applications with AI at the core, such as interactive tools and educational platforms.",
+       "provider": {
+        "@id": "https://lynq.build/#organization"
+       }
+      }
+     },
+     {
+      "@type": "Offer",
+      "itemOffered": {
+       "@type": "Service",
+       "name": "Web strategy and consulting",
+       "description": "A second opinion on an existing site, a roadmap before building, or ongoing strategy.",
+       "provider": {
+        "@id": "https://lynq.build/#organization"
+       }
+      }
+     },
+     {
+      "@type": "Offer",
+      "itemOffered": {
+       "@type": "Service",
+       "name": "Digital transformation",
+       "description": "Mapping the business and replacing spreadsheets, email, WhatsApp and manual work with one connected system.",
+       "url": "https://lynq.build/digital-transformation",
+       "provider": {
+        "@id": "https://lynq.build/#organization"
+       }
+      }
+     },
+     {
+      "@type": "Offer",
+      "itemOffered": {
+       "@type": "Service",
+       "name": "LYNQ Office and AI automation",
+       "description": "A private operating workspace plus automation of repeatable work like intake, lead qualification and follow-up.",
+       "url": "https://lynq.build/office",
+       "provider": {
+        "@id": "https://lynq.build/#organization"
+       }
+      }
+     },
+     {
+      "@type": "Offer",
+      "itemOffered": {
+       "@type": "Service",
+       "name": "AI lead generation and outreach",
+       "description": "A pipeline that finds local businesses in a target market, qualifies them and hands off warm leads.",
+       "provider": {
+        "@id": "https://lynq.build/#organization"
+       }
+      }
+     },
+     {
+      "@type": "Offer",
+      "itemOffered": {
+       "@type": "Service",
+       "name": "AI customer support",
+       "description": "A chat assistant trained on a business's own services and hours, embedded on its website.",
+       "provider": {
+        "@id": "https://lynq.build/#organization"
+       }
+      }
+     },
+     {
+      "@type": "Offer",
+      "itemOffered": {
+       "@type": "Service",
+       "name": "Agentic AI workflows",
+       "description": "Custom AI agents that take multi-step action and check their own work before anything goes out.",
+       "provider": {
+        "@id": "https://lynq.build/#organization"
+       }
+      }
+     },
+     {
+      "@type": "Offer",
+      "itemOffered": {
+       "@type": "Service",
+       "name": "AI video and reels",
+       "description": "Short brand films, story ads and reels made with AI video for Instagram, TikTok and YouTube Shorts.",
+       "provider": {
+        "@id": "https://lynq.build/#organization"
+       }
+      }
+     }
+    ]
+   },
+   "contactPoint": {
+    "@type": "ContactPoint",
+    "email": "mustafa@lynq.build",
+    "contactType": "sales",
+    "url": "https://lynq.build/book"
+   }
+  },
+  {
+   "@type": "WebSite",
+   "@id": "https://lynq.build/#website",
+   "url": "https://lynq.build/",
+   "name": "LYNQ",
+   "publisher": {
+    "@id": "https://lynq.build/#organization"
+   }
+  }
+ ]
+}
+</script>
 <style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;max-width:100%;overflow-x:clip;}
+body{max-width:100%;overflow-x:clip;font-family:'Manrope',sans-serif;background:#080808;color:#fff;-webkit-font-smoothing:antialiased;}
 
-/* ── CARD NUMBER (textural) ── */
-.card-num {
-  position: absolute;
-  top: 28px; right: 32px;
-  z-index: 3;
-  font-family: 'Outfit', sans-serif;
-  font-weight: 200;
-  font-size: clamp(4rem, 8vw, 7.5rem);
-  letter-spacing: -0.05em;
-  color: rgba(255,255,255,0.055);
-  line-height: 1;
-  pointer-events: none;
-  user-select: none;
-  transition: color 0.6s;
+/* ── NAV ── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:20px 52px;
+  background:rgba(8,8,8,0.96);
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+  border-bottom:1px solid rgba(255,255,255,0.06);
 }
-.gallery-card:hover .card-num { color: rgba(255,255,255,0.11); }
+.nav-logo{text-decoration:none;display:flex;align-items:center;gap:10px;}
+.nav-logo-mark{width:20px;height:20px;display:block;}
+.nav-logo-name{
+  font-family:'Manrope',sans-serif;
+  font-weight:300;font-size:1.1rem;
+  letter-spacing:0.18em;color:#fff;
+  text-transform:uppercase;
+}
+.nav-right{display:flex;align-items:center;gap:28px;}
+.nav-right a{
+  color:rgba(255,255,255,0.38);text-decoration:none;
+  font-size:0.72rem;letter-spacing:0.08em;
+  transition:color 0.2s;
+}
+.nav-right a:hover{color:#fff;}
+.nav-cta{
+  background:#fff !important;color:#080808 !important;
+  padding:9px 22px;
+  font-size:0.72rem !important;font-weight:500;
+  letter-spacing:0.08em;text-transform:uppercase;
+  transition:opacity 0.2s !important;
+}
+.nav-cta:hover{opacity:0.85 !important;}
 
-/* ── ALL-WORK OVERLAY ── */
-.aw-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 4000;
-  background: #080808;
-  transform: translateY(100%);
-  transition: transform 0.72s cubic-bezier(0.76,0,0.24,1);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-.aw-overlay.open { transform: translateY(0); }
-.aw-header {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 44px;
-  background: rgba(8,8,8,0.96);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-.aw-title {
-  font-size: 0.65rem;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.32);
-}
-.aw-close {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: none;
-  border: 1px solid rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.5);
-  padding: 9px 20px;
-  border-radius: 5px;
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.72rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  cursor: none !important;
-  transition: border-color 0.2s, color 0.2s;
-}
-.aw-close:hover { border-color: rgba(255,255,255,0.3); color: #fff; }
-.aw-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 3px;
-  padding: 3px;
-  background: #1a1a1a;
-}
-.aw-card {
-  position: relative;
-  overflow: hidden;
-  display: block;
-  text-decoration: none;
-  height: 52vmin;
-  min-height: 260px;
-  background: #111;
-  opacity: 0;
-  transform: translateY(32px);
-  transition: opacity 0.5s cubic-bezier(0.25,0.46,0.45,0.94),
-              transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94);
-}
-.aw-overlay.open .aw-card { opacity: 1; transform: none; }
-.aw-overlay.open .aw-card:nth-child(1)  { transition-delay: 0.04s; }
-.aw-overlay.open .aw-card:nth-child(2)  { transition-delay: 0.09s; }
-.aw-overlay.open .aw-card:nth-child(3)  { transition-delay: 0.14s; }
-.aw-overlay.open .aw-card:nth-child(4)  { transition-delay: 0.19s; }
-.aw-overlay.open .aw-card:nth-child(5)  { transition-delay: 0.24s; }
-.aw-overlay.open .aw-card:nth-child(6)  { transition-delay: 0.29s; }
-.aw-overlay.open .aw-card:nth-child(7)  { transition-delay: 0.34s; }
-.aw-overlay.open .aw-card:nth-child(8)  { transition-delay: 0.39s; }
-.aw-overlay.open .aw-card:nth-child(9)  { transition-delay: 0.44s; }
-.aw-overlay.open .aw-card:nth-child(10) { transition-delay: 0.49s; }
-.aw-overlay.open .aw-card:nth-child(11) { transition-delay: 0.54s; }
-.aw-overlay.open .aw-card:nth-child(12) { transition-delay: 0.59s; }
-.aw-overlay.open .aw-card:nth-child(13) { transition-delay: 0.64s; }
-.aw-card-img {
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center;
-  transition: transform 0.8s cubic-bezier(0.25,0.46,0.45,0.94);
-}
-.aw-card:hover .aw-card-img { transform: scale(1.06); }
-.aw-card-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.08) 55%, transparent 100%);
-  transition: background 0.4s;
-}
-.aw-card:hover .aw-card-overlay {
-  background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.3) 55%, rgba(0,0,0,0.08) 100%);
-}
-.aw-card-info {
-  position: absolute;
-  bottom: 22px; left: 24px;
-  z-index: 2;
-  transition: transform 0.4s;
-}
-.aw-card:hover .aw-card-info { transform: translateY(-6px); }
-.aw-card-cat {
-  font-size: 0.58rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.4);
-  margin-bottom: 6px;
-}
-.aw-card-name {
-  font-size: 1.15rem;
-  font-weight: 400;
-  color: #fff;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
+/* A restrained, product-led type system: no editorial serif or decorative
+   italics in the company interface. */
+.hero-h1,.services-heading,.services-group-title,.service-row-num,.service-row-name,
+.proof-title,.proof-card-name,.ai-examples-title,.contact-title,.footer-title{
+  font-family:'Manrope',sans-serif !important;
+  font-style:normal !important;
+  letter-spacing:-0.035em;
 }
 
-/* ── VIEW ALL TRIGGER ── */
-.more-trigger {
-  grid-column: 1 / -1;
-  position: relative;
-  overflow: hidden;
-  cursor: none !important;
-  background: #060606;
-  border-top: 1px solid rgba(255,255,255,0.055);
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  padding: 80px 52px 64px;
-  gap: 24px;
-  transition: background 0.5s;
-  min-height: 44vh;
+/* ── HERO ── */
+.hero{
+  position:relative;overflow:hidden;
+  padding:160px 52px 100px;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+  display:grid;grid-template-columns:1.15fr 1fr;gap:64px;align-items:center;
 }
-.more-trigger:hover { background: #0d0d0d; }
+.hero-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;display:block;}
+.hero-grain{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.045;}
+.hero-content,.hero-visual{position:relative;z-index:1;}
+.hero-logo{height:40px;width:auto;display:block;margin-bottom:28px;}
+.hero-eyebrow{
+  font-size:0.68rem;letter-spacing:0.28em;text-transform:uppercase;
+  color:rgba(255,255,255,0.55);margin-bottom:32px;font-weight:500;
+}
+.hero-h1{
+  font-family:'Cormorant Garamond',serif;
+  font-weight:300;font-style:italic;
+  font-size:clamp(2.6rem,5vw,4.6rem);
+  line-height:1.08;letter-spacing:-0.02em;
+  color:#fff;margin-bottom:32px;
+  max-width:640px;
+}
+.hero-sub{
+  font-size:0.95rem;color:rgba(255,255,255,0.68);
+  line-height:1.8;max-width:500px;
+  margin-bottom:40px;
+}
+.hero-btns{display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+.hero-btn-primary{
+  display:inline-flex;align-items:center;gap:12px;
+  background:#fff;color:#080808;
+  padding:15px 32px;
+  text-decoration:none;font-size:0.78rem;font-weight:600;
+  letter-spacing:0.08em;text-transform:uppercase;
+  transition:opacity 0.2s;
+}
+.hero-btn-primary:hover{opacity:0.85;}
+.hero-btn-secondary{
+  font-size:0.78rem;color:rgba(255,255,255,0.6);
+  text-decoration:none;letter-spacing:0.04em;
+  border-bottom:1px solid rgba(255,255,255,0.25);
+  padding-bottom:2px;transition:color 0.2s,border-color 0.2s;
+}
+.hero-btn-secondary:hover{color:#fff;border-color:#fff;}
 
-.mt-left { display: flex; flex-direction: column; gap: 18px; }
-.mt-eyebrow {
-  font-size: 0.6rem;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.2);
+/* Hero visual — 3-pillar panel */
+.hero-visual{
+  background:#0e0e0e;border:1px solid rgba(255,255,255,0.08);
+  border-radius:4px;overflow:hidden;
 }
-.mt-heading {
-  font-family: 'Cormorant Garamond', serif;
-  font-style: italic;
-  font-weight: 300;
-  font-size: clamp(3.4rem, 6.5vw, 7rem);
-  color: rgba(255,255,255,0.78);
-  letter-spacing: -0.03em;
-  line-height: 0.92;
-  transition: color 0.35s;
+.hero-pillar{
+  display:flex;align-items:flex-start;gap:18px;
+  padding:28px 30px;
+  border-bottom:1px solid rgba(255,255,255,0.07);
 }
-.more-trigger:hover .mt-heading { color: #fff; }
+.hero-pillar:last-child{border-bottom:none;}
+.hero-pillar-icon{
+  width:38px;height:38px;flex-shrink:0;border-radius:50%;
+  background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);
+  display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.85);
+}
+.hero-pillar-title{font-size:0.92rem;font-weight:600;color:#fff;margin-bottom:5px;}
+.hero-pillar-desc{font-size:0.78rem;color:rgba(255,255,255,0.55);line-height:1.6;}
 
-.mt-right {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  justify-content: flex-end;
-  gap: 14px;
-  padding-bottom: 8px;
+/* ── SERVICES LIST ── */
+.services-section{padding:0 52px;position:relative;}
+.services-section::before{
+  content:'';position:absolute;top:-40px;left:50%;transform:translateX(-50%);
+  width:1000px;max-width:160%;height:520px;
+  background:radial-gradient(ellipse at center, rgba(210,170,100,0.1) 0%, transparent 70%);
+  pointer-events:none;z-index:-1;
 }
-.mt-arrow {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  font-size: 0.7rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.25);
-  transition: gap 0.35s, color 0.35s;
+.services-intro{padding:96px 0 8px;position:relative;z-index:1;}
+.services-eyebrow{
+  font-size:0.68rem;letter-spacing:0.26em;text-transform:uppercase;
+  color:rgba(224,187,128,0.85);font-weight:500;margin-bottom:18px;
 }
-.more-trigger:hover .mt-arrow { gap: 24px; color: rgba(255,255,255,0.65); }
-.mt-arrow-line {
-  width: 36px; height: 1px;
-  background: currentColor;
-  transition: width 0.35s;
+.services-heading{
+  font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:300;
+  font-size:clamp(1.9rem,3.2vw,2.8rem);color:#fff;max-width:640px;line-height:1.15;
 }
-.more-trigger:hover .mt-arrow-line { width: 56px; }
+.services-group-head{
+  padding:64px 0 8px;
+  display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;
+  position:relative;z-index:1;
+}
+.services-group-num{
+  font-size:0.68rem;letter-spacing:0.1em;color:rgba(224,187,128,0.75);
+  border:1px solid rgba(210,170,100,0.3);border-radius:20px;
+  padding:4px 12px;
+}
+.services-group-title{
+  font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:300;
+  font-size:1.5rem;color:#fff;
+}
+.service-row{
+  display:grid;
+  grid-template-columns:140px 56px 1fr 1fr auto;
+  align-items:start;
+  gap:28px;
+  padding:56px 0;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+  position:relative;z-index:1;
+  transition:background 0.3s ease;
+}
+.service-row:first-child{border-top:1px solid rgba(255,255,255,0.06);}
+.service-row:hover{background:rgba(255,255,255,0.025);}
+.service-row-visual{
+  width:140px;height:100px;border-radius:4px;overflow:hidden;
+  position:relative;flex-shrink:0;background:#0e0e0e;
+}
+.service-row-visual img{
+  width:100%;height:100%;object-fit:cover;display:block;
+  filter:brightness(0.7) saturate(0.9);
+  transform:scale(1.07);
+  clip-path:inset(0 0 100% 0);
+  transition:clip-path 1.2s cubic-bezier(0.16,1,0.3,1),transform 1.2s cubic-bezier(0.16,1,0.3,1),filter 0.4s ease;
+}
+.service-row-visual.in img{clip-path:inset(0 0 0% 0);transform:scale(1);}
+.service-row:hover .service-row-visual img{filter:brightness(0.85) saturate(1);}
+.service-row-visual-badge{
+  position:absolute;bottom:8px;left:8px;
+  width:30px;height:30px;border-radius:50%;
+  background:rgba(8,8,8,0.55);backdrop-filter:blur(4px);
+  border:1px solid rgba(255,255,255,0.18);
+  display:flex;align-items:center;justify-content:center;
+  color:rgba(255,255,255,0.85);
+  transition:border-color 0.35s ease,color 0.35s ease,background 0.35s ease;
+}
+.service-row:hover .service-row-visual-badge{
+  border-color:rgba(210,170,100,0.7);color:rgb(224,187,128);background:rgba(210,170,100,0.35);
+}
+.service-row-num{
+  font-family:'Cormorant Garamond',serif;
+  font-style:italic;font-weight:300;
+  font-size:2.4rem;color:rgba(255,255,255,0.1);
+  line-height:1;padding-top:4px;
+  transition:color 0.35s ease;
+}
+.service-row:hover .service-row-num{color:rgba(210,170,100,0.3);}
+.service-row-name{
+  font-family:'Cormorant Garamond',serif;
+  font-weight:300;font-size:1.9rem;
+  color:#fff;line-height:1.1;
+  padding-top:6px;
+}
+.service-row-desc{
+  font-size:0.84rem;color:rgba(255,255,255,0.6);
+  line-height:1.8;padding-top:8px;
+  max-width:340px;
+}
+.service-row-tag{
+  font-size:0.6rem;letter-spacing:0.18em;text-transform:uppercase;
+  color:rgba(255,255,255,0.4);
+  padding-top:10px;
+  white-space:nowrap;
+}
 
-/* The big ghost number in the trigger */
-.mt-ghost {
-  position: absolute;
-  right: 44px; bottom: -16px;
-  font-family: 'Cormorant Garamond', serif;
-  font-style: italic;
-  font-weight: 300;
-  font-size: clamp(8rem, 16vw, 18rem);
-  letter-spacing: -0.06em;
-  line-height: 1;
-  color: rgba(255,255,255,0.032);
-  pointer-events: none;
-  user-select: none;
-  transition: color 0.6s;
+/* ── PROOF ── */
+.proof-section{padding:100px 52px;border-top:1px solid rgba(255,255,255,0.06);}
+.proof-eyebrow{font-size:0.68rem;letter-spacing:0.26em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-bottom:16px;font-weight:500;}
+.proof-title{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:300;font-size:clamp(1.8rem,3vw,2.6rem);color:#fff;margin-bottom:48px;}
+.proof-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px;}
+@media(max-width:1280px){.proof-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+.proof-card.kingsbridge{background:#191b19;}
+.proof-card.kingsbridge img{object-fit:contain;padding:35px 30px 125px;box-sizing:border-box;filter:none;}
+.proof-card{position:relative;display:block;text-decoration:none;height:340px;overflow:hidden;}
+.proof-card img{width:100%;height:100%;object-fit:cover;display:block;filter:brightness(0.68);transition:transform 0.7s;}
+.proof-card:hover img{transform:scale(1.05);}
+.proof-card-overlay{position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,0.85) 0%,transparent 55%);}
+.proof-card-info{position:absolute;bottom:26px;left:28px;right:28px;}
+.proof-card-cat{font-size:0.62rem;letter-spacing:0.16em;text-transform:uppercase;color:rgba(255,255,255,0.6);margin-bottom:6px;}
+.proof-card-name{font-family:'Cormorant Garamond',serif;font-size:1.7rem;color:#fff;margin-bottom:4px;}
+.proof-card-link{font-size:0.72rem;color:rgba(255,255,255,0.55);}
+
+/* ── CODEIT SPOTLIGHT ── */
+.spotlight{
+  margin:0 52px;
+  border:1px solid rgba(255,255,255,0.06);
+  border-top:none;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  min-height:520px;
+  overflow:hidden;
 }
-.more-trigger:hover .mt-ghost { color: rgba(255,255,255,0.055); }
+.spotlight-visual{
+  position:relative;
+  background:#060912;
+  overflow:hidden;
+}
+.spotlight-visual img{
+  width:100%;height:100%;
+  object-fit:cover;
+  object-position:center;
+  display:block;
+  filter:brightness(0.7) saturate(1.2);
+  transition:transform 0.8s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+.spotlight:hover .spotlight-visual img{transform:scale(1.04);}
+.spotlight-badge{
+  position:absolute;top:28px;left:28px;
+  display:inline-flex;align-items:center;gap:7px;
+  padding:6px 14px;
+  border:1px solid rgba(255,255,255,0.15);
+  background:rgba(0,0,0,0.4);
+  backdrop-filter:blur(12px);
+  font-size:0.52rem;letter-spacing:0.22em;text-transform:uppercase;
+  color:rgba(255,255,255,0.7);
+}
+.badge-dot{
+  width:5px;height:5px;border-radius:50%;
+  background:#7CF5A2;flex-shrink:0;
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+
+.spotlight-content{
+  background:#0e0e0e;
+  padding:72px 64px;
+  display:flex;flex-direction:column;justify-content:center;
+  border-left:1px solid rgba(255,255,255,0.05);
+}
+.spotlight-label{
+  font-size:0.62rem;letter-spacing:0.26em;text-transform:uppercase;
+  color:rgba(255,255,255,0.5);margin-bottom:24px;font-weight:500;
+  display:flex;align-items:center;gap:12px;
+}
+.spotlight-label::before{
+  content:'';width:20px;height:1px;
+  background:rgba(255,255,255,0.2);
+}
+.spotlight-title{
+  font-family:'Cormorant Garamond',serif;
+  font-weight:300;font-size:clamp(1.9rem,2.8vw,2.8rem);
+  color:#fff;line-height:1.1;
+  margin-bottom:20px;
+}
+.spotlight-body{
+  font-size:0.86rem;color:rgba(255,255,255,0.62);
+  line-height:1.85;margin-bottom:36px;
+  max-width:380px;
+}
+.spotlight-body strong{color:rgba(255,255,255,0.9);font-weight:500;}
+.spotlight-features{
+  list-style:none;
+  display:flex;flex-direction:column;gap:10px;
+  margin-bottom:44px;
+}
+.spotlight-features li{
+  display:flex;align-items:center;gap:12px;
+  font-size:0.82rem;color:rgba(255,255,255,0.68);
+}
+.feat-check{
+  width:18px;height:18px;border-radius:50%;
+  background:rgba(124,245,162,0.1);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;color:#7CF5A2;
+}
+.spotlight-cta{
+  display:inline-flex;align-items:center;gap:14px;
+  background:#fff;color:#080808;
+  padding:14px 28px;
+  text-decoration:none;font-size:0.75rem;font-weight:500;
+  letter-spacing:0.1em;text-transform:uppercase;
+  transition:opacity 0.2s;align-self:flex-start;
+}
+.spotlight-cta:hover{opacity:0.85;}
+.spotlight-cta-arrow{
+  transition:transform 0.25s;
+}
+.spotlight-cta:hover .spotlight-cta-arrow{transform:translateX(4px);}
+.spotlight-cta.secondary{
+  background:transparent;color:#fff;
+  border:1px solid rgba(255,255,255,0.28);
+}
+.spotlight-cta.secondary:hover{opacity:1;border-color:rgba(255,255,255,0.6);}
+
+/* ── AI EXAMPLES ── */
+.ai-examples-head{padding:100px 52px 0;max-width:720px;}
+.ai-examples-eyebrow{font-size:0.68rem;letter-spacing:0.26em;text-transform:uppercase;color:rgba(255,255,255,0.55);margin-bottom:20px;font-weight:500;}
+.ai-examples-title{font-family:'Cormorant Garamond',serif;font-weight:300;font-style:italic;font-size:clamp(2rem,3.5vw,3rem);color:#fff;line-height:1.15;}
+
+.spotlight.reverse .spotlight-content{order:1;border-left:none;border-right:1px solid rgba(255,255,255,0.05);}
+.spotlight.reverse .spotlight-visual{order:2;}
+.ai-examples .spotlight{margin-top:44px;}
+
+.chat-mock{background:#0a0a0a;padding:48px;display:flex;flex-direction:column;justify-content:center;gap:12px;height:100%;}
+.chat-mock-bubble{max-width:85%;padding:12px 16px;border-radius:12px;font-size:0.82rem;line-height:1.6;}
+.chat-mock-bubble.user{align-self:flex-end;background:#fff;color:#080808;border-bottom-right-radius:3px;}
+.chat-mock-bubble.assistant{align-self:flex-start;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.9);border-bottom-left-radius:3px;}
+
+/* Agentic demo block */
+.agent-demo{margin:44px 52px 0;border:1px solid rgba(255,255,255,0.06);background:#0e0e0e;padding:56px 64px;}
+.agent-demo-form{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:32px;margin-bottom:8px;}
+.agent-demo-form input,.agent-demo-form select{
+  background:#0a0a0a;border:1px solid rgba(255,255,255,0.1);border-radius:8px;
+  padding:12px 14px;color:#fff;font-family:inherit;font-size:0.85rem;outline:none;
+}
+.agent-demo-form input:focus,.agent-demo-form select:focus{border-color:rgba(255,255,255,0.3);}
+.agent-demo-run{
+  margin-top:14px;background:#fff;color:#080808;border:none;border-radius:8px;
+  padding:13px 30px;font-size:0.8rem;font-weight:600;letter-spacing:0.04em;cursor:pointer;
+}
+.agent-demo-run:disabled{opacity:0.4;cursor:default;}
+.agent-demo-err{color:#f87171;font-size:0.8rem;margin-top:10px;min-height:18px;}
+.agent-demo-trace{margin-top:36px;}
+.agent-demo-step{margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,0.06);opacity:0;transform:translateY(8px);transition:opacity 0.4s,transform 0.4s;}
+.agent-demo-step.visible{opacity:1;transform:none;}
+.agent-demo-step:last-child{border-bottom:none}
+.agent-demo-step-label{display:flex;align-items:center;gap:9px;font-size:0.78rem;font-weight:600;color:rgba(255,255,255,0.7);margin-bottom:10px;}
+.agent-demo-step-dot{width:7px;height:7px;border-radius:50%;background:#7CF5A2;flex-shrink:0;}
+.agent-demo-step-body{font-size:0.85rem;color:rgba(255,255,255,0.7);line-height:1.7;white-space:pre-wrap;background:#0a0a0a;border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:14px 16px;}
+
+@media(max-width:900px){
+  .spotlight.reverse .spotlight-content,.spotlight.reverse .spotlight-visual{order:initial;}
+  .ai-examples-head{padding:64px 20px 0;}
+  .agent-demo{margin:32px 20px 0;padding:32px 22px;}
+  .agent-demo-form{grid-template-columns:1fr;}
+}
+
+/* ── PROCESS ── */
+.process{
+  padding:120px 52px;
+  border-top:1px solid rgba(255,255,255,0.06);
+  display:grid;
+  grid-template-columns:320px 1fr;
+  gap:80px;
+  align-items:start;
+}
+.process-label{
+  font-size:0.68rem;letter-spacing:0.26em;text-transform:uppercase;
+  color:rgba(255,255,255,0.5);margin-bottom:20px;font-weight:500;
+}
+.process-heading{
+  font-family:'Cormorant Garamond',serif;
+  font-weight:300;font-size:clamp(2rem,3vw,3rem);
+  color:#fff;line-height:1.1;
+}
+.process-steps{
+  display:flex;flex-direction:column;gap:0;
+  padding-top:6px;
+}
+.process-step{
+  display:grid;
+  grid-template-columns:48px 1fr;
+  gap:24px;
+  padding:32px 0;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+  align-items:start;
+}
+.process-step:first-child{border-top:1px solid rgba(255,255,255,0.06);}
+.step-n{
+  font-family:'Cormorant Garamond',serif;
+  font-style:italic;font-size:1.5rem;
+  color:rgba(255,255,255,0.3);line-height:1;
+  padding-top:2px;
+}
+.step-name{
+  font-size:0.9rem;font-weight:600;
+  color:rgba(255,255,255,0.9);margin-bottom:6px;
+}
+.step-desc{
+  font-size:0.8rem;color:rgba(255,255,255,0.6);line-height:1.72;
+}
+
+/* ── CTA ── */
+.cta-section{
+  padding:120px 52px;
+  background:#0e0e0e;
+  border-top:1px solid rgba(255,255,255,0.06);
+  display:flex;align-items:center;justify-content:space-between;
+  gap:40px;flex-wrap:wrap;
+}
+.cta-left h2{
+  font-family:'Cormorant Garamond',serif;
+  font-weight:300;font-style:italic;
+  font-size:clamp(2.4rem,4vw,4rem);
+  color:#fff;line-height:1;margin-bottom:14px;
+}
+.cta-left p{font-size:0.85rem;color:rgba(255,255,255,0.6);max-width:360px;line-height:1.7;}
+.cta-btn{
+  display:inline-flex;align-items:center;gap:14px;
+  background:#fff;color:#080808;
+  padding:16px 36px;
+  text-decoration:none;font-size:0.78rem;font-weight:500;
+  letter-spacing:0.1em;text-transform:uppercase;
+  transition:opacity 0.2s;white-space:nowrap;
+}
+.cta-btn:hover{opacity:0.85;}
+.cta-btns{display:flex;gap:14px;flex-wrap:wrap;}
+.cta-btn-ghost{
+  display:inline-flex;align-items:center;gap:14px;
+  border:1px solid rgba(255,255,255,0.22);color:rgba(255,255,255,0.85);
+  padding:16px 36px;
+  text-decoration:none;font-size:0.78rem;font-weight:500;
+  letter-spacing:0.1em;text-transform:uppercase;
+  transition:border-color 0.2s,color 0.2s;white-space:nowrap;
+}
+.cta-btn-ghost:hover{border-color:rgba(255,255,255,0.5);color:#fff;}
+
+/* ── FOOTER ── */
+footer{
+  padding:22px 52px;
+  background:#080808;
+  display:flex;align-items:center;justify-content:space-between;
+  border-top:1px solid rgba(255,255,255,0.05);
+  flex-wrap:wrap;gap:12px;
+}
+.f-copy{font-size:0.68rem;color:rgba(255,255,255,0.4);}
+.f-back{font-size:0.68rem;color:rgba(255,255,255,0.5);text-decoration:none;transition:color 0.2s;}
+.f-back:hover{color:rgba(255,255,255,0.6);}
+
+/* Business-system services use the existing visual language—no generic SaaS mockup. */
+.system-visual{display:grid;place-items:center;background:linear-gradient(145deg,#121212,#090909);border:1px solid rgba(255,255,255,.08)}
+.system-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:5px;width:112px}
+.system-grid span{display:grid;place-items:center;min-height:36px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.035);font-size:.48rem;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.6)}
+.office-visual{background:radial-gradient(circle at 50% 45%,rgba(255,255,255,.09),transparent 58%),#090909}
+.office-service .service-row-tag a{color:rgba(255,255,255,.62);text-decoration:none;border-bottom:1px solid rgba(255,255,255,.2);padding-bottom:2px}
+.office-service .service-row-tag a:hover{color:#fff;border-color:#fff}
+.nav-cta,.hero-btn-primary,.cta-btn{background:#c8ff5a!important;color:#0b0d0f!important}
+.services-eyebrow,.services-group-num{color:#c8ff5a}
+.services-section::before{background:radial-gradient(ellipse at center,rgba(200,255,90,.07) 0%,transparent 70%)}
+.service-row:hover .service-row-visual-badge{border-color:rgba(200,255,90,.7);color:#c8ff5a;background:rgba(200,255,90,.12)}
+.service-row:hover .service-row-num{color:rgba(200,255,90,.32)}
+.f-links{display:flex;gap:20px}
+
+/* Light public-site direction: warm, calm, and intentionally sparse. */
+:root{--paper:#f4f3ef;--ink:#111315;--muted:#686d70;--line:rgba(17,19,21,.13);--lime:#c8ff5a}
+body{background:var(--paper);color:var(--ink)}
+nav{background:rgba(244,243,239,.9);border-color:var(--line)}
+.nav-logo-name{color:var(--ink)}
+.nav-logo-mark{filter:invert(1)}
+.nav-right a{color:rgba(17,19,21,.58)}
+.nav-right a:hover{color:var(--ink)}
+.hero{min-height:760px;display:flex;align-items:center;padding-top:180px;padding-bottom:120px;border-color:var(--line);background:radial-gradient(circle at 74% 28%,#fff 0,transparent 30%),var(--paper)}
+.hero-canvas,.hero-grain,.hero-logo,.hero-visual{display:none!important}
+.hero-content{max-width:980px}
+.hero-eyebrow{color:var(--muted);margin-bottom:28px}
+.hero-h1{max-width:900px;color:var(--ink);font-size:clamp(3.4rem,7.2vw,7.2rem);line-height:.94;letter-spacing:-.065em;margin-bottom:30px}
+.hero-sub{max-width:660px;color:var(--muted);font-size:1.06rem;line-height:1.7;margin-bottom:34px}
+.hero-btn-primary{border-radius:100px;padding:15px 25px}
+.hero-btn-secondary{color:#4f5457;border-color:rgba(17,19,21,.22)}
+.hero-btn-secondary:hover{color:var(--ink);border-color:var(--ink)}
+.services-section{background:#fff}
+.services-section::before{display:none}
+.services-eyebrow,.services-group-num{color:#61782e}
+.services-heading,.services-group-title,.service-row-name{color:var(--ink)}
+.services-group-desc,.service-row-desc,.service-row-tag{color:var(--muted)}
+.services-group-head,.service-row{border-color:var(--line)}
+.service-row:hover{background:#f7f6f2}
+.service-row-num{color:rgba(17,19,21,.2)}
+.service-row:hover .service-row-num{color:#6b842f}
+.system-visual{background:linear-gradient(145deg,#e8e7e2,#f8f7f3);border-color:var(--line)}
+.system-grid span{border-color:var(--line);background:rgba(255,255,255,.55);color:#555b5e}
+.office-visual{background:radial-gradient(circle at 50% 45%,#fff,transparent 58%),#e9e8e3}
+.office-service .service-row-tag a{color:#4d5457;border-color:rgba(17,19,21,.22)}
+.office-service .service-row-tag a:hover{color:var(--ink);border-color:var(--ink)}
+footer{background:var(--paper);border-color:var(--line)}
+.f-copy,.f-back{color:#656a6d}
+.f-back:hover{color:var(--ink)}
+
+/* Homepage edit: three choices, one proof section, one call to action. */
+.hero{background:#101214;color:#fff;border-color:rgba(255,255,255,.08)}
+.hero-content{max-width:900px}
+.hero-eyebrow{color:rgba(255,255,255,.56)}
+.hero-h1{color:#fff;max-width:820px}
+.hero-sub{color:rgba(255,255,255,.66);max-width:560px}
+.hero-btn-secondary{color:rgba(255,255,255,.68);border-color:rgba(255,255,255,.28)}
+.hero-btn-secondary:hover{color:#fff;border-color:#fff}
+.services-intro{padding-bottom:42px}
+.services-heading{max-width:560px}
+.services-section>.services-group-head,
+.services-section>.service-row{display:none}
+.services-section>.home-offer{display:grid}
+.services-section>.home-offer:first-of-type{border-top:1px solid var(--line)}
+.spotlight,.ai-examples,.process{display:none!important}
+.proof-section{padding-top:90px;padding-bottom:90px}
+.hero{margin:96px 28px 28px;border-radius:28px;padding-top:110px;min-height:690px}
+nav{padding-top:18px;padding-bottom:18px}
+.services-section{padding-top:28px;padding-bottom:80px}
+.services-section>.home-offer{grid-template-columns:minmax(280px,1.05fr) 62px minmax(190px,.7fr) minmax(240px,1fr) minmax(150px,.45fr);align-items:center;min-height:360px}
+.services-section>.home-offer .service-row-visual{width:100%;height:270px;border-radius:18px;overflow:hidden}
+.before-after{display:grid!important;grid-template-columns:1fr 1fr;gap:8px;padding:10px;background:#111!important}
+.before-after>div{position:relative;height:100%;overflow:hidden;border-radius:10px;background:#25282b}
+.before-after img{width:100%;height:100%;object-fit:cover;display:block}
+.before-after .before-state{display:grid;place-items:center;padding:20px;color:#b9bdc0;text-align:center;font-size:.7rem;line-height:1.6;border:1px dashed rgba(255,255,255,.16)}
+.example-label{position:absolute;top:10px;left:10px;z-index:2;padding:6px 8px;border-radius:100px;background:#fff;color:#111;font-size:.56rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.office-preview{display:grid!important;grid-template-columns:76px 1fr;background:linear-gradient(145deg,#111416,#080a0b)!important;padding:9px;color:#fff;border:1px solid #2d3234}
+.office-preview aside{display:flex;flex-direction:column;gap:5px;padding:10px 7px;border-right:1px solid #2d3234;font-size:.46rem;color:#858b8e}
+.office-preview aside b{color:#fff;margin-bottom:7px;font-size:.62rem;letter-spacing:.14em}
+.office-preview aside span{padding:6px;border-radius:5px}
+.office-preview aside span:first-of-type{background:#252a2c;color:#fff}
+.office-preview main{padding:10px 12px;overflow:hidden}
+.office-topline{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#8d9396;font-size:.45rem;text-transform:uppercase;letter-spacing:.1em}
+.office-live{display:inline-flex;align-items:center;gap:4px;color:#c8ff5a}
+.office-live::before{content:'';width:5px;height:5px;border-radius:50%;background:#c8ff5a;box-shadow:0 0 8px rgba(200,255,90,.65)}
+.office-preview h3{margin:6px 0 8px;font-size:.86rem;letter-spacing:-.025em}
+.office-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.office-metrics span{display:grid;gap:5px;padding:7px 6px;border:1px solid #2d3234;border-radius:6px;background:rgba(255,255,255,.035);font-size:.4rem;color:#8f9698}
+.office-metrics strong{font-size:.72rem;color:#fff}
+.office-workspace{display:grid;grid-template-columns:1.05fr .95fr;gap:6px;margin-top:6px}
+.office-panel{padding:7px;border:1px solid #2d3234;border-radius:7px;background:#15191b;min-height:78px}
+.office-panel-title{display:flex;justify-content:space-between;color:#dfe3e4;font-size:.43rem;margin-bottom:7px}
+.office-panel-title span{color:#7f878a}
+.office-pipeline{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.office-pipeline div{padding:5px 3px;border-radius:4px;background:#202527;color:#9ca3a5;font-size:.36rem;text-align:center}
+.office-pipeline b{display:block;color:#fff;font-size:.53rem;margin-bottom:2px}
+.office-activity{display:grid;gap:5px}
+.office-activity div{display:grid;grid-template-columns:5px 1fr;gap:5px;align-items:center;color:#9ba1a3;font-size:.36rem}
+.office-activity i{width:5px;height:5px;border-radius:50%;background:#c8ff5a}
+.video-preview{display:grid!important;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px;background:#111!important}
+.video-preview video{width:100%;height:100%;object-fit:cover;border-radius:10px;display:block;background:#1b1d1f}
+.video-reels{grid-column:1/-1!important;display:grid!important;grid-template-columns:repeat(4,minmax(0,230px));justify-content:center;gap:10px;padding:10px!important;background:#111416!important;border-color:#111416!important}
+.video-reels figure{margin:0}
+.video-reels video{width:100%;aspect-ratio:9/16;object-fit:cover;border-radius:10px;display:block;background:#1b1d1f}
+.video-reels figcaption{margin-top:8px;color:#adb3b5;font-size:.62rem;letter-spacing:.08em;text-transform:uppercase}
+.video-reels figcaption b{display:block;color:#fff;font-size:.8rem;letter-spacing:0;text-transform:none;margin-bottom:3px}
+@media(max-width:900px){.video-reels{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.offer-toggle{border:0;background:transparent;color:#4c5356;font:inherit;font-size:.6rem;letter-spacing:.13em;text-transform:uppercase;text-align:left;cursor:pointer;padding:12px 0;white-space:normal}
+.offer-toggle::after{content:' +';color:#6b842f}
+.home-offer.is-open .offer-toggle::after{content:' −'}
+.offer-toggle:hover,.offer-toggle:focus-visible{color:#111316;outline:none}
+.offer-panel{display:none;grid-column:1/-1;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 0 26px;margin-top:-18px}
+.home-offer.is-open .offer-panel{display:grid}
+.offer-panel>div{padding:20px;border:1px solid var(--line);border-radius:14px;background:#f6f5f1}
+.offer-panel-kicker{display:block;margin-bottom:9px;color:#61782e;font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.offer-panel h4{margin:0 0 8px;color:#111316;font-size:.96rem}
+.offer-panel p{margin:0;color:#5d6366;font-size:.76rem;line-height:1.7}
+.offer-panel-actions{grid-column:1/-1!important;display:flex;align-items:center;justify-content:space-between;gap:18px;background:#111416!important;color:#fff}
+.offer-panel-actions p{color:#adb3b5;max-width:620px}
+.offer-panel-actions a{flex:0 0 auto;color:#111;text-decoration:none;background:#c8ff5a;border-radius:100px;padding:12px 18px;font-size:.68rem;font-weight:700}
+.concept-note{position:absolute;right:10px;bottom:10px;padding:6px 8px;border-radius:100px;background:rgba(17,19,21,.82);color:#fff;font-size:.52rem;letter-spacing:.08em;text-transform:uppercase}
+.portfolio-head{display:flex;align-items:end;justify-content:space-between;gap:24px;margin-bottom:42px}
+.portfolio-head .proof-title{margin:0}
+.proof-section{background:#f7f7f3;border-top:1px solid rgba(17,20,22,.1)}
+.proof-section .proof-eyebrow{color:#747978}
+.proof-section .proof-title{color:#111416}
+.portfolio-link{display:inline-flex;align-items:center;justify-content:center;gap:10px;color:#fff;background:#111416;text-decoration:none;border:1px solid #111416;border-radius:100px;padding:13px 20px;font-size:.72rem;font-weight:600;transition:background .2s ease,color .2s ease,transform .2s ease}
+.portfolio-link:hover{background:#c8ff5a;color:#111416;transform:translateY(-1px)}
+.portfolio-after{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-top:24px;padding:24px 0 0;border-top:1px solid rgba(17,20,22,.14)}
+.portfolio-after p{margin:0;color:#646968;font-size:.82rem;line-height:1.6}
+.employee-entry{display:block;margin-top:10px;color:#50565a;font-size:.67rem}
+@media(max-width:900px){.hero{margin:78px 12px 16px;border-radius:20px}.services-section>.home-offer{grid-template-columns:1fr;min-height:0}.services-section>.home-offer .service-row-visual{height:240px}.offer-panel{grid-template-columns:1fr;margin-top:8px}.offer-panel-actions{align-items:flex-start;flex-direction:column}.portfolio-head,.portfolio-after{align-items:flex-start;flex-direction:column}.office-preview{grid-template-columns:70px 1fr}}
 
 /* ── RESPONSIVE ── */
-@media (max-width: 860px) {
-  .aw-header { padding: 16px 20px; }
-  .aw-grid { grid-template-columns: repeat(2, 1fr); }
-  .aw-card { height: 52vw; min-height: 180px; }
-  .more-trigger { padding: 52px 24px 48px; min-height: 36vh; }
-  .card-num { font-size: 3rem; top: 18px; right: 18px; }
-  .mt-ghost { font-size: 6rem; }
+@media(max-width:900px){
+  nav{padding:16px 20px;}
+  .nav-right{gap:12px}.nav-right>a:not(.nav-cta){display:none}.nav-cta{padding:9px 13px;font-size:.62rem!important}.nav-logo-name{font-size:.95rem}
+  .hero{min-height:auto;padding:138px 20px 78px;}
+  .hero-h1{font-size:clamp(3rem,13vw,5rem)}
+  .services-section{padding:0 20px;}
+  .service-row{grid-template-columns:1fr;gap:6px;row-gap:5px;padding:28px 0;}
+  .service-row-visual{width:100%;height:140px;margin-bottom:4px;}
+  .service-row-num{padding-top:0;font-size:1.7rem;}
+  .service-row-name{font-size:1.5rem;padding-top:0;}
+  .service-row-desc{max-width:none;font-size:0.8rem;line-height:1.6;padding-top:2px;}
+  .service-row-tag{padding-top:2px;}
+  .services-intro{padding:44px 0 4px;}
+  .services-group-head{padding:32px 0 4px;}
+  .proof-section{padding:64px 20px;}
+  .proof-grid{grid-template-columns:1fr;}
+  .spotlight{margin:0 20px;grid-template-columns:1fr;}
+  .spotlight-visual{height:52vw;min-height:260px;}
+  .spotlight-content{padding:48px 24px;}
+  .process{grid-template-columns:1fr;padding:72px 20px;gap:40px;}
+  .cta-section{padding:72px 20px;}
+  footer{padding:18px 20px;flex-direction:column;text-align:center;}.f-links{justify-content:center;flex-wrap:wrap}
 }
 </style>
 </head>
 <body>
 
-<!-- Film grain -->
-<svg class="grain" aria-hidden="true">
-  <filter id="gr" x="0%" y="0%" width="100%" height="100%">
-    <feTurbulence type="fractalNoise" baseFrequency="0.68" numOctaves="4" stitchTiles="stitch"/>
-    <feColorMatrix type="saturate" values="0"/>
-  </filter>
-  <rect width="100%" height="100%" filter="url(#gr)"/>
-</svg>
-
-<!-- Intro screen -->
-<div class="intro-screen" id="introScreen">
-  <div class="is-name">Mustafa Alqudah</div>
-  <div class="is-role">Web Designer &nbsp;·&nbsp; Toronto</div>
-</div>
-
-<!-- All-work overlay -->
-<div class="aw-overlay" id="awOverlay" role="dialog" aria-label="All projects">
-  <div class="aw-header">
-    <span class="aw-title">All work — 13 projects</span>
-    <button class="aw-close" id="awClose">✕ &nbsp; Close</button>
-  </div>
-  <div class="aw-grid">
-
-    <a href="projects/aether.html" target="_blank" rel="noopener" class="aw-card">
-      <div class="aw-card-img" style="background-color:#120e08; background-image:url('https://images.unsplash.com/photo-1587017539504-67cfbddac569?auto=format&fit=crop&w=900&q=80')"></div>
-      <div class="aw-card-overlay"></div>
-      <div class="aw-card-info"><div class="aw-card-cat">Perfume House</div><div class="aw-card-name">Aether</div></div>
-    </a>
-
-    <a href="projects/smyrna.html" target="_blank" rel="noopener" class="aw-card">
-      <div class="aw-card-img" style="background-color:#0f0c0b; background-image:url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=900&q=80')"></div>
-      <div class="aw-card-overlay"></div>
-      <div class="aw-card-info"><div class="aw-card-cat">Restaurant · Barcelona</div><div class="aw-card-name">SMYRNA by Cem</div></div>
-    </a>
-
-    <a href="projects/roux.html" target="_blank" rel="noopener" class="aw-card">
-      <div class="aw-card-img" style="background-color:#0e0809; background-image:url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=900&q=80')"></div>
-      <div class="aw-card-overlay"></div>
-      <div class="aw-card-info"><div class="aw-card-cat">Fine Dining · Toronto</div><div class="aw-card-name">ROUX</div></div>
-    </a>
-
-    <a href="projects/nours-kitchen.html" target="_blank" rel="noopener" class="aw-card">
-      <div class="aw-card-img" style="background-color:#110e0b; background-image:url('https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80')"></div>
-      <div class="aw-card-overlay"></div>
-      <div class="aw-card-info"><div class="aw-card-cat">Home Food · Toronto</div><div class="aw-card-name">Nour's Kitchen</div></div>
-    </a>
-
-    <a href="projects/drift-coffee.html" target="_blank" rel="noopener" class="aw-card">
-      <div class="aw-card-img" style="background-color:#0c0b09; background-image:url('https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80')"></div>
-      <div class="aw-card-overlay"></div>
-      <div class="aw-card-info"><div class="aw-card-cat">Coffee Shop · Toronto</div><div class="aw-card-name">Drift Coffee</div></div>
-    </a>
-
-    <a href="projects/greek-pastry.html" target="_blank" rel="noopener" class="aw-card">
-      <div class="aw-card-img" style="background-color:#14120e; background-image:url('https://images.unsplash.com/photo-1519676867240-f03562e64548?auto=format&fit=crop&w=900&q=80')"></div>
-      <div class="aw-card-overlay"></div>
-      <div class="aw-card-info"><div class="aw-card-cat">Bakery · Barcelona</div><div class="aw-card-name">Greek Pastry</div></div>
-    </a>
-
-    <a href="projects/maya-reyes.html" target="_blank" rel="noopener" class="aw-card">
-      <div class="aw-card-img" style="background-color:#0d0c0c; background-image:url('https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=900&q=80')"></div>
-      <div class="aw-card-overlay"></div>
-      <div class="aw-card-info"><div class="aw-card-cat">Photographer · Toronto</div><div class="aw-card-name">Maya Reyes</div></div>
-    </a>
-
-    <a href="projects/vault.html" target="_blank" rel="noopener" class="aw-card">
-      <div class="aw-card-img" style="background-color:#080614; background-image:url('https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=900&q=80')"></div>
-      <div class="aw-card-overlay"></div>
-      <div class="aw-card-info"><div class="aw-card-cat">Indie Game</div><div class="aw-card-name">VAULT</div></div>
-    </a>
-
-    <a href="projects/cavo.html" target="_blank" rel="noopener" class="aw-card">
-      <div class="aw-card-img" style="background-color:#030810; background-image:url('https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?auto=format&fit=crop&w=900&q=80')"></div>
-      <div class="aw-card-overlay"></div>
-      <div class="aw-card-info"><div class="aw-card-cat">Yacht Charter · Mediterranean</div><div class="aw-card-name">Cavo</div></div>
-    </a>
-
-    <a href="projects/kira.html" target="_blank" rel="noopener" class="aw-card">
-      <div class="aw-card-img" style="background-color:#090909; background-image:url('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=900&q=80')"></div>
-      <div class="aw-card-overlay"></div>
-      <div class="aw-card-info"><div class="aw-card-cat">Fashion Label · Toronto</div><div class="aw-card-name">KIRA</div></div>
-    </a>
-
-    <a href="projects/elara.html" target="_blank" rel="noopener" class="aw-card">
-      <div class="aw-card-img" style="background-color:#120a0e; background-image:url('https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=900&q=80')"></div>
-      <div class="aw-card-overlay"></div>
-      <div class="aw-card-info"><div class="aw-card-cat">Beauty Studio · Toronto</div><div class="aw-card-name">Elara Studio</div></div>
-    </a>
-
-    <a href="projects/solstice.html" target="_blank" rel="noopener" class="aw-card">
-      <div class="aw-card-img" style="background-color:#0c0e0a; background-image:url('https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=900&q=80')"></div>
-      <div class="aw-card-overlay"></div>
-      <div class="aw-card-info"><div class="aw-card-cat">Yoga Studio · Toronto</div><div class="aw-card-name">Solstice</div></div>
-    </a>
-
-    <a href="projects/forma.html" target="_blank" rel="noopener" class="aw-card">
-      <div class="aw-card-img" style="background-color:#0a0a0a; background-image:url('https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=900&q=80')"></div>
-      <div class="aw-card-overlay"></div>
-      <div class="aw-card-info"><div class="aw-card-cat">Architecture Studio · Toronto</div><div class="aw-card-name">Forma Studio</div></div>
-    </a>
-
-  </div>
-</div>
-
-<!-- Nav -->
-<nav class="nav" id="nav">
-  <a href="/" class="nav-logo">
-    <span class="nav-logo-name">LYNQ</span>
-    <span class="nav-logo-by">Mustafa Alqudah</span>
-  </a>
+<nav>
+  <a href="/" class="nav-logo"><img src="/logo.svg" alt="" class="nav-logo-mark"><span class="nav-logo-name">LYNQ</span></a>
   <div class="nav-right">
-    <a href="/services">Services</a>
-    <a href="#contact">Contact</a>
-    <a href="#contact" class="nav-cta">Start a project →</a>
+    <a href="#what-we-do">Services</a>
+    <a href="/digital-transformation">Digital transformation</a>
+    <a href="/portfolio">Work</a>
+    <a href="/office">Office &amp; AI</a>
+    <a href="/book" class="nav-cta">Start a project →</a>
   </div>
 </nav>
 
-<!-- Work label bar -->
-<div class="work-label">
-  <span class="wl-left">Selected work &mdash; 2024–2026</span>
-  <span class="wl-right"><span class="wl-dot"></span>Art, not templates</span>
-</div>
-
-<!-- Gallery -->
-<main class="gallery">
-
-  <!-- 01 · NOUR'S KITCHEN — featured -->
-  <a href="projects/nours-kitchen.html" target="_blank" rel="noopener"
-     class="gallery-card featured">
-    <span class="card-num">01</span>
-    <div class="card-img" style="
-      background-color: #1a0f0a;
-      background-image: url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=2400&q=88');
-      background-position: center 40%;
-    "></div>
-    <div class="card-overlay"></div>
-    <div class="card-info">
-      <div class="card-cat">Home Food · Toronto</div>
-      <div class="card-name">Nour's Kitchen</div>
+<!-- Hero -->
+<section class="hero">
+  <canvas class="hero-canvas" id="heroCanvas" aria-hidden="true"></canvas>
+  <svg class="hero-grain" aria-hidden="true">
+    <filter id="heroGrain" x="0%" y="0%" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+    </filter>
+    <rect width="100%" height="100%" filter="url(#heroGrain)"/>
+  </svg>
+  <div class="hero-content">
+    <img src="/assets/lynq-wordmark-white.png" alt="LYNQ" class="hero-logo">
+    <div class="hero-eyebrow">Websites · Digital Transformation · LYNQ Office</div>
+    <h1 class="hero-h1">Build better.<br>Work smarter.</h1>
+    <p class="hero-sub">Websites and connected business systems, designed around what you actually need.</p>
+    <div class="hero-btns">
+      <a href="/book" class="hero-btn-primary">
+        Start a project
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <a href="#what-we-do" class="hero-btn-secondary">See what we do ↓</a>
     </div>
-  </a>
-
-  <!-- 02 · AETHER -->
-  <a href="projects/aether.html" target="_blank" rel="noopener"
-     class="gallery-card aether-featured">
-    <span class="card-num">02</span>
-    <div class="card-img" style="background:
-      radial-gradient(ellipse 70% 90% at 74% 36%, rgba(120,72,6,0.68) 0%, transparent 52%),
-      radial-gradient(ellipse 55% 60% at 16% 82%, rgba(58,34,4,0.5) 0%, transparent 48%),
-      radial-gradient(ellipse 40% 50% at 50% 10%, rgba(90,54,6,0.32) 0%, transparent 44%),
-      linear-gradient(168deg, #0c0904 0%, #1d1509 26%, #2e1d0c 44%, #160f05 70%, #080603 100%);
-    "></div>
-    <div class="card-overlay"></div>
-    <div class="card-info">
-      <div class="card-cat">Perfume House · Independent</div>
-      <div class="card-name">Aether</div>
-    </div>
-  </a>
-
-  <!-- 03 · ELARA STUDIO -->
-  <a href="projects/elara.html" target="_blank" rel="noopener" class="gallery-card">
-    <span class="card-num">03</span>
-    <div class="card-img" style="
-      background-color: #1a0f14;
-      background-image: url('https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=85');
-    "></div>
-    <div class="card-overlay"></div>
-    <div class="card-info">
-      <div class="card-cat">Home Beauty · Toronto</div>
-      <div class="card-name">Elara Studio</div>
-    </div>
-  </a>
-
-  <!-- 04 · SMYRNA -->
-  <a href="projects/smyrna.html" target="_blank" rel="noopener" class="gallery-card">
-    <span class="card-num">04</span>
-    <div class="card-img" style="
-      background-color: #0f0c0b;
-      background-image: url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1400&q=85');
-    "></div>
-    <div class="card-overlay"></div>
-    <div class="card-info">
-      <div class="card-cat">Restaurant · Barcelona</div>
-      <div class="card-name">SMYRNA by Cem</div>
-    </div>
-  </a>
-
-  <!-- 05 · ROUX -->
-  <a href="projects/roux.html" target="_blank" rel="noopener" class="gallery-card">
-    <span class="card-num">05</span>
-    <div class="card-img" style="
-      background-color: #0e0809;
-      background-image: url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1400&q=85');
-    "></div>
-    <div class="card-overlay"></div>
-    <div class="card-info">
-      <div class="card-cat">Fine Dining · Toronto</div>
-      <div class="card-name">ROUX</div>
-    </div>
-  </a>
-
-  <!-- VIEW ALL TRIGGER -->
-  <div class="more-trigger" id="moreTrigger" role="button" tabindex="0"
-       aria-label="View all 13 projects">
-    <div class="mt-left">
-      <span class="mt-eyebrow">13 projects · 2024–2026</span>
-      <span class="mt-heading">All<br>the work.</span>
-    </div>
-    <div class="mt-right">
-      <span class="mt-arrow">
-        <span class="mt-arrow-line"></span>
-        Explore all
-      </span>
-    </div>
-    <span class="mt-ghost" aria-hidden="true">13</span>
   </div>
-
-</main>
-
-<!-- Contact -->
-<section class="contact" id="contact">
-  <div class="contact-tag">Get in touch</div>
-  <h2 class="contact-heading">Ready when<br><em>you are.</em></h2>
-  <a href="mailto:hello@lynq.build" class="contact-email">hello@lynq.build</a>
-  <p class="contact-sub">Reply within 24 hours.</p>
+  <div class="hero-visual">
+    <div class="hero-pillar">
+      <div class="hero-pillar-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg></div>
+      <div>
+        <div class="hero-pillar-title">Design</div>
+        <div class="hero-pillar-desc">Premium websites, strategic redesigns, and landing pages built to convert, not just look good.</div>
+      </div>
+    </div>
+    <div class="hero-pillar">
+      <div class="hero-pillar-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></div>
+      <div>
+        <div class="hero-pillar-title">Digital Transformation</div>
+        <div class="hero-pillar-desc">Turn spreadsheets, email, WhatsApp, and manual work into one connected operating system.</div>
+      </div>
+    </div>
+    <div class="hero-pillar">
+      <div class="hero-pillar-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2l2.4 7.2H22l-6 4.4 2.3 7.1-6.3-4.6-6.3 4.6 2.3-7.1-6-4.4h7.6z"/></svg></div>
+      <div>
+        <div class="hero-pillar-title">LYNQ Office</div>
+        <div class="hero-pillar-desc">A personalized workspace for customers, sales, projects, communication, automation, and AI.</div>
+      </div>
+    </div>
+  </div>
 </section>
 
-<footer class="footer">
-  <div class="footer-logo">LYNQ</div>
-  <div class="footer-right">
-    <a href="/services">Services</a>
-    <a href="#contact">Contact</a>
-    <span>&copy; 2026 Mustafa Alqudah</span>
+<!-- Services List -->
+<section class="services-section" id="what-we-do">
+
+  <div class="services-intro">
+    <div class="services-eyebrow">What We Do</div>
+    <h2 class="services-heading">Four ways we help.</h2>
   </div>
+
+  <div class="services-group-head">
+    <span class="services-group-num">01 – 04</span>
+    <span class="services-group-title">Design</span>
+  </div>
+
+  <div class="service-row home-offer home-offer-1">
+    <div class="service-row-visual img-curtain">
+      <img src="/assets/case-studies/website-landing-page-concept-v1.png" alt="Premium responsive website and landing-page example" loading="eager">
+      <div class="service-row-visual-badge"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></div>
+    </div>
+    <div class="service-row-num">01</div>
+    <div class="service-row-name">Websites &amp;<br>Landing Pages</div>
+    <div class="service-row-desc">Clear, premium websites built to turn attention into business.</div>
+    <button class="offer-toggle" type="button" aria-expanded="false">See exactly how it helps</button>
+    <div class="offer-panel">
+      <div><span class="offer-panel-kicker">What we do</span><h4>Strategy, design, copy, and build</h4><p>We clarify the offer, structure the customer journey, write the key pages, build responsive layouts, and connect analytics and lead capture.</p></div>
+      <div><span class="offer-panel-kicker">How it helps</span><h4>A site that makes the next step obvious</h4><p>Visitors understand what you sell, why it matters, and how to contact or buy from you—without hunting through a crowded website.</p></div>
+      <div><span class="offer-panel-kicker">Where savings come from</span><h4>Less wasted traffic and rework</h4><p>A focused conversion path can reduce wasted ad clicks, repetitive sales explanations, and the cost of rebuilding disconnected pages later.</p></div>
+      <div class="offer-panel-actions"><p>Every recommendation is tied to a business goal. We do not promise made-up conversion numbers; we set up measurement so you can see what improves.</p><a href="/book">Discuss your website →</a></div>
+    </div>
+  </div>
+
+  <div class="service-row">
+    <div class="service-row-visual img-curtain">
+      <img src="https://images.unsplash.com/photo-1497316730643-415fac54a2af?auto=format&fit=crop&w=400&q=70" alt="" loading="lazy">
+      <div class="service-row-visual-badge"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+    </div>
+    <div class="service-row-num">02</div>
+    <div class="service-row-name">Brand, Portfolio<br>&amp; Redesigns</div>
+    <div class="service-row-desc">New builds and strategic redesigns for founders, studios, experts, and creative brands that need to be taken seriously.</div>
+    <div class="service-row-tag">Creative</div>
+  </div>
+
+  <div class="service-row">
+    <div class="service-row-visual img-curtain">
+      <img src="https://images.unsplash.com/photo-1751200065697-4461cc2b43cb?auto=format&fit=crop&w=400&q=70" alt="" loading="lazy">
+      <div class="service-row-visual-badge"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
+    </div>
+    <div class="service-row-num">03</div>
+    <div class="service-row-name">Professional<br>Landing Pages</div>
+    <div class="service-row-desc">For advisors, coaches, consultants, and service providers. One page, one goal: turn visitors into clients. SEO-ready and built for ads.</div>
+    <div class="service-row-tag">Conversion-focused</div>
+  </div>
+
+  <div class="service-row">
+    <div class="service-row-visual img-curtain">
+      <img src="https://images.unsplash.com/photo-1743090660977-babf07732432?auto=format&fit=crop&w=400&q=70" alt="" loading="lazy">
+      <div class="service-row-visual-badge"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg></div>
+    </div>
+    <div class="service-row-num">04</div>
+    <div class="service-row-name">AI-Powered<br>Web Products</div>
+    <div class="service-row-desc">Custom web applications built with AI at the core — interactive tools, educational platforms, and products that do something, not just say something.</div>
+    <div class="service-row-tag">Featured below ↓</div>
+  </div>
+
+  <div class="services-group-head">
+    <span class="services-group-num">05</span>
+    <span class="services-group-title">Consulting</span>
+  </div>
+
+  <div class="service-row">
+    <div class="service-row-visual img-curtain">
+      <img src="https://images.unsplash.com/photo-1758873269035-aae0e1fd3422?auto=format&fit=crop&w=400&q=70" alt="" loading="lazy">
+      <div class="service-row-visual-badge"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg></div>
+    </div>
+    <div class="service-row-num">05</div>
+    <div class="service-row-name">Web Strategy &<br>Consulting</div>
+    <div class="service-row-desc">A second opinion on your current site, a roadmap before you build anything, or ongoing strategy for a business figuring out its next move online. No build required.</div>
+    <div class="service-row-tag">Advisory</div>
+  </div>
+
+  <div class="services-group-head">
+    <span class="services-group-num">06 – 08</span>
+    <span class="services-group-title">AI Automation</span>
+  </div>
+
+  <div class="service-row">
+    <div class="service-row-visual img-curtain">
+      <img src="https://images.unsplash.com/photo-1683322499436-f4383dd59f5a?auto=format&fit=crop&w=400&q=70" alt="" loading="lazy">
+      <div class="service-row-visual-badge"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></div>
+    </div>
+    <div class="service-row-num">06</div>
+    <div class="service-row-name">AI Lead Generation<br>& Outreach</div>
+    <div class="service-row-desc">A live pipeline that finds real local businesses in your target market, qualifies them by website quality, and hands off warm leads for outreach — built for agencies, sales teams, and anyone selling into a local market.</div>
+    <div class="service-row-tag">Automated</div>
+  </div>
+
+  <div class="service-row">
+    <div class="service-row-visual img-curtain">
+      <img src="https://images.unsplash.com/photo-1766066014237-00645c74e9c6?auto=format&fit=crop&w=400&q=70" alt="" loading="lazy">
+      <div class="service-row-visual-badge"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg></div>
+    </div>
+    <div class="service-row-num">07</div>
+    <div class="service-row-name">AI Customer<br>Support</div>
+    <div class="service-row-desc">A chat assistant trained on your actual menu, services, and hours — embedded on your site to answer visitor questions and guide them toward booking, around the clock. Not a script — the same AI answering questions on this site right now, bottom right.</div>
+    <div class="service-row-tag">Always on</div>
+  </div>
+
+  <div class="service-row">
+    <div class="service-row-visual img-curtain">
+      <img src="https://images.unsplash.com/photo-1697577418970-95d99b5a55cf?auto=format&fit=crop&w=400&q=70" alt="" loading="lazy">
+      <div class="service-row-visual-badge"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></div>
+    </div>
+    <div class="service-row-num">08</div>
+    <div class="service-row-name">Agentic AI<br>Workflows</div>
+    <div class="service-row-desc">Custom AI agents that take real, multi-step action for your business — qualify a lead, draft a personalized follow-up, then check their own work for mistakes before anything goes out. Built around the specific process you need automated.</div>
+    <div class="service-row-tag">Custom-built</div>
+  </div>
+
+  <div class="services-group-head" id="transformation">
+    <span class="services-group-num">09 – 10</span>
+    <span class="services-group-title">Business Systems</span>
+  </div>
+
+  <div class="service-row home-offer home-offer-2">
+    <div class="service-row-visual before-after">
+      <div class="before-state"><span class="example-label">Before</span>Scattered pages<br>Unclear parent journey<br>Manual follow-up</div>
+      <div><span class="example-label">After</span><img src="/assets/case-studies/kids-coding-concept-v1.png" alt="Kids Coding digital transformation concept" loading="eager"><span class="concept-note">Concept visual</span></div>
+    </div>
+    <div class="service-row-num">02</div>
+    <div class="service-row-name">Digital<br>Transformation</div>
+    <div class="service-row-desc">Turn disconnected tools and manual work into one practical system.</div>
+    <button class="offer-toggle" type="button" aria-expanded="false">See the transformation approach</button>
+    <div class="offer-panel">
+      <div><span class="offer-panel-kicker">What we do</span><h4>Map the business before choosing tools</h4><p>We document the customer journey, team handoffs, information flow, and bottlenecks, then design one practical system around the real operation.</p></div>
+      <div><span class="offer-panel-kicker">How it helps</span><h4>One connected way of working</h4><p>CRM, forms, projects, reporting, and communication stop living in separate places, so the team can see what is happening and what comes next.</p></div>
+      <div><span class="offer-panel-kicker">Where savings come from</span><h4>Fewer tools, mistakes, and manual handoffs</h4><p>Savings are found by removing duplicate subscriptions, repeated data entry, missed follow-ups, and hours spent assembling reports by hand.</p></div>
+      <div class="offer-panel-actions"><p>We start with an operational audit, show the recommended architecture, and phase the work so you only build what the business will actually use.</p><a href="/digital-transformation">Explore digital transformation →</a></div>
+    </div>
+  </div>
+
+  <div class="service-row office-service home-offer home-offer-3">
+    <div class="service-row-visual office-preview" aria-label="Example LYNQ Office workspace">
+      <aside><b>LYNQ</b><span>Overview</span><span>Projects</span><span>My Work</span><span>CRM</span><span>Content Studio</span><span>Automations</span></aside>
+      <main><div class="office-topline"><span>Example workspace</span><span class="office-live">Systems online</span></div><h3>Operations command center</h3><div class="office-metrics"><span><strong>12</strong>Tasks</span><span><strong>5</strong>Projects</span><span><strong>3</strong>Approvals</span><span><strong>4</strong>Automations</span></div><div class="office-workspace"><div class="office-panel"><div class="office-panel-title">Sales pipeline <span>This month</span></div><div class="office-pipeline"><div><b>8</b>New</div><div><b>4</b>Qualified</div><div><b>2</b>Proposal</div></div></div><div class="office-panel"><div class="office-panel-title">Automation activity <span>Live</span></div><div class="office-activity"><div><i></i><span>Lead routed to sales</span></div><div><i></i><span>Follow-up prepared</span></div><div><i></i><span>Report updated</span></div></div></div></div></main>
+    </div>
+    <div class="service-row-num">03</div>
+    <div class="service-row-name">LYNQ Office<br>&amp; AI Automation</div>
+    <div class="service-row-desc">A private operating system for your team, or custom AI automation for almost any repeatable company process. LYNQ runs on its own Office.</div>
+    <button class="offer-toggle" type="button" aria-expanded="false">See what the Office can run</button>
+    <div class="offer-panel">
+      <div><span class="offer-panel-kicker">What it is</span><h4>Your company's operating workspace</h4><p>Projects, CRM, tasks, approvals, marketing, communications, reporting, and team access are organized around how your company actually works.</p></div>
+      <div><span class="offer-panel-kicker">What we automate</span><h4>Repeatable work across the business</h4><p>Examples include intake, lead qualification, routing, follow-up drafts, reminders, status updates, document preparation, recurring reports, and on-brand posts, carousels and reels drafted in Content Studio.</p></div>
+      <div><span class="offer-panel-kicker">Where savings come from</span><h4>Less admin and fewer disconnected tools</h4><p>The Office can consolidate workflows, reduce copying between systems, shorten handoffs, and prevent opportunities or approvals from being forgotten.</p></div>
+      <div class="offer-panel-actions"><p>You control roles, approvals, and what automation is allowed to do. We identify the highest-value workflows first and measure the time or software cost they replace.</p><a href="/office">Explore Office &amp; AI →</a></div>
+    </div>
+  </div>
+
+  <div class="service-row home-offer home-offer-4" id="video">
+    <div class="service-row-visual video-preview" aria-label="AI video examples">
+      <video src="/assets/video/lynq-path.mp4" poster="/assets/video/lynq-path.jpg" muted loop playsinline preload="none" data-autoplay></video>
+      <video src="/assets/video/codeit-create.mp4" poster="/assets/video/codeit-create.jpg" muted loop playsinline preload="none" data-autoplay></video>
+      <video src="/assets/video/lynq-leak.mp4" poster="/assets/video/lynq-leak.jpg" muted loop playsinline preload="none" data-autoplay></video>
+    </div>
+    <div class="service-row-num">04</div>
+    <div class="service-row-name">AI Video<br>&amp; Reels</div>
+    <div class="service-row-desc">Short brand films, story ads, and reels made with AI video, ready for Instagram, TikTok, and YouTube Shorts.</div>
+    <button class="offer-toggle" type="button" aria-expanded="false">Watch the video work</button>
+    <div class="offer-panel">
+      <div><span class="offer-panel-kicker">What we make</span><h4>Reels, ads, and short brand films</h4><p>Vertical reels, story-driven ads, product promos, and brand introductions, from 15 seconds to about a minute.</p></div>
+      <div><span class="offer-panel-kicker">How it's made</span><h4>Script, storyboard, AI video, edit</h4><p>We write the script around your offer, generate the scenes with AI video tools, then cut it with voice, captions, music, and your branding.</p></div>
+      <div><span class="offer-panel-kicker">What you get</span><h4>Ready to post, in every format</h4><p>Final files in vertical, square, and wide versions, sized for Instagram, TikTok, YouTube Shorts, ads, and your website.</p></div>
+      <div class="video-reels"><figure><video src="/assets/video/kingsbridge-property.mp4" poster="/assets/video/kingsbridge-property.jpg" preload="none" controls playsinline></video><figcaption><b>The property never stops</b>Kingsbridge Group · client</figcaption></figure><figure><video src="/assets/video/kingsbridge-home.mp4" poster="/assets/video/kingsbridge-home.jpg" preload="none" controls playsinline></video><figcaption><b>Custom homes</b>Kingsbridge Group · client</figcaption></figure><figure><video src="/assets/video/lynq-leak.mp4" poster="/assets/video/lynq-leak.jpg" preload="none" controls playsinline></video><figcaption><b>A leak at 9pm</b>LYNQ · story ad</figcaption></figure><figure><video src="/assets/video/codeit-create.mp4" poster="/assets/video/codeit-create.jpg" preload="none" controls playsinline></video><figcaption><b>Screen time? Create time.</b>CodeIt · product reel</figcaption></figure></div>
+      <div class="offer-panel-actions"><p>Pair it with your website so every reel sends people somewhere that turns them into customers.</p><a href="/book">Start a video project →</a></div>
+    </div>
+  </div>
+
+</section>
+
+<!-- Proof -->
+<section class="proof-section">
+  <div class="proof-eyebrow">Selected portfolio</div>
+  <div class="portfolio-head"><h2 class="proof-title">Real work, built for real businesses.</h2></div>
+  <div class="proof-grid">
+    <a href="https://arcubed-label.vercel.app" target="_blank" rel="noopener" class="proof-card">
+      <img src="/assets/img/arcubed-card.jpg" alt="Arcubed Label" loading="lazy">
+      <div class="proof-card-overlay"></div>
+      <div class="proof-card-info">
+        <div class="proof-card-cat">Crochet bags &middot; E-commerce &middot; Amman</div>
+        <div class="proof-card-name">Arcubed Label</div>
+        <div class="proof-card-link">Made-to-order store, built end to end<br>arcubed-label.vercel.app &rarr;</div>
+      </div>
+    </a>
+    <a href="/work/kingsbridge" class="proof-card kingsbridge">
+      <img src="/assets/img/kingsbridge-logo.png" alt="Kingsbridge Group" loading="lazy">
+      <div class="proof-card-overlay"></div>
+      <div class="proof-card-info">
+        <div class="proof-card-cat">Completed client website · Toronto &amp; GTA</div>
+        <div class="proof-card-name">Kingsbridge Group</div>
+        <div class="proof-card-link">Custom homes &amp; property management<br>Read the case study →</div>
+      </div>
+    </a>
+    <a href="https://nasmajo.com" target="_blank" rel="noopener" class="proof-card">
+      <img src="https://nasmajo.com/03_Images/web/mezze-spread-overhead.jpg" alt="Nasma">
+      <div class="proof-card-overlay"></div>
+      <div class="proof-card-info">
+        <div class="proof-card-cat">Restaurant · Amman</div>
+        <div class="proof-card-name">Nasma</div>
+        <div class="proof-card-link">nasmajo.com →</div>
+      </div>
+    </a>
+    <a href="https://finding-amy.com" target="_blank" rel="noopener" class="proof-card">
+      <img src="https://finding-amy.com/img/xl-amy-in-situ.jpeg" alt="Finding Amy">
+      <div class="proof-card-overlay"></div>
+      <div class="proof-card-info">
+        <div class="proof-card-cat">Photo Booth Rental · Amman</div>
+        <div class="proof-card-name">Finding Amy</div>
+        <div class="proof-card-link">finding-amy.com →</div>
+      </div>
+    </a>
+  </div>
+  <div class="portfolio-after"><p>Explore every LYNQ client project, case study, and design concept.</p><a class="portfolio-link" href="/portfolio" aria-label="See more LYNQ projects">More projects →</a></div>
+</section>
+
+<!-- CodeIt Learn Spotlight -->
+<div class="spotlight">
+  <div class="spotlight-visual">
+    <img src="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1200&q=85" alt="CodeIt Learn — AI coding platform for kids">
+    <div class="spotlight-badge">
+      <span class="badge-dot"></span>
+      Live product
+    </div>
+  </div>
+  <div class="spotlight-content">
+    <div class="spotlight-label">Product build · EdTech · AI</div>
+    <h2 class="spotlight-title">We built an AI that teaches kids to build websites.</h2>
+    <p class="spotlight-body"><strong>CodeIt Learn</strong> is an AI-powered platform where kids build and edit real websites directly in the browser — no setup, no downloads, no experience needed. They see their changes instantly, like a game.</p>
+    <ul class="spotlight-features">
+      <li>
+        <div class="feat-check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+        AI guides kids through building their first website
+      </li>
+      <li>
+        <div class="feat-check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+        Live editing — change colors, text, images instantly
+      </li>
+      <li>
+        <div class="feat-check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+        No code knowledge required — learns by doing
+      </li>
+      <li>
+        <div class="feat-check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+        Built entirely by LYNQ
+      </li>
+    </ul>
+    <a href="https://codeitlearn.com" target="_blank" rel="noopener" class="spotlight-cta secondary">
+      Visit CodeIt Learn
+      <svg class="spotlight-cta-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+  </div>
+</div>
+
+<!-- AI Examples -->
+<section class="ai-examples">
+  <div class="ai-examples-head">
+    <div class="ai-examples-eyebrow">See it, don't just read about it</div>
+    <h2 class="ai-examples-title">Three AI services.<br>See how they actually work.</h2>
+  </div>
+
+  <!-- AI Customer Support -->
+  <div class="spotlight">
+    <div class="spotlight-visual">
+      <div class="chat-mock">
+        <div class="chat-mock-bubble assistant">Hey — what are you building or trying to fix on the web side?</div>
+        <div class="chat-mock-bubble user">Do you build restaurant sites?</div>
+        <div class="chat-mock-bubble assistant">Absolutely — restaurants are one of our core clients. We build fast, mobile-friendly sites that make it dead simple to book a table or order.</div>
+      </div>
+      <div class="spotlight-badge"><span class="badge-dot"></span>Live on this page</div>
+    </div>
+    <div class="spotlight-content">
+      <div class="spotlight-label">AI Customer Support</div>
+      <h2 class="spotlight-title">The assistant watching this page, right now.</h2>
+      <p class="spotlight-body">Not a screenshot — click through and it's the exact same AI a client's visitors would talk to, trained on their real menu, services, and hours instead of ours.</p>
+      <a href="#" class="spotlight-cta secondary" onclick="event.preventDefault(); window.LynqChat && window.LynqChat.open();">
+        Open the assistant
+        <svg class="spotlight-cta-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <!-- AI Lead Generation -->
+  <div class="spotlight reverse">
+    <div class="spotlight-visual">
+      <img src="https://images.unsplash.com/photo-1692737349870-e3bfc704ebf9?auto=format&fit=crop&w=1200&q=85" alt="Restaurant lead scored by the pipeline">
+      <div class="spotlight-badge"><span class="badge-dot"></span>How it works</div>
+    </div>
+    <div class="spotlight-content">
+      <div class="spotlight-label">AI Lead Generation</div>
+      <h2 class="spotlight-title">It finds businesses with no website before they ever ask.</h2>
+      <p class="spotlight-body">The pipeline scans a target market, checks which local businesses have no site (or a weak one), and scores each one automatically — restaurants, clinics, contractors, anyone worth approaching. No manual searching.</p>
+    </div>
+  </div>
+
+  <!-- Agentic AI Workflows — interactive live demo -->
+  <div class="agent-demo">
+    <div class="spotlight-label">Agentic AI Workflows</div>
+    <h2 class="spotlight-title">Try the actual agent — type a hypothetical business below.</h2>
+    <p class="spotlight-body" style="max-width:520px">Three real, chained AI calls: it analyzes the situation, drafts outreach from its own analysis, then critiques its own draft for accuracy before showing it to you.</p>
+    <div class="agent-demo-form">
+      <input id="agent-demo-name" type="text" placeholder="Business name (e.g. Joe's Diner)" maxlength="80">
+      <input id="agent-demo-industry" type="text" placeholder="Industry (e.g. Burger restaurant)" maxlength="60">
+      <select id="agent-demo-situation">
+        <option value="No website">No website</option>
+        <option value="Outdated or slow website">Outdated or slow website</option>
+        <option value="Has a site, wants more leads">Has a site, wants more leads</option>
+      </select>
+    </div>
+    <button class="agent-demo-run" id="agent-demo-run">Run the agent →</button>
+    <div class="agent-demo-err" id="agent-demo-err"></div>
+    <div class="agent-demo-trace" id="agent-demo-trace"></div>
+  </div>
+</section>
+
+<!-- Process -->
+<section class="process">
+  <div>
+    <div class="process-label">How it works</div>
+    <h2 class="process-heading">Simple process,<br>no surprises.</h2>
+  </div>
+  <div class="process-steps">
+    <div class="process-step">
+      <div class="step-n">1</div>
+      <div>
+        <div class="step-name">Brief & Strategy</div>
+        <div class="step-desc">We learn your business, your audience, and your goal. One call is usually enough to have everything we need.</div>
+      </div>
+    </div>
+    <div class="process-step">
+      <div class="step-n">2</div>
+      <div>
+        <div class="step-name">Design & Copy</div>
+        <div class="step-desc">We handle the design direction, layout, and copy. You give feedback. We refine until it's right.</div>
+      </div>
+    </div>
+    <div class="process-step">
+      <div class="step-n">3</div>
+      <div>
+        <div class="step-name">Build & Launch</div>
+        <div class="step-desc">Your site goes live fast — typically 1–2 weeks for most projects. We handle hosting, domain, and deployment.</div>
+      </div>
+    </div>
+    <div class="process-step">
+      <div class="step-n">4</div>
+      <div>
+        <div class="step-name">Support</div>
+        <div class="step-desc">Changes, updates, and tweaks after launch. We don't disappear once the site is live.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section" id="contact">
+  <div class="cta-left">
+    <h2>Let's build<br>something.</h2>
+    <p>Tell us what you need. We'll tell you if we're the right fit — honestly.</p>
+  </div>
+  <div class="cta-btns">
+    <a href="/book" class="cta-btn">
+      Book a call
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+    <a href="mailto:mustafa@lynq.build" class="cta-btn-ghost">mustafa@lynq.build</a>
+  </div>
+</section>
+
+<footer>
+  <div class="f-copy">© 2026 LYNQ · Mustafa Alqudah · Toronto &amp; Amman</div>
+  <div class="f-links"><a href="/" class="f-back">Website</a><a href="/portfolio" class="f-back">Portfolio</a><a href="/office" class="f-back">Office</a></div>
 </footer>
 
 <script>
-/* ── INTRO SCREEN ── */
-const intro = document.getElementById('introScreen');
-setTimeout(() => {
-  intro.classList.add('out');
-  setTimeout(() => intro.remove(), 900);
-}, 1600);
-
-/* ── NAV SCROLL ── */
-const nav = document.getElementById('nav');
-window.addEventListener('scroll', () => {
-  nav.classList.toggle('scrolled', window.scrollY > 40);
-}, { passive: true });
-
-/* ── 3D PARALLAX ON CARDS ── */
-document.querySelectorAll('.gallery-card').forEach(card => {
-  const img = card.querySelector('.card-img');
-  if (!img) return;
-  let raf;
-  card.addEventListener('mousemove', e => {
-    cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(() => {
-      const r   = card.getBoundingClientRect();
-      const xp  = (e.clientX - r.left)  / r.width  - 0.5;
-      const yp  = (e.clientY - r.top)   / r.height - 0.5;
-      img.style.transition  = 'none';
-      img.style.transform   = `scale(1.1) translate(${xp * -28}px, ${yp * -28}px)`;
-      card.style.transition = 'none';
-      card.style.transform  = `perspective(1400px) rotateX(${yp * -5}deg) rotateY(${xp * 5}deg)`;
+(function () {
+  document.querySelectorAll('.offer-toggle').forEach((button) => {
+    button.addEventListener('click', () => {
+      const offer = button.closest('.home-offer');
+      const opening = !offer.classList.contains('is-open');
+      offer.classList.toggle('is-open', opening);
+      button.setAttribute('aria-expanded', String(opening));
     });
   });
-  card.addEventListener('mouseleave', () => {
-    cancelAnimationFrame(raf);
-    img.style.transition  = 'transform 0.9s cubic-bezier(0.25,0.46,0.45,0.94)';
-    img.style.transform   = '';
-    card.style.transition = 'transform 0.9s cubic-bezier(0.25,0.46,0.45,0.94)';
-    card.style.transform  = '';
-  });
-});
-
-/* ── ALL-WORK OVERLAY ── */
-const overlay    = document.getElementById('awOverlay');
-const moreTrigger = document.getElementById('moreTrigger');
-const awClose    = document.getElementById('awClose');
-
-function openOverlay() {
-  overlay.classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-function closeOverlay() {
-  overlay.classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-moreTrigger.addEventListener('click', openOverlay);
-moreTrigger.addEventListener('keydown', e => {
-  if (e.key === 'Enter' || e.key === ' ') openOverlay();
-});
-awClose.addEventListener('click', closeOverlay);
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeOverlay();
-});
+})();
 </script>
+<script>
+(function () {
+  const btn = document.getElementById('agent-demo-run');
+  const errEl = document.getElementById('agent-demo-err');
+  const traceEl = document.getElementById('agent-demo-trace');
+  if (!btn) return;
+
+  function stepEl(label, body) {
+    const el = document.createElement('div');
+    el.className = 'agent-demo-step';
+    el.innerHTML = `<div class="agent-demo-step-label"><span class="agent-demo-step-dot"></span>${label}</div><div class="agent-demo-step-body"></div>`;
+    el.querySelector('.agent-demo-step-body').textContent = body;
+    return el;
+  }
+
+  function reveal(el) {
+    traceEl.appendChild(el);
+    requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('visible')));
+  }
+
+  btn.addEventListener('click', async () => {
+    const businessName = document.getElementById('agent-demo-name').value.trim();
+    const industry = document.getElementById('agent-demo-industry').value.trim();
+    const situation = document.getElementById('agent-demo-situation').value;
+    errEl.textContent = '';
+    traceEl.innerHTML = '';
+
+    if (!businessName || !industry) {
+      errEl.textContent = 'Add a business name and industry first.';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Running the agent…';
+
+    try {
+      const res = await fetch('/api/agent-demo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ businessName, industry, situation }),
+      });
+      const data = await res.json();
+
+      if (data.steps?.analysis) {
+        reveal(stepEl('Step 1 — Analyze', `Angle: ${data.steps.analysis.angle}\n\nRisk: ${data.steps.analysis.risk}`));
+      }
+      if (data.steps?.draft) {
+        reveal(stepEl('Step 2 — Draft, seeded with Step 1', `Subject: ${data.steps.draft.subject}\n\n${data.steps.draft.email}`));
+      }
+      if (data.steps?.review) {
+        reveal(stepEl('Step 3 — Self-review', `Confidence: ${data.steps.review.confidence}/100\n${data.steps.review.note}`));
+      }
+      if (!res.ok) {
+        errEl.textContent = data.error || 'Something went wrong.';
+      }
+    } catch (err) {
+      errEl.textContent = 'Something went wrong — try again in a moment.';
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Run the agent →';
+  });
+})();
+</script>
+<script>
+(function () {
+  const curtains = document.querySelectorAll('.img-curtain');
+  if (!curtains.length) return;
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.12 });
+  curtains.forEach((el) => io.observe(el));
+})();
+</script>
+<script>
+(function () {
+  const canvas = document.getElementById('heroCanvas');
+  if (!canvas) return;
+  const hero = canvas.closest('.hero');
+  const ctx = canvas.getContext('2d');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isSmall = window.innerWidth < 700;
+
+  let w, h, dpr, particles, mouseX = 0.5, mouseY = 0.5, targetX = 0.5, targetY = 0.5;
+
+  function sizeCanvas() {
+    const rect = hero.getBoundingClientRect();
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = rect.width; h = rect.height;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function makeParticles() {
+    const count = Math.min(55, Math.max(24, Math.round((w * h) / (isSmall ? 24000 : 14000))));
+    particles = Array.from({ length: count }, () => ({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      vx: (Math.random() - 0.5) * 0.2,
+      vy: (Math.random() - 0.5) * 0.2,
+      r: Math.random() * 1.1 + 0.9,
+    }));
+  }
+
+  sizeCanvas();
+  makeParticles();
+
+  const LINK_DIST = isSmall ? 120 : 170;
+  const AMBER = '224,187,128';
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+
+    mouseX += (targetX - mouseX) * 0.04;
+    mouseY += (targetY - mouseY) * 0.04;
+    const px = (mouseX - 0.5) * 20;
+    const py = (mouseY - 0.5) * 14;
+
+    for (const p of particles) {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < -20) p.x = w + 20; if (p.x > w + 20) p.x = -20;
+      if (p.y < -20) p.y = h + 20; if (p.y > h + 20) p.y = -20;
+    }
+
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const a = particles[i], b = particles[j];
+        const dx = a.x - b.x, dy = a.y - b.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < LINK_DIST) {
+          ctx.strokeStyle = `rgba(${AMBER},${0.2 * (1 - dist / LINK_DIST)})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(a.x + px, a.y + py);
+          ctx.lineTo(b.x + px, b.y + py);
+          ctx.stroke();
+        }
+      }
+    }
+    for (const p of particles) {
+      const gx = p.x + px, gy = p.y + py;
+      const glow = ctx.createRadialGradient(gx, gy, 0, gx, gy, p.r * 3.5);
+      glow.addColorStop(0, `rgba(${AMBER},0.25)`);
+      glow.addColorStop(1, `rgba(${AMBER},0)`);
+      ctx.beginPath();
+      ctx.arc(gx, gy, p.r * 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = glow;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(gx, gy, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${AMBER},0.6)`;
+      ctx.fill();
+    }
+  }
+
+  let raf = null;
+  function loop() {
+    draw();
+    raf = requestAnimationFrame(loop);
+  }
+
+  if (reduceMotion) {
+    draw();
+  } else {
+    loop();
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) { cancelAnimationFrame(raf); raf = null; }
+      else if (!raf) { loop(); }
+    });
+  }
+
+  if (window.matchMedia('(hover: hover)').matches) {
+    hero.addEventListener('mousemove', (e) => {
+      const rect = hero.getBoundingClientRect();
+      targetX = (e.clientX - rect.left) / rect.width;
+      targetY = (e.clientY - rect.top) / rect.height;
+    });
+    hero.addEventListener('mouseleave', () => { targetX = 0.5; targetY = 0.5; });
+  }
+
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => { sizeCanvas(); makeParticles(); }, 200);
+  });
+})();
+</script>
+<script>
+(function(){
+  var vids=document.querySelectorAll('video[data-autoplay]');
+  if(!vids.length||!('IntersectionObserver' in window))return;
+  if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){var v=e.target;if(e.isIntersecting){v.play&&v.play().catch(function(){});}else{v.pause&&v.pause();}});},{threshold:.35});
+  vids.forEach(function(v){io.observe(v);});
+})();
+</script>
+<script src="/assets/chat-widget.js" defer></script>
 </body>
 </html>

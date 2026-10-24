@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Finding Amy — Case Study · LYNQ</title>
+<meta name="description" content="How LYNQ built Finding Amy — a photo booth rental brand in Amman — from an Instagram page into a full 3D interactive website with live booking.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://lynq.build/work/finding-amy">
+<meta property="og:title" content="Finding Amy — Case Study · LYNQ">
+<meta property="og:description" content="How LYNQ built Finding Amy — a photo booth rental brand in Amman — from an Instagram page into a full 3D interactive website with live booking.">
+<meta property="og:image" content="https://finding-amy.com/img/xl-amy-in-situ.jpeg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Finding Amy — Case Study · LYNQ">
+<meta name="twitter:description" content="How LYNQ built Finding Amy — a photo booth rental brand in Amman — from an Instagram page into a full 3D interactive website with live booking.">
+<meta name="twitter:image" content="https://finding-amy.com/img/xl-amy-in-situ.jpeg">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="canonical" href="https://lynq.build/work/finding-amy">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/gallery.css?v=7">
+<style>
+  body{ overflow-x:hidden; }
+  .nav{ animation:none; }
+
+  .cs-hero{
+    position:relative; height:78vh; min-height:520px; overflow:hidden;
+    display:flex; align-items:flex-end; margin-top:0;
+  }
+  .cs-hero-img{
+    position:absolute; inset:0; background-size:cover; background-position:center 42%;
+    background-color:#1c0509;
+  }
+  .cs-hero-scrim{
+    position:absolute; inset:0;
+    background:linear-gradient(to top, rgba(8,8,8,0.94) 0%, rgba(8,8,8,0.35) 50%, rgba(8,8,8,0.15) 100%);
+  }
+  .cs-hero-inner{ position:relative; z-index:2; padding:0 44px 64px; max-width:900px; }
+  .cs-eyebrow{
+    font-size:0.68rem; letter-spacing:0.28em; text-transform:uppercase;
+    color:rgba(255,255,255,0.5); margin-bottom:20px;
+  }
+  .cs-title{
+    margin:0;
+    font-family:'Cormorant Garamond', serif; font-style:italic; font-weight:300;
+    font-size:clamp(3rem, 7vw, 6.5rem); color:#fff; letter-spacing:-0.02em; line-height:0.98;
+    margin-bottom:22px;
+  }
+  .cs-dek{ font-size:clamp(1rem, 1.5vw, 1.25rem); color:rgba(255,255,255,0.68); max-width:560px; line-height:1.55; margin-bottom:32px; }
+  .cs-hero-btn{
+    display:inline-flex; align-items:center; gap:10px; padding:15px 30px; border-radius:8px;
+    background:#fff; color:#080808; font-size:0.82rem; font-weight:500; letter-spacing:0.06em;
+    text-decoration:none; transition:opacity 0.2s, transform 0.25s;
+  }
+  .cs-hero-btn:hover{ opacity:0.88; transform:translateY(-2px); }
+
+  .cs-meta{
+    display:flex; flex-wrap:wrap; gap:0; padding:36px 44px; border-bottom:1px solid rgba(255,255,255,0.07);
+  }
+  .cs-meta-item{ padding-right:56px; margin-bottom:12px; }
+  .cs-meta-label{ font-size:0.6rem; letter-spacing:0.2em; text-transform:uppercase; color:rgba(255,255,255,0.3); margin-bottom:8px; }
+  .cs-meta-value{ font-size:0.95rem; color:rgba(255,255,255,0.85); }
+  .cs-meta-value a{ color:#fff; text-decoration:none; border-bottom:1px solid rgba(255,255,255,0.25); transition:border-color 0.2s; }
+  .cs-meta-value a:hover{ border-color:rgba(255,255,255,0.7); }
+
+  .cs-section{ padding:96px 44px; max-width:820px; }
+  .cs-section-tag{ font-size:0.63rem; letter-spacing:0.26em; text-transform:uppercase; color:rgba(255,255,255,0.28); margin-bottom:24px; }
+  .cs-section h2{
+    font-family:'Cormorant Garamond', serif; font-style:italic; font-weight:300;
+    font-size:clamp(2rem, 3.6vw, 3rem); color:rgba(255,255,255,0.92); letter-spacing:-0.02em;
+    line-height:1.08; margin-bottom:28px;
+  }
+  .cs-section p{ font-size:1.05rem; line-height:1.75; color:rgba(255,255,255,0.62); margin-bottom:20px; }
+  .cs-section p:last-child{ margin-bottom:0; }
+  .cs-section ul{ margin:8px 0 0; padding:0; list-style:none; }
+  .cs-section li{
+    font-size:1.02rem; line-height:1.7; color:rgba(255,255,255,0.62);
+    padding-left:26px; position:relative; margin-bottom:14px;
+  }
+  .cs-section li::before{
+    content:""; position:absolute; left:0; top:0.68em; width:6px; height:1px; background:rgba(255,255,255,0.35);
+  }
+
+  .cs-gallery{
+    display:grid; grid-template-columns:repeat(3, 1fr); gap:3px; background:#1a1a1a;
+  }
+  .cs-gallery-img{
+    height:44vmin; min-height:260px; background-size:cover; background-position:center;
+  }
+
+  .cs-cta{
+    padding:140px 44px; text-align:center; border-top:1px solid rgba(255,255,255,0.06);
+  }
+  .cs-cta-tag{ font-size:0.63rem; letter-spacing:0.3em; text-transform:uppercase; color:rgba(255,255,255,0.18); margin-bottom:32px; }
+  .cs-cta h2{
+    font-family:'Cormorant Garamond', serif; font-style:italic; font-weight:300;
+    font-size:clamp(2.4rem, 5vw, 4.2rem); color:rgba(255,255,255,0.88); letter-spacing:-0.03em;
+    line-height:1.04; margin-bottom:44px;
+  }
+  .cs-cta-row{ display:flex; align-items:center; justify-content:center; gap:20px; flex-wrap:wrap; }
+  .cs-btn{
+    display:inline-flex; align-items:center; gap:8px; padding:15px 30px; border-radius:8px;
+    font-size:0.82rem; letter-spacing:0.06em; text-decoration:none; transition:opacity 0.2s, transform 0.25s;
+  }
+  .cs-btn-solid{ background:#fff; color:#080808; font-weight:500; }
+  .cs-btn-solid:hover{ opacity:0.88; transform:translateY(-2px); }
+  .cs-btn-ghost{ border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.7); }
+  .cs-btn-ghost:hover{ border-color:rgba(255,255,255,0.5); color:#fff; }
+
+  @media(max-width:860px){
+    .cs-hero{ height:60vh; }
+    .cs-hero-inner, .cs-meta, .cs-section, .cs-cta{ padding-left:22px; padding-right:22px; }
+    .cs-section{ padding-top:64px; padding-bottom:64px; }
+    .cs-gallery{ grid-template-columns:1fr 1fr; }
+    .cs-gallery-img:nth-child(3){ grid-column:1 / -1; }
+  }
+</style>
+</head>
+<body>
+
+<svg class="grain" aria-hidden="true">
+  <filter id="gr" x="0%" y="0%" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.68" numOctaves="4" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+  <rect width="100%" height="100%" filter="url(#gr)"/>
+</svg>
+
+<nav class="nav" id="nav">
+  <a href="/" class="nav-logo">
+    <span class="nav-logo-name">LYNQ</span>
+  </a>
+  <div class="nav-right">
+    <a href="/services">Services</a>
+    <a href="/#contact">Contact</a>
+    <a href="/book" class="nav-cta">Start a project →</a>
+  </div>
+</nav>
+
+<div class="cs-hero">
+  <div class="cs-hero-img" style="background-image:url('https://finding-amy.com/img/xl-amy-in-situ.jpeg')"></div>
+  <div class="cs-hero-scrim"></div>
+  <div class="cs-hero-inner">
+    <div class="cs-eyebrow">Photo Booth Rental · Amman · 2026</div>
+    <h1 class="cs-title">Finding Amy</h1>
+    <p class="cs-dek">Turning an Instagram-only booth rental business into a fully interactive 3D website — built around their actual product, not a template.</p>
+    <a href="https://finding-amy.com" target="_blank" rel="noopener" class="cs-hero-btn">Visit the live site ↗</a>
+  </div>
+</div>
+
+<div class="cs-meta">
+  <div class="cs-meta-item">
+    <div class="cs-meta-label">Client</div>
+    <div class="cs-meta-value">Finding Amy</div>
+  </div>
+  <div class="cs-meta-item">
+    <div class="cs-meta-label">Industry</div>
+    <div class="cs-meta-value">Event &amp; photo booth rental</div>
+  </div>
+  <div class="cs-meta-item">
+    <div class="cs-meta-label">Location</div>
+    <div class="cs-meta-value">Amman, Jordan</div>
+  </div>
+  <div class="cs-meta-item">
+    <div class="cs-meta-label">Live site</div>
+    <div class="cs-meta-value"><a href="https://finding-amy.com" target="_blank" rel="noopener">finding-amy.com ↗</a></div>
+  </div>
+</div>
+
+<div class="cs-section">
+  <div class="cs-section-tag">The brief</div>
+  <h2>A brand that only existed on Instagram.</h2>
+  <p>Finding Amy rents out a custom-built photo booth — nicknamed "Amy" — for weddings and events across Amman. Before LYNQ, the entire business lived on a single Instagram page. No website, no booking system, no brand system beyond the booth itself.</p>
+  <p>The ask was simple to say and harder to do: build a site that felt like the actual product, not a generic rental-business template.</p>
+</div>
+
+<div class="cs-section">
+  <div class="cs-section-tag">The approach</div>
+  <h2>Build the site around the booth, not around a template.</h2>
+  <ul>
+    <li>A full brand system extracted from the client's Instagram and direct conversation — a burgundy-and-cream palette, paired with the client's own commercial typefaces once licensed.</li>
+    <li>A 3D, interactive intro built in Three.js: visitors see and tap Amy's actual booth to enter the site, rather than scrolling past a hero banner.</li>
+    <li>An "Amy OS" interface for browsing packages, booking, and past events — designed to feel like using a real product, not browsing a brochure.</li>
+    <li>Live booking synced to the client's real Google Calendar — aware that the business runs two physical booth units, so a date only shows as fully booked once both are reserved.</li>
+    <li>Full-resolution, mobile-first rendering, since almost every booking happens from a phone at the event itself.</li>
+  </ul>
+</div>
+
+<div class="cs-gallery">
+  <div class="cs-gallery-img" style="background-image:url('https://finding-amy.com/img/xl-ring-red.jpeg')"></div>
+  <div class="cs-gallery-img" style="background-image:url('https://finding-amy.com/img/w-flower-wall.jpeg')"></div>
+  <div class="cs-gallery-img" style="background-image:url('https://finding-amy.com/img/xl-chandelier-table.jpeg')"></div>
+</div>
+
+<div class="cs-section">
+  <div class="cs-section-tag">The result</div>
+  <h2>Live, booking real events.</h2>
+  <p>Finding Amy is live at finding-amy.com on its own domain, with a working calendar that reflects real availability across both booth units — no more manually checking bookings before confirming a date.</p>
+</div>
+
+<div class="cs-cta">
+  <div class="cs-cta-tag">Like what you see</div>
+  <h2>Want something<br><em>built like this?</em></h2>
+  <div class="cs-cta-row">
+    <a href="/book" class="cs-btn cs-btn-solid">Start a project →</a>
+    <a href="https://finding-amy.com" target="_blank" rel="noopener" class="cs-btn cs-btn-ghost">Visit finding-amy.com ↗</a>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="footer-logo">LYNQ</div>
+  <div class="footer-right">
+    <a href="/services">Services</a>
+    <a href="/#contact">Contact</a>
+    <span>&copy; 2026 Mustafa Alqudah</span>
+  </div>
+</footer>
+
+<script>
+const nav = document.getElementById('nav');
+nav.classList.add('scrolled');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 40 || true);
+}, { passive: true });
+</script>
+</body>
+</html>

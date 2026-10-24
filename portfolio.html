@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Selected Client Work &amp; Design Concepts | LYNQ Portfolio</title>
+<meta name="description" content="Explore selected LYNQ client work and clearly labelled design concepts across websites, restaurants, creative brands and business technology.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://lynq.build/portfolio">
+<meta property="og:title" content="Portfolio — LYNQ · Web Design Work">
+<meta property="og:description" content="Selected web design work by LYNQ — restaurants, creatives, and independent brands in Toronto &amp; Amman.">
+<meta property="og:image" content="https://lynq.build/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Portfolio — LYNQ · Web Design Work">
+<meta name="twitter:description" content="Selected web design work by LYNQ — restaurants, creatives, and independent brands in Toronto &amp; Amman.">
+<meta name="twitter:image" content="https://lynq.build/og-image.png">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="canonical" href="https://lynq.build/portfolio">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/gallery.css?v=7">
+<style>
+
+/* ── VISUALLY HIDDEN (for semantic H1 without changing the visual design) ── */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
+/* ── CARD NUMBER (textural) ── */
+.card-num {
+  position: absolute;
+  top: 28px; right: 32px;
+  z-index: 3;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 200;
+  font-size: clamp(4rem, 8vw, 7.5rem);
+  letter-spacing: -0.05em;
+  color: rgba(255,255,255,0.055);
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  transition: color 0.6s;
+}
+.gallery-card:hover .card-num { color: rgba(255,255,255,0.11); }
+.work-note{padding:150px 5vw 52px;background:#080808;color:#fff;border-bottom:1px solid rgba(255,255,255,.08)}
+.work-note h1{font-family:'Outfit',sans-serif;font-weight:300;font-size:clamp(2.8rem,6vw,6.4rem);letter-spacing:-.055em;line-height:.95;max-width:920px}
+.work-note p{color:rgba(255,255,255,.52);font-size:.9rem;line-height:1.7;max-width:710px;margin-top:22px}
+.project-status{display:inline-flex;margin-top:12px;padding:6px 9px;border:1px solid rgba(255,255,255,.22);border-radius:100px;color:rgba(255,255,255,.72);font-size:.55rem;letter-spacing:.12em;text-transform:uppercase}
+
+/* ── ALL-WORK OVERLAY ── */
+.aw-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 4000;
+  background: #080808;
+  transform: translateY(100%);
+  transition: transform 0.72s cubic-bezier(0.76,0,0.24,1);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.aw-overlay.open { transform: translateY(0); }
+.aw-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 44px;
+  background: rgba(8,8,8,0.96);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.aw-title {
+  font-size: 0.65rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.32);
+}
+.aw-close {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: none;
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.5);
+  padding: 9px 20px;
+  border-radius: 5px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.aw-close:hover { border-color: rgba(255,255,255,0.3); color: #fff; }
+.aw-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  padding: 3px;
+  background: #1a1a1a;
+}
+.aw-card {
+  position: relative;
+  overflow: hidden;
+  display: block;
+  text-decoration: none;
+  height: 52vmin;
+  min-height: 260px;
+  background: #111;
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.5s cubic-bezier(0.25,0.46,0.45,0.94),
+              transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+.aw-overlay.open .aw-card { opacity: 1; transform: none; }
+.aw-overlay.open .aw-card:nth-child(1)  { transition-delay: 0.04s; }
+.aw-overlay.open .aw-card:nth-child(2)  { transition-delay: 0.09s; }
+.aw-overlay.open .aw-card:nth-child(3)  { transition-delay: 0.14s; }
+.aw-overlay.open .aw-card:nth-child(4)  { transition-delay: 0.19s; }
+.aw-overlay.open .aw-card:nth-child(5)  { transition-delay: 0.24s; }
+.aw-overlay.open .aw-card:nth-child(6)  { transition-delay: 0.29s; }
+.aw-overlay.open .aw-card:nth-child(7)  { transition-delay: 0.34s; }
+.aw-overlay.open .aw-card:nth-child(8)  { transition-delay: 0.39s; }
+.aw-overlay.open .aw-card:nth-child(9)  { transition-delay: 0.44s; }
+.aw-overlay.open .aw-card:nth-child(10) { transition-delay: 0.49s; }
+.aw-overlay.open .aw-card:nth-child(11) { transition-delay: 0.54s; }
+.aw-overlay.open .aw-card:nth-child(12) { transition-delay: 0.59s; }
+.aw-overlay.open .aw-card:nth-child(13) { transition-delay: 0.64s; }
+.aw-overlay.open .aw-card:nth-child(14) { transition-delay: 0.69s; }
+.aw-overlay.open .aw-card:nth-child(15) { transition-delay: 0.74s; }
+.aw-overlay.open .aw-card:nth-child(16) { transition-delay: 0.79s; }
+.aw-overlay.open .aw-card:nth-child(17) { transition-delay: 0.84s; }
+.aw-overlay.open .aw-card:nth-child(18) { transition-delay: 0.89s; }
+.aw-overlay.open .aw-card:nth-child(19) { transition-delay: 0.94s; }
+.aw-overlay.open .aw-card:nth-child(20) { transition-delay: 0.99s; }
+.aw-overlay.open .aw-card:nth-child(21) { transition-delay: 1.04s; }
+.aw-card-img {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.8s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+.aw-card:hover .aw-card-img { transform: scale(1.06); }
+.aw-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.08) 55%, transparent 100%);
+  transition: background 0.4s;
+}
+.aw-card:hover .aw-card-overlay {
+  background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.3) 55%, rgba(0,0,0,0.08) 100%);
+}
+.aw-card-info {
+  position: absolute;
+  bottom: 22px; left: 24px;
+  z-index: 2;
+  transition: transform 0.4s;
+}
+.aw-card:hover .aw-card-info { transform: translateY(-6px); }
+.aw-card-cat {
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 6px;
+}
+.aw-card-name {
+  font-size: 1.15rem;
+  font-weight: 400;
+  color: #fff;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+/* ── VIEW ALL TRIGGER ── */
+.more-trigger {
+  grid-column: 1 / -1;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  background: #080808;
+  border: 1px solid rgba(255,255,255,0.07);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 80px 52px 64px;
+  gap: 24px;
+  transition: background 0.5s, border-color 0.5s;
+  min-height: 44vh;
+}
+.more-trigger:hover { background: #0e0e0e; border-color: rgba(255,255,255,0.14); }
+
+.mt-left { display: flex; flex-direction: column; gap: 18px; }
+.mt-eyebrow {
+  font-size: 0.6rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.38);
+}
+.mt-heading {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(3.4rem, 6.5vw, 7rem);
+  color: rgba(255,255,255,0.78);
+  letter-spacing: -0.03em;
+  line-height: 0.92;
+  transition: color 0.35s;
+}
+.more-trigger:hover .mt-heading { color: #fff; }
+
+.mt-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 14px;
+  padding-bottom: 8px;
+}
+.mt-arrow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+  transition: gap 0.35s, color 0.35s;
+}
+.more-trigger:hover .mt-arrow { gap: 26px; color: rgba(255,255,255,0.9); }
+.mt-arrow-line {
+  width: 36px; height: 1px;
+  background: currentColor;
+  transition: width 0.35s;
+  animation: mt-pulse 2.8s ease-in-out infinite;
+}
+.more-trigger:hover .mt-arrow-line { width: 64px; animation: none; }
+@keyframes mt-pulse {
+  0%, 100% { width: 28px; opacity: 0.55; }
+  50% { width: 52px; opacity: 1; }
+}
+
+/* Pill CTA */
+.mt-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 100px;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.6);
+  transition: border-color 0.3s, color 0.3s, background 0.3s;
+  margin-bottom: 20px;
+}
+.more-trigger:hover .mt-pill {
+  border-color: rgba(255,255,255,0.4);
+  color: #fff;
+  background: rgba(255,255,255,0.05);
+}
+
+/* The big ghost number in the trigger */
+.mt-ghost {
+  position: absolute;
+  right: 44px; bottom: -16px;
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(8rem, 16vw, 18rem);
+  letter-spacing: -0.06em;
+  line-height: 1;
+  color: rgba(255,255,255,0.05);
+  pointer-events: none;
+  user-select: none;
+  transition: color 0.6s;
+}
+.more-trigger:hover .mt-ghost { color: rgba(255,255,255,0.08); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 860px) {
+  .aw-header { padding: 16px 20px; }
+  .aw-grid { grid-template-columns: repeat(2, 1fr); }
+  .aw-card { height: 52vw; min-height: 180px; }
+  .more-trigger { padding: 52px 24px 48px; min-height: 36vh; }
+  .card-num { font-size: 3rem; top: 18px; right: 18px; }
+  .mt-ghost { font-size: 6rem; }
+}
+
+/* project descriptions */
+.card-desc,.aw-card-desc{color:rgba(255,255,255,.74);line-height:1.55;letter-spacing:0;max-height:0;opacity:0;overflow:hidden;transition:max-height .5s cubic-bezier(.25,.46,.45,.94),opacity .4s,margin .4s}
+.card-desc{font-size:.82rem;max-width:44ch}
+.aw-card-desc{font-size:.74rem;max-width:36ch}
+.gallery-card:hover .card-desc,.gallery-card:focus-visible .card-desc{max-height:7em;opacity:1;margin-top:10px}
+.aw-card:hover .aw-card-desc,.aw-card:focus-visible .aw-card-desc{max-height:7em;opacity:1;margin-top:8px}
+.card-info{right:42px}.aw-card-info{right:24px}
+@media (hover:none){.card-desc,.aw-card-desc{max-height:none;opacity:1;margin-top:8px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}}
+</style>
+</head>
+<body>
+
+<!-- Film grain -->
+<svg class="grain" aria-hidden="true">
+  <filter id="gr" x="0%" y="0%" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.68" numOctaves="4" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+  <rect width="100%" height="100%" filter="url(#gr)"/>
+</svg>
+
+<!-- Intro screen -->
+<div class="intro-screen" id="introScreen">
+  <div class="is-inner">
+    <div class="is-name">LYNQ</div>
+    <div class="is-line"></div>
+    <div class="is-role">Founded by Mustafa Alqudah &nbsp;·&nbsp; Toronto &amp; Amman</div>
+  </div>
+</div>
+
+<!-- All-work overlay -->
+<div class="aw-overlay" id="awOverlay" role="dialog" aria-label="All projects">
+  <div class="aw-header">
+    <span class="aw-title">All work — 24 projects</span>
+    <button class="aw-close" id="awClose">✕ &nbsp; Close</button>
+  </div>
+  <div class="aw-grid">
+    <a href="https://kingsbridgegroup.ca" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#191b19;background-image:url('/assets/img/kingsbridge-logo.png');background-size:70% auto;background-repeat:no-repeat;background-position:center 30%"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Completed client website · Toronto &amp; GTA</div><div class="aw-card-name">Kingsbridge Group</div><div class="aw-card-desc">Website for a Toronto custom home builder and commercial property manager, with its own pages for custom homes and property management and two inquiry forms.</div></div>
+    </a>
+
+    <a href="https://arcubed-label.vercel.app" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#f7d9f2; background-image:url('assets/img/arcubed-card.jpg'); background-position:center 48%"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Crochet Bags &middot; E-commerce &middot; Amman</div><div class="aw-card-name">Arcubed Label</div><div class="aw-card-desc">Online store for hand crocheted bags made to order in Amman. Shoppers pick a shape and colour, see prices in JOD and order through a cart.</div></div>
+    </a>
+
+    <a href="https://seat-the-occasion.vercel.app" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#17110c; background-image:url('assets/img/seat-card.jpg'); background-position:center 58%"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Event Furniture Rental &middot; Jordan</div><div class="aw-card-name">Seat the Occasion</div><div class="aw-card-desc">Concept site for an event furniture rental business in Jordan, built to show the range of pieces and take rental enquiries.</div></div>
+    </a>
+
+    <a href="work/nasma.html" class="aw-card">
+      <div class="aw-card-img" style="background-color:#1c1814; background-image:url('https://nasmajo.com/03_Images/web/mezze-spread-overhead.jpg'); background-position:center 55%"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Restaurant · Amman</div><div class="aw-card-name">Nasma</div><div class="aw-card-desc">First website for a Levantine restaurant and café in Amman: a menu for breakfast, lunch and dinner, reservations and online ordering, styled from its Instagram look.</div></div>
+    </a>
+
+    <a href="work/finding-amy.html" class="aw-card">
+      <div class="aw-card-img" style="background-color:#1c0509; background-image:url('https://finding-amy.com/img/xl-amy-in-situ.jpeg'); background-position:center 30%"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Photo Booth Rental · Amman</div><div class="aw-card-name">Finding Amy</div><div class="aw-card-desc">Photo booth rental in Amman. Visitors tap a 3D booth to enter, browse packages and book a date on a calendar synced across both booths.</div></div>
+    </a>
+
+    <a href="projects/smyrna.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#0f0c0b; background-image:url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=900&q=80')"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Restaurant · Barcelona</div><div class="aw-card-name">SMYRNA by Cem</div><div class="aw-card-desc">Site for a Turkish Mediterranean restaurant on the Barceloneta waterfront, with a menu from mezze to paella, the chef's story and reservations.</div></div>
+    </a>
+
+    <a href="projects/dept-01.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#0a0a0a; background-image:url('assets/img/dept01-card.jpg')"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Creative &amp; Ad Agency · Amman</div><div class="aw-card-name">Dept. 01</div><div class="aw-card-desc">One page site for a two person creative and ad agency in Amman, covering paid media, content, brand strategy and social.</div></div>
+    </a>
+
+    <a href="projects/nours-kitchen.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#110e0b; background-image:url('https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80')"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Home Kitchen · Toronto</div><div class="aw-card-name">Sofra</div><div class="aw-card-desc">Concept site for a Syrian home kitchen in Toronto, with a weekly menu, family trays and WhatsApp ordering for pickup or delivery.</div></div>
+    </a>
+
+    <a href="projects/drift-coffee.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#0c0b09; background-image:url('https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80')"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Coffee Shop · Toronto</div><div class="aw-card-name">Drift Coffee</div><div class="aw-card-desc">Concept site for a specialty coffee shop, with big photography, a priced drink menu, hours and directions.</div></div>
+    </a>
+
+    <a href="projects/greek-pastry.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#14120e; background-image:url('https://images.unsplash.com/photo-1519676867240-f03562e64548?auto=format&fit=crop&w=900&q=80')"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Bakery · Barcelona</div><div class="aw-card-name">Greek Pastry</div><div class="aw-card-desc">Concept site for a Greek bakery in Barcelona, with a photo menu of pastries, the founder's story and an order button.</div></div>
+    </a>
+
+    <a href="projects/maya-reyes.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#0d0c0c; background-image:url('https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=900&q=80'); background-position:center 15%"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Photographer · Toronto</div><div class="aw-card-name">Maya Reyes</div><div class="aw-card-desc">Concept portfolio for a portrait and editorial photographer, with a gallery you can filter by type of shoot.</div></div>
+    </a>
+
+    <a href="projects/kira.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#090909; background-image:url('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=900&q=80'); background-position:center 10%"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Fashion Label · Toronto</div><div class="aw-card-name">KIRA</div><div class="aw-card-desc">Concept store for a small streetwear label that sells in seasonal drops, with a shop and a sign up for the next drop.</div></div>
+    </a>
+
+    <a href="projects/elara.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#120a0e; background-image:url('https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=900&q=80')"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Beauty Studio · Toronto</div><div class="aw-card-name">Elara Studio</div><div class="aw-card-desc">Concept site for a private beauty studio, with services and starting prices and a booking section.</div></div>
+    </a>
+
+    <a href="projects/solstice.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#0c0e0a; background-image:url('https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=900&q=80')"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Yoga Studio · Toronto</div><div class="aw-card-name">Solstice</div><div class="aw-card-desc">Concept site for a yoga studio, with a weekly timetable, class descriptions and membership pricing.</div></div>
+    </a>
+
+    <a href="projects/forma.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#0a0a0a; background-image:url('https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=900&q=80')"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Architecture Studio · Toronto</div><div class="aw-card-name">Forma Studio</div><div class="aw-card-desc">Concept site for an architecture and interiors studio, with a selected work gallery, services and a brief form.</div></div>
+    </a>
+
+    <a href="projects/aether.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#040405; background-image:url('https://images.unsplash.com/photo-1560521166-99f8bed834f5?auto=format&fit=crop&w=900&q=80')"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Perfume House · Independent</div><div class="aw-card-name">Aether</div><div class="aw-card-desc">Concept site for an independent perfume house that releases small numbered editions.</div></div>
+    </a>
+
+    <a href="projects/vault.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#0a0908; background-image:url('https://images.unsplash.com/photo-1728755833852-2c138c84cfb1?auto=format&fit=crop&w=900&q=80')"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Indie Game · Puzzle-Thriller</div><div class="aw-card-name">Vault</div><div class="aw-card-desc">Concept landing page for an indie puzzle thriller game, with story, screenshots, a trailer and a Steam wishlist button.</div></div>
+    </a>
+
+    <a href="projects/cavo.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#0b1929; background-image:url('https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?auto=format&fit=crop&w=900&q=80')"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Yacht Charters · Mediterranean</div><div class="aw-card-name">Cavo</div><div class="aw-card-desc">Concept site for a Mediterranean yacht charter company, with routes, the fleet and an enquiry link.</div></div>
+    </a>
+
+    <a href="projects/roux.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#0c0a09; background-image:url('https://images.unsplash.com/photo-1703793578040-07e1778b6b2c?auto=format&fit=crop&w=900&q=80')"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">French Fine Dining · Toronto</div><div class="aw-card-name">ROUX</div><div class="aw-card-desc">Concept site for a French fine dining restaurant, built around a seasonal tasting menu and reservations.</div></div>
+    </a>
+
+    <a href="projects/saffron-kitchen.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#0a0604; background-image:url('https://images.unsplash.com/photo-1781332146555-5507a0fc9bc9?auto=format&fit=crop&w=900&q=80')"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Indian Restaurant · Toronto</div><div class="aw-card-name">Saffron Kitchen</div><div class="aw-card-desc">Concept site for an Indian restaurant, with a card menu of signature dishes, reviews and table reservations.</div></div>
+    </a>
+
+    <a href="projects/peak-renovations.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#08090c; background-image:url('https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=900&q=80')"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Home Renovation · Toronto &amp; GTA</div><div class="aw-card-name">Peak Renovations</div><div class="aw-card-desc">Concept site for a GTA renovation contractor, with services, recent projects, a four step process and reviews.</div></div>
+    </a>
+
+    <a href="projects/ecommerce.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#f3f0eb; background-image:url('https://images.unsplash.com/photo-1584998316204-3b1e3b1895ae?auto=format&fit=crop&w=900&q=80')"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Fashion E-Commerce</div><div class="aw-card-name">Maison</div><div class="aw-card-desc">Concept online store for a fashion label that makes one small run per season.</div></div>
+    </a>
+
+    <a href="projects/product-launch.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#09090b; background-image:radial-gradient(circle at 50% 45%, rgba(124,58,237,0.5), transparent 65%)"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">Product Launch · Tech</div><div class="aw-card-name">AURA</div><div class="aw-card-desc">Concept launch page for wireless headphones, with feature sections, a countdown to launch and pre-order sign up.</div></div>
+    </a>
+
+    <a href="projects/ai-dashboard.html" target="_blank" rel="noopener" class="aw-card">
+      <div class="aw-card-img" style="background-color:#0a0a0f; background-image:url('assets/img/analytica-card.png'); background-size:cover; background-position:top"></div>
+      <div class="aw-card-overlay"></div>
+      <div class="aw-card-info"><div class="aw-card-cat">SaaS Dashboard · Analytics</div><div class="aw-card-name">Analytica</div><div class="aw-card-desc">Concept analytics dashboard with KPI cards, a revenue chart, traffic sources and recent transactions.</div></div>
+    </a>
+
+  </div>
+</div>
+
+<!-- Nav -->
+<nav class="nav" id="nav">
+  <a href="/" class="nav-logo">
+    <span class="nav-logo-name">LYNQ</span>
+  </a>
+  <div class="nav-right">
+    <a href="/">Home</a>
+    <a href="/digital-transformation">Transformation</a>
+    <a href="/office">Office &amp; AI</a>
+    <a href="#contact">Contact</a>
+    <a href="/book" class="nav-cta">Start a project →</a>
+  </div>
+</nav>
+
+<header class="work-note"><div class="work-label" style="position:static;padding:0;border:0;margin-bottom:26px"><span class="wl-left">Selected work and design studies</span></div><h1>Work that shows how we think and build.</h1><p>Real client work is labelled. Concept projects demonstrate design range and technical capability; they are not presented as paid client engagements.</p></header>
+
+<!-- Work label bar -->
+<div class="work-label">
+  <span class="wl-left">Selected work &mdash; 2024–2026</span>
+  <span class="wl-right"><span class="wl-dot"></span>Art, not templates</span>
+</div>
+
+<!-- Gallery -->
+<main class="gallery">
+
+  <!-- 01 · ARCUBED LABEL — real client, live store -->
+  <a href="https://arcubed-label.vercel.app" target="_blank" rel="noopener"
+     class="gallery-card featured">
+    <span class="card-num">01</span>
+    <div class="card-img" style="
+      background-color: #ffe1fd;
+      background-image: url('assets/img/arcubed-card.jpg');
+      background-position: center 50%;
+    "></div>
+    <div class="card-overlay"></div>
+    <div class="card-info">
+      <div class="card-cat">Crochet Bags &middot; E-commerce &middot; Amman</div>
+      <div class="card-name">Arcubed Label</div>
+      <div class="card-desc">Online store for hand crocheted bags made to order in Amman. Shoppers pick a shape and colour, see prices in JOD and order through a cart.</div>
+      <span class="project-status">Client project</span>
+    </div>
+  </a>
+
+  <!-- 02 · NOUR'S KITCHEN -->
+  <a href="projects/nours-kitchen.html" target="_blank" rel="noopener"
+     class="gallery-card">
+    <span class="card-num">02</span>
+    <div class="card-img" style="
+      background-color: #1a0f0a;
+      background-image: url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=2400&q=88');
+      background-position: center 40%;
+    "></div>
+    <div class="card-overlay"></div>
+    <div class="card-info">
+      <div class="card-cat">Home Kitchen · Toronto</div>
+      <div class="card-name">Sofra</div>
+      <div class="card-desc">Concept site for a Syrian home kitchen in Toronto, with a weekly menu, family trays and WhatsApp ordering for pickup or delivery.</div>
+      <span class="project-status">Concept study</span>
+    </div>
+  </a>
+
+  <!-- 02 · DEPT. 01 -->
+  <a href="projects/dept-01.html" target="_blank" rel="noopener"
+     class="gallery-card">
+    <span class="card-num">03</span>
+    <div class="card-img" style="
+      background-color: #0a0a0a;
+      background-image: url('assets/img/dept01-card.jpg');
+    "></div>
+    <div class="card-overlay"></div>
+    <div class="card-info">
+      <div class="card-cat">Creative &amp; Ad Agency · Amman</div>
+      <div class="card-name">Dept. 01</div>
+      <div class="card-desc">One page site for a two person creative and ad agency in Amman, covering paid media, content, brand strategy and social.</div>
+      <span class="project-status">Client project</span>
+    </div>
+  </a>
+
+  <!-- 03 · NASMA — real client -->
+  <a href="work/nasma.html" class="gallery-card">
+    <span class="card-num">04</span>
+    <div class="card-img" style="
+      background-color: #1c1814;
+      background-image: url('https://nasmajo.com/03_Images/web/mezze-spread-overhead.jpg');
+      background-position: center 55%;
+    "></div>
+    <div class="card-overlay"></div>
+    <div class="card-info">
+      <div class="card-cat">Restaurant · Amman</div>
+      <div class="card-name">Nasma</div>
+      <div class="card-desc">First website for a Levantine restaurant and café in Amman: a menu for breakfast, lunch and dinner, reservations and online ordering, styled from its Instagram look.</div>
+      <span class="project-status">Client project</span>
+    </div>
+  </a>
+
+  <!-- 04 · FORMA STUDIO -->
+  <a href="projects/forma.html" target="_blank" rel="noopener" class="gallery-card">
+    <span class="card-num">05</span>
+    <div class="card-img" style="
+      background-color: #0a0a0a;
+      background-image: url('https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=1400&q=85');
+    "></div>
+    <div class="card-overlay"></div>
+    <div class="card-info">
+      <div class="card-cat">Architecture Studio · Toronto</div>
+      <div class="card-name">Forma Studio</div>
+      <div class="card-desc">Concept site for an architecture and interiors studio, with a selected work gallery, services and a brief form.</div>
+      <span class="project-status">Concept study</span>
+    </div>
+  </a>
+
+  <!-- 05 · FINDING AMY — real client -->
+  <a href="work/finding-amy.html" class="gallery-card">
+    <span class="card-num">06</span>
+    <div class="card-img" style="
+      background-color: #1c0509;
+      background-image: url('https://finding-amy.com/img/xl-amy-in-situ.jpeg');
+      background-position: center 42%;
+    "></div>
+    <div class="card-overlay"></div>
+    <div class="card-info">
+      <div class="card-cat">Photo Booth Rental · Amman</div>
+      <div class="card-name">Finding Amy</div>
+      <div class="card-desc">Photo booth rental in Amman. Visitors tap a 3D booth to enter, browse packages and book a date on a calendar synced across both booths.</div>
+      <span class="project-status">Client project</span>
+    </div>
+  </a>
+
+  <!-- 07 · SEAT THE OCCASION -->
+  <a href="https://seat-the-occasion.vercel.app" target="_blank" rel="noopener" class="gallery-card">
+    <span class="card-num">07</span>
+    <div class="card-img" style="
+      background-color: #17110c;
+      background-image: url('assets/img/seat-card.jpg');
+      background-position: center 58%;
+    "></div>
+    <div class="card-overlay"></div>
+    <div class="card-info">
+      <div class="card-cat">Event Furniture Rental &middot; Jordan</div>
+      <div class="card-name">Seat the Occasion</div>
+      <div class="card-desc">Concept site for an event furniture rental business in Jordan, built to show the range of pieces and take rental enquiries.</div>
+      <span class="project-status">Concept study</span>
+    </div>
+  </a>
+
+  <!-- Kingsbridge Group — completed client website -->
+  <a href="https://kingsbridgegroup.ca" target="_blank" rel="noopener" class="gallery-card" style="grid-column:1 / -1">
+    <span class="card-num">08</span>
+    <div class="card-img" style="background-color:#191b19;background-image:url('/assets/img/kingsbridge-logo.png');background-size:auto 55%;background-repeat:no-repeat;background-position:center 18%"></div>
+    <div class="card-overlay"></div>
+    <div class="card-info">
+      <div class="card-cat">Custom homes &amp; property management · Toronto &amp; GTA</div>
+      <div class="card-name">Kingsbridge Group</div>
+      <div class="card-desc">Website for a Toronto custom home builder and commercial property manager, with its own pages for custom homes and property management and two inquiry forms.</div>
+      <span class="project-status">Completed client website</span>
+    </div>
+  </a>
+
+  <!-- VIEW ALL TRIGGER -->
+  <div class="more-trigger" id="moreTrigger" role="button" tabindex="0"
+       aria-label="View all 24 projects">
+    <div class="mt-left">
+      <span class="mt-eyebrow">24 projects · 2024–2026</span>
+      <span class="mt-heading">All<br>the work.</span>
+    </div>
+    <div class="mt-right">
+      <span class="mt-pill">View all 24 projects &nbsp;→</span>
+      <span class="mt-arrow">
+        <span class="mt-arrow-line"></span>
+        Explore all
+      </span>
+    </div>
+    <span class="mt-ghost" aria-hidden="true">24</span>
+  </div>
+
+</main>
+
+<!-- Contact -->
+<section class="contact" id="contact">
+  <div class="contact-tag">Get in touch</div>
+  <h2 class="contact-heading">Ready when<br><em>you are.</em></h2>
+  <a href="mailto:mustafa@lynq.build" class="contact-email">mustafa@lynq.build</a>
+  <p class="contact-sub">Reply within 24 hours. Based in Toronto &amp; Amman.</p>
+  <a href="/book" class="cta-btn" style="margin-top:28px;text-decoration:none">Book a call →</a>
+</section>
+
+<footer class="footer">
+  <div class="footer-logo">LYNQ</div>
+  <div class="footer-right">
+    <a href="/">Home</a>
+    <a href="#contact">Contact</a>
+    <span>&copy; 2026 LYNQ · Mustafa Alqudah · Toronto &amp; Amman</span>
+  </div>
+</footer>
+
+<script>
+/* ── INTRO SCREEN ── */
+const intro = document.getElementById('introScreen');
+setTimeout(() => {
+  intro.classList.add('out');
+  setTimeout(() => intro.remove(), 1100);
+}, 2600);
+
+/* ── NAV SCROLL ── */
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 40);
+}, { passive: true });
+
+/* ── 3D PARALLAX ON CARDS ── */
+document.querySelectorAll('.gallery-card').forEach(card => {
+  const img = card.querySelector('.card-img');
+  if (!img) return;
+  let raf;
+  card.addEventListener('mousemove', e => {
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {
+      const r   = card.getBoundingClientRect();
+      const xp  = (e.clientX - r.left)  / r.width  - 0.5;
+      const yp  = (e.clientY - r.top)   / r.height - 0.5;
+      img.style.transition  = 'none';
+      img.style.transform   = `scale(1.1) translate(${xp * -28}px, ${yp * -28}px)`;
+      card.style.transition = 'none';
+      card.style.transform  = `perspective(1400px) rotateX(${yp * -5}deg) rotateY(${xp * 5}deg)`;
+    });
+  });
+  card.addEventListener('mouseleave', () => {
+    cancelAnimationFrame(raf);
+    img.style.transition  = 'transform 0.9s cubic-bezier(0.25,0.46,0.45,0.94)';
+    img.style.transform   = '';
+    card.style.transition = 'transform 0.9s cubic-bezier(0.25,0.46,0.45,0.94)';
+    card.style.transform  = '';
+  });
+});
+
+/* ── ALL-WORK OVERLAY ── */
+const overlay    = document.getElementById('awOverlay');
+const moreTrigger = document.getElementById('moreTrigger');
+const awClose    = document.getElementById('awClose');
+
+function openOverlay() {
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeOverlay() {
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+moreTrigger.addEventListener('click', openOverlay);
+moreTrigger.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') openOverlay();
+});
+awClose.addEventListener('click', closeOverlay);
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeOverlay();
+});
+</script>
+<script src="/assets/chat-widget.js" defer></script>
+</body>
+</html>
