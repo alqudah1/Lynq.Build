@@ -328,8 +328,8 @@ export const WEEK_PLANS: WeekPlan[] = [
         key: "lynq-w2-arcubed", brand: LYNQ, day: "2026-10-21", time: "12:15", pillar: "PROOF", storyHighlight: "ARCUBED",
         title: "LYNQ · PROOF 04 — Arcubed Label", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "Every bag is made by hand. Every order used to be, too.",
-        body: "Every bag is made by hand. Every order used to be, too.\n\nColour? Size? Deposit? Delivery? Arcubed Label answered all of it in DMs, one bag at a time, while the crochet hook sat waiting.\n\nNow the store does the talking. Pick the bag, pick the colour, pay. The order lands in a list, not a chat. The hands go back to the hook.\n\nBuilt end to end by LYNQ for a maker who would rather be making.\n\nIf you sell something you make, your site should take the order so you can keep making. DM \"AUDIT\" and we'll show you where yours drops the thread.",
-        facebookBody: "Every bag is made by hand. Every order used to be, too.\n\nArcubed Label answered colour, size, deposit and delivery in DMs, one bag at a time. Now the store does the talking: pick the bag, pick the colour, pay. The order lands in a list, not a chat.\n\nBuilt end to end by LYNQ. Sell something you make? Message us and we'll show you where your site drops the thread.",
+        body: "Every bag is made by hand. Every order used to be, too.\n\nColour? Size? Deposit? Delivery? Arcubed Label answered all of it in DMs, one bag at a time, while the crochet hook sat waiting.\n\nNow the store does the talking. Pick the bag, pick the colour, order. The order lands in a list, not a chat. The hands go back to the hook.\n\nBuilt end to end by LYNQ for a maker who would rather be making.\n\nIf you sell something you make, your site should take the order so you can keep making. DM \"AUDIT\" and we'll show you where yours drops the thread.",
+        facebookBody: "Every bag is made by hand. Every order used to be, too.\n\nArcubed Label answered colour, size, deposit and delivery in DMs, one bag at a time. Now the store does the talking: pick the bag, pick the colour, order. The order lands in a list, not a chat.\n\nBuilt end to end by LYNQ. Sell something you make? Message us and we'll show you where your site drops the thread.",
         hashtags: ["Handmade", "Ecommerce", "WebDesign", "SmallBusiness"], callToAction: "DM AUDIT",
         creativeDirection: `One handmade crochet tote in natural undyed cotton, standing upright and centred on the black studio floor, hard light from the upper left, a single acid-lime paper order tag tied to its handle. No text. ${HONEST_CARD} ${LYNQ_LOOK}`,
       },
@@ -583,7 +583,7 @@ export const WEEK_PLANS: WeekPlan[] = [
     weekStart: "2026-10-22",
     retired: ["n-codeit-free", "n-codeit-askteacher"],
     highlights: {
-      LYNQ: ["START HERE", "KINGSBRIDGE", "NASMA", "AMY", "ARCUBED", "FIX THIS", "WHAT YOU GET", "OFFICE", "BEHIND"],
+      LYNQ: ["START HERE", "KINGSBRIDGE", "NASMA", "AMY", "ARCUBED", "HOUSE DEALS", "FIX THIS", "WHAT YOU GET", "OFFICE", "BEHIND"],
       CodeIt: ["START HERE", "BUILDS", "LESSONS", "ASK THE TEACHER", "FREE", "ABOUT", "QUIZ", "PIP"],
     },
     feed: [
@@ -636,8 +636,8 @@ export const WEEK_PLANS: WeekPlan[] = [
         key: "n-lynq-arcubed", brand: LYNQ, day: "2026-10-28", time: "12:15", pillar: "PROOF", storyHighlight: "ARCUBED",
         title: "LYNQ · PROOF 04 — Arcubed Label", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "Every bag is made by hand. Every order used to be, too.",
-        body: "Every bag is made by hand. Every order used to be, too.\n\nColour? Size? Deposit? Delivery? Arcubed Label answered all of it in DMs, one bag at a time, while the crochet hook sat waiting.\n\nNow the store does the talking. Pick the bag, pick the colour, pay. The order lands in a list, not a chat. The hands go back to the hook.\n\nBuilt end to end by LYNQ for a maker who would rather be making.\n\nIf you sell something you make, your site should take the order so you can keep making. DM \"AUDIT\" and we'll show you where yours drops the thread.",
-        facebookBody: "Every bag is made by hand. Every order used to be, too.\n\nArcubed Label answered colour, size, deposit and delivery in DMs, one bag at a time. Now the store does the talking: pick the bag, pick the colour, pay. The order lands in a list, not a chat.\n\nBuilt end to end by LYNQ. Sell something you make? Message us and we'll show you where your site drops the thread.",
+        body: "Every bag is made by hand. Every order used to be, too.\n\nColour? Size? Deposit? Delivery? Arcubed Label answered all of it in DMs, one bag at a time, while the crochet hook sat waiting.\n\nNow the store does the talking. Pick the bag, pick the colour, order. The order lands in a list, not a chat. The hands go back to the hook.\n\nBuilt end to end by LYNQ for a maker who would rather be making.\n\nIf you sell something you make, your site should take the order so you can keep making. DM \"AUDIT\" and we'll show you where yours drops the thread.",
+        facebookBody: "Every bag is made by hand. Every order used to be, too.\n\nArcubed Label answered colour, size, deposit and delivery in DMs, one bag at a time. Now the store does the talking: pick the bag, pick the colour, order. The order lands in a list, not a chat.\n\nBuilt end to end by LYNQ. Sell something you make? Message us and we'll show you where your site drops the thread.",
         hashtags: ["Handmade", "Ecommerce", "WebDesign", "SmallBusiness"], callToAction: "DM AUDIT",
         creativeDirection: `One handmade crochet tote in natural undyed cotton, standing upright and centred on the black studio floor, hard light from the upper left, a single acid-lime paper order tag tied to its handle. No text. ${HONEST_CARD} ${LYNQ_LOOK}`,
       },
@@ -1070,6 +1070,21 @@ export const WEEK_PLANS: WeekPlan[] = [
         key: "c-try-dice", brand: CODEIT, day: "2026-11-04", time: "15:45", highlight: "LESSONS",
         spec: { kind: "tryTonight", brand: "codeit", eyebrow: "Try tonight", headline: "Roll a dice in Python", steps: ["Open the playground", "Type the two lines", "Run it again and again"], code: "import random\nprint(random.randint(1, 6))" },
       },
+      // Case-study highlights: seven finished frames each, five minutes apart so they land in order.
+      { key: "case-arcubed-01", brand: LYNQ, day: "2026-10-28", time: "13:00", highlight: "ARCUBED", spec: { kind: "image", brand: "lynq", file: "arcubed-01.jpg", alt: "Arcubed Label, case 04: hand crocheted bags, made to order." } },
+      { key: "case-arcubed-02", brand: LYNQ, day: "2026-10-28", time: "13:05", highlight: "ARCUBED", spec: { kind: "image", brand: "lynq", file: "arcubed-02.jpg", alt: "The brief: every bag is made by hand, and every order used to be too." } },
+      { key: "case-arcubed-03", brand: LYNQ, day: "2026-10-28", time: "13:10", highlight: "ARCUBED", spec: { kind: "image", brand: "lynq", file: "arcubed-03.jpg", alt: "Pick the shape, then the colour, on the Arcubed Label store." } },
+      { key: "case-arcubed-04", brand: LYNQ, day: "2026-10-28", time: "13:15", highlight: "ARCUBED", spec: { kind: "image", brand: "lynq", file: "arcubed-04.jpg", alt: "Every bag, shown before it is made." } },
+      { key: "case-arcubed-05", brand: LYNQ, day: "2026-10-28", time: "13:20", highlight: "ARCUBED", spec: { kind: "image", brand: "lynq", file: "arcubed-05.jpg", alt: "Into the bag, not into the DMs: the Arcubed Label cart." } },
+      { key: "case-arcubed-06", brand: LYNQ, day: "2026-10-28", time: "13:25", highlight: "ARCUBED", spec: { kind: "image", brand: "lynq", file: "arcubed-06.jpg", alt: "What we built: storefront, customizer, ready now, checkout." } },
+      { key: "case-arcubed-07", brand: LYNQ, day: "2026-10-28", time: "13:30", highlight: "ARCUBED", spec: { kind: "image", brand: "lynq", file: "arcubed-07.jpg", alt: "Now the store does the talking. DM AUDIT." } },
+      { key: "case-housedeals-01", brand: LYNQ, day: "2026-10-29", time: "14:00", highlight: "HOUSE DEALS", spec: { kind: "image", brand: "lynq", file: "housedeals-01.jpg", alt: "House Deals Direct, case 05: buys homes direct and offers deals to investors." } },
+      { key: "case-housedeals-02", brand: LYNQ, day: "2026-10-29", time: "14:05", highlight: "HOUSE DEALS", spec: { kind: "image", brand: "lynq", file: "housedeals-02.jpg", alt: "The brief: one business, two audiences, one site." } },
+      { key: "case-housedeals-03", brand: LYNQ, day: "2026-10-29", time: "14:10", highlight: "HOUSE DEALS", spec: { kind: "image", brand: "lynq", file: "housedeals-03.jpg", alt: "Sell without listing it: the House Deals Direct seller form." } },
+      { key: "case-housedeals-04", brand: LYNQ, day: "2026-10-29", time: "14:15", highlight: "HOUSE DEALS", spec: { kind: "image", brand: "lynq", file: "housedeals-04.jpg", alt: "Four steps, and owners decide at each one." } },
+      { key: "case-housedeals-05", brand: LYNQ, day: "2026-10-29", time: "14:20", highlight: "HOUSE DEALS", spec: { kind: "image", brand: "lynq", file: "housedeals-05.jpg", alt: "The investor side, with every estimate labelled." } },
+      { key: "case-housedeals-06", brand: LYNQ, day: "2026-10-29", time: "14:25", highlight: "HOUSE DEALS", spec: { kind: "image", brand: "lynq", file: "housedeals-06.jpg", alt: "What we built: seller form, how it works, investor list, FAQ." } },
+      { key: "case-housedeals-07", brand: LYNQ, day: "2026-10-29", time: "14:30", highlight: "HOUSE DEALS", spec: { kind: "image", brand: "lynq", file: "housedeals-07.jpg", alt: "One site, both sides served. DM AUDIT." } },
     ],
   },
 ];
@@ -1177,7 +1192,7 @@ async function renderPlanStory(db: Db, input: { organizationId: string; actorUse
 
 function storyAltText(spec: StorySpec): string {
   const s = spec as Record<string, unknown>;
-  const parts = [s.headline, s.model, s.title, Array.isArray(s.lines) ? (s.lines as string[]).join(" ") : null].flat().filter((x): x is string => typeof x === "string");
+  const parts = [s.alt, s.headline, s.model, s.title, Array.isArray(s.lines) ? (s.lines as string[]).join(" ") : null].flat().filter((x): x is string => typeof x === "string");
   return parts.join(" ") || "Story";
 }
 

@@ -38,11 +38,15 @@ export type StorySpec =
   | { kind: "oneFix"; brand: "lynq"; eyebrow: string; headline: string[]; fix: string; detail: string }
   // LYNQ editorial stories: magazine and product-sheet formats, no question asked.
   | { kind: "specSheet"; brand: "lynq"; series: string; model: string; subtitle: string; specs: { label: string; value: string; accent?: boolean }[]; note: string }
-  | { kind: "statement"; brand: "lynq"; series: string; lines: string[]; accentWord: string; byline: string }
-  | { kind: "object"; brand: "lynq"; series: string; /** Feed image (a product shot) placed as the hero; bytes passed at render time. */ title: string; label: { k: string; v: string }[]; line: string }
-  | { kind: "index"; brand: "lynq"; series: string; headline: string; rows: { name: string; what: string; where?: string }[]; note: string }
+  | { kind: "statement"; brand: "lynq"; series: string; folio?: string; /** Small lime label above the lines (default "Studio note"). */ label?: string; lines: string[]; accentWord: string; byline: string }
+  | { kind: "object"; brand: "lynq"; series: string; folio?: string; /** Feed image (a product shot) placed as the hero; bytes passed at render time. */ title: string; label: { k: string; v: string }[]; line: string }
+  | { kind: "index"; brand: "lynq"; series: string; folio?: string; headline: string; rows: { name: string; what: string; where?: string }[]; note: string }
   | { kind: "process"; brand: "lynq"; series: string; headline: string; steps: { n: string; name: string; detail: string }[]; note: string }
-  | { kind: "teardown"; brand: "lynq"; series: string; headline: string; before: string[]; after: string[]; note: string };
+  | { kind: "teardown"; brand: "lynq"; series: string; headline: string; before: string[]; after: string[]; note: string }
+  // A real screenshot of a client's site inside a rendered phone (bytes passed at render time; `crop` is the source y offset in px).
+  // A finished story image bundled with the app (src/assets/cases), e.g. a case-study highlight frame.
+  | { kind: "image"; brand: StoryBrandKey; file: string; alt: string }
+  | { kind: "screen"; brand: "lynq"; series: string; folio?: string; step: string; headline: [string, string]; detail: string; crop?: number };
 
 export type Icon = "car" | "paw" | "rocket" | "music" | "phone" | "form" | "star" | "rock";
 
@@ -227,6 +231,8 @@ const sliderEnds = (notes: string[]): { ends: [string, string] | null; rest: str
   const m = notes[i]!.match(/^Left: (.+?)\. Right: (.+?)\.?$/)!;
   return { ends: [m[1]!, m[2]!], rest: notes.filter((_, j) => j !== i) };
 };
+/** Where the phone sits on a screen story; the screenshot fills its glass. */
+const SCREEN = { x: 290, y: 800, w: 500, h: 810 };
 const fit = (t: string, max: number, width = 900, em = 0.52) => Math.min(max, Math.floor(width / (em * Math.max(1, t.length))));
 
 // ---------- Templates ----------
@@ -355,10 +361,10 @@ ${rows}${rule(1250 + n * 76 - 50)}`;
         return `<text x="90" y="${y}" font-family="Inter Light" font-weight="300" font-size="${size}" letter-spacing="-3" fill="${WH}" xml:space="preserve">${esc(l.slice(0, at))}<tspan fill="${LI}">${esc(spec.accentWord)}</tspan>${esc(l.slice(at + spec.accentWord.length))}</text>`;
       }).join("");
       const end = top + (spec.lines.length - 1) * lh;
-      return `${lFrame(spec.series, "NOTE")}${mLabel(90, top - size - 40, "Studio note", LI)}${lines}<rect x="90" y="${end + 70}" width="140" height="5" fill="${LI}"/>${mLabel(90, end + 140, spec.byline)}`;
+      return `${lFrame(spec.series, spec.folio ?? "NOTE")}${mLabel(90, top - size - 40, spec.label ?? "Studio note", LI)}${lines}<rect x="90" y="${end + 70}" width="140" height="5" fill="${LI}"/>${mLabel(90, end + 140, spec.byline)}`;
     }
     case "object":
-      return `${lFrame(spec.series, "OBJ")}
+      return `${lFrame(spec.series, spec.folio ?? "OBJ")}
 <rect x="0" y="300" width="${W}" height="880" fill="#111113"/>
 <!-- the photo is composited into this band at render time; the fade is drawn over it in composeStory -->
 ${spec.label.map((r, i) => { const y = 1270 + i * 70; return `${rule(y - 50)}${mLabel(90, y, r.k)}${T(W - 90, y + 2, r.v, { f: "Inter Light", w: 300, s: 40, c: WH, a: "end" })}`; }).join("")}${rule(1270 + spec.label.length * 70 - 50)}
@@ -369,7 +375,7 @@ ${T(90, 1270 + spec.label.length * 70 + 50, spec.line, { f: "Inter Light", w: 30
         return `${rule(y - 76)}${mLabel(90, y - 22, String(i + 1).padStart(2, "0"), LI)}${T(170, y, r.name, { f: "Inter Light", w: 300, s: 62, c: WH, ls: -1 })}${T(170, y + 48, r.what, { f: "Inter Light", w: 300, s: 32, c: MU })}${r.where ? mLabel(W - 90, y - 22, r.where, "#5a5a60", "end") : ""}`;
       }).join("");
       const last = 680 + spec.rows.length * 160 - 76;
-      return `${lFrame(spec.series, "INDEX")}${lBig(90, 470, spec.headline, 112)}${rows}${rule(last)}${T(90, last + 100, spec.note, { f: "Inter Light", w: 300, s: 46, c: LI })}`;
+      return `${lFrame(spec.series, spec.folio ?? "INDEX")}${lBig(90, 470, spec.headline, 112)}${rows}${rule(last)}${T(90, last + 100, spec.note, { f: "Inter Light", w: 300, s: 46, c: LI })}`;
     }
     case "process": {
       const rows = spec.steps.map((st, i) => {
@@ -380,6 +386,12 @@ ${T(90, 1270 + spec.label.length * 70 + 50, spec.line, { f: "Inter Light", w: 30
       const last = 680 + spec.steps.length * 170;
       return `${lFrame(spec.series, "PROC")}${lBig(90, 470, spec.headline, 104)}${rows}${T(90, last + 10, spec.note, { f: "Inter Light", w: 300, s: 44, c: LI })}`;
     }
+    case "image":
+      return `<rect width="${W}" height="${H}" fill="${BK}"/>`;
+    case "screen":
+      return `${lFrame(spec.series, spec.folio ?? "SCREEN")}${mLabel(90, 400, spec.step, LI)}${lBig(90, 500, spec.headline[0], 96)}${lBig(90, 610, spec.headline[1], 96)}
+${wrapWords(spec.detail, 44).slice(0, 2).map((l, i) => T(90, 690 + i * 48, l, { f: "Inter Light", w: 300, s: 36, c: MU })).join("")}
+${lPhone(SCREEN.x, SCREEN.y, SCREEN.w, SCREEN.h, () => "")}`;
     case "teardown": {
       const before = (x: number, y: number, w: number) => `${bar(x, y, w, 150, "#26262b")}${T(x + w / 2, y + 84, "◀  SLIDESHOW  ▶", { f: MONO, w: 500, s: 18, c: "#6a6a70", a: "middle", ls: 2 })}${[0, 1, 2, 3, 4, 5].map((i) => bar(x, y + 180 + i * 30, w - (i % 3) * 40, 12, "#1f1f23")).join("")}${T(x + w / 2, y + 400, "menu · menu · menu", { f: MONO, w: 500, s: 16, c: "#55555b", a: "middle" })}`;
       const after = (x: number, y: number, w: number) => `${T(x, y + 44, "What you do,", { f: "Inter SemiBold", w: 600, s: 30, c: WH })}${T(x, y + 82, "in one line.", { f: "Inter SemiBold", w: 600, s: 30, c: WH })}<rect x="${x}" y="${y + 120}" width="${w}" height="78" rx="39" fill="${LI}"/>${T(x + w / 2, y + 170, "Call now", { f: "Inter SemiBold", w: 600, s: 28, c: BK, a: "middle" })}<rect x="${x}" y="${y + 214}" width="${w}" height="70" rx="35" fill="none" stroke="#4a4a50" stroke-width="3"/>${T(x + w / 2, y + 258, "Book", { f: "Inter Light", w: 300, s: 26, c: WH, a: "middle" })}`;
@@ -393,16 +405,36 @@ ${list(110, spec.before, false)}${list(570, spec.after, true)}`;
 }
 
 const LOGO = path.join(process.cwd(), "src", "assets", "brand", "codeit-logo.png");
+/** Finished case-study frames, rendered by case-render from the client's own photos and screenshots. */
+const CASES = path.join(process.cwd(), "src", "assets", "cases");
 
 /** Renders a story to a 1080×1920 JPEG. */
 export async function composeStory(spec: StorySpec, photo?: Uint8Array): Promise<{ bytes: Uint8Array; width: number; height: number; contentType: "image/jpeg" }> {
   prepareFonts();
   const sharp = (await import("sharp")).default;
+  if (spec.kind === "image") {
+    const out = await sharp(readFileSync(path.join(CASES, path.basename(spec.file)))).resize(W, H, { fit: "cover" }).jpeg({ quality: 92, chromaSubsampling: "4:4:4" }).toBuffer();
+    return { bytes: new Uint8Array(out.buffer, out.byteOffset, out.byteLength), width: W, height: H, contentType: "image/jpeg" };
+  }
   const layers = [] as { input: Buffer; left: number; top: number }[];
   if (spec.kind === "object" && photo) {
     layers.push({ input: await sharp(Buffer.from(photo)).resize(W, 880, { fit: "cover" }).toBuffer(), left: 0, top: 300 });
     // fade the photo into the page, and keep the title legible over it
     layers.push({ input: Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="880"><defs><linearGradient id="f" x1="0" y1="0" x2="0" y2="1"><stop offset="0.6" stop-color="#0b0b0c" stop-opacity="0"/><stop offset="1" stop-color="#0b0b0c" stop-opacity="1"/></linearGradient></defs><rect width="${W}" height="880" fill="url(#f)"/><text x="90" y="840" font-family="JetBrains Mono" font-weight="500" font-size="24" letter-spacing="3" fill="#c7ff3d">${esc(spec.title.toUpperCase())}</text></svg>`), left: 0, top: 300 });
+  }
+  if (spec.kind === "screen" && photo) {
+    const gx = SCREEN.x + 14, gy = SCREEN.y + 14, gw = SCREEN.w - 28, gh = SCREEN.h - 28;
+    const src = sharp(Buffer.from(photo));
+    const meta = await src.metadata();
+    const scale = gw / (meta.width ?? gw);
+    const top = Math.max(0, Math.round((spec.crop ?? 0) * scale));
+    const resized = await sharp(Buffer.from(photo)).resize({ width: gw }).toBuffer();
+    const rh = Math.round((meta.height ?? gh) * scale);
+    const shot = await sharp(resized).extract({ left: 0, top: Math.min(top, Math.max(0, rh - gh)), width: gw, height: Math.min(gh, rh) }).toBuffer();
+    const mask = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${gw}" height="${Math.min(gh, rh)}"><rect width="${gw}" height="${Math.min(gh, rh)}" rx="46" fill="#fff"/></svg>`);
+    layers.push({ input: await sharp(shot).composite([{ input: mask, blend: "dest-in" }]).png().toBuffer(), left: gx, top: gy });
+    // the notch sits over the screen
+    layers.push({ input: Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="140" height="40"><rect x="16" y="2" width="108" height="30" rx="15" fill="#050506"/></svg>`), left: SCREEN.x + SCREEN.w / 2 - 70, top: SCREEN.y + 24 });
   }
   if (spec.brand === "codeit") layers.push({ input: await sharp(readFileSync(LOGO)).resize({ width: 220 }).png().toBuffer(), left: (W - 220) / 2, top: 140 });
   const out = await sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${storySvg(spec)}</svg>`))
@@ -479,6 +511,7 @@ export const HIGHLIGHT_COVERS: Record<StoryBrandKey, Record<string, { mark: Cove
     NASMA: { mark: "letters", letters: "N" },
     AMY: { mark: "letters", letters: "A" },
     ARCUBED: { mark: "letters", letters: "AR" },
+    "HOUSE DEALS": { mark: "letters", letters: "HD" },
     "FIX THIS": { mark: "wrench" },
     "WHAT YOU GET": { mark: "box" },
     OFFICE: { mark: "grid" },
