@@ -72,6 +72,13 @@ describe.each(withStories)("stories in plan $key", (plan) => {
     }
   });
 
+  it("lists fit their layout: a checklist has at most four items, an index at most six rows", () => {
+    for (const s of plan.stories!) {
+      if (s.spec.kind === "checklist") expect(s.spec.items.length, s.key).toBeLessThanOrEqual(4);
+      if (s.spec.kind === "index") expect(s.spec.rows.length, s.key).toBeLessThanOrEqual(6);
+    }
+  });
+
   it("renders every story as valid SVG text with no em dashes", () => {
     for (const s of plan.stories!) {
       const svg = storySvg(s.spec);
