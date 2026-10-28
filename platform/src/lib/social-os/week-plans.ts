@@ -798,6 +798,34 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `Flat vector on mint: one big flat orange house shape with three round cream windows, a tiny flat laptop in each window; the mascot waves from the door. Headline "One plan. Every kid." in chunky navy type. ${CODEIT_LOOK}`,
       },
       {
+        key: "n-codeit-bughunt", brand: CODEIT, day: "2026-11-01", time: "10:00", pillar: "TEACH", storyHighlight: "QUIZ",
+        title: "CodeIt · Bug hunt: the ghost won't move", kind: "image_post", platforms: ["instagram", "facebook"],
+        hook: "The ghost won't move. One of these three lines is the reason.",
+        body: "Bug hunt. The ghost won't move.\n\n1. ghost.x = 100\n2. speed = 0\n3. ghost.x += speed\n\nOne of these lines is the bug. Read them out loud with your kid and see who spots it first.\n\nComment the line number. The answer is in tomorrow's story.\n\nFinding a bug is half of coding, and on CodeIt kids fix their own games the same way.",
+        facebookBody: "Bug hunt: the ghost won't move. Line 1: ghost.x = 100. Line 2: speed = 0. Line 3: ghost.x += speed. Which line is the bug? Comment the number, the answer is in tomorrow's story.",
+        hashtags: CODEIT_TAGS, callToAction: "Comment the line number",
+        card: { eyebrow: "Bug hunt", headline: "The ghost won't move.", sub: "Find the bug.", steps: [], format: {
+          kind: "bug", hero: "ghost", item: "candy", symptom: "STUCK",
+          code: ["ghost.x = 100", "speed = 0", "ghost.x += speed"], question: "Which line is the bug?",
+        } },
+        creativeDirection: "Rendered card.",
+      },
+      {
+        key: "n-codeit-pip-loop", brand: CODEIT, day: "2026-11-04", time: "19:30", pillar: "HOW IT WORKS", storyHighlight: "PIP",
+        title: "CodeIt · Pip learns a loop", kind: "image_post", platforms: ["instagram", "facebook"],
+        hook: "Pip wanted to jump three times. Pip typed it three times.",
+        body: "Pip wanted to jump three times.\n\nSo Pip typed jump() three times. It worked, but imagine a hundred jumps.\n\nThen Pip found the loop: repeat 3: jump()\nSame jumps, one line.\n\nThat is what a loop is. Ask your kid tonight: what would you want to repeat a hundred times in a game?\n\nCodeIt shows the code behind every change, loops included. Free to start, ages 5 to 18.",
+        facebookBody: "Pip wanted to jump three times, so Pip typed jump() three times. Then Pip found the loop: repeat 3: jump(). Same jumps, one line. That is a loop. Ask your kid what they would repeat a hundred times in a game.",
+        hashtags: CODEIT_TAGS, callToAction: "Save this",
+        card: { eyebrow: "Pip learns a loop", headline: "Jump. Jump. Jump.", sub: "Or one loop.", steps: [], format: { kind: "comic", panels: [
+          { pose: "think", bubble: "I want to\njump 3 times", caption: "Pip has a plan" },
+          { pose: "type", code: "jump() jump() jump()", caption: "Typing it 3 times" },
+          { pose: "type", code: "repeat 3: jump()", caption: "Or one loop" },
+          { pose: "jump", jumps: 3, caption: "Same jumps, less typing" },
+        ] } },
+        creativeDirection: "Rendered card.",
+      },
+      {
         key: "n-codeit-start", brand: CODEIT, day: "2026-10-28", time: "19:30", pillar: "OFFER", storyHighlight: "START HERE",
         title: "CodeIt · One line, two games", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "Same game. One number changed.",
@@ -1070,11 +1098,12 @@ export const WEEK_PLANS: WeekPlan[] = [
       },
       {
         key: "c-quiz-loop", brand: CODEIT, day: "2026-11-01", time: "17:00", highlight: "QUIZ",
-        spec: { kind: "quiz", brand: "codeit", eyebrow: "Quiz time", headline: "How many boos?", code: ["for i in range(3):", '    print("boo")'], sticker: { type: "quiz", question: "How many times does it print boo?", options: ["1", "3", "4"], correct: 1 } },
+        // Same key as the loop quiz it replaced, so the draft is re-rendered rather than orphaned. The loop moved to Pip's comic on Nov 4.
+        spec: { kind: "quiz", brand: "codeit", eyebrow: "Bug hunt", headline: "The ghost won't move", code: ["ghost.x = 100", "speed = 0", "ghost.x += speed"], sticker: { type: "quiz", question: "Which line is the bug?", options: ["Line 1", "Line 2", "Line 3"], correct: 1 } },
       },
       {
         key: "c-answer-loop", brand: CODEIT, day: "2026-11-02", time: "15:45", highlight: "QUIZ",
-        spec: { kind: "answer", brand: "codeit", eyebrow: "Yesterday's answer", headline: "It prints boo:", answer: "3 times", why: ["range(3) counts 0, 1, 2.", "That is three turns,", "one boo each turn."], example: "for i in range(10):", tryThis: "Change 3 to 10 and run it." },
+        spec: { kind: "answer", brand: "codeit", eyebrow: "Yesterday's bug hunt", headline: "The bug is:", answer: "Line 2", why: ["speed = 0 means the", "ghost moves 0 steps", "every frame."], example: "speed = 5", tryThis: "Change one number, it moves." },
       },
       {
         key: "c-poll-make", brand: CODEIT, day: "2026-11-03", time: "17:00", highlight: "BUILDS",

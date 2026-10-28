@@ -127,7 +127,7 @@ ${head(PAD, 978, "Same game. One number changed.", 40)}`;
       break;
     }
     case "bug": {
-      body = `${scene(PAD + 14, 262, 400, 260, { hero: f.hero, item: f.item, heroX: 0.55, badge: f.symptom, badgeBad: true, id: "bug" })}
+      body = `${scene(PAD + 14, 262, 400, 260, { hero: f.hero, item: f.item, heroX: 0.22, badge: f.symptom, badgeBad: true, id: "bug" })}
 ${card(PAD + 470, 248, W - PAD * 2 - 470, 288, DARK)}${f.code.map((l, i) => `${mono(PAD + 500, 306 + i * 56, String(i + 1), 26, "#8e7b69")}${mono(PAD + 540, 306 + i * 56, l, Math.min(30, (W - PAD * 2 - 470 - 100) / (0.62 * Math.max(...f.code.map((c) => c.length)))), "#fff4e5")}`).join("")}
 ${card(PAD, 580, W - PAD * 2, 300, PAPER)}${head(W / 2, 654, f.question, 44, BROWN, "middle")}
 ${f.code.map((_, i, a) => { const n = a.length, gw = (W - PAD * 2 - 80 - (n - 1) * 24) / n, gx = PAD + 40 + i * (gw + 24); return `<rect x="${gx + 6}" y="${716}" width="${gw}" height="110" rx="24" fill="${DARK}"/><rect x="${gx}" y="${710}" width="${gw}" height="110" rx="24" fill="${i % 2 ? CREAM : "#fff0e0"}" stroke="${DARK}" stroke-width="4"/>${text(gx + gw / 2, 785, `Line ${i + 1}`, { f: "Baloo 2", w: 700, s: 40, a: "middle" })}`; }).join("")}
