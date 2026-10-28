@@ -55,3 +55,28 @@ export const HOUSE_DEALS_CASE: CaseSet = {
     { kind: "cta", photo: "interior.jpg", lines: ["One site.", "Both sides served."], accentWord: "served.", button: "DM AUDIT" },
   ],
 };
+
+/** KIDS CODING highlight: a STEM school whose site LYNQ runs (program finder, term timeline, registration, SEO). No photos of children. */
+export const KIDS_CODING_CASE: CaseSet = {
+  series: "Case 06 · Kids Coding",
+  glow: "#e8954a",
+  frames: [
+    { kind: "cover", photo: "bg-cover.jpg", caseNo: "Case 06", name: ["Kids", "Coding"], line: "A STEM school for ages 5 to 17." },
+    { kind: "brief", photo: "bg-brief.jpg", label: "The brief", lines: ["Five programs.", "One question from", "every parent:", "where do we start?"], accentWord: "start?", byline: "After-school, camps, online, workshops, weekly classes" },
+    { kind: "phones", step: "01 · Start here", headline: ["Three answers,", "one starting point."], detail: "Parents pick their child's age and interests, and the site shows where to begin.", shots: [{ img: "finder.jpg" }] },
+    { kind: "phones", step: "02 · Plan the year", headline: ["Every term", "on one page."], detail: "Terms, breaks and camps in order, each with its dates and the next step.", shots: [{ img: "timeline.jpg" }, { img: "online.jpg" }] },
+    { kind: "phones", step: "03 · Enroll", headline: ["Dates, then", "Enroll & Pay."], detail: "Every camp and class has its own Enroll & Pay button, right next to its dates.", shots: [{ img: "camps.jpg" }] },
+    {
+      kind: "bento",
+      headline: "Five ways in.",
+      tiles: [
+        { shot: { img: "finder.jpg" }, label: "Program finder", sub: "Three questions" },
+        { shot: { img: "timeline.jpg" }, label: "Term timeline", sub: "The whole year" },
+        { shot: { img: "camps.jpg" }, label: "Camps", sub: "Dates, Enroll & Pay" },
+        { shot: { img: "online.jpg" }, label: "Online", sub: "Live classes" },
+      ],
+      note: "Run and maintained by LYNQ.",
+    },
+    { kind: "cta", photo: "bg-cta.jpg", lines: ["Parents find it.", "Then they enroll."], accentWord: "enroll.", button: "DM AUDIT" },
+  ],
+};

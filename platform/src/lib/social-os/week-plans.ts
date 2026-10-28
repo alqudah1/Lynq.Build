@@ -583,7 +583,7 @@ export const WEEK_PLANS: WeekPlan[] = [
     weekStart: "2026-10-22",
     retired: ["n-codeit-free", "n-codeit-askteacher"],
     highlights: {
-      LYNQ: ["START HERE", "KINGSBRIDGE", "NASMA", "AMY", "ARCUBED", "HOUSE DEALS", "FIX THIS", "WHAT YOU GET", "OFFICE", "BEHIND"],
+      LYNQ: ["START HERE", "KINGSBRIDGE", "NASMA", "AMY", "ARCUBED", "HOUSE DEALS", "KIDS CODING", "FIX THIS", "WHAT YOU GET", "OFFICE", "BEHIND"],
       CodeIt: ["START HERE", "BUILDS", "LESSONS", "ASK THE TEACHER", "FREE", "ABOUT", "QUIZ", "PIP"],
     },
     feed: [
@@ -796,6 +796,20 @@ export const WEEK_PLANS: WeekPlan[] = [
           { label: "Family plan, CA$12/month", panel: { type: "text", lines: ["More builds each month", "Separate projects per child", "The same check on every build"] } },
         ], takeaway: "Start free. Upgrade only if they run out of builds.", tryThis: "Ages 5 to 18, in the browser, nothing to install: codeitlearn.com" },
         creativeDirection: `Flat vector on mint: one big flat orange house shape with three round cream windows, a tiny flat laptop in each window; the mascot waves from the door. Headline "One plan. Every kid." in chunky navy type. ${CODEIT_LOOK}`,
+      },
+      {
+        key: "n-codeit-start", brand: CODEIT, day: "2026-10-28", time: "19:30", pillar: "OFFER", storyHighlight: "START HERE",
+        title: "CodeIt · Start free tonight: one sentence, one game", kind: "image_post", platforms: ["instagram", "facebook"],
+        hook: "Tonight's plan takes one minute to start.",
+        body: "Tonight's plan takes one minute to start.\n\n1. Open codeitlearn.com\n2. Type one sentence: \"a game where a cat catches falling pizza\"\n3. Press build, play it, then change it. A faster cat, more pizza, a score.\n\nEvery change shows the code behind it.\n\nFree to start, no card, nothing to install. The 31 Python lessons and 10 AI builds a month are free. Ages 5 to 18.\nLink in bio.",
+        facebookBody: "Tonight's plan takes one minute to start: open codeitlearn.com, type one sentence like \"a game where a cat catches falling pizza\", press build and play it. Then change it and see the code behind every change. Free to start, no card, nothing to install. Ages 5 to 18.",
+        hashtags: CODEIT_TAGS, callToAction: "Start free at codeitlearn.com",
+        card: { eyebrow: "Start free tonight", headline: "One sentence.", sub: "One game.", steps: [
+          { label: "Type one sentence", panel: { type: "input", text: "a game where a cat catches falling pizza" } },
+          { label: "Press build", panel: { type: "run", label: "Build my game" } },
+          { label: "Play it, then change it", panel: { type: "game", hero: "cat", item: "pizza", score: "3" } },
+        ], takeaway: "Every change shows the code behind it.", tryThis: "Free to start, no card, nothing to install. Ages 5 to 18: codeitlearn.com" },
+        creativeDirection: "Rendered card.",
       },
       {
         key: "n-codeit-threeq", brand: CODEIT, day: "2026-10-29", time: "19:30", pillar: "LEARN", storyHighlight: "ASK THE TEACHER",
@@ -1085,6 +1099,13 @@ export const WEEK_PLANS: WeekPlan[] = [
       { key: "case-housedeals-05", brand: LYNQ, day: "2026-10-29", time: "14:20", highlight: "HOUSE DEALS", spec: { kind: "image", brand: "lynq", file: "housedeals-05.jpg", alt: "The investor side, with every estimate labelled." } },
       { key: "case-housedeals-06", brand: LYNQ, day: "2026-10-29", time: "14:25", highlight: "HOUSE DEALS", spec: { kind: "image", brand: "lynq", file: "housedeals-06.jpg", alt: "What we built: seller form, how it works, investor list, FAQ." } },
       { key: "case-housedeals-07", brand: LYNQ, day: "2026-10-29", time: "14:30", highlight: "HOUSE DEALS", spec: { kind: "image", brand: "lynq", file: "housedeals-07.jpg", alt: "One site, both sides served. DM AUDIT." } },
+      { key: "case-kidscoding-01", brand: LYNQ, day: "2026-10-30", time: "14:00", highlight: "KIDS CODING", spec: { kind: "image", brand: "lynq", file: "kidscoding-01.jpg", alt: "Kids Coding, case 06: a STEM school for ages 5 to 17." } },
+      { key: "case-kidscoding-02", brand: LYNQ, day: "2026-10-30", time: "14:05", highlight: "KIDS CODING", spec: { kind: "image", brand: "lynq", file: "kidscoding-02.jpg", alt: "The brief: five programs, and one question from every parent: where do we start?" } },
+      { key: "case-kidscoding-03", brand: LYNQ, day: "2026-10-30", time: "14:10", highlight: "KIDS CODING", spec: { kind: "image", brand: "lynq", file: "kidscoding-03.jpg", alt: "Three answers, one starting point: the Kids Coding program finder." } },
+      { key: "case-kidscoding-04", brand: LYNQ, day: "2026-10-30", time: "14:15", highlight: "KIDS CODING", spec: { kind: "image", brand: "lynq", file: "kidscoding-04.jpg", alt: "Every term on one page: the Kids Coding timeline." } },
+      { key: "case-kidscoding-05", brand: LYNQ, day: "2026-10-30", time: "14:20", highlight: "KIDS CODING", spec: { kind: "image", brand: "lynq", file: "kidscoding-05.jpg", alt: "Dates, then Enroll and Pay, on every camp and class." } },
+      { key: "case-kidscoding-06", brand: LYNQ, day: "2026-10-30", time: "14:25", highlight: "KIDS CODING", spec: { kind: "image", brand: "lynq", file: "kidscoding-06.jpg", alt: "What we built: program finder, term timeline, camps, online classes." } },
+      { key: "case-kidscoding-07", brand: LYNQ, day: "2026-10-30", time: "14:30", highlight: "KIDS CODING", spec: { kind: "image", brand: "lynq", file: "kidscoding-07.jpg", alt: "Parents find it. Then they enroll. DM AUDIT." } },
     ],
   },
 ];

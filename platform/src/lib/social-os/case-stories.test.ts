@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { ARCUBED_CASE, HOUSE_DEALS_CASE } from "./case-stories";
+import { ARCUBED_CASE, HOUSE_DEALS_CASE, KIDS_CODING_CASE } from "./case-stories";
 
-describe.each([ARCUBED_CASE, HOUSE_DEALS_CASE])("case set $series", (set) => {
+describe.each([ARCUBED_CASE, HOUSE_DEALS_CASE, KIDS_CODING_CASE])("case set $series", (set) => {
   it("runs cover → brief → the build → what we built → the result", () => {
     expect(set.frames[0]!.kind).toBe("cover");
     expect(set.frames[1]!.kind).toBe("brief");

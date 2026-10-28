@@ -512,6 +512,7 @@ export const HIGHLIGHT_COVERS: Record<StoryBrandKey, Record<string, { mark: Cove
     AMY: { mark: "letters", letters: "A" },
     ARCUBED: { mark: "letters", letters: "AR" },
     "HOUSE DEALS": { mark: "letters", letters: "HD" },
+    "KIDS CODING": { mark: "letters", letters: "KC" },
     "FIX THIS": { mark: "wrench" },
     "WHAT YOU GET": { mark: "box" },
     OFFICE: { mark: "grid" },
