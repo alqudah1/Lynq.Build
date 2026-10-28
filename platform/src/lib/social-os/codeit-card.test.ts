@@ -12,21 +12,24 @@ const spec: CodeItCard = {
 };
 
 describe("CodeIt story cards", () => {
-  it("draws the website's system: cream canvas, orange eyebrow, brown and orange headline, the dark code box, numbered steps", () => {
+  it("draws the modern look: cream gradient, soft shadows and no outlines, orange eyebrow, the dark code window, numbered steps", () => {
     const svg = codeItCardSvg(spec);
-    expect(svg).toContain('fill="#fff4e5"');
+    expect(svg).toContain('fill="url(#kbg)"');
+    expect(svg).toContain('filter="url(#kshadow)"');
+    expect(svg).not.toMatch(/stroke="#2b1d12" stroke-width="4"/);
+    expect(svg).toContain('fill="url(#kcode)"');
     expect(svg).toContain("WE PROVE IT");
     expect(svg).toContain("The game works.");
     expect(svg).toContain("Now, one question.");
     expect(svg).toContain("jump = 8");
     expect(svg).toContain("codeitlearn.com");
-    expect((svg.match(/<circle cx="\d+" cy="\d+" r="26" fill="#ff7a00"/g) ?? []).length).toBe(3);
+    expect((svg.match(/<circle cx="\d+" cy="\d+" r="24" fill="url\(#korange\)"/g) ?? []).length).toBe(3);
   });
 
   it("the right answer is the orange pill with a tick, the others stay cream", () => {
     const svg = codeItCardSvg(spec);
     expect(svg).toContain('stroke="#fff" stroke-width="6"');
-    expect((svg.match(/rx="31" fill="#ff7a00"/g) ?? []).length).toBe(1);
+    expect((svg.match(/rx="31" fill="url\(#korange\)"/g) ?? []).length).toBe(1);
   });
 
   it("steps are scaled down, never clipped, when they run longer than the space above the takeaway", () => {
