@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
       // Story cards and highlight covers render text through librsvg; the fonts must travel with the function.
       "./src/assets/fonts/**/*",
       "./src/assets/cases/**/*",
+      "./src/assets/reels/**/*",
       // CodeIt story cards composite the brand logo.
       "./src/assets/brand/**/*",
     ],

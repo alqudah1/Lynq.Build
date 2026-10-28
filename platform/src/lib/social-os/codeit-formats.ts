@@ -29,7 +29,7 @@ import { BROWN, CORAL, INK, MINT, ORANGE, ORANGE_T, PAD, PAPER, W, YELLOW, backd
 
 const ln = `stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"`;
 
-function hero(kind: FormatHero, x: number, y: number, tilt = 0): string {
+export function hero(kind: FormatHero, x: number, y: number, tilt = 0): string {
   const g = (inner: string) => `<g transform="translate(${x},${y}) rotate(${tilt})">${inner}</g>`;
   if (kind === "ghost") return g(`<path d="M0 60 L0 20 Q0 -20 50 -20 Q100 -20 100 20 L100 60 L84 48 L68 60 L50 48 L34 60 L16 48 Z" fill="#fffaf4" ${ln}/><circle cx="36" cy="18" r="6" fill="${INK}"/><circle cx="64" cy="18" r="6" fill="${INK}"/><circle cx="28" cy="32" r="6" fill="${CORAL}" opacity="0.35"/><circle cx="72" cy="32" r="6" fill="${CORAL}" opacity="0.35"/>`);
   if (kind === "rocket") return g(`<path d="M50 -30 Q90 20 70 80 L30 80 Q10 20 50 -30 Z" fill="#fffaf4" ${ln}/><circle cx="50" cy="20" r="12" fill="#bfe3ff" ${ln}/><path d="M30 60 L8 84 L34 80 Z M70 60 L92 84 L66 80 Z" fill="${CORAL}" ${ln}/><path d="M40 82 L50 108 L60 82 Z" fill="${YELLOW}"/>`);
@@ -37,7 +37,7 @@ function hero(kind: FormatHero, x: number, y: number, tilt = 0): string {
   return g(`<ellipse cx="60" cy="40" rx="64" ry="36" fill="${ORANGE}" ${ln}/><ellipse cx="60" cy="52" rx="34" ry="16" fill="#ffc98a"/><circle cx="118" cy="22" r="30" fill="${ORANGE}" ${ln}/><path d="M98 0 L104 -22 L120 -2 Z M138 0 L146 -22 L128 -2 Z" fill="${ORANGE}" ${ln}/><circle cx="110" cy="20" r="4" fill="${INK}"/><circle cx="128" cy="20" r="4" fill="${INK}"/><path d="M20 70 l-8 22 M70 72 l-4 22 M104 60 l10 20" stroke="${ORANGE}" stroke-width="8" stroke-linecap="round"/>`);
 }
 
-function item(kind: FormatItem, x: number, y: number): string {
+export function item(kind: FormatItem, x: number, y: number): string {
   if (kind === "candy") return `<g transform="translate(${x},${y - 40}) rotate(-20)"><rect x="0" y="0" width="90" height="44" rx="22" fill="${CORAL}" ${ln}/><path d="M0 10 L-22 -4 L-22 48 L0 34 Z M90 10 L112 -4 L112 48 L90 34 Z" fill="${CORAL}" ${ln}/><path d="M24 6 l8 32 M48 6 l8 32" stroke="#fff" stroke-width="5" opacity="0.7"/></g>`;
   if (kind === "asteroid") return `<path d="M${x} ${y - 40} l40 -30 l50 10 l20 40 l-30 40 l-50 5 l-35 -30 Z" fill="#a89a8e" ${ln}/>`;
   if (kind === "carrot") return `<g transform="translate(${x},${y - 90}) rotate(30)"><path d="M0 0 Q20 -6 40 0 L20 110 Z" fill="${ORANGE}" ${ln}/><path d="M8 -4 Q0 -30 4 -36 Q14 -20 20 -8 Q26 -34 32 -40 Q36 -18 34 -4 Z" fill="${MINT}" ${ln}/></g>`;
@@ -63,7 +63,7 @@ ${o.badge ? `<rect x="${x + w - 196}" y="${y + 18}" width="176" height="44" rx="
 }
 
 /** Pip, CodeIt's mascot, drawn flat and soft: a round orange fluff ball in a yellow hoodie. */
-function pip(cx: number, cy: number, r: number, pose: "think" | "type" | "jump" | "cheer" = "think"): string {
+export function pip(cx: number, cy: number, r: number, pose: "think" | "type" | "jump" | "cheer" = "think"): string {
   const fluff = Array.from({ length: 16 }, (_, i) => {
     const a = (Math.PI * 2 * i) / 16 + 0.2;
     return `<circle cx="${(cx + Math.cos(a) * r * 0.92).toFixed(1)}" cy="${(cy + Math.sin(a) * r * 0.9).toFixed(1)}" r="${(r * 0.22).toFixed(1)}" fill="#ff8a1f"/>`;

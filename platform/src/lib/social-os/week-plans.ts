@@ -1,4 +1,6 @@
 import "server-only";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { marketingChannelAccounts, marketingContentItems, socialAssets, socialContentVariants } from "@/db/schema";
@@ -85,6 +87,8 @@ interface PlanReel {
   shots: { timing: string; visual: string; onScreenText?: string; audio?: string }[];
   /** The owner already sent this reel's video to the Telegram bot: attach the newest Telegram video in the workspace when the reel has none. */
   videoFromTelegram?: boolean;
+  /** A rendered reel bundled in src/assets/reels (see reel-render.ts): uploaded once and attached when the reel has no video. */
+  videoFile?: string;
   /**
    * AI video, ready to make: the prompt is stored as the reel's art direction so
    * Studio → Make video uses it. Nothing is generated (or spent) until the owner
@@ -2141,6 +2145,7 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
       const existing = await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId: existingReelId, actorUserId: input.actorUserId });
       if (await refreshPlanCopy(db, input, existing, (v) => ({ hook: reel.hook, body: v.platform === "facebook" ? (reel.facebookBody ?? reel.body) : reel.body, hashtags: reel.hashtags, callToAction: reel.callToAction, scheduledFor: planSlot(reel.day, reel.time) }))) report.scheduled.push(`${existing.title}: updated`);
       if (reel.videoFromTelegram && (await attachTelegramVideo(db, input, existingReelId))) report.scheduled.push(`${existing.title}: video from Telegram attached`);
+      if (reel.videoFile && (await attachBundledVideo(db, input, existingReelId, brandProfileId, reel.videoFile, reel.title))) report.scheduled.push(`${existing.title}: rendered video attached`);
       if (reel.aiVideo && existing.brief.creativeDirection !== reel.aiVideo.prompt && existing.variants.every((v) => v.archivedAt || RESCHEDULABLE.has(v.status))) {
         await updateContentItem(db, { organizationId: input.organizationId, contentItemId: existing.id, actorUserId: input.actorUserId, expectedRevision: existing.revision, changes: { brief: { creativeDirection: reel.aiVideo.prompt, keyPoints: reelKeyPoints(reel) } } });
         report.scheduled.push(`${existing.title}: video prompt updated`);
@@ -2170,6 +2175,7 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
     }
     report.created.push(`${reel.title} · ${reel.day} ${reel.time}`);
     if (reel.videoFromTelegram && (await attachTelegramVideo(db, input, item.id))) report.scheduled.push(`${reel.title}: video from Telegram attached`);
+    else if (reel.videoFile && (await attachBundledVideo(db, input, item.id, brandProfileId, reel.videoFile, reel.title))) report.scheduled.push(`${reel.title}: rendered video attached`);
     else if (reel.aiVideo) report.needsYou.push(`${reel.title}: AI video ready to make (${reel.aiVideo.seconds} s). Press Make video in Studio once video credits are set up; nothing is spent before that.`);
     else report.needsYou.push(`${reel.title}: film it from the script and upload the video before ${reel.day}.`);
   }
@@ -2235,6 +2241,43 @@ async function attachCodeItCard(db: Db, input: { organizationId: string; actorUs
 }
 
 /** Puts the newest video sent to the Telegram bot on every version of a reel that still has no media. True when something was attached. */
+const REELS_DIR = path.join(process.cwd(), "src", "assets", "reels");
+
+/** Attaches a bundled rendered reel to a reel's empty variants, uploading the file once per workspace. */
+async function attachBundledVideo(db: Db, input: { organizationId: string; actorUserId: string }, contentItemId: string, brandProfileId: string, file: string, title: string): Promise<boolean> {
+  const variants = await getVariantsOfItem(db, input, contentItemId);
+  const empty = variants.filter((v) => !v.archivedAt && !v.media.length && RESCHEDULABLE.has(v.status) && v.platform !== "linkedin");
+  if (!empty.length) return false;
+  const tag = `reel-file:${file}`;
+  const [found] = await db
+    .select({ id: socialAssets.id })
+    .from(socialAssets)
+    .where(and(eq(socialAssets.organizationId, input.organizationId), isNull(socialAssets.archivedAt), eq(socialAssets.assetType, "video"), sql`${socialAssets.tags} @> ${JSON.stringify([tag])}::jsonb`))
+    .limit(1);
+  let assetId = found?.id;
+  if (!assetId) {
+    let bytes: Uint8Array;
+    try {
+      bytes = new Uint8Array(readFileSync(path.join(REELS_DIR, file)));
+    } catch {
+      console.error(`[week-plan] rendered reel missing: ${file}`);
+      return false;
+    }
+    const asset = await createUploadedAsset(db, { organizationId: input.organizationId, actorUserId: input.actorUserId, brandProfileId, contentItemId, assetType: "video", title: `Reel · ${title}`.slice(0, 200), tags: ["rendered-reel", tag], file: { bytes, contentType: "video/mp4", filename: file }, platformHint: "instagram" });
+    assetId = asset.id;
+  }
+  let attached = 0;
+  for (const v of empty) {
+    try {
+      await updateVariant(db, { organizationId: input.organizationId, contentVariantId: v.id, actorUserId: input.actorUserId, expectedRevision: v.revision, changes: { media: [{ assetId, position: 0, role: "primary" as const }] } });
+      attached++;
+    } catch (err) {
+      console.error("[week-plan] rendered reel attach failed:", err instanceof Error ? err.message.slice(0, 200) : "unknown");
+    }
+  }
+  return attached > 0;
+}
+
 async function attachTelegramVideo(db: Db, input: { organizationId: string; actorUserId: string }, contentItemId: string): Promise<boolean> {
   const variants = await getVariantsOfItem(db, input, contentItemId);
   const empty = variants.filter((v) => !v.archivedAt && !v.media.length && RESCHEDULABLE.has(v.status) && v.platform !== "linkedin");
