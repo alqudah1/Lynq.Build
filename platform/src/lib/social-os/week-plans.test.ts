@@ -67,7 +67,9 @@ describe.each(WEEK_PLANS)("week plan $key", (plan) => {
     expect(currentWeekPlan(new Date("2026-10-21T12:00:00Z"))?.key).toBe("2026-10-12");
     expect(currentWeekPlan(new Date("2026-10-22T12:00:00Z"))?.key).toBe("2026-11-02");
     expect(currentWeekPlan(new Date("2026-11-04T12:00:00Z"))?.key).toBe("2026-11-02");
-    expect(currentWeekPlan(new Date("2026-11-05T12:00:00Z"))).toBeUndefined();
+    expect(currentWeekPlan(new Date("2026-11-05T12:00:00Z"))?.key).toBe("2026-11-18");
+    expect(currentWeekPlan(new Date("2026-11-18T12:00:00Z"))?.key).toBe("2026-11-18");
+    expect(currentWeekPlan(new Date("2026-11-19T12:00:00Z"))).toBeUndefined();
   });
 
   it("story highlights use the plan's fixed highlight sets", () => {

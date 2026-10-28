@@ -14,8 +14,11 @@
 export type FormatHero = "cat" | "ghost" | "rocket" | "bunny";
 export type FormatItem = "pizza" | "candy" | "asteroid" | "carrot";
 
+/** One half of a split: the line of code, a label, and optionally a badge (e.g. "LIVES 99") or explicit speed lines. */
+export interface SplitSide { code: string; caption: string; badge?: string; fast?: boolean }
+
 export type CardFormat =
-  | { kind: "split"; top: { code: string; caption: string }; bottom: { code: string; caption: string }; hero?: FormatHero; item?: FormatItem }
+  | { kind: "split"; top: SplitSide; bottom: SplitSide; hero?: FormatHero; item?: FormatItem; /** Line under the two games (default "Same game. One number changed."). */ note?: string }
   | { kind: "bug"; hero?: FormatHero; item?: FormatItem; symptom: string; code: string[]; question: string }
   | { kind: "comic"; panels: { caption: string; pose: "think" | "type" | "jump" | "cheer"; bubble?: string; code?: string; jumps?: number }[] }
   | { kind: "cheat"; word: string; like: string; object: "jar" | "loop" | "fork"; lines: string[]; code: string }
@@ -70,7 +73,7 @@ function scene(x: number, y: number, w: number, h: number, o: { hero?: FormatHer
 <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${sky}"/><rect x="${x}" y="${y + h - 46}" width="${w}" height="46" fill="${MINT}"/><rect x="${x}" y="${y + h - 16}" width="${w}" height="16" fill="${MINT_T}" opacity="0.5"/>
 ${star(x + 40, y + 30)}${star(x + w * 0.5, y + 22)}
 <g transform="translate(${x + w - 130},${y + h - 46}) scale(0.8)">${item(o.item ?? "pizza", 0, 0)}</g>
-${speed}<g transform="translate(${hx},${y + h - 46 - 84}) scale(0.85)">${hero(kind, 0, 0, o.fast ? -6 : 0)}</g>
+${speed}<g transform="translate(${hx},${y + h - 46 - (kind === "bunny" ? 68 : kind === "ghost" ? 51 : kind === "rocket" ? 120 : 84)}) scale(0.85)">${hero(kind, 0, 0, o.fast ? -6 : 0)}</g>
 ${o.badge ? `<rect x="${x + w - 190}" y="${y + 14}" width="176" height="42" rx="12" fill="${o.badgeBad ? CORAL : DARK}"/>${text(x + w - 102, y + 43, o.badge, { f: "JetBrains Mono", w: 700, s: 22, c: "#fff", a: "middle" })}` : ""}
 </g>`;
 }
@@ -118,12 +121,15 @@ export function formatSvg(eyebrow: string, headline: string, sub: string, f: Car
   switch (f.kind) {
     case "split": {
       const sw = W - PAD * 2 - 28, sh = 250;
-      const row = (y: number, part: { code: string; caption: string }, fast: boolean, id: string) =>
-        `${scene(PAD + 14, y, sw, sh, { hero: f.hero, item: f.item, heroX: fast ? 0.56 : 0.08, fast, id })}${chip(PAD + 34, y + 20, part.code, DARK, MINT, 32)}${pillText(W - PAD - 30 - (part.caption.length * 28 * 0.56 + 56) / 2, y + 20, part.caption, fast ? ORANGE : PAPER, fast ? "#fff" : BROWN, 28)}`;
+      const row = (y: number, part: SplitSide, fastDefault: boolean, id: string) => {
+        const fast = part.fast ?? (part.badge ? false : fastDefault);
+        const badge = part.badge ? `<rect x="${W / 2 - 100}" y="${y + 20}" width="200" height="60" rx="16" fill="${fastDefault ? ORANGE : PAPER}" stroke="${DARK}" stroke-width="3"/>${text(W / 2, y + 62, part.badge, { f: "JetBrains Mono", w: 700, s: 28, c: fastDefault ? "#fff" : BROWN, a: "middle" })}` : "";
+        return `${scene(PAD + 14, y, sw, sh, { hero: f.hero, item: f.item, heroX: fast ? 0.56 : part.badge && fastDefault ? 0.4 : 0.08, fast, id })}${chip(PAD + 34, y + 20, part.code, DARK, MINT, 32)}${badge}${pillText(W - PAD - 30 - (part.caption.length * 28 * 0.56 + 56) / 2, y + 20, part.caption, fastDefault ? ORANGE : PAPER, fastDefault ? "#fff" : BROWN, 28)}`;
+      };
       body = `${row(262, f.top, false, "a")}
 <g transform="translate(${W / 2} 568)"><circle r="40" fill="${ORANGE}" stroke="${DARK}" stroke-width="4"/>${text(0, 14, "vs", { f: "Baloo 2", w: 700, s: 38, c: "#fff", a: "middle" })}</g>
 ${row(624, f.bottom, true, "b")}
-${head(PAD, 978, "Same game. One number changed.", 40)}`;
+${head(PAD, 978, f.note ?? "Same game. One number changed.", 40)}`;
       break;
     }
     case "bug": {

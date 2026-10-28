@@ -370,11 +370,12 @@ ${rows}${rule(1250 + n * 76 - 50)}`;
 ${spec.label.map((r, i) => { const y = 1270 + i * 70; return `${rule(y - 50)}${mLabel(90, y, r.k)}${T(W - 90, y + 2, r.v, { f: "Inter Light", w: 300, s: 40, c: WH, a: "end" })}`; }).join("")}${rule(1270 + spec.label.length * 70 - 50)}
 ${T(90, 1270 + spec.label.length * 70 + 50, spec.line, { f: "Inter Light", w: 300, s: 50, c: LI, ls: -1 })}`;
     case "index": {
+      const gap = spec.rows.length > 5 ? 134 : 160;
       const rows = spec.rows.map((r, i) => {
-        const y = 680 + i * 160;
+        const y = 680 + i * gap;
         return `${rule(y - 76)}${mLabel(90, y - 22, String(i + 1).padStart(2, "0"), LI)}${T(170, y, r.name, { f: "Inter Light", w: 300, s: 62, c: WH, ls: -1 })}${T(170, y + 48, r.what, { f: "Inter Light", w: 300, s: 32, c: MU })}${r.where ? mLabel(W - 90, y - 22, r.where, "#5a5a60", "end") : ""}`;
       }).join("");
-      const last = 680 + spec.rows.length * 160 - 76;
+      const last = 680 + spec.rows.length * gap - 76;
       return `${lFrame(spec.series, spec.folio ?? "INDEX")}${lBig(90, 470, spec.headline, 112)}${rows}${rule(last)}${T(90, last + 100, spec.note, { f: "Inter Light", w: 300, s: 46, c: LI })}`;
     }
     case "process": {
