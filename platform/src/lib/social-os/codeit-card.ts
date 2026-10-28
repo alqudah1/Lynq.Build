@@ -13,6 +13,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { prepareFonts } from "./story-card";
+import { formatSvg, type CardFormat } from "./codeit-formats";
 
 export type Hero = "cat" | "ghost" | "rocket" | "bunny";
 export type Item = "pizza" | "candy" | "asteroid" | "carrot";
@@ -50,6 +51,8 @@ export interface CodeItCard {
   takeaway?: string;
   /** Orange "try this" line under the takeaway, e.g. "Try tonight: ask what makes their character move." */
   tryThis?: string;
+  /** A creative format (split, bug hunt, comic, cheat sheet, guess, ask) drawn instead of the steps. */
+  format?: CardFormat;
 }
 
 const W = 1080;
@@ -221,6 +224,7 @@ function panel(x: number, y: number, w: number, p: CardPanel): string {
 
 /** The whole SVG (without the logo bitmap, composited after). */
 export function codeItCardSvg(spec: CodeItCard): string {
+  if (spec.format) return formatSvg(spec.eyebrow, spec.headline, spec.sub, spec.format);
   const rows = spec.rows ?? spec.steps.map((_, i) => [i]);
   const parts: string[] = [`<rect width="${W}" height="${W}" fill="${CREAM}"/>`];
   parts.push(text(270, 96, spec.eyebrow.toUpperCase(), { w: 800, s: 26, c: ORANGE_T, ls: 5 }));

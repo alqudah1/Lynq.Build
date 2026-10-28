@@ -799,16 +799,16 @@ export const WEEK_PLANS: WeekPlan[] = [
       },
       {
         key: "n-codeit-start", brand: CODEIT, day: "2026-10-28", time: "19:30", pillar: "OFFER", storyHighlight: "START HERE",
-        title: "CodeIt · Start free tonight: one sentence, one game", kind: "image_post", platforms: ["instagram", "facebook"],
-        hook: "Tonight's plan takes one minute to start.",
-        body: "Tonight's plan takes one minute to start.\n\n1. Open codeitlearn.com\n2. Type one sentence: \"a game where a cat catches falling pizza\"\n3. Press build, play it, then change it. A faster cat, more pizza, a score.\n\nEvery change shows the code behind it.\n\nFree to start, no card, nothing to install. The 31 Python lessons and 10 AI builds a month are free. Ages 5 to 18.\nLink in bio.",
-        facebookBody: "Tonight's plan takes one minute to start: open codeitlearn.com, type one sentence like \"a game where a cat catches falling pizza\", press build and play it. Then change it and see the code behind every change. Free to start, no card, nothing to install. Ages 5 to 18.",
+        title: "CodeIt · One line, two games", kind: "image_post", platforms: ["instagram", "facebook"],
+        hook: "Same game. One number changed.",
+        body: "Same game. One number changed.\n\nTop: speed = 2. The cat strolls over to the pizza.\nBottom: speed = 20. The cat is gone before you blink.\n\nThat one line is the whole difference, and on CodeIt your kid finds it themselves. They type one sentence like \"a game where a cat catches falling pizza\", get a working game, then change it and see the code behind every change.\n\nTonight, ask them: what number would you change first?\n\nFree to start, no card, nothing to install. Ages 5 to 18.\nLink in bio.",
+        facebookBody: "Same game, one number changed. With speed = 2 the cat strolls to the pizza. With speed = 20 it is gone before you blink. On CodeIt kids type one sentence, get a working game, then change it and see the code behind every change. Free to start, no card, nothing to install. Ages 5 to 18.",
         hashtags: CODEIT_TAGS, callToAction: "Start free at codeitlearn.com",
-        card: { eyebrow: "Start free tonight", headline: "One sentence.", sub: "One game.", steps: [
-          { label: "Type one sentence", panel: { type: "input", text: "a game where a cat catches falling pizza" } },
-          { label: "Press build", panel: { type: "run", label: "Build my game" } },
-          { label: "Play it, then change it", panel: { type: "game", hero: "cat", item: "pizza", score: "3" } },
-        ], takeaway: "Every change shows the code behind it.", tryThis: "Free to start, no card, nothing to install. Ages 5 to 18: codeitlearn.com" },
+        card: { eyebrow: "One line, two games", headline: "Which cat", sub: "would your kid make?", steps: [], format: {
+          kind: "split", hero: "cat", item: "pizza",
+          top: { code: "speed = 2", caption: "Strolling cat" },
+          bottom: { code: "speed = 20", caption: "Zoomy cat" },
+        } },
         creativeDirection: "Rendered card.",
       },
       {
