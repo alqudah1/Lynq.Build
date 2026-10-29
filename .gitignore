@@ -8,3 +8,5 @@ node_modules/
 .DS_Store
 zetaitos/
 clients/kidscoding/KidsCoding/
+video/node_modules
+video/out/
