@@ -62,31 +62,47 @@ ${o.badge ? `<rect x="${x + w - 196}" y="${y + 18}" width="176" height="44" rx="
 </g>`;
 }
 
-/** Pip, CodeIt's mascot, drawn flat and soft: a round orange fluff ball in a yellow hoodie. */
+/**
+ * Pip, CodeIt's mascot, as on the CodeIt Instagram: a round orange character
+ * with a three-feather tuft, big navy eyes with a white shine, navy brows, an
+ * open smile, and a yellow hoodie whose drawstrings end in navy tips. Flat,
+ * no outlines. (cx, cy) is the centre of the head; r its radius.
+ */
 export function pip(cx: number, cy: number, r: number, pose: "think" | "type" | "jump" | "cheer" = "think"): string {
-  const fluff = Array.from({ length: 16 }, (_, i) => {
-    const a = (Math.PI * 2 * i) / 16 + 0.2;
-    return `<circle cx="${(cx + Math.cos(a) * r * 0.92).toFixed(1)}" cy="${(cy + Math.sin(a) * r * 0.9).toFixed(1)}" r="${(r * 0.22).toFixed(1)}" fill="#ff8a1f"/>`;
-  }).join("");
-  const armUp = pose === "cheer" || pose === "jump";
-  const arm = (d: string) => `<path d="${d}" stroke="${YELLOW}" stroke-width="${r * 0.18}" stroke-linecap="round" fill="none"/>`;
-  const arms = armUp
-    ? arm(`M${cx - r * 0.8} ${cy + r * 0.3} q-${r * 0.35} -${r * 0.45} -${r * 0.25} -${r * 0.85}`) + arm(`M${cx + r * 0.8} ${cy + r * 0.3} q${r * 0.35} -${r * 0.45} ${r * 0.25} -${r * 0.85}`)
-    : arm(`M${cx - r * 0.78} ${cy + r * 0.45} q-${r * 0.22} ${r * 0.25} ${r * 0.05} ${r * 0.45}`) + arm(`M${cx + r * 0.78} ${cy + r * 0.45} q${r * 0.22} ${r * 0.25} -${r * 0.05} ${r * 0.45}`);
-  const eyeDy = pose === "type" ? r * 0.12 : 0;
-  const lookX = pose === "think" ? r * 0.08 : 0;
-  const mouth = armUp ? `<path d="M${cx - r * 0.2} ${cy + r * 0.06} q${r * 0.2} ${r * 0.28} ${r * 0.4} 0 z" fill="${INK}"/>` : pose === "think" ? `<path d="M${cx - r * 0.1} ${cy + r * 0.12} h${r * 0.22}" stroke="${INK}" stroke-width="${r * 0.06}" stroke-linecap="round"/>` : `<path d="M${cx - r * 0.15} ${cy + r * 0.1} q${r * 0.15} ${r * 0.13} ${r * 0.3} 0" fill="none" stroke="${INK}" stroke-width="${r * 0.06}" stroke-linecap="round"/>`;
+  const NAVY = "#1d2654", OR = "#ff6b1a", OR_D = "#e85a10", YE = "#ffd23f", YE_D = "#f1b91f";
+  const up = pose === "cheer" || pose === "jump";
+  const look = pose === "think" ? r * 0.06 : 0;
+  const down = pose === "type" ? r * 0.08 : 0;
+  const tuft = `<path d="M${cx - r * 0.34} ${cy - r * 0.8} Q${cx - r * 0.5} ${cy - r * 1.28} ${cx - r * 0.12} ${cy - r * 1.36} Q${cx - r * 0.2} ${cy - r * 1.1} ${cx - r * 0.06} ${cy - r * 0.94} Z" fill="${OR}"/>
+<path d="M${cx - r * 0.12} ${cy - r * 0.9} Q${cx - r * 0.06} ${cy - r * 1.5} ${cx + r * 0.32} ${cy - r * 1.42} Q${cx + r * 0.14} ${cy - r * 1.2} ${cx + r * 0.16} ${cy - r * 0.92} Z" fill="${OR}"/>
+<path d="M${cx + r * 0.1} ${cy - r * 0.92} Q${cx + r * 0.36} ${cy - r * 1.28} ${cx + r * 0.62} ${cy - r * 1.12} Q${cx + r * 0.4} ${cy - r * 1.02} ${cx + r * 0.36} ${cy - r * 0.8} Z" fill="${OR_D}"/>`;
+  const hand = (hx: number, hy: number) => `<circle cx="${hx}" cy="${hy}" r="${r * 0.17}" fill="${OR}"/>`;
+  const sleeve = (x1: number, y1: number, x2: number, y2: number) => `<path d="M${x1} ${y1} L${x2} ${y2}" stroke="${YE}" stroke-width="${r * 0.3}" stroke-linecap="round"/>`;
+  const arms = up
+    ? `${sleeve(cx - r * 0.7, cy + r * 0.75, cx - r * 1.05, cy + r * 0.05)}${hand(cx - r * 1.08, cy - r * 0.08)}${sleeve(cx + r * 0.7, cy + r * 0.75, cx + r * 1.05, cy + r * 0.05)}${hand(cx + r * 1.08, cy - r * 0.08)}`
+    : pose === "type"
+      ? `${sleeve(cx - r * 0.7, cy + r * 0.8, cx - r * 0.4, cy + r * 1.1)}${hand(cx - r * 0.32, cy + r * 1.16)}${sleeve(cx + r * 0.7, cy + r * 0.8, cx + r * 0.4, cy + r * 1.1)}${hand(cx + r * 0.32, cy + r * 1.16)}`
+      : `${sleeve(cx - r * 0.74, cy + r * 0.78, cx - r * 0.84, cy + r * 1.16)}${hand(cx - r * 0.84, cy + r * 1.22)}${sleeve(cx + r * 0.74, cy + r * 0.8, cx + r * 0.5, cy + r * 0.66)}${hand(cx + r * 0.42, cy + r * 0.6)}`;
+  const eye = (ex: number) => `<ellipse cx="${ex}" cy="${cy - r * 0.12}" rx="${r * 0.23}" ry="${r * 0.27}" fill="#ffffff"/><circle cx="${ex + look}" cy="${cy - r * 0.08 + down}" r="${r * 0.15}" fill="${NAVY}"/><circle cx="${ex + look - r * 0.05}" cy="${cy - r * 0.14 + down}" r="${r * 0.05}" fill="#ffffff"/>`;
+  const brow = (ex: number, tilt: number) => `<path d="M${ex - r * 0.14} ${cy - r * 0.46 + tilt} Q${ex} ${cy - r * 0.54} ${ex + r * 0.14} ${cy - r * 0.46 - tilt}" fill="none" stroke="${NAVY}" stroke-width="${r * 0.06}" stroke-linecap="round"/>`;
+  const worried = pose === "think" ? r * 0.04 : 0;
+  const mouth = up
+    ? `<path d="M${cx - r * 0.28} ${cy + r * 0.22} Q${cx} ${cy + r * 0.74} ${cx + r * 0.28} ${cy + r * 0.22} Z" fill="${NAVY}"/><path d="M${cx - r * 0.14} ${cy + r * 0.5} Q${cx} ${cy + r * 0.4} ${cx + r * 0.14} ${cy + r * 0.5} Q${cx} ${cy + r * 0.6} ${cx - r * 0.14} ${cy + r * 0.5} Z" fill="#ff7a8a"/>`
+    : pose === "think"
+      ? `<path d="M${cx - r * 0.1} ${cy + r * 0.32} Q${cx} ${cy + r * 0.28} ${cx + r * 0.1} ${cy + r * 0.32}" fill="none" stroke="${NAVY}" stroke-width="${r * 0.06}" stroke-linecap="round"/>`
+      : `<path d="M${cx - r * 0.16} ${cy + r * 0.26} Q${cx} ${cy + r * 0.44} ${cx + r * 0.16} ${cy + r * 0.26} Z" fill="${NAVY}"/>`;
   return `<g>
-<ellipse cx="${cx}" cy="${cy + r * 1.15}" rx="${r * 0.8}" ry="${r * 0.12}" fill="${BROWN}" opacity="0.12"/>
-${fluff}<circle cx="${cx}" cy="${cy}" r="${r}" fill="${ORANGE}"/><circle cx="${cx - r * 0.3}" cy="${cy - r * 0.45}" r="${r * 0.28}" fill="#ffffff" opacity="0.18"/>
-<path d="M${cx - r * 0.96} ${cy + r * 0.28} Q${cx} ${cy + r * 0.52} ${cx + r * 0.96} ${cy + r * 0.28} Q${cx + r * 0.9} ${cy + r * 1.08} ${cx} ${cy + r * 1.08} Q${cx - r * 0.9} ${cy + r * 1.08} ${cx - r * 0.96} ${cy + r * 0.28} Z" fill="${YELLOW}"/>
-<path d="M${cx - r * 0.7} ${cy + r * 0.4} Q${cx} ${cy + r * 0.64} ${cx + r * 0.7} ${cy + r * 0.4}" fill="none" stroke="#e5b82c" stroke-width="${r * 0.1}" stroke-linecap="round"/>
-<rect x="${cx - r * 0.34}" y="${cy + r * 0.7}" width="${r * 0.68}" height="${r * 0.22}" rx="${r * 0.11}" fill="#e5b82c"/>
+<ellipse cx="${cx}" cy="${cy + r * 1.42}" rx="${r * 0.85}" ry="${r * 0.1}" fill="${BROWN}" opacity="0.12"/>
+${tuft}
+<path d="M${cx - r * 0.86} ${cy + r * 0.62} Q${cx - r * 0.95} ${cy + r * 1.36} ${cx} ${cy + r * 1.38} Q${cx + r * 0.95} ${cy + r * 1.36} ${cx + r * 0.86} ${cy + r * 0.62} Z" fill="${YE}"/>
+<ellipse cx="${cx}" cy="${cy}" rx="${r * 0.92}" ry="${r}" fill="${OR}"/>
+<ellipse cx="${cx - r * 0.34}" cy="${cy - r * 0.6}" rx="${r * 0.26}" ry="${r * 0.14}" fill="#ffffff" opacity="0.16" transform="rotate(-25 ${cx - r * 0.34} ${cy - r * 0.6})"/>
+<path d="M${cx - r * 0.84} ${cy + r * 0.52} Q${cx} ${cy + r * 0.98} ${cx + r * 0.84} ${cy + r * 0.52} Q${cx + r * 0.9} ${cy + r * 0.78} ${cx + r * 0.7} ${cy + r * 0.92} Q${cx} ${cy + r * 1.2} ${cx - r * 0.7} ${cy + r * 0.92} Q${cx - r * 0.9} ${cy + r * 0.78} ${cx - r * 0.84} ${cy + r * 0.52} Z" fill="${YE_D}"/>
+<path d="M${cx - r * 0.2} ${cy + r * 0.95} L${cx - r * 0.24} ${cy + r * 1.24} M${cx + r * 0.2} ${cy + r * 0.95} L${cx + r * 0.24} ${cy + r * 1.24}" stroke="#ffffff" stroke-width="${r * 0.04}" stroke-linecap="round"/>
+<circle cx="${cx - r * 0.24}" cy="${cy + r * 1.27}" r="${r * 0.06}" fill="${NAVY}"/><circle cx="${cx + r * 0.24}" cy="${cy + r * 1.27}" r="${r * 0.06}" fill="${NAVY}"/>
 ${arms}
-<ellipse cx="${cx - r * 0.32 + lookX}" cy="${cy - r * 0.2 + eyeDy}" rx="${r * 0.19}" ry="${r * 0.23}" fill="${PAPER}"/><ellipse cx="${cx + r * 0.32 + lookX}" cy="${cy - r * 0.2 + eyeDy}" rx="${r * 0.19}" ry="${r * 0.23}" fill="${PAPER}"/>
-<circle cx="${cx - r * 0.29 + lookX * 2}" cy="${cy - r * 0.16 + eyeDy * 1.5}" r="${r * 0.1}" fill="${INK}"/><circle cx="${cx + r * 0.35 + lookX * 2}" cy="${cy - r * 0.16 + eyeDy * 1.5}" r="${r * 0.1}" fill="${INK}"/>
-<circle cx="${cx - r * 0.26 + lookX * 2}" cy="${cy - r * 0.2 + eyeDy * 1.5}" r="${r * 0.035}" fill="#fff"/><circle cx="${cx + r * 0.38 + lookX * 2}" cy="${cy - r * 0.2 + eyeDy * 1.5}" r="${r * 0.035}" fill="#fff"/>
-<circle cx="${cx - r * 0.55}" cy="${cy + r * 0.05}" r="${r * 0.1}" fill="${CORAL}" opacity="0.35"/><circle cx="${cx + r * 0.55}" cy="${cy + r * 0.05}" r="${r * 0.1}" fill="${CORAL}" opacity="0.35"/>
+${eye(cx - r * 0.33)}${eye(cx + r * 0.33)}${brow(cx - r * 0.33, worried)}${brow(cx + r * 0.33, -worried)}
+<circle cx="${cx - r * 0.62}" cy="${cy + r * 0.14}" r="${r * 0.1}" fill="#ff8f7a" opacity="0.55"/><circle cx="${cx + r * 0.62}" cy="${cy + r * 0.14}" r="${r * 0.1}" fill="#ff8f7a" opacity="0.55"/>
 ${mouth}</g>`;
 }
 

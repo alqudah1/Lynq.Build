@@ -290,7 +290,7 @@ export async function composeCodeItCard(spec: CodeItCard): Promise<{ bytes: Uint
 }
 
 /** The look's version: bump it when the design changes. */
-const STYLE = "modern-1";
+const STYLE = "modern-2";
 
 /** A stable fingerprint of a card spec, stored on the post so a changed spec remakes the image. */
 export function cardKey(spec: CodeItCard): string {

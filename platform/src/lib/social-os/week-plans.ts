@@ -87,7 +87,7 @@ interface PlanReel {
   shots: { timing: string; visual: string; onScreenText?: string; audio?: string }[];
   /** The owner already sent this reel's video to the Telegram bot: attach the newest Telegram video in the workspace when the reel has none. */
   videoFromTelegram?: boolean;
-  /** A rendered reel bundled in src/assets/reels (see reel-render.ts): uploaded once and attached when the reel has no video. */
+  /** A rendered reel bundled in src/assets/reels (made in the Remotion studio in /video): uploaded once and attached when the reel has no video. */
   videoFile?: string;
   /**
    * AI video, ready to make: the prompt is stored as the reel's art direction so
@@ -1472,7 +1472,36 @@ export const WEEK_PLANS: WeekPlan[] = [
     ],
     reels: [
       {
-        key: "p3-lynq-reel-salon", brand: LYNQ, day: "2026-11-06", time: "18:30", series: "FIX THIS",
+        key: "p3-lynq-reel-ab", brand: LYNQ, day: "2026-11-05", time: "18:30", series: "A OR B", videoFile: "lynq-ab-button.mp4",
+        title: "LYNQ Reel · A or B: which button gets the call?",
+        hook: "Two buttons. One gets the call. Which would you tap?",
+        body: "A or B?\n\nA says \"Contact us\".\nB says \"Call now, we answer\".\n\nSame page, same spot. Which one would you tap?\n\nComment A or B. The answer is in tomorrow's story.",
+        facebookBody: "A says \"Contact us\". B says \"Call now, we answer\". Same page, same spot. Which would you tap? The answer is in tomorrow's story.",
+        hashtags: LYNQ_TAGS, callToAction: "Comment A or B",
+        script: "Rendered reel (no recording needed): two phones with the same page and different buttons, a countdown, then Comment A or B.",
+        shots: [
+          { timing: "0–2s", visual: "Two buttons. One gets the call.", onScreenText: "Two buttons." },
+          { timing: "2–9s", visual: "Two phones, button A then button B", onScreenText: "Contact us vs Call now, we answer" },
+          { timing: "9–14s", visual: "Countdown, then the end card", onScreenText: "Comment A or B" },
+        ],
+      },
+      {
+        key: "p3-lynq-reel-housedeals", brand: LYNQ, day: "2026-11-06", time: "18:30", series: "THE WORK", videoFile: "lynq-housedeals.mp4",
+        title: "LYNQ Reel · THE WORK: House Deals Direct, one site for two audiences",
+        hook: "One business. Two audiences. Watch how one website serves both.",
+        body: "One business. Two audiences.\n\nHouse Deals Direct buys homes from owners and offers deals to investors. Same site, opposite needs.\n\nOwners get a short form and decide at every step. Investors get their own list, with every estimate labelled.\n\nServe two kinds of customer? Comment TWO and we'll show you where most sites mix them up.",
+        facebookBody: "House Deals Direct buys homes from owners and offers deals to investors. One site serves both: a short form for owners, a separate list for investors. Serve two kinds of customer? Ask us where most sites mix them up.",
+        hashtags: ["RealEstate", "WebDesign", "SmallBusiness"], callToAction: "Comment TWO",
+        script: "Rendered reel (no recording needed): the real House Deals Direct site scrolling inside a phone, seller side, the four steps, then the investor list, ending on Comment TWO.",
+        shots: [
+          { timing: "0–2s", visual: "One business. Two audiences.", onScreenText: "One business. Two audiences." },
+          { timing: "2–8s", visual: "The seller side and the four steps, scrolling", onScreenText: "Owners decide at each step" },
+          { timing: "8–12s", visual: "The investor list, scrolling", onScreenText: "Investors get their own list" },
+          { timing: "12–17s", visual: "Both phones, then the end card", onScreenText: "Comment TWO" },
+        ],
+      },
+      {
+        key: "p3-lynq-reel-salon", brand: LYNQ, day: "2026-11-09", time: "18:30", series: "FIX THIS",
         title: "LYNQ Reel · FIX THIS: 60 seconds on a salon's website",
         hook: "60 seconds trying to book a haircut online. Watch where it breaks.",
         body: "FIX THIS: 60 seconds trying to book a haircut on a salon's website (name hidden).\n\nThree things I need: the prices, a free time, and a book button. Watch where I give up.\n\nOwn a salon? Comment SALON and I'll send you the one fix I'd make first.",
@@ -1514,6 +1543,76 @@ export const WEEK_PLANS: WeekPlan[] = [
           { timing: "2–15s", visual: "Searching for prices", onScreenText: "1. How much?" },
           { timing: "15–27s", visual: "Searching for hours", onScreenText: "2. When are you open?" },
           { timing: "27–40s", visual: "Searching for a trial, ends on the fix list", onScreenText: "3. Can I try it? · Comment yours" },
+        ],
+      },
+      {
+        key: "p3-codeit-pip-ep1", brand: CODEIT, day: "2026-11-05", time: "16:30", series: "PIP BUILDS A GAME", videoFile: "pip-ep1.mp4",
+        title: "CodeIt Reel · Pip builds a game, episode 1: the idea",
+        hook: "Pip has never made a game. Tonight that changes.",
+        body: "Episode 1: Pip has never made a game.\n\nSo Pip types one sentence, presses build, and a rocket game appears. It works! Until it doesn't.\n\nFollow for episode 2, where Pip fixes it. Five episodes, one game, every line of code on screen.\n\nYour kid can build one too: free to start, ages 5 to 18.",
+        facebookBody: "Pip has never made a game, so Pip types one sentence and a rocket game appears. It works, until it doesn't. Episode 2 is next: Pip fixes it.",
+        hashtags: CODEIT_TAGS, callToAction: "Follow for the next episode",
+        script: "Rendered reel (no recording needed): episode 1 of 5 of Pip building a rocket game, ending on the hook for the next episode.",
+        shots: [
+          { timing: "0–1s", visual: "Series sting: Pip builds a game, episode 1", onScreenText: "EP 1: The idea" },
+          { timing: "1–12s", visual: "The episode", onScreenText: "Pip has never made a game." },
+          { timing: "12–15s", visual: "What's next, and the follow button", onScreenText: "Follow so you don't miss it" },
+        ],
+      },
+      {
+        key: "p3-codeit-pip-ep2", brand: CODEIT, day: "2026-11-08", time: "16:30", series: "PIP BUILDS A GAME", videoFile: "pip-ep2.mp4",
+        title: "CodeIt Reel · Pip builds a game, episode 2: it breaks",
+        hook: "One hit and the game was over. Pip finds the one line to blame.",
+        body: "Episode 2: it breaks.\n\nOne hit and the game was over. Pip reads the code and finds it: lives = 0. No spare lives at all.\n\nOne number changes, and now the rocket survives a hit.\n\nNext episode, Pip adds stars. Follow so you don't miss it.",
+        facebookBody: "One hit and Pip's game was over. The code said lives = 0. One number changes and the rocket survives. Next episode: stars.",
+        hashtags: CODEIT_TAGS, callToAction: "Follow for the next episode",
+        script: "Rendered reel (no recording needed): episode 2 of 5 of Pip building a rocket game, ending on the hook for the next episode.",
+        shots: [
+          { timing: "0–1s", visual: "Series sting: Pip builds a game, episode 2", onScreenText: "EP 2: It breaks" },
+          { timing: "1–12s", visual: "The episode", onScreenText: "One hit and the game was over." },
+          { timing: "12–15s", visual: "What's next, and the follow button", onScreenText: "Follow so you don't miss it" },
+        ],
+      },
+      {
+        key: "p3-codeit-pip-ep3", brand: CODEIT, day: "2026-11-11", time: "16:30", series: "PIP BUILDS A GAME", videoFile: "pip-ep3.mp4",
+        title: "CodeIt Reel · Pip builds a game, episode 3: stars",
+        hook: "Pip adds stars to collect. The score won't move. Can you spot the bug?",
+        body: "Episode 3: stars.\n\nPip adds stars to collect, and the rocket grabs every one. But the score is stuck on 1.\n\nscore = 0\nif touching(star):\n    score = 1\n\nCan you spot the bug? Comment the line number. The answer is in episode 4.",
+        facebookBody: "Pip adds stars, the rocket grabs every one, and the score is stuck on 1. Can you spot the bug in three lines of code? The answer is in episode 4.",
+        hashtags: CODEIT_TAGS, callToAction: "Follow for the next episode",
+        script: "Rendered reel (no recording needed): episode 3 of 5 of Pip building a rocket game, ending on the hook for the next episode.",
+        shots: [
+          { timing: "0–1s", visual: "Series sting: Pip builds a game, episode 3", onScreenText: "EP 3: Stars" },
+          { timing: "1–12s", visual: "The episode", onScreenText: "Pip adds stars to collect." },
+          { timing: "12–15s", visual: "What's next, and the follow button", onScreenText: "Follow so you don't miss it" },
+        ],
+      },
+      {
+        key: "p3-codeit-pip-ep4", brand: CODEIT, day: "2026-11-14", time: "16:30", series: "PIP BUILDS A GAME", videoFile: "pip-ep4.mp4",
+        title: "CodeIt Reel · Pip builds a game, episode 4: the score",
+        hook: "The bug was line 3. Watch every star finally count.",
+        body: "Episode 4: the score.\n\nThe bug was line 3. score = 1 sets the score to 1 every time. score = score + 1 adds one.\n\nNow every star counts.\n\nDid you get it right? Tell us in the comments. The final episode is next: can Pip explain it?",
+        facebookBody: "The bug was line 3: score = 1 sets it to 1 every time, score = score + 1 adds one. Now every star counts. The final episode is next.",
+        hashtags: CODEIT_TAGS, callToAction: "Follow for the next episode",
+        script: "Rendered reel (no recording needed): episode 4 of 5 of Pip building a rocket game, ending on the hook for the next episode.",
+        shots: [
+          { timing: "0–1s", visual: "Series sting: Pip builds a game, episode 4", onScreenText: "EP 4: The score" },
+          { timing: "1–12s", visual: "The episode", onScreenText: "The bug was line 3." },
+          { timing: "12–15s", visual: "What's next, and the follow button", onScreenText: "Follow so you don't miss it" },
+        ],
+      },
+      {
+        key: "p3-codeit-pip-ep5", brand: CODEIT, day: "2026-11-17", time: "16:30", series: "PIP BUILDS A GAME", videoFile: "pip-ep5.mp4",
+        title: "CodeIt Reel · Pip builds a game, episode 5: prove it",
+        hook: "Pip built a game. Now one question from Pip's own code.",
+        body: "Episode 5: prove it.\n\nBuilding a game is half. Explaining it is the other half.\n\nCodeIt asks a question about the code you wrote yourself. Pip gets it right first try.\n\nYour kid's turn: describe a game, get a working first version, change it and see the code. Free to start, ages 5 to 18.\n\nWhat should Pip build in season 2? Comment it.",
+        facebookBody: "Building a game is half, explaining it is the other half. CodeIt asks a question about your own code, and Pip gets it first try. What should Pip build in season 2?",
+        hashtags: CODEIT_TAGS, callToAction: "Follow for the next episode",
+        script: "Rendered reel (no recording needed): episode 5 of 5 of Pip building a rocket game, ending on the hook for the next episode.",
+        shots: [
+          { timing: "0–1s", visual: "Series sting: Pip builds a game, episode 5", onScreenText: "EP 5: Prove it" },
+          { timing: "1–12s", visual: "The episode", onScreenText: "Pip built a game." },
+          { timing: "12–15s", visual: "What's next, and the follow button", onScreenText: "Follow so you don't miss it" },
         ],
       },
       {

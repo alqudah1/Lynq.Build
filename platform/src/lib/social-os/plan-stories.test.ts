@@ -137,3 +137,9 @@ describe("sticker story Telegram message", () => {
     expect(c).not.toContain("(sticker)");
   });
 });
+
+describe("rendered reels", () => {
+  it("every reel that names a video file has it bundled in src/assets/reels", () => {
+    for (const plan of WEEK_PLANS) for (const r of plan.reels) if (r.videoFile) expect(existsSync(path.join(process.cwd(), "src", "assets", "reels", r.videoFile)), `${r.key}: ${r.videoFile}`).toBe(true);
+  });
+});

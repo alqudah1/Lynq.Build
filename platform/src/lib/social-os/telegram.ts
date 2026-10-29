@@ -342,7 +342,7 @@ export async function handleTelegramUpdate(db: Db, env: TelegramEnv, update: Tel
     if (media) return handleIncomingMedia(db, env, chatId, update.message, media, deps);
     if (text && !text.startsWith("/") && update.message.reply_to_message) return handleCaptionReply(db, env, chatId, update.message, text, deps);
     if (/^\/(start|help)\b/.test(text)) {
-      await telegram(env, "sendMessage", { chat_id: chatId, text: "LYNQ approvals are on.\nEvery morning at 8, that day's posts arrive here — approve them for their time or post now.\nSend a video or a picture here and pick the post it belongs to.\nReply to any post here with text to replace its caption.\n/stories — today's stories with a poll, quiz or slider for you to post\n/week — the next 7 days at a glance\n/pending — posts waiting for your approval\n/drafts — the next post for each brand, ready to send for review\n/drafts all — every draft" }, deps);
+      await telegram(env, "sendMessage", { chat_id: chatId, text: "LYNQ approvals are on.\nEvery morning at 8, that day's posts arrive here — approve them for their time or post now.\nSend a video or a picture here and pick the post it belongs to.\nSend /everywhere for today's reels with TikTok and YouTube Shorts captions.\nReply to any post here with text to replace its caption.\n/stories — today's stories with a poll, quiz or slider for you to post\n/week — the next 7 days at a glance\n/pending — posts waiting for your approval\n/drafts — the next post for each brand, ready to send for review\n/drafts all — every draft" }, deps);
       return { action: "help" };
     }
     if (/^\/pending\b/.test(text)) {
@@ -369,6 +369,16 @@ export async function handleTelegramUpdate(db: Db, env: TelegramEnv, update: Tel
       const n = await sendStickerStories(db, env, chatId, approver.organizationIds, deps.now?.() ?? new Date(), deps);
       if (!n) await telegram(env, "sendMessage", { chat_id: chatId, text: "No sticker stories for you to post today." }, deps);
       return { action: `stories:${n}` };
+    }
+    if (/^\/everywhere\b/.test(text)) {
+      const approver = await resolveApprover(db, env);
+      if ("error" in approver) {
+        await telegram(env, "sendMessage", { chat_id: chatId, text: approver.error }, deps);
+        return { action: "no_approver" };
+      }
+      const n = await sendEverywhereReels(db, env, chatId, approver.organizationIds, deps.now?.() ?? new Date(), deps);
+      if (!n) await telegram(env, "sendMessage", { chat_id: chatId, text: "No reels with a video today, so nothing to post on TikTok or Shorts." }, deps);
+      return { action: `everywhere:${n}` };
     }
     if (/^\/week\b/.test(text)) {
       const approver = await resolveApprover(db, env);
@@ -916,6 +926,7 @@ export async function runMorningTelegramSend(db: Db, env: TelegramEnv, deps: Tel
   }
   const firstRunOfDay = hour === 8 && minute < 15;
   if (firstRunOfDay) sent += await sendStickerStories(db, env, env.TELEGRAM_CHAT_ID, approver.organizationIds, now, deps).catch(() => 0);
+  if (firstRunOfDay) sent += await sendEverywhereReels(db, env, env.TELEGRAM_CHAT_ID, approver.organizationIds, now, deps).catch(() => 0);
   if (sent && firstRunOfDay) await telegram(env, "sendMessage", { chat_id: env.TELEGRAM_CHAT_ID, text: `☀️ Good morning — ${sent} post${sent === 1 ? "" : "s"} for today ${sent === 1 ? "is" : "are"} above. Approve each for its time, or post now.` }, deps).catch(() => undefined);
   if (blocked.length && firstRunOfDay) {
     const unique = [...new Set(blocked)];
@@ -965,4 +976,52 @@ export function stickerStoryCaption(p: { title: string; at: Date | null; sticker
     p.sticker,
     `4. Share${highlight ? `, then add it to the ${highlight} highlight` : ""}`,
   ].join("\n").slice(0, CAPTION_LIMIT);
+}
+
+/**
+ * Today's reels, for the platforms the Office can't post to yet: the video and
+ * a ready caption for TikTok and a title and description for YouTube Shorts.
+ * Sent with the morning send and on /everywhere.
+ */
+export async function sendEverywhereReels(db: Db, env: TelegramEnv, chatId: string, organizationIds: string[], now: Date, deps: TelegramDeps = {}): Promise<number> {
+  if (!organizationIds.length) return 0;
+  const local = new Intl.DateTimeFormat("en-CA", { timeZone: TELEGRAM_TIMEZONE, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+  const [y, m, d] = local.split("-").map(Number);
+  const start = zonedDateTimeToUtc(y, m, d, 0, 0, TELEGRAM_TIMEZONE);
+  const end = zonedDateTimeToUtc(y, m, d + 1, 0, 0, TELEGRAM_TIMEZONE);
+  const rows = await db
+    .select({ media: socialContentVariants.media, at: socialContentVariants.scheduledFor, hook: socialContentVariants.hook, body: socialContentVariants.body, hashtags: socialContentVariants.hashtags, title: marketingContentItems.title, brand: marketingBrandProfiles.name })
+    .from(socialContentVariants)
+    .innerJoin(marketingContentItems, and(eq(marketingContentItems.id, socialContentVariants.contentItemId), eq(marketingContentItems.organizationId, socialContentVariants.organizationId)))
+    .leftJoin(marketingBrandProfiles, eq(marketingBrandProfiles.id, marketingContentItems.brandProfileId))
+    .where(and(inArray(socialContentVariants.organizationId, organizationIds), isNull(socialContentVariants.archivedAt), isNull(marketingContentItems.archivedAt), eq(socialContentVariants.platform, "instagram"), eq(socialContentVariants.format, "reel"), gt(socialContentVariants.scheduledFor, start), lte(socialContentVariants.scheduledFor, end), sql`jsonb_array_length(${socialContentVariants.media}) > 0`))
+    .orderBy(asc(socialContentVariants.scheduledFor))
+    .limit(6);
+  let sent = 0;
+  for (const r of rows) {
+    const assetId = (r.media as { assetId?: string }[] | null)?.[0]?.assetId;
+    if (!assetId) continue;
+    const c = everywhereCaptions({ hook: r.hook, body: r.body, hashtags: (r.hashtags as string[] | null) ?? [] });
+    const when = r.at ? ` around ${formatLocal(r.at)}` : " today";
+    try {
+      await telegram(env, "sendVideo", { chat_id: chatId, video: assetPublicUrl(env, assetId), supports_streaming: true, caption: `🎬 ${r.brand ?? ""} reel for TikTok and YouTube Shorts${when}\n${r.title}\n\nSave the video, then post it on each app. Add a trending sound in the app if you like. The captions are in the next message.`.slice(0, CAPTION_LIMIT) }, deps);
+      await telegram(env, "sendMessage", { chat_id: chatId, text: `TikTok caption:\n${c.tiktok}\n\nYouTube Shorts title:\n${c.shortsTitle}\n\nYouTube Shorts description:\n${c.shortsDescription}`.slice(0, 4000) }, deps);
+      sent++;
+    } catch {
+      // A video Telegram can't fetch must not stop the rest.
+    }
+  }
+  return sent;
+}
+
+/** Captions for TikTok and YouTube Shorts from a reel's Instagram copy. */
+export function everywhereCaptions(p: { hook: string; body: string; hashtags: string[] }): { tiktok: string; shortsTitle: string; shortsDescription: string } {
+  const tags = [...new Set(p.hashtags.map((t) => t.replace(/^#/, "")).filter(Boolean))].slice(0, 5);
+  const body = p.body.replace(/\n*Link in bio[.:]?[^\n]*$/i, "").trim();
+  const lead = (p.hook || body.split("\n")[0] || "").trim();
+  const tiktok = `${body}\n\n${tags.map((t) => `#${t}`).join(" ")}`.trim().slice(0, 2200);
+  const titleBase = lead.length > 90 ? `${lead.slice(0, 87).trimEnd()}...` : lead;
+  const shortsTitle = `${titleBase} #Shorts`.slice(0, 100);
+  const shortsDescription = `${body}\n\n${["Shorts", ...tags].map((t) => `#${t}`).join(" ")}`.trim().slice(0, 5000);
+  return { tiktok, shortsTitle, shortsDescription };
 }
