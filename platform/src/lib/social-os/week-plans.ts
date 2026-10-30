@@ -1,4 +1,6 @@
 import "server-only";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { marketingChannelAccounts, marketingContentItems, socialAssets, socialContentVariants } from "@/db/schema";
@@ -85,6 +87,8 @@ interface PlanReel {
   shots: { timing: string; visual: string; onScreenText?: string; audio?: string }[];
   /** The owner already sent this reel's video to the Telegram bot: attach the newest Telegram video in the workspace when the reel has none. */
   videoFromTelegram?: boolean;
+  /** A rendered reel bundled in src/assets/reels (made in the Remotion studio in /video): uploaded once and attached when the reel has no video. */
+  videoFile?: string;
   /**
    * AI video, ready to make: the prompt is stored as the reel's art direction so
    * Studio → Make video uses it. Nothing is generated (or spent) until the owner
@@ -581,7 +585,7 @@ export const WEEK_PLANS: WeekPlan[] = [
     key: "2026-11-02",
     label: "Oct 22 to Nov 4 — LYNQ + CodeIt, one post a day each",
     weekStart: "2026-10-22",
-    retired: ["n-codeit-free", "n-codeit-askteacher"],
+    retired: ["n-codeit-free", "n-codeit-askteacher", "n-codeit-wrong", "n-lynq-howwework"],
     highlights: {
       LYNQ: ["START HERE", "KINGSBRIDGE", "NASMA", "AMY", "ARCUBED", "HOUSE DEALS", "KIDS CODING", "FIX THIS", "WHAT YOU GET", "OFFICE", "BEHIND"],
       CodeIt: ["START HERE", "BUILDS", "LESSONS", "ASK THE TEACHER", "FREE", "ABOUT", "QUIZ", "PIP"],
@@ -651,15 +655,6 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `A matte black magnifying glass lying on the black studio floor, hard light from the upper left and one clean shadow; the rim of the lens is a thin acid-lime ring. One line of thin white type: "Five minutes." ${HONEST_CARD} ${LYNQ_LOOK}`,
       },
       {
-        key: "n-lynq-howwework", brand: LYNQ, day: "2026-10-31", time: "12:15", pillar: "FOUNDER", storyHighlight: "BEHIND",
-        title: "LYNQ · BEHIND — How we work", kind: "image_post", platforms: ["instagram", "facebook"],
-        hook: "No packages. No hourly meter. Here is how LYNQ works.",
-        body: "No packages. No hourly meter.\n\nEvery business we work with gets the same three questions first: how do customers find you, what do they need to do once they land, and who answers when they reach out at 9pm.\n\nThe answers become the build. A written quote for your business, not a menu of tiers. Then we design it, build it, connect the systems behind it, and keep it running once it is live.\n\nKingsbridge Group, Nasma, Finding Amy and Arcubed Label were all built this way. Different businesses, same standard.\n\nIf you want to know what yours would take, DM \"SITE\".",
-        facebookBody: "No packages. No hourly meter.\n\nEvery business we work with gets the same three questions first: how do customers find you, what do they need to do once they land, and who answers when they reach out at 9pm. The answers become the build, with a written quote for your business.\n\nWant to know what yours would take? Send us a message.",
-        hashtags: ["WebDesign", "SmallBusiness", "LYNQ"], callToAction: "DM AUDIT",
-        creativeDirection: `A matte black clipboard lying on the black studio floor holding one white sheet with three short printed lines and a single acid-lime tick beside the third; hard light from the upper left. One line of thin white type: "Three questions first." ${HONEST_CARD} ${LYNQ_LOOK}`,
-      },
-      {
         key: "n-lynq-hours", brand: LYNQ, day: "2026-11-01", time: "12:15", pillar: "TEACH", storyHighlight: "FIX THIS",
         title: "LYNQ · FIX THIS — Your hours are wrong on Google", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "Google says you are open. Your door says you are closed. Guess who they blame.",
@@ -669,7 +664,7 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `A small matte black "CLOSED" door sign hanging on a thin chain, isolated on the black studio floor, hard light from the upper left; the hook it hangs from is acid lime. One line of thin white type: "Open until 8?" ${HONEST_CARD} ${LYNQ_LOOK}`,
       },
       {
-        key: "n-lynq-includes", brand: LYNQ, day: "2026-11-03", time: "12:15", pillar: "OFFER", storyHighlight: "WHAT YOU GET",
+        key: "n-lynq-includes", brand: LYNQ, day: "2026-11-03", time: "12:15", pillar: "FOUNDER", storyHighlight: "WHAT YOU GET",
         title: "LYNQ · WHAT YOU GET — What a LYNQ site includes", kind: "image_post", platforms: ["instagram", "facebook"],
         hook: "A LYNQ site is not a brochure. Here is what comes with it.",
         body: "A LYNQ site is not a brochure. Here is what every one comes with.\n\n1. Found: Google Business Profile done properly, the site built so it ranks for what you actually sell\n2. Answers: every form and message gets a reply by text and email in under a minute, day or night\n3. Converts: call, book or buy in the first screen on a phone\n4. Kept: hosting, updates and fixes stay with us after launch\n\nDesigned for your business, quoted in writing before anything starts. No packages, no hourly meter.\n\nDM \"SITE\" and we will tell you what yours would take.",
@@ -769,20 +764,6 @@ export const WEEK_PLANS: WeekPlan[] = [
           { label: "Make the ghost faster", panel: { type: "code", lines: ["ghost_speed = 3", "ghost_speed = 7", "# spookier."], strike: 0, highlight: 1 } },
         ], takeaway: "Twenty minutes, one game, and they can explain how it works.", tryThis: "Before the doorbell starts: codeitlearn.com, free, no card, ages 5 to 18." },
         creativeDirection: `Flat vector on navy: a big round cream ghost shape with two dot eyes holding a flat orange candy bucket, three flat candies flying out; the mascot peeks from the bottom corner with a tiny witch hat. Headline "Boo. Build." in chunky orange type. ${CODEIT_LOOK}`,
-      },
-      {
-        key: "n-codeit-wrong", brand: CODEIT, day: "2026-10-30", time: "19:30", pillar: "HOW IT WORKS", storyHighlight: "START HERE",
-        title: "CodeIt · Why the wrong answers come from their own code", kind: "image_post", platforms: ["instagram", "facebook"],
-        hook: "Our quiz has no trick questions. The wrong answers are just their other code.",
-        body: "Most kids' coding quizzes can be guessed. One answer looks like code, the others look silly.\n\nCodeIt does it differently. After a build, the question is made from your kid's own project, and the wrong answers are other real values from the same file. Speed 5, speed 8, speed 12. All look right. Only one is the line that makes the character jump.\n\nSo a guess scores like a guess, and a real answer scores like a real answer. Only a first time right answer counts.\n\nThat is the whole idea: kids can code, and we can show you they understood it.\n\nFree to start, link in bio.",
-        facebookBody: "Most kids' coding quizzes can be guessed. In CodeIt the question comes from your kid's own project and the wrong answers are other real values from the same file, so a guess scores like a guess. Only a first time right answer counts. Free to start: codeitlearn.com",
-        hashtags: CODEIT_TAGS, callToAction: "Link in bio",
-        card: { eyebrow: "How it works", headline: "No trick questions.", sub: "Just their other code.", rows: [[0, 1], [2]], steps: [
-          { label: "Their code", panel: { type: "code", lines: ["speed = 5", "lives = 3", "jump = 8"], highlight: 2 } },
-          { label: "The question", panel: { type: "text", lines: ["Which line makes", "the character jump?"] } },
-          { label: "The wrong answers are real values from the same file", panel: { type: "question", prompt: "Pick the line", options: ["speed = 5", "lives = 3", "jump = 8"], correct: 2 } },
-        ], takeaway: "A guess scores like a guess. Only a first time right answer counts.", tryThis: "Kids can code. We can show you they understood it. Free to start at codeitlearn.com." },
-        creativeDirection: `Flat vector on cream: three big rounded navy answer buttons stacked, each with a flat number (5, 8, 12), the middle one outlined in orange with a flat orange checkmark; a tiny flat pixel character mid-jump beside them. No mascot. Headline "No trick questions." in chunky navy type. ${CODEIT_LOOK}`,
       },
       {
         key: "n-codeit-family", brand: CODEIT, day: "2026-11-02", time: "19:30", pillar: "OFFER", storyHighlight: "FREE",
@@ -914,6 +895,49 @@ export const WEEK_PLANS: WeekPlan[] = [
           { timing: "15–27s", visual: "Inner page — looking for hours/phone", onScreenText: "2. Hours + phone" },
           { timing: "27–38s", visual: "Searching for reviews on the site", onScreenText: "3. Reviews" },
           { timing: "38–45s", visual: "Black end card", onScreenText: "Free audit · DM AUDIT" },
+        ],
+      },
+      {
+        key: "n-lynq-reel-office", brand: LYNQ, day: "2026-10-31", time: "12:15", series: "LYNQ OFFICE", videoFile: "lynq-office.mp4",
+        title: "LYNQ Reel · LYNQ OFFICE: behind the posts",
+        hook: "This post was planned, designed and scheduled by one system.",
+        body: "This post was planned, designed and scheduled by one system.\n\n1. Plan: two weeks of posts, one a day per brand\n2. Design: every post made to the brand's look\n3. Approve: it lands on our phone, one tap\n4. Posted: Instagram and Facebook, on time\n\nIt's how we run our own pages, and it's what LYNQ Office sets up for yours.\n\nDM \"OFFICE\" and we'll show you how it would work for your business.",
+        facebookBody: "This post was planned, designed and scheduled by one system: two weeks planned, every post designed, approved with one tap, posted on time. It's what LYNQ Office sets up for your business. Send us a message and we'll show you.",
+        hashtags: ["ContentCreation", "SocialMediaMarketing", "LYNQ"], callToAction: "DM OFFICE",
+        script: "Rendered reel (no recording needed): plan, design, approve by phone, posted, then DM OFFICE. Uses real posts from our own plan.",
+        shots: [
+          { timing: "0–1.5s", visual: "This post was planned, designed and scheduled by one system.", onScreenText: "By one system." },
+          { timing: "1.5–8s", visual: "The week filling in, then the real posts", onScreenText: "Plan. Design." },
+          { timing: "8–13s", visual: "Approve on the phone, then the profile grid fills", onScreenText: "Approve. Posted." },
+          { timing: "13–16s", visual: "End card", onScreenText: "DM OFFICE" },
+        ],
+      },
+      {
+        key: "n-codeit-pip-ep1", brand: CODEIT, day: "2026-10-30", time: "19:30", series: "PIP BUILDS A GAME", videoFile: "pip-ep1.mp4",
+        title: "CodeIt Reel · Pip builds a game, episode 1: the idea",
+        hook: "Pip has never made a game. Tonight that changes.",
+        body: "Episode 1: Pip has never made a game.\n\nSo Pip types one sentence, presses build, and a rocket game appears. It works! Until it doesn't.\n\nFollow for episode 2, where Pip fixes it. Five episodes, one game, every line of code on screen.\n\nYour kid can build one too: free to start, ages 5 to 18.",
+        facebookBody: "Pip has never made a game, so Pip types one sentence and a rocket game appears. It works, until it doesn't. Episode 2 is next: Pip fixes it.",
+        hashtags: CODEIT_TAGS, callToAction: "Follow for the next episode",
+        script: "Rendered reel (no recording needed): episode 1 of 5 of Pip building a rocket game, ending on the hook for the next episode.",
+        shots: [
+          { timing: "0–1s", visual: "Series sting: Pip builds a game, episode 1", onScreenText: "EP 1: The idea" },
+          { timing: "1–12s", visual: "The episode", onScreenText: "Pip has never made a game." },
+          { timing: "12–15s", visual: "What's next, and the follow button", onScreenText: "Follow so you don't miss it" },
+        ],
+      },
+      {
+        key: "n-codeit-pip-ep2", brand: CODEIT, day: "2026-11-02", time: "16:30", series: "PIP BUILDS A GAME", videoFile: "pip-ep2.mp4",
+        title: "CodeIt Reel · Pip builds a game, episode 2: it breaks",
+        hook: "One hit and the game was over. Pip finds the one line to blame.",
+        body: "Episode 2: it breaks.\n\nOne hit and the game was over. Pip reads the code and finds it: lives = 0. No spare lives at all.\n\nOne number changes, and now the rocket survives a hit.\n\nNext episode, Pip adds stars. Follow so you don't miss it.",
+        facebookBody: "One hit and Pip's game was over. The code said lives = 0. One number changes and the rocket survives. Next episode: stars.",
+        hashtags: CODEIT_TAGS, callToAction: "Follow for the next episode",
+        script: "Rendered reel (no recording needed): episode 2 of 5 of Pip building a rocket game, ending on the hook for the next episode.",
+        shots: [
+          { timing: "0–1s", visual: "Series sting: Pip builds a game, episode 2", onScreenText: "EP 2: It breaks" },
+          { timing: "1–12s", visual: "The episode", onScreenText: "One hit and the game was over." },
+          { timing: "12–15s", visual: "What's next, and the follow button", onScreenText: "Follow so you don't miss it" },
         ],
       },
       {
@@ -1468,7 +1492,36 @@ export const WEEK_PLANS: WeekPlan[] = [
     ],
     reels: [
       {
-        key: "p3-lynq-reel-salon", brand: LYNQ, day: "2026-11-06", time: "18:30", series: "FIX THIS",
+        key: "p3-lynq-reel-ab", brand: LYNQ, day: "2026-11-05", time: "18:30", series: "A OR B", videoFile: "lynq-ab-button.mp4",
+        title: "LYNQ Reel · A or B: which button gets the call?",
+        hook: "Two buttons. One gets the call. Which would you tap?",
+        body: "A or B?\n\nA says \"Contact us\".\nB says \"Call now, we answer\".\n\nSame page, same spot. Which one would you tap?\n\nComment A or B. The answer is in tomorrow's story.",
+        facebookBody: "A says \"Contact us\". B says \"Call now, we answer\". Same page, same spot. Which would you tap? The answer is in tomorrow's story.",
+        hashtags: LYNQ_TAGS, callToAction: "Comment A or B",
+        script: "Rendered reel (no recording needed): two phones with the same page and different buttons, a countdown, then Comment A or B.",
+        shots: [
+          { timing: "0–2s", visual: "Two buttons. One gets the call.", onScreenText: "Two buttons." },
+          { timing: "2–9s", visual: "Two phones, button A then button B", onScreenText: "Contact us vs Call now, we answer" },
+          { timing: "9–14s", visual: "Countdown, then the end card", onScreenText: "Comment A or B" },
+        ],
+      },
+      {
+        key: "p3-lynq-reel-housedeals", brand: LYNQ, day: "2026-11-06", time: "18:30", series: "THE WORK", videoFile: "lynq-housedeals.mp4",
+        title: "LYNQ Reel · THE WORK: House Deals Direct, one site for two audiences",
+        hook: "One business. Two audiences. Watch how one website serves both.",
+        body: "One business. Two audiences.\n\nHouse Deals Direct buys homes from owners and offers deals to investors. Same site, opposite needs.\n\nOwners get a short form and decide at every step. Investors get their own list, with every estimate labelled.\n\nServe two kinds of customer? Comment TWO and we'll show you where most sites mix them up.",
+        facebookBody: "House Deals Direct buys homes from owners and offers deals to investors. One site serves both: a short form for owners, a separate list for investors. Serve two kinds of customer? Ask us where most sites mix them up.",
+        hashtags: ["RealEstate", "WebDesign", "SmallBusiness"], callToAction: "Comment TWO",
+        script: "Rendered reel (no recording needed): the real House Deals Direct site scrolling inside a phone, seller side, the four steps, then the investor list, ending on Comment TWO.",
+        shots: [
+          { timing: "0–2s", visual: "One business. Two audiences.", onScreenText: "One business. Two audiences." },
+          { timing: "2–8s", visual: "The seller side and the four steps, scrolling", onScreenText: "Owners decide at each step" },
+          { timing: "8–12s", visual: "The investor list, scrolling", onScreenText: "Investors get their own list" },
+          { timing: "12–17s", visual: "Both phones, then the end card", onScreenText: "Comment TWO" },
+        ],
+      },
+      {
+        key: "p3-lynq-reel-salon", brand: LYNQ, day: "2026-11-09", time: "18:30", series: "FIX THIS",
         title: "LYNQ Reel · FIX THIS: 60 seconds on a salon's website",
         hook: "60 seconds trying to book a haircut online. Watch where it breaks.",
         body: "FIX THIS: 60 seconds trying to book a haircut on a salon's website (name hidden).\n\nThree things I need: the prices, a free time, and a book button. Watch where I give up.\n\nOwn a salon? Comment SALON and I'll send you the one fix I'd make first.",
@@ -1510,6 +1563,48 @@ export const WEEK_PLANS: WeekPlan[] = [
           { timing: "2–15s", visual: "Searching for prices", onScreenText: "1. How much?" },
           { timing: "15–27s", visual: "Searching for hours", onScreenText: "2. When are you open?" },
           { timing: "27–40s", visual: "Searching for a trial, ends on the fix list", onScreenText: "3. Can I try it? · Comment yours" },
+        ],
+      },
+      {
+        key: "p3-codeit-pip-ep3", brand: CODEIT, day: "2026-11-05", time: "16:30", series: "PIP BUILDS A GAME", videoFile: "pip-ep3.mp4",
+        title: "CodeIt Reel · Pip builds a game, episode 3: stars",
+        hook: "Pip adds stars to collect. The score won't move. Can you spot the bug?",
+        body: "Episode 3: stars.\n\nPip adds stars to collect, and the rocket grabs every one. But the score is stuck on 1.\n\nscore = 0\nif touching(star):\n    score = 1\n\nCan you spot the bug? Comment the line number. The answer is in episode 4.",
+        facebookBody: "Pip adds stars, the rocket grabs every one, and the score is stuck on 1. Can you spot the bug in three lines of code? The answer is in episode 4.",
+        hashtags: CODEIT_TAGS, callToAction: "Follow for the next episode",
+        script: "Rendered reel (no recording needed): episode 3 of 5 of Pip building a rocket game, ending on the hook for the next episode.",
+        shots: [
+          { timing: "0–1s", visual: "Series sting: Pip builds a game, episode 3", onScreenText: "EP 3: Stars" },
+          { timing: "1–12s", visual: "The episode", onScreenText: "Pip adds stars to collect." },
+          { timing: "12–15s", visual: "What's next, and the follow button", onScreenText: "Follow so you don't miss it" },
+        ],
+      },
+      {
+        key: "p3-codeit-pip-ep4", brand: CODEIT, day: "2026-11-08", time: "16:30", series: "PIP BUILDS A GAME", videoFile: "pip-ep4.mp4",
+        title: "CodeIt Reel · Pip builds a game, episode 4: the score",
+        hook: "The bug was line 3. Watch every star finally count.",
+        body: "Episode 4: the score.\n\nThe bug was line 3. score = 1 sets the score to 1 every time. score = score + 1 adds one.\n\nNow every star counts.\n\nDid you get it right? Tell us in the comments. The final episode is next: can Pip explain it?",
+        facebookBody: "The bug was line 3: score = 1 sets it to 1 every time, score = score + 1 adds one. Now every star counts. The final episode is next.",
+        hashtags: CODEIT_TAGS, callToAction: "Follow for the next episode",
+        script: "Rendered reel (no recording needed): episode 4 of 5 of Pip building a rocket game, ending on the hook for the next episode.",
+        shots: [
+          { timing: "0–1s", visual: "Series sting: Pip builds a game, episode 4", onScreenText: "EP 4: The score" },
+          { timing: "1–12s", visual: "The episode", onScreenText: "The bug was line 3." },
+          { timing: "12–15s", visual: "What's next, and the follow button", onScreenText: "Follow so you don't miss it" },
+        ],
+      },
+      {
+        key: "p3-codeit-pip-ep5", brand: CODEIT, day: "2026-11-11", time: "16:30", series: "PIP BUILDS A GAME", videoFile: "pip-ep5.mp4",
+        title: "CodeIt Reel · Pip builds a game, episode 5: prove it",
+        hook: "Pip built a game. Now one question from Pip's own code.",
+        body: "Episode 5: prove it.\n\nBuilding a game is half. Explaining it is the other half.\n\nCodeIt asks a question about the code you wrote yourself. Pip gets it right first try.\n\nYour kid's turn: describe a game, get a working first version, change it and see the code. Free to start, ages 5 to 18.\n\nWhat should Pip build in season 2? Comment it.",
+        facebookBody: "Building a game is half, explaining it is the other half. CodeIt asks a question about your own code, and Pip gets it first try. What should Pip build in season 2?",
+        hashtags: CODEIT_TAGS, callToAction: "Follow for the next episode",
+        script: "Rendered reel (no recording needed): episode 5 of 5 of Pip building a rocket game, ending on the hook for the next episode.",
+        shots: [
+          { timing: "0–1s", visual: "Series sting: Pip builds a game, episode 5", onScreenText: "EP 5: Prove it" },
+          { timing: "1–12s", visual: "The episode", onScreenText: "Pip built a game." },
+          { timing: "12–15s", visual: "What's next, and the follow button", onScreenText: "Follow so you don't miss it" },
         ],
       },
       {
@@ -2141,6 +2236,7 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
       const existing = await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId: existingReelId, actorUserId: input.actorUserId });
       if (await refreshPlanCopy(db, input, existing, (v) => ({ hook: reel.hook, body: v.platform === "facebook" ? (reel.facebookBody ?? reel.body) : reel.body, hashtags: reel.hashtags, callToAction: reel.callToAction, scheduledFor: planSlot(reel.day, reel.time) }))) report.scheduled.push(`${existing.title}: updated`);
       if (reel.videoFromTelegram && (await attachTelegramVideo(db, input, existingReelId))) report.scheduled.push(`${existing.title}: video from Telegram attached`);
+      if (reel.videoFile && (await attachBundledVideo(db, input, existingReelId, brandProfileId, reel.videoFile, reel.title))) report.scheduled.push(`${existing.title}: rendered video attached`);
       if (reel.aiVideo && existing.brief.creativeDirection !== reel.aiVideo.prompt && existing.variants.every((v) => v.archivedAt || RESCHEDULABLE.has(v.status))) {
         await updateContentItem(db, { organizationId: input.organizationId, contentItemId: existing.id, actorUserId: input.actorUserId, expectedRevision: existing.revision, changes: { brief: { creativeDirection: reel.aiVideo.prompt, keyPoints: reelKeyPoints(reel) } } });
         report.scheduled.push(`${existing.title}: video prompt updated`);
@@ -2170,6 +2266,7 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
     }
     report.created.push(`${reel.title} · ${reel.day} ${reel.time}`);
     if (reel.videoFromTelegram && (await attachTelegramVideo(db, input, item.id))) report.scheduled.push(`${reel.title}: video from Telegram attached`);
+    else if (reel.videoFile && (await attachBundledVideo(db, input, item.id, brandProfileId, reel.videoFile, reel.title))) report.scheduled.push(`${reel.title}: rendered video attached`);
     else if (reel.aiVideo) report.needsYou.push(`${reel.title}: AI video ready to make (${reel.aiVideo.seconds} s). Press Make video in Studio once video credits are set up; nothing is spent before that.`);
     else report.needsYou.push(`${reel.title}: film it from the script and upload the video before ${reel.day}.`);
   }
@@ -2235,6 +2332,43 @@ async function attachCodeItCard(db: Db, input: { organizationId: string; actorUs
 }
 
 /** Puts the newest video sent to the Telegram bot on every version of a reel that still has no media. True when something was attached. */
+const REELS_DIR = path.join(process.cwd(), "src", "assets", "reels");
+
+/** Attaches a bundled rendered reel to a reel's empty variants, uploading the file once per workspace. */
+async function attachBundledVideo(db: Db, input: { organizationId: string; actorUserId: string }, contentItemId: string, brandProfileId: string, file: string, title: string): Promise<boolean> {
+  const variants = await getVariantsOfItem(db, input, contentItemId);
+  const empty = variants.filter((v) => !v.archivedAt && !v.media.length && RESCHEDULABLE.has(v.status) && v.platform !== "linkedin");
+  if (!empty.length) return false;
+  const tag = `reel-file:${file}`;
+  const [found] = await db
+    .select({ id: socialAssets.id })
+    .from(socialAssets)
+    .where(and(eq(socialAssets.organizationId, input.organizationId), isNull(socialAssets.archivedAt), eq(socialAssets.assetType, "video"), sql`${socialAssets.tags} @> ${JSON.stringify([tag])}::jsonb`))
+    .limit(1);
+  let assetId = found?.id;
+  if (!assetId) {
+    let bytes: Uint8Array;
+    try {
+      bytes = new Uint8Array(readFileSync(path.join(REELS_DIR, file)));
+    } catch {
+      console.error(`[week-plan] rendered reel missing: ${file}`);
+      return false;
+    }
+    const asset = await createUploadedAsset(db, { organizationId: input.organizationId, actorUserId: input.actorUserId, brandProfileId, contentItemId, assetType: "video", title: `Reel · ${title}`.slice(0, 200), tags: ["rendered-reel", tag], file: { bytes, contentType: "video/mp4", filename: file }, platformHint: "instagram" });
+    assetId = asset.id;
+  }
+  let attached = 0;
+  for (const v of empty) {
+    try {
+      await updateVariant(db, { organizationId: input.organizationId, contentVariantId: v.id, actorUserId: input.actorUserId, expectedRevision: v.revision, changes: { media: [{ assetId, position: 0, role: "primary" as const }] } });
+      attached++;
+    } catch (err) {
+      console.error("[week-plan] rendered reel attach failed:", err instanceof Error ? err.message.slice(0, 200) : "unknown");
+    }
+  }
+  return attached > 0;
+}
+
 async function attachTelegramVideo(db: Db, input: { organizationId: string; actorUserId: string }, contentItemId: string): Promise<boolean> {
   const variants = await getVariantsOfItem(db, input, contentItemId);
   const empty = variants.filter((v) => !v.archivedAt && !v.media.length && RESCHEDULABLE.has(v.status) && v.platform !== "linkedin");
