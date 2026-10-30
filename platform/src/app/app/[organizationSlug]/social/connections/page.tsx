@@ -33,7 +33,7 @@ import { ACCOUNT_STATUS_TONE, CONNECTION_STATUS_LABEL, formatDateTime, formatSho
 
 export const dynamic = "force-dynamic";
 
-const PROVIDER_SHORT: Record<string, string> = { meta: "Meta", linkedin: "LinkedIn", google_ads: "Google Ads" };
+const PROVIDER_SHORT: Record<string, string> = { meta: "Meta", linkedin: "LinkedIn", google_ads: "Google Ads", youtube: "YouTube", tiktok: "TikTok" };
 
 /** Plain-language reasons for `?social_error=` codes coming back from the OAuth routes. */
 const SOCIAL_ERRORS: Record<string, string> = {
@@ -240,7 +240,7 @@ export default async function SocialConnectionsPage({ params, searchParams }: { 
                 </p>
                 <p className="text-xs text-subtle">Webhook events only nudge a sync; the inbox still pulls through the official API.</p>
               </div>
-              <p className="text-xs text-subtle">TikTok, YouTube and X have no official-API integration in this build: add them as manual accounts to track results.</p>
+              <p className="text-xs text-subtle">X has no official-API integration in this build: add it as a manual account to track results. TikTok posts land in the TikTok inbox to finish in the app until the TikTok app passes its audit (then set TIKTOK_DIRECT_POST=1).</p>
               <Link href={`/app/${organizationSlug}/social/settings`} className="text-xs text-muted underline-offset-4 hover:text-foreground hover:underline">AI providers and roles → Settings</Link>
             </div>
           </details>

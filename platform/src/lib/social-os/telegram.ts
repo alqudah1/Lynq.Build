@@ -1,6 +1,6 @@
 import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { and, asc, eq, gt, inArray, isNull, lte, sql } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, isNotNull, isNull, lte, sql } from "drizzle-orm";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { marketingBrandProfiles, marketingContentItems, organizationMemberships, organizations, socialAssets, socialContentVariants, users } from "@/db/schema";
 import { loadAuthEnv } from "@/lib/auth/env";
@@ -33,6 +33,8 @@ export interface TelegramEnv {
   TELEGRAM_CHAT_ID?: string;
   TELEGRAM_APPROVER_EMAIL?: string;
   TELEGRAM_ORGANIZATION_SLUG?: string;
+  /** "1" when TikTok posts go out directly with their caption (otherwise they land in the TikTok inbox). */
+  TIKTOK_DIRECT_POST?: string;
   AUTH_SECRET: string;
   AUTH_BASE_URL: string;
 }
@@ -58,7 +60,7 @@ const CAPTION_LIMIT = 1024;
 export function loadTelegramEnv(): TelegramEnv {
   const env = loadEnv();
   const auth = loadAuthEnv();
-  return { TELEGRAM_BOT_TOKEN: env.TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID: env.TELEGRAM_CHAT_ID, TELEGRAM_APPROVER_EMAIL: env.TELEGRAM_APPROVER_EMAIL, TELEGRAM_ORGANIZATION_SLUG: env.TELEGRAM_ORGANIZATION_SLUG, AUTH_SECRET: auth.AUTH_SECRET, AUTH_BASE_URL: auth.AUTH_BASE_URL };
+  return { TELEGRAM_BOT_TOKEN: env.TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID: env.TELEGRAM_CHAT_ID, TELEGRAM_APPROVER_EMAIL: env.TELEGRAM_APPROVER_EMAIL, TELEGRAM_ORGANIZATION_SLUG: env.TELEGRAM_ORGANIZATION_SLUG, TIKTOK_DIRECT_POST: env.TIKTOK_DIRECT_POST, AUTH_SECRET: auth.AUTH_SECRET, AUTH_BASE_URL: auth.AUTH_BASE_URL };
 }
 
 export function telegramEnabled(env: Pick<TelegramEnv, "TELEGRAM_BOT_TOKEN">): boolean {
@@ -990,22 +992,41 @@ export async function sendEverywhereReels(db: Db, env: TelegramEnv, chatId: stri
   const start = zonedDateTimeToUtc(y, m, d, 0, 0, TELEGRAM_TIMEZONE);
   const end = zonedDateTimeToUtc(y, m, d + 1, 0, 0, TELEGRAM_TIMEZONE);
   const rows = await db
-    .select({ media: socialContentVariants.media, at: socialContentVariants.scheduledFor, hook: socialContentVariants.hook, body: socialContentVariants.body, hashtags: socialContentVariants.hashtags, title: marketingContentItems.title, brand: marketingBrandProfiles.name })
+    .select({ itemId: socialContentVariants.contentItemId, media: socialContentVariants.media, at: socialContentVariants.scheduledFor, hook: socialContentVariants.hook, body: socialContentVariants.body, hashtags: socialContentVariants.hashtags, title: marketingContentItems.title, brand: marketingBrandProfiles.name })
     .from(socialContentVariants)
     .innerJoin(marketingContentItems, and(eq(marketingContentItems.id, socialContentVariants.contentItemId), eq(marketingContentItems.organizationId, socialContentVariants.organizationId)))
     .leftJoin(marketingBrandProfiles, eq(marketingBrandProfiles.id, marketingContentItems.brandProfileId))
     .where(and(inArray(socialContentVariants.organizationId, organizationIds), isNull(socialContentVariants.archivedAt), isNull(marketingContentItems.archivedAt), eq(socialContentVariants.platform, "instagram"), eq(socialContentVariants.format, "reel"), gt(socialContentVariants.scheduledFor, start), lte(socialContentVariants.scheduledFor, end), sql`jsonb_array_length(${socialContentVariants.media}) > 0`))
     .orderBy(asc(socialContentVariants.scheduledFor))
     .limit(6);
+  // Reels that already have a connected TikTok / YouTube version post there by themselves.
+  const automatic = new Map<string, Set<string>>();
+  if (rows.length) {
+    const versions = await db
+      .select({ itemId: socialContentVariants.contentItemId, platform: socialContentVariants.platform })
+      .from(socialContentVariants)
+      .where(and(inArray(socialContentVariants.contentItemId, rows.map((r) => r.itemId)), isNull(socialContentVariants.archivedAt), isNotNull(socialContentVariants.channelAccountId), inArray(socialContentVariants.platform, ["tiktok", "youtube"])));
+    for (const v of versions) automatic.set(v.itemId, new Set([...(automatic.get(v.itemId) ?? []), v.platform]));
+  }
   let sent = 0;
   for (const r of rows) {
     const assetId = (r.media as { assetId?: string }[] | null)?.[0]?.assetId;
     if (!assetId) continue;
+    const auto = automatic.get(r.itemId) ?? new Set<string>();
+    const tiktokDone = auto.has("tiktok") && env.TIKTOK_DIRECT_POST === "1";
+    const tiktokInbox = auto.has("tiktok") && !tiktokDone;
+    const youtubeDone = auto.has("youtube");
+    if (tiktokDone && youtubeDone) continue;
     const c = everywhereCaptions({ hook: r.hook, body: r.body, hashtags: (r.hashtags as string[] | null) ?? [] });
     const when = r.at ? ` around ${formatLocal(r.at)}` : " today";
+    const manual = [!tiktokDone ? "TikTok" : null, !youtubeDone ? "YouTube Shorts" : null].filter(Boolean).join(" and ");
+    const steps = tiktokInbox
+      ? `${youtubeDone ? "YouTube posts by itself. " : ""}At its planned time the video lands in your TikTok inbox: open TikTok, tap the notification, paste the caption from the next message and post.${youtubeDone ? "" : " Post it on YouTube Shorts yourself."}`
+      : `${tiktokDone ? "TikTok posts by itself. " : youtubeDone ? "YouTube posts by itself. " : ""}Save the video, then post it on ${manual}. Add a trending sound in the app if you like. The captions are in the next message.`;
+    const text = [!tiktokDone ? `TikTok caption:\n${c.tiktok}` : null, !youtubeDone ? `YouTube Shorts title:\n${c.shortsTitle}\n\nYouTube Shorts description:\n${c.shortsDescription}` : null].filter(Boolean).join("\n\n");
     try {
-      await telegram(env, "sendVideo", { chat_id: chatId, video: assetPublicUrl(env, assetId), supports_streaming: true, caption: `🎬 ${r.brand ?? ""} reel for TikTok and YouTube Shorts${when}\n${r.title}\n\nSave the video, then post it on each app. Add a trending sound in the app if you like. The captions are in the next message.`.slice(0, CAPTION_LIMIT) }, deps);
-      await telegram(env, "sendMessage", { chat_id: chatId, text: `TikTok caption:\n${c.tiktok}\n\nYouTube Shorts title:\n${c.shortsTitle}\n\nYouTube Shorts description:\n${c.shortsDescription}`.slice(0, 4000) }, deps);
+      await telegram(env, "sendVideo", { chat_id: chatId, video: assetPublicUrl(env, assetId), supports_streaming: true, caption: `🎬 ${r.brand ?? ""} reel for ${manual}${when}\n${r.title}\n\n${steps}`.slice(0, CAPTION_LIMIT) }, deps);
+      await telegram(env, "sendMessage", { chat_id: chatId, text: text.slice(0, 4000) }, deps);
       sent++;
     } catch {
       // A video Telegram can't fetch must not stop the rest.

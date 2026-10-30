@@ -38,7 +38,7 @@ const safeAppPath = z.string().min(1).max(2000).refine(isSafeSocialRedirectPath,
 
 export const socialOAuthPayloadSchema = z
   .object({
-    provider: z.enum(["meta", "linkedin", "google_ads"]),
+    provider: z.enum(["meta", "linkedin", "google_ads", "youtube", "tiktok"]),
     state: z.string().min(16).max(200),
     codeVerifier: z.string().min(1).max(200).optional(),
     organizationId: z.string().uuid(),

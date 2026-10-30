@@ -49,7 +49,7 @@ describe("social OAuth state cookie", () => {
   });
 
   it("rejects off-site redirect targets and unknown providers inside a validly signed payload", () => {
-    for (const bad of [payload({ redirectTo: "https://evil.example" }), payload({ redirectTo: "//evil.example" }), { ...payload(), provider: "tiktok" } as unknown as SocialOAuthPayload]) {
+    for (const bad of [payload({ redirectTo: "https://evil.example" }), payload({ redirectTo: "//evil.example" }), { ...payload(), provider: "x" } as unknown as SocialOAuthPayload]) {
       expect(() => verifySocialOAuthPayload(signSocialOAuthPayload(bad, SECRET), SECRET)).toThrow(SocialOAuthCookieInvalidError);
     }
   });

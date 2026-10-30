@@ -12,7 +12,7 @@ import type { SocialProviderId } from "@/lib/social-os/providers/social/types";
 
 export const dynamic = "force-dynamic";
 
-const VALID_PROVIDERS: SocialProviderId[] = ["meta", "linkedin", "google_ads"];
+const VALID_PROVIDERS: SocialProviderId[] = ["meta", "linkedin", "google_ads", "youtube", "tiktok"];
 
 function sameString(a: string, b: string): boolean {
   const ba = Buffer.from(a);
