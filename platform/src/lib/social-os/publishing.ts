@@ -346,7 +346,7 @@ async function buildMedia(db: Db, organizationId: string, platform: SocialOrgani
   const byId = new Map(assets.map((a) => [a.id, a]));
   const provider = SOCIAL_PLATFORM_PROVIDER[platform];
   const needsUrl = provider === "meta";
-  const needsBytes = provider === "linkedin";
+  const needsBytes = provider === "linkedin" || provider === "youtube" || provider === "tiktok";
   const urlEnv = needsUrl ? (deps.assetUrlEnv ?? loadAuthEnv()) : null;
   const out: PublishMediaInput[] = [];
   for (const m of [...media.data].sort((a, b) => a.position - b.position)) {

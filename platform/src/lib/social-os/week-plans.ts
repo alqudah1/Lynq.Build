@@ -10,8 +10,9 @@ import { cardKey, composeCodeItCard, type CodeItCard } from "./codeit-card";
 import { composeStory, needsSticker, stickerInstructions, storyKey, type StorySpec } from "./story-original";
 import { createBrand, listBrands, updateBrand } from "./brands";
 import { updateAccount } from "./connections";
-import { archiveContentItem, createContentItem, getContentItemForUser, getVariantForUser, updateContentItem, updateVariant, type SocialContentItem } from "./content";
+import { addVariant, archiveContentItem, createContentItem, getContentItemForUser, getVariantForUser, submitVariantForReview, updateContentItem, updateVariant, type SocialContentItem } from "./content";
 import { regenerateVariantPart, zonedDateTimeToUtc } from "./studio";
+import { youtubeShortsMetadata } from "./providers/social/youtube";
 import type { BrandProfileInput, SocialContentBrief, SocialContentKind, SocialOrganicPlatform, SocialVariantPlatformOptions } from "./validation";
 
 /**
@@ -2235,6 +2236,7 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
     if (existingReelId) {
       const existing = await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId: existingReelId, actorUserId: input.actorUserId });
       if (await refreshPlanCopy(db, input, existing, (v) => ({ hook: reel.hook, body: v.platform === "facebook" ? (reel.facebookBody ?? reel.body) : reel.body, hashtags: reel.hashtags, callToAction: reel.callToAction, scheduledFor: planSlot(reel.day, reel.time) }))) report.scheduled.push(`${existing.title}: updated`);
+      for (const added of await addVideoPlatformVariants(db, input, existing, reel)) report.scheduled.push(`${existing.title}: ${added} version added`);
       if (reel.videoFromTelegram && (await attachTelegramVideo(db, input, existingReelId))) report.scheduled.push(`${existing.title}: video from Telegram attached`);
       if (reel.videoFile && (await attachBundledVideo(db, input, existingReelId, brandProfileId, reel.videoFile, reel.title))) report.scheduled.push(`${existing.title}: rendered video attached`);
       if (reel.aiVideo && existing.brief.creativeDirection !== reel.aiVideo.prompt && existing.variants.every((v) => v.archivedAt || RESCHEDULABLE.has(v.status))) {
@@ -2265,6 +2267,7 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
       await updateVariant(db, { organizationId: input.organizationId, contentVariantId: v.id, actorUserId: input.actorUserId, expectedRevision: v.revision, changes: { format: v.platform === "instagram" ? "reel" : "video", hook: reel.hook, body: v.platform === "facebook" ? (reel.facebookBody ?? reel.body) : reel.body, hashtags: reel.hashtags, callToAction: reel.callToAction, platformOptions, scheduledFor: at, ...(account ? { channelAccountId: account } : {}) } });
     }
     report.created.push(`${reel.title} · ${reel.day} ${reel.time}`);
+    for (const added of await addVideoPlatformVariants(db, input, await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId: item.id, actorUserId: input.actorUserId }), reel)) report.scheduled.push(`${reel.title}: ${added} version added`);
     if (reel.videoFromTelegram && (await attachTelegramVideo(db, input, item.id))) report.scheduled.push(`${reel.title}: video from Telegram attached`);
     else if (reel.videoFile && (await attachBundledVideo(db, input, item.id, brandProfileId, reel.videoFile, reel.title))) report.scheduled.push(`${reel.title}: rendered video attached`);
     else if (reel.aiVideo) report.needsYou.push(`${reel.title}: AI video ready to make (${reel.aiVideo.seconds} s). Press Make video in Studio once video credits are set up; nothing is spent before that.`);
@@ -2333,6 +2336,56 @@ async function attachCodeItCard(db: Db, input: { organizationId: string; actorUs
 
 /** Puts the newest video sent to the Telegram bot on every version of a reel that still has no media. True when something was attached. */
 const REELS_DIR = path.join(process.cwd(), "src", "assets", "reels");
+
+const VIDEO_PLATFORMS: { platform: "tiktok" | "youtube"; label: string }[] = [
+  { platform: "tiktok", label: "TikTok" },
+  { platform: "youtube", label: "YouTube Shorts" },
+];
+
+/** Reel copy for TikTok and YouTube: no "link in bio" line (neither has one to point at), at most five hashtags. */
+export function videoPlatformCopy(reel: Pick<PlanReel, "hook" | "body" | "hashtags" | "brand">, platform: "tiktok" | "youtube"): { body: string; hashtags: string[]; platformOptions: SocialVariantPlatformOptions } {
+  const body = reel.body.replace(/\n*[^\n]*link in (?:our )?bio[^\n]*$/i, "").trim();
+  const hashtags = [...new Set(reel.hashtags.map((t) => t.replace(/^#/, "")).filter(Boolean))].slice(0, 5);
+  if (platform === "tiktok") return { body, hashtags, platformOptions: {} };
+  const codeit = reel.brand.brandKey === "codeit";
+  // CodeIt is made for kids, so YouTube's audience setting says so (required by YouTube for content aimed at children).
+  return { body, hashtags, platformOptions: { title: youtubeShortsMetadata({ body: reel.hook || body, hashtags: [] }).title, madeForKids: codeit, categoryId: codeit ? "27" : "28" } };
+}
+
+/**
+ * Once the brand has a connected TikTok or YouTube account, a reel gets a version for each, with the
+ * reel's video, decided together with the Instagram version in Telegram. Only for reels still ahead.
+ */
+async function addVideoPlatformVariants(db: Db, input: { organizationId: string; actorUserId: string }, item: SocialContentItem, reel: PlanReel): Promise<string[]> {
+  if (!item.brandProfileId || planSlot(reel.day, reel.time).getTime() <= Date.now()) return [];
+  const live = item.variants.filter((v) => !v.archivedAt);
+  const lead = live.find((v) => v.platform === "instagram") ?? live[0];
+  if (!lead || (!RESCHEDULABLE.has(lead.status) && lead.status !== "ready_for_review")) return [];
+  const accounts = await db
+    .select({ id: marketingChannelAccounts.id, platform: marketingChannelAccounts.platform })
+    .from(marketingChannelAccounts)
+    .where(and(eq(marketingChannelAccounts.organizationId, input.organizationId), eq(marketingChannelAccounts.brandProfileId, item.brandProfileId), eq(marketingChannelAccounts.connectionStatus, "connected"), isNull(marketingChannelAccounts.archivedAt)));
+  const added: string[] = [];
+  for (const { platform, label } of VIDEO_PLATFORMS) {
+    const account = accounts.find((a) => a.platform === platform);
+    if (!account || live.some((v) => v.platform === platform)) continue;
+    const copy = videoPlatformCopy(reel, platform);
+    try {
+      const variant = await addVariant(db, {
+        organizationId: input.organizationId,
+        contentItemId: item.id,
+        actorUserId: input.actorUserId,
+        input: { platform, channelAccountId: account.id, format: "short_video", hook: reel.hook, body: copy.body, hashtags: copy.hashtags, callToAction: reel.callToAction, media: lead.media, platformOptions: copy.platformOptions, scheduledFor: planSlot(reel.day, reel.time) },
+      });
+      // Already sent for review: join it, so the one Telegram decision covers this version too.
+      if (lead.status === "ready_for_review" && variant.media.length) await submitVariantForReview(db, { organizationId: input.organizationId, contentVariantId: variant.id, actorUserId: input.actorUserId, expectedRevision: variant.revision, summary: "Added with its reel" });
+      added.push(label);
+    } catch (err) {
+      console.error(`[week-plan] ${platform} version failed:`, err instanceof Error ? err.message.slice(0, 200) : "unknown");
+    }
+  }
+  return added;
+}
 
 /** Attaches a bundled rendered reel to a reel's empty variants, uploading the file once per workspace. */
 async function attachBundledVideo(db: Db, input: { organizationId: string; actorUserId: string }, contentItemId: string, brandProfileId: string, file: string, title: string): Promise<boolean> {

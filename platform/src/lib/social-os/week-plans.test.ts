@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { WEEK_PLANS, currentWeekPlan, planInstant, planMarker, planEnd } from "./week-plans";
+import { WEEK_PLANS, currentWeekPlan, planInstant, planMarker, planEnd, videoPlatformCopy } from "./week-plans";
 
 const next = (d: string) => new Date(Date.parse(`${d}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
 import { SOCIAL_PLATFORM_RULES, socialContentBriefSchema } from "./validation";
@@ -154,5 +154,20 @@ describe("catch-up for slots already in the past", () => {
     expect(catchUp(new Date("2026-10-09T18:00:00Z"), now).toISOString()).toBe("2026-10-09T18:00:00.000Z");
     expect(catchUp(new Date("2026-10-07T23:30:00Z"), now).toISOString()).toBe("2026-10-09T17:45:00.000Z");
     expect(catchUp(new Date("2026-10-09T17:20:00Z"), now).toISOString()).toBe("2026-10-09T17:45:00.000Z");
+  });
+});
+
+describe("reel copy for TikTok and YouTube", () => {
+  const reel = { hook: "Pip builds a game in 60 seconds", body: "Watch Pip build it.\n\nLink in bio to try it free.", hashtags: ["#coding", "kids", "python", "games", "pip", "extra"], brand: { brandKey: "codeit" } } as unknown as Parameters<typeof videoPlatformCopy>[0];
+  it("drops the link-in-bio line and keeps five hashtags", () => {
+    const t = videoPlatformCopy(reel, "tiktok");
+    expect(t.body).toBe("Watch Pip build it.");
+    expect(t.hashtags).toEqual(["coding", "kids", "python", "games", "pip"]);
+  });
+  it("titles the Short from the hook and marks CodeIt as made for kids", () => {
+    const y = videoPlatformCopy(reel, "youtube");
+    expect(y.platformOptions).toEqual({ title: "Pip builds a game in 60 seconds #Shorts", madeForKids: true, categoryId: "27" });
+    const lynq = videoPlatformCopy({ ...reel, brand: { brandKey: "lynq" } } as typeof reel, "youtube");
+    expect(lynq.platformOptions).toMatchObject({ madeForKids: false, categoryId: "28" });
   });
 });

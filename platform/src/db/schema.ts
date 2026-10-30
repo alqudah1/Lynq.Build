@@ -5020,7 +5020,7 @@ export const marketingProjectLinks = pgTable("marketing_project_links", {
 // change.
 // ---------------------------------------------------------------------------
 
-export const integrationProviderEnum = pgEnum("integration_provider", ["resend", "dev_email", "twilio", "dev_sms", "whatsapp_cloud_api", "dev_whatsapp", "meta", "linkedin", "google_ads"]);
+export const integrationProviderEnum = pgEnum("integration_provider", ["resend", "dev_email", "twilio", "dev_sms", "whatsapp_cloud_api", "dev_whatsapp", "meta", "linkedin", "google_ads", "youtube", "tiktok"]);
 /** `social` and `ads` are integration TYPES only (Module 19 OAuth connections); they are never a conversation/message channel. */
 export const communicationChannelEnum = pgEnum("communication_channel", ["email", "sms", "whatsapp", "social", "ads"]);
 export const integrationConnectionStatusEnum = pgEnum("integration_connection_status", ["pending", "connected", "verification_failed", "disabled", "disconnected"]);

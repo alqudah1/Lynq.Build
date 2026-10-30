@@ -13,7 +13,7 @@ import type { SocialProviderId } from "@/lib/social-os/providers/social/types";
 
 export const dynamic = "force-dynamic";
 
-const VALID_PROVIDERS: SocialProviderId[] = ["meta", "linkedin", "google_ads"];
+const VALID_PROVIDERS: SocialProviderId[] = ["meta", "linkedin", "google_ads", "youtube", "tiktok"];
 const SOCIAL_OAUTH_START_RATE_LIMIT = { limit: 10, windowSeconds: 900 };
 
 const querySchema = z.object({ organizationId: z.string().uuid(), brandProfileId: z.string().uuid(), redirectTo: z.string().max(2000).optional() });

@@ -10,15 +10,15 @@ import type { FetchLike } from "./types";
  *  - `retryable`: network failures, HTTP 429, HTTP 5xx, Meta throttling
  *    codes (4, 17, 32, 613, 80001–80014) and Meta `is_transient` errors.
  *  - `authorizationLost`: HTTP 401, Meta code 190 (and subcodes 458–467),
- *    LinkedIn EXPIRED/REVOKED access tokens, Google `UNAUTHENTICATED` and
- *    OAuth `invalid_grant`.
+ *    LinkedIn EXPIRED/REVOKED access tokens, Google `UNAUTHENTICATED`,
+ *    OAuth `invalid_grant` and TikTok `access_token_invalid`.
  *  - everything else (400/403/404/…) is permanent — a human must look.
  *
  * Messages never contain a token: query-string secrets and bearer values
  * are redacted before a message is built.
  */
 
-export type SocialProviderName = "meta" | "linkedin" | "google_ads";
+export type SocialProviderName = "meta" | "linkedin" | "google_ads" | "youtube" | "tiktok";
 
 export interface JsonResponse<T> {
   status: number;
@@ -34,7 +34,8 @@ export function redactSecrets(value: string): string {
   return value
     .replace(SECRET_PARAM_PATTERN, "$1=[redacted]")
     .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/g, "Bearer [redacted]")
-    .replace(/\b(EAA[A-Za-z0-9]{20,}|ya29\.[A-Za-z0-9._-]+|AQ[A-Za-z0-9_-]{40,})\b/g, "[redacted]");
+    .replace(/\b(EAA[A-Za-z0-9]{20,}|ya29\.[A-Za-z0-9._-]+|AQ[A-Za-z0-9_-]{40,}|act\.[A-Za-z0-9._-]{20,}|rft\.[A-Za-z0-9._-]{20,})\b/g, "[redacted]")
+    .replace(/\b1\/\/[A-Za-z0-9_-]{20,}/g, "[redacted]");
 }
 
 function truncate(value: string, max = 300): string {
@@ -140,6 +141,13 @@ export function classifyProviderError(status: number, body: unknown, headers?: H
       if (metaCode === 190 || metaCode === 102 || (Number.isFinite(subcode) && META_AUTH_SUBCODES.has(subcode))) authorizationLost = true;
       if (META_THROTTLE_CODES.has(metaCode) || (metaCode >= 80000 && metaCode <= 80014) || nested.is_transient === true || metaCode === 1 || metaCode === 2) retryable = true;
     }
+  } else if (nested && typeof nested.code === "string") {
+    // TikTok Open API: { data, error: { code: "access_token_invalid", message, log_id } } ("ok" is success).
+    const tCode = nested.code;
+    code = `tiktok_${tCode}`;
+    if (typeof nested.message === "string" && nested.message) message = nested.message;
+    if (/^(access_token_invalid|scope_not_authorized|scope_permission_missed|token_not_authorized_for_specified_deployment)$/.test(tCode)) authorizationLost = true;
+    if (tCode === "rate_limit_exceeded" || tCode === "internal_error") retryable = true;
   } else if (record && typeof record.error === "string") {
     // OAuth 2.0 token endpoint shape: { error: "invalid_grant", error_description }
     code = `oauth_${record.error}`;
@@ -222,6 +230,9 @@ export async function jsonRequest<T = unknown>(fetchImpl: FetchLike, url: string
   // Graph API occasionally answers 200 with an error envelope.
   const rec = asRecord(body);
   if (options.provider === "meta" && rec && asRecord(rec.error) && !("data" in rec) && !("id" in rec)) throw providerErrorFromResponse(options.provider, 400, body, response.headers);
+  // TikTok answers 200 with `error.code` set to something other than "ok" for some refusals.
+  const tErr = options.provider === "tiktok" ? asRecord(rec?.error) : null;
+  if (tErr && typeof tErr.code === "string" && tErr.code !== "ok") throw providerErrorFromResponse(options.provider, 400, body, response.headers);
   return { status: response.status, headers: response.headers, data: body as T };
 }
 

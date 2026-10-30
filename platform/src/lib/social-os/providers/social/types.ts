@@ -2,7 +2,7 @@ import type { SocialPlatform, SocialOrganicPlatform, SocialVariantFormat } from 
 
 /**
  * Module 19 — the provider adapter contract for social platforms. One
- * adapter per OAuth provider (`meta`, `linkedin`, `google_ads`); each
+ * adapter per OAuth provider (`meta`, `linkedin`, `google_ads`, `youtube`, `tiktok`); each
  * adapter may serve several platforms (Meta → facebook, instagram,
  * meta_ads). Adapters are pure HTTP clients over official APIs: they take
  * decrypted credentials as arguments, never read the database, never log a
@@ -13,7 +13,7 @@ import type { SocialPlatform, SocialOrganicPlatform, SocialVariantFormat } from 
  * as "not supported" when absent.
  */
 
-export type SocialProviderId = "meta" | "linkedin" | "google_ads";
+export type SocialProviderId = "meta" | "linkedin" | "google_ads" | "youtube" | "tiktok";
 
 /** What is stored (encrypted) on an `integration_credentials` row for a social connection. */
 export interface SocialTokenBundle {

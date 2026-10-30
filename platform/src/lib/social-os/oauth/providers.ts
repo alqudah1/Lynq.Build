@@ -2,6 +2,8 @@ import { SocialProviderNotConfiguredError } from "../errors";
 import { buildMetaAuthorizationUrl, exchangeMetaCode, exchangeMetaLongLivedToken, fetchMetaPrincipal, debugMetaToken, META_DEFAULT_SCOPES, META_DEFAULT_GRAPH_VERSION } from "../providers/social/meta";
 import { buildLinkedInAuthorizationUrl, exchangeLinkedInCode, fetchLinkedInPrincipal, resolveLinkedInScopes } from "../providers/social/linkedin";
 import { buildGoogleAdsAuthorizationUrl, exchangeGoogleAdsCode, GOOGLE_ADS_SCOPE } from "../providers/social/google-ads";
+import { buildYouTubeAuthorizationUrl, exchangeYouTubeCode, youtubeClient, YOUTUBE_SCOPES } from "../providers/social/youtube";
+import { buildTikTokAuthorizationUrl, exchangeTikTokCode, fetchTikTokUser, tiktokScopes } from "../providers/social/tiktok";
 import { SocialProviderError } from "../errors";
 import type { SocialProviderEnv } from "../providers/social/registry";
 import type { FetchLike, SocialProviderId, SocialTokenBundle } from "../providers/social/types";
@@ -22,6 +24,8 @@ export function socialOAuthRedirectUri(authBaseUrl: string, provider: SocialProv
 export function requestedScopes(provider: SocialProviderId, env: SocialProviderEnv = {}): string[] {
   if (provider === "meta") return [...META_DEFAULT_SCOPES];
   if (provider === "linkedin") return resolveLinkedInScopes(env);
+  if (provider === "youtube") return [...YOUTUBE_SCOPES];
+  if (provider === "tiktok") return tiktokScopes(env);
   return [GOOGLE_ADS_SCOPE];
 }
 
@@ -41,6 +45,15 @@ export function buildProviderAuthorizationUrl(provider: SocialProviderId, env: S
   if (provider === "linkedin") {
     const c = requireConfig(provider, { LINKEDIN_CLIENT_ID: env.LINKEDIN_CLIENT_ID, LINKEDIN_CLIENT_SECRET: env.LINKEDIN_CLIENT_SECRET });
     return buildLinkedInAuthorizationUrl({ clientId: c.LINKEDIN_CLIENT_ID, redirectUri: input.redirectUri, state: input.state, scopes: resolveLinkedInScopes(env) });
+  }
+  if (provider === "youtube") {
+    const yt = youtubeClient(env);
+    const c = requireConfig(provider, { YOUTUBE_CLIENT_ID: yt.clientId, YOUTUBE_CLIENT_SECRET: yt.clientSecret });
+    return buildYouTubeAuthorizationUrl({ clientId: c.YOUTUBE_CLIENT_ID, redirectUri: input.redirectUri, state: input.state });
+  }
+  if (provider === "tiktok") {
+    const c = requireConfig(provider, { TIKTOK_CLIENT_KEY: env.TIKTOK_CLIENT_KEY, TIKTOK_CLIENT_SECRET: env.TIKTOK_CLIENT_SECRET });
+    return buildTikTokAuthorizationUrl({ clientKey: c.TIKTOK_CLIENT_KEY, redirectUri: input.redirectUri, state: input.state, scopes: tiktokScopes(env) });
   }
   const c = requireConfig(provider, { GOOGLE_ADS_CLIENT_ID: env.GOOGLE_ADS_CLIENT_ID, GOOGLE_ADS_CLIENT_SECRET: env.GOOGLE_ADS_CLIENT_SECRET, GOOGLE_ADS_DEVELOPER_TOKEN: env.GOOGLE_ADS_DEVELOPER_TOKEN });
   return buildGoogleAdsAuthorizationUrl({ clientId: c.GOOGLE_ADS_CLIENT_ID, redirectUri: input.redirectUri, state: input.state });
@@ -77,6 +90,32 @@ export async function exchangeProviderCode(
     let principal: { externalId: string; name?: string } | undefined;
     try {
       principal = await fetchLinkedInPrincipal(fetchImpl, token.accessToken);
+    } catch (err) {
+      if (err instanceof SocialProviderError && (err.authorizationLost || err.retryable)) throw err;
+    }
+    return {
+      accessToken: token.accessToken,
+      tokenType: "bearer",
+      expiresAt: token.expiresAt,
+      refreshToken: token.refreshToken,
+      ...(token.refreshTokenExpiresAt ? { refreshTokenExpiresAt: token.refreshTokenExpiresAt } : {}),
+      scopes: token.scopes ?? requestedScopes(provider, env),
+      principal,
+    };
+  }
+  if (provider === "youtube") {
+    const yt = youtubeClient(env);
+    const c = requireConfig(provider, { YOUTUBE_CLIENT_ID: yt.clientId, YOUTUBE_CLIENT_SECRET: yt.clientSecret });
+    const token = await exchangeYouTubeCode(fetchImpl, { clientId: c.YOUTUBE_CLIENT_ID, clientSecret: c.YOUTUBE_CLIENT_SECRET, redirectUri: input.redirectUri, code: input.code, now });
+    return { accessToken: token.accessToken, tokenType: "bearer", expiresAt: token.expiresAt, refreshToken: token.refreshToken, scopes: token.scopes ?? requestedScopes(provider, env) };
+  }
+  if (provider === "tiktok") {
+    const c = requireConfig(provider, { TIKTOK_CLIENT_KEY: env.TIKTOK_CLIENT_KEY, TIKTOK_CLIENT_SECRET: env.TIKTOK_CLIENT_SECRET });
+    const token = await exchangeTikTokCode(fetchImpl, { clientKey: c.TIKTOK_CLIENT_KEY, clientSecret: c.TIKTOK_CLIENT_SECRET, redirectUri: input.redirectUri, code: input.code, now });
+    let principal: { externalId: string; name?: string } | undefined = token.openId ? { externalId: token.openId } : undefined;
+    try {
+      const user = await fetchTikTokUser(fetchImpl, token.accessToken);
+      principal = { externalId: user.openId, name: user.displayName };
     } catch (err) {
       if (err instanceof SocialProviderError && (err.authorizationLost || err.retryable)) throw err;
     }

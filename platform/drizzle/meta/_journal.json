@@ -330,6 +330,13 @@
       "when": 1790889336451,
       "tag": "0046_social_automation_rule_scope_unique",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1793381649775,
+      "tag": "0047_social_youtube_tiktok",
+      "breakpoints": true
     }
   ]
 }

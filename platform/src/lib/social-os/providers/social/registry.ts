@@ -3,6 +3,8 @@ import { SOCIAL_PLATFORM_PROVIDER, type SocialPlatform } from "../../validation"
 import { createMetaAdapter, type MetaEnv } from "./meta";
 import { createLinkedInAdapter, type LinkedInEnv } from "./linkedin";
 import { createGoogleAdsAdapter, type GoogleAdsEnv } from "./google-ads";
+import { createYouTubeAdapter, type YouTubeEnv } from "./youtube";
+import { createTikTokAdapter, type TikTokEnv } from "./tiktok";
 import type { FetchLike, SocialProviderAdapter, SocialProviderId } from "./types";
 
 /**
@@ -11,7 +13,7 @@ import type { FetchLike, SocialProviderAdapter, SocialProviderId } from "./types
  * always derived from env, never assumed.
  */
 
-export type SocialProviderEnv = MetaEnv & LinkedInEnv & GoogleAdsEnv;
+export type SocialProviderEnv = MetaEnv & LinkedInEnv & GoogleAdsEnv & YouTubeEnv & TikTokEnv;
 
 export interface SocialAdapterDeps {
   fetchImpl?: FetchLike;
@@ -19,12 +21,14 @@ export interface SocialAdapterDeps {
   sleep?: (ms: number) => Promise<void>;
 }
 
-export const SOCIAL_PROVIDER_IDS: readonly SocialProviderId[] = ["meta", "linkedin", "google_ads"];
+export const SOCIAL_PROVIDER_IDS: readonly SocialProviderId[] = ["meta", "linkedin", "google_ads", "youtube", "tiktok"];
 
 export const SOCIAL_PROVIDER_LABELS: Record<SocialProviderId, string> = {
   meta: "Meta (Facebook, Instagram, Meta Ads)",
   linkedin: "LinkedIn (Pages, profile, LinkedIn Ads)",
   google_ads: "Google Ads",
+  youtube: "YouTube (Shorts)",
+  tiktok: "TikTok",
 };
 
 export function resolveSocialProviderAdapter(provider: SocialProviderId, env: SocialProviderEnv, deps: SocialAdapterDeps = {}): SocialProviderAdapter {
@@ -35,6 +39,10 @@ export function resolveSocialProviderAdapter(provider: SocialProviderId, env: So
       return createLinkedInAdapter(env, deps);
     case "google_ads":
       return createGoogleAdsAdapter(env, deps);
+    case "youtube":
+      return createYouTubeAdapter(env, deps);
+    case "tiktok":
+      return createTikTokAdapter(env, deps);
     default:
       throw new SocialProviderNotSupportedError(String(provider), "a provider adapter");
   }

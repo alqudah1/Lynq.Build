@@ -23,15 +23,15 @@ export const socialAdPlatformSchema = z.enum(SOCIAL_AD_PLATFORMS);
 export type SocialAdPlatform = (typeof SOCIAL_AD_PLATFORMS)[number];
 
 /** Which OAuth provider (an `integration_connections.provider`) owns each platform. */
-export const SOCIAL_PLATFORM_PROVIDER: Record<SocialPlatform, "meta" | "linkedin" | "google_ads" | null> = {
+export const SOCIAL_PLATFORM_PROVIDER: Record<SocialPlatform, "meta" | "linkedin" | "google_ads" | "youtube" | "tiktok" | null> = {
   facebook: "meta",
   instagram: "meta",
   meta_ads: "meta",
   linkedin: "linkedin",
   linkedin_ads: "linkedin",
   google_ads: "google_ads",
-  tiktok: null,
-  youtube: null,
+  tiktok: "tiktok",
+  youtube: "youtube",
   x: null,
 };
 
@@ -252,6 +252,12 @@ export const socialVariantPlatformOptionsSchema = z
     shareToFeed: z.boolean().optional(),
     linkTitle: z.string().trim().max(200).optional(),
     visibility: z.enum(["public", "connections", "unlisted", "private"]).optional(),
+    /** YouTube: the audience setting YouTube requires for every upload (content made for children under 13). */
+    madeForKids: z.boolean().optional(),
+    /** YouTube video category id (22 People & Blogs, 27 Education, 28 Science & Technology). */
+    categoryId: z.string().regex(/^\d{1,3}$/).optional(),
+    /** TikTok direct posts: one of the creator's allowed privacy levels. */
+    privacyLevel: z.enum(["PUBLIC_TO_EVERYONE", "MUTUAL_FOLLOW_FRIENDS", "FOLLOWER_OF_CREATOR", "SELF_ONLY"]).optional(),
   })
   .strict();
 export type SocialVariantPlatformOptions = z.infer<typeof socialVariantPlatformOptionsSchema>;
