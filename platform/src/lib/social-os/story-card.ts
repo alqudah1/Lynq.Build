@@ -101,17 +101,19 @@ export function storyOverlaySvg(input: Omit<StoryCardInput, "image">): string {
 }
 
 /** Composes the 1080×1920 story card. */
-export async function composeStoryCard(input: StoryCardInput): Promise<{ bytes: Uint8Array; width: number; height: number; contentType: "image/png" }> {
+export async function composeStoryCard(input: StoryCardInput): Promise<{ bytes: Uint8Array; width: number; height: number; contentType: "image/jpeg" }> {
   prepareFonts();
   const sharp = (await import("sharp")).default;
   const t = THEME[input.brand];
   const mask = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${IMAGE}" height="${IMAGE}"><rect width="${IMAGE}" height="${IMAGE}" rx="${t.radius}" fill="#fff"/></svg>`);
   const photo = await sharp(Buffer.from(input.image)).resize(IMAGE, IMAGE, { fit: "cover" }).composite([{ input: mask, blend: "dest-in" }]).png().toBuffer();
+  // Instagram only accepts JPEG images, for stories too.
   const out = await sharp(Buffer.from(storyOverlaySvg(input)))
     .composite([{ input: photo, left: Math.round((W - IMAGE) / 2), top: IMAGE_TOP }])
-    .png()
+    .flatten({ background: t.bg })
+    .jpeg({ quality: 94, chromaSubsampling: "4:4:4" })
     .toBuffer();
-  return { bytes: new Uint8Array(out.buffer, out.byteOffset, out.byteLength), width: W, height: H, contentType: "image/png" };
+  return { bytes: new Uint8Array(out.buffer, out.byteOffset, out.byteLength), width: W, height: H, contentType: "image/jpeg" };
 }
 
 /** A highlight cover: brand background, one word, the accent as a single dot. 1080×1920 so Instagram's circular crop takes the centre. */

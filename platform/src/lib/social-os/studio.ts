@@ -744,7 +744,8 @@ async function regenerateImage(
   });
   let assetId: string;
   try {
-    const references = await loadBrandReferences(db, input.organizationId, input.scope.brandProfileId);
+    // A brand whose visual rules say "no reference images" is drawn from its description alone (its logo or old posts would pull a mascot back in).
+    const references = usesReferenceImages(brand) ? await loadBrandReferences(db, input.organizationId, input.scope.brandProfileId) : [];
     // Every feed image is inspected before it is attached: if a logo, badge or headline sits on an edge, the image is
     // regenerated with a stricter instruction (up to IMAGE_EDGE_RETRIES more times) and the cleanest attempt is kept.
     let image = await provider.generateImage({ prompt, aspectRatio, idempotencyKey: generation.id, ...(references.length ? { references } : {}) });
@@ -792,6 +793,12 @@ const IMAGE_EDGE_RETRIES = 2;
 
 const VIDEO_DURATION_SECONDS: VideoGenerationRequest["durationSeconds"] = 5;
 
+/** A planned reel can ask for a longer clip ("AI video: 10 seconds" in its key points); anything else is 5 s. */
+export function videoSecondsFor(keyPoints: string[]): VideoGenerationRequest["durationSeconds"] {
+  const n = Number(keyPoints.map((k) => k.match(/^AI video: (\d+) seconds/)?.[1]).find(Boolean));
+  return n === 8 || n === 10 ? n : VIDEO_DURATION_SECONDS;
+}
+
 async function regenerateVideo(
   db: Db,
   input: { organizationId: string; actorUserId: string; variant: SocialVariant; item: SocialContentItem; instruction?: string; scope: { brandProfileId: string; contentItemId: string; contentVariantId: string; campaignId: string }; deps?: StudioDeps }
@@ -802,6 +809,7 @@ async function regenerateVideo(
   const provider = input.deps?.videoProvider ?? resolveVideoProvider(env);
   const brand = await requireActiveBrand(db, input.organizationId, input.scope.brandProfileId);
   const aspectRatio = videoAspectFor(variant.platform, variant.format);
+  const seconds = videoSecondsFor(item.brief.keyPoints);
   const shots = item.brief.shots.map((s) => `${s.timing}: ${s.visual}`).join("; ");
   const visual = buildBrandContextText(brand, ["visual"]).split("\n").slice(1).join(" ");
   const prompt = [item.brief.creativeDirection || `A short social video for "${item.title}".`, variant.hook || item.brief.hook ? `Message: ${variant.hook || item.brief.hook}` : "", shots ? `Shots: ${shots}` : "", input.instruction ? `Direction: ${input.instruction}` : "", visual ? `Brand look: ${visual}` : "", "No on-screen text, no logos, no invented UI."].filter(Boolean).join("\n").slice(0, 1000);
@@ -823,13 +831,13 @@ async function regenerateVideo(
     generationType: "video",
     provider: provider.id,
     model: provider.defaultModel,
-    request: { prompt, aspectRatio, durationSeconds: VIDEO_DURATION_SECONDS, title: `${item.title} — ${SOCIAL_PLATFORM_LABELS[variant.platform]} video`.slice(0, 200), promptImageAssetId: promptImage ? primary?.assetId : null },
-    estimatedCostUsd: perSecond !== null ? Math.round(perSecond * VIDEO_DURATION_SECONDS * 1e6) / 1e6 : null,
+    request: { prompt, aspectRatio, durationSeconds: seconds, title: `${item.title} — ${SOCIAL_PLATFORM_LABELS[variant.platform]} video`.slice(0, 200), promptImageAssetId: promptImage ? primary?.assetId : null },
+    estimatedCostUsd: perSecond !== null ? Math.round(perSecond * seconds * 1e6) / 1e6 : null,
     env,
     now: input.deps?.now,
   });
   try {
-    const started = await provider.startVideo({ prompt, aspectRatio, durationSeconds: VIDEO_DURATION_SECONDS, promptImage, idempotencyKey: generation.id });
+    const started = await provider.startVideo({ prompt, aspectRatio, durationSeconds: seconds, promptImage, idempotencyKey: generation.id });
     await recordProviderTask(db, { organizationId: input.organizationId, generationId: generation.id, providerTaskId: started.taskId, model: started.model });
   } catch (err) {
     await failGeneration(db, { organizationId: input.organizationId, generationId: generation.id, errorCode: errorCodeFor(err), errorMessage: errorMessageFor(err) });
@@ -1174,6 +1182,11 @@ export async function draftEngagementReply(
  * generation as references so a mascot stays the same character in every
  * post. Best-effort: a missing or unreadable file just means no reference.
  */
+/** Brand → Visual rules containing "no reference images" switches the logo/mascot and Instagram references off for image generation. */
+export function usesReferenceImages(brand: Pick<SocialBrand, "visualRules">): boolean {
+  return !/no reference images/i.test(brand.visualRules);
+}
+
 async function loadBrandReferences(db: Db, organizationId: string, brandProfileId: string): Promise<{ bytes: Uint8Array; contentType: string; tag: string }[]> {
   try {
     const rows = await db

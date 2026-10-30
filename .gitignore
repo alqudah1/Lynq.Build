@@ -5,3 +5,8 @@ node_modules/
 .env.*.local
 .env*
 !.env.example
+.DS_Store
+zetaitos/
+clients/kidscoding/KidsCoding/
+video/node_modules
+video/out/

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Start a Project — Websites, Transformation &amp; AI | LYNQ</title>
+<meta name="description" content="Tell LYNQ what you need: a website, digital transformation, LYNQ Office, or business AI automation. Get a clear next step within one business day.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://lynq.build/book">
+<meta property="og:title" content="Book a Call — LYNQ">
+<meta property="og:description" content="Book a call with LYNQ to talk about your website or web project — Toronto and Amman.">
+<meta property="og:image" content="https://lynq.build/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Book a Call — LYNQ">
+<meta name="twitter:description" content="Book a call with LYNQ to talk about your website or web project — Toronto and Amman.">
+<meta name="twitter:image" content="https://lynq.build/og-image.png">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="canonical" href="https://lynq.build/book">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    background:#0c0e0f;color:#fff;font-family:'Manrope',sans-serif;
+    min-height:100svh;display:flex;flex-direction:column;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit}
+  .wrap{max-width:640px;margin:0 auto;padding:0 32px;width:100%}
+  nav{padding:28px 0}
+  .nav-logo{font-size:0.95rem;font-weight:600;letter-spacing:0.24em;text-decoration:none;color:#fff;text-transform:uppercase}
+
+  main{flex:1;display:flex;flex-direction:column;justify-content:center;padding:40px 0 80px}
+  .tag{font-size:0.63rem;letter-spacing:0.3em;text-transform:uppercase;color:rgba(255,255,255,0.35);margin-bottom:28px}
+  h1{
+    font-family:'Manrope',sans-serif;font-weight:500;
+    font-size:clamp(2.6rem,6vw,4rem);line-height:1.02;letter-spacing:-0.02em;margin-bottom:24px;
+  }
+  .sub{font-size:1rem;color:rgba(255,255,255,0.5);line-height:1.7;max-width:460px;margin-bottom:48px}
+
+  .btn-row{display:flex;flex-direction:column;gap:14px;max-width:380px;margin-bottom:40px}
+  .btn{
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    padding:17px 28px;border-radius:8px;font-size:0.85rem;font-weight:500;
+    letter-spacing:0.04em;text-decoration:none;transition:opacity 0.2s,transform 0.25s;
+  }
+  .btn-solid{background:#fff;color:#080808}
+  .btn-solid:hover{opacity:0.88;transform:translateY(-2px)}
+
+  .steps{display:flex;flex-direction:column;gap:12px;max-width:420px;margin-bottom:48px}
+  .step{display:flex;align-items:flex-start;gap:14px}
+  .step-num{
+    flex-shrink:0;width:22px;height:22px;border-radius:50%;
+    border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.6);
+    font-size:0.68rem;display:flex;align-items:center;justify-content:center;margin-top:1px;
+  }
+  .step-text{font-size:0.86rem;color:rgba(255,255,255,0.6);line-height:1.5}
+  .step-text strong{color:rgba(255,255,255,0.92);font-weight:500}
+
+  form{display:flex;flex-direction:column;gap:14px;max-width:460px}
+  form.is-hidden{display:none}
+  .field{display:flex;flex-direction:column;gap:8px}
+  label{font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.4)}
+  label .opt{text-transform:none;letter-spacing:0;color:rgba(255,255,255,0.25)}
+  input,textarea,select{
+    background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.14);border-radius:6px;
+    padding:13px 14px;color:#fff;font-family:'Manrope',sans-serif;font-size:0.92rem;
+  }
+  input:focus,textarea:focus,select:focus{outline:none;border-color:#c8ff5a}
+  select{appearance:none;background-color:rgba(255,255,255,.04)}
+  textarea{resize:vertical;min-height:90px}
+  .hp-field{position:absolute;left:-9999px;top:-9999px}
+  .submit-btn{
+    margin-top:8px;align-self:flex-start;
+    display:inline-flex;align-items:center;gap:8px;
+    background:#fff;color:#080808;border:none;border-radius:8px;
+    padding:15px 30px;font-family:'Manrope',sans-serif;font-size:0.85rem;font-weight:600;
+    letter-spacing:0.04em;cursor:pointer;transition:opacity 0.2s,transform 0.25s;
+  }
+  .submit-btn:hover{opacity:0.88;transform:translateY(-2px)}
+  .submit-btn:disabled{opacity:0.5;cursor:default;transform:none}
+  .form-note{font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:18px;max-width:460px;line-height:1.6}
+  .form-error{font-size:0.82rem;color:#ff8a8a;margin-top:4px;display:none}
+  .form-error.is-visible{display:block}
+
+  .success-box{max-width:460px;display:none}
+  .success-box.is-visible{display:block}
+  .success-box h2{
+    font-family:'Manrope',sans-serif;font-weight:500;
+    font-size:1.9rem;margin-bottom:12px;
+  }
+  .success-box p{font-size:0.92rem;color:rgba(255,255,255,0.6);line-height:1.6}
+
+  footer{padding:24px 0;border-top:1px solid rgba(255,255,255,0.06)}
+  .foot-row{display:flex;justify-content:space-between;font-size:0.7rem;color:rgba(255,255,255,0.25)}
+  footer a{text-decoration:none;color:rgba(255,255,255,0.4);transition:color 0.2s}
+  footer a:hover{color:#fff}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <nav><a href="/" class="nav-logo">LYNQ</a></nav>
+</div>
+
+<main>
+  <div class="wrap">
+    <div class="tag">Book a call</div>
+    <h1>Tell us what needs<br>to work better.</h1>
+    <p class="sub">A clearer website, a connected operation, or an AI workflow that removes repetitive work. Give us the context—we'll respond with the right next step within one business day.</p>
+
+    <div class="btn-row">
+      <a class="btn btn-solid" href="mailto:mustafa@lynq.build?subject=Let%27s%20talk%20about%20a%20project">Email mustafa@lynq.build →</a>
+    </div>
+
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-text"><strong>You send the form below</strong> — takes about a minute.</div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-text"><strong>We reply within 24 hours</strong> to a few questions, by email.</div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-text"><strong>We book a real 15–20 min call</strong> once we both know it's a fit.</div></div>
+    </div>
+
+    <form id="bookForm">
+      <input type="text" name="website" class="hp-field" tabindex="-1" autocomplete="off">
+      <div class="field">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" required>
+      </div>
+      <div class="field">
+        <label for="business">Business / brand <span class="opt">(optional)</span></label>
+        <input type="text" id="business" name="business">
+      </div>
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required>
+      </div>
+      <div class="field">
+        <label for="service">What are you looking for?</label>
+        <select id="service" name="service" required>
+          <option value="">Choose one</option>
+          <option>Website or landing page</option>
+          <option>Digital transformation</option>
+          <option>LYNQ Office</option>
+          <option>AI automation</option>
+          <option>AI video &amp; reels</option>
+          <option>Not sure yet</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="timeline">Ideal timeline</label>
+        <select id="timeline" name="timeline"><option>As soon as practical</option><option>Within 30 days</option><option>1–3 months</option><option>Exploring for later</option></select>
+      </div>
+      <div class="field">
+        <label for="budget">Investment range <span class="opt">(helps us recommend the right scope)</span></label>
+        <select id="budget" name="budget"><option value="">Prefer not to say yet</option><option>Under CA$2,500</option><option>CA$2,500–5,000</option><option>CA$5,000–15,000</option><option>CA$15,000+</option></select>
+      </div>
+      <div class="field">
+        <label for="message">What do you need? <span class="opt">(optional)</span></label>
+        <textarea id="message" name="message" placeholder="New website, redesign, lead generation, consulting call, etc."></textarea>
+      </div>
+      <button type="submit" class="submit-btn" id="submitBtn">Send request →</button>
+      <p class="form-error" id="formError"></p>
+    </form>
+    <p class="form-note" id="formNote">Sent securely to LYNQ — we reply from mustafa@lynq.build within 24 hours.</p>
+
+    <div class="success-box" id="successBox">
+      <h2>Got it, thanks.</h2>
+      <p>We'll reply at the email you gave us within 24 hours to set up a real time to talk. If it's urgent, email <a href="mailto:mustafa@lynq.build" style="color:#fff">mustafa@lynq.build</a> directly.</p>
+    </div>
+  </div>
+</main>
+
+<div class="wrap">
+  <footer>
+    <div class="foot-row">
+      <span>© 2026 LYNQ</span>
+      <a href="/">Back to lynq.build</a>
+    </div>
+  </footer>
+</div>
+
+<script>
+const bookForm = document.getElementById('bookForm');
+const submitBtn = document.getElementById('submitBtn');
+const formError = document.getElementById('formError');
+const formNote = document.getElementById('formNote');
+
+bookForm.addEventListener('submit', async function(e){
+  e.preventDefault();
+  formError.classList.remove('is-visible');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Sending…';
+
+  const payload = {
+    name: document.getElementById('name').value,
+    business: document.getElementById('business').value,
+    email: document.getElementById('email').value,
+    message: document.getElementById('message').value,
+    service: document.getElementById('service').value,
+    timeline: document.getElementById('timeline').value,
+    budget: document.getElementById('budget').value,
+    website: bookForm.querySelector('[name="website"]').value,
+  };
+
+  try {
+    const res = await fetch('/api/book-request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+
+    bookForm.classList.add('is-hidden');
+    formNote.style.display = 'none';
+    document.getElementById('successBox').classList.add('is-visible');
+  } catch (err) {
+    formError.textContent = err.message || 'Something went wrong. Please email mustafa@lynq.build directly.';
+    formError.classList.add('is-visible');
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Send request →';
+  }
+});
+</script>
+</body>
+</html>

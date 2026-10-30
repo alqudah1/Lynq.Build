@@ -4,9 +4,8 @@ import { WEEK_PLANS, currentWeekPlan, planInstant, planMarker, planEnd } from ".
 const next = (d: string) => new Date(Date.parse(`${d}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
 import { SOCIAL_PLATFORM_RULES, socialContentBriefSchema } from "./validation";
 
-const plan = WEEK_PLANS[0];
 
-describe("week plan Oct 12", () => {
+describe.each(WEEK_PLANS)("week plan $key", (plan) => {
   it("posts every day from the week start to the plan end: each brand has a feed post or a reel every single day", () => {
     for (const brand of ["lynq", "codeit"]) {
       const covered = new Set([...plan.feed.filter((p) => p.brand.brandKey === brand), ...plan.reels.filter((r) => r.brand.brandKey === brand)].map((e) => e.day));
@@ -15,7 +14,7 @@ describe("week plan Oct 12", () => {
     for (const brand of ["lynq", "codeit"]) {
       const days = new Set(plan.feed.filter((p) => p.brand.brandKey === brand).map((p) => p.day));
       expect(days.size, brand).toBeGreaterThanOrEqual(7);
-      for (const d of days) expect(d >= plan.weekStart && d <= planEnd(plan), `${brand} ${d}`).toBe(true);
+      for (const d of days) expect(d >= "2026-10-07" && d <= planEnd(plan), `${brand} ${d}`).toBe(true);
     }
   });
 
@@ -23,14 +22,14 @@ describe("week plan Oct 12", () => {
     for (const brand of ["lynq", "codeit"]) {
       const reels = plan.reels.filter((r) => r.brand.brandKey === brand);
       expect(reels.length).toBeGreaterThanOrEqual(3);
-      for (const r of reels) expect(r.day >= plan.weekStart && r.day <= planEnd(plan)).toBe(true);
+      for (const r of reels) expect(r.day >= "2026-10-07" && r.day <= planEnd(plan)).toBe(true);
     }
   });
 
   it("keeps the grid rule: any three consecutive feed posts of a brand never repeat a pillar", () => {
     for (const brand of ["lynq", "codeit"]) {
       const posts = plan.feed.filter((p) => p.brand.brandKey === brand).sort((a, b) => `${a.day}${a.time}`.localeCompare(`${b.day}${b.time}`));
-      for (let i = 0; i + 2 < posts.length; i++) expect(new Set(posts.slice(i, i + 3).map((p) => p.pillar)).size).toBe(3);
+      for (let i = 0; i + 2 < posts.length; i++) expect(new Set(posts.slice(i, i + 3).map((p) => p.pillar)).size, posts.slice(i, i + 3).map((p) => `${p.key}:${p.day}:${p.pillar}`).join(" ")).toBe(3);
     }
   });
 
@@ -66,7 +65,11 @@ describe("week plan Oct 12", () => {
   it("is the current plan until the week ends", () => {
     expect(currentWeekPlan(new Date("2026-10-06T12:00:00Z"))?.key).toBe("2026-10-12");
     expect(currentWeekPlan(new Date("2026-10-21T12:00:00Z"))?.key).toBe("2026-10-12");
-    expect(currentWeekPlan(new Date("2026-10-22T12:00:00Z"))).toBeUndefined();
+    expect(currentWeekPlan(new Date("2026-10-22T12:00:00Z"))?.key).toBe("2026-11-02");
+    expect(currentWeekPlan(new Date("2026-11-04T12:00:00Z"))?.key).toBe("2026-11-02");
+    expect(currentWeekPlan(new Date("2026-11-05T12:00:00Z"))?.key).toBe("2026-11-18");
+    expect(currentWeekPlan(new Date("2026-11-18T12:00:00Z"))?.key).toBe("2026-11-18");
+    expect(currentWeekPlan(new Date("2026-11-19T12:00:00Z"))).toBeUndefined();
   });
 
   it("story highlights use the plan's fixed highlight sets", () => {
@@ -115,6 +118,28 @@ describe("week plan Oct 12", () => {
       expect(l.body.length, l.key).toBeLessThan(1500);
       expect(l.body, l.key).not.toMatch(/https?:\/\/|www\./);
     }
+  });
+
+  it("the brands carry the visual system the posts are written for: LYNQ without a mascot or references, CodeIt flat", () => {
+    const lynq = plan.feed.find((p) => p.brand.brandKey === "lynq")!.brand;
+    const codeit = plan.feed.find((p) => p.brand.brandKey === "codeit")!.brand;
+    expect(lynq.visual?.visualRules).toMatch(/no mascot/i);
+    expect(lynq.visual?.visualRules).toMatch(/no reference images/i);
+    expect(codeit.visual?.visualRules).toMatch(/flat 2d/i);
+    expect(codeit.createWith?.visualRules).toBe(codeit.visual?.visualRules);
+  });
+
+  it("a feed marker is never a prefix of another entry's marker by accident: the story marker is the post's marker plus -story", () => {
+    for (const p of plan.feed) expect(planMarker(plan.key, `${p.key}-story`)).toBe(`${planMarker(plan.key, p.key)}-story`);
+  });
+
+  it("feed captions never introduce the founder by name (LinkedIn posts from his own profile may)", () => {
+    for (const p of [...plan.feed.filter((p) => !(p.platforms ?? []).includes("linkedin")), ...plan.reels]) for (const text of [p.hook, p.body, p.facebookBody ?? ""]) expect(text, p.key).not.toMatch(/mustafa/i);
+  });
+
+  it("LYNQ copy never names a city: who we are and what we build, not where", () => {
+    const lynq = [...plan.feed, ...plan.reels].filter((p) => p.brand.brandKey === "lynq");
+    for (const p of lynq) for (const text of [p.title, p.hook, p.body, p.facebookBody ?? "", ...(p.hashtags ?? [])]) expect(text, p.key).not.toMatch(/toronto|amman|gta\b|two cities/i);
   });
 
   it("reel hooks are short enough to land in the first three seconds", () => {

@@ -6,7 +6,7 @@
   "trailingSlash": false,
   "redirects": [
     {
-      "source": "/office",
+      "source": "/office/login",
       "destination": "https://app.lynq.build/office",
       "permanent": false
     }
