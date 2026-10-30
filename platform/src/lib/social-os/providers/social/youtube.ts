@@ -12,9 +12,10 @@ import type { AccountInsights, DiscoveredAsset, FetchLike, PublishInput, Publish
  * client can be the same one Google Ads uses (`GOOGLE_ADS_CLIENT_ID`), so
  * `YOUTUBE_CLIENT_ID` / `YOUTUBE_CLIENT_SECRET` are optional overrides.
  *
- * Until the consent screen is verified by Google, videos uploaded by an
- * unverified project are locked to private by YouTube; publishing is
- * otherwise identical. Each upload costs 1 call of the daily upload quota.
+ * Until the Cloud project passes YouTube's API compliance audit, YouTube
+ * locks uploads from it to private (they can be made public in YouTube
+ * Studio); publishing is otherwise identical. Each upload costs 1 call of
+ * the daily upload quota.
  *
  * Shorts: YouTube treats any vertical video up to 3 minutes as a Short.
  * `#Shorts` is added to the title (when it fits) and the description.
