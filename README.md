@@ -38,7 +38,7 @@ A multi-tenant workspace for running a small agency end to end: clients, project
 | Validation | Zod at every boundary; environment checked at request time, server-only |
 | Media | sharp + librsvg for rendering, ffmpeg for video, Vercel Blob for storage |
 | Hosting | Vercel (functions and cron), feature branches with preview deployments |
-| Quality | 250+ test files (unit, integration against Postgres, accessibility) in Vitest, run in GitHub Actions with typecheck and lint on every push |
+| Quality | 250+ test files (unit, integration against Postgres, accessibility) in Vitest, with typecheck and lint, run before every release |
 
 Each module has a design document in [`platform/docs/`](platform/docs) that covers its data model, authorization and failure modes before any code was written. Start with [`platform/README.md`](platform/README.md) for local setup.
 
