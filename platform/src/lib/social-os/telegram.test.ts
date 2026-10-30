@@ -229,7 +229,7 @@ describe("one Telegram message per post", () => {
 describe("everywhereCaptions", () => {
   it("turns a reel's Instagram copy into a TikTok caption and a Shorts title under 100 characters", async () => {
     const { everywhereCaptions } = await import("./telegram");
-    const c = everywhereCaptions({ hook: "Watch one number turn a slow game into a chaotic one.", body: "One line, two games.\n\nWhat number next?\n\nFree to start, ages 5 to 18. Link in bio.", hashtags: ["KidsWhoCode", "#PythonForKids", "KidsWhoCode"] });
+    const c = everywhereCaptions({ hook: "Watch one number turn a slow game into a chaotic one.", body: "One line, two games.\n\nWhat number next?\n\nFree to start, ages 8 to 14. Link in bio.", hashtags: ["KidsWhoCode", "#PythonForKids", "KidsWhoCode"] });
     expect(c.shortsTitle).toBe("Watch one number turn a slow game into a chaotic one. #Shorts");
     expect(c.shortsTitle.length).toBeLessThanOrEqual(100);
     expect(c.tiktok).toContain("#KidsWhoCode #PythonForKids");
