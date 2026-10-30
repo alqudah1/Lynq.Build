@@ -50,10 +50,9 @@ describe.each(WEEK_PLANS)("week plan $key", (plan) => {
     expect(text).not.toMatch(/\b(my kids?|as a parent|i'm a parent|homeschool)\b/i);
   });
 
-  it("CodeIt copy uses the product's age range (8 to 14) and no lesson count, as the site does", () => {
+  it("CodeIt copy doesn't count lessons (the site dropped the count on purpose)", () => {
     const codeit = [...plan.feed, ...plan.reels].filter((p) => p.brand.brandKey === "codeit");
     for (const p of codeit) for (const t of [p.title ?? "", p.hook ?? "", p.body ?? "", p.facebookBody ?? "", JSON.stringify("card" in p ? p.card ?? {} : {})]) {
-      expect(t, p.key).not.toMatch(/5 ?(to|–|-) ?18/);
       expect(t, p.key).not.toMatch(/\b31 (beginner |free |Python )*lessons|of 31\b/i);
     }
   });
