@@ -7,7 +7,7 @@ import { Fonts } from "./kit";
  * (navy, cream, orange) inside LYNQ's frame. Real screenshots of the live site,
  * no children's faces (the homepage is cropped above its photo).
  */
-const NAVY = "#1c1f30", NAVY2 = "#262a40", CREAM = "#fbf6ef", OR = "#e8954a", OR2 = "#f2a65f", WH = "#ffffff", MU = "#9ea2b8", LI = "#c7ff3d";
+const NAVY = "#0b0b0c", NAVY2 = "#1a1a1d", CREAM = "#fbf6ef", OR = "#e8954a", OR2 = "#c7ff3d", WH = "#ffffff", MU = "#8a8a8f", LI = "#c7ff3d";
 const SHOT_W = 780;
 const q = (f: string) => `'${f}'`;
 
@@ -15,7 +15,7 @@ const Chrome: React.FC<{ n: number }> = ({ n }) => (
   <>
     <div style={{ position: "absolute", left: 80, top: 120, fontFamily: q("JetBrains Mono"), fontSize: 26, letterSpacing: 5, color: WH }}>LYNQ</div>
     <div style={{ position: "absolute", right: 80, top: 120, fontFamily: q("JetBrains Mono"), fontSize: 24, letterSpacing: 4, color: MU }}>CASE 06 · KIDS CODING · 0{n} / 07</div>
-    <div style={{ position: "absolute", left: 80, right: 80, bottom: 150, display: "flex", gap: 10 }}>{Array.from({ length: 7 }, (_, i) => <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i < n ? OR : "rgba(255,255,255,0.14)" }} />)}</div>
+    <div style={{ position: "absolute", left: 80, right: 80, bottom: 150, display: "flex", gap: 10 }}>{Array.from({ length: 7 }, (_, i) => <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i < n ? LI : "rgba(255,255,255,0.12)" }} />)}</div>
     <div style={{ position: "absolute", left: 80, bottom: 96, fontFamily: q("JetBrains Mono"), fontSize: 22, letterSpacing: 4, color: MU }}>LYNQ.BUILD</div>
     <div style={{ position: "absolute", right: 80, bottom: 96, fontFamily: q("JetBrains Mono"), fontSize: 22, letterSpacing: 4, color: MU }}>WEBSITES · SYSTEMS · AUTOMATION</div>
   </>
@@ -23,11 +23,10 @@ const Chrome: React.FC<{ n: number }> = ({ n }) => (
 
 const Back: React.FC<{ glowX?: number; glowY?: number }> = ({ glowX = 760, glowY = 1150 }) => (
   <AbsoluteFill style={{ background: [
-    `radial-gradient(700px 700px at ${glowX}px ${glowY}px, rgba(232,149,74,0.42), rgba(232,149,74,0) 70%)`,
-    `radial-gradient(600px 600px at 120px 300px, rgba(120,130,200,0.18), rgba(120,130,200,0) 70%)`,
-    `linear-gradient(170deg, ${NAVY2} 0%, ${NAVY} 60%, #14162a 100%)`,
+    `radial-gradient(640px 640px at ${glowX}px ${glowY}px, rgba(232,149,74,0.26), rgba(232,149,74,0) 70%)`,
+    `radial-gradient(120% 80% at 25% 12%, ${NAVY2} 0%, ${NAVY} 60%)`,
   ].join(", ") }}>
-    <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
+    <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
   </AbsoluteFill>
 );
 
@@ -35,7 +34,7 @@ const Back: React.FC<{ glowX?: number; glowY?: number }> = ({ glowX = 760, glowY
 const Phone: React.FC<{ img: string; y?: number; w: number; style?: React.CSSProperties }> = ({ img, y = 0, w, style }) => {
   const sw = w - 28, k = sw / SHOT_W, h = w * 2.05;
   return (
-    <div style={{ position: "absolute", width: w, height: h, borderRadius: w * 0.15, background: "#0d0e16", boxShadow: "0 70px 120px rgba(5,6,15,0.65), 0 0 0 2px #3a3e58 inset", ...style }}>
+    <div style={{ position: "absolute", width: w, height: h, borderRadius: w * 0.15, background: "#141416", boxShadow: "0 70px 120px rgba(0,0,0,0.7), 0 0 0 2px #2e2e33 inset", ...style }}>
       <div style={{ position: "absolute", left: 14, top: 14, width: sw, height: h - 28, borderRadius: w * 0.13, overflow: "hidden", background: CREAM }}>
         <Img src={staticFile(`kc/${img}`)} style={{ position: "absolute", left: 0, top: -y * k, width: sw }} />
       </div>
@@ -46,14 +45,14 @@ const Phone: React.FC<{ img: string; y?: number; w: number; style?: React.CSSPro
 
 /** A crop of a screenshot, lifted out of the phone and enlarged, with an orange ring. */
 const Callout: React.FC<{ img: string; x: number; y: number; w: number; h: number; scale: number; style?: React.CSSProperties; ring?: boolean }> = ({ img, x, y, w, h, scale, style, ring = true }) => (
-  <div style={{ position: "absolute", width: w * scale, height: h * scale, borderRadius: 34, overflow: "hidden", background: CREAM, boxShadow: `0 50px 90px rgba(5,6,15,0.55)${ring ? `, 0 0 0 5px ${OR}` : ""}`, ...style }}>
+  <div style={{ position: "absolute", width: w * scale, height: h * scale, borderRadius: 34, overflow: "hidden", background: CREAM, boxShadow: `0 50px 90px rgba(0,0,0,0.6)${ring ? `, 0 0 0 4px ${LI}` : ""}`, ...style }}>
     <Img src={staticFile(`kc/${img}`)} style={{ position: "absolute", left: -x * scale, top: -y * scale, width: SHOT_W * scale }} />
   </div>
 );
 
 const Step: React.FC<{ n: string; label: string }> = ({ n, label }) => (
-  <div style={{ display: "inline-flex", alignItems: "center", gap: 16, padding: "14px 26px", borderRadius: 40, background: "rgba(232,149,74,0.16)", fontFamily: q("JetBrains Mono"), fontSize: 26, letterSpacing: 4, color: OR2 }}>
-    <span style={{ width: 14, height: 14, borderRadius: 7, background: OR }} />{n} · {label.toUpperCase()}
+  <div style={{ display: "inline-flex", alignItems: "center", gap: 16, padding: "14px 26px", borderRadius: 40, background: "rgba(255,255,255,0.06)", border: "1px solid #2e2e33", fontFamily: q("JetBrains Mono"), fontSize: 26, letterSpacing: 4, color: "#d6d6da" }}>
+    <span style={{ width: 14, height: 14, borderRadius: 7, background: LI }} />{n} · {label.toUpperCase()}
   </div>
 );
 
@@ -67,7 +66,7 @@ const Head: React.FC<{ lines: string[]; accent?: string; size?: number; style?: 
   </div>
 );
 
-const Detail: React.FC<{ text: string; style?: React.CSSProperties }> = ({ text, style }) => <div style={{ fontFamily: q("Inter Light"), fontSize: 40, lineHeight: 1.35, color: "#c9ccdb", ...style }}>{text}</div>;
+const Detail: React.FC<{ text: string; style?: React.CSSProperties }> = ({ text, style }) => <div style={{ fontFamily: q("Inter Light"), fontSize: 40, lineHeight: 1.35, color: "#b4b4ba", ...style }}>{text}</div>;
 
 const Frame: React.FC<{ n: number; children: React.ReactNode; glowX?: number; glowY?: number }> = ({ n, children, glowX, glowY }) => (
   <AbsoluteFill style={{ background: NAVY, overflow: "hidden" }}>
@@ -81,11 +80,11 @@ const Frame: React.FC<{ n: number; children: React.ReactNode; glowX?: number; gl
 export const KC1: React.FC = () => (
   <Frame n={1} glowX={700} glowY={760}>
     <Phone img="home-top.jpg" w={620} style={{ left: 330, top: 300, transform: "perspective(2400px) rotateY(-16deg) rotateX(6deg) rotateZ(4deg)" }} />
-    <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 900, background: `linear-gradient(180deg, rgba(28,31,48,0) 0%, ${NAVY} 42%)` }} />
+    <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 900, background: `linear-gradient(180deg, rgba(11,11,12,0) 0%, ${NAVY} 42%)` }} />
     <div style={{ position: "absolute", left: 80, top: 1190 }}>
-      <div style={{ display: "inline-block", padding: "10px 24px", borderRadius: 30, border: `2px solid ${OR}`, fontFamily: q("JetBrains Mono"), fontSize: 26, letterSpacing: 4, color: OR2 }}>CASE 06</div>
+      <div style={{ display: "inline-block", padding: "10px 24px", borderRadius: 30, border: `2px solid ${LI}`, fontFamily: q("JetBrains Mono"), fontSize: 26, letterSpacing: 4, color: LI }}>CASE 06</div>
       <div style={{ fontFamily: q("Inter SemiBold"), fontSize: 170, lineHeight: 0.95, letterSpacing: -7, color: WH, marginTop: 30 }}>Kids<br />Coding</div>
-      <div style={{ fontFamily: q("Inter Light"), fontSize: 46, color: "#c9ccdb", marginTop: 26 }}>A STEM school for ages 5 to 17.</div>
+      <div style={{ fontFamily: q("Inter Light"), fontSize: 46, color: "#b4b4ba", marginTop: 26 }}>A STEM school for ages 5 to 17.</div>
     </div>
   </Frame>
 );
@@ -163,7 +162,7 @@ export const KC7: React.FC = () => (
   <Frame n={7} glowX={540} glowY={1000}>
     <Phone img="online.jpg" w={440} style={{ left: 90, top: 330, transform: "perspective(2200px) rotateY(16deg) rotateZ(-6deg)" }} />
     <Phone img="camps.jpg" w={440} style={{ left: 550, top: 290, transform: "perspective(2200px) rotateY(-16deg) rotateZ(6deg)" }} />
-    <div style={{ position: "absolute", left: 0, right: 0, top: 820, height: 500, background: `linear-gradient(180deg, rgba(28,31,48,0) 0%, ${NAVY} 60%)` }} />
+    <div style={{ position: "absolute", left: 0, right: 0, top: 820, height: 500, background: `linear-gradient(180deg, rgba(11,11,12,0) 0%, ${NAVY} 60%)` }} />
     <div style={{ position: "absolute", left: 80, top: 1160 }}>
       <Step n="05" label="The result" />
       <Head lines={["Parents find it.", "Then they enroll."]} accent="enroll." size={104} style={{ marginTop: 34 }} />
