@@ -2459,6 +2459,9 @@ async function refreshPlanCopy(db: Db, input: { organizationId: string; actorUse
     // Posts in review (not yet approved) take copy changes too: the edit returns them to draft, so the new text is what gets reviewed.
     if (v.archivedAt || !REMAKEABLE.has(v.status)) continue;
     const w = want(v);
+    // A post already in review is pulled back to draft for a copy change only. Its planned time stays as submitted:
+    // a caught-up slot moves every hour, and a time change alone must not close the approval the owner is looking at.
+    if (v.status === "ready_for_review") delete w.scheduledFor;
     const same = v.hook === w.hook && v.body === w.body && tagKey(v.hashtags) === tagKey(w.hashtags) && (w.callToAction === undefined || v.callToAction === w.callToAction) && (w.scheduledFor === undefined || v.scheduledFor?.getTime() === w.scheduledFor.getTime());
     if (same) continue;
     await updateVariant(db, { organizationId: input.organizationId, contentVariantId: v.id, actorUserId: input.actorUserId, expectedRevision: v.revision, changes: w });
