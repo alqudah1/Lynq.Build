@@ -7,7 +7,7 @@ export PATH="/opt/homebrew/bin:/usr/local/bin:$HOME/.npm-global/bin:$HOME/.local
 SRC="$HOME/Desktop/Active Projects/lynq.build"
 OUT="$HOME/Downloads/lynq-site-deploy"
 LOG="$HOME/Downloads/lynq-deploy-log.txt"
-ALLOW="index.html portfolio.html book.html digital-transformation.html office.html agent.html website-review.html admin.html favicon.svg logo.svg og-image.png site.webmanifest robots.txt sitemap.xml llms.txt vercel.json package.json package-lock.json pnpm-lock.yaml api assets projects work"
+ALLOW="index.html portfolio.html book.html privacy.html terms.html digital-transformation.html office.html agent.html website-review.html admin.html favicon.svg logo.svg og-image.png site.webmanifest robots.txt sitemap.xml llms.txt vercel.json package.json package-lock.json pnpm-lock.yaml api assets projects work"
 {
   echo "LYNQ deploy — $(date)"
   cd "$SRC" || { echo "repo not found"; exit 1; }
