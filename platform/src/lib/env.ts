@@ -156,8 +156,9 @@ export function loadEnv(): Env {
     TELEGRAM_CHAT_ID: process.env.TELEGRAM_CHAT_ID,
     TELEGRAM_APPROVER_EMAIL: process.env.TELEGRAM_APPROVER_EMAIL,
     TELEGRAM_ORGANIZATION_SLUG: process.env.TELEGRAM_ORGANIZATION_SLUG,
-    YOUTUBE_CLIENT_ID: process.env.YOUTUBE_CLIENT_ID,
-    YOUTUBE_CLIENT_SECRET: process.env.YOUTUBE_CLIENT_SECRET,
+    // YouTube reuses the Google sign-in OAuth client (its redirect list includes /api/social/oauth/youtube/callback) unless overridden.
+    YOUTUBE_CLIENT_ID: process.env.YOUTUBE_CLIENT_ID?.trim() || process.env.GOOGLE_OAUTH_CLIENT_ID,
+    YOUTUBE_CLIENT_SECRET: process.env.YOUTUBE_CLIENT_SECRET?.trim() || process.env.GOOGLE_OAUTH_CLIENT_SECRET,
     TIKTOK_CLIENT_KEY: process.env.TIKTOK_CLIENT_KEY,
     TIKTOK_CLIENT_SECRET: process.env.TIKTOK_CLIENT_SECRET,
     TIKTOK_DIRECT_POST: process.env.TIKTOK_DIRECT_POST,

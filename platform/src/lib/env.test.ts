@@ -69,4 +69,17 @@ describe("loadEnv", () => {
     process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID = "123-456-7890";
     expect(loadEnv().GOOGLE_ADS_LOGIN_CUSTOMER_ID).toBe("1234567890");
   });
+
+  it("uses the Google sign-in OAuth client for YouTube unless YOUTUBE_CLIENT_ID is set", () => {
+    process.env.DATABASE_URL = "postgres://user:pass@host/db";
+    process.env.DATABASE_URL_UNPOOLED = "postgres://user:pass@host/db";
+    process.env.GOOGLE_OAUTH_CLIENT_ID = "signin-id";
+    process.env.GOOGLE_OAUTH_CLIENT_SECRET = "signin-secret";
+    delete process.env.YOUTUBE_CLIENT_ID;
+    delete process.env.YOUTUBE_CLIENT_SECRET;
+    expect(loadEnv()).toMatchObject({ YOUTUBE_CLIENT_ID: "signin-id", YOUTUBE_CLIENT_SECRET: "signin-secret" });
+    process.env.YOUTUBE_CLIENT_ID = "yt-id";
+    process.env.YOUTUBE_CLIENT_SECRET = "yt-secret";
+    expect(loadEnv()).toMatchObject({ YOUTUBE_CLIENT_ID: "yt-id", YOUTUBE_CLIENT_SECRET: "yt-secret" });
+  });
 });
