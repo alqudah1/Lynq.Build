@@ -1,4 +1,5 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
@@ -930,15 +931,15 @@ export const WEEK_PLANS: WeekPlan[] = [
       {
         key: "n-codeit-pip-ep2", brand: CODEIT, day: "2026-11-02", time: "16:30", series: "PIP BUILDS A GAME", videoFile: "pip-ep2.mp4",
         title: "CodeIt Reel · Pip builds a game, episode 2: it breaks",
-        hook: "One hit and the game was over. Pip finds the one line to blame.",
-        body: "Episode 2: it breaks.\n\nOne hit and the game was over. Pip reads the code and finds it: lives = 0. No spare lives at all.\n\nOne number changes, and now the rocket survives a hit.\n\nNext episode, Pip adds stars. Follow so you don't miss it.",
-        facebookBody: "One hit and Pip's game was over. The code said lives = 0. One number changes and the rocket survives. Next episode: stars.",
+        hook: "One hit and it's game over. One of these 4 lines is why.",
+        body: "Episode 2: it breaks.\n\nPip's rocket dies on the first hit. Every single time.\n\n1. lives = 0\n2. if hit:\n3.     lives -= 1\n4. if lives < 0: game_over()\n\nWhich line is the bug? Comment the number. The fix is in episode 3.",
+        facebookBody: "Pip's rocket dies on the first hit, every time. One of these 4 lines is why: lives = 0, if hit:, lives -= 1, if lives < 0: game_over(). Which one? The fix is in episode 3.",
         hashtags: CODEIT_TAGS, callToAction: "Follow for the next episode",
-        script: "Rendered reel (no recording needed): episode 2 of 5 of Pip building a rocket game, ending on the hook for the next episode.",
+        script: "Rendered reel (no recording needed): a cold open on the most dramatic moment, no recap, ending unresolved so it loops; the answer opens the next episode.",
         shots: [
-          { timing: "0–1s", visual: "Series sting: Pip builds a game, episode 2", onScreenText: "EP 2: It breaks" },
-          { timing: "1–12s", visual: "The episode", onScreenText: "One hit and the game was over." },
-          { timing: "12–15s", visual: "What's next, and the follow button", onScreenText: "Follow so you don't miss it" },
+          { timing: "0–3s", visual: "Cold open: the rocket crashes, GAME OVER", onScreenText: "One hit. Game over." },
+          { timing: "3–9s", visual: "Pip tries again, it crashes every time", onScreenText: "Every. Single. Time." },
+          { timing: "9–14s", visual: "The 4 lines, scanned one by one, then loops", onScreenText: "Which line? Comment the number" },
         ],
       },
       {
@@ -1569,43 +1570,43 @@ export const WEEK_PLANS: WeekPlan[] = [
       {
         key: "p3-codeit-pip-ep3", brand: CODEIT, day: "2026-11-05", time: "16:30", series: "PIP BUILDS A GAME", videoFile: "pip-ep3.mp4",
         title: "CodeIt Reel · Pip builds a game, episode 3: stars",
-        hook: "Pip adds stars to collect. The score won't move. Can you spot the bug?",
-        body: "Episode 3: stars.\n\nPip adds stars to collect, and the rocket grabs every one. But the score is stuck on 1.\n\nscore = 0\nif touching(star):\n    score = 1\n\nCan you spot the bug? Comment the line number. The answer is in episode 4.",
-        facebookBody: "Pip adds stars, the rocket grabs every one, and the score is stuck on 1. Can you spot the bug in three lines of code? The answer is in episode 4.",
+        hook: "The rocket finally survives. Then the score breaks.",
+        body: "Episode 3: stars.\n\nIt was line 1. lives = 0 meant no spare lives. One number changes and the rocket survives a hit.\n\nSo Pip adds stars to collect. The rocket grabs every one, and the score is stuck on 1.\n\nscore = 0\nif touching(star):\n    score = 1\n\nCan you spot this one? The answer is in episode 4.",
+        facebookBody: "It was line 1: lives = 0. Now the rocket survives. Then Pip adds stars, grabs every one, and the score is stuck on 1. Can you spot the bug in three lines? The answer is in episode 4.",
         hashtags: CODEIT_TAGS, callToAction: "Follow for the next episode",
-        script: "Rendered reel (no recording needed): episode 3 of 5 of Pip building a rocket game, ending on the hook for the next episode.",
+        script: "Rendered reel (no recording needed): a cold open on the most dramatic moment, no recap, ending unresolved so it loops; the answer opens the next episode.",
         shots: [
-          { timing: "0–1s", visual: "Series sting: Pip builds a game, episode 3", onScreenText: "EP 3: Stars" },
-          { timing: "1–12s", visual: "The episode", onScreenText: "Pip adds stars to collect." },
-          { timing: "12–15s", visual: "What's next, and the follow button", onScreenText: "Follow so you don't miss it" },
+          { timing: "0–2.6s", visual: "Cold open: line 1 changes from 0 to 3", onScreenText: "It was line 1." },
+          { timing: "2.6–11s", visual: "The rocket survives, Pip adds stars, the score sticks", onScreenText: "Every star. Score: 1?!" },
+          { timing: "11–15s", visual: "The 3 score lines, scanned", onScreenText: "Another bug. Where?" },
         ],
       },
       {
         key: "p3-codeit-pip-ep4", brand: CODEIT, day: "2026-11-08", time: "16:30", series: "PIP BUILDS A GAME", videoFile: "pip-ep4.mp4",
         title: "CodeIt Reel · Pip builds a game, episode 4: the score",
-        hook: "The bug was line 3. Watch every star finally count.",
-        body: "Episode 4: the score.\n\nThe bug was line 3. score = 1 sets the score to 1 every time. score = score + 1 adds one.\n\nNow every star counts.\n\nDid you get it right? Tell us in the comments. The final episode is next: can Pip explain it?",
-        facebookBody: "The bug was line 3: score = 1 sets it to 1 every time, score = score + 1 adds one. Now every star counts. The final episode is next.",
+        hook: "Every star collected, and the score still says 1.",
+        body: "Episode 4: the score.\n\nThe bug was line 3. score = 1 sets the score to 1 every time. score = score + 1 adds one.\n\nNow every star counts.\n\nThen the teacher asks Pip: if line 3 says score + 5, what happens?\nA. 5 points per star\nB. The score resets\nC. Nothing changes\n\nComment A, B or C. Episode 5 has the answer.",
+        facebookBody: "The bug was line 3: score = 1 sets it to 1 every time, score = score + 1 adds one. Now every star counts. Then the teacher asks: if line 3 says score + 5, what happens? A, B or C? Episode 5 has the answer.",
         hashtags: CODEIT_TAGS, callToAction: "Follow for the next episode",
-        script: "Rendered reel (no recording needed): episode 4 of 5 of Pip building a rocket game, ending on the hook for the next episode.",
+        script: "Rendered reel (no recording needed): a cold open on the most dramatic moment, no recap, ending unresolved so it loops; the answer opens the next episode.",
         shots: [
-          { timing: "0–1s", visual: "Series sting: Pip builds a game, episode 4", onScreenText: "EP 4: The score" },
-          { timing: "1–12s", visual: "The episode", onScreenText: "The bug was line 3." },
-          { timing: "12–15s", visual: "What's next, and the follow button", onScreenText: "Follow so you don't miss it" },
+          { timing: "0–2.4s", visual: "Cold open: stars collected, score stuck on 1", onScreenText: "Every star. Score: 1." },
+          { timing: "2.4–10s", visual: "Line 3 fixed, every star counts", onScreenText: "It was line 3." },
+          { timing: "10–15s", visual: "The teacher's question, unanswered", onScreenText: "What happens now? Comment A, B or C" },
         ],
       },
       {
         key: "p3-codeit-pip-ep5", brand: CODEIT, day: "2026-11-11", time: "16:30", series: "PIP BUILDS A GAME", videoFile: "pip-ep5.mp4",
         title: "CodeIt Reel · Pip builds a game, episode 5: prove it",
-        hook: "Pip built a game. Now one question from Pip's own code.",
-        body: "Episode 5: prove it.\n\nBuilding a game is half. Explaining it is the other half.\n\nCodeIt asks a question about the code you wrote yourself. Pip gets it right first try.\n\nYour kid's turn: describe a game, get a working first version, change it and see the code. Free to start, ages 5 to 18.\n\nWhat should Pip build in season 2? Comment it.",
+        hook: "Pip has 3 seconds to answer a question about Pip's own code.",
+        body: "Episode 5: the answer is A. Every star is now worth 5 points.\n\nBuilding a game is half. Explaining it is the other half.\n\nCodeIt asks a question about the code you wrote yourself. Pip gets it right first try.\n\nYour kid's turn: describe a game, get a working first version, change it and see the code. Free to start, ages 5 to 18.\n\nWhat should Pip build in season 2? Comment it.",
         facebookBody: "Building a game is half, explaining it is the other half. CodeIt asks a question about your own code, and Pip gets it first try. What should Pip build in season 2?",
         hashtags: CODEIT_TAGS, callToAction: "Follow for the next episode",
-        script: "Rendered reel (no recording needed): episode 5 of 5 of Pip building a rocket game, ending on the hook for the next episode.",
+        script: "Rendered reel (no recording needed): a cold open on the most dramatic moment, no recap, ending unresolved so it loops; the answer opens the next episode.",
         shots: [
-          { timing: "0–1s", visual: "Series sting: Pip builds a game, episode 5", onScreenText: "EP 5: Prove it" },
-          { timing: "1–12s", visual: "The episode", onScreenText: "Pip built a game." },
-          { timing: "12–15s", visual: "What's next, and the follow button", onScreenText: "Follow so you don't miss it" },
+          { timing: "0–4.6s", visual: "Cold open: the question, Pip picks A", onScreenText: "Pip has 3 seconds." },
+          { timing: "4.6–10s", visual: "5 points a star, live", onScreenText: "Pip built it. And gets it." },
+          { timing: "10–13s", visual: "End card", onScreenText: "Your kid's turn: build one free." },
         ],
       },
       {
@@ -2368,7 +2369,8 @@ async function addVideoPlatformVariants(db: Db, input: { organizationId: string;
   const added: string[] = [];
   for (const { platform, label } of VIDEO_PLATFORMS) {
     const account = accounts.find((a) => a.platform === platform);
-    if (!account || live.some((v) => v.platform === platform)) continue;
+    // An archived version means someone took this platform off the reel on purpose (for example to post it by hand), so don't add it back.
+    if (!account || item.variants.some((v) => v.platform === platform)) continue;
     const copy = videoPlatformCopy(reel, platform);
     try {
       const variant = await addVariant(db, {
@@ -2387,31 +2389,38 @@ async function addVideoPlatformVariants(db: Db, input: { organizationId: string;
   return added;
 }
 
-/** Attaches a bundled rendered reel to a reel's empty variants, uploading the file once per workspace. */
+/**
+ * Attaches a bundled rendered reel to a reel's variants, uploading each render once per workspace.
+ * A variant gets it when it has no media yet, or (while still a draft) when its video is an older
+ * render of the same file: re-rendering a reel then reaches every post that hasn't been approved.
+ */
 async function attachBundledVideo(db: Db, input: { organizationId: string; actorUserId: string }, contentItemId: string, brandProfileId: string, file: string, title: string): Promise<boolean> {
   const variants = await getVariantsOfItem(db, input, contentItemId);
-  const empty = variants.filter((v) => !v.archivedAt && !v.media.length && RESCHEDULABLE.has(v.status) && v.platform !== "linkedin");
-  if (!empty.length) return false;
+  const open = variants.filter((v) => !v.archivedAt && RESCHEDULABLE.has(v.status) && v.platform !== "linkedin");
+  if (!open.length) return false;
+  let bytes: Uint8Array;
+  try {
+    bytes = new Uint8Array(readFileSync(path.join(REELS_DIR, file)));
+  } catch {
+    console.error(`[week-plan] rendered reel missing: ${file}`);
+    return false;
+  }
   const tag = `reel-file:${file}`;
-  const [found] = await db
-    .select({ id: socialAssets.id })
+  const renderTag = `reel-render:${createHash("sha256").update(bytes).digest("hex").slice(0, 16)}`;
+  const renders = await db
+    .select({ id: socialAssets.id, tags: socialAssets.tags })
     .from(socialAssets)
-    .where(and(eq(socialAssets.organizationId, input.organizationId), isNull(socialAssets.archivedAt), eq(socialAssets.assetType, "video"), sql`${socialAssets.tags} @> ${JSON.stringify([tag])}::jsonb`))
-    .limit(1);
-  let assetId = found?.id;
+    .where(and(eq(socialAssets.organizationId, input.organizationId), isNull(socialAssets.archivedAt), eq(socialAssets.assetType, "video"), sql`${socialAssets.tags} @> ${JSON.stringify([tag])}::jsonb`));
+  // Each render is its own asset, keyed by a hash of the file; any other render of the same file is older.
+  let assetId = renders.find((r) => (r.tags as string[] | null)?.includes(renderTag))?.id;
   if (!assetId) {
-    let bytes: Uint8Array;
-    try {
-      bytes = new Uint8Array(readFileSync(path.join(REELS_DIR, file)));
-    } catch {
-      console.error(`[week-plan] rendered reel missing: ${file}`);
-      return false;
-    }
-    const asset = await createUploadedAsset(db, { organizationId: input.organizationId, actorUserId: input.actorUserId, brandProfileId, contentItemId, assetType: "video", title: `Reel · ${title}`.slice(0, 200), tags: ["rendered-reel", tag], file: { bytes, contentType: "video/mp4", filename: file }, platformHint: "instagram" });
+    const asset = await createUploadedAsset(db, { organizationId: input.organizationId, actorUserId: input.actorUserId, brandProfileId, contentItemId, assetType: "video", title: `Reel · ${title}`.slice(0, 200), tags: ["rendered-reel", tag, renderTag], file: { bytes, contentType: "video/mp4", filename: file }, platformHint: "instagram" });
     assetId = asset.id;
   }
+  const older = new Set(renders.map((r) => r.id).filter((id) => id !== assetId));
+  const targets = open.filter((v) => !v.media.length || (v.media.length === 1 && older.has(v.media[0].assetId)));
   let attached = 0;
-  for (const v of empty) {
+  for (const v of targets) {
     try {
       await updateVariant(db, { organizationId: input.organizationId, contentVariantId: v.id, actorUserId: input.actorUserId, expectedRevision: v.revision, changes: { media: [{ assetId, position: 0, role: "primary" as const }] } });
       attached++;

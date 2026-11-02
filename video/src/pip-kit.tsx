@@ -106,7 +106,7 @@ export const rocketX = (t: number) => W * 0.45 + Math.sin(t * 1.6) * W * 0.28 - 
  * it, except the one at `hitAt`); stars fall onto its path every 0.9 s when
  * `stars` is on; the score counts the way `score` says.
  */
-export const Game: React.FC<{ t: number; crashAt?: number; hitAt?: number; hearts?: number; stars?: boolean; score?: "time" | "stuck" | "plus1" | "none"; style?: React.CSSProperties }> = ({ t, crashAt, hitAt, hearts, stars, score = "time", style }) => {
+export const Game: React.FC<{ t: number; gameOver?: boolean; crashAt?: number; hitAt?: number; hearts?: number; stars?: boolean; score?: "time" | "stuck" | "plus1" | "plus5" | "none"; style?: React.CSSProperties }> = ({ t, gameOver, crashAt, hitAt, hearts, stars, score = "time", style }) => {
   const crashed = crashAt !== undefined && t >= crashAt;
   const ct = crashed ? t - crashAt! : 0;
   const rt = crashed ? crashAt! : t;
@@ -142,7 +142,7 @@ export const Game: React.FC<{ t: number; crashAt?: number; hitAt?: number; heart
   const boom = crashed && ct < 0.6 ? `<circle cx="${rx + 115}" cy="${RY + 60}" r="${60 + ct * 420}" fill="#fff" opacity="${0.85 * (1 - ct / 0.6)}"/>` : "";
   const shakeT = crashed ? ct : hitFlash ? t - hitAt! : 1;
   const shake = shakeT < 0.45 ? Math.sin(shakeT * 90) * 24 * (1 - shakeT / 0.45) : 0;
-  const shown = score === "none" ? null : score === "time" ? Math.floor(rt * 3) : score === "stuck" ? (collected ? 1 : 0) : collected;
+  const shown = score === "none" ? null : score === "time" ? Math.floor(rt * 3) : score === "stuck" ? (collected ? 1 : 0) : score === "plus5" ? collected * 5 : collected;
   const lives = hearts === undefined ? null : hitAt !== undefined && t >= hitAt ? hearts - 1 : hearts;
   return (
     <div style={{ position: "absolute", overflow: "hidden", borderRadius: 60, width: W, height: H, boxShadow: "0 40px 90px rgba(23,24,61,0.45)", ...style }}>
@@ -150,6 +150,7 @@ export const Game: React.FC<{ t: number; crashAt?: number; hitAt?: number; heart
         <Svg w={W} h={H} vb={`0 0 ${W} ${H}`} html={`<defs><linearGradient id="ng" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#30327a"/><stop offset="1" stop-color="#17183d"/></linearGradient></defs><rect width="${W}" height="${H}" fill="url(#ng)"/>${sky}${starSvg}${rocks.join("")}${blinkHide ? "" : `${flame}<g transform="translate(${rx} ${ry}) scale(2.3) rotate(${crashed ? ct * 420 : Math.sin(rt * 1.6 + 1.57) * -12} 50 40)">${hero("rocket", 0, 0)}</g>`}${boom}`} style={{ left: 0, top: 0 }} />
       </div>
       {shown !== null && <div style={{ position: "absolute", right: 36, top: 36, padding: "14px 30px", borderRadius: 40, background: "rgba(255,255,255,0.16)", fontFamily: q(MONO), fontSize: 44, color: "#fff" }}>SCORE {shown}</div>}
+      {gameOver && crashed && ct > 0.25 && <div style={{ position: "absolute", left: 0, right: 0, top: H * 0.36, textAlign: "center", fontFamily: q(BALOO), fontWeight: 800, fontSize: 150, color: "#ff5a6e", letterSpacing: 4, textShadow: "0 10px 0 rgba(0,0,0,0.35)", transform: `scale(${Math.min(1, 0.6 + (ct - 0.25) * 3)}) rotate(-6deg)` }}>GAME OVER</div>}
       {lives !== null && <div style={{ position: "absolute", left: 36, top: 36, padding: "10px 26px", borderRadius: 40, background: "rgba(255,255,255,0.16)", fontSize: 50, color: "#ff5a6e", letterSpacing: 6 }}>{"♥".repeat(Math.max(0, lives))}<span style={{ opacity: 0.25 }}>{"♥".repeat(Math.max(0, (hearts ?? 0) - Math.max(0, lives)))}</span></div>}
     </div>
   );
@@ -158,7 +159,8 @@ export const Game: React.FC<{ t: number; crashAt?: number; hitAt?: number; heart
 /** Pops `game` in at `at`, shrunk to fit above the caption. */
 export const GameIn: React.FC<{ at: number; out: number; scale?: number; top?: number; children: (t: number) => React.ReactNode }> = ({ at, out, scale = 0.98, top = 260, children }) => {
   const { s } = useT();
-  const p = useSpringAt(at, { damping: 16, stiffness: 130 });
+  const sp = useSpringAt(at, { damping: 16, stiffness: 130 });
+  const p = at < 0 ? 1 : sp;
   if (s < at || s >= out + 0.25) return null;
   const leave = ramp(s, out, out + 0.25);
   return <div style={{ position: "absolute", left: 50, top, width: W, height: H, transformOrigin: "50% 0%", transform: `scale(${(0.6 + p * 0.4) * scale * (1 - leave * 0.2)})`, opacity: Math.min(1, p * 1.5) * (1 - leave) }}>{children(s - at)}</div>;
@@ -181,22 +183,31 @@ export const NextUp: React.FC<{ at: number; line1: string; line2: string; cta?: 
   );
 };
 
+/** A small tag over the action, instead of an end card people swipe away from. */
+export const Tag: React.FC<{ text: string; at: number; top?: number }> = ({ text, at, top = 1770 }) => {
+  const p = useSpringAt(at, { damping: 12, stiffness: 200 });
+  const { s } = useT();
+  if (s < at) return null;
+  return <div style={{ position: "absolute", left: 0, right: 0, top, display: "flex", justifyContent: "center", opacity: p, transform: `translateY(${(1 - p) * 40}px)` }}><div style={{ padding: "18px 44px", borderRadius: 60, background: "linear-gradient(135deg,#ff9a3c,#ff6a00)", fontFamily: q(NUNITO), fontWeight: 900, fontSize: 40, color: "#fff", boxShadow: "0 16px 36px rgba(255,106,0,0.3)" }}>{text}</div></div>;
+};
+
 export const Footer: React.FC = () => <div style={{ position: "absolute", left: 0, right: 0, bottom: 64, textAlign: "center", fontFamily: q(NUNITO), fontWeight: 800, fontSize: 32, color: ORANGE_T, opacity: 0.85 }}>codeitlearn.com</div>;
 
 /** The shared frame: fonts, backdrop, music, sting, pill and footer around an episode. */
-export const Episode: React.FC<{ ep: number; title: string; children: React.ReactNode; seconds: number }> = ({ ep, title, children, seconds }) => {
+export const Episode: React.FC<{ ep: number; title: string; children: React.ReactNode; seconds: number; cold?: boolean }> = ({ ep, title, children, seconds, cold }) => {
   const { s } = useT();
   return (
     <AbsoluteFill>
       <Fonts />
       <Backdrop />
-      {s > 0.9 && <SeriesPill ep={ep} />}
+      {(cold || s > 0.9) && <SeriesPill ep={ep} />}
       {children}
       <Footer />
-      <Sting ep={ep} title={title} />
-      <Audio src={staticFile("sfx/codeit-bed.mp3")} volume={(f) => interpolate(f, [0, 20, seconds * 30 - 30, seconds * 30], [0, 0.32, 0.32, 0], { extrapolateRight: "clamp" })} />
-      <Sfx at={0} src="whoosh.wav" volume={0.6} />
-      <Sfx at={0.2} src="thump.wav" />
+      {!cold && <Sting ep={ep} title={title} />}
+      {/* Cold opens start mid-action at full volume, and don't fade out, so the loop back to frame 0 is seamless. */}
+      <Audio src={staticFile("sfx/codeit-bed.mp3")} volume={cold ? 0.3 : (f) => interpolate(f, [0, 20, seconds * 30 - 30, seconds * 30], [0, 0.32, 0.32, 0], { extrapolateRight: "clamp" })} />
+      {!cold && <Sfx at={0} src="whoosh.wav" volume={0.6} />}
+      {!cold && <Sfx at={0.2} src="thump.wav" />}
     </AbsoluteFill>
   );
 };
