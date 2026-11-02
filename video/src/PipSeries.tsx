@@ -5,7 +5,7 @@ import { Sfx, useSpringAt, useT } from "./kit";
 
 const q = (f: string) => `'${f}'`;
 
-const Burst: React.FC<{ at: number; x: number; y: number }> = ({ at, x, y }) => {
+export const Burst: React.FC<{ at: number; x: number; y: number }> = ({ at, x, y }) => {
   const { s } = useT();
   const d = s - at;
   if (d < 0 || d > 0.9) return null;
@@ -16,7 +16,7 @@ const Burst: React.FC<{ at: number; x: number; y: number }> = ({ at, x, y }) => 
   return <Svg w={10} h={10} vb="0 0 10 10" html={html} style={{ left: x, top: y }} />;
 };
 
-const IdeaInput: React.FC<{ at: number; text: string; typeAt: number }> = ({ at, text: en, typeAt }) => {
+export const IdeaInput: React.FC<{ at: number; text: string; typeAt: number }> = ({ at, text: en, typeAt }) => {
   const { s } = useT();
   const { tr, ui, dir } = useTr();
   const text = tr(en);
@@ -30,7 +30,7 @@ const IdeaInput: React.FC<{ at: number; text: string; typeAt: number }> = ({ at,
   );
 };
 
-const BuildButton: React.FC<{ at: number; pressAt: number }> = ({ at, pressAt }) => {
+export const BuildButton: React.FC<{ at: number; pressAt: number }> = ({ at, pressAt }) => {
   const { s } = useT();
   const { tr, ui } = useTr();
   const p = useSpringAt(at, { damping: 10, stiffness: 220 });
@@ -42,7 +42,7 @@ const BuildButton: React.FC<{ at: number; pressAt: number }> = ({ at, pressAt })
   );
 };
 
-const Clicks: React.FC<{ at: number; n: number; every?: number }> = ({ at, n, every = 0.12 }) => <>{Array.from({ length: n }, (_, i) => <Sfx key={i} at={at + i * every} src="click.wav" volume={0.5} />)}</>;
+export const Clicks: React.FC<{ at: number; n: number; every?: number }> = ({ at, n, every = 0.12 }) => <>{Array.from({ length: n }, (_, i) => <Sfx key={i} at={at + i * every} src="click.wav" volume={0.5} />)}</>;
 
 /** Episode 1: the idea. Ends on the crash. */
 export const PipEp1: React.FC = () => {
