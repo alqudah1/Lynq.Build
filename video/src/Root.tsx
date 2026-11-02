@@ -15,9 +15,9 @@ export const Root: React.FC = () => (
     {C("lynq-office", LynqOffice, 16)}
     {[KC1, KC2, KC3, KC4, KC5, KC6, KC7].map((K, i) => <Composition key={i} id={`kidscoding-0${i + 1}`} component={K} durationInFrames={1} fps={30} width={1080} height={1920} />)}
     {C("pip-ep1", PipEp1, 15)}
-    {C("pip-ep2", PipEp2, 15.5)}
+    {C("pip-ep2", PipEp2, 14)}
     {C("pip-ep3", PipEp3, 15)}
-    {C("pip-ep4", PipEp4, 14.5)}
-    {C("pip-ep5", PipEp5, 15)}
+    {C("pip-ep4", PipEp4, 15)}
+    {C("pip-ep5", PipEp5, 13)}
   </>
 );

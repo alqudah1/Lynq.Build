@@ -1,5 +1,5 @@
 import React from "react";
-import { BROWN, Caption, CodeWindow, Episode, Game, GameIn, NextUp, ORANGE, Pip, Svg, TopLine, YELLOW, MINT, NUNITO } from "./pip-kit";
+import { BROWN, BALOO, Caption, CodeWindow, Episode, Game, GameIn, NextUp, ORANGE, Pip, Svg, Tag, TopLine, YELLOW, MINT, NUNITO } from "./pip-kit";
 import { Sfx, useSpringAt, useT } from "./kit";
 
 const q = (f: string) => `'${f}'`;
@@ -71,129 +71,185 @@ export const PipEp1: React.FC = () => {
 };
 
 const LIVES = ["lives = 0", "if hit:", "    lives -= 1", "if lives < 0: game_over()"];
+const SCORE_BUG = ["score = 0", "if touching(star):", "    score = 1"];
 
-/** Episode 2: it breaks, and Pip finds the one number. */
+/*
+ * Episodes 2 to 5 are cold opens: frame 0 is already the most dramatic moment, with the hook on
+ * screen (no title card, no "last time"), each episode stops on a question and the next one opens
+ * with its answer, and the last second leads back into the first so the Short loops.
+ */
+
+/** Line-by-line scan over a code window: which line is it? */
+const scanLine = (s: number, from: number, n: number, every = 0.45) => (s < from ? undefined : Math.floor((s - from) / every) % n);
+
+/** A quiz card: the question, three answers, and (from `pickAt`) the right one lit up. */
+const Quiz: React.FC<{ at: number; pickAt?: number }> = ({ at, pickAt }) => {
+  const { s } = useT();
+  const sp = useSpringAt(at, { damping: 15, stiffness: 140 });
+  const card = at < 0 ? 1 : sp;
+  const answered = pickAt !== undefined && s >= pickAt;
+  const opts = ["5 points per star", "The score resets", "Nothing changes"];
+  const scan = !answered ? scanLine(s, Math.max(at, 0) + 0.8, 3, 0.5) : undefined;
+  return (
+    <div style={{ position: "absolute", left: 70, right: 70, top: 470, padding: "50px 50px 56px", borderRadius: 48, background: "#fff", boxShadow: "0 40px 90px rgba(53,34,14,0.2)", opacity: card, transform: `translateY(${(1 - card) * 100}px)` }}>
+      <div style={{ fontFamily: `'${NUNITO}'`, fontWeight: 800, fontSize: 30, letterSpacing: 5, color: "#d46500" }}>LINE 3 SAYS score + 5</div>
+      <div style={{ fontFamily: `'${BALOO}'`, fontWeight: 700, fontSize: 70, color: BROWN, lineHeight: 1.05, margin: "18px 0 30px" }}>What happens now?</div>
+      {opts.map((o, i) => {
+        const right = i === 0 && answered;
+        const lit = scan === i;
+        return (
+          <div key={o} style={{ display: "flex", alignItems: "center", gap: 26, marginTop: 22, padding: "28px 34px", borderRadius: 44, background: right ? "linear-gradient(135deg,#ff9a3c,#ff6a00)" : lit ? "#ffe2c2" : "#fff3e6", color: right ? "#fff" : BROWN, fontFamily: `'${NUNITO}'`, fontWeight: 800, fontSize: 50, transform: right && s < pickAt! + 0.3 ? "scale(1.05)" : lit ? "scale(1.02)" : "none" }}>
+            <span style={{ width: 64, height: 64, borderRadius: 32, background: right ? "#fff" : "rgba(255,122,0,0.15)", color: right ? "#ff6a00" : "#d46500", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 40 }}>{right ? "✓" : "ABC"[i]}</span>
+            {o}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+/** Episode 2: it breaks. Opens on the crash, ends on "which line?" (the answer opens episode 3). */
 export const PipEp2: React.FC = () => {
   const { s } = useT();
+  const scan = scanLine(s, 9.3, 4);
   return (
-    <Episode ep={2} title="It breaks" seconds={15.5}>
-      {s < 3.6 && <TopLine text="Last time: one hit, game over." at={1.0} out={3.3} accent={["one", "hit,"]} size={84} />}
-      <GameIn at={1.0} out={3.4} scale={0.78} top={430}>{(t) => <Game t={t} crashAt={1.7} />}</GameIn>
-      {s >= 3.6 && s < 9.0 && (
+    <Episode ep={2} title="It breaks" seconds={14} cold>
+      {s < 3.0 && <TopLine text="One hit. Game over." at={-1} out={2.8} accent={["Game", "over."]} />}
+      <GameIn at={-0.5} out={2.85} scale={0.86} top={400}>{(t) => <Game t={t} crashAt={0.8} gameOver />}</GameIn>
+      {s >= 3.0 && s < 6.3 && (
         <>
-          <TopLine text="Pip reads the code." at={3.7} out={6.0} accent={["reads"]} size={88} />
-          <CodeWindow at={3.7} lines={LIVES} highlight={0} highlightAt={4.7} bad edit={{ line: 0, from: "0", to: "3", at: 7.0 }} />
-          <Caption text="Zero spare lives!" at={4.8} out={6.8} accent={["Zero"]} size={90} top={1200} />
-          <Caption text="Change one number." at={7.2} out={8.8} accent={["one", "number."]} size={90} top={1200} />
-          <Pip pose={s > 6.9 ? "type" : "think"} x={540} y={1580} size={320} />
+          <TopLine text="Pip tries again." at={3.0} out={6.0} accent={["again."]} />
+          <GameIn at={3.0} out={6.1} scale={0.86} top={400}>{(t) => <Game t={t} crashAt={1.6} gameOver />}</GameIn>
         </>
       )}
-      <GameIn at={9.0} out={12.85}>{(t) => <Game t={t} hearts={3} hitAt={1.6} />}</GameIn>
-      {s >= 9.0 && s < 12.9 && <><Caption text="It survives!" at={10.8} out={12.7} accent={["survives!"]} /><Pip pose="cheer" x={900} y={1380} size={240} bounce={s > 10.8 ? Math.abs(Math.sin(s * 6)) * 30 : 0} /></>}
-      <NextUp at={12.9} line1="Next episode:" line2="Pip adds stars." />
-      <Sfx at={1.0} src="whoosh.wav" volume={0.5} />
-      <Sfx at={2.7} src="crash.wav" volume={0.7} />
-      <Sfx at={4.7} src="pop.wav" />
-      <Clicks at={7.0} n={3} />
-      <Sfx at={9.0} src="whoosh.wav" volume={0.6} />
-      <Sfx at={10.6} src="thump.wav" />
-      <Sfx at={10.8} src="ding.wav" volume={0.5} />
-      <Sfx at={12.9} src="whoosh.wav" volume={0.6} />
+      {s >= 6.3 && s < 9.2 && (
+        <>
+          <TopLine text="Every. Single. Time." at={6.3} out={9.0} accent={["Single."]} />
+          <GameIn at={6.3} out={9.1} scale={0.86} top={400}>{(t) => <Game t={t} crashAt={0.9} gameOver />}</GameIn>
+        </>
+      )}
+      {s >= 9.2 && (
+        <>
+          <TopLine text="One of these lines is why." at={9.2} accent={["One", "why."]} size={84} />
+          <CodeWindow at={9.2} lines={LIVES} highlight={scan} highlightAt={9.3} bad />
+          <Caption text="Which line?" at={10.4} accent={["line?"]} size={120} top={1090} />
+          <Tag text="Comment the number" at={11.6} top={1260} />
+          <Pip pose="think" x={540} y={1600} size={240} />
+        </>
+      )}
+      <Sfx at={0.3} src="crash.wav" />
+      <Sfx at={3.0} src="whoosh.wav" volume={0.5} />
+      <Sfx at={4.6} src="crash.wav" volume={0.8} />
+      <Sfx at={6.3} src="whoosh.wav" volume={0.5} />
+      <Sfx at={7.2} src="crash.wav" volume={0.8} />
+      <Sfx at={9.2} src="pop.wav" />
+      {[9.3, 9.75, 10.2, 10.65, 11.1, 11.55, 12.0, 12.45, 12.9, 13.35].map((t) => <Sfx key={t} at={t} src="click.wav" volume={0.45} />)}
     </Episode>
   );
 };
 
-const SCORE_BUG = ["score = 0", "if touching(star):", "    score = 1"];
-
-/** Episode 3: stars, and a score that won't move. Ends asking the audience to find the bug. */
+/** Episode 3: line 1 was the bug. The rocket survives, Pip adds stars, and the score gets stuck. */
 export const PipEp3: React.FC = () => {
   const { s } = useT();
+  const scan = scanLine(s, 11.4, 3);
   return (
-    <Episode ep={3} title="Stars" seconds={15}>
-      {s < 4.2 && (
+    <Episode ep={3} title="Stars" seconds={15} cold>
+      {s < 2.6 && (
         <>
-          <TopLine text="Pip adds stars to collect." at={1.0} out={3.9} accent={["stars"]} size={86} />
-          <CodeWindow at={1.3} lines={SCORE_BUG} />
-          <Pip pose="type" x={540} y={1500} size={420} />
-          <Clicks at={1.5} n={10} />
+          <TopLine text="It was line 1." at={-1} out={2.4} accent={["line", "1."]} size={100} />
+          <CodeWindow at={-1} lines={LIVES} highlight={0} highlightAt={0} bad edit={{ line: 0, from: "0", to: "3", at: 0.9 }} />
+          <Caption text="Zero spare lives. Now 3." at={1.0} out={2.4} accent={["3."]} size={88} top={1110} />
+          <Pip pose="type" x={540} y={1600} size={260} />
         </>
       )}
-      <GameIn at={4.2} out={11.35}>{(t) => <Game t={t} stars score="stuck" />}</GameIn>
-      {s >= 4.2 && s < 11.4 && (
+      <GameIn at={2.6} out={5.35}>{(t) => <Game t={t} hearts={3} hitAt={1.0} />}</GameIn>
+      {s >= 2.6 && s < 5.4 && <><Caption text="It survives!" at={3.7} out={5.2} accent={["survives!"]} /><Pip pose="cheer" x={900} y={1380} size={240} bounce={s > 3.6 ? Math.abs(Math.sin(s * 6)) * 30 : 0} /></>}
+      <GameIn at={5.4} out={11.25}>{(t) => <Game t={t} stars score="stuck" />}</GameIn>
+      {s >= 5.4 && s < 11.3 && (
         <>
-          <Caption text="Collect them all!" at={4.7} out={7.7} accent={["all!"]} />
-          <Caption text="But the score is stuck on 1." at={8.0} out={11.2} accent={["stuck"]} size={80} />
+          <Caption text="So Pip adds stars." at={5.5} out={7.6} accent={["stars."]} />
+          <Caption text="Every star. Score: 1?!" at={8.0} out={11.1} accent={["1?!"]} />
           <Pip pose={s > 8 ? "think" : "cheer"} x={900} y={1380} size={240} bounce={s < 8 ? Math.abs(Math.sin(s * 6)) * 30 : 0} />
         </>
       )}
-      <NextUp at={11.4} line1="Can you spot the bug?" line2="Comment the line." cta="The answer is in Ep 4. Follow!" />
-      <Sfx at={4.2} src="whoosh.wav" volume={0.6} />
-      {[5.0, 5.9, 6.8, 7.7, 8.6, 9.5, 10.4].map((t) => <Sfx key={t} at={t} src="pop.wav" volume={0.45} />)}
+      {s >= 11.3 && (
+        <>
+          <TopLine text="Another bug. Where?" at={11.3} accent={["Where?"]} />
+          <CodeWindow at={11.3} lines={SCORE_BUG} highlight={scan} highlightAt={11.4} bad />
+          <Tag text="Answer in episode 4" at={12.4} top={1100} />
+          <Pip pose="think" x={540} y={1560} size={300} />
+        </>
+      )}
+      <Clicks at={0.9} n={3} />
+      <Sfx at={1.6} src="ding.wav" volume={0.5} />
+      <Sfx at={2.6} src="whoosh.wav" volume={0.6} />
+      <Sfx at={3.6} src="thump.wav" />
+      <Sfx at={5.4} src="whoosh.wav" volume={0.6} />
+      {[6.2, 7.1, 8.0, 8.9, 9.8, 10.7].map((t) => <Sfx key={t} at={t} src="pop.wav" volume={0.45} />)}
       <Sfx at={8.0} src="thump.wav" />
-      <Sfx at={11.4} src="whoosh.wav" volume={0.6} />
+      <Sfx at={11.3} src="pop.wav" />
     </Episode>
   );
 };
 
-/** Episode 4: the fix. Every star counts. */
+/** Episode 4: line 3 was the bug. Every star counts, then Pip gets a question (answered in episode 5). */
 export const PipEp4: React.FC = () => {
   const { s } = useT();
   return (
-    <Episode ep={4} title="The score" seconds={14.5}>
-      {s < 5.0 && (
+    <Episode ep={4} title="The score" seconds={15} cold>
+      <GameIn at={-6} out={2.35}>{(t) => <Game t={t} stars score="stuck" />}</GameIn>
+      {s < 2.4 && <><Caption text="Every star. Score: 1." at={-1} out={2.2} accent={["1."]} /><Pip pose="think" x={900} y={1380} size={240} /></>}
+      {s >= 2.4 && s < 5.6 && (
         <>
-          <TopLine text="The bug was line 3." at={1.0} out={4.7} accent={["line", "3."]} size={88} />
-          <CodeWindow at={1.1} lines={SCORE_BUG} highlight={2} highlightAt={1.7} bad edit={{ line: 2, from: "1", to: "score + 1", at: 2.9 }} />
-          <Caption text="Add one every time." at={3.7} out={4.8} accent={["every"]} size={88} top={1150} />
-          <Pip pose={s > 2.8 ? "type" : "think"} x={540} y={1600} size={360} />
-          <Clicks at={2.9} n={8} every={0.07} />
+          <TopLine text="It was line 3." at={2.4} out={5.4} accent={["line", "3."]} size={100} />
+          <CodeWindow at={2.4} lines={SCORE_BUG} highlight={2} highlightAt={2.8} bad edit={{ line: 2, from: "1", to: "score + 1", at: 3.6 }} />
+          <Caption text="Add one every time." at={4.3} out={5.4} accent={["every"]} size={88} top={1150} />
+          <Pip pose={s > 3.5 ? "type" : "think"} x={540} y={1580} size={260} />
         </>
       )}
-      <GameIn at={5.0} out={10.75}>{(t) => <Game t={t} stars score="plus1" />}</GameIn>
-      {s >= 5.0 && s < 10.8 && <><Caption text="Now every star counts!" at={5.6} out={10.6} accent={["every", "counts!"]} size={88} /><Pip pose="cheer" x={900} y={1380} size={240} bounce={Math.abs(Math.sin(s * 6)) * 30} /></>}
-      <Burst at={9.8} x={540} y={700} />
-      <NextUp at={10.8} line1="The final episode:" line2="Can Pip explain it?" />
-      <Sfx at={1.7} src="pop.wav" />
-      <Sfx at={5.0} src="whoosh.wav" volume={0.6} />
-      {[5.8, 6.7, 7.6, 8.5, 9.4, 10.3].map((t) => <Sfx key={t} at={t} src="ding.wav" volume={0.3} />)}
-      <Sfx at={10.8} src="whoosh.wav" volume={0.6} />
+      <GameIn at={5.6} out={10.25}>{(t) => <Game t={t} stars score="plus1" />}</GameIn>
+      {s >= 5.6 && s < 10.3 && <><Caption text="Now every star counts!" at={6.0} out={10.1} accent={["every", "counts!"]} size={88} /><Pip pose="cheer" x={900} y={1380} size={240} bounce={Math.abs(Math.sin(s * 6)) * 30} /></>}
+      {s >= 10.3 && (
+        <>
+          <TopLine text="Then the teacher asks:" at={10.3} accent={["asks:"]} size={84} />
+          <Quiz at={10.5} />
+          <Tag text="Comment A, B or C" at={12.2} top={1260} />
+          <Pip pose="think" x={540} y={1600} size={240} />
+        </>
+      )}
+      <Sfx at={2.4} src="whoosh.wav" volume={0.5} />
+      <Sfx at={2.8} src="pop.wav" />
+      <Clicks at={3.6} n={8} every={0.07} />
+      <Sfx at={5.6} src="whoosh.wav" volume={0.6} />
+      {[6.4, 7.3, 8.2, 9.1, 10.0].map((t) => <Sfx key={t} at={t} src="ding.wav" volume={0.3} />)}
+      <Sfx at={10.3} src="thump.wav" />
     </Episode>
   );
 };
 
-/** Episode 5: prove it. A question from Pip's own code; Pip gets it right first time. */
+/** Episode 5: the answer, the proof, and the only ask in the series. */
 export const PipEp5: React.FC = () => {
   const { s } = useT();
-  const card = useSpringAt(3.0, { damping: 15, stiffness: 140 });
-  const answered = s >= 6.6;
-  const opts = ["5 points per star", "The score resets", "Nothing changes"];
   return (
-    <Episode ep={5} title="Prove it" seconds={15}>
-      {s < 2.4 && <TopLine text="Building it is half." at={1.0} out={2.2} accent={["half."]} />}
-      {s >= 2.3 && s < 11.2 && <TopLine text="Explaining it is the other half." at={2.4} out={8.4} accent={["other", "half."]} size={80} />}
-      {s >= 3.0 && s < 11.2 && (
-        <div style={{ position: "absolute", left: 70, right: 70, top: 520, padding: "50px 50px 56px", borderRadius: 48, background: "#fff", boxShadow: "0 40px 90px rgba(53,34,14,0.2)", opacity: card, transform: `translateY(${(1 - card) * 100}px)` }}>
-          <div style={{ fontFamily: q(NUNITO), fontWeight: 800, fontSize: 30, letterSpacing: 5, color: "#d46500" }}>A QUESTION FROM PIP'S OWN CODE</div>
-          <div style={{ fontFamily: "'Baloo 2'", fontWeight: 700, fontSize: 64, color: BROWN, lineHeight: 1.05, margin: "18px 0 34px" }}>If line 3 says score + 5, what happens?</div>
-          {opts.map((o, i) => {
-            const right = i === 0 && answered;
-            return (
-              <div key={o} style={{ display: "flex", alignItems: "center", gap: 26, marginTop: 22, padding: "28px 34px", borderRadius: 44, background: right ? "linear-gradient(135deg,#ff9a3c,#ff6a00)" : "#fff3e6", color: right ? "#fff" : BROWN, fontFamily: q(NUNITO), fontWeight: 800, fontSize: 50, transform: right && s < 6.9 ? "scale(1.04)" : "none" }}>
-                <span style={{ width: 64, height: 64, borderRadius: 32, background: right ? "#fff" : "rgba(255,122,0,0.15)", color: right ? "#ff6a00" : "#d46500", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 40 }}>{right ? "✓" : "ABC"[i]}</span>
-                {o}
-              </div>
-            );
-          })}
-        </div>
+    <Episode ep={5} title="Prove it" seconds={13} cold>
+      {s < 4.6 && (
+        <>
+          <TopLine text="Pip has 3 seconds." at={-1} out={4.4} accent={["3", "seconds."]} size={88} />
+          <Quiz at={-1} pickAt={2.6} />
+          <Caption text="A! First try." at={2.9} out={4.4} accent={["A!"]} size={100} top={1230} />
+          <Pip pose={s > 2.6 ? "cheer" : "think"} x={540} y={1600} size={240} bounce={s > 2.6 ? Math.abs(Math.sin(s * 6)) * 30 : 0} />
+        </>
       )}
-      {s >= 3.0 && s < 11.2 && <Pip pose={answered ? "cheer" : "think"} x={540} y={1650} size={300} bounce={answered ? Math.abs(Math.sin(s * 6)) * 30 : 0} />}
-      {s >= 8.4 && s < 11.2 && <TopLine text="First try. Pip gets it." at={8.5} out={11.0} accent={["First", "try."]} size={84} />}
-      <Burst at={6.65} x={540} y={900} />
-      <NextUp at={11.2} line1="Your kid's turn:" line2="build one free." cta="Comment what Pip builds next" pose="cheer" />
-      <Sfx at={3.0} src="whoosh.wav" volume={0.5} />
-      <Sfx at={6.6} src="ding.wav" volume={0.7} />
-      <Sfx at={6.65} src="pop.wav" />
-      <Sfx at={11.2} src="whoosh.wav" volume={0.6} />
+      <Burst at={2.65} x={540} y={900} />
+      <GameIn at={4.6} out={10.05}>{(t) => <Game t={t} stars score="plus5" />}</GameIn>
+      {s >= 4.6 && s < 10.1 && <><Caption text="5 points a star." at={5.0} out={7.6} accent={["5"]} /><Caption text="Pip built it. And gets it." at={7.8} out={9.9} accent={["gets"]} size={84} /><Pip pose="cheer" x={900} y={1380} size={240} bounce={Math.abs(Math.sin(s * 6)) * 30} /></>}
+      <NextUp at={10.1} line1="Your kid's turn:" line2="build one free." cta="codeitlearn.com" pose="cheer" />
+      {[0.8, 1.3, 1.8, 2.3].map((t) => <Sfx key={t} at={t} src="click.wav" volume={0.45} />)}
+      <Sfx at={2.6} src="ding.wav" volume={0.7} />
+      <Sfx at={2.65} src="pop.wav" />
+      <Sfx at={4.6} src="whoosh.wav" volume={0.6} />
+      {[5.4, 6.3, 7.2, 8.1, 9.0, 9.9].map((t) => <Sfx key={t} at={t} src="ding.wav" volume={0.3} />)}
+      <Sfx at={10.1} src="whoosh.wav" volume={0.6} />
     </Episode>
   );
 };
