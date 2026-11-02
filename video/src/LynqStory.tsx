@@ -1,5 +1,5 @@
 import React from "react";
-import { BK, Bakery, Calls, LI, LN, Lang, MapCard, MU, NewSite, OldSite, Orders, Phone, Reviews, Sami, Say, Sfx, StoryFrame, Street, Tag, Walkers, WH, fontFor, ramp, useSpringAt, useT } from "./lynq-story-kit";
+import { BK, Bakery, Calls, LI, LN, Lang, MapCard, MU, NewSite, OldSite, Orders, Phone, Reviews, Sami, Say, Sfx, StoryFrame, Street, Tag, Kw, Walkers, WH, fontFor, ramp, useSpringAt, useT } from "./lynq-story-kit";
 
 /*
  * "The shop nobody could find": five cold-open episodes about Sami, a made-up bakery owner.
@@ -34,14 +34,14 @@ const LINES = {
     e2a: "Fix 1: the real hours.", e2b: "10 minutes. People walk in.", e2c: "Then they look up his website.", e2d: "Still loading. They're gone.", e2e: "Can a website lose a sale before it loads?", e2tag: "Episode 3: the rebuild",
     e3a: "Fix 2: a site that opens in a second.", e3b: "Hours. Menu. One button.", e3x: "And they come in.", e3c: "Then they read the reviews.", e3d: "3.1 stars. Would you go?", e3tag: "Episode 4: the reviews",
     e4a: "Fix 3: answer every review.", e4b: "Then ask the happy ones.", e4c: "Now everyone calls. At once.", e4d: "Every missed call is a lost order.", e4tag: "Final episode",
-    e5a: "Fix 4: let them order without calling.", e5b: "The orders come in. Quietly.", e5list: "Real hours|Fast site|Answered reviews|Order button", e5d: "Sami is made up. The fixes are real.", e5e: "Want them for your shop?", e5cta: "DM FIX",
+    e5a: "Fix 4: let them order without calling.", e5b: "The orders come in. Quietly.", e5list: "Real hours|Fast site|Answered reviews|Order button", e5d: "Sami is made up. The fixes are real.", e5e: "Want the free checklist?", e5cta: "Comment FIX", e5sub: "Or we do all four for you · lynq.build", kw: "Comment FIX · free checklist",
   },
   ar: {
     e1a: "المحل مفتوح. وجوجل بيقول مسكّر.", e1b: "فالناس بتمرق من قدامه.", e1c: "الدوام غلط على النت. ولا زبون.", e1d: "وهاي بس المشكلة الأولى.", e1tag: "٤ مشاكل · ٥ حلقات",
     e2a: "الحل ١: الدوام الصح.", e2b: "١٠ دقايق. والناس بتفوت.", e2c: "بعدين بيدوّروا على موقعه.", e2d: "لسا بيحمّل. راحوا.", e2e: "ممكن موقع يخسّرك بيعة قبل ما يفتح؟", e2tag: "الحلقة ٣: موقع جديد",
     e3a: "الحل ٢: موقع بيفتح بثانية.", e3b: "الدوام. القائمة. زر واحد.", e3x: "وبيفوتوا.", e3c: "بعدين بيقرأوا التقييمات.", e3d: "٣.١ نجوم. كنت رحت؟", e3tag: "الحلقة ٤: التقييمات",
     e4a: "الحل ٣: رد على كل تقييم.", e4b: "واطلب من الزباين المبسوطين.", e4c: "هلق الكل بيتصل. بنفس الوقت.", e4d: "كل مكالمة فائتة طلب ضايع.", e4tag: "الحلقة الأخيرة",
-    e5a: "الحل ٤: خليهم يطلبوا بدون اتصال.", e5b: "الطلبات بتوصل. بهدوء.", e5list: "دوام صح|موقع سريع|ردود على التقييمات|زر الطلب", e5d: "سامي خيالي. الحلول حقيقية.", e5e: "بدك ياها لمحلك؟", e5cta: "راسلنا FIX",
+    e5a: "الحل ٤: خليهم يطلبوا بدون اتصال.", e5b: "الطلبات بتوصل. بهدوء.", e5list: "دوام صح|موقع سريع|ردود على التقييمات|زر الطلب", e5d: "سامي خيالي. الحلول حقيقية.", e5e: "بدك القائمة ببلاش؟", e5cta: "اكتب FIX", e5sub: "أو منعملهم عنك · lynq.build", kw: "اكتب FIX بالتعليقات · القائمة ببلاش",
   },
 };
 
@@ -68,7 +68,7 @@ export const LynqStory1: React.FC<P> = ({ lang = "en" }) => {
           <Bakery pose="worried" sign="open" top={170} />
           <Say text={l.e1d} at={10.2} lang={lang} top={250} accent={ac} size={88} />
           <div dir={lang === "ar" ? "rtl" : "ltr"} style={{ position: "absolute", left: 0, right: 0, top: 1470, textAlign: "center", fontFamily: `'${fontFor(lang)}'`, fontSize: 34, color: MU }}>{tx.customers}: <span style={{ fontFamily: "'Inter SemiBold'", fontSize: 60, color: WH }}>0</span></div>
-          <Tag text={l.e1tag} at={12.0} top={1560} lang={lang} />
+          <Tag text={l.e1tag} at={12.0} top={1560} lang={lang} /><Kw text={l.kw} at={12.7} top={1680} lang={lang} />
         </>
       )}
       <Sfx at={0.05} src="thump.wav" />
@@ -95,7 +95,7 @@ export const LynqStory2: React.FC<P> = ({ lang = "en" }) => {
           {s >= 8.6 && <Say text={l.e2d} at={8.7} out={11.8} lang={lang} top={250} accent={ac} size={88} />}
         </>
       )}
-      {s >= 12.0 && <><Bakery pose="worried" top={170} /><Say text={l.e2e} at={12.0} lang={lang} top={250} accent={ac} size={74} /><Tag text={l.e2tag} at={13.0} top={1520} lang={lang} /></>}
+      {s >= 12.0 && <><Bakery pose="worried" top={170} /><Say text={l.e2e} at={12.0} lang={lang} top={250} accent={ac} size={74} /><Tag text={l.e2tag} at={13.0} top={1520} lang={lang} /><Kw text={l.kw} at={13.5} top={1650} lang={lang} /></>}
       <Sfx at={0.9} src="click.wav" />
       <Sfx at={1.1} src="ding.wav" volume={0.5} />
       <Sfx at={2.7} src="whoosh.wav" volume={0.5} />
@@ -129,7 +129,7 @@ export const LynqStory3: React.FC<P> = ({ lang = "en" }) => {
       {s >= 3.2 && s < 6.4 && <Say text={l.e3b} at={3.3} out={6.2} lang={lang} top={250} accent={ac} size={92} />}
       {s >= 6.4 && s < 8.6 && <><Street sign="open" pose="happy" /><Walkers from={6.4} n={3} enter /><Say text={l.e3x} at={6.5} out={8.4} lang={lang} top={250} accent={ac} size={92} /></>}
       {s >= 8.6 && s < 12.1 && <><Phone at={8.6} out={11.9}><Reviews rating={3.1} lang={lang} tx={tx} /></Phone><Say text={l.e3c} at={8.7} out={11.9} lang={lang} top={250} accent={ac} size={84} /></>}
-      {s >= 12.1 && <><Bakery pose="worried" top={170} /><Say text={l.e3d} at={12.1} lang={lang} top={250} accent={ac} size={92} /><Tag text={l.e3tag} at={13.1} top={1520} lang={lang} /></>}
+      {s >= 12.1 && <><Bakery pose="worried" top={170} /><Say text={l.e3d} at={12.1} lang={lang} top={250} accent={ac} size={92} /><Tag text={l.e3tag} at={13.1} top={1520} lang={lang} /><Kw text={l.kw} at={13.6} top={1650} lang={lang} /></>}
       <Sfx at={0.25} src="whoosh.wav" volume={0.6} />
       <Sfx at={1.05} src="ding.wav" volume={0.5} />
       <Sfx at={6.4} src="whoosh.wav" volume={0.5} />
@@ -168,7 +168,7 @@ export const LynqStory4: React.FC<P> = ({ lang = "en" }) => {
       {s < 3.6 && <><Phone at={-1}><Reviews rating={3.1} replyAt={0.2} lang={lang} tx={tx} /></Phone><Say text={l.e4a} at={-1} out={3.4} lang={lang} top={250} accent={ac} size={86} /></>}
       {s >= 3.6 && s < 7.9 && <><Bakery pose="happy" top={170} /><Climb from={4.4} lang={lang} tx={tx} /><Say text={l.e4b} at={3.7} out={7.7} lang={lang} top={250} accent={ac} size={86} /></>}
       {s >= 7.9 && s < 11.6 && <><Phone at={7.9} out={11.4} shake><Calls from={8.0} lang={lang} tx={tx} /></Phone><Say text={l.e4c} at={8.0} out={11.4} lang={lang} top={250} accent={ac} size={86} /></>}
-      {s >= 11.6 && <><Bakery pose="busy" top={170} /><Say text={l.e4d} at={11.6} lang={lang} top={250} accent={ac} size={80} /><Tag text={l.e4tag} at={12.8} top={1520} lang={lang} /></>}
+      {s >= 11.6 && <><Bakery pose="busy" top={170} /><Say text={l.e4d} at={11.6} lang={lang} top={250} accent={ac} size={80} /><Tag text={l.e4tag} at={12.8} top={1520} lang={lang} /><Kw text={l.kw} at={13.3} top={1650} lang={lang} /></>}
       {[0.4, 0.9, 1.4, 1.9, 2.4].map((t) => <Sfx key={t} at={t} src="click.wav" volume={0.4} />)}
       <Sfx at={3.6} src="whoosh.wav" volume={0.5} />
       {[4.6, 5.3, 6.0, 6.7, 7.4].map((t) => <Sfx key={t} at={t} src="ding.wav" volume={0.3} />)}
@@ -205,6 +205,7 @@ export const LynqStory5: React.FC<P> = ({ lang = "en" }) => {
           <Say text={l.e5d} at={9.6} lang={lang} top={470} accent={ac} size={92} />
           <Say text={l.e5e} at={10.1} lang={lang} top={800} size={92} />
           <div style={{ position: "absolute", left: 0, right: 0, top: 1030, display: "flex", justifyContent: "center" }}><div dir={lang === "ar" ? "rtl" : "ltr"} style={{ padding: "34px 80px", borderRadius: 70, background: LI, fontFamily: `'${fontFor(lang, "bold")}'`, fontSize: 64, color: BK, transform: `scale(${btn})` }}>{l.e5cta}</div></div>
+          <div dir={lang === "ar" ? "rtl" : "ltr"} style={{ position: "absolute", left: 80, right: 80, top: 1230, textAlign: "center", fontFamily: `'${fontFor(lang)}'`, fontSize: 40, color: MU }}>{l.e5sub}</div>
           <Sami x={540} y={1700} size={0.5} pose="happy" />
           <div style={{ position: "absolute", left: 140, right: 140, top: 1720, height: 2, background: LN }} />
         </>

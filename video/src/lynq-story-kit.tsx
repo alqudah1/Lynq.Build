@@ -305,4 +305,12 @@ export const Tag: React.FC<{ text: string; at: number; top: number; lang: Lang }
   return <div style={{ position: "absolute", left: 0, right: 0, top, display: "flex", justifyContent: "center", opacity: p, transform: `translateY(${(1 - p) * 40}px)` }}><div dir={lang === "ar" ? "rtl" : "ltr"} style={{ padding: "20px 46px", borderRadius: 60, background: LI, fontFamily: q(fontFor(lang, "bold")), fontSize: 40, color: BK }}>{text}</div></div>;
 };
 
+/** The comment keyword, in an outline pill under the cliffhanger. */
+export const Kw: React.FC<{ text: string; at: number; top: number; lang: Lang }> = ({ text, at, top, lang }) => {
+  const p = useSpringAt(at, { damping: 14, stiffness: 200 });
+  const { s } = useT();
+  if (s < at) return null;
+  return <div style={{ position: "absolute", left: 0, right: 0, top, display: "flex", justifyContent: "center", opacity: p }}><div dir={lang === "ar" ? "rtl" : "ltr"} style={{ padding: "14px 34px", borderRadius: 60, border: `2px solid ${LI}`, background: "rgba(11,11,12,0.7)", fontFamily: q(fontFor(lang, "bold")), fontSize: 32, color: LI }}>{text}</div></div>;
+};
+
 export { Sfx, ramp, useSpringAt, useT };

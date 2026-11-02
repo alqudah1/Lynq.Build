@@ -46,7 +46,7 @@ const SampleFrame: React.FC<{ seconds: number; bg: string; accent: string; brand
         <AbsoluteFill style={{ background: BK, opacity: end }}>
           <div style={{ position: "absolute", left: 0, right: 0, top: 560, textAlign: "center", fontFamily: q("JetBrains Mono"), fontSize: 30, letterSpacing: 6, color: MU }}>SAMPLE REEL BY LYNQ</div>
           <div style={{ position: "absolute", left: 80, right: 80, top: 660, textAlign: "center", fontFamily: q("Inter Light"), fontSize: 108, letterSpacing: -3, lineHeight: 1.02, color: WH }}>Want one for your business?</div>
-          <div style={{ position: "absolute", left: 0, right: 0, top: 1040, display: "flex", justifyContent: "center" }}><div style={{ padding: "34px 80px", borderRadius: 70, background: LI, fontFamily: q("Inter SemiBold"), fontSize: 64, color: BK, transform: `scale(${btn})` }}>DM REEL</div></div>
+          <div style={{ position: "absolute", left: 0, right: 0, top: 1040, display: "flex", justifyContent: "center" }}><div style={{ padding: "34px 80px", borderRadius: 70, background: LI, fontFamily: q("Inter SemiBold"), fontSize: 64, color: BK, transform: `scale(${btn})` }}>Comment REEL</div></div>
           <div style={{ position: "absolute", left: 0, right: 0, top: 1240, textAlign: "center", fontFamily: q("Inter Light"), fontSize: 40, color: MU }}>Made for your shop, in your colours.</div>
         </AbsoluteFill>
       )}
