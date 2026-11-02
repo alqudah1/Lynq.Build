@@ -1,5 +1,6 @@
 import React from "react";
-import { BROWN, BALOO, Caption, CodeWindow, Episode, Game, GameIn, NextUp, ORANGE, Pip, Svg, Tag, TopLine, YELLOW, MINT, NUNITO } from "./pip-kit";
+import { Sequence } from "remotion";
+import { BROWN, Caption, CodeWindow, Episode, Game, GameIn, NextUp, ORANGE, Pip, PipLang, Svg, Tag, TopLine, YELLOW, MINT, useTr } from "./pip-kit";
 import { Sfx, useSpringAt, useT } from "./kit";
 
 const q = (f: string) => `'${f}'`;
@@ -15,12 +16,14 @@ const Burst: React.FC<{ at: number; x: number; y: number }> = ({ at, x, y }) => 
   return <Svg w={10} h={10} vb="0 0 10 10" html={html} style={{ left: x, top: y }} />;
 };
 
-const IdeaInput: React.FC<{ at: number; text: string; typeAt: number }> = ({ at, text, typeAt }) => {
+const IdeaInput: React.FC<{ at: number; text: string; typeAt: number }> = ({ at, text: en, typeAt }) => {
   const { s } = useT();
+  const { tr, ui, dir } = useTr();
+  const text = tr(en);
   const p = useSpringAt(at, { damping: 15, stiffness: 140 });
   const typed = text.slice(0, Math.max(0, Math.floor((s - typeAt) * 15)));
   return (
-    <div style={{ position: "absolute", left: 80, right: 80, top: 560, height: 210, borderRadius: 44, background: "#fff", boxShadow: "0 30px 70px rgba(53,34,14,0.18)", opacity: p, transform: `translateY(${(1 - p) * 80}px)`, display: "flex", alignItems: "center", padding: "0 50px", fontFamily: q(NUNITO), fontWeight: 700, fontSize: 54, color: BROWN }}>
+    <div dir={dir} style={{ position: "absolute", left: 80, right: 80, top: 560, height: 210, borderRadius: 44, background: "#fff", boxShadow: "0 30px 70px rgba(53,34,14,0.18)", opacity: p, transform: `translateY(${(1 - p) * 80}px)`, display: "flex", alignItems: "center", padding: "0 50px", fontFamily: q(ui), fontWeight: 700, fontSize: 54, color: BROWN }}>
       {typed}
       <span style={{ width: 6, height: 70, borderRadius: 3, background: ORANGE, marginLeft: 6, opacity: Math.floor(s * 3) % 2 ? 1 : 0.2 }} />
     </div>
@@ -29,11 +32,12 @@ const IdeaInput: React.FC<{ at: number; text: string; typeAt: number }> = ({ at,
 
 const BuildButton: React.FC<{ at: number; pressAt: number }> = ({ at, pressAt }) => {
   const { s } = useT();
+  const { tr, ui } = useTr();
   const p = useSpringAt(at, { damping: 10, stiffness: 220 });
   const press = s > pressAt && s < pressAt + 0.18 ? 0.9 : 1;
   return (
     <div style={{ position: "absolute", left: 0, right: 0, top: 830, display: "flex", justifyContent: "center", opacity: p, transform: `scale(${p * press})` }}>
-      <div style={{ padding: "34px 74px", borderRadius: 70, background: YELLOW, boxShadow: "0 24px 50px rgba(53,34,14,0.2)", fontFamily: q(NUNITO), fontWeight: 900, fontSize: 58, color: BROWN }}>▶ Build my game</div>
+      <div style={{ padding: "34px 74px", borderRadius: 70, background: YELLOW, boxShadow: "0 24px 50px rgba(53,34,14,0.2)", fontFamily: q(ui), fontWeight: 900, fontSize: 58, color: BROWN }}>{tr("▶ Build my game")}</div>
     </div>
   );
 };
@@ -88,17 +92,18 @@ const Quiz: React.FC<{ at: number; pickAt?: number }> = ({ at, pickAt }) => {
   const sp = useSpringAt(at, { damping: 15, stiffness: 140 });
   const card = at < 0 ? 1 : sp;
   const answered = pickAt !== undefined && s >= pickAt;
-  const opts = ["5 points per star", "The score resets", "Nothing changes"];
+  const { tr, font, ui, dir } = useTr();
+  const opts = ["5 points per star", "The score resets", "Nothing changes"].map(tr);
   const scan = !answered ? scanLine(s, Math.max(at, 0) + 0.8, 3, 0.5) : undefined;
   return (
-    <div style={{ position: "absolute", left: 70, right: 70, top: 470, padding: "50px 50px 56px", borderRadius: 48, background: "#fff", boxShadow: "0 40px 90px rgba(53,34,14,0.2)", opacity: card, transform: `translateY(${(1 - card) * 100}px)` }}>
-      <div style={{ fontFamily: `'${NUNITO}'`, fontWeight: 800, fontSize: 30, letterSpacing: 5, color: "#d46500" }}>LINE 3 SAYS score + 5</div>
-      <div style={{ fontFamily: `'${BALOO}'`, fontWeight: 700, fontSize: 70, color: BROWN, lineHeight: 1.05, margin: "18px 0 30px" }}>What happens now?</div>
+    <div dir={dir} style={{ position: "absolute", left: 70, right: 70, top: 470, padding: "50px 50px 56px", borderRadius: 48, background: "#fff", boxShadow: "0 40px 90px rgba(53,34,14,0.2)", opacity: card, transform: `translateY(${(1 - card) * 100}px)` }}>
+      <div style={{ fontFamily: `'${ui}'`, fontWeight: 800, fontSize: 30, letterSpacing: dir === "rtl" ? 0 : 5, color: "#d46500" }}>{tr("LINE 3 SAYS score + 5")}</div>
+      <div style={{ fontFamily: `'${font}'`, fontWeight: 700, fontSize: 70, color: BROWN, lineHeight: 1.15, margin: "18px 0 30px" }}>{tr("What happens now?")}</div>
       {opts.map((o, i) => {
         const right = i === 0 && answered;
         const lit = scan === i;
         return (
-          <div key={o} style={{ display: "flex", alignItems: "center", gap: 26, marginTop: 22, padding: "28px 34px", borderRadius: 44, background: right ? "linear-gradient(135deg,#ff9a3c,#ff6a00)" : lit ? "#ffe2c2" : "#fff3e6", color: right ? "#fff" : BROWN, fontFamily: `'${NUNITO}'`, fontWeight: 800, fontSize: 50, transform: right && s < pickAt! + 0.3 ? "scale(1.05)" : lit ? "scale(1.02)" : "none" }}>
+          <div key={o} style={{ display: "flex", alignItems: "center", gap: 26, marginTop: 22, padding: "28px 34px", borderRadius: 44, background: right ? "linear-gradient(135deg,#ff9a3c,#ff6a00)" : lit ? "#ffe2c2" : "#fff3e6", color: right ? "#fff" : BROWN, fontFamily: `'${ui}'`, fontWeight: 800, fontSize: 50, transform: right && s < pickAt! + 0.3 ? "scale(1.05)" : lit ? "scale(1.02)" : "none" }}>
             <span style={{ width: 64, height: 64, borderRadius: 32, background: right ? "#fff" : "rgba(255,122,0,0.15)", color: right ? "#ff6a00" : "#d46500", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 40 }}>{right ? "✓" : "ABC"[i]}</span>
             {o}
           </div>
@@ -253,3 +258,12 @@ export const PipEp5: React.FC = () => {
     </Episode>
   );
 };
+
+/** Arabic cuts: the same episodes with every line in Arabic (the Python on screen stays). */
+const inArabic = (K: React.FC): React.FC => {
+  const A: React.FC = () => <PipLang.Provider value="ar"><K /></PipLang.Provider>;
+  return A;
+};
+/** Arabic episode 1 starts 1 s in, past the title card, so it opens on Pip (a cold open like the others). */
+export const PipEp1Ar: React.FC = () => <PipLang.Provider value="ar"><Sequence from={-30} layout="none"><PipEp1 /></Sequence></PipLang.Provider>;
+export const PipEp2Ar = inArabic(PipEp2), PipEp3Ar = inArabic(PipEp3), PipEp4Ar = inArabic(PipEp4), PipEp5Ar = inArabic(PipEp5);

@@ -1,10 +1,21 @@
 import React from "react";
-import { AbsoluteFill, Audio, interpolate, staticFile } from "remotion";
+import { AbsoluteFill, Audio, Sequence, interpolate, staticFile, useVideoConfig } from "remotion";
 import { hero, item, pip } from "../../platform/src/lib/social-os/codeit-formats";
 import { Fonts, Sfx, Words, ramp, useSpringAt, useT } from "./kit";
+import { PIP_AR } from "./pip-ar";
+import { VOICE } from "./voice-manifest";
 
 export const BROWN = "#35220e", ORANGE = "#ff7a00", ORANGE_T = "#d46500", YELLOW = "#f5d04a", MINT = "#3ddc97", NAVY = "#1d2654";
-export const BALOO = "Baloo 2", NUNITO = "Nunito", MONO = "JetBrains Mono";
+export const BALOO = "Baloo 2", NUNITO = "Nunito", MONO = "JetBrains Mono", BALOO_AR = "Baloo Bhaijaan 2";
+
+/** Which language a Pip cut is in. Arabic swaps every line through PIP_AR; the Python on screen stays as it is. */
+export const PipLang = React.createContext<"en" | "ar">("en");
+export const useTr = () => {
+  const lang = React.useContext(PipLang);
+  const tr = (en: string) => (lang === "ar" ? (PIP_AR[en]?.[0] ?? en) : en);
+  const acc = (en: string, accent: string[] = []) => (lang === "ar" ? (PIP_AR[en]?.[1] ?? []) : accent);
+  return { lang, tr, acc, font: lang === "ar" ? BALOO_AR : BALOO, ui: lang === "ar" ? BALOO_AR : NUNITO, dir: (lang === "ar" ? "rtl" : "ltr") as "rtl" | "ltr" };
+};
 const q = (f: string) => `'${f}'`;
 
 export const Svg: React.FC<{ w: number; h: number; vb: string; html: string; style?: React.CSSProperties }> = ({ w, h, vb, html, style }) => (
@@ -29,14 +40,17 @@ export const Backdrop: React.FC<{ dark?: number }> = ({ dark = 0 }) => {
   );
 };
 
-export const SeriesPill: React.FC<{ ep: number }> = ({ ep }) => (
-  <div style={{ position: "absolute", top: 150, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
-    <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "16px 34px", borderRadius: 40, background: "rgba(255,122,0,0.13)", fontFamily: q(NUNITO), fontWeight: 800, fontSize: 28, letterSpacing: 5, color: ORANGE_T }}>
-      <span style={{ width: 16, height: 16, borderRadius: 8, background: ORANGE, display: "inline-block" }} />
-      PIP BUILDS A GAME · EP {ep} OF 5
+export const SeriesPill: React.FC<{ ep: number }> = ({ ep }) => {
+  const { lang, ui, dir } = useTr();
+  return (
+    <div style={{ position: "absolute", top: 150, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
+      <div dir={dir} style={{ display: "flex", alignItems: "center", gap: 16, padding: "16px 34px", borderRadius: 40, background: "rgba(255,122,0,0.13)", fontFamily: q(ui), fontWeight: 800, fontSize: lang === "ar" ? 32 : 28, letterSpacing: lang === "ar" ? 0 : 5, color: ORANGE_T }}>
+        <span style={{ width: 16, height: 16, borderRadius: 8, background: ORANGE, display: "inline-block" }} />
+        {lang === "ar" ? `بيب بيعمل لعبة · الحلقة ${"٠١٢٣٤٥"[ep]} من ٥` : `PIP BUILDS A GAME · EP ${ep} OF 5`}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 /** 0.9 s title sting: series name and episode number slam in. */
 export const Sting: React.FC<{ ep: number; title: string }> = ({ ep, title }) => {
@@ -44,28 +58,35 @@ export const Sting: React.FC<{ ep: number; title: string }> = ({ ep, title }) =>
   const a = useSpringAt(0, { damping: 11, stiffness: 240 });
   const b = useSpringAt(0.18, { damping: 10, stiffness: 260 });
   const out = ramp(s, 0.75, 0.95);
+  const { lang, tr, font, ui } = useTr();
   if (s > 1.0) return null;
   return (
-    <AbsoluteFill style={{ background: "linear-gradient(135deg,#ff9a3c,#ff6a00)", opacity: 1 - out, alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
-      <div style={{ fontFamily: q(NUNITO), fontWeight: 900, fontSize: 44, letterSpacing: 10, color: "#fff", opacity: a, transform: `translateY(${(1 - a) * -60}px)` }}>PIP BUILDS A GAME</div>
-      <div style={{ fontFamily: q(BALOO), fontWeight: 700, fontSize: 260, color: "#fff", lineHeight: 1, transform: `scale(${b})` }}>EP {ep}</div>
-      <div style={{ fontFamily: q(BALOO), fontWeight: 700, fontSize: 80, color: "#fff2df", opacity: b }}>{title}</div>
+    <AbsoluteFill dir={lang === "ar" ? "rtl" : "ltr"} style={{ background: "linear-gradient(135deg,#ff9a3c,#ff6a00)", opacity: 1 - out, alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
+      <div style={{ fontFamily: q(ui), fontWeight: 900, fontSize: 44, letterSpacing: lang === "ar" ? 0 : 10, color: "#fff", opacity: a, transform: `translateY(${(1 - a) * -60}px)` }}>{tr("PIP BUILDS A GAME")}</div>
+      <div style={{ fontFamily: q(font), fontWeight: 700, fontSize: lang === "ar" ? 200 : 260, color: "#fff", lineHeight: 1, transform: `scale(${b})` }}>{lang === "ar" ? `الحلقة ${"٠١٢٣٤٥"[ep]}` : `EP ${ep}`}</div>
+      <div style={{ fontFamily: q(font), fontWeight: 700, fontSize: 80, color: "#fff2df", opacity: b }}>{tr(title)}</div>
     </AbsoluteFill>
   );
 };
 
 /** Bottom caption, big and centred. */
-export const Caption: React.FC<{ text: string; at: number; out?: number; accent?: string[]; size?: number; top?: number }> = ({ text, at, out, accent = [], size = 96, top = 1640 }) => (
-  <div style={{ position: "absolute", left: 60, right: 60, top, textAlign: "center" }}>
-    <Words text={text} at={at} out={out} size={size} color={BROWN} accent={ORANGE} accentWords={accent} font={BALOO} weight={700} align="center" lineHeight={1.0} />
-  </div>
-);
+export const Caption: React.FC<{ text: string; at: number; out?: number; accent?: string[]; size?: number; top?: number }> = ({ text, at, out, accent = [], size = 96, top = 1640 }) => {
+  const { tr, acc, font, dir, lang } = useTr();
+  return (
+    <div dir={dir} style={{ position: "absolute", left: 60, right: 60, top, textAlign: "center" }}>
+      <Words text={tr(text)} at={at} out={out} size={size} color={BROWN} accent={ORANGE} accentWords={acc(text, accent)} font={font} weight={700} align="center" lineHeight={lang === "ar" ? 1.25 : 1.0} />
+    </div>
+  );
+};
 
-export const TopLine: React.FC<{ text: string; at: number; out?: number; accent?: string[]; size?: number }> = ({ text, at, out, accent = [], size = 92 }) => (
-  <div style={{ position: "absolute", left: 60, right: 60, top: 250, textAlign: "center" }}>
-    <Words text={text} at={at} out={out} size={size} color={BROWN} accent={ORANGE} accentWords={accent} font={BALOO} weight={700} align="center" lineHeight={1.0} />
-  </div>
-);
+export const TopLine: React.FC<{ text: string; at: number; out?: number; accent?: string[]; size?: number }> = ({ text, at, out, accent = [], size = 92 }) => {
+  const { tr, acc, font, dir, lang } = useTr();
+  return (
+    <div dir={dir} style={{ position: "absolute", left: 60, right: 60, top: 250, textAlign: "center" }}>
+      <Words text={tr(text)} at={at} out={out} size={size} color={BROWN} accent={ORANGE} accentWords={acc(text, accent)} font={font} weight={700} align="center" lineHeight={lang === "ar" ? 1.25 : 1.0} />
+    </div>
+  );
+};
 
 /** A dark code window; `edits` swap a line's text at a time, with a typing cursor. */
 export const CodeWindow: React.FC<{ at: number; lines: string[]; top?: number; highlight?: number; highlightAt?: number; edit?: { line: number; from: string; to: string; at: number }; bad?: boolean }> = ({ at, lines, top = 520, highlight, highlightAt = 0, edit, bad }) => {
@@ -167,28 +188,32 @@ export const GameIn: React.FC<{ at: number; out: number; scale?: number; top?: n
 };
 
 /** The cliffhanger: what's next, and the follow button. */
-export const NextUp: React.FC<{ at: number; line1: string; line2: string; cta?: string; pose?: "think" | "cheer" }> = ({ at, line1, line2, cta = "Follow so you don't miss it", pose = "think" }) => {
+export const NextUp: React.FC<{ at: number; line1: string; line2: string; cta?: string; pose?: "think" | "cheer" }> = ({ at, line1: l1, line2: l2, cta: c = "Follow so you don't miss it", pose = "think" }) => {
   const { s } = useT();
+  const { tr, font, ui, dir } = useTr();
+  const line1 = tr(l1), line2 = tr(l2), cta = tr(c);
   const p = useSpringAt(at + 0.5, { damping: 14, stiffness: 140 });
   if (s < at) return null;
   return (
     <>
-      <div style={{ position: "absolute", left: 60, right: 60, top: 300, textAlign: "center" }}>
-        <Words text={line1} at={at} size={84} color={BROWN} font={BALOO} weight={700} align="center" />
-        <Words text={line2} at={at + 0.25} size={128} color={ORANGE} font={BALOO} weight={700} align="center" lineHeight={1.0} />
+      <div dir={dir} style={{ position: "absolute", left: 60, right: 60, top: 300, textAlign: "center" }}>
+        <Words text={line1} at={at} size={84} color={BROWN} font={font} weight={700} align="center" />
+        <Words text={line2} at={at + 0.25} size={128} color={ORANGE} font={font} weight={700} align="center" lineHeight={1.1} />
       </div>
       <Pip pose={pose} x={540} y={1010 + (1 - p) * 500} size={440} bounce={pose === "cheer" ? Math.abs(Math.sin(s * 5)) * 30 : 0} />
-      <div style={{ position: "absolute", left: 90, right: 90, top: 1480, padding: "40px 0", borderRadius: 80, background: "linear-gradient(135deg,#ff9a3c,#ff6a00)", boxShadow: "0 24px 50px rgba(255,106,0,0.35)", textAlign: "center", fontFamily: q(NUNITO), fontWeight: 900, fontSize: 54, color: "#fff", opacity: p, transform: `translateY(${(1 - p) * 60}px)` }}>{cta}</div>
+      <div style={{ position: "absolute", left: 90, right: 90, top: 1480, padding: "40px 0", borderRadius: 80, background: "linear-gradient(135deg,#ff9a3c,#ff6a00)", boxShadow: "0 24px 50px rgba(255,106,0,0.35)", textAlign: "center", fontFamily: q(ui), fontWeight: 900, fontSize: 54, color: "#fff", opacity: p, transform: `translateY(${(1 - p) * 60}px)` }}>{cta}</div>
     </>
   );
 };
 
 /** A small tag over the action, instead of an end card people swipe away from. */
-export const Tag: React.FC<{ text: string; at: number; top?: number }> = ({ text, at, top = 1770 }) => {
+export const Tag: React.FC<{ text: string; at: number; top?: number }> = ({ text: en, at, top = 1770 }) => {
+  const { tr, ui } = useTr();
+  const text = tr(en);
   const p = useSpringAt(at, { damping: 12, stiffness: 200 });
   const { s } = useT();
   if (s < at) return null;
-  return <div style={{ position: "absolute", left: 0, right: 0, top, display: "flex", justifyContent: "center", opacity: p, transform: `translateY(${(1 - p) * 40}px)` }}><div style={{ padding: "18px 44px", borderRadius: 60, background: "linear-gradient(135deg,#ff9a3c,#ff6a00)", fontFamily: q(NUNITO), fontWeight: 900, fontSize: 40, color: "#fff", boxShadow: "0 16px 36px rgba(255,106,0,0.3)" }}>{text}</div></div>;
+  return <div style={{ position: "absolute", left: 0, right: 0, top, display: "flex", justifyContent: "center", opacity: p, transform: `translateY(${(1 - p) * 40}px)` }}><div style={{ padding: "18px 44px", borderRadius: 60, background: "linear-gradient(135deg,#ff9a3c,#ff6a00)", fontFamily: q(ui), fontWeight: 900, fontSize: 40, color: "#fff", boxShadow: "0 16px 36px rgba(255,106,0,0.3)" }}>{text}</div></div>;
 };
 
 export const Footer: React.FC = () => <div style={{ position: "absolute", left: 0, right: 0, bottom: 64, textAlign: "center", fontFamily: q(NUNITO), fontWeight: 800, fontSize: 32, color: ORANGE_T, opacity: 0.85 }}>codeitlearn.com</div>;
@@ -196,6 +221,9 @@ export const Footer: React.FC = () => <div style={{ position: "absolute", left: 
 /** The shared frame: fonts, backdrop, music, sting, pill and footer around an episode. */
 export const Episode: React.FC<{ ep: number; title: string; children: React.ReactNode; seconds: number; cold?: boolean }> = ({ ep, title, children, seconds, cold }) => {
   const { s } = useT();
+  const { fps } = useVideoConfig();
+  const { lang, tr, ui } = useTr();
+  const voice = VOICE[`pip-ep${ep}${lang === "ar" ? "-ar" : ""}`] ?? [];
   return (
     <AbsoluteFill>
       <Fonts />
@@ -205,7 +233,9 @@ export const Episode: React.FC<{ ep: number; title: string; children: React.Reac
       <Footer />
       {!cold && <Sting ep={ep} title={title} />}
       {/* Cold opens start mid-action at full volume, and don't fade out, so the loop back to frame 0 is seamless. */}
-      <Audio src={staticFile("sfx/codeit-bed.mp3")} volume={cold ? 0.3 : (f) => interpolate(f, [0, 20, seconds * 30 - 30, seconds * 30], [0, 0.32, 0.32, 0], { extrapolateRight: "clamp" })} />
+      {voice.length > 0 && <div dir={lang === "ar" ? "rtl" : "ltr"} style={{ position: "absolute", left: 0, right: 0, top: 112, textAlign: "center", fontFamily: q(ui), fontSize: 22, color: ORANGE_T, opacity: 0.8 }}>{tr("AI voice")}</div>}
+      {voice.map((v) => <Sequence key={v.src} from={Math.round(v.at * fps)} layout="none"><Audio src={staticFile(v.src)} volume={1} /></Sequence>)}
+      <Audio src={staticFile("sfx/codeit-bed.mp3")} volume={voice.length ? 0.14 : cold ? 0.3 : (f) => interpolate(f, [0, 20, seconds * 30 - 30, seconds * 30], [0, 0.32, 0.32, 0], { extrapolateRight: "clamp" })} />
       {!cold && <Sfx at={0} src="whoosh.wav" volume={0.6} />}
       {!cold && <Sfx at={0.2} src="thump.wav" />}
     </AbsoluteFill>

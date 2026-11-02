@@ -8,13 +8,21 @@ export const FONTS = `
 @font-face { font-family: "Nunito"; src: url(${staticFile("fonts/Nunito.ttf")}); font-weight: 200 1000; }
 @font-face { font-family: "JetBrains Mono"; src: url(${staticFile("fonts/JetBrainsMono.ttf")}); font-weight: 100 800; }
 `;
-const FACES: [string, string, string?][] = [["Inter Light", "fonts/Inter-Light.otf"], ["Inter SemiBold", "fonts/Inter-SemiBold.otf"], ["Baloo 2", "fonts/Baloo2.ttf", "400 800"], ["Nunito", "fonts/Nunito.ttf", "200 1000"], ["JetBrains Mono", "fonts/JetBrainsMono.ttf", "100 800"]];
+const AR = "U+0600-06FF, U+0750-077F, U+0870-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200C-200E, U+2010-2011, U+204F, U+2E41";
+const FACES: [string, string, string?, string?][] = [
+  ["Inter Light", "fonts/Inter-Light.otf"], ["Inter SemiBold", "fonts/Inter-SemiBold.otf"], ["Baloo 2", "fonts/Baloo2.ttf", "400 800"], ["Nunito", "fonts/Nunito.ttf", "200 1000"], ["JetBrains Mono", "fonts/JetBrainsMono.ttf", "100 800"], ["Outfit Bold", "fonts/Outfit-Bold.ttf"], ["Outfit Regular", "fonts/Outfit-Regular.ttf"],
+  // IBM Plex Sans Arabic (SIL Open Font License, see fonts/PlexArabic-OFL.txt), for the Arabic cuts.
+  ["IBM Plex Sans Arabic", "fonts/PlexArabic-400-arabic.woff2", undefined, AR], ["IBM Plex Sans Arabic", "fonts/PlexArabic-400-latin.woff2"],
+  ["IBM Plex Sans Arabic SemiBold", "fonts/PlexArabic-600-arabic.woff2", undefined, AR], ["IBM Plex Sans Arabic SemiBold", "fonts/PlexArabic-600-latin.woff2"],
+  // Baloo Bhaijaan 2 (SIL Open Font License, see fonts/BalooBhaijaan2-OFL.txt), the Arabic sibling of Baloo 2, for Pip.
+  ["Baloo Bhaijaan 2", "fonts/BalooBhaijaan2-700-arabic.woff2", "700", AR], ["Baloo Bhaijaan 2", "fonts/BalooBhaijaan2-700-latin.woff2", "700"],
+];
 let fontsLoaded: Promise<unknown> | null = null;
 /** Loads the bundled fonts before the first frame is captured. */
 export const Fonts: React.FC = () => {
   const [handle] = React.useState(() => delayRender("fonts"));
   React.useEffect(() => {
-    fontsLoaded ??= Promise.all(FACES.map(([family, file, weight]) => new FontFace(family, `url(${staticFile(file)})`, weight ? { weight } : {}).load().then((f) => document.fonts.add(f))));
+    fontsLoaded ??= Promise.all(FACES.map(([family, file, weight, unicodeRange]) => new FontFace(family, `url(${staticFile(file)})`, { ...(weight ? { weight } : {}), ...(unicodeRange ? { unicodeRange } : {}) }).load().then((f) => document.fonts.add(f))));
     fontsLoaded.then(() => continueRender(handle), () => continueRender(handle));
   }, [handle]);
   return null;
