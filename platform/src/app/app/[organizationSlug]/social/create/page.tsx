@@ -61,7 +61,12 @@ export default async function SocialCreatePage({ params, searchParams }: { param
       <PageHeader
         title="Content Studio"
         description="Describe the post once. LYNQ drafts a version per platform in the brand's voice — nothing is published without approval."
-        actions={<SocialBrandSwitcher brands={brands.map((b) => ({ id: b.id, name: b.name }))} selectedBrandId={selection.selectedBrandId} allowAll={false} />}
+        actions={
+          <div className="flex flex-wrap items-center gap-3">
+            <Link href={`/app/${organizationSlug}/social/create/voiceover`} className="lynq-transition inline-flex min-h-11 items-center rounded-sm border border-border px-4 text-xs font-medium uppercase tracking-[0.08em] text-foreground hover:border-border-strong">Voiceover</Link>
+            <SocialBrandSwitcher brands={brands.map((b) => ({ id: b.id, name: b.name }))} selectedBrandId={selection.selectedBrandId} allowAll={false} />
+          </div>
+        }
       />
 
       {!brand ? (
