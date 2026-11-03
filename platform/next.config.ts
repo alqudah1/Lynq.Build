@@ -4,6 +4,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   serverExternalPackages: ["ffmpeg-static"],
   outputFileTracingIncludes: {
+    // Rendered reels (about 25 MB) only travel with the two places that load a week plan: the cron and the calendar's "Load plan" action.
+    "/api/internal/runtime/cron": ["./src/assets/reels/**/*"],
+    "/app/*/social/calendar": ["./src/assets/reels/**/*"],
     "/*": [
       "./node_modules/ffmpeg-static/ffmpeg",
       "./public/content-studio/codeitlearn/**/*",
@@ -11,7 +14,6 @@ const nextConfig: NextConfig = {
       // Story cards and highlight covers render text through librsvg; the fonts must travel with the function.
       "./src/assets/fonts/**/*",
       "./src/assets/cases/**/*",
-      "./src/assets/reels/**/*",
       // CodeIt story cards composite the brand logo.
       "./src/assets/brand/**/*",
     ],
