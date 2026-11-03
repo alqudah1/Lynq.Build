@@ -1,0 +1,61 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>10 first games · CodeIt</title><meta name="description" content="Ten first games a kid can build this week, each with one sentence to start, the coding idea it teaches, and one thing to change."><link rel="canonical" href="https://lynq.build/games"><meta name="robots" content="index,follow"><meta property="og:title" content="10 first games your kid can build this week"><meta property="og:description" content="One sentence to start each game, the coding idea it teaches, and one thing to change. Free, from CodeIt."><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+:root{--bg:#fff8ec;--ink:#35220e;--muted:#6b5440;--orange:#ff7a00;--orange-t:#d46500;--card:#ffffff;--line:#f1dfc6;--code:#2a1d12;--mint:#3ddc97}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Nunito,Arial,sans-serif;line-height:1.55}
+.wrap{width:min(780px,100% - 32px);margin:auto}
+header.top{padding:34px 0 10px;display:flex;justify-content:space-between;align-items:center}
+.brand{font-family:'Baloo 2';font-weight:800;font-size:28px;color:var(--orange)}
+.site{font-weight:800;color:var(--orange-t);text-decoration:none}
+h1{font-family:'Baloo 2';font-weight:800;font-size:clamp(42px,8vw,70px);line-height:1;margin:22px 0 12px;letter-spacing:-1px}
+h1 span{color:var(--orange)}
+.lede{font-size:19px;color:var(--muted);max-width:640px}
+.how{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:26px 0 10px}
+.how div{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:14px 16px;font-size:15px}
+.how b{display:block;font-family:'Baloo 2';font-size:20px;color:var(--orange-t)}
+.game{background:var(--card);border:2px solid var(--line);border-radius:26px;padding:22px 24px;margin:20px 0;break-inside:avoid}
+.game .n{font-family:'Baloo 2';font-weight:800;font-size:16px;color:#fff;background:var(--orange);border-radius:999px;padding:2px 14px;display:inline-block}
+.game h2{font-family:'Baloo 2';font-weight:800;font-size:30px;margin:8px 0 4px;line-height:1.1}
+.age{font-size:14px;color:var(--muted)}
+.row{display:grid;grid-template-columns:130px 1fr;gap:10px;margin-top:12px;font-size:16px}
+.row dt{font-weight:800;color:var(--orange-t);font-size:13px;letter-spacing:1px;text-transform:uppercase;padding-top:3px}
+.row dd{margin:0}
+.say{background:#fff3e2;border-radius:14px;padding:10px 14px;font-style:italic}
+code,pre{font-family:'JetBrains Mono',monospace}
+pre{background:var(--code);color:var(--mint);border-radius:14px;padding:12px 16px;font-size:15px;margin:6px 0 0;overflow-x:auto}
+.cta{background:linear-gradient(135deg,#ff9a3c,#ff6a00);color:#fff;border-radius:26px;padding:28px;margin:30px 0}
+.cta h2{font-family:'Baloo 2';font-weight:800;font-size:34px;margin:0}
+.cta p{margin:8px 0 16px;font-size:17px}
+.cta a{display:inline-block;background:#fff;color:var(--orange-t);font-weight:800;text-decoration:none;padding:12px 22px;border-radius:999px}
+footer{padding:20px 0 40px;color:var(--muted);font-size:14px}
+@media(max-width:620px){.how{grid-template-columns:1fr}.row{grid-template-columns:1fr;gap:2px}}
+@media print{.cta a{border:2px solid var(--orange-t)}body{background:#fff}}
+</style></head><body><div class="wrap">
+<header class="top"><span class="brand">CodeIt</span><a class="site" href="https://codeitlearn.com">codeitlearn.com</a></header>
+<h1>10 first games your kid can build <span>this week</span></h1>
+<p class="lede">Every game here starts with one sentence. Your kid says what they want to build, gets a working first version, then changes one thing in the code and sees what happens. That last part is where the learning is.</p>
+<div class="how"><div><b>1. Say it</b>Type the sentence into CodeIt, or change it to their own idea.</div><div><b>2. Play it</b>Play the first version. Something will be a bit off. Good.</div><div><b>3. Change one thing</b>Do the change below and ask: what happened, and why?</div></div>
+
+<section class="game"><span class="n">1</span><h2>Rocket dodge</h2><p class="age">Ages 6 and up</p><dl class="row"><dt>Say it</dt><dd class="say">"A rocket that dodges falling asteroids."</dd><dt>They learn</dt><dd>Variables and lives: what <code>lives = 3</code> means.</dd><dt>Change one thing</dt><dd>Set lives to 0. Why is it game over on the first hit?<pre>lives = 3</pre></dd></dl></section>
+
+<section class="game"><span class="n">2</span><h2>Guess my number</h2><p class="age">Ages 7 and up</p><dl class="row"><dt>Say it</dt><dd class="say">"The computer picks a number from 1 to 20 and tells me higher or lower."</dd><dt>They learn</dt><dd>Random numbers, <code>input</code>, and <code>if</code> / <code>else</code>.</dd><dt>Change one thing</dt><dd>Make it 1 to 100. How many guesses does it take now?</dd></dl></section>
+
+<section class="game"><span class="n">3</span><h2>Rock, paper, scissors</h2><p class="age">Ages 6 and up</p><dl class="row"><dt>Say it</dt><dd class="say">"Rock, paper, scissors against the computer, first to 3 wins."</dd><dt>They learn</dt><dd>Comparing choices and keeping score.</dd><dt>Change one thing</dt><dd>Make it first to 5. Which line did you change?</dd></dl></section>
+
+<section class="game"><span class="n">4</span><h2>Star catcher</h2><p class="age">Ages 7 and up</p><dl class="row"><dt>Say it</dt><dd class="say">"Catch falling stars with a basket, one point per star."</dd><dt>They learn</dt><dd>Adding to a score each time.</dd><dt>Change one thing</dt><dd>Make each star worth 5. What does <code>+ 5</code> do?<pre>score = score + 1</pre></dd></dl></section>
+
+<section class="game"><span class="n">5</span><h2>Family quiz</h2><p class="age">Ages 8 and up</p><dl class="row"><dt>Say it</dt><dd class="say">"A quiz about my family with 5 questions and a score at the end."</dd><dt>They learn</dt><dd>Text, questions and answers, counting right answers.</dd><dt>Change one thing</dt><dd>Add a sixth question. Does the score still work?</dd></dl></section>
+
+<section class="game"><span class="n">6</span><h2>Dice race</h2><p class="age">Ages 7 and up</p><dl class="row"><dt>Say it</dt><dd class="say">"Two players roll a dice, first to 20 wins."</dd><dt>They learn</dt><dd>Loops that keep going until something happens.</dd><dt>Change one thing</dt><dd>Race to 50 instead. How many more rolls does it take?</dd></dl></section>
+
+<section class="game"><span class="n">7</span><h2>Virtual pet</h2><p class="age">Ages 8 and up</p><dl class="row"><dt>Say it</dt><dd class="say">"A pet that gets hungry over time, and I can feed it or play with it."</dd><dt>They learn</dt><dd>Variables that change over time, and functions like <code>feed()</code>.</dd><dt>Change one thing</dt><dd>Make it get hungry twice as fast. Which number did that?</dd></dl></section>
+
+<section class="game"><span class="n">8</span><h2>Maze escape</h2><p class="age">Ages 9 and up</p><dl class="row"><dt>Say it</dt><dd class="say">"Move a player through a maze with the arrow keys to reach the door."</dd><dt>They learn</dt><dd>Positions on a grid: <code>x</code> and <code>y</code>.</dd><dt>Change one thing</dt><dd>Move the door somewhere else. Can they still get there?</dd></dl></section>
+
+<section class="game"><span class="n">9</span><h2>Typing race</h2><p class="age">Ages 9 and up</p><dl class="row"><dt>Say it</dt><dd class="say">"Show a word, time how fast I type it, and show my best time."</dd><dt>They learn</dt><dd>Timing, comparing text, and remembering a best score.</dd><dt>Change one thing</dt><dd>Use longer words. Does the best time get worse?</dd></dl></section>
+
+<section class="game"><span class="n">10</span><h2>Choose your path</h2><p class="age">Ages 8 and up</p><dl class="row"><dt>Say it</dt><dd class="say">"A story where I pick left or right and it ends differently."</dd><dt>They learn</dt><dd>Branches with <code>if</code>, <code>elif</code> and <code>else</code>.</dd><dt>Change one thing</dt><dd>Add a third choice. Where does the new branch go?</dd></dl></section>
+
+<section class="cta"><h2>Build the first one free</h2><p>CodeIt turns your kid's sentence into a working game, then shows them the Python behind it and asks a question about their own code. Ages 5 to 18, free to start.</p><a href="https://codeitlearn.com">codeitlearn.com</a></section>
+<footer>Made by CodeIt, built with LYNQ. Younger kids can do these with a grown-up reading along. Ages are a rough guide, not a rule.</footer>
+</div></body></html>

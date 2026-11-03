@@ -1,0 +1,90 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>The 4-fix checklist · LYNQ</title><meta name="description" content="Four fixes that bring local customers back: the right hours, a site that opens fast, answered reviews, and a way to order without calling. About 10 minutes each."><link rel="canonical" href="https://lynq.build/fix"><meta name="robots" content="index,follow"><meta property="og:title" content="The 4-fix checklist for local shops"><meta property="og:description" content="Four fixes, about 10 minutes each. Free, from LYNQ."><meta property="og:image" content="https://lynq.build/og-image.png"><link rel="icon" href="/favicon.svg"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+:root{--bg:#0a0c0b;--fg:#f2f4eb;--muted:#c3c9bd;--subtle:#9ba48f;--line:#30362d;--card:#121512;--lime:#d5fd71}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:Outfit,Arial,sans-serif;line-height:1.6}
+a{color:var(--lime);text-underline-offset:4px}a:focus-visible,input:focus-visible+span{outline:3px solid var(--lime);outline-offset:4px}
+.wrap{width:min(760px,100% - 32px);margin:auto}
+nav{display:flex;justify-content:space-between;align-items:center;padding:24px 0;border-bottom:1px solid var(--line)}nav a{color:inherit}
+.logo{font-size:22px;font-weight:600;letter-spacing:4px;text-decoration:none}.navlinks{display:flex;gap:20px;font-size:14px}
+.eyebrow{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--lime)}
+h1{font-size:clamp(40px,7vw,68px);letter-spacing:-2px;line-height:1.04;font-weight:400;margin:18px 0 14px}
+.lede{font-size:19px;color:var(--muted);max-width:620px}
+.meta{display:flex;gap:10px;flex-wrap:wrap;margin:22px 0 8px}.pill{border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:13px;color:var(--subtle)}
+main{padding:48px 0 20px}
+.fix{border:1px solid var(--line);background:var(--card);border-radius:22px;padding:26px 26px 18px;margin:26px 0;break-inside:avoid}
+.fix header{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
+.num{font-family:ui-monospace,Menlo,monospace;font-size:14px;color:var(--lime);letter-spacing:2px}
+h2{font-size:28px;font-weight:500;letter-spacing:-.6px;margin:0}
+.why{color:var(--muted);margin:10px 0 14px}
+ul.steps{list-style:none;padding:0;margin:0}
+ul.steps li{border-top:1px solid var(--line);padding:12px 0}
+label{display:flex;gap:14px;align-items:flex-start;cursor:pointer;color:var(--fg)}
+label input{position:absolute;opacity:0}
+label span.box{flex:none;width:24px;height:24px;border-radius:7px;border:2px solid #4a5244;margin-top:2px;display:inline-flex;align-items:center;justify-content:center}
+label input:checked+span.box{background:var(--lime);border-color:var(--lime)}label input:checked+span.box::after{content:"✓";color:#0a0c0b;font-weight:700;font-size:15px}
+label input:checked~.t{color:var(--subtle);text-decoration:line-through;text-decoration-color:#4a5244}
+.t small{display:block;color:var(--subtle);font-size:14px;margin-top:2px;text-decoration:none}
+.say{margin:14px 0 6px;padding:14px 18px;border-left:3px solid var(--lime);background:#171b16;border-radius:10px;color:var(--muted);font-size:16px}
+.say b{color:var(--fg);font-weight:500}
+.progress{position:sticky;top:0;z-index:2;background:rgba(10,12,11,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);padding:10px 0}
+.bar{height:6px;border-radius:6px;background:var(--line);overflow:hidden}.bar i{display:block;height:100%;width:0;background:var(--lime);transition:width .3s}
+.progress p{margin:6px 0 0;font-size:13px;color:var(--subtle)}
+.cta{border-radius:22px;padding:30px;margin:34px 0;background:var(--lime);color:#0a0c0b}.cta h2{color:#0a0c0b}.cta p{color:#1f2618;margin:10px 0 18px}
+.cta a{display:inline-block;background:#0a0c0b;color:var(--lime);text-decoration:none;padding:14px 24px;border-radius:999px;font-weight:500}
+footer{padding:28px 0 42px;border-top:1px solid var(--line);margin-top:30px;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;font-size:14px;color:#aab39f}footer a{color:inherit}
+@media print{.progress,nav .navlinks,.noprint{display:none}body{background:#fff;color:#111}.fix{background:#fff;border-color:#ccc}.why,.say,.t small,.lede{color:#333}.say{background:#f4f4ef}h1,h2{color:#111}.cta{border:2px solid #111;background:#fff}.cta a{background:#111;color:#fff}label,.t,nav a{color:#111}.num,.eyebrow,a{color:#4d6b00}label span.box{border-color:#888}}
+</style></head><body>
+<div class="progress noprint" aria-hidden="true"><div class="wrap"><div class="bar"><i id="bar"></i></div><p id="count">0 of 13 done</p></div></div>
+<div class="wrap"><nav aria-label="Main navigation"><a class="logo" href="/" aria-label="LYNQ home">LYNQ</a><div class="navlinks"><a href="/portfolio">Work</a><a href="/office">Office</a><a href="/book">Contact</a></div></nav>
+<main>
+<span class="eyebrow">Free checklist</span>
+<h1>The 4-fix checklist</h1>
+<p class="lede">Most local shops don't lose customers to a competitor. They lose them online, before anyone walks in: wrong hours, a slow site, a bad review nobody answered, a phone that keeps ringing. Four fixes, about 10 minutes each. Tick them off as you go.</p>
+<div class="meta"><span class="pill">4 fixes</span><span class="pill">About 40 minutes</span><span class="pill">Free tools only</span></div>
+
+<section class="fix" id="hours"><header><span class="num">FIX 01</span><h2>The real hours, everywhere</h2></header>
+<p class="why">If Google says you're closed, people believe Google. Your hours have to match on every app a customer might check.</p>
+<ul class="steps">
+<li><label><input type="checkbox"><span class="box"></span><span class="t">Fix your hours in Google Business Profile<small>Search your shop on Google, tap Edit profile, then Hours. Set each day, including the day you close early.</small></span></label></li>
+<li><label><input type="checkbox"><span class="box"></span><span class="t">Add holiday hours now, not the night before<small>Edit profile, then Special hours. Do the next few holidays in one go.</small></span></label></li>
+<li><label><input type="checkbox"><span class="box"></span><span class="t">Make every other place match<small>Your website, Instagram and Facebook pages, and Apple Maps (through Apple Business Connect).</small></span></label></li>
+<li><label><input type="checkbox"><span class="box"></span><span class="t">Check it like a customer<small>On your phone with Wi-Fi off, search your shop's name. Does it say open right now?</small></span></label></li>
+</ul></section>
+
+<section class="fix" id="site"><header><span class="num">FIX 02</span><h2>A site that opens in a second</h2></header>
+<p class="why">People look you up on their phone, often standing outside. If the page is slow or the menu is hard to find, they leave before it loads.</p>
+<ul class="steps">
+<li><label><input type="checkbox"><span class="box"></span><span class="t">Time it on your phone<small>Wi-Fi off, open your site, count. You should see what you sell without waiting or zooming.</small></span></label></li>
+<li><label><input type="checkbox"><span class="box"></span><span class="t">Run the free Google test<small><a href="https://pagespeed.web.dev" rel="noopener">pagespeed.web.dev</a>. Paste your address and look at the mobile score.</small></span></label></li>
+<li><label><input type="checkbox"><span class="box"></span><span class="t">Put the four answers at the top<small>What you sell, your hours, where you are, and one button: call, book or order.</small></span></label></li>
+</ul></section>
+
+<section class="fix" id="reviews"><header><span class="num">FIX 03</span><h2>Answer every review</h2></header>
+<p class="why">New customers read the bad reviews first, and they read your reply. One calm answer can do more than ten good reviews.</p>
+<ul class="steps">
+<li><label><input type="checkbox"><span class="box"></span><span class="t">Reply to the worst review first<small>Thank them, own what went wrong, say what you changed, and invite them back. No arguing, and no details about the customer.</small></span></label></li>
+<li><label><input type="checkbox"><span class="box"></span><span class="t">Then reply to every other review, good ones too<small>A short thank you, in your own words.</small></span></label></li>
+<li><label><input type="checkbox"><span class="box"></span><span class="t">Ask your happy customers<small>In Google Business Profile, tap Ask for reviews to get your link. Print it as a QR code by the till.</small></span></label></li>
+</ul>
+<p class="say"><b>A reply you can adapt:</b> "Thanks for telling us, Dana. Waiting that long isn't okay, and that's on us. We've changed how we handle the morning rush. Come back and ask for me, your coffee is on us."</p>
+<p class="why">Never buy reviews or only ask people you know will be happy. It's against Google's rules and it can get reviews removed.</p></section>
+
+<section class="fix" id="order"><header><span class="num">FIX 04</span><h2>Let them order or book without calling</h2></header>
+<p class="why">At your busiest hour, every call you can't pick up is an order that goes somewhere else.</p>
+<ul class="steps">
+<li><label><input type="checkbox"><span class="box"></span><span class="t">Pick one way to order or book online<small>An ordering page, a booking link, or a WhatsApp or Instagram message button. One is enough.</small></span></label></li>
+<li><label><input type="checkbox"><span class="box"></span><span class="t">Put that link where people already look<small>Your Google profile (the Order or Book link), the top of your website, and your Instagram bio.</small></span></label></li>
+<li><label><input type="checkbox"><span class="box"></span><span class="t">Catch the calls you miss<small>Turn on a voicemail or text-back message that points callers to the link.</small></span></label></li>
+</ul></section>
+
+<section class="cta"><h2>Want us to do all four for you?</h2><p>LYNQ fixes this for local businesses in Toronto and Amman: your Google profile, a fast site, review replies and online orders, set up and looked after.</p><a href="/book">Talk to us</a></section>
+<p class="meta">Made by LYNQ. The bakery in our videos, Sami's, is made up. The fixes are real.</p>
+</main>
+<footer><span>© 2026 LYNQ · Mustafa Alqudah</span><span><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="mailto:mustafa@lynq.build">mustafa@lynq.build</a></span></footer></div>
+<script>
+(function(){var boxes=[].slice.call(document.querySelectorAll('ul.steps input')),key='lynq-fix-v1',saved=[];try{saved=JSON.parse(localStorage.getItem(key)||'[]')}catch(e){}
+boxes.forEach(function(b,i){b.checked=!!saved[i];b.addEventListener('change',update)});
+function update(){var done=boxes.filter(function(b){return b.checked}).length;document.getElementById('bar').style.width=(done/boxes.length*100)+'%';document.getElementById('count').textContent=done+' of '+boxes.length+' done';try{localStorage.setItem(key,JSON.stringify(boxes.map(function(b){return b.checked})))}catch(e){}}
+update()})();
+</script></body></html>
