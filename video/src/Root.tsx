@@ -8,7 +8,7 @@ import { PipEp1, PipEp1Ar, PipEp2, PipEp2Ar, PipEp3, PipEp3Ar, PipEp4, PipEp4Ar,
 import { LYNQ_STORY, LYNQ_STORY_SECONDS } from "./LynqStory";
 import { PipHook1 } from "./PipHook";
 import { AdamEp1 } from "./AdamStory";
-import { LynqCrm } from "./LynqServices";
+import { LynqCrm, LynqMenu } from "./LynqServices";
 import { GuessOutput1, PovFirstTry, PythonCan, Speedrun } from "./CodeItFun";
 import { PovClosed, PovHungry, RateReply, RedFlags } from "./LynqFun";
 import { ShowcaseBarber, ShowcaseCafe, ShowcaseGym } from "./Showcase";
@@ -34,6 +34,7 @@ export const Root: React.FC = () => (
     {C("pip-hook-1", PipHook1, 10)}
     {C("adam-ep1", AdamEp1, 16)}
     {C("lynq-crm", LynqCrm, 13)}
+    {C("lynq-menu", LynqMenu, 16.5)}
     {C("codeit-guess-1", GuessOutput1, 11)}
     {C("codeit-python-can", PythonCan, 10)}
     {C("codeit-pov-first-try", PovFirstTry, 9)}
