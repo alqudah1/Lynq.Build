@@ -227,7 +227,7 @@ export const Speedrun: React.FC = () => {
         </>
       )}
       <GameIn at={2.2} out={4.9} scale={0.82} top={400}>{(t) => <Game t={t + 1} hearts={3} />}</GameIn>
-      {s >= 2.2 && s < 4.9 && <Caption text="Game: done." at={2.3} accent={["done"]} top={1580} />}
+      {s >= 2.2 && s < 4.9 && <Caption text="Game: done." at={2.3} accent={["done"]} top={1440} />}
       {s >= 4.9 && s < 7.0 && (
         <>
           <CodeWindow at={4.9} top={480} lines={["lives = 3", "if hit:", "    lives -= 1"]} highlight={0} highlightAt={5.2} edit={{ line: 0, from: "3", to: "9", at: 5.6 }} />
@@ -236,11 +236,11 @@ export const Speedrun: React.FC = () => {
         </>
       )}
       <GameIn at={7.0} out={10.5} scale={0.82} top={400}>{(t) => <Game t={t + 0.2} hearts={9} hitAt={1.2} />}</GameIn>
-      {s >= 7.0 && s < stop && <Caption text="9 lives. Ha." at={7.1} accent={["9"]} top={1580} />}
+      {s >= 7.0 && s < stop && <Caption text="9 lives. Ha." at={7.1} accent={["9"]} top={1440} />}
       {s >= stop && (
         <>
           <div style={{ position: "absolute", left: 0, right: 0, top: 1000, textAlign: "center", fontFamily: q(BALOO), fontWeight: 800, fontSize: 150, color: "#22b878", textShadow: "0 8px 0 rgba(0,0,0,0.15)", transform: `rotate(-6deg) scale(${Math.min(1, 0.5 + (s - stop) * 3)})` }}>NEW RECORD</div>
-          <Tag text="Can you beat 9.31? Comment your idea" at={stop + 0.15} top={1580} />
+          <Tag text="Can you beat 9.31? Comment your idea" at={stop + 0.15} top={1440} />
         </>
       )}
       <Clicks at={0} n={10} every={0.09} />

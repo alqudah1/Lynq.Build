@@ -67,7 +67,7 @@ export const LynqStory1: React.FC<P> = ({ lang = "en" }) => {
         <>
           <Bakery pose="worried" sign="open" top={170} />
           <Say text={l.e1d} at={10.2} lang={lang} top={250} accent={ac} size={88} />
-          <div dir={lang === "ar" ? "rtl" : "ltr"} style={{ position: "absolute", left: 0, right: 0, top: 1470, textAlign: "center", fontFamily: `'${fontFor(lang)}'`, fontSize: 34, color: MU }}>{tx.customers}: <span style={{ fontFamily: "'Inter SemiBold'", fontSize: 60, color: WH }}>0</span></div>
+          <div dir={lang === "ar" ? "rtl" : "ltr"} style={{ position: "absolute", left: 0, right: 0, top: 1470, textAlign: "center", fontFamily: `'${fontFor(lang)}'`, fontSize: 34, color: MU }}>{tx.customers}: <span style={{ fontFamily: "'Outfit Bold'", fontSize: 60, color: WH }}>0</span></div>
           <Tag text={l.e1tag} at={12.0} top={1560} lang={lang} /><Kw text={l.kw} at={12.7} top={1680} lang={lang} />
         </>
       )}
@@ -153,7 +153,7 @@ const Climb: React.FC<{ from: number; lang: Lang; tx: Record<string, string> }> 
         <div dir={lang === "ar" ? "rtl" : "ltr"} style={{ fontFamily: `'${fontFor(lang, "bold")}'`, fontSize: 24, color: BK, marginTop: 8 }}>{tx.qr}</div>
       </div>
       <div style={{ position: "absolute", right: 110, top: 1410, textAlign: "center" }}>
-        <div style={{ fontFamily: "'Inter SemiBold'", fontSize: 130, color: WH, lineHeight: 1 }}>{r.toFixed(1)}</div>
+        <div style={{ fontFamily: "'Outfit Bold'", fontSize: 130, color: WH, lineHeight: 1 }}>{r.toFixed(1)}</div>
         <div style={{ fontSize: 46, color: "#fbbf24", letterSpacing: 4 }}>{"★".repeat(Math.round(r))}<span style={{ color: "#3a3a40" }}>{"★".repeat(5 - Math.round(r))}</span></div>
       </div>
     </>
@@ -183,7 +183,7 @@ const Checklist: React.FC<{ at: number; items: string[]; lang: Lang }> = ({ at, 
       const p = useSpringAt(at + i * 0.45, { damping: 12, stiffness: 200 });
       return (
         <div key={it} style={{ display: "flex", alignItems: "center", gap: 34, marginBottom: 46, opacity: Math.min(1, p * 1.4), transform: `translateX(${(1 - p) * (lang === "ar" ? 80 : -80)}px)` }}>
-          <div style={{ width: 96, height: 96, borderRadius: 48, background: LI, color: BK, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 58, fontFamily: "'Inter SemiBold'" }}>✓</div>
+          <div style={{ width: 96, height: 96, borderRadius: 48, background: LI, color: BK, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 58, fontFamily: "'Outfit Bold'" }}>✓</div>
           <div style={{ fontFamily: `'${fontFor(lang)}'`, fontSize: 76, color: WH, letterSpacing: lang === "ar" ? 0 : -2 }}>{it}</div>
         </div>
       );

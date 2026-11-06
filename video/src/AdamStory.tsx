@@ -199,7 +199,7 @@ export const AdamEp1: React.FC = () => {
           <Bubble text="…so can I?" at={11.9} x={120} y={820} w={420} size={70} />
           <Mom x={860} y={1640} size={1.0} pose="worried" />
           {s >= 13.6 && (
-            <div style={{ position: "absolute", left: 0, right: 0, top: 1660, display: "flex", justifyContent: "center", transform: `scale(${Math.min(1, (s - 13.6) * 4)})` }}>
+            <div style={{ position: "absolute", left: 0, right: 0, top: 1450, display: "flex", justifyContent: "center", transform: `scale(${Math.min(1, (s - 13.6) * 4)})` }}>
               <div style={{ padding: "22px 46px", borderRadius: 60, background: "linear-gradient(135deg,#ff9a3c,#ff6a00)", fontFamily: q(NUNITO), fontWeight: 900, fontSize: 40, color: "#fff" }}>Parents: what would you say? Ep 2 tomorrow</div>
             </div>
           )}

@@ -9,10 +9,10 @@ import { Fonts, Sfx, ramp, useSpringAt, useT } from "./kit";
  * frame carries a "made-up shop" tag so nobody takes it for a real case study.
  */
 
-export const BK = "#0b0b0c", WH = "#ffffff", LI = "#c7ff3d", MU = "#8a8a8f", LN = "#2a2a2e", CARD = "#141416", RED = "#ff5a5f", GREEN = "#4ade80", BREAD = "#d9a25b";
+export const BK = "#0a0c0b", WH = "#f2f4eb", LI = "#d5fd71", MU = "#9ba48f", LN = "#30362d", CARD = "#121512", RED = "#ff5a5f", GREEN = "#4ade80", BREAD = "#d9a25b";
 export type Lang = "en" | "ar";
 const q = (f: string) => `'${f}'`;
-export const fontFor = (lang: Lang, weight: "light" | "bold" = "light") => (lang === "ar" ? (weight === "bold" ? "IBM Plex Sans Arabic SemiBold" : "IBM Plex Sans Arabic") : weight === "bold" ? "Inter SemiBold" : "Inter Light");
+export const fontFor = (lang: Lang, weight: "light" | "bold" = "light") => (lang === "ar" ? (weight === "bold" ? "IBM Plex Sans Arabic SemiBold" : "IBM Plex Sans Arabic") : weight === "bold" ? "Outfit Regular" : "Outfit Regular");
 
 export const Svg: React.FC<{ w: number; h: number; vb: string; html: string; style?: React.CSSProperties }> = ({ w, h, vb, html, style }) => (
   <svg width={w} height={h} viewBox={vb} style={{ position: "absolute", overflow: "visible", ...style }} dangerouslySetInnerHTML={{ __html: html }} />
@@ -78,7 +78,7 @@ export const Bakery: React.FC<{ pose?: "neutral" | "worried" | "happy" | "phone"
       <Svg w={1080} h={1920} vb="0 0 1080 1920" html={html} style={{ left: 0, top: 0 }} />
       <Sign at={0} state={sign} x={790} y={330} />
       <Sami x={540} y={1330} size={1.05} pose={pose} bob={pose === "happy" ? Math.abs(Math.sin(s * 5)) * 14 : 0} />
-      <div style={{ position: "absolute", left: 60, right: 60, top: 1240, height: 260, borderRadius: 30, background: "#1a1a1d", boxShadow: "0 -20px 60px rgba(0,0,0,0.5)", borderTop: `6px solid ${LI}` }} />
+      <div style={{ position: "absolute", left: 60, right: 60, top: 1240, height: 260, borderRadius: 30, background: "#161a15", boxShadow: "0 -20px 60px rgba(0,0,0,0.5)", borderTop: `6px solid ${LI}` }} />
       {children}
     </div>
   );
@@ -92,7 +92,7 @@ export const Sign: React.FC<{ at: number; state: "open" | "closed"; x: number; y
   return (
     <div style={{ position: "absolute", left: x, top: y, transform: `rotate(${sway}deg)`, transformOrigin: "50% -60px" }}>
       <Svg w={240} h={200} vb="0 0 240 200" html={`<path d="M60 0 L120 -60 L180 0" stroke="#55555b" stroke-width="5" fill="none"/>`} style={{ left: 0, top: 0 }} />
-      <div style={{ width: 240, height: 100, borderRadius: 16, background: open ? LI : "#2a2a2e", color: open ? BK : MU, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: q("JetBrains Mono"), fontSize: 46, letterSpacing: 6 }}>{open ? "OPEN" : "CLOSED"}</div>
+      <div style={{ width: 240, height: 100, borderRadius: 16, background: open ? LI : "#262c23", color: open ? BK : MU, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: q("JetBrains Mono"), fontSize: 46, letterSpacing: 6 }}>{open ? "OPEN" : "CLOSED"}</div>
     </div>
   );
 };
@@ -132,7 +132,7 @@ export const MapCard: React.FC<{ status: "closed" | "open" | "editing"; rating?:
         <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 12, color: "#d4d4d8", fontSize: 28 }}><span>{rating.toFixed(1)}</span>{stars(rating)}<span style={{ color: MU }}>({reviews})</span></div>
         <div style={{ marginTop: 18, fontFamily: q(fontFor(lang, "bold")), fontSize: 38, color: isOpen ? GREEN : RED, opacity: isOpen ? 1 : blink }}>{isOpen ? tx.openNow : tx.closedNow}</div>
         <div style={{ display: "flex", gap: 12, marginTop: 26 }}>
-          {[tx.directions, tx.call, tx.website].map((b) => <div key={b} style={{ flex: 1, padding: "18px 0", borderRadius: 24, background: "#2a2a2e", textAlign: "center", color: WH, fontSize: 24 }}>{b}</div>)}
+          {[tx.directions, tx.call, tx.website].map((b) => <div key={b} style={{ flex: 1, padding: "18px 0", borderRadius: 24, background: "#262c23", textAlign: "center", color: WH, fontSize: 24 }}>{b}</div>)}
         </div>
       </div>
     </div>
@@ -168,7 +168,7 @@ export const NewSite: React.FC<{ lang: Lang; tx: Record<string, string>; scrollA
   return (
     <div dir={lang === "ar" ? "rtl" : "ltr"} style={{ position: "absolute", inset: 0, background: "#0f0f11", fontFamily: q(fontFor(lang)), color: WH }}>
       <div style={{ transform: `translateY(${-scroll}px)` }}>
-        <div style={{ height: 520, background: `radial-gradient(80% 70% at 50% 60%, #3a2a17 0%, #141416 75%)`, position: "relative", paddingTop: 120 }}>
+        <div style={{ height: 520, background: `radial-gradient(80% 70% at 50% 60%, #3a2a17 0%, #121512 75%)`, position: "relative", paddingTop: 120 }}>
           <Svg w={540} h={400} vb="0 0 540 400" html={`<ellipse cx="270" cy="270" rx="170" ry="80" fill="${BREAD}"/><path d="M170 255 q25 -25 50 0 m20 0 q25 -25 50 0 m20 0 q25 -25 50 0" stroke="#a8713a" stroke-width="10" fill="none"/>`} style={{ left: 0, top: 40 }} />
           <div style={{ position: "absolute", left: 30, right: 30, bottom: 30, fontFamily: q(fontFor(lang, "bold")), fontSize: 52 }}>{tx.shop}</div>
         </div>
@@ -176,7 +176,7 @@ export const NewSite: React.FC<{ lang: Lang; tx: Record<string, string>; scrollA
           <div style={{ fontSize: 32, color: "#d4d4d8" }}>{tx.newTag}</div>
           <div style={{ display: "flex", gap: 14, marginTop: 26 }}>
             <div style={{ flex: 1, padding: "26px 0", borderRadius: 26, background: LI, color: BK, textAlign: "center", fontFamily: q(fontFor(lang, "bold")), fontSize: 34, transform: pressed ? "scale(0.94)" : "none" }}>{tx.order}</div>
-            <div style={{ flex: 1, padding: "26px 0", borderRadius: 26, background: "#2a2a2e", textAlign: "center", fontSize: 34 }}>{tx.call}</div>
+            <div style={{ flex: 1, padding: "26px 0", borderRadius: 26, background: "#262c23", textAlign: "center", fontSize: 34 }}>{tx.call}</div>
           </div>
           <div style={{ marginTop: 34, fontFamily: q("JetBrains Mono"), fontSize: 24, letterSpacing: 3, color: MU }}>{tx.hoursLabel}</div>
           <div style={{ marginTop: 10, fontSize: 32 }}>{tx.hours}</div>
@@ -195,7 +195,7 @@ export const Reviews: React.FC<{ rating: number; lang: Lang; tx: Record<string, 
   return (
     <div dir={lang === "ar" ? "rtl" : "ltr"} style={{ padding: "120px 30px 0", fontFamily: q(fontFor(lang)), color: WH }}>
       <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-        <div style={{ fontFamily: q("Inter SemiBold"), fontSize: 120, color: WH }}>{rating.toFixed(1)}</div>
+        <div style={{ fontFamily: q("Outfit Bold"), fontSize: 120, color: WH }}>{rating.toFixed(1)}</div>
         <div>{stars(rating, 44)}<div style={{ color: MU, fontSize: 26 }}>{tx.reviewsCount}</div></div>
       </div>
       <div style={{ marginTop: 30, borderRadius: 30, background: "#1c1c1f", padding: 28 }}>
@@ -259,10 +259,10 @@ export const Walkers: React.FC<{ from: number; n?: number; enter?: boolean; y?: 
 /** The shop from the street: awning, window with Sami inside, the door and its sign. */
 export const Street: React.FC<{ sign: "open" | "closed"; pose?: "neutral" | "worried" | "happy" }> = ({ sign, pose = "neutral" }) => {
   const stripes = Array.from({ length: 9 }, (_, i) => `<rect x="${110 + i * 96}" y="420" width="48" height="110" fill="${i % 2 ? "#1f1f22" : "#e8e6df"}"/>`).join("");
-  const html = `<rect x="80" y="400" width="920" height="900" rx="24" fill="#18181b"/>${stripes}<path d="M110 530 h862 l-30 40 h-802 z" fill="#2a2a2e"/>
+  const html = `<rect x="80" y="400" width="920" height="900" rx="24" fill="#141813"/>${stripes}<path d="M110 530 h862 l-30 40 h-802 z" fill="#262c23"/>
     <rect x="130" y="640" width="500" height="460" rx="18" fill="#1d2230" stroke="#33333a" stroke-width="6"/>
     <rect x="700" y="640" width="240" height="660" rx="16" fill="#26262a" stroke="#33333a" stroke-width="6"/><circle cx="910" cy="980" r="12" fill="${LI}"/>
-    <rect x="0" y="1300" width="1080" height="400" fill="#121214"/><rect x="0" y="1300" width="1080" height="8" fill="#2a2a2e"/>`;
+    <rect x="0" y="1300" width="1080" height="400" fill="#0f120f"/><rect x="0" y="1300" width="1080" height="8" fill="#262c23"/>`;
   return (
     <>
       <Svg w={1080} h={1920} vb="0 0 1080 1920" html={html} style={{ left: 0, top: 0 }} />
@@ -279,7 +279,7 @@ export const StoryFrame: React.FC<{ ep: number; seconds: number; lang: Lang; tx:
   const { fps } = useVideoConfig();
   const voice = VOICE[`lynq-story-${ep}${lang === "ar" ? "-ar" : ""}`] ?? [];
   return (
-    <AbsoluteFill style={{ background: `radial-gradient(120% 80% at 25% 12%, #1d1d21 0%, ${BK} 60%)` }}>
+    <AbsoluteFill style={{ background: `radial-gradient(70% 45% at 50% 28%, #1e221d 0%, ${BK} 72%)` }}>
       <Fonts />
       {children}
       <div dir={lang === "ar" ? "rtl" : "ltr"} style={{ position: "absolute", left: 90, right: 90, top: 110, display: "flex", justifyContent: "space-between", fontFamily: q(lang === "ar" ? fontFor(lang) : "JetBrains Mono"), fontSize: 26, letterSpacing: lang === "ar" ? 0 : 4, color: MU }}>

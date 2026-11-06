@@ -8,7 +8,7 @@ import { Fonts, Sfx, ramp, useSpringAt, useT } from "./kit";
  * business?". No real shops, people, logos or prices.
  */
 
-const BK = "#0b0b0c", WH = "#ffffff", LI = "#c7ff3d", MU = "#8a8a8f";
+const BK = "#0a0c0b", WH = "#f2f4eb", LI = "#d5fd71", MU = "#9ba48f";
 const q = (f: string) => `'${f}'`;
 
 const Svg: React.FC<{ html: string; style?: React.CSSProperties }> = ({ html, style }) => (
@@ -30,7 +30,7 @@ const Line: React.FC<{ text: string; at: number; out?: number; top: number; size
   const p = at < 0 ? 1 : sp;
   if (s < at || (out !== undefined && s > out + 0.2)) return null;
   const gone = out !== undefined ? ramp(s, out, out + 0.2) : 0;
-  return <div style={{ position: "absolute", left: 80, right: 80, top, textAlign: "center", fontFamily: q("Inter Light"), fontSize: size, color, opacity: Math.min(1, p * 1.4) * (1 - gone), transform: `translateY(${(1 - p) * 30}px)` }}>{text}</div>;
+  return <div style={{ position: "absolute", left: 80, right: 80, top, textAlign: "center", fontFamily: q("Outfit Regular"), fontSize: size, color, opacity: Math.min(1, p * 1.4) * (1 - gone), transform: `translateY(${(1 - p) * 30}px)` }}>{text}</div>;
 };
 
 /** The shared end card and the sample tag on every frame. */
@@ -45,9 +45,9 @@ const SampleFrame: React.FC<{ seconds: number; bg: string; accent: string; brand
       {s >= endAt && (
         <AbsoluteFill style={{ background: BK, opacity: end }}>
           <div style={{ position: "absolute", left: 0, right: 0, top: 560, textAlign: "center", fontFamily: q("JetBrains Mono"), fontSize: 30, letterSpacing: 6, color: MU }}>SAMPLE REEL BY LYNQ</div>
-          <div style={{ position: "absolute", left: 80, right: 80, top: 660, textAlign: "center", fontFamily: q("Inter Light"), fontSize: 108, letterSpacing: -3, lineHeight: 1.02, color: WH }}>Want one for your business?</div>
-          <div style={{ position: "absolute", left: 0, right: 0, top: 1040, display: "flex", justifyContent: "center" }}><div style={{ padding: "34px 80px", borderRadius: 70, background: LI, fontFamily: q("Inter SemiBold"), fontSize: 64, color: BK, transform: `scale(${btn})` }}>Comment REEL</div></div>
-          <div style={{ position: "absolute", left: 0, right: 0, top: 1240, textAlign: "center", fontFamily: q("Inter Light"), fontSize: 40, color: MU }}>Made for your shop, in your colours.</div>
+          <div style={{ position: "absolute", left: 80, right: 80, top: 660, textAlign: "center", fontFamily: q("Outfit Regular"), fontSize: 108, letterSpacing: -3, lineHeight: 1.02, color: WH }}>Want one for your business?</div>
+          <div style={{ position: "absolute", left: 0, right: 0, top: 1040, display: "flex", justifyContent: "center" }}><div style={{ padding: "34px 80px", borderRadius: 70, background: LI, fontFamily: q("Outfit Bold"), fontSize: 64, color: BK, transform: `scale(${btn})` }}>Comment REEL</div></div>
+          <div style={{ position: "absolute", left: 0, right: 0, top: 1240, textAlign: "center", fontFamily: q("Outfit Regular"), fontSize: 40, color: MU }}>Made for your shop, in your colours.</div>
         </AbsoluteFill>
       )}
       <div style={{ position: "absolute", left: 0, right: 0, top: 110, display: "flex", justifyContent: "center" }}>
@@ -90,7 +90,7 @@ export const ShowcaseGym: React.FC = () => {
   const { s } = useT();
   const reps = Math.min(12, Math.floor(s * 4.2) + 1);
   const pulse = 1 + Math.max(0, Math.sin(s * Math.PI * 4.2)) * 0.04;
-  const bars = Array.from({ length: 9 }, (_, i) => `<rect x="${90 + i * 104}" y="${1500 - (s < 3.2 ? 140 + ((i * 53 + Math.floor(s * 8) * 37) % 260) : 120)}" width="70" height="${s < 3.2 ? 140 + ((i * 53 + Math.floor(s * 8) * 37) % 260) : 120}" rx="12" fill="${i % 3 === 0 ? "#ff3b30" : "#2a2a2e"}"/>`).join("");
+  const bars = Array.from({ length: 9 }, (_, i) => `<rect x="${90 + i * 104}" y="${1500 - (s < 3.2 ? 140 + ((i * 53 + Math.floor(s * 8) * 37) % 260) : 120)}" width="70" height="${s < 3.2 ? 140 + ((i * 53 + Math.floor(s * 8) * 37) % 260) : 120}" rx="12" fill="${i % 3 === 0 ? "#ff3b30" : "#262c23"}"/>`).join("");
   return (
     <SampleFrame seconds={11} bg="#0e0e10" accent="#ff3b30" brand="IRON 6AM" endAt={7.6}>
       <Svg html={bars} />
