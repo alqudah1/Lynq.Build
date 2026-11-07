@@ -11,6 +11,8 @@ import { AdamEp1 } from "./AdamStory";
 import { LynqCrm, LynqMenu } from "./LynqServices";
 import { GuessOutput1, PovFirstTry, PythonCan, Speedrun } from "./CodeItFun";
 import { PovClosed, PovHungry, RateReply, RedFlags } from "./LynqFun";
+import { LynqSocialWeek, LynqTextBack } from "./LynqDemos";
+import { JumpQuiz, OneSentence } from "./CodeItDemos";
 import { ShowcaseBarber, ShowcaseCafe, ShowcaseGym } from "./Showcase";
 
 const C = (id: string, component: React.FC, seconds: number) => <Composition id={id} component={component} durationInFrames={Math.round(seconds * 30)} fps={30} width={1080} height={1920} />;
@@ -32,6 +34,10 @@ export const Root: React.FC = () => (
     {C("pip-ep4-ar", PipEp4Ar, 15)}
     {C("pip-ep5-ar", PipEp5Ar, 13)}
     {C("pip-hook-1", PipHook1, 10)}
+    {C("lynq-textback", LynqTextBack, 14.5)}
+    {C("lynq-social-week", LynqSocialWeek, 14)}
+    {C("codeit-one-sentence", OneSentence, 16)}
+    {C("codeit-jump-quiz", JumpQuiz, 12.5)}
     {C("adam-ep1", AdamEp1, 16)}
     {C("lynq-crm", LynqCrm, 13)}
     {C("lynq-menu", LynqMenu, 16.5)}

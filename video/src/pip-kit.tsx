@@ -89,13 +89,13 @@ export const TopLine: React.FC<{ text: string; at: number; out?: number; accent?
 };
 
 /** A dark code window; `edits` swap a line's text at a time, with a typing cursor. */
-export const CodeWindow: React.FC<{ at: number; lines: string[]; top?: number; highlight?: number; highlightAt?: number; edit?: { line: number; from: string; to: string; at: number }; bad?: boolean }> = ({ at, lines, top = 520, highlight, highlightAt = 0, edit, bad }) => {
+export const CodeWindow: React.FC<{ at: number; lines: string[]; top?: number; highlight?: number; highlightAt?: number; edit?: { line: number; from: string; to: string; at: number }; bad?: boolean; file?: string }> = ({ at, lines, top = 520, highlight, highlightAt = 0, edit, bad, file = "pip_game.py" }) => {
   const { s } = useT();
   const p = useSpringAt(at, { damping: 15, stiffness: 150 });
   const glow = highlight !== undefined && s > highlightAt ? 0.6 + Math.sin((s - highlightAt) * 8) * 0.4 : 0;
   return (
     <div style={{ position: "absolute", left: 70, right: 70, top, padding: "40px 46px 46px", borderRadius: 48, background: "linear-gradient(180deg,#33241a,#1f150d)", boxShadow: "0 40px 90px rgba(53,34,14,0.35)", opacity: Math.min(1, p * 1.3), transform: `translateY(${(1 - p) * 120}px) scale(${0.92 + p * 0.08})` }}>
-      <div style={{ display: "flex", gap: 14, marginBottom: 34 }}>{["#ff5f57", "#febc2e", "#28c840"].map((c) => <span key={c} style={{ width: 22, height: 22, borderRadius: 11, background: c }} />)}<span style={{ marginLeft: 20, fontFamily: q(MONO), fontSize: 30, color: "#b9a590" }}>pip_game.py</span></div>
+      <div style={{ display: "flex", gap: 14, marginBottom: 34 }}>{["#ff5f57", "#febc2e", "#28c840"].map((c) => <span key={c} style={{ width: 22, height: 22, borderRadius: 11, background: c }} />)}<span style={{ marginLeft: 20, fontFamily: q(MONO), fontSize: 30, color: "#b9a590" }}>{file}</span></div>
       {lines.map((l, i) => {
         let text = l;
         let cursor = false;
