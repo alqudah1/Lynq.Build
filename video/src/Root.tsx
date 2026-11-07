@@ -11,7 +11,7 @@ import { AdamEp1 } from "./AdamStory";
 import { LynqCrm, LynqMenu } from "./LynqServices";
 import { GuessOutput1, PovFirstTry, PythonCan, Speedrun } from "./CodeItFun";
 import { PovClosed, PovHungry, RateReply, RedFlags } from "./LynqFun";
-import { LynqSocialWeek, LynqTextBack } from "./LynqDemos";
+import { LynqSocialWeek, LynqTextBack, LynqTextBackTrades } from "./LynqDemos";
 import { JumpQuiz, OneSentence } from "./CodeItDemos";
 import { AdamFilm } from "./AdamFilm";
 import { ShowcaseBarber, ShowcaseCafe, ShowcaseGym } from "./Showcase";
@@ -37,6 +37,7 @@ export const Root: React.FC = () => (
     {C("pip-hook-1", PipHook1, 10)}
     {C("lynq-textback", LynqTextBack, 14.5)}
     {C("lynq-social-week", LynqSocialWeek, 14)}
+    {C("lynq-textback-trades", LynqTextBackTrades, 16.5)}
     {C("codeit-one-sentence", OneSentence, 16)}
     {C("codeit-jump-quiz", JumpQuiz, 12.5)}
     {C("codeit-adam-film", AdamFilm, 16)}

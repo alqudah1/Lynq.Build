@@ -46,7 +46,7 @@ const BigPhone: React.FC<{ children: React.ReactNode; scale?: number; y?: number
 
 /* ── 1. Missed call, texted back ─────────────────────────────────────── */
 
-const CallScreen: React.FC<{ endAt: number }> = ({ endAt }) => {
+const CallScreen: React.FC<{ endAt: number; name?: string }> = ({ endAt, name = "Sami's Bakery" }) => {
   const { s } = useT();
   const ended = s >= endAt;
   const pulse = ended ? 0 : (s * 1.2) % 1;
@@ -55,9 +55,9 @@ const CallScreen: React.FC<{ endAt: number }> = ({ endAt }) => {
       <div style={{ position: "absolute", left: 0, right: 0, top: 170, textAlign: "center" }}>
         <div style={{ position: "relative", width: 230, height: 230, margin: "0 auto" }}>
           {!ended && <div style={{ position: "absolute", inset: -60 * pulse, borderRadius: 400, border: `3px solid ${LI}`, opacity: 1 - pulse }} />}
-          <div style={{ width: 230, height: 230, borderRadius: 115, background: "#3a3f37", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: q(BOLD), fontSize: 110, color: WH }}>S</div>
+          <div style={{ width: 230, height: 230, borderRadius: 115, background: "#3a3f37", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: q(BOLD), fontSize: 110, color: WH }}>{name[0]}</div>
         </div>
-        <div style={{ marginTop: 40, fontFamily: q(SANS), fontSize: 66, color: WH }}>Sami's Bakery</div>
+        <div style={{ marginTop: 40, fontFamily: q(SANS), fontSize: 66, color: WH }}>{name}</div>
         <div style={{ marginTop: 14, fontFamily: q(SANS), fontSize: 38, color: ended ? RED : MU }}>{ended ? "No answer" : "calling…"}</div>
       </div>
       <div style={{ position: "absolute", left: 0, right: 0, top: 760, display: "flex", justifyContent: "center" }}>
@@ -93,19 +93,19 @@ const Bubble: React.FC<{ m: Msg }> = ({ m }) => {
   );
 };
 
-const Thread: React.FC<{ msgs: Msg[]; chipAt: number }> = ({ msgs, chipAt }) => {
+const Thread: React.FC<{ msgs: Msg[]; chipAt: number; name?: string }> = ({ msgs, chipAt, name = "Sami's Bakery" }) => {
   const { s } = useT();
   const chip = useSpringAt(chipAt, { damping: 12, stiffness: 200 }) * (1 - ramp(s, chipAt + 2.0, chipAt + 2.4));
   return (
     <div style={{ position: "absolute", inset: 0, background: "#000" }}>
       {/* the messages stack up from the bottom of the visible screen and push older ones up */}
-      <div style={{ position: "absolute", left: 0, right: 0, bottom: 1600 - 22 - 940, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+      <div style={{ position: "absolute", left: 0, right: 0, top: 250, bottom: 1600 - 22 - 940, overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
         {msgs.map((m, i) => <Bubble key={i} m={m} />)}
       </div>
       <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: 250, background: "linear-gradient(180deg,#0d0e0d 75%,rgba(13,14,13,0))", zIndex: 2 }}>
         <div style={{ position: "absolute", left: 0, right: 0, top: 100, textAlign: "center" }}>
-          <div style={{ width: 84, height: 84, borderRadius: 42, margin: "0 auto", background: "#3a3f37", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: q(BOLD), fontSize: 40, color: WH }}>S</div>
-          <div style={{ marginTop: 6, fontFamily: q(SANS), fontSize: 28, color: WH }}>Sami's Bakery</div>
+          <div style={{ width: 84, height: 84, borderRadius: 42, margin: "0 auto", background: "#3a3f37", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: q(BOLD), fontSize: 40, color: WH }}>{name[0]}</div>
+          <div style={{ marginTop: 6, fontFamily: q(SANS), fontSize: 28, color: WH }}>{name}</div>
         </div>
       </div>
       <div style={{ position: "absolute", left: 0, right: 0, top: 270, display: "flex", justifyContent: "center", zIndex: 2, opacity: chip, transform: `scale(${chip})` }}>
@@ -256,8 +256,9 @@ export const LynqSocialWeek: React.FC = () => {
         </div>
       )}
       <Week at={6.8} />
-      <Say text="Monday, 8 AM. Your posts for the week are ready." at={0.1} out={3.0} size={70} accent={["ready."]} lang={EN} top={270} />
-      <Say text="You read them. You tap approve. That's it." at={3.2} out={6.4} size={70} accent={["approve."]} lang={EN} top={270} />
+      <Say text="You know you should post every week. Who has the time?" at={0.1} out={2.4} size={68} accent={["every", "week."]} lang={EN} top={270} />
+      <Say text="So we build you an assistant that writes them." at={2.5} out={4.3} size={68} accent={["writes"]} lang={EN} top={270} />
+      <Say text="You read them. You tap approve. That's it." at={4.4} out={6.4} size={70} accent={["approve."]} lang={EN} top={270} />
       <Say text="They go out all week, on Instagram and Facebook." at={6.6} out={9.3} size={68} accent={["all", "week,"]} lang={EN} top={270} />
       <Say text="It drafts the easy replies too. You approve those as well." at={9.5} out={11.6} size={64} accent={["replies"]} lang={EN} top={270} />
       <Say text="20 seconds of your Monday." at={11.8} size={84} accent={["20", "seconds"]} lang={EN} top={270} />
@@ -268,6 +269,59 @@ export const LynqSocialWeek: React.FC = () => {
       {POSTS.slice(1).map((p) => <Sfx key={p.title + "in"} at={p.at} src="pop.wav" volume={0.45} />)}
       <Sfx at={6.6} src="whoosh.wav" volume={0.6} />
       <Sfx at={9.3} src="ding.wav" volume={0.5} />
+    </Frame>
+  );
+};
+
+/* ── 1b. Missed call, with context: a trade, real stakes, one sourced number ── */
+
+const HEAT: Msg[] = [
+  { at: 7.0, text: "Hi, sorry we missed your call! This is Northside Heating. What's going on?", label: "AUTOMATIC TEXT" },
+  { at: 8.4, me: true, text: "furnace stopped, house is freezing. 2 kids home" },
+  { at: 9.9, text: "Sorry! Our on-call tech can be there by 10:30 tonight. Want me to book it?", label: "AI REPLY" },
+  { at: 11.1, me: true, text: "yes please" },
+  { at: 12.1, text: "Booked ✓ Tech arrives by 10:30 PM. We'll text when he's on the way.", label: "AI REPLY" },
+];
+
+const Stat: React.FC<{ at: number; out: number }> = ({ at, out }) => {
+  const { s } = useT();
+  const p = useSpringAt(at, { damping: 14, stiffness: 170 });
+  if (s < at || s > out + 0.3) return null;
+  const leave = ramp(s, out, out + 0.3);
+  return (
+    <div style={{ position: "absolute", left: 80, right: 80, top: 600, padding: "56px 50px", borderRadius: 48, background: CARD, border: `1px solid ${LN}`, boxShadow: "0 50px 120px rgba(0,0,0,0.8)", opacity: p * (1 - leave), transform: `scale(${0.9 + 0.1 * p})`, zIndex: 8 }}>
+      <div style={{ fontFamily: q(BOLD), fontSize: 190, lineHeight: 1, color: LI, letterSpacing: -6 }}>37.8%</div>
+      <div style={{ marginTop: 24, fontFamily: q(SANS), fontSize: 46, lineHeight: 1.2, color: WH }}>of calls to local businesses were answered by a live person.</div>
+      <div style={{ marginTop: 26, fontFamily: q(MONO), fontSize: 22, letterSpacing: 2, color: MU }}>SOURCE: 411 LOCALS STUDY, 2024 · 85 BUSINESSES</div>
+    </div>
+  );
+};
+
+export const LynqTextBackTrades: React.FC = () => {
+  const { s } = useT();
+  const call = s < 6.2;
+  const away = ramp(s, 13.3, 13.9);
+  return (
+    <Frame label="FOR TRADES · MISSED CALLS">
+      <BigPhone time="9:14" scale={1 - away * 0.12} y={away * 140} dim={Math.max(away * 0.78, s > 4.3 && s < 6.3 ? 0.7 : 0)}>
+        {call ? <CallScreen endAt={3.0} name="Northside Heating" /> : <Thread msgs={HEAT} chipAt={6.4} name="Northside Heating" />}
+      </BigPhone>
+      <Say text="9:14 PM. A family's furnace just died." at={0.1} out={1.9} size={74} accent={["furnace"]} lang={EN} top={270} />
+      <Say text="They call you. You're off for the night." at={2.0} out={4.2} size={74} accent={["off"]} lang={EN} top={270} />
+      <Stat at={4.4} out={6.1} />
+      <Say text="So they call the next company on the list." at={4.4} out={6.1} size={66} accent={["next"]} lang={EN} top={270} />
+      <Say text="Unless your business texts back. In 8 seconds." at={6.3} out={13.1} size={70} accent={["texts", "back."]} lang={EN} top={270} />
+      <Say text="Whoever answers first gets the job. Make it you." at={13.3} size={74} accent={["first"]} lang={EN} top={270} />
+      <Notice at={13.7} app="JOBS" title="New job booked from a missed call" body="No heat · tonight 10:30 PM" />
+      <Tag text="We set this up for trades" at={14.6} top={1080} lang={EN} />
+      <Kw text="Comment TEXTBACK" at={15.0} top={1220} lang={EN} />
+      <Sfx at={0.2} src="ring.wav" volume={0.7} />
+      <Sfx at={1.3} src="ring.wav" volume={0.7} />
+      <Sfx at={2.4} src="ring.wav" volume={0.7} />
+      <Sfx at={3.0} src="thump.wav" volume={0.5} />
+      <Sfx at={4.4} src="whoosh.wav" volume={0.5} />
+      {HEAT.map((m, i) => <Sfx key={i} at={m.at} src={m.me ? "click.wav" : "pop.wav"} volume={0.6} />)}
+      <Sfx at={13.7} src="ding.wav" volume={0.6} />
     </Frame>
   );
 };

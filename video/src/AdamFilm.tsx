@@ -49,7 +49,7 @@ const Line: React.FC<{ text: string; at: number; out?: number; accent?: string[]
 const Typed: React.FC<{ at: number; text: string }> = ({ at, text }) => {
   const { s } = useT();
   const p = useSpringAt(at, { damping: 14, stiffness: 180 });
-  if (s < at) return null;
+  if (s < at || s > 8.75) return null;
   const typed = text.slice(0, Math.max(0, Math.floor((s - at - 0.2) * 16)));
   return (
     <div style={{ position: "absolute", left: 90, right: 90, top: 560, padding: "34px 40px", borderRadius: 40, background: "rgba(255,255,255,0.95)", boxShadow: "0 24px 60px rgba(30,15,5,0.35)", fontFamily: q("Baloo 2"), fontWeight: 700, fontSize: 52, color: "#35220e", opacity: p, transform: `translateY(${(1 - p) * 60}px)` }}>
@@ -79,6 +79,7 @@ export const AdamFilm: React.FC = () => {
       <Line text="Then he showed Mom the number he changed to make it harder." at={8.85} out={11.4} accent={["changed"]} size={68} />
       <Line text="He didn't just play a game tonight." at={11.7} size={72} />
       <Line text="He built one." at={12.4} size={124} top={420} accent={["built"]} />
+      <Line text="Screen time he can explain to you." at={13.6} size={54} top={590} />
 
       {s >= 13.2 && (
         <div style={{ position: "absolute", left: 0, right: 0, top: 1360, display: "flex", justifyContent: "center", opacity: tag, transform: `translateY(${(1 - tag) * 40}px)` }}>
