@@ -23,14 +23,14 @@ const SHOTS: Shot[] = [
 
 const Still: React.FC<{ shot: Shot }> = ({ shot }) => {
   const { s } = useT();
-  if (s < shot.from - 0.2 || s > shot.to + 0.01) return null;
-  const k = ramp(s, shot.from, shot.to, 0, 1, (x) => x);
+  if (s < shot.from - 0.6 || s > shot.to + 0.01) return null;
+  const k = ramp(s, shot.from - 0.6, shot.to, 0, 1, (x) => x);
   const z = shot.zoom[0] + (shot.zoom[1] - shot.zoom[0]) * k;
   const py = shot.pan ? shot.pan[0] + (shot.pan[1] - shot.pan[0]) * k : 0;
-  const fadeIn = ramp(s, shot.from - 0.2, shot.from + 0.05);
+  const fadeIn = ramp(s, shot.from - 0.6, shot.from + 0.1);
   return (
     <AbsoluteFill style={{ opacity: shot.from === 0 ? 1 : fadeIn }}>
-      <Img src={staticFile(shot.src)} style={{ width: "100%", height: "100%", objectFit: "cover", transform: `scale(${z}) translateY(${py}px)`, transformOrigin: `50% ${shot.focusY ?? 50}%` }} />
+      <Img src={staticFile(shot.src)} style={{ width: "100%", height: "100%", objectFit: "cover", transform: `scale(${z + (1 - fadeIn) * 0.06}) translateY(${py}px)`, filter: `blur(${(1 - fadeIn) * 6}px)`, transformOrigin: `50% ${shot.focusY ?? 50}%` }} />
     </AbsoluteFill>
   );
 };
@@ -49,10 +49,11 @@ const Line: React.FC<{ text: string; at: number; out?: number; accent?: string[]
 const Typed: React.FC<{ at: number; text: string }> = ({ at, text }) => {
   const { s } = useT();
   const p = useSpringAt(at, { damping: 14, stiffness: 180 });
-  if (s < at || s > 8.75) return null;
+  if (s < at || s > 8.85) return null;
+  const gone = ramp(s, 8.2, 8.75);
   const typed = text.slice(0, Math.max(0, Math.floor((s - at - 0.2) * 16)));
   return (
-    <div style={{ position: "absolute", left: 90, right: 90, top: 560, padding: "34px 40px", borderRadius: 40, background: "rgba(255,255,255,0.95)", boxShadow: "0 24px 60px rgba(30,15,5,0.35)", fontFamily: q("Baloo 2"), fontWeight: 700, fontSize: 52, color: "#35220e", opacity: p, transform: `translateY(${(1 - p) * 60}px)` }}>
+    <div style={{ position: "absolute", left: 90, right: 90, top: 560, padding: "34px 40px", borderRadius: 40, background: "rgba(255,255,255,0.95)", boxShadow: "0 24px 60px rgba(30,15,5,0.35)", fontFamily: q("Baloo 2"), fontWeight: 700, fontSize: 52, color: "#35220e", opacity: p * (1 - gone), transform: `translateY(${(1 - p) * 60 - gone * 40}px)` }}>
       {typed}<span style={{ display: "inline-block", width: 5, height: 56, marginLeft: 4, background: ORANGE, verticalAlign: "middle", opacity: Math.floor(s * 3) % 2 ? 1 : 0.2 }} />
     </div>
   );
@@ -61,7 +62,7 @@ const Typed: React.FC<{ at: number; text: string }> = ({ at, text }) => {
 export const AdamFilm: React.FC = () => {
   const { s } = useT();
   const tag = useSpringAt(13.2, { damping: 12, stiffness: 200 });
-  const flash = 1 - ramp(s, 0, 0.35);
+  const flash = Math.max(1 - ramp(s, 0, 0.35), ramp(s, 15.55, 16.0));
   return (
     <AbsoluteFill style={{ background: "#1a0f08" }}>
       <Fonts />
@@ -91,10 +92,13 @@ export const AdamFilm: React.FC = () => {
       <Audio src={staticFile("sfx/codeit-bed.mp3")} volume={0.32} />
       <Sfx at={0.05} src="whoosh.wav" />
       <Sfx at={0.15} src="ding.wav" volume={0.6} />
-      <Sfx at={2.0} src="whoosh.wav" volume={0.4} />
+      <Sfx at={1.6} src="whoosh.wav" volume={0.3} />
+      <Sfx at={3.6} src="whoosh.wav" volume={0.25} />
+      <Sfx at={5.4} src="whoosh.wav" volume={0.25} />
+      <Sfx at={11.2} src="whoosh.wav" volume={0.3} />
       <Sfx at={4.0} src="pop.wav" volume={0.6} />
       {Array.from({ length: 14 }, (_, i) => <Sfx key={i} at={6.6 + i * 0.12} src="click.wav" volume={0.4} />)}
-      <Sfx at={8.8} src="whoosh.wav" volume={0.4} />
+      <Sfx at={8.4} src="whoosh.wav" volume={0.3} />
       <Sfx at={12.4} src="ding.wav" volume={0.6} />
       <Sfx at={13.2} src="pop.wav" volume={0.6} />
     </AbsoluteFill>
