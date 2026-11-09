@@ -1,5 +1,5 @@
 import React from "react";
-import { AbsoluteFill, Audio, Img, staticFile } from "remotion";
+import { AbsoluteFill, Audio, Img, OffthreadVideo, Sequence, staticFile } from "remotion";
 import { BK, CARD, Kw, LI, LN, MU, Tag, WH } from "./lynq-story-kit";
 import { Fonts, Sfx, ramp, useSpringAt, useT } from "./kit";
 
@@ -12,25 +12,33 @@ import { Fonts, Sfx, ramp, useSpringAt, useT } from "./kit";
 const q = (f: string) => `'${f}'`;
 const EN = "en" as const;
 
-type Shot = { src: string; from: number; to: number; zoom: [number, number]; focusY?: number; pan?: [number, number] };
+type Shot = { src: string; video?: boolean; rate?: number; from: number; to: number; zoom: [number, number]; focusY?: number };
 const SHOTS: Shot[] = [
-  { src: "lynq-sam/1-cold.jpg", from: 0, to: 2.8, zoom: [1.14, 1.04], focusY: 45 },
-  { src: "lynq-sam/2-dinner.jpg", from: 2.8, to: 5.2, zoom: [1.02, 1.12], focusY: 45 },
-  { src: "lynq-sam/3-ringing.jpg", from: 5.2, to: 8.4, zoom: [1.04, 1.2], focusY: 60 },
-  { src: "lynq-sam/4-textback.jpg", from: 8.4, to: 12.6, zoom: [1.16, 1.04], focusY: 65 },
-  { src: "lynq-sam/5-relief.jpg", from: 12.6, to: 15.0, zoom: [1.02, 1.12], focusY: 45 },
-  { src: "lynq-sam/6-fixed.jpg", from: 15.0, to: 20.0, zoom: [1.12, 1.02], focusY: 50 },
+  { src: "lynq-sam/v1-cold.mp4", video: true, from: 0, to: 3.4, zoom: [1.06, 1.0], focusY: 45 },
+  { src: "lynq-sam/2-dinner.jpg", from: 3.4, to: 5.8, zoom: [1.02, 1.12], focusY: 45 },
+  { src: "lynq-sam/v3-ringing.mp4", video: true, from: 5.8, to: 9.0, zoom: [1.0, 1.06], focusY: 60 },
+  { src: "lynq-sam/v4-textback.mp4", video: true, rate: 0.9, from: 9.0, to: 13.2, zoom: [1.0, 1.04], focusY: 60 },
+  { src: "lynq-sam/v5-relief.mp4", video: true, from: 13.2, to: 16.2, zoom: [1.0, 1.06], focusY: 45 },
+  { src: "lynq-sam/6-fixed.jpg", from: 16.2, to: 20.2, zoom: [1.12, 1.02], focusY: 50 },
 ];
 
 const Still: React.FC<{ shot: Shot }> = ({ shot }) => {
-  const { s } = useT();
+  const { s, fps } = useT();
   if (s < shot.from - 0.6 || s > shot.to + 0.01) return null;
   const k = ramp(s, shot.from - 0.6, shot.to, 0, 1, (x) => x);
   const z = shot.zoom[0] + (shot.zoom[1] - shot.zoom[0]) * k;
   const fadeIn = shot.from === 0 ? 1 : ramp(s, shot.from - 0.6, shot.from + 0.1);
+  const style: React.CSSProperties = { width: "100%", height: "100%", objectFit: "cover", transform: `scale(${z + (1 - fadeIn) * 0.06})`, transformOrigin: `50% ${shot.focusY ?? 50}%`, filter: `blur(${(1 - fadeIn) * 6}px)` };
+  const startAt = Math.max(0, shot.from - 0.6);
   return (
     <AbsoluteFill style={{ opacity: fadeIn }}>
-      <Img src={staticFile(shot.src)} style={{ width: "100%", height: "100%", objectFit: "cover", transform: `scale(${z + (1 - fadeIn) * 0.06})`, transformOrigin: `50% ${shot.focusY ?? 50}%`, filter: `blur(${(1 - fadeIn) * 6}px)` }} />
+      {shot.video ? (
+        <Sequence from={Math.round(startAt * fps)} layout="none">
+          <OffthreadVideo src={staticFile(shot.src)} muted playbackRate={shot.rate ?? 1} style={style} />
+        </Sequence>
+      ) : (
+        <Img src={staticFile(shot.src)} style={style} />
+      )}
     </AbsoluteFill>
   );
 };
@@ -51,25 +59,11 @@ const Line: React.FC<{ text: string; at: number; out?: number; accent?: string[]
   );
 };
 
-const Stat: React.FC<{ at: number; out: number }> = ({ at, out }) => {
-  const { s } = useT();
-  const p = useSpringAt(at, { damping: 14, stiffness: 170 });
-  if (s < at || s > out + 0.3) return null;
-  const leave = ramp(s, out, out + 0.3);
-  return (
-    <div style={{ position: "absolute", left: 80, right: 80, top: 560, padding: "50px 46px", borderRadius: 44, background: "rgba(12,14,12,0.88)", border: `1px solid ${LN}`, boxShadow: "0 50px 120px rgba(0,0,0,0.7)", opacity: p * (1 - leave), transform: `scale(${0.92 + 0.08 * p})` }}>
-      <div style={{ fontFamily: q("Outfit Bold"), fontSize: 170, lineHeight: 1, color: LI, letterSpacing: -5 }}>37.8%</div>
-      <div style={{ marginTop: 20, fontFamily: q("Outfit Regular"), fontSize: 44, lineHeight: 1.2, color: WH }}>of calls to local businesses were answered by a live person.</div>
-      <div style={{ marginTop: 22, fontFamily: q("JetBrains Mono"), fontSize: 21, letterSpacing: 2, color: MU }}>SOURCE: 411 LOCALS STUDY, 2024 · 85 BUSINESSES</div>
-    </div>
-  );
-};
-
 type Msg = { at: number; me?: boolean; text: string; label?: string };
 const CHAT: Msg[] = [
-  { at: 9.1, text: "Hi, sorry we missed your call! This is Sam's Heating. What's going on?", label: "AUTOMATIC TEXT" },
-  { at: 10.2, me: true, text: "furnace stopped, kids are freezing" },
-  { at: 11.3, text: "Booked ✓ Sam can be there by 10:30 tonight.", label: "AI REPLY" },
+  { at: 9.9, text: "Hi, sorry we missed your call! This is Sam's Heating. What's going on?", label: "AUTOMATIC TEXT" },
+  { at: 11.0, me: true, text: "furnace stopped, kids are freezing" },
+  { at: 12.0, text: "Booked ✓ Sam can be there by 10:30 tonight.", label: "AI REPLY" },
 ];
 
 const Chat: React.FC<{ at: number; out: number }> = ({ at, out }) => {
@@ -78,7 +72,7 @@ const Chat: React.FC<{ at: number; out: number }> = ({ at, out }) => {
   if (s < at || s > out + 0.3) return null;
   const leave = ramp(s, out, out + 0.3);
   return (
-    <div style={{ position: "absolute", left: 70, right: 70, top: 470, padding: "30px 28px 34px", borderRadius: 44, background: "rgba(10,12,11,0.82)", border: `1px solid ${LN}`, boxShadow: "0 40px 100px rgba(0,0,0,0.6)", opacity: p * (1 - leave), transform: `translateY(${(1 - p) * 60}px)` }}>
+    <div style={{ position: "absolute", left: 70, right: 70, top: 560, padding: "30px 28px 34px", borderRadius: 44, background: "rgba(10,12,11,0.82)", border: `1px solid ${LN}`, boxShadow: "0 40px 100px rgba(0,0,0,0.6)", opacity: p * (1 - leave), transform: `translateY(${(1 - p) * 60}px)` }}>
       <div style={{ fontFamily: q("JetBrains Mono"), fontSize: 22, letterSpacing: 3, color: MU, marginBottom: 6 }}>8 SECONDS AFTER THE MISSED CALL</div>
       {CHAT.map((m, i) => {
         const b = ramp(s, m.at, m.at + 0.25);
@@ -94,44 +88,61 @@ const Chat: React.FC<{ at: number; out: number }> = ({ at, out }) => {
   );
 };
 
+/** The last beat: the brand, what it does, one sourced number. */
+const EndCard: React.FC<{ at: number }> = ({ at }) => {
+  const { s } = useT();
+  const p = ramp(s, at - 0.4, at + 0.2);
+  if (s < at - 0.4) return null;
+  return (
+    <AbsoluteFill style={{ background: `radial-gradient(70% 45% at 50% 30%, #1e221d 0%, ${BK} 72%)`, opacity: p }}>
+      <div style={{ position: "absolute", top: 300, left: 80, right: 80, textAlign: "center" }}>
+        <div style={{ fontFamily: q("JetBrains Mono"), fontSize: 30, letterSpacing: 10, color: MU }}>LYNQ</div>
+        <div style={{ marginTop: 40, fontFamily: q("Outfit Bold"), fontSize: 92, lineHeight: 1.05, letterSpacing: -2, color: WH }}>Missed calls, <span style={{ color: LI }}>answered.</span></div>
+        <div style={{ marginTop: 28, fontFamily: q("Outfit Regular"), fontSize: 44, lineHeight: 1.25, color: MU }}>We set up text back for your business, so the next job doesn&apos;t go to someone else.</div>
+        <div style={{ margin: "56px auto 0", maxWidth: 820, padding: "30px 34px", borderRadius: 30, border: `1px solid ${LN}`, background: CARD, textAlign: "left" }}>
+          <div style={{ fontFamily: q("Outfit Regular"), fontSize: 34, lineHeight: 1.3, color: WH }}><span style={{ color: LI, fontFamily: q("Outfit Bold") }}>37.8%</span> of calls to local businesses were answered by a live person.</div>
+          <div style={{ marginTop: 12, fontFamily: q("JetBrains Mono"), fontSize: 19, letterSpacing: 2, color: MU }}>411 LOCALS STUDY, 2024 · 85 BUSINESSES</div>
+        </div>
+      </div>
+    </AbsoluteFill>
+  );
+};
+
 export const LynqSamFilm: React.FC = () => {
   const { s } = useT();
-  const dim = ramp(s, 6.4, 6.7) * (1 - ramp(s, 8.2, 8.5)) * 0.45;
-  const end = ramp(s, 19.55, 20.0);
   return (
     <AbsoluteFill style={{ background: BK }}>
       <Fonts />
       {SHOTS.map((sh) => <Still key={sh.src} shot={sh} />)}
       <AbsoluteFill style={{ background: "linear-gradient(180deg, rgba(5,6,5,0.6) 0%, rgba(5,6,5,0) 34%)" }} />
-      <AbsoluteFill style={{ background: "#000", opacity: dim }} />
 
-      <Line text="9:14 PM. Their furnace just died." at={0.1} out={2.5} accent={["furnace"]} />
-      <Line text="Sam fixes furnaces. He just sat down for dinner." at={2.9} out={5.0} accent={["dinner."]} size={70} />
-      <Line text="The phone rings. Nobody picks up." at={5.3} out={8.2} accent={["Nobody"]} />
-      <Stat at={6.6} out={8.2} />
-      <Line text="So his business texts back." at={8.5} out={12.4} accent={["texts", "back."]} />
-      <Chat at={8.8} out={12.4} />
-      <Line text="Help is booked. By text. In minutes." at={12.7} out={14.8} accent={["booked."]} />
-      <Line text="He didn't answer the phone. His business did." at={15.2} size={78} accent={["business"]} />
-      <Tag text="We set this up for trades" at={16.8} top={470} lang={EN} />
-      <Kw text="Comment TEXTBACK" at={17.2} top={590} lang={EN} />
-
+      <Line text="9:14 PM. No heat. Two kids." at={0.05} out={3.1} accent={["No", "heat."]} size={80} />
+      <Line text="She calls a heating company." at={1.5} out={3.1} top={350} size={56} />
+      <Line text="That's Sam. He just sat down for dinner." at={3.5} out={5.6} accent={["Sam."]} size={70} />
+      <Line text="His phone rings. Nobody answers." at={5.9} out={8.8} accent={["Nobody"]} />
+      <Line text="But his business texts her back. In seconds." at={9.1} out={13.0} accent={["texts", "back."]} size={70} />
+      <Chat at={9.6} out={13.0} />
+      <Line text="Booked for tonight. She didn't have to call anyone else." at={13.3} out={16.0} accent={["Booked"]} size={66} />
+      <Line text="He didn't answer the phone. His business did." at={16.4} out={20.0} size={78} accent={["business"]} />
+      <EndCard at={20.2} />
+      {s >= 20.6 && <Tag text="Comment TEXTBACK" at={20.6} top={1230} lang={EN} />}
+      {s >= 21.0 && <Kw text="See how it works for your business" at={21.0} top={1350} lang={EN} />}
       <div style={{ position: "absolute", left: 90, right: 90, top: 120, display: "flex", justifyContent: "space-between", fontFamily: q("JetBrains Mono"), fontSize: 22, letterSpacing: 3, color: "rgba(242,244,235,0.8)" }}>
         <span>LYNQ</span><span>AI-MADE IMAGES · MADE-UP STORY</span>
       </div>
-      <AbsoluteFill style={{ background: BK, opacity: end }} />
 
       <Audio src={staticFile("sfx/lynq-bed.mp3")} volume={0.3} />
-      <Sfx at={2.3} src="whoosh.wav" volume={0.25} />
-      <Sfx at={4.6} src="whoosh.wav" volume={0.25} />
-      <Sfx at={5.3} src="ring.wav" volume={0.6} />
-      <Sfx at={6.4} src="ring.wav" volume={0.6} />
-      <Sfx at={8.0} src="whoosh.wav" volume={0.3} />
+      <Sfx at={2.9} src="whoosh.wav" volume={0.25} />
+      <Sfx at={5.0} src="ring.wav" volume={0.55} />
+      <Sfx at={6.1} src="ring.wav" volume={0.65} />
+      <Sfx at={7.2} src="ring.wav" volume={0.65} />
+      <Sfx at={8.5} src="whoosh.wav" volume={0.3} />
       {CHAT.map((m, i) => <Sfx key={i} at={m.at} src={m.me ? "click.wav" : "pop.wav"} volume={0.6} />)}
-      <Sfx at={12.2} src="whoosh.wav" volume={0.25} />
-      <Sfx at={12.8} src="ding.wav" volume={0.5} />
-      <Sfx at={14.6} src="whoosh.wav" volume={0.25} />
-      <Sfx at={16.8} src="pop.wav" volume={0.5} />
+      <Sfx at={12.7} src="whoosh.wav" volume={0.25} />
+      <Sfx at={13.4} src="ding.wav" volume={0.5} />
+      <Sfx at={15.7} src="whoosh.wav" volume={0.25} />
+      <Sfx at={19.8} src="whoosh.wav" volume={0.35} />
+      <Sfx at={20.6} src="pop.wav" volume={0.5} />
     </AbsoluteFill>
   );
 };
