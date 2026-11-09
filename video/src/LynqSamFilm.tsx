@@ -14,12 +14,13 @@ const EN = "en" as const;
 
 type Shot = { src: string; video?: boolean; rate?: number; from: number; to: number; zoom: [number, number]; focusY?: number };
 const SHOTS: Shot[] = [
-  { src: "lynq-sam/v1-cold.mp4", video: true, from: 0, to: 3.4, zoom: [1.06, 1.0], focusY: 45 },
-  { src: "lynq-sam/2-dinner.jpg", from: 3.4, to: 5.8, zoom: [1.02, 1.12], focusY: 45 },
-  { src: "lynq-sam/v3-ringing.mp4", video: true, from: 5.8, to: 9.0, zoom: [1.0, 1.06], focusY: 60 },
-  { src: "lynq-sam/v4-textback.mp4", video: true, rate: 0.9, from: 9.0, to: 13.2, zoom: [1.0, 1.04], focusY: 60 },
-  { src: "lynq-sam/v5-relief.mp4", video: true, from: 13.2, to: 16.2, zoom: [1.0, 1.06], focusY: 45 },
-  { src: "lynq-sam/6-fixed.jpg", from: 16.2, to: 20.2, zoom: [1.12, 1.02], focusY: 50 },
+  { src: "lynq-sam/2-dinner.jpg", from: 0, to: 3.4, zoom: [1.1, 1.0], focusY: 40 },
+  { src: "lynq-sam/v1-cold.mp4", video: true, from: 3.4, to: 6.6, zoom: [1.06, 1.0], focusY: 45 },
+  { src: "lynq-sam/v3-ringing.mp4", video: true, from: 6.6, to: 9.4, zoom: [1.0, 1.06], focusY: 60 },
+  { src: "lynq-sam/v4-textback.mp4", video: true, rate: 0.85, from: 9.4, to: 14.0, zoom: [1.0, 1.04], focusY: 60 },
+  { src: "lynq-sam/v5-relief.mp4", video: true, from: 14.0, to: 16.6, zoom: [1.0, 1.06], focusY: 45 },
+  { src: "lynq-sam/2-dinner.jpg", from: 16.6, to: 19.4, zoom: [1.16, 1.24], focusY: 55 },
+  { src: "lynq-sam/6-fixed.jpg", from: 19.4, to: 22.8, zoom: [1.12, 1.02], focusY: 50 },
 ];
 
 const Still: React.FC<{ shot: Shot }> = ({ shot }) => {
@@ -61,9 +62,9 @@ const Line: React.FC<{ text: string; at: number; out?: number; accent?: string[]
 
 type Msg = { at: number; me?: boolean; text: string; label?: string };
 const CHAT: Msg[] = [
-  { at: 9.9, text: "Hi, sorry we missed your call! This is Sam's Heating. What's going on?", label: "AUTOMATIC TEXT" },
-  { at: 11.0, me: true, text: "furnace stopped, kids are freezing" },
-  { at: 12.0, text: "Booked ✓ Sam can be there by 10:30 tonight.", label: "AI REPLY" },
+  { at: 10.4, text: "Hi, sorry we missed your call! This is Sam's Heating. What's going on?", label: "AUTOMATIC TEXT" },
+  { at: 11.5, me: true, text: "furnace stopped, kids are freezing" },
+  { at: 12.5, text: "Booked ✓ Sam can be there by 10:30 tonight.", label: "AI REPLY" },
 ];
 
 const Chat: React.FC<{ at: number; out: number }> = ({ at, out }) => {
@@ -84,6 +85,24 @@ const Chat: React.FC<{ at: number; out: number }> = ({ at, out }) => {
           </div>
         );
       })}
+    </div>
+  );
+};
+
+/** The booking lands on Sam's phone as a notification, so the viewer sees how he knows. */
+const Booking: React.FC<{ at: number; out: number }> = ({ at, out }) => {
+  const { s } = useT();
+  const p = useSpringAt(at, { damping: 15, stiffness: 170 });
+  if (s < at || s > out + 0.3) return null;
+  const leave = ramp(s, out, out + 0.3);
+  return (
+    <div style={{ position: "absolute", left: 70, right: 70, top: 470, padding: "30px 32px", borderRadius: 44, background: "rgba(18,21,18,0.94)", border: `1px solid ${LN}`, boxShadow: "0 40px 100px rgba(0,0,0,0.6)", display: "flex", gap: 26, opacity: p * (1 - leave), transform: `translateY(${(1 - p) * -80}px)` }}>
+      <div style={{ width: 96, height: 96, borderRadius: 24, background: LI, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: q("Outfit Bold"), fontSize: 48, color: BK }}>✓</div>
+      <div style={{ flex: 1 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontFamily: q("JetBrains Mono"), fontSize: 22, letterSpacing: 2, color: MU }}><span>SAM'S HEATING · JOBS</span><span>9:16 PM</span></div>
+        <div style={{ marginTop: 8, fontFamily: q("Outfit Bold"), fontSize: 40, color: WH }}>New job booked by text</div>
+        <div style={{ marginTop: 6, fontFamily: q("Outfit Regular"), fontSize: 34, lineHeight: 1.3, color: MU }}>No heat, 2 kids home · tonight 10:30 PM</div>
+      </div>
     </div>
   );
 };
@@ -113,36 +132,42 @@ export const LynqSamFilm: React.FC = () => {
   return (
     <AbsoluteFill style={{ background: BK }}>
       <Fonts />
-      {SHOTS.map((sh) => <Still key={sh.src} shot={sh} />)}
+      {SHOTS.map((sh) => <Still key={sh.src + sh.from} shot={sh} />)}
       <AbsoluteFill style={{ background: "linear-gradient(180deg, rgba(5,6,5,0.6) 0%, rgba(5,6,5,0) 34%)" }} />
 
-      <Line text="9:14 PM. No heat. Two kids." at={0.05} out={3.1} accent={["No", "heat."]} size={80} />
-      <Line text="She calls a heating company." at={1.5} out={3.1} top={350} size={56} />
-      <Line text="That's Sam. He just sat down for dinner." at={3.5} out={5.6} accent={["Sam."]} size={70} />
-      <Line text="His phone rings. Nobody answers." at={5.9} out={8.8} accent={["Nobody"]} />
-      <Line text="But his business texts her back. In seconds." at={9.1} out={13.0} accent={["texts", "back."]} size={70} />
-      <Chat at={9.6} out={13.0} />
-      <Line text="Booked for tonight. She didn't have to call anyone else." at={13.3} out={16.0} accent={["Booked"]} size={66} />
-      <Line text="He didn't answer the phone. His business did." at={16.4} out={20.0} size={78} accent={["business"]} />
-      <EndCard at={20.2} />
-      {s >= 20.6 && <Tag text="Comment TEXTBACK" at={20.6} top={1230} lang={EN} />}
-      {s >= 21.0 && <Kw text="See how it works for your business" at={21.0} top={1350} lang={EN} />}
+      <Line text="This is Sam. He fixes furnaces." at={0.1} out={1.5} accent={["Sam."]} />
+      <Line text="9 PM. He finally sat down for dinner." at={1.85} out={3.1} accent={["dinner."]} size={70} />
+      <Line text="Across town, a family's furnace just died." at={3.5} out={4.9} accent={["furnace"]} size={70} />
+      <Line text="They call Sam." at={5.25} out={6.3} accent={["Sam."]} size={84} />
+      <Line text="His phone rings. Nobody picks up." at={6.7} out={9.1} accent={["Nobody"]} />
+      <Line text="So his business texts them back." at={9.5} out={13.7} accent={["texts", "back."]} />
+      <Chat at={9.9} out={13.7} />
+      <Line text="Booked for 10:30 tonight." at={14.1} out={16.3} accent={["Booked"]} size={80} />
+      <Line text="And Sam gets the booking on his phone." at={16.7} out={19.1} accent={["booking"]} size={70} />
+      <Booking at={17.3} out={19.1} />
+      <Line text="He finishes dinner and goes to fix it." at={19.5} out={21.0} size={70} />
+      <Line text="He missed the call. Not the job." at={21.35} out={22.6} accent={["Not", "job."]} size={78} />
+      <EndCard at={22.8} />
+      {s >= 23.2 && <Tag text="Comment TEXTBACK" at={23.2} top={1230} lang={EN} />}
+      {s >= 23.6 && <Kw text="See how it works for your business" at={23.6} top={1350} lang={EN} />}
       <div style={{ position: "absolute", left: 90, right: 90, top: 120, display: "flex", justifyContent: "space-between", fontFamily: q("JetBrains Mono"), fontSize: 22, letterSpacing: 3, color: "rgba(242,244,235,0.8)" }}>
         <span>LYNQ</span><span>AI-MADE IMAGES · MADE-UP STORY</span>
       </div>
 
       <Audio src={staticFile("sfx/lynq-bed.mp3")} volume={0.3} />
-      <Sfx at={2.9} src="whoosh.wav" volume={0.25} />
-      <Sfx at={5.0} src="ring.wav" volume={0.55} />
-      <Sfx at={6.1} src="ring.wav" volume={0.65} />
-      <Sfx at={7.2} src="ring.wav" volume={0.65} />
-      <Sfx at={8.5} src="whoosh.wav" volume={0.3} />
+      <Sfx at={3.0} src="whoosh.wav" volume={0.25} />
+      <Sfx at={6.2} src="whoosh.wav" volume={0.25} />
+      <Sfx at={6.7} src="ring.wav" volume={0.6} />
+      <Sfx at={7.8} src="ring.wav" volume={0.65} />
+      <Sfx at={8.9} src="ring.wav" volume={0.65} />
       {CHAT.map((m, i) => <Sfx key={i} at={m.at} src={m.me ? "click.wav" : "pop.wav"} volume={0.6} />)}
-      <Sfx at={12.7} src="whoosh.wav" volume={0.25} />
-      <Sfx at={13.4} src="ding.wav" volume={0.5} />
-      <Sfx at={15.7} src="whoosh.wav" volume={0.25} />
-      <Sfx at={19.8} src="whoosh.wav" volume={0.35} />
-      <Sfx at={20.6} src="pop.wav" volume={0.5} />
+      <Sfx at={13.6} src="whoosh.wav" volume={0.25} />
+      <Sfx at={14.1} src="ding.wav" volume={0.5} />
+      <Sfx at={16.2} src="whoosh.wav" volume={0.25} />
+      <Sfx at={17.3} src="ding.wav" volume={0.6} />
+      <Sfx at={19.0} src="whoosh.wav" volume={0.25} />
+      <Sfx at={22.4} src="whoosh.wav" volume={0.35} />
+      <Sfx at={23.2} src="pop.wav" volume={0.5} />
     </AbsoluteFill>
   );
 };
