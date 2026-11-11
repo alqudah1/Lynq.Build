@@ -15,6 +15,7 @@ import { LynqSocialWeek, LynqTextBack, LynqTextBackTrades } from "./LynqDemos";
 import { JumpQuiz, OneSentence } from "./CodeItDemos";
 import { AdamFilm } from "./AdamFilm";
 import { LynqSamFilm } from "./LynqSamFilm";
+import { LynqIdea } from "./PhoneAds";
 import { ShowcaseBarber, ShowcaseCafe, ShowcaseGym } from "./Showcase";
 
 const C = (id: string, component: React.FC, seconds: number) => <Composition id={id} component={component} durationInFrames={Math.round(seconds * 30)} fps={30} width={1080} height={1920} />;
@@ -43,6 +44,7 @@ export const Root: React.FC = () => (
     {C("codeit-jump-quiz", JumpQuiz, 12.5)}
     {C("codeit-adam-film", AdamFilm, 16)}
     {C("lynq-sam-film", LynqSamFilm, 25.5)}
+    {C("lynq-idea", LynqIdea, 13)}
     {C("adam-ep1", AdamEp1, 16)}
     {C("lynq-crm", LynqCrm, 13)}
     {C("lynq-menu", LynqMenu, 16.5)}
