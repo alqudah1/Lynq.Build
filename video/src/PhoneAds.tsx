@@ -181,7 +181,7 @@ const Who: React.FC<{ text: string; who: string; at: number; out: number }> = ({
   );
 };
 
-const IDEA = "a bunny that catches carrots at night";
+const IDEA = "a cat that catches falling fish";
 
 /** The builder box from codeitlearn.com, redrawn sharp at video size. */
 const Builder: React.FC<{ at: number }> = ({ at }) => {
@@ -222,47 +222,62 @@ const KCard: React.FC<{ at: number; x: number; y: number; big: string; small: st
   );
 };
 
+/** One story line at a time, lower third, CodeIt type. */
+const Story: React.FC<{ text: string; at: number; out: number; accent?: string[]; size?: number }> = ({ text, at, out, accent = [], size = 70 }) => {
+  const { s, frame, fps } = useT();
+  if (s < at || s > out + 0.25) return null;
+  const gone = ramp(s, out, out + 0.25);
+  return (
+    <div style={{ position: "absolute", left: 70, right: 70, top: 1180, textAlign: "center", fontFamily: q("Baloo 2"), fontWeight: 800, fontSize: size, lineHeight: 1.1, color: "#fff", opacity: 1 - gone, textShadow: "0 4px 22px rgba(0,0,0,0.75), 0 2px 5px rgba(0,0,0,0.6)" }}>
+      {text.split(" ").map((w, i) => {
+        const p = Math.max(0, Math.min(1, (frame - Math.round((at + i * 0.08) * fps)) / 5));
+        return <span key={i} style={{ display: "inline-block", margin: "0 0.12em", opacity: p, transform: `translateY(${(1 - p) * 18}px)`, color: accent.includes(w.replace(/[.,!?"]/g, "")) ? "#ffb15c" : undefined }}>{w}</span>;
+      })}
+    </div>
+  );
+};
+
+/*
+ * One story across the three people: a teacher sets the task in class, the student keeps building
+ * at home because he wants to, and then he shows his dad. Music only, no sound effects.
+ */
 export const CodeItEveryone: React.FC = () => {
   const { s } = useT();
-  const site = ramp(s, 8.75, 9.1);
-  const end = ramp(s, 13.6, 13.95);
+  const site = ramp(s, 12.35, 12.7);
+  const end = ramp(s, 17.2, 17.55);
   return (
     <AbsoluteFill style={{ background: CREAM }}>
       <Fonts />
-      <Clip src="ads/codeit-teacher.mp4" video from={0} to={3.0} />
-      <Clip src="ads/codeit-dad.jpg" from={3.0} to={6.0} />
-      <Clip src="ads/codeit-student.mp4" video from={6.0} to={9.0} />
-      {s < 9.1 && <AbsoluteFill style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 24%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.35) 100%)" }} />}
-      <Who who="TEACHERS" text="For my class." at={0.25} out={2.8} />
-      <Who who="PARENTS" text="For my kid." at={3.2} out={5.8} />
-      <Who who="STUDENTS" text="For me." at={6.2} out={8.7} />
-      {s < 9.0 && <Label text="CODEIT · AI-MADE PEOPLE" />}
+      <Clip src="ads/codeit-teacher.mp4" video from={0} to={4.0} />
+      <Clip src="ads/codeit-student.mp4" video from={4.0} to={8.2} />
+      <Clip src="ads/codeit-dad.jpg" from={8.2} to={12.6} />
+      {s < 12.7 && <AbsoluteFill style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 24%, rgba(0,0,0,0) 50%, rgba(0,0,0,0.45) 100%)" }} />}
+      <Story text="In class, his teacher gave one task:" at={0.2} out={1.9} />
+      <Story text={'"Describe a game you want to play."'} at={2.1} out={3.8} accent={["Describe", "game"]} />
+      <Story text="That night he was still building it." at={4.2} out={6.0} accent={["still"]} />
+      <Story text="Nobody told him to." at={6.2} out={8.0} accent={["Nobody"]} size={84} />
+      <Story text="Then he showed his dad." at={8.4} out={10.2} />
+      <Story text="Now his dad shows everyone." at={10.4} out={12.3} accent={["everyone"]} size={84} />
+      {s < 12.6 && <Label text="CODEIT · AI-MADE PEOPLE · MADE-UP STORY" />}
 
-      {s >= 8.75 && (
+      {s >= 12.35 && (
         <AbsoluteFill style={{ background: `radial-gradient(80% 50% at 50% 20%, #ffe7c7 0%, ${CREAM} 70%)`, opacity: site }}>
-          <div style={{ position: "absolute", left: 60, right: 60, top: 250, textAlign: "center", fontFamily: q("Baloo 2"), fontWeight: 800, fontSize: 92, lineHeight: 1.05, color: BROWN }}>Type one sentence. <span style={{ color: ORANGE }}>Play your game.</span></div>
-          <Builder at={9.1} />
-          <KCard at={10.6} x={40} y={570} big="Free" small="to start" rot={-5} />
-          <KCard at={11.4} x={700} y={610} big="5 to 18" small="all ages" rot={4} />
-          <KCard at={12.2} x={560} y={1500} big="31" small="free Python lessons" rot={-3} />
+          <div style={{ position: "absolute", left: 60, right: 60, top: 250, textAlign: "center", fontFamily: q("Baloo 2"), fontWeight: 800, fontSize: 92, lineHeight: 1.05, color: BROWN }}>It started with <span style={{ color: ORANGE }}>one sentence.</span></div>
+          <Builder at={12.7} />
+          <KCard at={15.0} x={40} y={570} big="Free" small="to start" rot={-5} />
+          <KCard at={15.7} x={640} y={610} big="For class" small="and for home" rot={4} />
         </AbsoluteFill>
       )}
-      {s >= 13.6 && (
+      {s >= 17.2 && (
         <AbsoluteFill style={{ background: ORANGE, opacity: end, alignItems: "center", justifyContent: "center" }}>
-          <div style={{ textAlign: "center", marginTop: -200 }}>
+          <div style={{ textAlign: "center", marginTop: -200, padding: "0 70px" }}>
             <div style={{ fontFamily: q("Baloo 2"), fontWeight: 800, fontSize: 150, lineHeight: 1, color: "#fff" }}>CodeIt</div>
-            <div style={{ marginTop: 30, fontFamily: q("Baloo 2"), fontWeight: 800, fontSize: 84, color: BROWN }}>Everyone can code.</div>
+            <div style={{ marginTop: 30, fontFamily: q("Baloo 2"), fontWeight: 800, fontSize: 72, lineHeight: 1.1, color: BROWN }}>For teachers, parents and students.</div>
             <div style={{ marginTop: 50, display: "inline-block", padding: "22px 54px", borderRadius: 60, background: "#fff", fontFamily: q("Nunito"), fontWeight: 900, fontSize: 48, color: BROWN }}>codeitlearn.com</div>
           </div>
         </AbsoluteFill>
       )}
-
-      <Audio src={staticFile("sfx/codeit-bed.mp3")} volume={0.32} />
-      {[0.25, 3.2, 6.2].map((a) => <Sfx key={a} at={a} src="pop.wav" volume={0.6} />)}
-      <Sfx at={8.7} src="whoosh.wav" volume={0.5} />
-      {Array.from({ length: 12 }, (_, i) => <Sfx key={i} at={9.6 + i * 0.14} src="click.wav" volume={0.35} />)}
-      {[10.6, 11.4, 12.2].map((a) => <Sfx key={a} at={a} src="pop.wav" volume={0.6} />)}
-      <Sfx at={13.6} src="ding.wav" volume={0.6} />
+      <Audio src={staticFile("sfx/codeit-bed.mp3")} volume={0.22} />
     </AbsoluteFill>
   );
 };
