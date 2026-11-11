@@ -133,14 +133,6 @@ export const LynqIdea: React.FC = () => {
       <EndCard at={10.0} />
       {s >= 10.5 && <Tag text="Comment IDEA" at={10.5} top={1180} lang={EN} />}
       {s < 10.0 && <Label text="LYNQ · AI-MADE PERSON · MADE-UP SHOP" />}
-
-      <Audio src={staticFile("sfx/lynq-bed.mp3")} volume={0.3} />
-      <Sfx at={3.8} src="whoosh.wav" volume={0.4} />
-      <Sfx at={5.2} src="pop.wav" volume={0.6} />
-      <Sfx at={6.4} src="pop.wav" volume={0.6} />
-      <Sfx at={7.6} src="pop.wav" volume={0.6} />
-      <Sfx at={9.7} src="whoosh.wav" volume={0.35} />
-      <Sfx at={10.5} src="ding.wav" volume={0.5} />
     </AbsoluteFill>
   );
 };
@@ -277,7 +269,6 @@ export const CodeItEveryone: React.FC = () => {
           </div>
         </AbsoluteFill>
       )}
-      <Audio src={staticFile("sfx/codeit-bed.mp3")} volume={0.22} />
     </AbsoluteFill>
   );
 };
