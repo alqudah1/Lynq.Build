@@ -8,7 +8,7 @@ import { Fonts } from "./kit";
  * 1080x1350 stills. Every fact is from codeitlearn.com.
  */
 
-const CORAL = "#ff7d59", YELLOW = "#fed340", CREAM = "#fff4e5", INK = "#2a1a0c", BROWN = "#35220e";
+const CORAL = "#ff7d59", YELLOW = "#fed340", CREAM = "#fff4e5", INK = "#16161d", BROWN = "#16161d";
 const H = "'Baloo 2'", B = "'Nunito'", M = "'JetBrains Mono'";
 
 const Frame: React.FC<{ bg: string; kicker: string; dark?: boolean; chip?: boolean; children: React.ReactNode }> = ({ bg, kicker, dark, chip, children }) => (
@@ -34,10 +34,10 @@ const Star: React.FC<{ x: number; y: number; s?: number; c?: string }> = ({ x, y
 export const PostOneNumber: React.FC = () => (
   <Frame bg={INK} kicker="HOW KIDS LEARN HERE" dark>
     <Head top={150} color={CREAM}>Change <span style={{ color: YELLOW }}>one number.</span><br />See what breaks.</Head>
-    <div style={{ position: "absolute", left: 70, top: 570, width: 560, borderRadius: 34, background: "#1a0f06", border: "3px solid #5a3d1f", padding: "30px 34px", fontFamily: M, fontSize: 36, lineHeight: 1.55, color: "#e8d7bd" }}>
-      <div style={{ color: "#8a6f52" }}>// game.js</div>
+    <div style={{ position: "absolute", left: 70, top: 570, width: 560, borderRadius: 34, background: "#0d0d12", border: "3px solid #2e2e3a", padding: "30px 34px", fontFamily: M, fontSize: 36, lineHeight: 1.55, color: "#ececf2" }}>
+      <div style={{ color: "#8b8b9c" }}>// game.js</div>
       <div><span style={{ color: CORAL }}>let</span> score = <span style={{ color: YELLOW }}>0</span></div>
-      <div style={{ margin: "4px -14px", padding: "4px 14px", borderRadius: 12, background: "rgba(254,211,64,0.16)" }}><span style={{ color: CORAL }}>let</span> fallSpeed = <span style={{ textDecoration: "line-through", color: "#8a6f52" }}>2</span> <span style={{ color: YELLOW, fontWeight: 800 }}>9</span></div>
+      <div style={{ margin: "4px -14px", padding: "4px 14px", borderRadius: 12, background: "rgba(254,211,64,0.16)" }}><span style={{ color: CORAL }}>let</span> fallSpeed = <span style={{ textDecoration: "line-through", color: "#8b8b9c" }}>2</span> <span style={{ color: YELLOW, fontWeight: 800 }}>9</span></div>
       <div><span style={{ color: CORAL }}>let</span> lives = <span style={{ color: YELLOW }}>3</span></div>
     </div>
     <div style={{ position: "absolute", right: 70, top: 540, width: 330, height: 400, borderRadius: 34, background: "linear-gradient(180deg,#24325c,#3b2a6b)", border: `6px solid ${CREAM}`, overflow: "hidden" }}>
@@ -45,7 +45,7 @@ export const PostOneNumber: React.FC = () => (
       {[40, 200, 110, 240].map((x, i) => <div key={i} style={{ position: "absolute", left: x + 22, top: [0, 70, 180, 250][i] - 60, width: 6, height: 70, borderRadius: 3, background: "rgba(254,211,64,0.35)" }} />)}
       <div style={{ position: "absolute", left: 105, bottom: 22, width: 120, height: 34, borderRadius: 17, background: CORAL }} />
     </div>
-    <div style={{ position: "absolute", left: 70, right: 70, top: 985, fontFamily: B, fontWeight: 800, fontSize: 42, lineHeight: 1.25, color: "#e8d7bd" }}>Make it, play it, change it. That's how the code starts to make sense.</div>
+    <div style={{ position: "absolute", left: 70, right: 70, top: 985, fontFamily: B, fontWeight: 800, fontSize: 42, lineHeight: 1.25, color: "#ececf2" }}>Make it, play it, change it. That's how the code starts to make sense.</div>
   </Frame>
 );
 
@@ -59,7 +59,7 @@ export const PostThreeGames: React.FC = () => {
   );
   return (
     <Frame bg={YELLOW} kicker="PLAY FIRST">
-      <Head top={150}>3 games.<br />No typing.<br /><span style={{ color: "#c2410c" }}>No account.</span></Head>
+      <Head top={150}>3 games.<br />No typing.<br /><span style={{ color: "#e2552f" }}>No account.</span></Head>
       <Tile x={70} bg="linear-gradient(180deg,#24325c,#3b2a6b)" name="Catch the falling stars">
         <Star x={30} y={30} /><Star x={170} y={100} s={76} /><Star x={90} y={190} s={48} />
         <div style={{ position: "absolute", left: 88, bottom: 20, width: 110, height: 30, borderRadius: 15, background: CORAL }} />
@@ -82,9 +82,9 @@ export const PostParentSentence: React.FC = () => (
   <Frame bg={CREAM} kicker="FOR PARENTS">
     <Head top={150}>Not a score.<br /><span style={{ color: CORAL }}>A sentence.</span></Head>
     <div style={{ position: "absolute", left: 70, right: 70, top: 470, borderRadius: 40, background: "#fff", border: `5px solid ${INK}`, boxShadow: `0 14px 0 ${INK}`, padding: "44px 48px" }}>
-      <div style={{ fontFamily: B, fontWeight: 900, fontSize: 26, letterSpacing: 4, color: "#b4530a" }}>WHAT YOUR CHILD WORKED OUT</div>
+      <div style={{ fontFamily: B, fontWeight: 900, fontSize: 26, letterSpacing: 4, color: "#e2552f" }}>WHAT YOUR CHILD WORKED OUT</div>
       <div style={{ marginTop: 22, fontFamily: H, fontWeight: 700, fontSize: 60, lineHeight: 1.12, color: INK }}>"Worked out that <span style={{ background: YELLOW, padding: "0 12px", borderRadius: 12, fontFamily: M, fontSize: 50 }}>fallSpeed</span> controls how fast the stars drop."</div>
-      <div style={{ marginTop: 26, fontFamily: B, fontWeight: 700, fontSize: 28, color: "#8a6f52" }}>Example of the parent view</div>
+      <div style={{ marginTop: 26, fontFamily: B, fontWeight: 700, fontSize: 28, color: "#8b8b9c" }}>Example of the parent view</div>
     </div>
     <div style={{ position: "absolute", left: 70, right: 70, top: 975, fontFamily: B, fontWeight: 800, fontSize: 38, lineHeight: 1.25, color: BROWN }}>The questions come from their own project's code. Only a right answer on the first try counts.</div>
   </Frame>
@@ -161,7 +161,7 @@ export const PostSayAGame: React.FC = () => (
   <Frame bg={CREAM} kicker="SAY A GAME. GET A GAME.">
     <Head top={150}>They describe it.<br /><span style={{ color: CORAL }}>Then make it theirs.</span></Head>
     <div style={{ position: "absolute", left: 70, right: 70, top: 600, padding: "30px 36px 34px", borderRadius: 40, background: INK }}>
-      <div style={{ fontFamily: B, fontWeight: 900, fontSize: 26, letterSpacing: 4, color: "#d8c3a5" }}>WHAT DO YOU WANT TO BUILD?</div>
+      <div style={{ fontFamily: B, fontWeight: 900, fontSize: 26, letterSpacing: 4, color: "#c9c9d6" }}>WHAT DO YOU WANT TO BUILD?</div>
       <div style={{ marginTop: 20, padding: "28px 32px", borderRadius: 26, background: CREAM, border: `5px solid ${YELLOW}`, fontFamily: B, fontWeight: 800, fontSize: 46, color: INK }}>a cat that catches falling fish<span style={{ display: "inline-block", width: 5, height: 48, marginLeft: 4, background: INK, verticalAlign: "middle" }} /></div>
       <div style={{ marginTop: 26, display: "inline-block", padding: "20px 46px", borderRadius: 50, background: CORAL, fontFamily: H, fontWeight: 800, fontSize: 46, color: INK }}>Build it →</div>
     </div>
@@ -192,7 +192,7 @@ export const PostWhatTheyBuild: React.FC = () => {
     <Frame bg={CORAL} kicker="WHAT KIDS MAKE" chip>
       <Head top={150}>Built by a kid.<br /><span style={{ color: YELLOW }}>Not just played.</span></Head>
       <Card x={60} rot={-4} bg={CREAM} name="Websites">
-        <div style={{ height: 50, background: INK }} /><div style={{ margin: "24px 24px 0", height: 80, borderRadius: 14, background: YELLOW }} /><div style={{ margin: "18px 24px 0", height: 20, borderRadius: 10, background: "#d8c3a5" }} /><div style={{ margin: "14px 24px 0", width: 150, height: 20, borderRadius: 10, background: "#d8c3a5" }} />
+        <div style={{ height: 50, background: INK }} /><div style={{ margin: "24px 24px 0", height: 80, borderRadius: 14, background: YELLOW }} /><div style={{ margin: "18px 24px 0", height: 20, borderRadius: 10, background: "#c9c9d6" }} /><div style={{ margin: "14px 24px 0", width: 150, height: 20, borderRadius: 10, background: "#c9c9d6" }} />
       </Card>
       <Card x={390} rot={2} bg="linear-gradient(180deg,#24325c,#3b2a6b)" name="Games">
         <Star x={40} y={30} /><Star x={170} y={90} s={76} /><div style={{ position: "absolute", left: 92, bottom: 22, width: 110, height: 30, borderRadius: 15, background: CORAL }} />
@@ -213,7 +213,7 @@ export const PostTeachers: React.FC = () => (
     <Bullet top={640} text="For your classroom" dark />
     <Bullet top={750} text="Runs in the browser" dark />
     <Bullet top={860} text="Free to start" dark />
-    <div style={{ position: "absolute", left: 70, right: 70, top: 1000, fontFamily: B, fontWeight: 800, fontSize: 42, lineHeight: 1.2, color: "#e8d7bd" }}>Find them under "Teach a class".</div>
+    <div style={{ position: "absolute", left: 70, right: 70, top: 1000, fontFamily: B, fontWeight: 800, fontSize: 42, lineHeight: 1.2, color: "#ececf2" }}>Find them under "Teach a class".</div>
   </Frame>
 );
 
@@ -222,10 +222,10 @@ export const PostFirstProgram: React.FC = () => (
   <Frame bg={CREAM} kicker="LESSON ONE">
     <Head top={150}>Their first<br /><span style={{ color: CORAL }}>Python program.</span></Head>
     <div style={{ position: "absolute", left: 70, right: 70, top: 480, borderRadius: 34, background: INK, overflow: "hidden" }}>
-      <div style={{ padding: "30px 36px", fontFamily: M, fontSize: 44, lineHeight: 1.5, color: "#e8d7bd" }}>
+      <div style={{ padding: "30px 36px", fontFamily: M, fontSize: 44, lineHeight: 1.5, color: "#ececf2" }}>
         <div><span style={{ color: YELLOW }}>print</span>(<span style={{ color: CORAL }}>"Hello, I made this!"</span>)</div>
       </div>
-      <div style={{ padding: "22px 36px 30px", background: "#1a0f06", fontFamily: M, fontSize: 40, color: "#9be28a" }}><span style={{ color: "#8a6f52" }}>&gt; </span>Hello, I made this!</div>
+      <div style={{ padding: "22px 36px 30px", background: "#0d0d12", fontFamily: M, fontSize: 40, color: "#9be28a" }}><span style={{ color: "#8b8b9c" }}>&gt; </span>Hello, I made this!</div>
     </div>
     <div style={{ position: "absolute", left: 70, right: 70, top: 800, display: "flex", gap: 22 }}>
       {["Write it", "Run it", "Make it yours"].map((t, i) => <div key={t} style={{ flex: 1, padding: "30px 10px", borderRadius: 28, background: i === 2 ? CORAL : YELLOW, border: `5px solid ${INK}`, fontFamily: H, fontWeight: 800, fontSize: 36, whiteSpace: "nowrap", color: INK, textAlign: "center" }}>{t}</div>)}
