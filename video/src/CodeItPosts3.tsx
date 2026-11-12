@@ -143,3 +143,23 @@ export const LuxDial: React.FC = () => (
     <div style={{ position: "absolute", left: 70, right: 70, bottom: 60, fontFamily: OR, fontSize: 38, color: "rgba(255,255,255,0.8)" }}>Make it. Play it. Change it.</div>
   </AbsoluteFill>
 );
+
+/* ── 3D set: a custom toy-like render per post, one headline in the clear space above it ── */
+
+const Post3D: React.FC<{ img: string; l1: string; l2: string; sub: string; ink: string; accent: string; muted: string; size?: number; chip?: boolean }> = ({ img, l1, l2, sub, ink, accent, muted, size = 112, chip }) => (
+  <AbsoluteFill style={{ overflow: "hidden" }}>
+    <Fonts />
+    <Img src={staticFile(`c3d/${img}.jpg`)} style={{ position: "absolute", left: -4, top: 0, width: 1088, height: 1350, objectFit: "cover" }} />
+    {chip && <div style={{ position: "absolute", left: 44, top: 36, width: 182, height: 128, borderRadius: 34, background: CREAM }} />}
+    <Img src={staticFile("ads/codeit-logo.png")} style={{ position: "absolute", left: 60, top: 48, width: 150 }} />
+    <div style={{ position: "absolute", right: 70, top: 82, fontFamily: OR, fontSize: 28, letterSpacing: 1, color: muted }}>codeitlearn.com</div>
+    <div style={{ position: "absolute", left: 66, right: 60, top: 200, fontFamily: O, fontSize: size, lineHeight: 0.98, letterSpacing: -size / 30, whiteSpace: "nowrap", color: ink }}>{l1}<br /><span style={{ color: accent }}>{l2}</span></div>
+    <div style={{ position: "absolute", left: 70, right: 70, top: 200 + size * 1.96 + 30, fontFamily: OR, fontSize: 40, lineHeight: 1.2, color: muted }}>{sub}</div>
+  </AbsoluteFill>
+);
+
+export const D3Dial: React.FC = () => <Post3D img="dial" l1="Change one number." l2="See what breaks." sub="That's how kids learn what code does." ink={INK} accent="#f0562d" muted="rgba(22,22,29,0.62)" size={100} />;
+export const D3Trophy: React.FC = () => <Post3D img="trophy" l1="Screen time" l2="you'll brag about." sub="They build the game. Then explain how it works." ink={INK} accent="#e2481f" muted="rgba(22,22,29,0.66)" size={108} />;
+export const D3Controller: React.FC = () => <Post3D img="controller" l1="They don't just play it." l2="They built it." sub="Real games, made of code they can open." ink="#fff" accent={YELLOW} muted="rgba(255,255,255,0.9)" size={84} chip />;
+export const D3Snake: React.FC = () => <Post3D img="snake" l1="31 Python lessons." l2="One step at a time." sub="In the browser. Nothing to install." ink={INK} accent="#f0562d" muted="rgba(22,22,29,0.62)" size={104} />;
+export const D3Dinner: React.FC = () => <Post3D img="dinner" l1="“5 more minutes.”" l2="The good kind." sub="When they'd rather fix their game than stop." ink="#fff" accent={YELLOW} muted="rgba(255,255,255,0.8)" size={104} />;
