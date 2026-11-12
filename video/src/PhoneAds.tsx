@@ -118,38 +118,28 @@ const Hook: React.FC<{ lines: string[]; accent: string[]; color: string; font: s
 
 export const LynqIdea: React.FC = () => {
   const { s } = useT();
-  const cut = 4.3;
-  const handIn = ramp(s, cut - 0.6, cut, 0, 1, (x) => x * x * (3 - 2 * x));
-  const zoom = 1.06 - ramp(s, cut, 8.6, 0, 0.06, (x) => x);
+  // One continuous take: she says the whole thing to camera, no cutaways. Then a soft dissolve to the end card.
+  const push = 1 + ramp(s, 0, 8.2, 0, 0.07, (x) => x);
   return (
     <AbsoluteFill style={{ background: BK }}>
       <Fonts />
-      {s < cut + 0.05 && (
-        <AbsoluteFill>
+      {s < 8.6 && (
+        <AbsoluteFill style={{ transform: `scale(${push})`, transformOrigin: "50% 45%" }}>
           <OffthreadVideo src={staticFile("ads/lynq-talk.mp4")} muted style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         </AbsoluteFill>
       )}
-      {s >= cut - 0.6 && s < 9.0 && (
-        <AbsoluteFill style={{ opacity: handIn, transform: `scale(${zoom + (1 - handIn) * 0.08})`, transformOrigin: "50% 62%", filter: `blur(${(1 - handIn) * 10}px)` }}>
-          <div style={{ position: "absolute", left: 318, top: 745, width: 443, height: 955, overflow: "hidden", borderRadius: 40, background: "#faf6ef" }}>
-            <div style={{ transform: `scale(${443 / 431})`, transformOrigin: "0 0" }}><ShopSite scroll={ramp(s, 5.0, 8.5, 0, 300, (x) => x)} /></div>
-          </div>
-          <Img src={staticFile("ads/lynq-hand.png")} style={{ position: "absolute", left: 0, top: -7, width: 1080, height: 1934 }} />
-        </AbsoluteFill>
-      )}
-      <AbsoluteFill style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.12) 40%, rgba(0,0,0,0) 60%)" }} />
+      <AbsoluteFill style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.12) 40%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.35) 100%)" }} />
 
       <Hook lines={["Still sitting", "on your idea?"]} accent={["idea"]} color={LI} font="Outfit Bold" out={2.2} top={300} />
       <Caption text="I had an idea." at={0.3} out={2.5} />
       <Caption text="Now it's a real business." at={2.8} out={4.0} accent={["real", "business."]} />
-      <Caption text="LYNQ built everything." at={4.5} out={8.3} top={300} size={82} accent={["LYNQ"]} />
-      <Card at={5.5} x={40} y={690} big="Website" small="built from scratch" icon="↗" />
-      <Card at={6.3} x={560} y={1040} big="Ads" small="that bring customers" icon="◎" />
-      <Card at={7.0} x={90} y={1330} big="One team" small="for all of it" icon="✓" />
-      <EndCard at={8.7} />
-      {s >= 9.4 && <Tag text="Comment IDEA" at={9.4} top={1180} lang={EN} />}
-      {s < 8.7 && <Label text="LYNQ · AI-MADE PERSON AND VOICE · MADE-UP SHOP" />}
-      <Audio src={staticFile("ads/lynq-talk.mp4")} />
+      <Caption text="LYNQ built everything." at={4.2} out={5.3} accent={["LYNQ"]} size={72} />
+      <Caption text="My website. My ads." at={5.5} out={6.8} accent={["website.", "ads."]} size={72} />
+      <Caption text="One team for all of it." at={7.0} out={7.9} accent={["One", "team"]} size={72} />
+      <EndCard at={8.2} />
+      {s >= 8.9 && <Tag text="Comment IDEA" at={8.9} top={1180} lang={EN} />}
+      {s < 8.0 && <Label text="LYNQ · AI-MADE PERSON AND VOICE · MADE-UP SHOP" />}
+      <Audio src={staticFile("ads/lynq-talk.mp4")} endAt={240} volume={(f) => Math.max(0, Math.min(1, (240 - f) / 8))} />
     </AbsoluteFill>
   );
 };
@@ -253,43 +243,42 @@ const Story: React.FC<{ text: string; at: number; out: number; accent?: string[]
  */
 export const CodeItEveryone: React.FC = () => {
   const { s } = useT();
-  const site = ramp(s, 12.7, 13.3, 0, 1, (x) => x * x * (3 - 2 * x));
-  const end = ramp(s, 17.5, 18.1, 0, 1, (x) => x * x * (3 - 2 * x));
+  const ss = (x: number) => x * x * (3 - 2 * x);
+  // One story, in order: the teacher sets the task, we see the sentence typed, we see the game he built, CodeIt.
+  const site = ramp(s, 5.3, 5.9, 0, 1, ss) * (1 - ramp(s, 8.3, 8.9, 0, 1, ss));
+  const end = ramp(s, 13.0, 13.6, 0, 1, ss);
   return (
     <AbsoluteFill style={{ background: CREAM }}>
       <Fonts />
-      <Clip src="ads/teacher-talk.mp4" video from={0} to={5.2} />
-      <Clip src="ads/codeit-student.mp4" video rate={0.8} from={5.2} to={9.2} />
-      <Clip src="ads/codeit-dad.jpg" from={9.2} to={13.2} />
-      {s < 13.3 && <AbsoluteFill style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 24%, rgba(0,0,0,0) 50%, rgba(0,0,0,0.45) 100%)" }} />}
+      <Clip src="ads/teacher-talk.mp4" video from={0} to={5.9} />
+      <Clip src="ads/codeit-student.mp4" video rate={0.8} from={8.9} to={13.6} />
+      {(s < 5.9 || s > 8.3) && s < 13.6 && <AbsoluteFill style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 24%, rgba(0,0,0,0) 50%, rgba(0,0,0,0.45) 100%)" }} />}
       <Hook lines={["The homework", "he didn't want", "to stop."]} accent={["homework"]} color="#ffb15c" font="Baloo 2" out={2.6} size={118} top={400} />
       <Story text="I gave my class one task:" at={0.3} out={2.5} />
       <Story text={'"Describe a game you want to play."'} at={3.1} out={4.9} accent={["Describe", "game"]} />
-      <Story text="That night he was still building it." at={5.5} out={7.6} accent={["still"]} />
-      <Story text="Nobody told him to." at={7.9} out={9.0} accent={["Nobody"]} size={84} />
-      <Story text="Then he showed his dad." at={9.4} out={10.7} />
-      <Story text="Now his dad shows everyone." at={11.0} out={12.8} accent={["everyone"]} size={84} />
-      {s < 13.2 && <Label text="CODEIT · AI-MADE PEOPLE AND VOICE · MADE-UP STORY" />}
-      <Audio src={staticFile("ads/teacher-talk.mp4")} endAt={159} volume={(f) => Math.max(0, Math.min(1, (156 - f) / 9))} />
-      <Sequence from={162} layout="none"><Audio src={staticFile("vo/codeit-vo.mp3")} startFrom={147} /></Sequence>
+      <Story text="That night he was still building it." at={9.1} out={11.2} accent={["still"]} />
+      <Story text="Nobody told him to." at={11.5} out={12.7} accent={["Nobody"]} size={84} />
+      {(s < 5.6 || (s > 8.6 && s < 13.2)) && <Label text="CODEIT · AI-MADE PEOPLE AND VOICE · MADE-UP STORY" />}
 
-      {s >= 12.7 && (
-        <AbsoluteFill style={{ background: `radial-gradient(80% 50% at 50% 20%, #ffe7c7 0%, ${CREAM} 70%)`, opacity: site }}>
+      {s >= 5.3 && s < 8.95 && (
+        <AbsoluteFill style={{ background: `radial-gradient(80% 50% at 50% 20%, #ffe7c7 0%, ${CREAM} 70%)`, opacity: site, transform: `scale(${1 + ramp(s, 8.3, 8.9, 0, 0.12, ss)})`, transformOrigin: "50% 62%" }}>
           <div style={{ position: "absolute", left: 60, right: 60, top: 250, textAlign: "center", fontFamily: q("Baloo 2"), fontWeight: 800, fontSize: 92, lineHeight: 1.05, color: BROWN }}>It started with <span style={{ color: ORANGE }}>one sentence.</span></div>
-          <Builder at={13.2} />
-          <KCard at={16.2} x={40} y={570} big="Free" small="to start" rot={-5} />
-          <KCard at={16.8} x={640} y={610} big="For class" small="and for home" rot={4} />
+          <Builder at={5.6} />
         </AbsoluteFill>
       )}
-      {s >= 17.5 && (
+      {s >= 13.0 && (
         <AbsoluteFill style={{ background: ORANGE, opacity: end, alignItems: "center", justifyContent: "center" }}>
           <div style={{ textAlign: "center", marginTop: -200, padding: "0 70px" }}>
             <div style={{ fontFamily: q("Baloo 2"), fontWeight: 800, fontSize: 150, lineHeight: 1, color: "#fff" }}>CodeIt</div>
             <div style={{ marginTop: 30, fontFamily: q("Baloo 2"), fontWeight: 800, fontSize: 72, lineHeight: 1.1, color: BROWN }}>For teachers, parents and students.</div>
-            <div style={{ marginTop: 50, display: "inline-block", padding: "22px 54px", borderRadius: 60, background: "#fff", fontFamily: q("Nunito"), fontWeight: 900, fontSize: 48, color: BROWN }}>codeitlearn.com</div>
+            <div style={{ marginTop: 50, display: "inline-block", padding: "22px 54px", borderRadius: 60, background: "#fff", fontFamily: q("Nunito"), fontWeight: 900, fontSize: 48, color: BROWN }}>Free to start · codeitlearn.com</div>
           </div>
         </AbsoluteFill>
       )}
+      <Audio src={staticFile("ads/teacher-talk.mp4")} endAt={159} volume={(f) => Math.max(0, Math.min(1, (156 - f) / 9))} />
+      <Sequence from={168} layout="none"><Audio src={staticFile("vo/codeit-vo.mp3")} startFrom={381} endAt={444} /></Sequence>
+      <Sequence from={270} layout="none"><Audio src={staticFile("vo/codeit-vo.mp3")} startFrom={147} endAt={261} /></Sequence>
+      <Sequence from={399} layout="none"><Audio src={staticFile("vo/codeit-vo.mp3")} startFrom={447} /></Sequence>
     </AbsoluteFill>
   );
 };
