@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!--
+    LYNQ logomark — geometric L with inner-corner notch.
+    Vertical bar: x 8–30. Horizontal bar: y 70–95.
+    Notch: diagonal cut from (30,54) → (46,70) at the inner corner.
+  -->
+  <path
+    d="M8,5 L30,5 L30,54 L46,70 L92,70 L92,95 L8,95 Z"
+    fill="white"
+  />
+</svg>

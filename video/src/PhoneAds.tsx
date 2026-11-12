@@ -88,14 +88,20 @@ const ShopSite: React.FC<{ scroll: number }> = ({ scroll }) => (
 
 const EndCard: React.FC<{ at: number }> = ({ at }) => {
   const { s } = useT();
-  const p = ramp(s, at - 0.5, at + 0.1, 0, 1, (x) => x * x * (3 - 2 * x));
-  if (s < at - 0.5) return null;
+  const p = ramp(s, at - 0.6, at + 0.1, 0, 1, (x) => x * x * (3 - 2 * x));
+  const logo = useSpringAt(at - 0.2, { damping: 14, stiffness: 120 });
+  const l2 = useSpringAt(at + 1.1, { damping: 14, stiffness: 150 });
+  if (s < at - 0.6) return null;
   return (
-    <AbsoluteFill style={{ background: `radial-gradient(70% 45% at 50% 30%, #1e221d 0%, ${BK} 72%)`, opacity: p }}>
-      <div style={{ position: "absolute", top: 420, left: 80, right: 80, textAlign: "center" }}>
-        <div style={{ fontFamily: q("JetBrains Mono"), fontSize: 30, letterSpacing: 10, color: MU }}>LYNQ</div>
-        <div style={{ marginTop: 44, fontFamily: q("Outfit Bold"), fontSize: 100, lineHeight: 1.04, letterSpacing: -2, color: WH }}>Bring your idea <span style={{ color: LI }}>to life.</span></div>
-        <div style={{ marginTop: 34, fontFamily: q("Outfit Regular"), fontSize: 44, lineHeight: 1.25, color: MU }}>Your website. Your ads. Your first customers.</div>
+    <AbsoluteFill style={{ background: `radial-gradient(70% 45% at 50% 34%, #1e221d 0%, ${BK} 72%)`, opacity: p }}>
+      <div style={{ position: "absolute", top: 470, left: 80, right: 80, textAlign: "center" }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 26, opacity: logo, transform: `translateY(${(1 - logo) * 30}px)` }}>
+          <Img src={staticFile("ads/lynq-logo.svg")} style={{ width: 92, height: 92 }} />
+          <span style={{ fontFamily: q("Outfit Bold"), fontSize: 96, letterSpacing: 6, color: WH }}>LYNQ</span>
+        </div>
+        <div style={{ marginTop: 70, fontFamily: q("Outfit Bold"), fontSize: 104, lineHeight: 1.06, letterSpacing: -2, color: WH }}>Got an idea?</div>
+        <div style={{ fontFamily: q("Outfit Bold"), fontSize: 104, lineHeight: 1.06, letterSpacing: -2, color: LI, opacity: Math.min(1, l2 * 1.3), transform: `translateY(${(1 - l2) * 30}px)` }}>Bring it to life.</div>
+        <div style={{ marginTop: 40, fontFamily: q("Outfit Regular"), fontSize: 44, lineHeight: 1.25, color: MU, opacity: Math.min(1, l2 * 1.3) }}>Your website. Your ads. One team.</div>
       </div>
     </AbsoluteFill>
   );
@@ -118,28 +124,40 @@ const Hook: React.FC<{ lines: string[]; accent: string[]; color: string; font: s
 
 export const LynqIdea: React.FC = () => {
   const { s } = useT();
-  // One continuous take: she says the whole thing to camera, no cutaways. Then a soft dissolve to the end card.
-  const push = 1 + ramp(s, 0, 8.2, 0, 0.07, (x) => x);
+  const ss = (x: number) => x * x * (3 - 2 * x);
+  const cut = 4.6;
+  const handIn = ramp(s, cut - 0.7, cut, 0, 1, ss);
+  const zoom = 1.06 - ramp(s, cut, 10.0, 0, 0.06, (x) => x);
+  // One voice from start to finish. Nobody talks on camera, so there are no lips to match.
   return (
     <AbsoluteFill style={{ background: BK }}>
       <Fonts />
-      {s < 8.6 && (
-        <AbsoluteFill style={{ transform: `scale(${push})`, transformOrigin: "50% 45%" }}>
-          <OffthreadVideo src={staticFile("ads/lynq-talk.mp4")} muted style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+      {s < cut + 0.05 && (
+        <AbsoluteFill style={{ transform: `scale(${1.02 + ramp(s, 0, cut, 0, 0.1, (x) => x)}) translate(${Math.sin(s * 1.5) * 5}px, ${Math.cos(s * 1.1) * 4}px)`, transformOrigin: "50% 48%" }}>
+          <Img src={staticFile("ads/lynq-woman.jpg")} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         </AbsoluteFill>
       )}
-      <AbsoluteFill style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.12) 40%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.35) 100%)" }} />
+      {s >= cut - 0.7 && s < 10.5 && (
+        <AbsoluteFill style={{ opacity: handIn, transform: `scale(${zoom + (1 - handIn) * 0.08})`, transformOrigin: "50% 62%", filter: `blur(${(1 - handIn) * 10}px)` }}>
+          <div style={{ position: "absolute", left: 318, top: 745, width: 443, height: 955, overflow: "hidden", borderRadius: 40, background: "#faf6ef" }}>
+            <div style={{ transform: `scale(${443 / 431})`, transformOrigin: "0 0" }}><ShopSite scroll={ramp(s, 5.4, 9.9, 0, 300, (x) => x)} /></div>
+          </div>
+          <Img src={staticFile("ads/lynq-hand.png")} style={{ position: "absolute", left: 0, top: -7, width: 1080, height: 1934 }} />
+        </AbsoluteFill>
+      )}
+      <AbsoluteFill style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.12) 40%, rgba(0,0,0,0) 60%)" }} />
 
       <Hook lines={["Still sitting", "on your idea?"]} accent={["idea"]} color={LI} font="Outfit Bold" out={2.2} top={300} />
-      <Caption text="I had an idea." at={0.3} out={2.5} />
-      <Caption text="Now it's a real business." at={2.8} out={4.0} accent={["real", "business."]} />
-      <Caption text="LYNQ built everything." at={4.2} out={5.3} accent={["LYNQ"]} size={72} />
-      <Caption text="My website. My ads." at={5.5} out={6.8} accent={["website.", "ads."]} size={72} />
-      <Caption text="One team for all of it." at={7.0} out={7.9} accent={["One", "team"]} size={72} />
-      <EndCard at={8.2} />
-      {s >= 8.9 && <Tag text="Comment IDEA" at={8.9} top={1180} lang={EN} />}
-      {s < 8.0 && <Label text="LYNQ · AI-MADE PERSON AND VOICE · MADE-UP SHOP" />}
-      <Audio src={staticFile("ads/lynq-talk.mp4")} endAt={240} volume={(f) => Math.max(0, Math.min(1, (240 - f) / 8))} />
+      <Caption text="I had an idea." at={0.4} out={2.3} />
+      <Caption text="Now it's a real business." at={2.7} out={4.3} accent={["real", "business."]} />
+      <Caption text="LYNQ built everything." at={4.7} out={9.7} top={300} size={82} accent={["LYNQ"]} />
+      <Card at={6.4} x={40} y={690} big="Website" small="built from scratch" icon="↗" />
+      <Card at={7.3} x={560} y={1040} big="Ads" small="that bring customers" icon="◎" />
+      <Card at={8.1} x={90} y={1330} big="One team" small="for all of it" icon="✓" />
+      <EndCard at={10.0} />
+      {s >= 12.2 && <Tag text="Comment IDEA" at={12.2} top={1250} lang={EN} />}
+      {s < 9.8 && <Label text="LYNQ · AI-MADE PERSON AND VOICE · MADE-UP SHOP" />}
+      <Sequence from={9} layout="none"><Audio src={staticFile("vo/lynq-vo.mp3")} /></Sequence>
     </AbsoluteFill>
   );
 };
@@ -250,12 +268,12 @@ export const CodeItEveryone: React.FC = () => {
   return (
     <AbsoluteFill style={{ background: CREAM }}>
       <Fonts />
-      <Clip src="ads/teacher-talk.mp4" video from={0} to={5.9} />
+      <Clip src="ads/codeit-teacher.jpg" from={0} to={5.9} />
       <Clip src="ads/codeit-student.mp4" video rate={0.8} from={8.9} to={13.6} />
       {(s < 5.9 || s > 8.3) && s < 13.6 && <AbsoluteFill style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 24%, rgba(0,0,0,0) 50%, rgba(0,0,0,0.45) 100%)" }} />}
       <Hook lines={["The homework", "he didn't want", "to stop."]} accent={["homework"]} color="#ffb15c" font="Baloo 2" out={2.6} size={118} top={400} />
-      <Story text="I gave my class one task:" at={0.3} out={2.5} />
-      <Story text={'"Describe a game you want to play."'} at={3.1} out={4.9} accent={["Describe", "game"]} />
+      <Story text="In class, his teacher gave one task:" at={0.3} out={2.8} />
+      <Story text={'"Describe a game you want to play."'} at={3.2} out={4.8} accent={["Describe", "game"]} />
       <Story text="That night he was still building it." at={9.1} out={11.2} accent={["still"]} />
       <Story text="Nobody told him to." at={11.5} out={12.7} accent={["Nobody"]} size={84} />
       {(s < 5.6 || (s > 8.6 && s < 13.2)) && <Label text="CODEIT · AI-MADE PEOPLE AND VOICE · MADE-UP STORY" />}
@@ -267,15 +285,16 @@ export const CodeItEveryone: React.FC = () => {
         </AbsoluteFill>
       )}
       {s >= 13.0 && (
-        <AbsoluteFill style={{ background: ORANGE, opacity: end, alignItems: "center", justifyContent: "center" }}>
-          <div style={{ textAlign: "center", marginTop: -200, padding: "0 70px" }}>
-            <div style={{ fontFamily: q("Baloo 2"), fontWeight: 800, fontSize: 150, lineHeight: 1, color: "#fff" }}>CodeIt</div>
-            <div style={{ marginTop: 30, fontFamily: q("Baloo 2"), fontWeight: 800, fontSize: 72, lineHeight: 1.1, color: BROWN }}>For teachers, parents and students.</div>
-            <div style={{ marginTop: 50, display: "inline-block", padding: "22px 54px", borderRadius: 60, background: "#fff", fontFamily: q("Nunito"), fontWeight: 900, fontSize: 48, color: BROWN }}>Free to start · codeitlearn.com</div>
+        <AbsoluteFill style={{ background: `radial-gradient(80% 50% at 50% 36%, #ffe7c7 0%, ${CREAM} 70%)`, opacity: end, alignItems: "center", justifyContent: "center" }}>
+          <div style={{ textAlign: "center", marginTop: -120, padding: "0 70px" }}>
+            <Img src={staticFile("ads/codeit-logo.png")} style={{ width: 760, transform: `scale(${0.9 + 0.1 * end}) rotate(${Math.sin(s * 1.6) * 1.2}deg)` }} />
+            <div style={{ marginTop: 50, fontFamily: q("Baloo 2"), fontWeight: 800, fontSize: 84, lineHeight: 1.08, color: BROWN }}>Free to start.</div>
+            <div style={{ marginTop: 10, fontFamily: q("Baloo 2"), fontWeight: 800, fontSize: 56, lineHeight: 1.15, color: "#b4530a", opacity: ramp(s, 14.4, 14.9) }}>For teachers, parents and students.</div>
+            <div style={{ marginTop: 54, display: "inline-block", padding: "24px 60px", borderRadius: 60, background: ORANGE, boxShadow: `0 10px 0 ${BROWN}`, fontFamily: q("Nunito"), fontWeight: 900, fontSize: 50, color: "#fff", opacity: ramp(s, 15.2, 15.7) }}>codeitlearn.com</div>
           </div>
         </AbsoluteFill>
       )}
-      <Audio src={staticFile("ads/teacher-talk.mp4")} endAt={159} volume={(f) => Math.max(0, Math.min(1, (156 - f) / 9))} />
+      <Sequence from={9} layout="none"><Audio src={staticFile("vo/codeit-vo.mp3")} endAt={141} /></Sequence>
       <Sequence from={168} layout="none"><Audio src={staticFile("vo/codeit-vo.mp3")} startFrom={381} endAt={444} /></Sequence>
       <Sequence from={270} layout="none"><Audio src={staticFile("vo/codeit-vo.mp3")} startFrom={147} endAt={261} /></Sequence>
       <Sequence from={399} layout="none"><Audio src={staticFile("vo/codeit-vo.mp3")} startFrom={447} /></Sequence>
