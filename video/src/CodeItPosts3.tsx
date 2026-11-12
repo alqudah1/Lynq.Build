@@ -75,3 +75,71 @@ export const LuxOneNumber: React.FC<{ dark?: boolean }> = ({ dark }) => (
 );
 
 export const LuxOneNumberDark: React.FC = () => <LuxOneNumber dark />;
+
+/* ── Three stronger directions for the same post ── */
+
+const O = "'Outfit Bold'", OR = "'Outfit Regular'";
+
+/** 1. Photo hero: the kid, the lamp, the game on screen. Type sits in the dark of the room. */
+export const LuxPhoto: React.FC = () => (
+  <AbsoluteFill style={{ background: "#0d0d12", overflow: "hidden" }}>
+    <Fonts />
+    <Img src={staticFile("ads/codeit-student.jpg")} style={{ position: "absolute", left: 0, top: -330, width: 1080, height: 1920, filter: "saturate(1.08) contrast(1.04)" }} />
+    <AbsoluteFill style={{ background: "linear-gradient(180deg, rgba(8,8,12,0.92) 0%, rgba(8,8,12,0.7) 28%, rgba(8,8,12,0) 46%, rgba(8,8,12,0) 66%, rgba(8,8,12,0.92) 100%)" }} />
+    <Img src={staticFile("ads/codeit-logo.png")} style={{ position: "absolute", left: 60, top: 48, width: 160 }} />
+    <div style={{ position: "absolute", right: 70, top: 84, fontFamily: OR, fontSize: 28, letterSpacing: 1, color: "rgba(255,255,255,0.75)" }}>codeitlearn.com</div>
+    <div style={{ position: "absolute", left: 66, right: 60, top: 200, fontFamily: O, fontSize: 108, lineHeight: 0.98, letterSpacing: -4, color: "#fff", textShadow: "0 4px 40px rgba(0,0,0,0.5)" }}>
+      He changed<br /><span style={{ color: YELLOW }}>one number.</span>
+    </div>
+    <div style={{ position: "absolute", left: 70, top: 424, fontFamily: OR, fontSize: 42, lineHeight: 1.2, color: "rgba(255,255,255,0.85)" }}>Now he won't stop.</div>
+    {/* glass callout by the screen */}
+    <div style={{ position: "absolute", left: 610, top: 880, display: "flex", alignItems: "center", gap: 16, padding: "18px 30px", borderRadius: 50, background: "rgba(255,255,255,0.16)", border: "2px solid rgba(255,255,255,0.45)", backdropFilter: "blur(18px)", boxShadow: "0 24px 50px rgba(0,0,0,0.45)", fontFamily: O, fontSize: 42, color: "#fff" }}>
+      <span style={{ fontFamily: M, fontSize: 32, color: "rgba(255,255,255,0.8)" }}>fallSpeed</span>2<span style={{ color: YELLOW }}>→</span>9
+    </div>
+    <div style={{ position: "absolute", left: 70, right: 70, bottom: 96, fontFamily: O, fontSize: 54, lineHeight: 1.08, letterSpacing: -1, color: "#fff" }}>Make it. Play it. Change it.</div>
+    <div style={{ position: "absolute", left: 70, bottom: 50, fontFamily: OR, fontSize: 24, letterSpacing: 3, color: "rgba(255,255,255,0.55)" }}>FREE TO START · AI-MADE IMAGE</div>
+  </AbsoluteFill>
+);
+
+/** 2. Minimal: the change itself is the picture. */
+export const LuxNumbers: React.FC = () => (
+  <AbsoluteFill style={{ background: CREAM, overflow: "hidden" }}>
+    <Fonts />
+    <div style={{ position: "absolute", right: -300, top: -300, width: 1000, height: 1000, borderRadius: 500, background: "radial-gradient(closest-side, rgba(254,211,64,0.7) 0%, rgba(254,211,64,0) 100%)" }} />
+    <Img src={staticFile("ads/codeit-logo.png")} style={{ position: "absolute", left: 60, top: 48, width: 160 }} />
+    <div style={{ position: "absolute", right: 70, top: 84, fontFamily: OR, fontSize: 28, letterSpacing: 1, color: "rgba(22,22,29,0.6)" }}>codeitlearn.com</div>
+    <div style={{ position: "absolute", left: 70, top: 250, fontFamily: M, fontSize: 40, color: "rgba(22,22,29,0.55)" }}><span style={{ color: CORAL }}>let</span> fallSpeed =</div>
+    <div style={{ position: "absolute", left: 50, right: 50, top: 290, display: "flex", alignItems: "center", justifyContent: "space-between", fontFamily: O, lineHeight: 1 }}>
+      <span style={{ fontSize: 520, letterSpacing: -20, color: "rgba(22,22,29,0.16)" }}>2</span>
+      <span style={{ fontSize: 150, color: CORAL }}>→</span>
+      <span style={{ fontSize: 620, letterSpacing: -20, background: `linear-gradient(160deg, ${YELLOW} 0%, ${CORAL} 80%)`, WebkitBackgroundClip: "text", color: "transparent", filter: "drop-shadow(0 30px 40px rgba(255,125,89,0.35))" }}>9</span>
+    </div>
+    <div style={{ position: "absolute", left: 70, right: 70, top: 900, fontFamily: O, fontSize: 104, lineHeight: 0.98, letterSpacing: -3, color: INK }}>One number.<br />Whole new game.</div>
+    <div style={{ position: "absolute", left: 70, right: 70, bottom: 64, fontFamily: OR, fontSize: 38, color: "rgba(22,22,29,0.7)" }}>Kids learn to code by changing real code and seeing what happens.</div>
+  </AbsoluteFill>
+);
+
+/** 3. The control: one big dial, the game reacting behind it. */
+export const LuxDial: React.FC = () => (
+  <AbsoluteFill style={{ background: "linear-gradient(180deg, #1c2550 0%, #40287a 100%)", overflow: "hidden" }}>
+    <Fonts />
+    <div style={{ position: "absolute", left: -200, top: 300, width: 900, height: 900, borderRadius: 450, background: "radial-gradient(closest-side, rgba(255,125,89,0.35) 0%, rgba(255,125,89,0) 100%)" }} />
+    <Star x={120} y={560} s={90} trail={110} /><Star x={760} y={520} s={130} trail={80} /><Star x={470} y={640} s={70} trail={150} /><Star x={920} y={700} s={56} trail={160} /><Star x={290} y={730} s={48} trail={200} />
+    <Img src={staticFile("ads/codeit-logo.png")} style={{ position: "absolute", left: 60, top: 48, width: 160 }} />
+    <div style={{ position: "absolute", right: 70, top: 84, fontFamily: OR, fontSize: 28, letterSpacing: 1, color: "rgba(255,255,255,0.75)" }}>codeitlearn.com</div>
+    <div style={{ position: "absolute", left: 66, right: 60, top: 190, fontFamily: O, fontSize: 112, lineHeight: 0.98, letterSpacing: -3, color: "#fff" }}>Too easy?<br /><span style={{ color: YELLOW }}>Change the code.</span></div>
+    {/* slider card */}
+    <div style={{ position: "absolute", left: 70, right: 70, top: 830, padding: "44px 50px 50px", borderRadius: 56, background: "rgba(255,255,255,0.96)", boxShadow: "0 60px 120px rgba(8,8,30,0.55), 0 18px 36px rgba(8,8,30,0.3)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+        <span style={{ fontFamily: M, fontSize: 44, color: INK }}><span style={{ color: CORAL }}>let</span> fallSpeed</span>
+        <span style={{ fontFamily: O, fontSize: 120, lineHeight: 1, color: INK }}>9</span>
+      </div>
+      <div style={{ position: "relative", marginTop: 26, height: 28, borderRadius: 14, background: "#ece7df" }}>
+        <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "86%", borderRadius: 14, background: `linear-gradient(90deg, ${YELLOW}, ${CORAL})` }} />
+        <div style={{ position: "absolute", left: "86%", top: -26, width: 80, height: 80, marginLeft: -40, borderRadius: 40, background: "#fff", border: `8px solid ${CORAL}`, boxShadow: "0 14px 30px rgba(255,125,89,0.5)" }} />
+      </div>
+      <div style={{ marginTop: 34, display: "flex", justifyContent: "space-between", fontFamily: OR, fontSize: 30, color: "rgba(22,22,29,0.55)" }}><span>slow</span><span>chaos</span></div>
+    </div>
+    <div style={{ position: "absolute", left: 70, right: 70, bottom: 60, fontFamily: OR, fontSize: 38, color: "rgba(255,255,255,0.8)" }}>Make it. Play it. Change it.</div>
+  </AbsoluteFill>
+);

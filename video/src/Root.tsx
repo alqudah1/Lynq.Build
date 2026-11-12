@@ -18,7 +18,7 @@ import { LynqSamFilm } from "./LynqSamFilm";
 import { CodeItEveryone, LynqIdea } from "./PhoneAds";
 import { PostAiQuestion, PostFirstProgram, PostFree, PostLessons, PostNoInstall, PostOneNumber, PostParentSentence, PostPrivate, PostSayAGame, PostTeachers, PostThreeGames, PostWhatTheyBuild } from "./CodeItPosts";
 import { PostAchievements, PostArcade, PostRecipe, PostSearch, PostThread, PostWanted } from "./CodeItPosts2";
-import { LuxOneNumber, LuxOneNumberDark } from "./CodeItPosts3";
+import { LuxDial, LuxNumbers, LuxOneNumber, LuxOneNumberDark, LuxPhoto } from "./CodeItPosts3";
 import { ShowcaseBarber, ShowcaseCafe, ShowcaseGym } from "./Showcase";
 
 const C = (id: string, component: React.FC, seconds: number) => <Composition id={id} component={component} durationInFrames={Math.round(seconds * 30)} fps={30} width={1080} height={1920} />;
@@ -27,7 +27,7 @@ export const Root: React.FC = () => (
   <>
     {[PostOneNumber, PostThreeGames, PostParentSentence, PostLessons, PostAiQuestion, PostFree, PostSayAGame, PostNoInstall, PostWhatTheyBuild, PostTeachers, PostFirstProgram, PostPrivate].map((P, i) => <Composition key={`cp${i}`} id={`codeit-post-${i + 1}`} component={P} durationInFrames={1} fps={30} width={1080} height={1350} />)}
     {[PostThread, PostArcade, PostAchievements, PostWanted, PostSearch, PostRecipe].map((P, i) => <Composition key={`cq${i}`} id={`codeit-idea-${i + 1}`} component={P} durationInFrames={1} fps={30} width={1080} height={1350} />)}
-    {[LuxOneNumber, LuxOneNumberDark].map((P, i) => <Composition key={`lx${i}`} id={`codeit-lux-${i + 1}`} component={P} durationInFrames={1} fps={30} width={1080} height={1350} />)}
+    {[LuxOneNumber, LuxOneNumberDark, LuxPhoto, LuxNumbers, LuxDial].map((P, i) => <Composition key={`lx${i}`} id={`codeit-lux-${i + 1}`} component={P} durationInFrames={1} fps={30} width={1080} height={1350} />)}
     {C("lynq-housedeals", LynqHouseDeals, 17)}
     {C("lynq-ab-button", LynqAB, 14)}
     {C("lynq-office", LynqOffice, 16)}
