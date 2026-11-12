@@ -10,7 +10,17 @@
 // asset — the site is plain static HTML, so there is no build step that could inline them.
 // Never log a secret, an access token, or an Authorization header.
 //
-// Required environment variables (Vercel → Project kingsbridge-group → Settings → Environment Variables):
+// DELIVERY PROVIDER (Oct 2026): Kingsbridge mail moved to Google Workspace. When both Gmail
+// variables below are set, inquiries are sent through Gmail SMTP (smtp.gmail.com:465, TLS)
+// as the Workspace mailbox, so they land in Gmail. Sending through Microsoft Graph would keep
+// delivering inside the old Microsoft 365 tenant (internal delivery ignores MX), so the
+// Gmail path takes priority. If the Gmail variables are absent, the Graph path below is used
+// unchanged. No dependencies: the SMTP exchange uses Node's built-in `tls` module.
+//
+//   GMAIL_USER          The Workspace mailbox to send AS, e.g. admin@kingsbridgegroup.ca
+//   GMAIL_APP_PASSWORD  A Google app password for that mailbox (requires 2-Step Verification)
+//
+// Microsoft Graph environment variables (fallback when Gmail is not configured):
 //   MS_TENANT_ID       Directory (tenant) ID of the Kingsbridge Microsoft Entra tenant
 //   MS_CLIENT_ID       Application (client) ID of the app registration
 //   MS_CLIENT_SECRET   Client secret VALUE (not the secret ID)
@@ -230,6 +240,127 @@ async function sendViaGraph(env, { subject, html, replyTo, recipient }) {
   throw err;
 }
 
+// --- Gmail SMTP (Google Workspace) ----------------------------------------------------
+
+const tls = require('tls');
+
+const GMAIL_SMTP_HOST = 'smtp.gmail.com';
+const GMAIL_SMTP_PORT = 465;
+
+function gmailConfigured(env) {
+  return Boolean(env.GMAIL_USER && env.GMAIL_APP_PASSWORD);
+}
+
+// RFC 2047 encoded-word, so names and inquiry types with non-ASCII characters survive.
+function encodeHeader(value) {
+  const text = String(value).replace(/[\r\n]/g, ' ');
+  return /^[\x20-\x7E]*$/.test(text) ? text : `=?UTF-8?B?${Buffer.from(text, 'utf8').toString('base64')}?=`;
+}
+
+function wrapBase64(value) {
+  return Buffer.from(value, 'utf8').toString('base64').replace(/.{1,76}/g, '$&\r\n');
+}
+
+// Builds the RFC 5322 message. Exported for tests.
+function buildMimeMessage({ from, to, replyTo, subject, html, date = new Date() }) {
+  const domain = String(from).split('@')[1] || 'localhost';
+  const messageId = `<${Date.now().toString(36)}.${Math.random().toString(36).slice(2)}@${domain}>`;
+  const headers = [
+    `From: "Kingsbridge Website" <${from}>`,
+    `To: <${to}>`,
+    replyTo ? `Reply-To: <${replyTo}>` : null,
+    `Subject: ${encodeHeader(subject)}`,
+    `Date: ${date.toUTCString().replace('GMT', '+0000')}`,
+    `Message-ID: ${messageId}`,
+    'MIME-Version: 1.0',
+    'Content-Type: text/html; charset=UTF-8',
+    'Content-Transfer-Encoding: base64'
+  ].filter(Boolean);
+  return `${headers.join('\r\n')}\r\n\r\n${wrapBase64(html)}`;
+}
+
+// Minimal SMTP client for one message over implicit TLS. Resolves on a 250 after DATA,
+// rejects on any unexpected reply code, socket error or timeout. Never logs credentials.
+function smtpSend({ host, port, user, pass, from, to, data, timeoutMs = GRAPH_SEND_TIMEOUT_MS, connect = tls.connect }) {
+  return new Promise((resolve, reject) => {
+    const socket = connect({ host, port, servername: host });
+    let buffer = '';
+    let settled = false;
+    const steps = [
+      { expect: 220, send: `EHLO kingsbridgegroup.ca` },
+      { expect: 250, send: `AUTH PLAIN ${Buffer.from(`\u0000${user}\u0000${pass}`, 'utf8').toString('base64')}` },
+      { expect: 235, send: `MAIL FROM:<${from}>` },
+      { expect: 250, send: `RCPT TO:<${to}>` },
+      { expect: 250, send: 'DATA' },
+      // Dot-stuff any line that begins with "." (RFC 5321 §4.5.2), then terminate.
+      { expect: 354, send: `${data.replace(/\r\n\./g, '\r\n..')}\r\n.` },
+      { expect: 250, send: 'QUIT', done: true }
+    ];
+    let index = 0;
+
+    const finish = (err) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (err) {
+        socket.destroy();
+        reject(err);
+      } else {
+        socket.end();
+        resolve();
+      }
+    };
+    const timer = setTimeout(() => {
+      const err = new Error('gmail_send_failed');
+      err.detail = 'timeout';
+      finish(err);
+    }, timeoutMs);
+
+    socket.setEncoding('utf8');
+    socket.on('error', (e) => {
+      const err = new Error('gmail_send_failed');
+      err.detail = e.code || 'socket_error';
+      finish(err);
+    });
+    socket.on('data', (chunk) => {
+      buffer += chunk;
+      // A reply is complete when its last line has a space after the code ("250 OK").
+      let match;
+      while ((match = buffer.match(/^(\d{3})([ -])(.*)\r?\n/m)) && match.index === 0) {
+        buffer = buffer.slice(match[0].length);
+        if (match[2] === '-') continue;
+        const code = Number(match[1]);
+        const step = steps[index];
+        if (!step) return;
+        if (code !== step.expect) {
+          const err = new Error('gmail_send_failed');
+          // Reply code and server text only — AUTH replies never echo the password.
+          err.detail = `${code} ${match[3]}`.slice(0, 200);
+          return finish(err);
+        }
+        socket.write(`${step.send}\r\n`);
+        index += 1;
+        if (step.done) return finish();
+      }
+    });
+  });
+}
+
+async function sendViaGmail(env, { subject, html, replyTo, recipient }) {
+  const from = env.GMAIL_USER;
+  const data = buildMimeMessage({ from, to: recipient, replyTo, subject, html });
+  await smtpSend({
+    host: GMAIL_SMTP_HOST,
+    port: GMAIL_SMTP_PORT,
+    user: from,
+    // Google displays app passwords in groups of four; spaces are not part of the password.
+    pass: String(env.GMAIL_APP_PASSWORD).replace(/\s+/g, ''),
+    from,
+    to: recipient,
+    data
+  });
+}
+
 // --- handler --------------------------------------------------------------------------
 
 module.exports = async function handler(req, res) {
@@ -324,8 +455,10 @@ module.exports = async function handler(req, res) {
   }
 
   const env = process.env;
-  const missing = ['MS_TENANT_ID', 'MS_CLIENT_ID', 'MS_CLIENT_SECRET', 'MS_SENDER_UPN']
-    .filter((k) => !env[k]);
+  const useGmail = gmailConfigured(env);
+  const missing = useGmail
+    ? []
+    : ['MS_TENANT_ID', 'MS_CLIENT_ID', 'MS_CLIENT_SECRET', 'MS_SENDER_UPN'].filter((k) => !env[k]);
   if (missing.length) {
     // Names only — never values.
     console.error('[contact] missing environment variables:', missing.join(', '));
@@ -360,15 +493,17 @@ module.exports = async function handler(req, res) {
   // start a second one. Only a confirmed Graph acceptance turns this into 'sent'.
   deliveries.set(dedupeKey, { state: 'pending', at: Date.now() });
   try {
-    await sendViaGraph(env, { subject, html, replyTo: values.email, recipient });
+    const send = useGmail ? sendViaGmail : sendViaGraph;
+    await send(env, { subject, html, replyTo: values.email, recipient });
     deliveries.set(dedupeKey, { state: 'sent', at: Date.now() });
-    // `delivered: true` is returned ONLY here, after Microsoft Graph accepted the message.
+    // `delivered: true` is returned ONLY here, after Gmail (250 after DATA) or Microsoft
+    // Graph (202) accepted the message.
     // The page fires the GA4 generate_lead conversion on this flag and nothing else.
     return res.status(200).json({ ok: true, delivered: true });
   } catch (error) {
     // Not delivered: forget the attempt entirely so the same inquiry can be retried.
     deliveries.delete(dedupeKey);
-    // error.detail carries Microsoft's error code and message only — no token, no secret.
+    // error.detail carries the provider's error code and message only — no token, no secret.
     console.error('[contact] delivery failed:', error.message, error.detail || '');
     return res.status(502).json({
       ok: false,
@@ -376,3 +511,6 @@ module.exports = async function handler(req, res) {
     });
   }
 };
+
+// Test hooks (not used at runtime).
+module.exports._internal = { buildMimeMessage, smtpSend, gmailConfigured, encodeHeader };
