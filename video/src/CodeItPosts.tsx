@@ -146,3 +146,102 @@ export const PostFree: React.FC = () => (
     </div>
   </Frame>
 );
+
+/* ── Second set, so there are options to pick from ── */
+
+const Bullet: React.FC<{ top: number; text: string; dark?: boolean }> = ({ top, text, dark }) => (
+  <div style={{ position: "absolute", left: 70, right: 70, top, display: "flex", alignItems: "center", gap: 26 }}>
+    <div style={{ flex: "none", width: 70, height: 70, borderRadius: 35, background: YELLOW, border: `5px solid ${INK}`, fontFamily: H, fontWeight: 800, fontSize: 46, lineHeight: "64px", textAlign: "center", color: INK }}>✓</div>
+    <div style={{ fontFamily: H, fontWeight: 800, fontSize: 58, lineHeight: 1.05, color: dark ? CREAM : INK }}>{text}</div>
+  </div>
+);
+
+/* 7. Say a game, get a game */
+export const PostSayAGame: React.FC = () => (
+  <Frame bg={CREAM} kicker="SAY A GAME. GET A GAME.">
+    <Head top={150}>They describe it.<br /><span style={{ color: CORAL }}>Then make it theirs.</span></Head>
+    <div style={{ position: "absolute", left: 70, right: 70, top: 600, padding: "30px 36px 34px", borderRadius: 40, background: INK }}>
+      <div style={{ fontFamily: B, fontWeight: 900, fontSize: 26, letterSpacing: 4, color: "#d8c3a5" }}>WHAT DO YOU WANT TO BUILD?</div>
+      <div style={{ marginTop: 20, padding: "28px 32px", borderRadius: 26, background: CREAM, border: `5px solid ${YELLOW}`, fontFamily: B, fontWeight: 800, fontSize: 46, color: INK }}>a cat that catches falling fish<span style={{ display: "inline-block", width: 5, height: 48, marginLeft: 4, background: INK, verticalAlign: "middle" }} /></div>
+      <div style={{ marginTop: 26, display: "inline-block", padding: "20px 46px", borderRadius: 50, background: CORAL, fontFamily: H, fontWeight: 800, fontSize: 46, color: INK }}>Build it →</div>
+    </div>
+    <div style={{ position: "absolute", left: 70, right: 70, top: 1010, fontFamily: B, fontWeight: 800, fontSize: 38, lineHeight: 1.25, color: BROWN }}>CodeIt builds a first version. The changing, fixing and understanding is on them.</div>
+  </Frame>
+);
+
+/* 8. Nothing to install */
+export const PostNoInstall: React.FC = () => (
+  <Frame bg={YELLOW} kicker="PARENTS ASK">
+    <Head top={150} size={96}>"Do we need to install anything?"</Head>
+    <div style={{ position: "absolute", left: 60, top: 400, fontFamily: H, fontWeight: 800, fontSize: 400, lineHeight: 1, letterSpacing: -12, color: INK }}>No.</div>
+    <Bullet top={850} text="Runs in the browser" />
+    <Bullet top={950} text="Nothing to download" />
+    <Bullet top={1050} text="Needs internet" />
+  </Frame>
+);
+
+/* 9. What they can build */
+export const PostWhatTheyBuild: React.FC = () => {
+  const Card: React.FC<{ x: number; rot: number; bg: string; name: string; children: React.ReactNode }> = ({ x, rot, bg, name, children }) => (
+    <div style={{ position: "absolute", left: x, top: 540, width: 300, transform: `rotate(${rot}deg)` }}>
+      <div style={{ height: 300, borderRadius: 30, background: bg, border: `6px solid ${INK}`, boxShadow: `0 12px 0 ${INK}`, position: "relative", overflow: "hidden" }}>{children}</div>
+      <div style={{ marginTop: 30, fontFamily: H, fontWeight: 800, fontSize: 60, color: CREAM, textAlign: "center" }}>{name}</div>
+    </div>
+  );
+  return (
+    <Frame bg={CORAL} kicker="WHAT KIDS MAKE" chip>
+      <Head top={150}>Built by a kid.<br /><span style={{ color: YELLOW }}>Not just played.</span></Head>
+      <Card x={60} rot={-4} bg={CREAM} name="Websites">
+        <div style={{ height: 50, background: INK }} /><div style={{ margin: "24px 24px 0", height: 80, borderRadius: 14, background: YELLOW }} /><div style={{ margin: "18px 24px 0", height: 20, borderRadius: 10, background: "#d8c3a5" }} /><div style={{ margin: "14px 24px 0", width: 150, height: 20, borderRadius: 10, background: "#d8c3a5" }} />
+      </Card>
+      <Card x={390} rot={2} bg="linear-gradient(180deg,#24325c,#3b2a6b)" name="Games">
+        <Star x={40} y={30} /><Star x={170} y={90} s={76} /><div style={{ position: "absolute", left: 92, bottom: 22, width: 110, height: 30, borderRadius: 15, background: CORAL }} />
+      </Card>
+      <Card x={720} rot={-2} bg={YELLOW} name="Quizzes">
+        <div style={{ position: "absolute", left: 0, right: 0, top: 30, textAlign: "center", fontFamily: H, fontWeight: 800, fontSize: 190, lineHeight: 1, color: INK }}>?</div>
+      </Card>
+      <div style={{ position: "absolute", left: 70, right: 70, top: 1000, fontFamily: B, fontWeight: 800, fontSize: 38, lineHeight: 1.2, color: INK }}>Real HTML, CSS and JavaScript they can open and edit.</div>
+    </Frame>
+  );
+};
+
+/* 10. Teachers */
+export const PostTeachers: React.FC = () => (
+  <Frame bg={INK} kicker="FOR TEACHERS" dark>
+    <div style={{ position: "absolute", left: 60, top: 120, fontFamily: H, fontWeight: 800, fontSize: 420, lineHeight: 1, letterSpacing: -14, color: CORAL }}>12</div>
+    <div style={{ position: "absolute", left: 560, top: 230, right: 60, fontFamily: H, fontWeight: 800, fontSize: 88, lineHeight: 0.98, color: CREAM }}>coding lesson plans.</div>
+    <Bullet top={640} text="For your classroom" dark />
+    <Bullet top={750} text="Runs in the browser" dark />
+    <Bullet top={860} text="Free to start" dark />
+    <div style={{ position: "absolute", left: 70, right: 70, top: 1000, fontFamily: B, fontWeight: 800, fontSize: 42, lineHeight: 1.2, color: "#e8d7bd" }}>Find them under "Teach a class".</div>
+  </Frame>
+);
+
+/* 11. First Python program */
+export const PostFirstProgram: React.FC = () => (
+  <Frame bg={CREAM} kicker="LESSON ONE">
+    <Head top={150}>Their first<br /><span style={{ color: CORAL }}>Python program.</span></Head>
+    <div style={{ position: "absolute", left: 70, right: 70, top: 480, borderRadius: 34, background: INK, overflow: "hidden" }}>
+      <div style={{ padding: "30px 36px", fontFamily: M, fontSize: 44, lineHeight: 1.5, color: "#e8d7bd" }}>
+        <div><span style={{ color: YELLOW }}>print</span>(<span style={{ color: CORAL }}>"Hello, I made this!"</span>)</div>
+      </div>
+      <div style={{ padding: "22px 36px 30px", background: "#1a0f06", fontFamily: M, fontSize: 40, color: "#9be28a" }}><span style={{ color: "#8a6f52" }}>&gt; </span>Hello, I made this!</div>
+    </div>
+    <div style={{ position: "absolute", left: 70, right: 70, top: 800, display: "flex", gap: 22 }}>
+      {["Write it", "Run it", "Make it yours"].map((t, i) => <div key={t} style={{ flex: 1, padding: "30px 10px", borderRadius: 28, background: i === 2 ? CORAL : YELLOW, border: `5px solid ${INK}`, fontFamily: H, fontWeight: 800, fontSize: 36, whiteSpace: "nowrap", color: INK, textAlign: "center" }}>{t}</div>)}
+    </div>
+    <div style={{ position: "absolute", left: 70, right: 70, top: 1000, fontFamily: B, fontWeight: 800, fontSize: 42, lineHeight: 1.25, color: BROWN }}>No AI in the lessons. Just them and the code.</div>
+  </Frame>
+);
+
+/* 12. Private by default */
+export const PostPrivate: React.FC = () => (
+  <Frame bg={YELLOW} kicker="FOR PARENTS">
+    <Head top={150}>Under 13?<br />You hold the keys.</Head>
+    <svg width={300} height={300} viewBox="0 0 24 24" style={{ position: "absolute", right: 80, top: 470 }}><rect x="4" y="10" width="16" height="11" rx="3" fill={INK} /><path d="M8 10V7a4 4 0 018 0v3" fill="none" stroke={INK} strokeWidth="2.6" /><circle cx="12" cy="15.5" r="1.8" fill={YELLOW} /></svg>
+    <div style={{ position: "absolute", left: 70, width: 600, top: 500, fontFamily: B, fontWeight: 800, fontSize: 48, lineHeight: 1.22, color: INK }}>A parent creates a private profile for them.</div>
+    <Bullet top={830} text="Managed by you" />
+    <Bullet top={935} text="Can't publish publicly" />
+    <Bullet top={1040} text="No install, no card" />
+  </Frame>
+);
