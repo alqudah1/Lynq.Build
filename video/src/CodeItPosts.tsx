@@ -1,0 +1,148 @@
+import React from "react";
+import { AbsoluteFill, Img, staticFile } from "remotion";
+import { Fonts } from "./kit";
+
+/*
+ * CodeIt feed posts, second look: bold colour-block posters built around the real product
+ * (code, games, the parent view) and the real logo, instead of the mascot illustrations.
+ * 1080x1350 stills. Every fact is from codeitlearn.com.
+ */
+
+const CORAL = "#ff7d59", YELLOW = "#fed340", CREAM = "#fff4e5", INK = "#2a1a0c", BROWN = "#35220e";
+const H = "'Baloo 2'", B = "'Nunito'", M = "'JetBrains Mono'";
+
+const Frame: React.FC<{ bg: string; kicker: string; dark?: boolean; chip?: boolean; children: React.ReactNode }> = ({ bg, kicker, dark, chip, children }) => (
+  <AbsoluteFill style={{ background: bg, overflow: "hidden" }}>
+    <Fonts />
+    <div style={{ position: "absolute", left: 70, top: 64, padding: "12px 28px", borderRadius: 40, background: dark ? "rgba(255,255,255,0.12)" : INK, fontFamily: B, fontWeight: 900, fontSize: 28, letterSpacing: 4, color: dark ? YELLOW : CREAM }}>{kicker}</div>
+    {children}
+    {chip && <div style={{ position: "absolute", left: 40, bottom: 30, width: 270, height: 190, borderRadius: 40, background: CREAM }} />}
+    <Img src={staticFile("ads/codeit-logo.png")} style={{ position: "absolute", left: 56, bottom: 44, width: 230 }} />
+    <div style={{ position: "absolute", right: 70, bottom: 78, padding: "16px 34px", borderRadius: 50, background: dark ? CREAM : INK, fontFamily: B, fontWeight: 900, fontSize: 34, color: dark ? INK : CREAM }}>codeitlearn.com</div>
+  </AbsoluteFill>
+);
+
+const Head: React.FC<{ top: number; size?: number; color?: string; children: React.ReactNode }> = ({ top, size = 118, color = INK, children }) => (
+  <div style={{ position: "absolute", left: 70, right: 70, top, fontFamily: H, fontWeight: 800, fontSize: size, lineHeight: 0.98, letterSpacing: -2, color }}>{children}</div>
+);
+
+const Star: React.FC<{ x: number; y: number; s?: number; c?: string }> = ({ x, y, s = 60, c = YELLOW }) => (
+  <svg width={s} height={s} viewBox="0 0 24 24" style={{ position: "absolute", left: x, top: y }}><path d="M12 1.5l3.1 6.6 7.2.9-5.3 5 1.4 7.1L12 17.6 5.6 21.1 7 14 1.7 9l7.2-.9z" fill={c} /></svg>
+);
+
+/* 1. Change one number */
+export const PostOneNumber: React.FC = () => (
+  <Frame bg={INK} kicker="HOW KIDS LEARN HERE" dark>
+    <Head top={150} color={CREAM}>Change <span style={{ color: YELLOW }}>one number.</span><br />See what breaks.</Head>
+    <div style={{ position: "absolute", left: 70, top: 570, width: 560, borderRadius: 34, background: "#1a0f06", border: "3px solid #5a3d1f", padding: "30px 34px", fontFamily: M, fontSize: 36, lineHeight: 1.55, color: "#e8d7bd" }}>
+      <div style={{ color: "#8a6f52" }}>// game.js</div>
+      <div><span style={{ color: CORAL }}>let</span> score = <span style={{ color: YELLOW }}>0</span></div>
+      <div style={{ margin: "4px -14px", padding: "4px 14px", borderRadius: 12, background: "rgba(254,211,64,0.16)" }}><span style={{ color: CORAL }}>let</span> fallSpeed = <span style={{ textDecoration: "line-through", color: "#8a6f52" }}>2</span> <span style={{ color: YELLOW, fontWeight: 800 }}>9</span></div>
+      <div><span style={{ color: CORAL }}>let</span> lives = <span style={{ color: YELLOW }}>3</span></div>
+    </div>
+    <div style={{ position: "absolute", right: 70, top: 540, width: 330, height: 400, borderRadius: 34, background: "linear-gradient(180deg,#24325c,#3b2a6b)", border: `6px solid ${CREAM}`, overflow: "hidden" }}>
+      <Star x={40} y={30} s={56} /><Star x={200} y={110} s={70} /><Star x={110} y={220} s={50} /><Star x={240} y={280} s={44} />
+      {[40, 200, 110, 240].map((x, i) => <div key={i} style={{ position: "absolute", left: x + 22, top: [0, 70, 180, 250][i] - 60, width: 6, height: 70, borderRadius: 3, background: "rgba(254,211,64,0.35)" }} />)}
+      <div style={{ position: "absolute", left: 105, bottom: 22, width: 120, height: 34, borderRadius: 17, background: CORAL }} />
+    </div>
+    <div style={{ position: "absolute", left: 70, right: 70, top: 985, fontFamily: B, fontWeight: 800, fontSize: 42, lineHeight: 1.25, color: "#e8d7bd" }}>Make it, play it, change it. That's how the code starts to make sense.</div>
+  </Frame>
+);
+
+/* 2. Three games, no typing */
+export const PostThreeGames: React.FC = () => {
+  const Tile: React.FC<{ x: number; bg: string; name: string; children: React.ReactNode }> = ({ x, bg, name, children }) => (
+    <div style={{ position: "absolute", left: x, top: 520, width: 296 }}>
+      <div style={{ height: 360, borderRadius: 30, background: bg, border: `6px solid ${INK}`, boxShadow: `0 12px 0 ${INK}`, position: "relative", overflow: "hidden" }}>{children}</div>
+      <div style={{ marginTop: 34, fontFamily: H, fontWeight: 800, fontSize: 40, lineHeight: 1.02, color: INK, textAlign: "center" }}>{name}</div>
+    </div>
+  );
+  return (
+    <Frame bg={YELLOW} kicker="PLAY FIRST">
+      <Head top={150}>3 games.<br />No typing.<br /><span style={{ color: "#c2410c" }}>No account.</span></Head>
+      <Tile x={70} bg="linear-gradient(180deg,#24325c,#3b2a6b)" name="Catch the falling stars">
+        <Star x={30} y={30} /><Star x={170} y={100} s={76} /><Star x={90} y={190} s={48} />
+        <div style={{ position: "absolute", left: 88, bottom: 20, width: 110, height: 30, borderRadius: 15, background: CORAL }} />
+      </Tile>
+      <Tile x={392} bg="linear-gradient(180deg,#7ad0ff 0%,#7ad0ff 45%,#3fae5a 45%)" name="Penalty shootout">
+        <div style={{ position: "absolute", left: 48, top: 70, width: 190, height: 110, border: "8px solid #fff", borderBottom: "none" }} />
+        <div style={{ position: "absolute", left: 118, top: 232, width: 50, height: 50, borderRadius: 25, background: "#fff", border: `5px solid ${INK}` }} />
+      </Tile>
+      <Tile x={714} bg="linear-gradient(180deg,#0e0b1f,#261a44)" name="Dodge the asteroids">
+        {[[40, 50, 70], [180, 120, 54], [90, 180, 40]].map(([x, y, s], i) => <div key={i} style={{ position: "absolute", left: x, top: y, width: s, height: s, borderRadius: "46% 54% 40% 60%", background: "#8d7a6a", border: "4px solid #5f5247" }} />)}
+        <div style={{ position: "absolute", left: 122, bottom: 26, width: 0, height: 0, borderLeft: "26px solid transparent", borderRight: "26px solid transparent", borderBottom: `56px solid ${YELLOW}` }} />
+      </Tile>
+      <div style={{ position: "absolute", left: 70, right: 70, top: 1040, fontFamily: B, fontWeight: 800, fontSize: 42, lineHeight: 1.2, color: INK, textAlign: "center" }}>Then open the code and see what it's made of.</div>
+    </Frame>
+  );
+};
+
+/* 3. Parent view */
+export const PostParentSentence: React.FC = () => (
+  <Frame bg={CREAM} kicker="FOR PARENTS">
+    <Head top={150}>Not a score.<br /><span style={{ color: CORAL }}>A sentence.</span></Head>
+    <div style={{ position: "absolute", left: 70, right: 70, top: 470, borderRadius: 40, background: "#fff", border: `5px solid ${INK}`, boxShadow: `0 14px 0 ${INK}`, padding: "44px 48px" }}>
+      <div style={{ fontFamily: B, fontWeight: 900, fontSize: 26, letterSpacing: 4, color: "#b4530a" }}>WHAT YOUR CHILD WORKED OUT</div>
+      <div style={{ marginTop: 22, fontFamily: H, fontWeight: 700, fontSize: 60, lineHeight: 1.12, color: INK }}>"Worked out that <span style={{ background: YELLOW, padding: "0 12px", borderRadius: 12, fontFamily: M, fontSize: 50 }}>fallSpeed</span> controls how fast the stars drop."</div>
+      <div style={{ marginTop: 26, fontFamily: B, fontWeight: 700, fontSize: 28, color: "#8a6f52" }}>Example of the parent view</div>
+    </div>
+    <div style={{ position: "absolute", left: 70, right: 70, top: 975, fontFamily: B, fontWeight: 800, fontSize: 38, lineHeight: 1.25, color: BROWN }}>The questions come from their own project's code. Only a right answer on the first try counts.</div>
+  </Frame>
+);
+
+/* 4. 31 lessons path */
+export const PostLessons: React.FC = () => {
+  const steps = ["variables", "strings", "if statements", "for loops"];
+  return (
+    <Frame bg={CORAL} kicker="PYTHON, STEP BY STEP" chip>
+      <div style={{ position: "absolute", left: 60, top: 120, fontFamily: H, fontWeight: 800, fontSize: 420, lineHeight: 1, letterSpacing: -14, color: YELLOW }}>31</div>
+      <div style={{ position: "absolute", left: 590, top: 250, right: 60, fontFamily: H, fontWeight: 800, fontSize: 92, lineHeight: 0.98, color: INK }}>Python lessons.</div>
+      <div style={{ position: "absolute", left: 70, right: 70, top: 600, height: 10, borderRadius: 5, background: INK, opacity: 0.25, marginTop: 44 }} />
+      {steps.map((t, i) => (
+        <div key={t} style={{ position: "absolute", left: 70 + i * 240, top: 600, width: 220, textAlign: "center" }}>
+          <div style={{ margin: "0 auto", width: 96, height: 96, borderRadius: 48, background: i === 0 ? YELLOW : CREAM, border: `6px solid ${INK}`, fontFamily: H, fontWeight: 800, fontSize: 50, lineHeight: "88px", color: INK }}>{i + 1}</div>
+          <div style={{ marginTop: 18, fontFamily: M, fontWeight: 700, fontSize: 30, color: INK }}>{t}</div>
+        </div>
+      ))}
+      <div style={{ position: "absolute", left: 70, right: 70, top: 850, display: "flex", gap: 22 }}>
+        {["In the browser", "Nothing to install", "Run every line"].map((t) => <div key={t} style={{ flex: 1, padding: "26px 10px", borderRadius: 28, background: INK, fontFamily: B, fontWeight: 900, fontSize: 32, color: CREAM, textAlign: "center" }}>{t}</div>)}
+      </div>
+      <div style={{ position: "absolute", left: 70, right: 70, top: 1010, fontFamily: B, fontWeight: 800, fontSize: 42, lineHeight: 1.2, color: INK }}>Write it, run it, make the message yours.</div>
+    </Frame>
+  );
+};
+
+/* 5. The AI question */
+export const PostAiQuestion: React.FC = () => (
+  <Frame bg={INK} kicker="PARENTS ASK" dark>
+    <Head top={150} size={104} color={CREAM}>"Can't my kid just let <span style={{ color: CORAL }}>AI</span> do it all?"</Head>
+    {[
+      ["1", "CodeIt builds the first version."],
+      ["2", "Your kid changes it and plays it."],
+      ["3", "Then it asks about their own code."],
+    ].map(([n, t], i) => (
+      <div key={n} style={{ position: "absolute", left: 70, right: 70, top: 490 + i * 140, display: "flex", alignItems: "center", gap: 28 }}>
+        <div style={{ flex: "none", width: 96, height: 96, borderRadius: 28, background: i === 2 ? YELLOW : CREAM, fontFamily: H, fontWeight: 800, fontSize: 60, lineHeight: "100px", textAlign: "center", color: INK }}>{n}</div>
+        <div style={{ fontFamily: B, fontWeight: 800, fontSize: 48, lineHeight: 1.1, color: i === 2 ? YELLOW : CREAM }}>{t}</div>
+      </div>
+    ))}
+    <div style={{ position: "absolute", left: 70, right: 70, top: 950, fontFamily: H, fontWeight: 800, fontSize: 72, lineHeight: 1.05, color: CREAM }}>Only they can answer that part.</div>
+  </Frame>
+);
+
+/* 6. Free plan */
+export const PostFree: React.FC = () => (
+  <Frame bg={CREAM} kicker="WHAT IT COSTS">
+    <div style={{ position: "absolute", left: 60, top: 130, fontFamily: H, fontWeight: 800, fontSize: 330, lineHeight: 1, letterSpacing: -10, color: CORAL }}>Free.</div>
+    {["No card", "No expiry", "10 assisted builds a month"].map((t, i) => (
+      <div key={t} style={{ position: "absolute", left: 70, top: 520 + i * 118, display: "flex", alignItems: "center", gap: 26 }}>
+        <div style={{ width: 76, height: 76, borderRadius: 38, background: YELLOW, border: `5px solid ${INK}`, fontFamily: H, fontWeight: 800, fontSize: 50, lineHeight: "70px", textAlign: "center", color: INK }}>✓</div>
+        <div style={{ fontFamily: H, fontWeight: 800, fontSize: 68, color: INK }}>{t}</div>
+      </div>
+    ))}
+    <div style={{ position: "absolute", left: 70, right: 70, top: 920, padding: "34px 40px", borderRadius: 34, background: INK }}>
+      <div style={{ fontFamily: B, fontWeight: 900, fontSize: 26, letterSpacing: 4, color: YELLOW }}>WANT MORE?</div>
+      <div style={{ marginTop: 6, fontFamily: B, fontWeight: 800, fontSize: 44, lineHeight: 1.15, color: CREAM }}>Family plan, CA$12/month. Cancel anytime.</div>
+    </div>
+  </Frame>
+);
