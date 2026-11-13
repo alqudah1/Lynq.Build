@@ -156,3 +156,25 @@ export const LynqAorB: React.FC = () => {
     </Shell>
   );
 };
+
+/* ── Object set: one product-style photo on black, one hook that explains the object ──
+ * The earlier object posts looked right but said nothing (a tiny ruler, tiny type). Rules applied here:
+ * one object big enough to read as a thumbnail, a metaphor the headline solves in a second,
+ * the business owner's problem in the headline, and one thing to do. */
+const ObjPost: React.FC<{ img: string; l1: string; l2: string; sub: string; cta: string; size?: number }> = ({ img, l1, l2, sub, cta, size = 150 }) => (
+  <AbsoluteFill style={{ background: "#0b0b0c", overflow: "hidden" }}>
+    <Fonts />
+    <Img src={staticFile(`lynq-obj/${img}.jpg`)} style={{ position: "absolute", left: -4, top: 0, width: 1088, height: 1350, objectFit: "cover", filter: "contrast(1.08) brightness(1.12)" }} />
+    <AbsoluteFill style={{ background: "linear-gradient(180deg, rgba(8,8,9,0.72) 0%, rgba(8,8,9,0.2) 34%, rgba(8,8,9,0) 50%, rgba(8,8,9,0) 78%, rgba(8,8,9,0.7) 100%)" }} />
+    <div style={{ position: "absolute", left: 70, top: 64, display: "flex", alignItems: "center", gap: 16 }}>
+      <Img src={staticFile("ads/lynq-logo.svg")} style={{ width: 44, height: 44 }} />
+      <span style={{ fontFamily: O, fontSize: 38, letterSpacing: 5, color: WH }}>LYNQ</span>
+    </div>
+    <div style={{ position: "absolute", left: 66, right: 60, top: 170, fontFamily: O, fontSize: size, lineHeight: 0.94, letterSpacing: -size / 26, color: "#fff", whiteSpace: "nowrap" }}>{l1}<br /><span style={{ color: LI }}>{l2}</span></div>
+    <div style={{ position: "absolute", left: 70, width: 760, top: 170 + size * 1.88 + 34, fontFamily: OR, fontSize: 44, lineHeight: 1.2, color: "rgba(255,255,255,0.86)" }}>{sub}</div>
+    <div style={{ position: "absolute", right: 70, bottom: 70, padding: "22px 40px", borderRadius: 60, background: LI, fontFamily: O, fontSize: 38, color: "#0b0b0c" }}>{cta}</div>
+    <div style={{ position: "absolute", left: 70, bottom: 86, fontFamily: OR, fontSize: 28, color: "rgba(255,255,255,0.6)" }}>lynq.build</div>
+  </AbsoluteFill>
+);
+
+export const LynqObjStopwatch: React.FC = () => <ObjPost img="stopwatch" l1="5 seconds." l2="Then they leave." sub="Can a stranger tell what you sell from your first screen?" cta="Comment your one sentence" size={126} />;
