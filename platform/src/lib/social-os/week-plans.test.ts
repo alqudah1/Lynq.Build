@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { WEEK_PLANS, currentWeekPlan, planInstant, planMarker, planEnd, videoPlatformCopy } from "./week-plans";
+import { existsSync } from "node:fs";
+import path from "node:path";
+import { WEEK_PLANS, bundledImageKey, currentWeekPlan, planInstant, planMarker, planEnd, videoPlatformCopy } from "./week-plans";
 
 const next = (d: string) => new Date(Date.parse(`${d}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
 import { SOCIAL_PLATFORM_RULES, socialContentBriefSchema } from "./validation";
@@ -84,7 +86,8 @@ describe.each(WEEK_PLANS)("week plan $key", (plan) => {
     for (const p of plan.feed) {
       expect(p.realPhotoOnly, p.key).toBeFalsy();
       expect(p.body, p.key).not.toMatch(/swipe/i);
-      if (p.pillar !== "PROOF" && p.pillar !== "FOUNDER") continue;
+      // A bundled finished picture has no art direction to check: it was approved as a picture.
+      if (p.image || (p.pillar !== "PROOF" && p.pillar !== "FOUNDER")) continue;
       expect(p.creativeDirection, p.key).not.toMatch(/screenshot|real photo|upload/i);
       expect(p.creativeDirection, p.key).toMatch(/no website screens|no real people/i);
     }
@@ -169,5 +172,24 @@ describe("reel copy for TikTok and YouTube", () => {
     expect(y.platformOptions).toEqual({ title: "Pip builds a game in 60 seconds #Shorts", madeForKids: true, categoryId: "27" });
     const lynq = videoPlatformCopy({ ...reel, brand: { brandKey: "lynq" } } as typeof reel, "youtube");
     expect(lynq.platformOptions).toMatchObject({ madeForKids: false, categoryId: "28" });
+  });
+});
+
+describe("finished pictures bundled with a plan", () => {
+  const withImage = WEEK_PLANS.flatMap((plan) => plan.feed.filter((p) => p.image));
+
+  it("every bundled picture is in src/assets/posts and is never also a drawn card or an upload", () => {
+    expect(withImage.length).toBeGreaterThan(0);
+    for (const p of withImage) {
+      expect(existsSync(path.join(process.cwd(), "src", "assets", "posts", p.image!)), p.key).toBe(true);
+      expect(p.card, p.key).toBeUndefined();
+      expect(p.realPhotoOnly, p.key).toBeFalsy();
+    }
+  });
+
+  it("the art key names the file and changes with its content", () => {
+    const key = bundledImageKey(withImage[0]!.image!);
+    expect(key).toMatch(/^bundled-image:[\w.-]+:[0-9a-f]{12}$/);
+    expect(bundledImageKey("not-there.jpg")).toBe("bundled-image:not-there.jpg:missing");
   });
 });
