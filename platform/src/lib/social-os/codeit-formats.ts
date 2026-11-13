@@ -39,7 +39,7 @@ export function hero(kind: FormatHero, x: number, y: number, tilt = 0): string {
 
 export function item(kind: FormatItem, x: number, y: number): string {
   if (kind === "candy") return `<g transform="translate(${x},${y - 40}) rotate(-20)"><rect x="0" y="0" width="90" height="44" rx="22" fill="${CORAL}" ${ln}/><path d="M0 10 L-22 -4 L-22 48 L0 34 Z M90 10 L112 -4 L112 48 L90 34 Z" fill="${CORAL}" ${ln}/><path d="M24 6 l8 32 M48 6 l8 32" stroke="#fff" stroke-width="5" opacity="0.7"/></g>`;
-  if (kind === "asteroid") return `<path d="M${x} ${y - 40} l40 -30 l50 10 l20 40 l-30 40 l-50 5 l-35 -30 Z" fill="#a89a8e" ${ln}/>`;
+  if (kind === "asteroid") return `<path d="M${x} ${y - 40} l40 -30 l50 10 l20 40 l-30 40 l-50 5 l-35 -30 Z" fill="#9a9aa8" ${ln}/>`;
   if (kind === "carrot") return `<g transform="translate(${x},${y - 90}) rotate(30)"><path d="M0 0 Q20 -6 40 0 L20 110 Z" fill="${ORANGE}" ${ln}/><path d="M8 -4 Q0 -30 4 -36 Q14 -20 20 -8 Q26 -34 32 -40 Q36 -18 34 -4 Z" fill="${MINT}" ${ln}/></g>`;
   return `<path d="M${x} ${y} L${x + 120} ${y} L${x + 60} ${y - 94} Z" fill="#ffc96b" ${ln}/><path d="M${x + 4} ${y} L${x + 116} ${y} L${x + 108} ${y - 14} L${x + 12} ${y - 14} Z" fill="#e0902e"/><circle cx="${x + 45}" cy="${y - 39}" r="9" fill="${CORAL}"/><circle cx="${x + 76}" cy="${y - 52}" r="9" fill="${CORAL}"/>`;
 }
@@ -58,7 +58,7 @@ function scene(x: number, y: number, w: number, h: number, o: { hero?: FormatHer
 ${sparkle(x + 48, y + 44)}${sparkle(x + w * 0.52, y + 34, 9)}${sparkle(x + w * 0.72, y + 70, 7, "#ffffff")}
 <g transform="translate(${x + w - 130},${y + h - 40}) scale(0.8)">${item(o.item ?? "pizza", 0, 0)}</g>
 ${speed}<g transform="translate(${hx},${y + h - 40 - lift}) scale(0.85)">${hero(kind, 0, 0, o.fast ? -6 : 0)}</g>
-${o.badge ? `<rect x="${x + w - 196}" y="${y + 18}" width="176" height="44" rx="22" fill="${o.badgeBad ? CORAL : "#2a1d12"}"/>${text(x + w - 108, y + 48, o.badge, { f: "JetBrains Mono", w: 700, s: 22, c: "#fff", a: "middle" })}` : ""}
+${o.badge ? `<rect x="${x + w - 196}" y="${y + 18}" width="176" height="44" rx="22" fill="${o.badgeBad ? CORAL : "#0d0d12"}"/>${text(x + w - 108, y + 48, o.badge, { f: "JetBrains Mono", w: 700, s: 22, c: "#fff", a: "middle" })}` : ""}
 </g>`;
 }
 
@@ -108,7 +108,7 @@ ${mouth}</g>`;
 
 const laptop = (x: number, y: number, w: number, code?: string) => {
   const h = w * 0.62;
-  return `${soft(x, y, w, h, "url(#kcode)", 16, 0.25)}${code ? mono(x + 20, y + h * 0.56, code, Math.min(24, (w - 40) / (0.62 * code.length)), MINT) : ""}<rect x="${x - 18}" y="${y + h}" width="${w + 36}" height="16" rx="8" fill="#8a7563"/>`;
+  return `${soft(x, y, w, h, "url(#kcode)", 16, 0.25)}${code ? mono(x + 20, y + h * 0.56, code, Math.min(24, (w - 40) / (0.62 * code.length)), MINT) : ""}<rect x="${x - 18}" y="${y + h}" width="${w + 36}" height="16" rx="8" fill="#7c7c8a"/>`;
 };
 
 /** The body of a creative card under the shared header. */
@@ -132,7 +132,7 @@ ${head(PAD, 980, f.note ?? "Same game. One number changed.", 40)}`;
       const codeW = W - PAD * 2 - 456, longest = Math.max(...f.code.map((c) => c.length));
       body = `${scene(PAD, 258, 420, 280, { hero: f.hero, item: f.item, heroX: 0.18, badge: f.symptom, badgeBad: true, id: "bug" })}
 ${soft(PAD + 456, 258, codeW, 280, "url(#kcode)", 30, 0.3)}<circle cx="${PAD + 490}" cy="${290}" r="8" fill="#ff5f57"/><circle cx="${PAD + 516}" cy="${290}" r="8" fill="#febc2e"/><circle cx="${PAD + 542}" cy="${290}" r="8" fill="#28c840"/>
-${f.code.map((l, i) => `${mono(PAD + 490, 362 + i * 58, String(i + 1), 24, "#7d6a58")}${mono(PAD + 528, 362 + i * 58, l, Math.min(30, (codeW - 80) / (0.62 * longest)), MINT)}`).join("")}
+${f.code.map((l, i) => `${mono(PAD + 490, 362 + i * 58, String(i + 1), 24, "#6b6b78")}${mono(PAD + 528, 362 + i * 58, l, Math.min(30, (codeW - 80) / (0.62 * longest)), MINT)}`).join("")}
 ${soft(PAD, 584, W - PAD * 2, 300, PAPER, 36)}${head(W / 2, 660, f.question, 46, BROWN, "middle")}
 ${f.code.map((_, i, a) => { const n = a.length, gw = (W - PAD * 2 - 80 - (n - 1) * 24) / n, gx = PAD + 40 + i * (gw + 24); return `<rect x="${gx}" y="712" width="${gw}" height="116" rx="28" fill="#fff1e2"/>${text(gx + gw / 2, 785, `Line ${i + 1}`, { f: "Baloo 2", w: 700, s: 42, a: "middle" })}`; }).join("")}
 ${text(W / 2, 940, "Comment your answer. It's in tomorrow's story.", { w: 800, s: 30, c: ORANGE_T, a: "middle" })}`;
@@ -167,8 +167,8 @@ ${chip(PAD, 716 + 56 + f.lines.length * 56 + 30, f.code, 32)}`;
     case "guess": {
       const size = Math.min(40, Math.floor((W - PAD * 2 - 140) / (0.6 * Math.max(...f.code.map((l) => l.length)))));
       const lh = size * 1.55, h = 100 + f.code.length * lh;
-      body = `${soft(PAD, 252, W - PAD * 2, h, "url(#kcode)", 36, 0.3)}<circle cx="${PAD + 42}" cy="290" r="10" fill="#ff5f57"/><circle cx="${PAD + 72}" cy="290" r="10" fill="#febc2e"/><circle cx="${PAD + 102}" cy="290" r="10" fill="#28c840"/>${mono(W / 2, 298, "mystery.py", 24, "#b9a590", "middle")}
-${f.code.map((l, i) => `${mono(PAD + 40, 360 + i * lh + size * 0.4, String(i + 1), size * 0.6, "#7d6a58")}${mono(PAD + 88, 360 + i * lh + size * 0.4, l, size, l.trim().startsWith("#") ? "#9c8670" : MINT)}`).join("")}
+      body = `${soft(PAD, 252, W - PAD * 2, h, "url(#kcode)", 36, 0.3)}<circle cx="${PAD + 42}" cy="290" r="10" fill="#ff5f57"/><circle cx="${PAD + 72}" cy="290" r="10" fill="#febc2e"/><circle cx="${PAD + 102}" cy="290" r="10" fill="#28c840"/>${mono(W / 2, 298, "mystery.py", 24, "#b4b4c2", "middle")}
+${f.code.map((l, i) => `${mono(PAD + 40, 360 + i * lh + size * 0.4, String(i + 1), size * 0.6, "#6b6b78")}${mono(PAD + 88, 360 + i * lh + size * 0.4, l, size, l.trim().startsWith("#") ? "#8b8b9c" : MINT)}`).join("")}
 ${f.options.slice(0, 4).map((o, i) => { const gw = (W - PAD * 2 - 24) / 2, gx = PAD + (i % 2) * (gw + 24), gy = 704 + Math.floor(i / 2) * 106; return `${soft(gx, gy, gw, 86, PAPER, 43, 0.12)}<circle cx="${gx + 44}" cy="${gy + 43}" r="27" fill="url(#korange)"/>${text(gx + 44, gy + 55, "ABCD"[i]!, { f: "Baloo 2", w: 700, s: 32, c: "#fff", a: "middle" })}${text(gx + 88, gy + 55, o, { w: 800, s: 32 })}`; }).join("")}
 ${text(W / 2, 948, f.hint, { w: 800, s: 28, c: ORANGE_T, a: "middle" })}`;
       break;
