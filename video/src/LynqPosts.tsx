@@ -208,3 +208,33 @@ export const LynqSignV2: React.FC = () => (
     </div>
   </AbsoluteFill>
 );
+
+/*
+ * Week of Nov 14: one object on black per day, each one a sale the owner never sees leaving.
+ * Same build as the blank sign: Inter Light headline, one lime line, small lime label, no glow.
+ */
+const WeekObj: React.FC<{ img: string; label: string; l1: string; l2: string; sub: string; cta: string; size?: number }> = ({ img, label, l1, l2, sub, cta, size = 132 }) => (
+  <AbsoluteFill style={{ background: "#030303", overflow: "hidden" }}>
+    <Fonts />
+    <Img src={staticFile(`lynq-obj/${img}.jpg`)} style={{ position: "absolute", left: 0, top: 50, width: 1080, height: 1341, objectFit: "cover", filter: "brightness(1.35) contrast(1.1)", mixBlendMode: "screen", WebkitMaskImage: "radial-gradient(ellipse 66% 56% at 50% 60%, #000 55%, transparent 100%)", maskImage: "radial-gradient(ellipse 66% 56% at 50% 60%, #000 55%, transparent 100%)" }} />
+    <AbsoluteFill style={{ background: "linear-gradient(180deg, rgba(3,3,3,0) 0%, rgba(3,3,3,0) 86%, #030303 98%, #030303 100%)" }} />
+    <div style={{ position: "absolute", left: 70, top: 64, display: "flex", alignItems: "center", gap: 16 }}>
+      <Img src={staticFile("ads/lynq-logo.svg")} style={{ width: 44, height: 44 }} />
+      <span style={{ fontFamily: "'Inter SemiBold'", fontSize: 34, letterSpacing: 7, color: "#fff" }}>LYNQ</span>
+    </div>
+    <div style={{ position: "absolute", right: 70, top: 76, fontFamily: "'Inter SemiBold'", fontSize: 22, letterSpacing: 6, color: "#C7FF3D" }}>{label}</div>
+    <div style={{ position: "absolute", left: 64, right: 60, top: 170, fontFamily: "'Inter Light'", fontSize: size, lineHeight: 1.0, letterSpacing: -size / 19, color: "#fff", whiteSpace: "nowrap" }}>{l1}<br /><span style={{ color: "#C7FF3D" }}>{l2}</span></div>
+    <div style={{ position: "absolute", left: 72, top: 170 + size * 2 + 40, fontFamily: "'Inter Light'", fontSize: 38, letterSpacing: -0.5, color: "rgba(255,255,255,0.78)" }}>{sub}</div>
+    <div style={{ position: "absolute", left: 70, right: 70, bottom: 60, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <span style={{ fontFamily: "'Inter Light'", fontSize: 28, color: "rgba(255,255,255,0.6)" }}>lynq.build</span>
+      <span style={{ padding: "16px 32px", borderRadius: 50, border: "2px solid #C7FF3D", fontFamily: "'Inter SemiBold'", fontSize: 27, color: "#C7FF3D" }}>{cta}</span>
+    </div>
+  </AbsoluteFill>
+);
+
+export const LynqWkPadlock: React.FC = () => <WeekObj img="padlock" label="OPEN, BUT CLOSED" l1="Open sign." l2="Locked door." sub="A website with no way to book or buy." cta="Try booking on yours →" size={150} />;
+export const LynqWkChair: React.FC = () => <WeekObj img="chair" label="THE EMPTY SLOT" l1="Someone wanted" l2="this appointment." sub="They couldn't book it, so they booked elsewhere." cta="Who filled it instead? →" size={118} />;
+export const LynqWkHourglass: React.FC = () => <WeekObj img="hourglass" label="THE SLOW SITE" l1="They'll wait" l2="this long." sub="Then they tap back and pick the next one." cta="Time yours on your phone →" size={150} />;
+export const LynqWkBottle: React.FC = () => <WeekObj img="bottle" label="THE CONTACT FORM" l1="How your contact" l2="form feels." sub="Sent. Then silence. A fast reply wins the job." cta="How fast do you reply? →" size={118} />;
+export const LynqWkCups: React.FC = () => <WeekObj img="cups" label="BOOKING" l1="Your booking" l2="system?" sub="If booking means calling you, many just don't." cta="Let them book online →" size={150} />;
+export const LynqWkBasket: React.FC = () => <WeekObj img="basket" label="THE ALMOST SALE" l1="They filled it." l2="Then they left." sub="One confusing step at checkout is enough." cta="Walk through your checkout →" size={136} />;

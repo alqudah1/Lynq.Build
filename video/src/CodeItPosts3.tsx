@@ -163,3 +163,8 @@ export const D3Trophy: React.FC = () => <Post3D img="trophy" l1="Screen time" l2
 export const D3Controller: React.FC = () => <Post3D img="controller" l1="They don't just play it." l2="They built it." sub="Real games, made of code they can open." ink="#fff" accent={YELLOW} muted="rgba(255,255,255,0.9)" size={84} chip />;
 export const D3Snake: React.FC = () => <Post3D img="snake" l1="31 Python lessons." l2="One step at a time." sub="In the browser. Nothing to install." ink={INK} accent="#f0562d" muted="rgba(22,22,29,0.62)" size={104} />;
 export const D3Dinner: React.FC = () => <Post3D img="dinner" l1="“5 more minutes.”" l2="The good kind." sub="When they'd rather fix their game than stop." ink="#fff" accent={YELLOW} muted="rgba(255,255,255,0.8)" size={104} />;
+
+/* Week of Nov 17: same 3D set, three new toys. */
+export const D3Fridge: React.FC = () => <Post3D img="fridge" l1="The new" l2="fridge art." sub="Code they wrote. Proud enough to print." ink={INK} accent="#f0562d" muted="rgba(22,22,29,0.62)" size={124} />;
+export const D3Ladybug: React.FC = () => <Post3D img="ladybug" l1="Bugs are" l2="the lesson." sub="Finding the mistake is how they learn." ink={INK} accent="#f0562d" muted="rgba(22,22,29,0.62)" size={124} />;
+export const D3Remote: React.FC = () => <Post3D img="remote" l1="Same screen." l2="Different button." sub="From watching games to building them." ink={INK} accent="#f0562d" muted="rgba(22,22,29,0.62)" size={112} />;
