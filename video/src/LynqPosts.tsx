@@ -179,3 +179,33 @@ const ObjPost: React.FC<{ img: string; l1: string; l2: string; sub: string; cta:
 
 export const LynqObjStopwatch: React.FC = () => <ObjPost img="stopwatch" l1="5 seconds." l2="Then they leave." sub="Can a stranger tell what you sell from your first screen?" cta="Comment your one sentence" size={126} />;
 export const LynqObjSign: React.FC = () => <ObjPost img="sign" l1="Your sign" l2="is blank." sub="That's your website to a stranger who can't tell what you sell." cta="Comment your one sentence" size={132} drop={150} />;
+
+/** Today's post, polished: the whole sign in frame, lit so it reads, a lime cursor waiting on the blank board. */
+export const LynqSignV2: React.FC = () => (
+  <AbsoluteFill style={{ background: "#030303", overflow: "hidden" }}>
+    <Fonts />
+    {/* soft stage light behind the sign */}
+    <div style={{ position: "absolute", left: 140, top: 380, width: 900, height: 900, borderRadius: 450, background: "radial-gradient(closest-side, rgba(255,255,255,0.11) 0%, rgba(255,255,255,0) 100%)" }} />
+    <Img src={staticFile("lynq-obj/sign.jpg")} style={{ position: "absolute", left: 48, top: 146, width: 984, height: 1221, objectFit: "cover", filter: "brightness(1.9) contrast(1.12)", mixBlendMode: "screen", WebkitMaskImage: "radial-gradient(ellipse 62% 60% at 52% 58%, #000 55%, transparent 100%)", maskImage: "radial-gradient(ellipse 62% 60% at 52% 58%, #000 55%, transparent 100%)" }} />
+    {/* floor glow and the lime dot's light */}
+    <div style={{ position: "absolute", left: 180, top: 1090, width: 760, height: 150, borderRadius: "50%", background: "radial-gradient(closest-side, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 100%)" }} />
+    <div style={{ position: "absolute", left: 759 - 130, top: 1035 - 130, width: 260, height: 260, borderRadius: 130, background: "radial-gradient(closest-side, rgba(213,253,113,0.42) 0%, rgba(213,253,113,0) 100%)", mixBlendMode: "screen" }} />
+    {/* the cursor: the board is waiting for one sentence */}
+    <div style={{ position: "absolute", left: 452, top: 616, width: 9, height: 78, borderRadius: 4, background: LI, boxShadow: `0 0 26px ${LI}`, transform: "skewY(2deg) rotate(1.5deg)" }} />
+    <AbsoluteFill style={{ background: "linear-gradient(90deg, #030303 0%, #030303 4%, rgba(3,3,3,0) 26%, rgba(3,3,3,0) 76%, #030303 96%, #030303 100%)" }} />
+    <AbsoluteFill style={{ background: "linear-gradient(180deg, rgba(3,3,3,0) 0%, rgba(3,3,3,0) 84%, #030303 97%, #030303 100%)" }} />
+
+    <div style={{ position: "absolute", left: 70, top: 64, display: "flex", alignItems: "center", gap: 16 }}>
+      <Img src={staticFile("ads/lynq-logo.svg")} style={{ width: 44, height: 44 }} />
+      <span style={{ fontFamily: O, fontSize: 38, letterSpacing: 5, color: WH }}>LYNQ</span>
+    </div>
+    <div style={{ position: "absolute", right: 70, top: 76, fontFamily: OR, fontSize: 24, letterSpacing: 6, color: LI }}>THE ONE SENTENCE RULE</div>
+    <div style={{ position: "absolute", left: 64, right: 60, top: 150, fontFamily: O, fontSize: 158, lineHeight: 0.92, letterSpacing: -7, color: "#fff", whiteSpace: "nowrap" }}>Your sign<br /><span style={{ color: LI }}>is blank.</span></div>
+    <div style={{ position: "absolute", left: 70, top: 448, fontFamily: OR, fontSize: 42, color: "rgba(255,255,255,0.82)" }}>That's your website to a stranger.</div>
+
+    <div style={{ position: "absolute", left: 70, right: 70, bottom: 60, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <span style={{ fontFamily: OR, fontSize: 28, color: "rgba(255,255,255,0.6)" }}>lynq.build</span>
+      <span style={{ padding: "16px 32px", borderRadius: 50, border: `2px solid ${LI}`, fontFamily: O, fontSize: 30, color: LI }}>Comment your one sentence →</span>
+    </div>
+  </AbsoluteFill>
+);
