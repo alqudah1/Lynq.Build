@@ -19,6 +19,7 @@ import { CodeItEveryone, LynqIdea } from "./PhoneAds";
 import { PostAiQuestion, PostFirstProgram, PostFree, PostLessons, PostNoInstall, PostOneNumber, PostParentSentence, PostPrivate, PostSayAGame, PostTeachers, PostThreeGames, PostWhatTheyBuild } from "./CodeItPosts";
 import { PostAchievements, PostArcade, PostRecipe, PostSearch, PostThread, PostWanted } from "./CodeItPosts2";
 import { CodeItBuilt } from "./CodeItBuilt";
+import { LynqMoneyAr } from "./PhoneStoryAr";
 import { LynqMoney, LynqMoneyCover, LynqGridCover, LynqMoneyFeedCover, LynqMoneyPhotoCover } from "./PhoneStory";
 import { D3Controller, D3Dial, D3Dinner, D3Fridge, D3Ladybug, D3Remote, D3Snake, D3Trophy, LuxDial, LuxNumbers, LuxOneNumber, LuxOneNumberDark, LuxPhoto } from "./CodeItPosts3";
 import { LynqAorB, LynqBeforeHire, LynqGridBasket, LynqGridBottle, LynqGridCups, LynqGridHourglass, LynqGridPadlock, LynqObjSign, LynqObjStopwatch, LynqWkBasket, LynqWkBottle, LynqWkChair, LynqWkCups, LynqWkHourglass, LynqWkPadlock, LynqOneSentence, LynqSignV2, LynqPhoneFirst, LynqSendLink, LynqSixScreens } from "./LynqPosts";
@@ -61,6 +62,7 @@ export const Root: React.FC = () => (
     {C("lynq-idea", LynqIdea, 14)}
     {C("lynq-money", LynqMoney, 18.5)}
     {C("codeit-built", CodeItBuilt, 17.5)}
+    {C("lynq-money-ar", LynqMoneyAr, 18.5)}
     <Composition id="lynq-money-feed-cover" component={LynqMoneyFeedCover} durationInFrames={300} fps={30} width={1080} height={1920} />
     <Composition id="lynq-money-photo-cover" component={LynqMoneyPhotoCover} durationInFrames={1} fps={30} width={1080} height={1920} />
     <Composition id="lynq-grid-cover" component={LynqGridCover} durationInFrames={1} fps={30} width={1080} height={1920} />
