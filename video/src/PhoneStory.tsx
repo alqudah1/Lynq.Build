@@ -1,5 +1,5 @@
 import React from "react";
-import { AbsoluteFill, Audio, Easing, Img, Sequence, interpolate, staticFile } from "remotion";
+import { AbsoluteFill, Audio, Easing, Freeze, Img, Sequence, interpolate, staticFile } from "remotion";
 import { Fonts, Sfx, ramp, useSpringAt, useT } from "./kit";
 
 /*
@@ -386,3 +386,48 @@ export const LynqMoneyCover: React.FC = () => (
     <AbsoluteFill style={{ background: "radial-gradient(120% 80% at 50% 50%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.55) 100%)" }} />
   </AbsoluteFill>
 );
+
+/**
+ * Instagram cover for the money reel. Instagram shows the middle 4:5 of a reel cover in the profile
+ * grid, so that middle is laid out exactly like the LYNQ feed posts: logo, lime label, light
+ * headline, one object on black. The object is her phone, stuck on the first shop's voicemail.
+ */
+export const LynqMoneyFeedCover: React.FC = () => {
+  const T = 285; // top of the 4:5 window inside the 9:16 frame
+  const K = 0.66;
+  return (
+    <AbsoluteFill style={{ background: BG, overflow: "hidden" }}>
+      <Fonts />
+      <div style={{ position: "absolute", left: 40, top: T + 480, width: 1000, height: 1000, borderRadius: 500, background: "radial-gradient(closest-side, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 100%)" }} />
+      <div style={{ position: "absolute", left: 70, top: T + 64, display: "flex", alignItems: "center", gap: 16 }}>
+        <Img src={staticFile("ads/lynq-logo.svg")} style={{ width: 44, height: 44 }} />
+        <span style={{ fontFamily: IS, fontSize: 34, letterSpacing: 7, color: "#fff" }}>LYNQ</span>
+      </div>
+      <div style={{ position: "absolute", right: 70, top: T + 76, fontFamily: IS, fontSize: 22, letterSpacing: 6, color: LI }}>THE LOST CUSTOMER</div>
+      <div style={{ position: "absolute", left: 64, right: 60, top: T + 168, fontFamily: IL, fontSize: 112, lineHeight: 1.0, letterSpacing: -5.8, color: "#fff", whiteSpace: "nowrap" }}>I tried to give this<br /><span style={{ color: LI }}>shop my money.</span></div>
+      <div style={{ position: "absolute", left: 72, top: T + 420, fontFamily: IL, fontSize: 38, letterSpacing: -0.5, color: "rgba(255,255,255,0.78)" }}>The first shop never knew I was there.</div>
+
+      <div style={{ position: "absolute", left: (1080 - PW) / 2 - 120, top: T + 530, width: PW, height: PH, transform: `scale(${K}) rotate(-4deg)`, transformOrigin: "50% 0", borderRadius: 86, background: "#0d0f0e", boxShadow: "0 0 0 2px #3a3d3b, 0 0 0 5px #121413, 0 70px 130px rgba(0,0,0,0.85)" }}>
+        <div style={{ position: "absolute", left: BZ, top: BZ, width: PW - BZ * 2, height: PH - BZ * 2, borderRadius: 74, overflow: "hidden", background: "#0b0c0c" }}>
+          <div style={{ width: SW, height: SH, transform: `scale(${SCALE})`, transformOrigin: "0 0", position: "relative" }}>
+            <Freeze frame={285}><Call /></Freeze>
+          </div>
+          <div style={{ position: "absolute", left: (PW - BZ * 2) / 2 - 62, top: 16, width: 124, height: 36, borderRadius: 18, background: "#000" }} />
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(115deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.03) 22%, rgba(255,255,255,0) 40%)" }} />
+        </div>
+      </div>
+
+      <div style={{ position: "absolute", left: 690, top: T + 800, width: 300, textAlign: "center", transform: "rotate(5deg)" }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 12, padding: "18px 30px 18px 20px", borderRadius: 56, background: LI, boxShadow: "0 0 60px rgba(199,255,61,0.3), 0 14px 30px rgba(0,0,0,0.5)" }}>
+          <span style={{ width: 46, height: 46, borderRadius: 23, background: "#0b0d0a", color: LI, fontFamily: IS, fontSize: 28, display: "flex", alignItems: "center", justifyContent: "center" }}>$</span>
+          <span style={{ fontFamily: IS, fontSize: 44, color: "#0b0d0a" }}>60</span>
+        </div>
+        <div style={{ marginTop: 16, fontFamily: IS, fontSize: 18, letterSpacing: 4, color: "rgba(255,255,255,0.55)" }}>STILL WAITING</div>
+      </div>
+
+      <AbsoluteFill style={{ background: `linear-gradient(180deg, ${BG} 0%, ${BG} ${(T / 1920) * 100 - 1}%, rgba(3,3,3,0) ${(T / 1920) * 100 + 2}%, rgba(3,3,3,0) ${((T + 1250) / 1920) * 100}%, ${BG} ${((T + 1350) / 1920) * 100}%, ${BG} 100%)` }} />
+      <div style={{ position: "absolute", left: 70, top: T + 1262, fontFamily: IL, fontSize: 28, color: "rgba(255,255,255,0.6)" }}>lynq.build</div>
+      <div style={{ position: "absolute", right: 70, top: T + 1246, padding: "16px 32px", borderRadius: 50, border: `2px solid ${LI}`, fontFamily: IS, fontSize: 27, color: LI }}>Watch what happened →</div>
+    </AbsoluteFill>
+  );
+};
