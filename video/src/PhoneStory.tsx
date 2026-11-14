@@ -365,3 +365,24 @@ export const LynqMoney: React.FC = () => {
     </AbsoluteFill>
   );
 };
+
+/** Feed cover for the money reel: the hook sits in the middle so profile grids don't crop it. */
+export const LynqMoneyCover: React.FC = () => (
+  <AbsoluteFill style={{ background: BG }}>
+    <Fonts />
+    <div style={{ position: "absolute", left: -110, top: 280, width: 1300, height: 1360, borderRadius: 680, background: "radial-gradient(closest-side, rgba(199,255,61,0.10) 0%, rgba(199,255,61,0) 100%)" }} />
+    <div style={{ position: "absolute", left: 0, right: 0, top: 470, display: "flex", justifyContent: "center", alignItems: "center", gap: 16 }}>
+      <Img src={staticFile("ads/lynq-logo.svg")} style={{ width: 44, height: 44 }} />
+      <span style={{ fontFamily: IS, fontSize: 34, letterSpacing: 7, color: "#fff" }}>LYNQ</span>
+    </div>
+    <div style={{ position: "absolute", left: 90, right: 90, top: 610, textAlign: "center", fontFamily: IL, fontSize: 128, lineHeight: 1.0, letterSpacing: -6.4, color: "#fff" }}>I tried to<br />give this shop<br /><span style={{ color: LI }}>my money.</span></div>
+    <div style={{ position: "absolute", left: 0, right: 0, top: 1090, textAlign: "center" }}>
+      <div style={{ display: "inline-flex", alignItems: "center", gap: 14, padding: "20px 34px 20px 22px", borderRadius: 60, background: LI, boxShadow: "0 0 70px rgba(199,255,61,0.35)" }}>
+        <span style={{ width: 52, height: 52, borderRadius: 26, background: "#0b0d0a", color: LI, fontFamily: IS, fontSize: 32, display: "flex", alignItems: "center", justifyContent: "center" }}>$</span>
+        <span style={{ fontFamily: IS, fontSize: 48, color: "#0b0d0a" }}>60</span>
+      </div>
+      <div style={{ marginTop: 22, fontFamily: IS, fontSize: 22, letterSpacing: 5, color: "rgba(255,255,255,0.55)" }}>READY TO SPEND</div>
+    </div>
+    <AbsoluteFill style={{ background: "radial-gradient(120% 80% at 50% 50%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.55) 100%)" }} />
+  </AbsoluteFill>
+);
