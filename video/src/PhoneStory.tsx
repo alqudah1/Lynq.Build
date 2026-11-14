@@ -431,3 +431,32 @@ export const LynqMoneyFeedCover: React.FC = () => {
     </AbsoluteFill>
   );
 };
+
+/** Cover direction B: a real product-style photo on black, like the feed posts, with only the hook. */
+export const LynqMoneyPhotoCover: React.FC<{ img?: string }> = ({ img = "chair" }) => {
+  const T = 285;
+  return (
+    <AbsoluteFill style={{ background: BG, overflow: "hidden" }}>
+      <Fonts />
+      <Img src={staticFile(`lynq-obj/${img}.jpg`)} style={{ position: "absolute", left: 0, top: T + 60, width: 1080, height: 1341, objectFit: "cover", filter: "brightness(1.35) contrast(1.1)", mixBlendMode: "screen", WebkitMaskImage: "radial-gradient(ellipse 66% 56% at 50% 60%, #000 55%, transparent 100%)", maskImage: "radial-gradient(ellipse 66% 56% at 50% 60%, #000 55%, transparent 100%)" }} />
+      <div style={{ position: "absolute", left: 70, top: T + 64, display: "flex", alignItems: "center", gap: 16 }}>
+        <Img src={staticFile("ads/lynq-logo.svg")} style={{ width: 44, height: 44 }} />
+        <span style={{ fontFamily: IS, fontSize: 34, letterSpacing: 7, color: "#fff" }}>LYNQ</span>
+      </div>
+      <div style={{ position: "absolute", left: 64, right: 60, top: T + 170, fontFamily: IL, fontSize: 118, lineHeight: 1.0, letterSpacing: -6.2, color: "#fff", whiteSpace: "nowrap" }}>I tried to give<br />this shop<br /><span style={{ color: LI }}>my money.</span></div>
+      <AbsoluteFill style={{ background: `linear-gradient(180deg, rgba(3,3,3,0) 0%, rgba(3,3,3,0) ${((T + 1200) / 1920) * 100}%, ${BG} ${((T + 1345) / 1920) * 100}%, ${BG} 100%)` }} />
+    </AbsoluteFill>
+  );
+};
+
+/**
+ * Cover in the exact style of the LYNQ grid: one photographed object on black, no logo, no headline,
+ * one tiny letter-spaced line under it. Laid out for the 3:4 middle that the profile grid shows.
+ */
+export const LynqGridCover: React.FC<{ img?: string; line?: string }> = ({ img = "chair", line = "I tried to give this shop my money." }) => (
+  <AbsoluteFill style={{ background: "#050505", overflow: "hidden" }}>
+    <Fonts />
+    <Img src={staticFile(`lynq-obj/${img}.jpg`)} style={{ position: "absolute", left: 0, top: 150, width: 1080, height: 1341, objectFit: "cover", filter: "brightness(1.2) contrast(1.06)", WebkitMaskImage: "linear-gradient(180deg, transparent 0%, #000 14%, #000 86%, transparent 100%)", maskImage: "linear-gradient(180deg, transparent 0%, #000 14%, #000 86%, transparent 100%)" }} />
+    <div style={{ position: "absolute", left: 0, right: 0, top: 1440, textAlign: "center", fontFamily: IL, fontSize: 27, letterSpacing: 9, color: "rgba(255,255,255,0.62)" }}>{line}</div>
+  </AbsoluteFill>
+);
