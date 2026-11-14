@@ -37,7 +37,7 @@ export interface CardStep {
 export interface CodeItCard {
   /** Small orange caps line above the headline, e.g. "WE PROVE IT". */
   eyebrow: string;
-  /** Brown headline, one line. */
+  /** Dark headline, one line. */
   headline: string;
   /** Orange second line. */
   sub: string;
@@ -59,11 +59,11 @@ export interface CodeItCard {
 const W = 1080;
 const PAD = 72;
 const CREAM = "#fff4e5";
-const BROWN = "#35220e";
+const BROWN = "#16161d";
 const ORANGE = "#ff7a00";
 const ORANGE_T = "#d46500";
 const YELLOW = "#f5d04a";
-const DARK = "#2b1d12";
+const DARK = "#0d0d12";
 const MINT = "#3ddc97";
 const CORAL = "#ff5a5f";
 const SKY = "#bfe3ff";
@@ -105,34 +105,34 @@ export function wrap(t: string, size: number, maxWidth: number, perChar = 0.5): 
 function hero(kind: Hero, x: number, y: number): string {
   const g = (inner: string) => `<g transform="translate(${x},${y}) rotate(-16)">${inner}</g>`;
   if (kind === "ghost") {
-    return g(`<path d="M0 60 L0 20 Q0 -20 50 -20 Q100 -20 100 20 L100 60 L84 48 L68 60 L50 48 L34 60 L16 48 Z" fill="#fff8f0" stroke="#4a2f17" stroke-width="2.5"/><circle cx="36" cy="18" r="6" fill="${DARK}"/><circle cx="64" cy="18" r="6" fill="${DARK}"/><path d="M42 36 q8 8 16 0" fill="none" stroke="#4a2f17" stroke-width="2.5" stroke-linecap="round"/>`);
+    return g(`<path d="M0 60 L0 20 Q0 -20 50 -20 Q100 -20 100 20 L100 60 L84 48 L68 60 L50 48 L34 60 L16 48 Z" fill="#fff8f0" stroke="#16161d" stroke-width="2.5"/><circle cx="36" cy="18" r="6" fill="${DARK}"/><circle cx="64" cy="18" r="6" fill="${DARK}"/><path d="M42 36 q8 8 16 0" fill="none" stroke="#16161d" stroke-width="2.5" stroke-linecap="round"/>`);
   }
   if (kind === "rocket") {
-    return g(`<path d="M50 -30 Q90 20 70 80 L30 80 Q10 20 50 -30 Z" fill="#fff8f0" stroke="#4a2f17" stroke-width="2.5"/><circle cx="50" cy="20" r="12" fill="${SKY}" stroke="#4a2f17" stroke-width="2.5"/><path d="M30 60 L8 84 L34 80 Z M70 60 L92 84 L66 80 Z" fill="${CORAL}" stroke="#4a2f17" stroke-width="2.5"/><path d="M40 82 L50 110 L60 82 Z" fill="${YELLOW}" stroke="#4a2f17" stroke-width="2.5"/>`);
+    return g(`<path d="M50 -30 Q90 20 70 80 L30 80 Q10 20 50 -30 Z" fill="#fff8f0" stroke="#16161d" stroke-width="2.5"/><circle cx="50" cy="20" r="12" fill="${SKY}" stroke="#16161d" stroke-width="2.5"/><path d="M30 60 L8 84 L34 80 Z M70 60 L92 84 L66 80 Z" fill="${CORAL}" stroke="#16161d" stroke-width="2.5"/><path d="M40 82 L50 110 L60 82 Z" fill="${YELLOW}" stroke="#16161d" stroke-width="2.5"/>`);
   }
   if (kind === "bunny") {
-    return g(`<ellipse cx="56" cy="46" rx="54" ry="34" fill="#fff8f0" stroke="#4a2f17" stroke-width="2.5"/><circle cx="108" cy="24" r="30" fill="#fff8f0" stroke="#4a2f17" stroke-width="2.5"/><path d="M96 -2 L92 -52 L114 -8 Z M124 -2 L136 -52 L142 -6 Z" fill="#fff8f0" stroke="#4a2f17" stroke-width="2.5"/><path d="M98 -8 L96 -40 L108 -12 Z M126 -8 L134 -40 L136 -12 Z" fill="${CORAL}" opacity="0.6"/><circle cx="100" cy="20" r="4" fill="${DARK}"/><circle cx="118" cy="20" r="4" fill="${DARK}"/><circle cx="110" cy="32" r="4" fill="${CORAL}"/><circle cx="4" cy="46" r="12" fill="#fff8f0" stroke="#4a2f17" stroke-width="2.5"/><path d="M34 76 l-8 20 M78 78 l-2 20" stroke="${DARK}" stroke-width="8" stroke-linecap="round"/><path d="M34 76 l-8 20 M78 78 l-2 20" stroke="#fff8f0" stroke-width="4" stroke-linecap="round"/>`);
+    return g(`<ellipse cx="56" cy="46" rx="54" ry="34" fill="#fff8f0" stroke="#16161d" stroke-width="2.5"/><circle cx="108" cy="24" r="30" fill="#fff8f0" stroke="#16161d" stroke-width="2.5"/><path d="M96 -2 L92 -52 L114 -8 Z M124 -2 L136 -52 L142 -6 Z" fill="#fff8f0" stroke="#16161d" stroke-width="2.5"/><path d="M98 -8 L96 -40 L108 -12 Z M126 -8 L134 -40 L136 -12 Z" fill="${CORAL}" opacity="0.6"/><circle cx="100" cy="20" r="4" fill="${DARK}"/><circle cx="118" cy="20" r="4" fill="${DARK}"/><circle cx="110" cy="32" r="4" fill="${CORAL}"/><circle cx="4" cy="46" r="12" fill="#fff8f0" stroke="#16161d" stroke-width="2.5"/><path d="M34 76 l-8 20 M78 78 l-2 20" stroke="${DARK}" stroke-width="8" stroke-linecap="round"/><path d="M34 76 l-8 20 M78 78 l-2 20" stroke="#fff8f0" stroke-width="4" stroke-linecap="round"/>`);
   }
-  return g(`<ellipse cx="60" cy="40" rx="64" ry="36" fill="${ORANGE}" stroke="#4a2f17" stroke-width="2.5"/><ellipse cx="60" cy="52" rx="34" ry="16" fill="#ffc98a" opacity="0.9"/><circle cx="118" cy="22" r="30" fill="${ORANGE}" stroke="#4a2f17" stroke-width="2.5"/><path d="M98 0 L104 -22 L120 -2 Z M138 0 L146 -22 L128 -2 Z" fill="${ORANGE}" stroke="#4a2f17" stroke-width="2.5"/><circle cx="110" cy="20" r="4" fill="${DARK}"/><circle cx="128" cy="20" r="4" fill="${DARK}"/><path d="M-2 40 C -30 20, -30 0, -6 4" fill="none" stroke="${DARK}" stroke-width="8" stroke-linecap="round"/><path d="M-2 40 C -30 20, -30 0, -6 4" fill="none" stroke="${ORANGE}" stroke-width="4" stroke-linecap="round"/><path d="M20 70 l-8 22 M70 72 l-4 22 M104 60 l10 20" stroke="${DARK}" stroke-width="8" stroke-linecap="round"/><path d="M20 70 l-8 22 M70 72 l-4 22 M104 60 l10 20" stroke="${ORANGE}" stroke-width="4" stroke-linecap="round"/>`);
+  return g(`<ellipse cx="60" cy="40" rx="64" ry="36" fill="${ORANGE}" stroke="#16161d" stroke-width="2.5"/><ellipse cx="60" cy="52" rx="34" ry="16" fill="#ffc98a" opacity="0.9"/><circle cx="118" cy="22" r="30" fill="${ORANGE}" stroke="#16161d" stroke-width="2.5"/><path d="M98 0 L104 -22 L120 -2 Z M138 0 L146 -22 L128 -2 Z" fill="${ORANGE}" stroke="#16161d" stroke-width="2.5"/><circle cx="110" cy="20" r="4" fill="${DARK}"/><circle cx="128" cy="20" r="4" fill="${DARK}"/><path d="M-2 40 C -30 20, -30 0, -6 4" fill="none" stroke="${DARK}" stroke-width="8" stroke-linecap="round"/><path d="M-2 40 C -30 20, -30 0, -6 4" fill="none" stroke="${ORANGE}" stroke-width="4" stroke-linecap="round"/><path d="M20 70 l-8 22 M70 72 l-4 22 M104 60 l10 20" stroke="${DARK}" stroke-width="8" stroke-linecap="round"/><path d="M20 70 l-8 22 M70 72 l-4 22 M104 60 l10 20" stroke="${ORANGE}" stroke-width="4" stroke-linecap="round"/>`);
 }
 
 function item(kind: Item, x: number, y: number): string {
   if (kind === "candy") {
-    return `<g transform="translate(${x},${y}) rotate(-20)"><rect x="0" y="0" width="90" height="44" rx="22" fill="${CORAL}" stroke="#4a2f17" stroke-width="2.5"/><path d="M0 10 L-22 -4 L-22 48 L0 34 Z M90 10 L112 -4 L112 48 L90 34 Z" fill="${CORAL}" stroke="#4a2f17" stroke-width="2.5"/><path d="M22 4 l10 36 M46 4 l10 36 M70 4 l10 36" stroke="#fff" stroke-width="5" opacity="0.8"/></g>`;
+    return `<g transform="translate(${x},${y}) rotate(-20)"><rect x="0" y="0" width="90" height="44" rx="22" fill="${CORAL}" stroke="#16161d" stroke-width="2.5"/><path d="M0 10 L-22 -4 L-22 48 L0 34 Z M90 10 L112 -4 L112 48 L90 34 Z" fill="${CORAL}" stroke="#16161d" stroke-width="2.5"/><path d="M22 4 l10 36 M46 4 l10 36 M70 4 l10 36" stroke="#fff" stroke-width="5" opacity="0.8"/></g>`;
   }
   if (kind === "asteroid") {
-    return `<path d="M${x} ${y} l40 -30 l50 10 l20 40 l-30 40 l-50 5 l-35 -30 Z" fill="#9a8d82" stroke="#4a2f17" stroke-width="2.5"/><circle cx="${x + 40}" cy="${y + 10}" r="8" fill="#7a6d62"/><circle cx="${x + 70}" cy="${y + 40}" r="11" fill="#7a6d62"/>`;
+    return `<path d="M${x} ${y} l40 -30 l50 10 l20 40 l-30 40 l-50 5 l-35 -30 Z" fill="#8b8b9c" stroke="#16161d" stroke-width="2.5"/><circle cx="${x + 40}" cy="${y + 10}" r="8" fill="#6b6b78"/><circle cx="${x + 70}" cy="${y + 40}" r="11" fill="#6b6b78"/>`;
   }
   if (kind === "carrot") {
-    return `<g transform="translate(${x},${y}) rotate(30)"><path d="M0 0 L40 0 L20 110 Z" fill="${ORANGE}" stroke="#4a2f17" stroke-width="2.5"/><path d="M8 -4 L0 -36 L20 -10 L30 -40 L34 -4 Z" fill="${MINT}" stroke="#4a2f17" stroke-width="2.5"/></g>`;
+    return `<g transform="translate(${x},${y}) rotate(30)"><path d="M0 0 L40 0 L20 110 Z" fill="${ORANGE}" stroke="#16161d" stroke-width="2.5"/><path d="M8 -4 L0 -36 L20 -10 L30 -40 L34 -4 Z" fill="${MINT}" stroke="#16161d" stroke-width="2.5"/></g>`;
   }
-  return `<path d="M${x} ${y} L${x + 120} ${y} L${x + 60} ${y - 94} Z" fill="#ffc96b" stroke="#4a2f17" stroke-width="2.5"/><path d="M${x} ${y} L${x + 120} ${y} L${x + 110} ${y - 16} L${x + 10} ${y - 16} Z" fill="#e0902e" stroke="#4a2f17" stroke-width="2.5"/><circle cx="${x + 45}" cy="${y - 39}" r="9" fill="${CORAL}" stroke="#4a2f17" stroke-width="2"/><circle cx="${x + 78}" cy="${y - 54}" r="9" fill="${CORAL}" stroke="#4a2f17" stroke-width="2"/><circle cx="${x + 62}" cy="${y - 24}" r="8" fill="${CORAL}" stroke="#4a2f17" stroke-width="2"/>`;
+  return `<path d="M${x} ${y} L${x + 120} ${y} L${x + 60} ${y - 94} Z" fill="#ffc96b" stroke="#16161d" stroke-width="2.5"/><path d="M${x} ${y} L${x + 120} ${y} L${x + 110} ${y - 16} L${x + 10} ${y - 16} Z" fill="#e0902e" stroke="#16161d" stroke-width="2.5"/><circle cx="${x + 45}" cy="${y - 39}" r="9" fill="${CORAL}" stroke="#16161d" stroke-width="2"/><circle cx="${x + 78}" cy="${y - 54}" r="9" fill="${CORAL}" stroke="#16161d" stroke-width="2"/><circle cx="${x + 62}" cy="${y - 24}" r="8" fill="${CORAL}" stroke="#16161d" stroke-width="2"/>`;
 }
 
 function scene(x: number, y: number, w: number, h: number, p: Extract<CardPanel, { type: "game" }>): string {
   const kind = p.hero ?? "cat";
   const sky = kind === "ghost" || kind === "rocket" ? NIGHT : SKY;
-  const star = (sx: number, sy: number) => `<path d="M${sx} ${sy} l6 14 15 1 -12 9 5 15 -14 -9 -14 9 5 -15 -12 -9 15 -1z" fill="${YELLOW}" stroke="#4a2f17" stroke-width="2"/>`;
+  const star = (sx: number, sy: number) => `<path d="M${sx} ${sy} l6 14 15 1 -12 9 5 15 -14 -9 -14 9 5 -15 -12 -9 15 -1z" fill="${YELLOW}" stroke="#16161d" stroke-width="2"/>`;
   const ground = kind === "rocket" ? "" : `<ellipse cx="${x + w * 0.3}" cy="${y + h - 34}" rx="${w * 0.6}" ry="60" fill="url(#kgrass)"/><ellipse cx="${x + w * 0.85}" cy="${y + h - 24}" rx="${w * 0.45}" ry="50" fill="#25b877" opacity="0.55"/><rect x="${x}" y="${y + h - 30}" width="${w}" height="30" fill="url(#kgrass)"/>`;
   const scale = Math.min(1, w / 440);
   return `
@@ -173,14 +173,14 @@ function panel(x: number, y: number, w: number, p: CardPanel): string {
       let out = card(x, y, w, h, DARK);
       let ly = y + 56;
       if (p.comment) {
-        out += mono(x + 36, ly, p.comment, 28, "#c9b8a6");
+        out += mono(x + 36, ly, p.comment, 28, "#c9c9d6");
         ly += 38;
       }
       p.lines.forEach((line, i) => {
         if (i === p.highlight) {
           out += `<rect x="${x + 24}" y="${ly - 36}" width="${Math.min(w - 48, line.length * 19 + 36)}" height="50" rx="12" fill="${ORANGE}"/>${mono(x + 36, ly, line, 32, "#fff")}`;
         } else if (i === p.strike) {
-          out += mono(x + 36, ly, line, 30, "#8e7b69") + `<line x1="${x + 34}" y1="${ly - 10}" x2="${x + 36 + line.length * 18.2}" y2="${ly - 10}" stroke="${CORAL}" stroke-width="6" stroke-linecap="round"/>`;
+          out += mono(x + 36, ly, line, 30, "#7c7c8a") + `<line x1="${x + 34}" y1="${ly - 10}" x2="${x + 36 + line.length * 18.2}" y2="${ly - 10}" stroke="${CORAL}" stroke-width="6" stroke-linecap="round"/>`;
         } else {
           const c = line.trim().startsWith("#") ? MINT : "#fff4e5";
           out += mono(x + 36, ly, line, 30, c);
@@ -290,7 +290,7 @@ export async function composeCodeItCard(spec: CodeItCard): Promise<{ bytes: Uint
 }
 
 /** The look's version: bump it when the design changes. */
-const STYLE = "modern-2";
+const STYLE = "modern-3";
 
 /** A stable fingerprint of a card spec, stored on the post so a changed spec remakes the image. */
 export function cardKey(spec: CodeItCard): string {

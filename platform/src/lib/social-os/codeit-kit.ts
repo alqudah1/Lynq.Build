@@ -7,9 +7,9 @@
  */
 export const W = 1080;
 export const PAD = 72;
-export const CREAM = "#fff4e5", BROWN = "#35220e", ORANGE = "#ff7a00", ORANGE_T = "#d46500", YELLOW = "#f5d04a", MINT = "#3ddc97", MINT_T = "#1a7a50", CORAL = "#ff5a5f", SKY = "#bfe3ff", NIGHT = "#2a2b5a", PAPER = "#ffffff";
-/** Ink for illustration lines: brown, never black. */
-export const INK = "#4a2f17";
+export const CREAM = "#fff4e5", BROWN = "#16161d", ORANGE = "#ff7a00", ORANGE_T = "#d46500", YELLOW = "#f5d04a", MINT = "#3ddc97", MINT_T = "#1a7a50", CORAL = "#ff5a5f", SKY = "#bfe3ff", NIGHT = "#2a2b5a", PAPER = "#ffffff";
+/** Ink for illustration lines: near-black (the owner dropped the brown). */
+export const INK = "#16161d";
 
 export const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 export type TO = { f?: string; w?: number; s?: number; c?: string; a?: "start" | "middle" | "end"; ls?: number; op?: number };
@@ -23,7 +23,7 @@ export const defs = `<defs>
 <filter id="kblur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="80"/></filter>
 <filter id="kshadow" x="-20%" y="-20%" width="140%" height="170%"><feGaussianBlur stdDeviation="18"/></filter>
 <linearGradient id="korange" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9a3c"/><stop offset="1" stop-color="#ff6a00"/></linearGradient>
-<linearGradient id="kcode" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#33241a"/><stop offset="1" stop-color="#1f150d"/></linearGradient>
+<linearGradient id="kcode" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c1c25"/><stop offset="1" stop-color="#0d0d12"/></linearGradient>
 <linearGradient id="ksky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d6eeff"/><stop offset="1" stop-color="#b3dcff"/></linearGradient>
 <linearGradient id="knight" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2f3170"/><stop offset="1" stop-color="#22234d"/></linearGradient>
 <linearGradient id="kgrass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4fe3a3"/><stop offset="1" stop-color="#2cc585"/></linearGradient>

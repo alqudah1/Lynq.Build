@@ -10,7 +10,7 @@
  * - `auto` stories carry everything in the image and are published by the
  *   Office like any other post.
  *
- * CodeIt stories use the website's system (cream, brown, orange, Baloo 2,
+ * CodeIt stories use the website's system (cream, near-black, orange, Baloo 2,
  * Nunito, JetBrains Mono); LYNQ stories use the grid's (near-black, white,
  * one acid lime, Inter).
  */
@@ -51,8 +51,11 @@ export type StorySpec =
 export type Icon = "car" | "paw" | "rocket" | "music" | "phone" | "form" | "star" | "rock";
 
 /** Stable key for a spec: stored on the story so a changed spec re-renders the image. */
+/** The stories' look version: bump it when the design changes, so stories already drawn are redrawn. */
+const STORY_STYLE = "ink-2";
+
 export function storyKey(spec: StorySpec): string {
-  return `story-spec:${createHash("sha1").update(JSON.stringify(spec)).digest("hex").slice(0, 16)}`;
+  return `story-spec:${createHash("sha1").update(STORY_STYLE + JSON.stringify(spec)).digest("hex").slice(0, 16)}`;
 }
 
 /** Whether the owner posts this story from the app (it needs a sticker). */
@@ -83,10 +86,10 @@ export function stickerZone(spec: StorySpec): { x: number; y: number; w: number;
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 type TextOpts = { f?: string; w?: number; s?: number; c?: string; a?: "start" | "middle" | "end"; ls?: number; op?: number };
 const T = (x: number, y: number, t: string, o: TextOpts = {}) =>
-  `<text x="${x}" y="${y}" font-family="${o.f ?? "Nunito"}" font-weight="${o.w ?? 700}" font-size="${o.s ?? 40}" fill="${o.c ?? "#35220e"}" text-anchor="${o.a ?? "start"}" letter-spacing="${o.ls ?? 0}" opacity="${o.op ?? 1}" xml:space="preserve">${esc(t)}</text>`;
+  `<text x="${x}" y="${y}" font-family="${o.f ?? "Nunito"}" font-weight="${o.w ?? 700}" font-size="${o.s ?? 40}" fill="${o.c ?? "#16161d"}" text-anchor="${o.a ?? "start"}" letter-spacing="${o.ls ?? 0}" opacity="${o.op ?? 1}" xml:space="preserve">${esc(t)}</text>`;
 
 // ---------- CodeIt ----------
-const CR = "#fff4e5", BR = "#35220e", OR = "#ff7a00", ORT = "#d46500", YE = "#f5d04a", MI = "#3ddc97";
+const CR = "#fff4e5", BR = "#16161d", OR = "#ff7a00", ORT = "#d46500", YE = "#f5d04a", MI = "#3ddc97";
 const cTitle = (y: number, t: string, s = 80, c = BR) => T(W / 2, y, t, { f: "Baloo 2", s, c, a: "middle" });
 function icon(kind: Icon, cx: number, cy: number, color: string, stroke: string): string {
   const s = `stroke="${stroke}" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"`;
@@ -130,7 +133,7 @@ const cDefs = `<defs>
 <filter id="blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="90"/></filter>
 <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%"><feGaussianBlur stdDeviation="26"/></filter>
 <linearGradient id="orange" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9a3c"/><stop offset="1" stop-color="#ff6a00"/></linearGradient>
-<linearGradient id="code" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#33241a"/><stop offset="1" stop-color="#1f150d"/></linearGradient>
+<linearGradient id="code" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c1c25"/><stop offset="1" stop-color="#0d0d12"/></linearGradient>
 </defs>`;
 /** Warm gradient with three soft light blooms: depth without doodles. */
 const cBackdrop = () => `${cDefs}<rect width="${W}" height="${H}" fill="url(#cbg)"/>
@@ -152,12 +155,12 @@ const cWindow = (x: number, y: number, w: number, lines: string[], file = "quiz.
   const h = 110 + 60 + lines.length * lh;
   const body = lines.map((l, i) => {
     const y0 = y + 110 + 30 + size + i * lh;
-    const num = T(x + 46, y0, String(i + 1), { f: "JetBrains Mono", w: 500, s: size * 0.55, c: "#6f5e4d" });
-    return `${num}${T(x + 104, y0, l, { f: "JetBrains Mono", w: 500, s: size, c: l.trim().startsWith("#") ? "#9c8670" : MI })}`;
+    const num = T(x + 46, y0, String(i + 1), { f: "JetBrains Mono", w: 500, s: size * 0.55, c: "#6b6b78" });
+    return `${num}${T(x + 104, y0, l, { f: "JetBrains Mono", w: 500, s: size, c: l.trim().startsWith("#") ? "#8b8b9c" : MI })}`;
   }).join("");
   return `${softCard(x, y, w, h, "url(#code)", 40, 0.35)}
 <circle cx="${x + 52}" cy="${y + 50}" r="12" fill="#ff5f57"/><circle cx="${x + 90}" cy="${y + 50}" r="12" fill="#febc2e"/><circle cx="${x + 128}" cy="${y + 50}" r="12" fill="#28c840"/>
-<rect x="${x + 170}" y="${y + 24}" width="${file.length * 19 + 48}" height="52" rx="14" fill="#ffffff" opacity="0.07"/>${T(x + 194, y + 60, file, { f: "JetBrains Mono", w: 500, s: 28, c: "#d8c4ad" })}
+<rect x="${x + 170}" y="${y + 24}" width="${file.length * 19 + 48}" height="52" rx="14" fill="#ffffff" opacity="0.07"/>${T(x + 194, y + 60, file, { f: "JetBrains Mono", w: 500, s: 28, c: "#c9c9d6" })}
 <line x1="${x}" y1="${y + 100}" x2="${x + w}" y2="${y + 100}" stroke="#ffffff" stroke-opacity="0.06" stroke-width="2"/>
 ${body}`;
 };
