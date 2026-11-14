@@ -65,6 +65,8 @@ interface PlanFeedPost {
   creativeDirection?: string;
   /** Rendered card (no AI image): the CodeIt story card drawn from this spec. */
   card?: CodeItCard;
+  /** A finished picture bundled in src/assets/posts (no AI image, no drawn card): attached exactly as it is. */
+  image?: string;
   /** No AI image: the owner uploads a real photo or screenshot. */
   realPhotoOnly?: boolean;
   /** What to upload when realPhotoOnly (shown in the checklist and the morning reminder). */
@@ -1177,7 +1179,46 @@ export const WEEK_PLANS: WeekPlan[] = [
       LYNQ: ["START HERE", "KINGSBRIDGE", "NASMA", "AMY", "ARCUBED", "HOUSE DEALS", "KIDS CODING", "FIX THIS", "WHAT YOU GET", "OFFICE", "BEHIND"],
       CodeIt: ["START HERE", "BUILDS", "LESSONS", "ASK THE TEACHER", "FREE", "ABOUT", "QUIZ", "PIP"],
     },
+    // Replaced on Nov 13 by finished pictures the owner approved (the new LYNQ object post and the CodeIt 3D set).
+    retired: ["p3-lynq-cases", "p3-codeit-cheat-if", "p3-codeit-split-score", "p3-codeit-pip-variable"],
     feed: [
+      // ---- Approved finished pictures (attached as they are, never drawn or generated) ----
+      {
+        key: "p4-lynq-sign", brand: LYNQ, day: "2026-11-14", time: "12:15", pillar: "PROOF", storyHighlight: "BEHIND",
+        title: "LYNQ · Your sign is blank", kind: "image_post", platforms: ["instagram", "facebook"],
+        hook: "Your sign is blank. That's your website to a stranger.",
+        body: "We have one rule before any design starts.\n\nA stranger opens your site on a phone. One screen, no scrolling. Can they say what you do, who it's for, and how to get it?\n\nIf not, we rewrite the first sentence until they can. Fonts and colours come after.\n\nTry it now: write what your business does in one sentence in the comments. We'll tell you honestly if it passes.",
+        facebookBody: "Our one rule before any design: a stranger opens your site on a phone and, without scrolling, can say what you do, who it's for and how to get it. If not, we rewrite the first sentence. Write yours in one sentence and we'll tell you if it passes.",
+        hashtags: ["Copywriting", ...LYNQ_TAGS.slice(0, 2)], callToAction: "Comment your sentence",
+        image: "lynq-sign-blank.jpg",
+      },
+      {
+        key: "p4-codeit-controller", brand: CODEIT, day: "2026-11-14", time: "18:30", pillar: "BUILD", storyHighlight: "BUILDS",
+        title: "CodeIt · They don't just play it. They built it.", kind: "image_post", platforms: ["instagram", "facebook"],
+        hook: "They don't just play it. They built it.",
+        body: "Playing a game is fun. Opening it up and seeing what it's made of is better.\n\nKids describe a game, get a first version, then change the real code behind it.\n\nFree to start at codeitlearn.com",
+        facebookBody: "Playing a game is fun. Opening it up and seeing what it's made of is better. Kids describe a game, get a first version, then change the real code behind it. Free to start at codeitlearn.com",
+        hashtags: ["KidsCoding", "CodingForKids", "GameDev", "LearnToCode", "Parenting"], callToAction: "Free to start",
+        image: "codeit-3d-controller.jpg",
+      },
+      {
+        key: "p4-codeit-python", brand: CODEIT, day: "2026-11-15", time: "18:30", pillar: "LEARN", storyHighlight: "LESSONS",
+        title: "CodeIt · 31 Python lessons. One step at a time.", kind: "image_post", platforms: ["instagram", "facebook"],
+        hook: "31 Python lessons. One step at a time.",
+        body: "31 Python lessons, starting from the very first line.\n\nWrite it, run it, make it yours. It all runs in the browser, so there's nothing to install.\n\nFree to start at codeitlearn.com",
+        facebookBody: "31 Python lessons, starting from the very first line. Write it, run it, make it yours. It all runs in the browser, so there's nothing to install. Free to start at codeitlearn.com",
+        hashtags: ["Python", "KidsCoding", "CodingForKids", "LearnToCode", "PythonForKids"], callToAction: "Free to start",
+        image: "codeit-3d-python.jpg",
+      },
+      {
+        key: "p4-codeit-five-minutes", brand: CODEIT, day: "2026-11-16", time: "18:30", pillar: "HOW IT WORKS", storyHighlight: "START HERE",
+        title: "CodeIt · 5 more minutes. The good kind.", kind: "image_post", platforms: ["instagram", "facebook"],
+        hook: "\"5 more minutes.\" The good kind.",
+        body: "The cat falls too fast. One more fix. Then one more.\n\nWhen \"5 more minutes\" means they're fixing their own game, that's a good problem to have.\n\nFree to start at codeitlearn.com",
+        facebookBody: "The cat falls too fast. One more fix. Then one more. When \"5 more minutes\" means they're fixing their own game, that's a good problem to have. Free to start at codeitlearn.com",
+        hashtags: ["KidsCoding", "Parenting", "ScreenTime", "CodingForKids", "LearnToCode"], callToAction: "Free to start",
+        image: "codeit-3d-five-minutes.jpg",
+      },
       // ---- LYNQ ----
       {
         key: "p3-lynq-ab-button", brand: LYNQ, day: "2026-11-05", time: "12:15", pillar: "TEACH", storyHighlight: "FIX THIS",
@@ -1259,15 +1300,6 @@ export const WEEK_PLANS: WeekPlan[] = [
         facebookBody: "Our one rule before any design: a stranger opens your site on a phone and, without scrolling, can say what you do, who it's for and how to get it. If not, we rewrite the first sentence. Write yours in one sentence and we'll tell you if it passes.",
         hashtags: ["Copywriting", ...LYNQ_TAGS.slice(0, 2)], callToAction: "Comment your sentence",
         creativeDirection: `A single matte black ruler lying on the black studio floor, hard light from the upper left, with one short thin white printed line along it and a tiny acid-lime mark at the end of the line. One line of thin white type: "One sentence." ${HONEST_CARD} ${LYNQ_LOOK}`,
-      },
-      {
-        key: "p3-lynq-cases", brand: LYNQ, day: "2026-11-14", time: "12:15", pillar: "PROOF", storyHighlight: "START HERE",
-        title: "LYNQ · Six businesses, six different first screens", kind: "image_post", platforms: ["instagram", "facebook"],
-        hook: "Six businesses, six different first screens. Which one should we break down next?",
-        body: "Six businesses we've built for, and not one of them has the same first screen.\n\nA home builder. A restaurant. An events business. A handmade bag maker. A home buyer with an investor list. A kids STEM school.\n\nEach site starts with the one thing that business needs a customer to do. That's the whole method.\n\nEvery case is in our highlights. Which kind of business should we break down step by step next? Comment it below.",
-        facebookBody: "Six businesses we've built for, and not one has the same first screen: a home builder, a restaurant, an events business, a bag maker, a home buyer with an investor list, and a STEM school. Each starts with the one thing that business needs a customer to do. Which kind should we break down next?",
-        hashtags: ["WebDesign", "SmallBusiness", "LYNQ"], callToAction: "Comment a business type",
-        creativeDirection: `Six small matte black tiles arranged in two neat rows on the black studio floor, hard light from the upper left, each with a different tiny engraved white symbol; one tile has an acid-lime edge. No text. ${HONEST_CARD} ${LYNQ_LOOK}`,
       },
       {
         key: "p3-lynq-hire", brand: LYNQ, day: "2026-11-15", time: "12:15", pillar: "TEACH", storyHighlight: "WHAT YOU GET",
@@ -1422,47 +1454,6 @@ export const WEEK_PLANS: WeekPlan[] = [
         card: { eyebrow: "Guess the game", headline: "Round two.", sub: "A classic.", steps: [], format: {
           kind: "guess", code: ["ball.x += speed", "if ball.hits(paddle):", "    speed = -speed", "# don't let it pass"], options: ["Racing", "Pong", "Snake", "Pet game"], hint: "Answer in tomorrow's story",
         } },
-        creativeDirection: "Rendered card.",
-      },
-      {
-        key: "p3-codeit-cheat-if", brand: CODEIT, day: "2026-11-14", time: "10:00", pillar: "LEARN", storyHighlight: "ASK THE TEACHER",
-        title: "CodeIt · Parent cheat sheet: what's an if?", kind: "image_post", platforms: ["instagram", "facebook"],
-        hook: "\"If it's raining, take a coat.\" You already know how to code an if.",
-        body: "Parent cheat sheet: what's an if?\n\nYou already use them. \"If it's raining, take a coat.\" \"If your room is clean, you can play.\"\n\n1. The computer checks something\n2. Yes: it does the next part\n3. No: it skips it\n\nIn Python: if raining: coat()\n\nSave this, and tonight ask your kid for an if from their own day. Then ask for one from their favourite game.",
-        facebookBody: "Parent cheat sheet: an if is \"if it's raining, take a coat.\" The computer checks something, does the next part when it's true, and skips it when it's not. Ask your kid for an if from their own day.",
-        hashtags: CODEIT_TAGS, callToAction: "Save this",
-        card: { eyebrow: "Parent cheat sheet", headline: "What's an if?", sub: "A fork in the road.", steps: [], format: {
-          kind: "cheat", word: "if", like: "a fork in\nthe road", object: "fork", lines: ["The computer checks something", "Yes: it does the next part", "No: it skips it"], code: "if raining: coat()",
-        } },
-        creativeDirection: "Rendered card.",
-      },
-      {
-        key: "p3-codeit-split-score", brand: CODEIT, day: "2026-11-15", time: "10:00", pillar: "HOW IT WORKS", storyHighlight: "START HERE",
-        title: "CodeIt · One line, two games: the score", kind: "image_post", platforms: ["instagram", "facebook"],
-        hook: "+1 per carrot or +100 per carrot. One line changes how the game feels.",
-        body: "One line, two games.\n\nscore += 1: every carrot counts a little. Getting to 50 feels like work.\nscore += 100: every carrot is a big moment. The numbers get silly fast.\n\nNeither is wrong. It's a choice, and kids love making it.\n\nWhich would your kid pick? Comment 1 or 100.\n\nOn CodeIt they change the number, play, and see the difference straight away.",
-        facebookBody: "One line, two games: score += 1 makes every carrot count a little, score += 100 makes every carrot a big moment. Neither is wrong, it's a choice. Would your kid pick 1 or 100?",
-        hashtags: CODEIT_TAGS, callToAction: "Comment 1 or 100",
-        card: { eyebrow: "One line, two games", headline: "Plus 1", sub: "or plus 100?", steps: [], format: {
-          kind: "split", hero: "bunny", item: "carrot", note: "Same game. One number changed.",
-          top: { code: "score += 1", caption: "Slow and steady", badge: "SCORE 3" },
-          bottom: { code: "score += 100", caption: "Big numbers", badge: "SCORE 300" },
-        } },
-        creativeDirection: "Rendered card.",
-      },
-      {
-        key: "p3-codeit-pip-variable", brand: CODEIT, day: "2026-11-16", time: "19:30", pillar: "TEACH", storyHighlight: "PIP",
-        title: "CodeIt · Pip learns a variable", kind: "image_post", platforms: ["instagram", "facebook"],
-        hook: "Pip keeps forgetting the score. So Pip gives it a name.",
-        body: "Pip learns a variable.\n\nPip keeps forgetting how many stars it collected. So Pip gives the number a name:\n\nscore = 0\nscore = score + 1\n\nNow the game remembers for Pip. That's a variable: a name the computer keeps a value under, and the value can change.\n\nAsk your kid: what would your game need to remember? Comment their answer.\n\nFollow for Pip's next lesson.",
-        facebookBody: "Pip learns a variable: Pip keeps forgetting the score, so it gives the number a name, score = 0, then score = score + 1. Now the game remembers. Ask your kid what their game would need to remember.",
-        hashtags: CODEIT_TAGS, callToAction: "Comment their answer",
-        card: { eyebrow: "Pip learns a variable", headline: "Name it.", sub: "The game remembers.", steps: [], format: { kind: "comic", panels: [
-          { pose: "think", bubble: "How many stars\ndid I get?", caption: "Pip forgot" },
-          { pose: "type", code: "score = 0", caption: "Give it a name" },
-          { pose: "type", code: "score = score + 1", caption: "Add one each star" },
-          { pose: "cheer", bubble: "It remembers\nfor me!", caption: "That's a variable" },
-        ] } },
         creativeDirection: "Rendered card.",
       },
       {
@@ -1830,7 +1821,7 @@ export interface WeekPlanReport {
   created: string[];
   skipped: string[];
   needsYou: string[];
-  imagesQueued: { contentItemId: string; igVariantId: string; copyTo: string[]; card?: CodeItCard; story?: { variantId: string; meta: StoryMeta; brandProfileId: string | null } }[];
+  imagesQueued: { contentItemId: string; igVariantId: string; copyTo: string[]; card?: CodeItCard; image?: string; story?: { variantId: string; meta: StoryMeta; brandProfileId: string | null } }[];
 }
 
 /**
@@ -2069,7 +2060,7 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
           report.scheduled.push(`${item.title}: caption updated`);
         }
         // Changed art direction on an untouched post: store it and drop the old image (post + story) so the cron remakes it.
-        const wantArt = p.card ? cardKey(p.card) : (p.creativeDirection ?? "");
+        const wantArt = p.card ? cardKey(p.card) : p.image ? bundledImageKey(p.image) : (p.creativeDirection ?? "");
         if (wantArt && item.brief.creativeDirection !== wantArt && item.variants.every((v) => v.archivedAt || REMAKEABLE.has(v.status))) {
           await updateContentItem(db, { organizationId: input.organizationId, contentItemId: item.id, actorUserId: input.actorUserId, expectedRevision: item.revision, changes: { brief: { creativeDirection: wantArt } } });
           const storyId = await findMarkedItem(db, input.organizationId, planMarker(plan.key, `${post.key}-story`));
@@ -2090,7 +2081,7 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
           topic: `${p.pillar} post`,
           tone: "",
           callToAction: p.callToAction ?? "",
-          creativeDirection: p.card ? cardKey(p.card) : (p.creativeDirection ?? ""),
+          creativeDirection: p.card ? cardKey(p.card) : p.image ? bundledImageKey(p.image) : (p.creativeDirection ?? ""),
           hook: p.hook ?? "",
           script: "",
           shots: [],
@@ -2110,7 +2101,7 @@ export async function applyWeekPlan(db: Db, input: { organizationId: string; act
       }
       const ig = item.variants.find((v) => v.platform === "instagram" && !v.archivedAt);
       if (p.realPhotoOnly) report.needsYou.push(`${item.title}: ${p.uploadNote ?? "upload a real photo (founder posts don't use AI images)."}`);
-      else if (ig && !ig.media.length) report.imagesQueued.push({ contentItemId: item.id, igVariantId: ig.id, copyTo: item.variants.filter((v) => v.id !== ig.id && !v.archivedAt && !v.media.length).map((v) => v.id), ...(p.card ? { card: p.card } : {}) });
+      else if (ig && !ig.media.length) report.imagesQueued.push({ contentItemId: item.id, igVariantId: ig.id, copyTo: item.variants.filter((v) => v.id !== ig.id && !v.archivedAt && !v.media.length).map((v) => v.id), ...(p.card ? { card: p.card } : {}), ...(p.image ? { image: p.image } : {}) });
     }
 
     if (!item) continue;
@@ -2335,6 +2326,42 @@ async function attachCodeItCard(db: Db, input: { organizationId: string; actorUs
   await updateVariant(db, { organizationId: input.organizationId, contentVariantId: ig.id, actorUserId: input.actorUserId, expectedRevision: ig.revision, changes: { media: [{ assetId: asset.id, position: 0, role: "primary" as const }], format: "image" } });
 }
 
+const POSTS_DIR = path.join(process.cwd(), "src", "assets", "posts");
+
+/** Identifies a bundled picture by name and content, so swapping the file under the same name is seen as new art. */
+export function bundledImageKey(file: string): string {
+  let digest = "missing";
+  try {
+    digest = createHash("sha1").update(readFileSync(path.join(POSTS_DIR, path.basename(file)))).digest("hex").slice(0, 12);
+  } catch {
+    // A missing file is reported when the picture is attached.
+  }
+  return `bundled-image:${path.basename(file)}:${digest}`;
+}
+
+/** Attaches a finished picture from src/assets/posts to the post's Instagram version (callers only ask when it has no media). */
+async function attachBundledImage(db: Db, input: { organizationId: string; actorUserId: string }, contentItemId: string, igVariantId: string, file: string): Promise<void> {
+  const item = await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId, actorUserId: input.actorUserId });
+  const ig = item.variants.find((v) => v.id === igVariantId);
+  if (!ig) throw new Error("variant not found");
+  const name = path.basename(file);
+  const bytes = readFileSync(path.join(POSTS_DIR, name));
+  const asset = await createUploadedAsset(db, {
+    organizationId: input.organizationId,
+    actorUserId: input.actorUserId,
+    brandProfileId: item.brandProfileId ?? null,
+    contentItemId: item.id,
+    contentVariantId: ig.id,
+    assetType: "image",
+    title: `${item.title} — picture`.slice(0, 200),
+    altText: (ig.hook || item.title).slice(0, 1000),
+    tags: ["bundled-post-image"],
+    file: { bytes, contentType: name.toLowerCase().endsWith(".png") ? "image/png" : "image/jpeg", filename: name },
+    platformHint: "instagram",
+  });
+  await updateVariant(db, { organizationId: input.organizationId, contentVariantId: ig.id, actorUserId: input.actorUserId, expectedRevision: ig.revision, changes: { media: [{ assetId: asset.id, position: 0, role: "primary" as const }], format: "image" } });
+}
+
 /** Puts the newest video sent to the Telegram bot on every version of a reel that still has no media. True when something was attached. */
 const REELS_DIR = path.join(process.cwd(), "src", "assets", "reels");
 
@@ -2488,6 +2515,7 @@ export async function generatePlanImages(db: Db, input: { organizationId: string
   for (const job of input.queue) {
     try {
       if (job.card) await attachCodeItCard(db, input, job.contentItemId, job.igVariantId, job.card);
+      else if (job.image) await attachBundledImage(db, input, job.contentItemId, job.igVariantId, job.image);
       else await regenerateVariantPart(db, { organizationId: input.organizationId, contentVariantId: job.igVariantId, actorUserId: input.actorUserId, part: "image" });
       const item = await getContentItemForUser(db, { organizationId: input.organizationId, contentItemId: job.contentItemId, actorUserId: input.actorUserId });
       const ig = item.variants.find((v) => v.id === job.igVariantId);
@@ -2563,7 +2591,7 @@ export async function fillWeekPlanImages(db: Db, input: { organizationId: string
       const ig = variants.find((v) => v.platform === "instagram" && !v.archivedAt);
       if (!ig) continue;
       // A feed image that isn't square came from the old portrait render (edges cut): clear it on every version so it is remade.
-      if (ig.media.length && REMAKEABLE.has(ig.status) && ((await isWrongShape(db, input.organizationId, ig.media[0]!.assetId)) || (await isPngCard(db, input.organizationId, ig.media[0]!.assetId)))) {
+      if (!p.image && ig.media.length && REMAKEABLE.has(ig.status) && ((await isWrongShape(db, input.organizationId, ig.media[0]!.assetId)) || (await isPngCard(db, input.organizationId, ig.media[0]!.assetId)))) {
         const storyId0 = idFor.get(planMarker(plan.key, `${post.key}-story`));
         const all = [...variants, ...(storyId0 ? await getVariantsOfItem(db, input, storyId0) : [])];
         for (const v of all) {
@@ -2577,6 +2605,7 @@ export async function fillWeekPlanImages(db: Db, input: { organizationId: string
         if (!RESCHEDULABLE.has(igNow.status)) continue;
         try {
           if (p.card) await attachCodeItCard(db, input, itemId, ig.id, p.card);
+          else if (p.image) await attachBundledImage(db, input, itemId, ig.id, p.image);
           else await regenerateVariantPart(db, { organizationId: input.organizationId, contentVariantId: ig.id, actorUserId: input.actorUserId, part: "image" });
           out.generated++;
           variants = await getVariantsOfItem(db, input, itemId);

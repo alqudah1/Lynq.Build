@@ -12,6 +12,8 @@ const nextConfig: NextConfig = {
       "./src/assets/fonts/**/*",
       "./src/assets/cases/**/*",
       "./src/assets/reels/**/*",
+      // Finished feed pictures the week plan attaches as they are.
+      "./src/assets/posts/**/*",
       // CodeIt story cards composite the brand logo.
       "./src/assets/brand/**/*",
     ],
