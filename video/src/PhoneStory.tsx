@@ -71,20 +71,25 @@ const Result: React.FC<{ name: string; url: string; line: string; hot?: boolean 
   </div>
 );
 
-const Search: React.FC<{ pick: 1 | 2; tapAt: number }> = ({ pick, tapAt }) => {
+const Search: React.FC<{ pick: 1 | 2; tapAt: number; typing?: boolean }> = ({ pick, tapAt, typing }) => {
   const { s } = useT();
   const hot = s > tapAt && s < tapAt + 0.6;
+  const Q = "hair salon near me";
+  const typed = typing ? Q.slice(0, Math.max(0, Math.floor((s - 0.15) * 20))) : Q;
+  const shown = typing ? ramp(s, 1.15, 1.5, 0, 1, ss) : 1;
   return (
     <>
       <StatusBar />
       <div style={{ margin: "58px 16px 16px", padding: "13px 18px", borderRadius: 26, background: "#f1f3f4", fontFamily: IL, fontSize: 17, color: "#202124", display: "flex", alignItems: "center", gap: 10 }}>
         <span style={{ width: 14, height: 14, borderRadius: 8, border: "2px solid #7b8187", display: "inline-block" }} />
-        hair salon near me
+        {typed}{typing && s < 1.3 && <span style={{ width: 2, height: 20, background: "#1a73e8", marginLeft: -6, opacity: Math.floor(s * 4) % 2 ? 1 : 0.2 }} />}
       </div>
+      <div style={{ opacity: shown, transform: `translateY(${(1 - shown) * 14}px)` }}>
       <div style={{ margin: "0 20px 12px", fontFamily: IL, fontSize: 12.5, color: "#70757a" }}>Results</div>
       <Result name={SHOP_A} url="oliveandthread.example" line="Hair salon. Cuts, colour and styling." hot={hot && pick === 1} />
       <Result name={SHOP_B} url="kindredchair.example" line="Hair salon. Book online in seconds." hot={hot && pick === 2} />
       <Result name="Third Street Hair" url="thirdstreethair.example" line="Walk-ins welcome most days." />
+      </div>
       <Tap at={tapAt} x={150} y={pick === 1 ? 190 : 330} dark />
     </>
   );
@@ -231,18 +236,63 @@ const Line: React.FC<{ text: string; at: number; out: number; lime?: string[]; s
   );
 };
 
+/** Her money: a lime chip that waits beside the phone, knocks on the first shop, and goes to the second. */
+const Money: React.FC = () => {
+  const { s } = useT();
+  if (s < 2.2 || s > 13.9) return null;
+  const k = (t: number[], v: number[]) => interpolate(s, t, v, { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.inOut(Easing.cubic) });
+  const born = ramp(s, 2.2, 2.9, 0, 1, ss);
+  // start where the words "my money." were, settle beside the phone
+  let x = k([2.2, 2.9], [600, 938]);
+  let y = k([2.2, 2.9], [372, 800]);
+  // two knocks on the first shop's edge: nothing lets it in
+  x += k([5.9, 6.05, 6.2, 6.4, 6.55, 6.7], [0, -92, 0, 0, -92, 0]);
+  // voicemail: it sinks
+  const sink = k([8.8, 9.4, 10.6, 11.4], [0, 1, 1, 0]);
+  y += sink * 46;
+  // booked: it flies into the tick
+  const go = k([13.45, 13.8], [0, 1]);
+  x = x + (540 - x) * go;
+  y = y + (1194 - y) * go;
+  const bob = Math.sin(s * 2.2) * 7 * (1 - go);
+  return (
+    <div style={{ position: "absolute", left: x - 130, top: y - 42 + bob, width: 260, textAlign: "center", opacity: born * (1 - sink * 0.45) * (1 - ramp(s, 13.72, 13.85)), transform: `scale(${(0.6 + 0.4 * born) * (1 - go * 0.6)}) rotate(${sink * -7 + Math.sin(s * 1.7) * 1.5}deg)`, zIndex: 5 }}>
+      <div style={{ display: "inline-flex", alignItems: "center", gap: 10, padding: "14px 24px 14px 16px", borderRadius: 44, background: LI, boxShadow: `0 0 50px rgba(199,255,61,${0.35 * (1 - sink)}), 0 14px 30px rgba(0,0,0,0.5)` }}>
+        <span style={{ width: 36, height: 36, borderRadius: 18, background: "#0b0d0a", color: LI, fontFamily: IS, fontSize: 22, display: "flex", alignItems: "center", justifyContent: "center" }}>$</span>
+        <span style={{ fontFamily: IS, fontSize: 34, color: "#0b0d0a", letterSpacing: -0.5 }}>60</span>
+      </div>
+      <div style={{ marginTop: 12, fontFamily: IS, fontSize: 15, letterSpacing: 2.5, whiteSpace: "nowrap", color: "rgba(255,255,255,0.55)", opacity: 1 - go }}>{sink > 0.5 ? "STILL WAITING" : "READY TO SPEND"}</div>
+    </div>
+  );
+};
+
 export const LynqMoney: React.FC = () => {
   const { s } = useT();
   const hookOut = ramp(s, 2.3, 2.7);
   const lock = ramp(s, 15.0, 15.6, 0, 1, ss);
-  const leave = ramp(s, 15.3, 16.1, 0, 1, ss);
+  const leave = ramp(s, 15.5, 16.0, 0, 1, ss);
   const end1 = ramp(s, 15.7, 16.3, 0, 1, ss);
   const end2 = useSpringAt(17.0, { damping: 15, stiffness: 130 });
+  const pop = useSpringAt(13.75, { damping: 9, stiffness: 180 });
+  // the room takes the colour of whatever is on her screen
+  const gWhite = (1 - ramp(s, 2.4, 2.9)) + ramp(s, 10.5, 10.8) * (1 - ramp(s, 11.2, 11.6));
+  const gBeige = ramp(s, 2.5, 3.0) * (1 - ramp(s, 6.8, 7.2));
+  const gRed = ramp(s, 8.7, 9.0) * (1 - ramp(s, 10.3, 10.7));
+  const gLime = ramp(s, 13.7, 14.0) * (1 - lock);
+  // the camera leans in on "Call for prices", shudders on the voicemail, and lifts on the booking
+  const lean = ramp(s, 4.9, 5.3, 0, 1, ss) * (1 - ramp(s, 5.75, 6.15, 0, 1, ss));
+  const shake = s > 8.8 && s < 9.35 ? Math.sin((s - 8.8) * 70) * 9 * (1 - (s - 8.8) / 0.55) : 0;
+  const float = Math.sin(s * 0.9) * 6;
+  const tilt = Math.sin(s * 0.55) * 1.6;
+  const flip = ramp(s, 15.25, 15.95, 0, 1, ss);
   return (
     <AbsoluteFill style={{ background: BG }}>
       <Fonts />
       {/* soft light behind the phone so it sits in a room, not on a flat card */}
-      <div style={{ position: "absolute", left: 90, top: 560, width: 900, height: 1000, borderRadius: 500, background: "radial-gradient(closest-side, rgba(255,255,255,0.075) 0%, rgba(255,255,255,0) 100%)", opacity: 1 - leave }} />
+      {[["255,255,255", gWhite * 0.13], ["226,214,180", gBeige * 0.14], ["255,69,58", gRed * 0.2], ["199,255,61", gLime * 0.22], ["255,255,255", 0.045]].map(([c, o], i) => (
+        <div key={i} style={{ position: "absolute", left: -110, top: 380, width: 1300, height: 1360, borderRadius: 680, background: `radial-gradient(closest-side, rgba(${c},${o}) 0%, rgba(${c},0) 100%)`, opacity: 1 - leave }} />
+      ))}
+      <Money />
 
       <div style={{ position: "absolute", left: 70, top: 150, display: "flex", alignItems: "center", gap: 14, opacity: 1 - leave }}>
         <Img src={staticFile("ads/lynq-logo.svg")} style={{ width: 38, height: 38 }} />
@@ -263,10 +313,10 @@ export const LynqMoney: React.FC = () => {
       <Line text="So they got my money." at={13.8} out={15.0} lime={["my", "money"]} />
 
       {/* the phone */}
-      <div style={{ position: "absolute", left: PX, top: PY, width: PW, height: PH, borderRadius: 86, background: "#0d0f0e", boxShadow: "0 0 0 2px #2b2e2c, 0 0 0 5px #121413, 0 60px 120px rgba(0,0,0,0.8)", opacity: 1 - leave, transform: `scale(${1 - leave * 0.06}) translateY(${leave * 40}px)` }}>
+      <div style={{ position: "absolute", left: PX, top: PY, width: PW, height: PH, borderRadius: 86, background: "#0d0f0e", boxShadow: "0 0 0 2px #3a3d3b, 0 0 0 5px #121413, inset 0 0 0 1px rgba(255,255,255,0.08), 0 70px 130px rgba(0,0,0,0.85)", opacity: 1 - ramp(s, 15.8, 15.95), transformOrigin: "50% 48%", transform: `perspective(1800px) translate(${shake}px, ${float}px) scale(${1 + lean * 0.1 + (pop > 0 && s < 15 ? Math.max(0, 1 - Math.abs(pop - 1) * 6) * 0 : 0) + (s >= 13.75 ? (pop - 1) * 0.25 + 0.02 : 0)}) rotateY(${tilt + flip * 88}deg) rotateX(${lean * 2}deg)` }}>
         <div style={{ position: "absolute", left: BZ, top: BZ, width: PW - BZ * 2, height: PH - BZ * 2, borderRadius: 74, overflow: "hidden", background: "#000" }}>
           <div style={{ width: SW, height: SH, transform: `scale(${SCALE})`, transformOrigin: "0 0", position: "relative" }}>
-            <Screen from={0} to={2.6} bg="#fff"><Search pick={1} tapAt={1.9} /></Screen>
+            <Screen from={0} to={2.6} bg="#fff"><Search pick={1} tapAt={2.05} /></Screen>
             <Screen from={2.6} to={7.0} bg="#f7f3e6"><WeakSite /></Screen>
             <Screen from={7.0} to={10.6} bg="#0b0c0c"><Call /></Screen>
             <Screen from={10.6} to={11.4} back bg="#fff"><Search pick={2} tapAt={10.95} /></Screen>
@@ -275,9 +325,11 @@ export const LynqMoney: React.FC = () => {
           {/* island and the screen going dark at the end */}
           <div style={{ position: "absolute", left: (PW - BZ * 2) / 2 - 62, top: 16, width: 124, height: 36, borderRadius: 18, background: "#000", zIndex: 60 }} />
           <div style={{ position: "absolute", inset: 0, background: "#000", opacity: lock, zIndex: 70 }} />
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(115deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.03) 22%, rgba(255,255,255,0) 40%)", zIndex: 80, pointerEvents: "none" }} />
         </div>
       </div>
 
+      <AbsoluteFill style={{ background: "radial-gradient(120% 80% at 50% 50%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.55) 100%)", pointerEvents: "none" }} />
       {/* end card: the black the phone left behind */}
       {s >= 15.7 && (
         <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
