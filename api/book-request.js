@@ -1,5 +1,5 @@
 const nodemailer = require('nodemailer');
-const { put } = require('@vercel/blob');
+const { put, list } = require('@vercel/blob');
 
 const RATE_LIMIT = 8;
 const WINDOW_MS = 60 * 60 * 1000;
@@ -28,16 +28,31 @@ async function notifyCompanyInbox(text) {
   const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text: `New lynq.build project inquiry\n\n${text}` }),
+    body: JSON.stringify({ chat_id: chatId, text: `New lynq.build consultation booking\n\n${text}` }),
   });
   return response.ok;
 }
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
+
+  // Times already booked, so the calendar can grey them out. Only the times
+  // are stored and returned here, never who booked them.
+  if (req.method === 'GET') {
+    let taken = [];
+    if (process.env.BLOB_READ_WRITE_TOKEN) {
+      try {
+        const { blobs } = await list({ prefix: 'book-slots/' });
+        taken = blobs.map((b) => Number(b.pathname.slice('book-slots/'.length).replace('.txt', '')))
+          .filter((ms) => ms > Date.now()).map((ms) => new Date(ms).toISOString());
+      } catch (err) { console.error('book-request slot list failed:', err); }
+    }
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(200).json({ taken });
+  }
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const ip = getIp(req);
@@ -45,7 +60,7 @@ module.exports = async (req, res) => {
     return res.status(429).json({ error: 'Too many requests. Please email mustafa@lynq.build directly.' });
   }
 
-  const { name, business, email, message, website, service, timeline, budget } = req.body || {};
+  const { name, business, email, message, website, service, timeline, budget, slot, slotLocal } = req.body || {};
 
   // Honeypot: real visitors never fill in a field this hidden.
   if (website) return res.status(200).json({ ok: true });
@@ -55,6 +70,25 @@ module.exports = async (req, res) => {
   if (String(name).length > 200 || String(business || '').length > 200 || String(message || '').length > 4000) {
     return res.status(400).json({ error: 'One of the fields is too long.' });
   }
+
+  // The call time the visitor picked on the calendar.
+  let slotMs = null;
+  if (slot) {
+    slotMs = Date.parse(String(slot));
+    if (!Number.isFinite(slotMs) || slotMs < Date.now() || slotMs > Date.now() + 60 * 24 * 3600 * 1000) {
+      return res.status(400).json({ error: 'That call time is no longer available. Please pick another.' });
+    }
+    if (process.env.BLOB_READ_WRITE_TOKEN) {
+      try {
+        const { blobs } = await list({ prefix: `book-slots/${slotMs}.txt` });
+        if (blobs.length) return res.status(409).json({ error: 'Someone just took that time. Please pick another.' });
+      } catch (err) { console.error('book-request slot check failed:', err); }
+    }
+  }
+  const callTime = slotMs
+    ? new Date(slotMs).toLocaleString('en-CA', { timeZone: 'America/Toronto', weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' Toronto time'
+    : '';
+  const cleanSlotLocal = String(slotLocal || '').trim().slice(0, 120);
 
   const cleanName = String(name).trim();
   const cleanBusiness = String(business || '').trim();
@@ -68,6 +102,7 @@ module.exports = async (req, res) => {
     `Name: ${cleanName}`,
     `Business: ${cleanBusiness || '—'}`,
     `Email: ${cleanEmail}`,
+    `Call time: ${callTime || 'not picked'}${cleanSlotLocal ? ` (their time: ${cleanSlotLocal})` : ''}`,
     `Service: ${cleanService || '—'}`,
     `Timeline: ${cleanTimeline || '—'}`,
     `Budget: ${cleanBudget || '—'}`,
@@ -76,6 +111,7 @@ module.exports = async (req, res) => {
   ].join('\n');
 
   let delivered = false;
+  let emailed = false;
   const ZOHO_PASS = process.env.ZOHO_APP_PASSWORD;
   if (ZOHO_PASS) try {
     const transporter = nodemailer.createTransport({
@@ -88,10 +124,11 @@ module.exports = async (req, res) => {
       // website inquiry to the active Microsoft 365 company mailbox.
       to: 'mustafa@lynq.build',
       replyTo: cleanEmail,
-      subject: `Project inquiry from ${cleanName}${cleanBusiness ? ' — ' + cleanBusiness : ''}`,
+      subject: `${callTime ? 'Call booked: ' + callTime : 'Project inquiry'} · ${cleanName}${cleanBusiness ? ' · ' + cleanBusiness : ''}`,
       text: bodyText,
     });
     delivered = true;
+    emailed = true;
   } catch (err) {
     console.error('book-request send failed:', err);
   }
@@ -118,12 +155,25 @@ module.exports = async (req, res) => {
         service: cleanService,
         timeline: cleanTimeline,
         budget: cleanBudget,
+        callTime,
       }), { access: 'public', contentType: 'application/json', addRandomSuffix: false });
       delivered = true;
     } catch (err) { console.error('book-request durable fallback failed:', err); }
   }
 
   if (!delivered) return res.status(500).json({ error: 'Could not send right now. Please email mustafa@lynq.build directly.' });
+
+  // Hold the time so nobody else can pick it.
+  if (slotMs && process.env.BLOB_READ_WRITE_TOKEN) {
+    try {
+      await put(`book-slots/${slotMs}.txt`, 'booked', { access: 'public', contentType: 'text/plain', addRandomSuffix: false });
+    } catch (err) { console.error('book-request slot hold failed:', err); }
+  }
+
+  // A booking should also reach the phone right away, even when email worked.
+  if (slotMs && emailed) {
+    try { await notifyCompanyInbox(bodyText); } catch (err) { console.error('book-request phone notice failed:', err); }
+  }
 
   return res.status(200).json({ ok: true });
 };

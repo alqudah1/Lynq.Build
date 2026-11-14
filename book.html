@@ -93,11 +93,45 @@
   }
   .success-box p{font-size:0.92rem;color:rgba(255,255,255,0.6);line-height:1.6}
 
+  .days{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin}
+  .day,.slot{
+    flex-shrink:0;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.14);border-radius:6px;
+    color:#fff;font-family:'Manrope',sans-serif;cursor:pointer;transition:border-color .15s,background .15s;
+  }
+  .day{padding:10px 14px;text-align:center;min-width:64px}
+  .day small{display:block;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.45);margin-bottom:3px}
+  .day b{font-weight:600;font-size:1rem}
+  .slots{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+  .slot{padding:11px 4px;font-size:0.84rem}
+  .day:hover,.slot:hover{border-color:rgba(255,255,255,0.4)}
+  .day.is-on,.slot.is-on{background:#c8ff5a;border-color:#c8ff5a;color:#080808}
+  .day.is-on small{color:rgba(8,8,8,0.6)}
+  .slot:disabled{opacity:0.25;cursor:default;text-decoration:line-through}
+  .tz-note{font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:8px}
+  @media(max-width:480px){.slots{grid-template-columns:repeat(3,1fr)}}
+
   footer{padding:24px 0;border-top:1px solid rgba(255,255,255,0.06)}
   .foot-row{display:flex;justify-content:space-between;font-size:0.7rem;color:rgba(255,255,255,0.25)}
   footer a{text-decoration:none;color:rgba(255,255,255,0.4);transition:color 0.2s}
   footer a:hover{color:#fff}
 </style>
+<!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1107850298665423');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=1107850298665423&ev=PageView&noscript=1"
+/></noscript>
+<!-- End Meta Pixel Code -->
 </head>
 <body>
 
@@ -107,18 +141,18 @@
 
 <main>
   <div class="wrap">
-    <div class="tag">Book a call</div>
+    <div class="tag">Book a consultation</div>
     <h1>Tell us what needs<br>to work better.</h1>
-    <p class="sub">A clearer website, a connected operation, or an AI workflow that removes repetitive work. Give us the context—we'll respond with the right next step within one business day.</p>
+    <p class="sub">A clearer website, a connected operation, or an AI workflow that removes repetitive work. Pick a time below for a free 15 to 20 minute video call.</p>
 
     <div class="btn-row">
       <a class="btn btn-solid" href="mailto:mustafa@lynq.build?subject=Let%27s%20talk%20about%20a%20project">Email mustafa@lynq.build →</a>
     </div>
 
     <div class="steps">
-      <div class="step"><div class="step-num">1</div><div class="step-text"><strong>You send the form below</strong> — takes about a minute.</div></div>
-      <div class="step"><div class="step-num">2</div><div class="step-text"><strong>We reply within 24 hours</strong> to a few questions, by email.</div></div>
-      <div class="step"><div class="step-num">3</div><div class="step-text"><strong>We book a real 15–20 min call</strong> once we both know it's a fit.</div></div>
+      <div class="step"><div class="step-num">1</div><div class="step-text"><strong>Pick a day and time below</strong>, it takes about a minute.</div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-text"><strong>We email you the video call link</strong> to confirm.</div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-text"><strong>We meet for 15 to 20 minutes</strong> and you leave with a clear next step.</div></div>
     </div>
 
     <form id="bookForm">
@@ -148,6 +182,12 @@
         </select>
       </div>
       <div class="field">
+        <label>Pick a day</label>
+        <div class="days" id="days"></div>
+        <div class="slots" id="slots"></div>
+        <p class="tz-note" id="tzNote"></p>
+      </div>
+      <div class="field">
         <label for="timeline">Ideal timeline</label>
         <select id="timeline" name="timeline"><option>As soon as practical</option><option>Within 30 days</option><option>1–3 months</option><option>Exploring for later</option></select>
       </div>
@@ -159,14 +199,14 @@
         <label for="message">What do you need? <span class="opt">(optional)</span></label>
         <textarea id="message" name="message" placeholder="New website, redesign, lead generation, consulting call, etc."></textarea>
       </div>
-      <button type="submit" class="submit-btn" id="submitBtn">Send request →</button>
+      <button type="submit" class="submit-btn" id="submitBtn">Book the call →</button>
       <p class="form-error" id="formError"></p>
     </form>
-    <p class="form-note" id="formNote">Sent securely to LYNQ — we reply from mustafa@lynq.build within 24 hours.</p>
+    <p class="form-note" id="formNote">Sent securely to LYNQ. The video call link comes from mustafa@lynq.build.</p>
 
     <div class="success-box" id="successBox">
-      <h2>Got it, thanks.</h2>
-      <p>We'll reply at the email you gave us within 24 hours to set up a real time to talk. If it's urgent, email <a href="mailto:mustafa@lynq.build" style="color:#fff">mustafa@lynq.build</a> directly.</p>
+      <h2>Your call is booked.</h2>
+      <p><strong id="bookedWhen" style="color:#c8ff5a;font-weight:500"></strong><br>We'll email the video call link to the address you gave us. If it's urgent, email <a href="mailto:mustafa@lynq.build" style="color:#fff">mustafa@lynq.build</a> directly.</p>
     </div>
   </div>
 </main>
@@ -186,9 +226,85 @@ const submitBtn = document.getElementById('submitBtn');
 const formError = document.getElementById('formError');
 const formNote = document.getElementById('formNote');
 
+// ---- Call time picker. Hours are LYNQ's working hours in Toronto time. ----
+const CALL = { tz: 'America/Toronto', startHour: 10, endHour: 19, stepMin: 30, daysAhead: 14, minNoticeHours: 12, closedWeekdays: [0] };
+const daysEl = document.getElementById('days');
+const slotsEl = document.getElementById('slots');
+let chosenSlot = null;
+let takenSlots = new Set();
+
+// The instant when a Toronto wall-clock time happens, whatever the season.
+function torontoInstant(y, m, d, h, min) {
+  const guess = new Date(Date.UTC(y, m, d, h + 5, min));
+  const shown = Number(new Intl.DateTimeFormat('en-CA', { timeZone: CALL.tz, hour: 'numeric', hourCycle: 'h23' }).format(guess));
+  return new Date(guess.getTime() + (h - shown) * 3600000);
+}
+function torontoToday() {
+  const p = new Intl.DateTimeFormat('en-CA', { timeZone: CALL.tz, year: 'numeric', month: 'numeric', day: 'numeric' }).formatToParts(new Date());
+  const g = (t) => Number(p.find((x) => x.type === t).value);
+  return { y: g('year'), m: g('month') - 1, d: g('day') };
+}
+function slotsFor(day) {
+  const out = [];
+  const earliest = Date.now() + CALL.minNoticeHours * 3600000;
+  for (let mins = CALL.startHour * 60; mins < CALL.endHour * 60; mins += CALL.stepMin) {
+    const t = torontoInstant(day.y, day.m, day.d, Math.floor(mins / 60), mins % 60);
+    if (t.getTime() >= earliest) out.push(t);
+  }
+  return out;
+}
+const fmtTime = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
+const fmtFull = new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+
+function showSlots(day, btn) {
+  daysEl.querySelectorAll('.day').forEach((b) => b.classList.remove('is-on'));
+  btn.classList.add('is-on');
+  slotsEl.innerHTML = '';
+  slotsFor(day).forEach((t) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'slot'; b.textContent = fmtTime.format(t);
+    if (takenSlots.has(t.toISOString())) b.disabled = true;
+    if (chosenSlot && chosenSlot.getTime() === t.getTime()) b.classList.add('is-on');
+    b.addEventListener('click', () => {
+      chosenSlot = t;
+      slotsEl.querySelectorAll('.slot').forEach((x) => x.classList.remove('is-on'));
+      b.classList.add('is-on');
+      formError.classList.remove('is-visible');
+    });
+    slotsEl.appendChild(b);
+  });
+}
+function buildDays() {
+  const t0 = torontoToday();
+  let first = null;
+  for (let i = 0; i < CALL.daysAhead; i++) {
+    const noon = new Date(Date.UTC(t0.y, t0.m, t0.d + i, 12));
+    const day = { y: noon.getUTCFullYear(), m: noon.getUTCMonth(), d: noon.getUTCDate() };
+    if (CALL.closedWeekdays.includes(noon.getUTCDay()) || !slotsFor(day).length) continue;
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'day';
+    b.innerHTML = '<small>' + noon.toLocaleDateString(undefined, { weekday: 'short', timeZone: 'UTC' }) + '</small><b>' + day.d + '</b>';
+    b.addEventListener('click', () => showSlots(day, b));
+    daysEl.appendChild(b);
+    if (!first) first = [day, b];
+  }
+  if (first) showSlots(first[0], first[1]);
+  document.getElementById('tzNote').textContent = 'Times are shown in your time zone (' + Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/_/g, ' ') + ').';
+}
+buildDays();
+fetch('/api/book-request?taken=1').then((r) => r.json()).then((d) => {
+  takenSlots = new Set(d.taken || []);
+  const on = daysEl.querySelector('.day.is-on'); if (on) on.click();
+}).catch(() => {});
+
 bookForm.addEventListener('submit', async function(e){
   e.preventDefault();
   formError.classList.remove('is-visible');
+  if (!chosenSlot) {
+    formError.textContent = 'Pick a day and time for the call.';
+    formError.classList.add('is-visible');
+    return;
+  }
   submitBtn.disabled = true;
   submitBtn.textContent = 'Sending…';
 
@@ -201,6 +317,8 @@ bookForm.addEventListener('submit', async function(e){
     timeline: document.getElementById('timeline').value,
     budget: document.getElementById('budget').value,
     website: bookForm.querySelector('[name="website"]').value,
+    slot: chosenSlot.toISOString(),
+    slotLocal: fmtFull.format(chosenSlot),
   };
 
   try {
@@ -214,12 +332,15 @@ bookForm.addEventListener('submit', async function(e){
 
     bookForm.classList.add('is-hidden');
     formNote.style.display = 'none';
+    document.getElementById('bookedWhen').textContent = fmtFull.format(chosenSlot);
     document.getElementById('successBox').classList.add('is-visible');
+    // Tell Meta a consultation was booked, so ads can be measured on it.
+    if (window.fbq && !payload.website) { fbq('track', 'Schedule'); fbq('track', 'Lead'); }
   } catch (err) {
     formError.textContent = err.message || 'Something went wrong. Please email mustafa@lynq.build directly.';
     formError.classList.add('is-visible');
     submitBtn.disabled = false;
-    submitBtn.textContent = 'Send request →';
+    submitBtn.textContent = 'Book the call →';
   }
 });
 </script>
