@@ -20,7 +20,7 @@ import { PostAiQuestion, PostFirstProgram, PostFree, PostLessons, PostNoInstall,
 import { PostAchievements, PostArcade, PostRecipe, PostSearch, PostThread, PostWanted } from "./CodeItPosts2";
 import { LynqMoney, LynqMoneyCover, LynqGridCover, LynqMoneyFeedCover, LynqMoneyPhotoCover } from "./PhoneStory";
 import { D3Controller, D3Dial, D3Dinner, D3Fridge, D3Ladybug, D3Remote, D3Snake, D3Trophy, LuxDial, LuxNumbers, LuxOneNumber, LuxOneNumberDark, LuxPhoto } from "./CodeItPosts3";
-import { LynqAorB, LynqBeforeHire, LynqObjSign, LynqObjStopwatch, LynqWkBasket, LynqWkBottle, LynqWkChair, LynqWkCups, LynqWkHourglass, LynqWkPadlock, LynqOneSentence, LynqSignV2, LynqPhoneFirst, LynqSendLink, LynqSixScreens } from "./LynqPosts";
+import { LynqAorB, LynqBeforeHire, LynqGridBasket, LynqGridBottle, LynqGridCups, LynqGridHourglass, LynqGridPadlock, LynqObjSign, LynqObjStopwatch, LynqWkBasket, LynqWkBottle, LynqWkChair, LynqWkCups, LynqWkHourglass, LynqWkPadlock, LynqOneSentence, LynqSignV2, LynqPhoneFirst, LynqSendLink, LynqSixScreens } from "./LynqPosts";
 import { ShowcaseBarber, ShowcaseCafe, ShowcaseGym } from "./Showcase";
 
 const C = (id: string, component: React.FC, seconds: number) => <Composition id={id} component={component} durationInFrames={Math.round(seconds * 30)} fps={30} width={1080} height={1920} />;
@@ -33,6 +33,7 @@ export const Root: React.FC = () => (
     {[D3Dial, D3Trophy, D3Controller, D3Snake, D3Dinner, D3Fridge, D3Ladybug, D3Remote].map((P, i) => <Composition key={`d3${i}`} id={`codeit-3d-${i + 1}`} component={P} durationInFrames={1} fps={30} width={1080} height={1350} />)}
     {[LynqOneSentence, LynqSixScreens, LynqBeforeHire, LynqSendLink, LynqPhoneFirst, LynqAorB].map((P, i) => <Composition key={`lp${i}`} id={`lynq-post-${i + 1}`} component={P} durationInFrames={1} fps={30} width={1080} height={1350} />)}
     {[LynqWkPadlock, LynqWkChair, LynqWkHourglass, LynqWkBottle, LynqWkCups, LynqWkBasket].map((P, i) => <Composition key={`lw${i}`} id={`lynq-wk-${i + 1}`} component={P} durationInFrames={1} fps={30} width={1080} height={1350} />)}
+    {[LynqGridPadlock, LynqGridHourglass, LynqGridBottle, LynqGridCups, LynqGridBasket].map((P, i) => <Composition key={`lg${i}`} id={`lynq-grid-${i + 1}`} component={P} durationInFrames={1} fps={30} width={1080} height={1350} />)}
     {[LynqObjStopwatch, LynqObjSign, LynqSignV2].map((P, i) => <Composition key={`lo${i}`} id={`lynq-obj-${i + 1}`} component={P} durationInFrames={1} fps={30} width={1080} height={1350} />)}
     {C("lynq-housedeals", LynqHouseDeals, 17)}
     {C("lynq-ab-button", LynqAB, 14)}

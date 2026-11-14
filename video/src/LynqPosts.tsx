@@ -238,3 +238,20 @@ export const LynqWkHourglass: React.FC = () => <WeekObj img="hourglass" label="T
 export const LynqWkBottle: React.FC = () => <WeekObj img="bottle" label="THE CONTACT FORM" l1="How your contact" l2="form feels." sub="Sent. Then silence. A fast reply wins the job." cta="How fast do you reply? →" size={118} />;
 export const LynqWkCups: React.FC = () => <WeekObj img="cups" label="BOOKING" l1="Your booking" l2="system?" sub="If booking means calling you, many just don't." cta="Let them book online →" size={150} />;
 export const LynqWkBasket: React.FC = () => <WeekObj img="basket" label="THE ALMOST SALE" l1="They filled it." l2="Then they left." sub="One confusing step at checkout is enough." cta="Walk through your checkout →" size={136} />;
+
+/*
+ * Grid style, matching what is already on the LYNQ profile: one photographed object on black,
+ * no logo, no headline, one small letter-spaced line under it. The caption carries the rest.
+ */
+const GridObj: React.FC<{ img: string; line: string }> = ({ img, line }) => (
+  <AbsoluteFill style={{ background: "#050505", overflow: "hidden" }}>
+    <Fonts />
+    <Img src={staticFile(`lynq-obj/${img}.jpg`)} style={{ position: "absolute", left: 0, top: -120, width: 1080, height: 1341, objectFit: "cover", filter: "brightness(1.2) contrast(1.06)", WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 88%, transparent 100%)", maskImage: "linear-gradient(180deg, #000 0%, #000 88%, transparent 100%)" }} />
+    <div style={{ position: "absolute", left: 0, right: 0, top: 1196, textAlign: "center", fontFamily: "'Inter Light'", fontSize: 27, letterSpacing: 9, color: "rgba(255,255,255,0.62)" }}>{line}</div>
+  </AbsoluteFill>
+);
+export const LynqGridPadlock: React.FC = () => <GridObj img="padlock" line="Open sign. Locked door." />;
+export const LynqGridHourglass: React.FC = () => <GridObj img="hourglass" line="They'll wait this long." />;
+export const LynqGridBottle: React.FC = () => <GridObj img="bottle" line="How your contact form feels." />;
+export const LynqGridCups: React.FC = () => <GridObj img="cups" line="Your booking system?" />;
+export const LynqGridBasket: React.FC = () => <GridObj img="basket" line="They filled it. Then they left." />;
