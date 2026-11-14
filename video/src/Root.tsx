@@ -18,6 +18,7 @@ import { LynqSamFilm } from "./LynqSamFilm";
 import { CodeItEveryone, LynqIdea } from "./PhoneAds";
 import { PostAiQuestion, PostFirstProgram, PostFree, PostLessons, PostNoInstall, PostOneNumber, PostParentSentence, PostPrivate, PostSayAGame, PostTeachers, PostThreeGames, PostWhatTheyBuild } from "./CodeItPosts";
 import { PostAchievements, PostArcade, PostRecipe, PostSearch, PostThread, PostWanted } from "./CodeItPosts2";
+import { LynqMoney } from "./PhoneStory";
 import { D3Controller, D3Dial, D3Dinner, D3Fridge, D3Ladybug, D3Remote, D3Snake, D3Trophy, LuxDial, LuxNumbers, LuxOneNumber, LuxOneNumberDark, LuxPhoto } from "./CodeItPosts3";
 import { LynqAorB, LynqBeforeHire, LynqObjSign, LynqObjStopwatch, LynqWkBasket, LynqWkBottle, LynqWkChair, LynqWkCups, LynqWkHourglass, LynqWkPadlock, LynqOneSentence, LynqSignV2, LynqPhoneFirst, LynqSendLink, LynqSixScreens } from "./LynqPosts";
 import { ShowcaseBarber, ShowcaseCafe, ShowcaseGym } from "./Showcase";
@@ -56,6 +57,7 @@ export const Root: React.FC = () => (
     {C("codeit-adam-film", AdamFilm, 16)}
     {C("lynq-sam-film", LynqSamFilm, 25.5)}
     {C("lynq-idea", LynqIdea, 14)}
+    {C("lynq-money", LynqMoney, 18.5)}
     {C("codeit-everyone", CodeItEveryone, 18.6)}
     {C("adam-ep1", AdamEp1, 16)}
     {C("lynq-crm", LynqCrm, 13)}
