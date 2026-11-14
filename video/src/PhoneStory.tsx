@@ -1,6 +1,6 @@
 import React from "react";
-import { AbsoluteFill, Easing, Img, interpolate, staticFile } from "remotion";
-import { Fonts, ramp, useSpringAt, useT } from "./kit";
+import { AbsoluteFill, Audio, Easing, Img, Sequence, interpolate, staticFile } from "remotion";
+import { Fonts, Sfx, ramp, useSpringAt, useT } from "./kit";
 
 /*
  * "I tried to give this shop my money." Told from the customer's side as a screen recording of
@@ -298,7 +298,7 @@ export const LynqMoney: React.FC = () => {
         <Img src={staticFile("ads/lynq-logo.svg")} style={{ width: 38, height: 38 }} />
         <span style={{ fontFamily: IS, fontSize: 28, letterSpacing: 6, color: "#fff" }}>LYNQ</span>
       </div>
-      <div style={{ position: "absolute", right: 70, top: 160, fontFamily: IS, fontSize: 18, letterSpacing: 4, color: "rgba(255,255,255,0.5)", opacity: 1 - leave }}>MADE-UP SHOPS</div>
+      <div style={{ position: "absolute", right: 70, top: 160, fontFamily: IS, fontSize: 18, letterSpacing: 4, color: "rgba(255,255,255,0.5)", opacity: 1 - leave }}>AI VOICE · MADE-UP SHOPS</div>
 
       {/* hook: full on frame 0, so the first frame is the cover */}
       {s < 2.8 && (
@@ -306,11 +306,29 @@ export const LynqMoney: React.FC = () => {
           I tried to give this<br />shop <span style={{ color: LI }}>my money.</span>
         </div>
       )}
-      <Line text="I found them first." at={2.9} out={4.4} />
+      <Line text="I found them first." at={2.9} out={4.3} />
       <Line text="No prices. No way to book." at={4.7} out={6.8} lime={["No"]} />
-      <Line text="So I called. Voicemail." at={7.2} out={10.3} lime={["Voicemail"]} />
-      <Line text="The next place let me book in two taps." at={11.5} out={13.5} size={58} lime={["two", "taps"]} />
-      <Line text="So they got my money." at={13.8} out={15.0} lime={["my", "money"]} />
+      <Line text="So I called." at={7.25} out={8.6} />
+      <Line text="Voicemail." at={8.9} out={10.3} lime={["Voicemail"]} size={84} />
+      <Line text="The next place let me book in two taps." at={11.5} out={13.6} size={58} lime={["two", "taps"]} />
+      <Line text="So they got my money." at={13.9} out={15.0} lime={["my", "money"]} />
+
+      {/* Yonisa, one take, cut at her own pauses and placed on the picture */}
+      {([[0.3, 0.0, 1.78], [2.9, 2.04, 3.42], [4.7, 3.63, 5.78], [7.3, 6.02, 6.9], [8.95, 7.16, 7.95], [11.5, 8.4, 10.85], [13.9, 10.95, 12.18], [15.95, 12.46, 14.72]] as number[][]).map(([at, a, b]) => (
+        <Sequence key={at} from={Math.round(at * 30)} durationInFrames={Math.ceil((b - a) * 30)} layout="none">
+          <Audio src={staticFile("vo/money-yonisa.mp3")} startFrom={Math.round(a * 30)} endAt={Math.round(b * 30)} />
+        </Sequence>
+      ))}
+      {/* real sounds only, kept low: taps, the ring, the voicemail thud, the booking chime */}
+      <Sfx at={2.05} src="click.wav" volume={0.35} />
+      <Sfx at={7.0} src="ring.wav" volume={0.22} />
+      <Sfx at={8.8} src="thump.wav" volume={0.5} />
+      <Sfx at={10.15} src="click.wav" volume={0.35} />
+      <Sfx at={10.95} src="click.wav" volume={0.35} />
+      <Sfx at={12.2} src="click.wav" volume={0.35} />
+      <Sfx at={13.45} src="click.wav" volume={0.35} />
+      <Sfx at={13.75} src="ding.wav" volume={0.4} />
+      <Sfx at={15.25} src="whoosh.wav" volume={0.25} />
 
       {/* the phone */}
       <div style={{ position: "absolute", left: PX, top: PY, width: PW, height: PH, borderRadius: 86, background: "#0d0f0e", boxShadow: "0 0 0 2px #3a3d3b, 0 0 0 5px #121413, inset 0 0 0 1px rgba(255,255,255,0.08), 0 70px 130px rgba(0,0,0,0.85)", opacity: 1 - ramp(s, 15.8, 15.95), transformOrigin: "50% 48%", transform: `perspective(1800px) translate(${shake}px, ${float}px) scale(${1 + lean * 0.1 + (pop > 0 && s < 15 ? Math.max(0, 1 - Math.abs(pop - 1) * 6) * 0 : 0) + (s >= 13.75 ? (pop - 1) * 0.25 + 0.02 : 0)}) rotateY(${tilt + flip * 88}deg) rotateX(${lean * 2}deg)` }}>
