@@ -94,11 +94,15 @@ module.exports = async (req, res) => {
     if (!inHours || !onStep || !openDay || !enoughNotice) {
       return res.status(400).json({ error: 'That call time is not available. Please pick another.' });
     }
-    if (process.env.BLOB_READ_WRITE_TOKEN) {
+    // Take the time straight away so nobody else can pick it. Only the time is stored.
+    if (process.env.BLOB_READ_WRITE_TOKEN && !website) {
+      let taken = false;
       try {
         const { blobs } = await list({ prefix: `book-slots/${slotMs}.txt` });
-        if (blobs.length) return res.status(409).json({ error: 'Someone just took that time. Please pick another.' });
-      } catch (err) { console.error('book-request slot check failed:', err); }
+        taken = blobs.length > 0;
+        if (!taken) await put(`book-slots/${slotMs}.txt`, 'booked', { access: 'public', contentType: 'text/plain', addRandomSuffix: false });
+      } catch (err) { console.error('book-request slot hold failed:', err); }
+      if (taken) return res.status(409).json({ error: 'Someone just took that time. Please pick another.' });
     }
   }
   const callTime = slotMs
@@ -157,36 +161,9 @@ module.exports = async (req, res) => {
     catch (err) { console.error('book-request notification fallback failed:', err); }
   }
 
-  // Final durable fallback: preserve the inquiry in the project's private
-  // operational storage so a temporary mail-provider issue cannot lose a lead.
-  if (!delivered && process.env.BLOB_READ_WRITE_TOKEN) {
-    try {
-      const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-      await put(`website-inquiries/${id}.json`, JSON.stringify({
-        receivedAt: new Date().toISOString(),
-        name: cleanName,
-        business: cleanBusiness,
-        email: cleanEmail,
-        message: cleanMessage,
-        service: cleanService,
-        timeline: cleanTimeline,
-        budget: cleanBudget,
-        callTime,
-      }), { access: 'public', contentType: 'application/json', addRandomSuffix: false });
-      delivered = true;
-    } catch (err) { console.error('book-request durable fallback failed:', err); }
-  }
-
   // No server-side transport reached the inbox. The booking page then sends the email itself
   // through its form-to-email service, so say so instead of failing the booking here.
   if (!delivered) return res.status(200).json({ ok: true, delivered: false, callTime });
-
-  // Hold the time so nobody else can pick it.
-  if (slotMs && process.env.BLOB_READ_WRITE_TOKEN) {
-    try {
-      await put(`book-slots/${slotMs}.txt`, 'booked', { access: 'public', contentType: 'text/plain', addRandomSuffix: false });
-    } catch (err) { console.error('book-request slot hold failed:', err); }
-  }
 
   // A booking should also reach the phone right away, even when email worked.
   if (slotMs && emailed) {
