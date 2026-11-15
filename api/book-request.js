@@ -1,6 +1,9 @@
 const nodemailer = require('nodemailer');
 const { put, list } = require('@vercel/blob');
 
+// Keep in step with CALL in book.html.
+const CALL_HOURS = { startHour: 10, endHour: 19, stepMin: 30, minNoticeHours: 12, closedDays: ['Sun'] };
+
 const RATE_LIMIT = 8;
 const WINDOW_MS = 60 * 60 * 1000;
 const hits = globalThis.__lynqBookRateLimit || (globalThis.__lynqBookRateLimit = new Map());
@@ -77,6 +80,19 @@ module.exports = async (req, res) => {
     slotMs = Date.parse(String(slot));
     if (!Number.isFinite(slotMs) || slotMs < Date.now() || slotMs > Date.now() + 60 * 24 * 3600 * 1000) {
       return res.status(400).json({ error: 'That call time is no longer available. Please pick another.' });
+    }
+    // Same rules as the calendar on /book (CALL in book.html), enforced here
+    // too so a direct request cannot book outside working hours.
+    const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Toronto', weekday: 'short', hour: 'numeric', minute: 'numeric', hourCycle: 'h23' }).formatToParts(new Date(slotMs));
+    const part = (t) => parts.find((x) => x.type === t).value;
+    const hour = Number(part('hour'));
+    const minute = Number(part('minute'));
+    const inHours = hour >= CALL_HOURS.startHour && hour < CALL_HOURS.endHour;
+    const onStep = minute % CALL_HOURS.stepMin === 0 && slotMs % 60000 === 0;
+    const openDay = !CALL_HOURS.closedDays.includes(part('weekday'));
+    const enoughNotice = slotMs >= Date.now() + (CALL_HOURS.minNoticeHours - 1) * 3600000;
+    if (!inHours || !onStep || !openDay || !enoughNotice) {
+      return res.status(400).json({ error: 'That call time is not available. Please pick another.' });
     }
     if (process.env.BLOB_READ_WRITE_TOKEN) {
       try {
