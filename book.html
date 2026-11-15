@@ -101,7 +101,11 @@
   .day{padding:10px 14px;text-align:center;min-width:64px}
   .day small{display:block;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.45);margin-bottom:3px}
   .day b{font-weight:600;font-size:1rem}
-  .slots{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px;max-height:300px;overflow-y:auto;padding-right:4px}
+  .slots{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+  .periods{display:flex;gap:8px;margin-top:14px}
+  .period{flex:1;background:none;border:none;border-bottom:2px solid rgba(255,255,255,0.14);color:rgba(255,255,255,0.5);font-family:'Manrope',sans-serif;font-size:0.8rem;padding:10px 0;cursor:pointer}
+  .period.is-on{color:#c8ff5a;border-bottom-color:#c8ff5a}
+  .period:disabled{opacity:0.3;cursor:default}
   .slot{padding:11px 4px;font-size:0.84rem}
   .day:hover,.slot:hover{border-color:rgba(255,255,255,0.4)}
   .day.is-on,.slot.is-on{background:#c8ff5a;border-color:#c8ff5a;color:#080808}
@@ -184,6 +188,7 @@ src="https://www.facebook.com/tr?id=1107850298665423&ev=PageView&noscript=1"
       <div class="field">
         <label>Pick a day</label>
         <div class="days" id="days"></div>
+        <div class="periods" id="periods"></div>
         <div class="slots" id="slots"></div>
         <p class="tz-note" id="tzNote"></p>
       </div>
@@ -226,8 +231,37 @@ const submitBtn = document.getElementById('submitBtn');
 const formError = document.getElementById('formError');
 const formNote = document.getElementById('formNote');
 
+// Bookings are emailed to LYNQ by Web3Forms, straight from the visitor's browser. The access
+// key is public by design (it can only deliver mail to the inbox it was made for).
+const MAIL_KEY = 'a7ace787-ea2c-4358-a04e-a23d245bb043';
+
+async function emailBooking(p, callTime) {
+  const res = await fetch('https://api.web3forms.com/submit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({
+      access_key: MAIL_KEY,
+      subject: 'Call booked: ' + callTime + ' · ' + p.name + (p.business ? ' · ' + p.business : ''),
+      from_name: 'LYNQ Website',
+      replyto: p.email,
+      'Call time': callTime,
+      'Their time': p.slotLocal,
+      Name: p.name,
+      Business: p.business || '-',
+      Email: p.email,
+      Service: p.service || '-',
+      Timeline: p.timeline || '-',
+      Budget: p.budget || '-',
+      Message: p.message || '(none)',
+      botcheck: '',
+    }),
+  });
+  const data = await res.json().catch(() => ({}));
+  return res.ok && data.success === true;
+}
+
 // ---- Call time picker. Hours are LYNQ's working hours in Toronto time. ----
-const CALL = { tz: 'America/Toronto', startHour: 0, endHour: 24, stepMin: 30, daysAhead: 14, minNoticeHours: 12, closedWeekdays: [] };
+const CALL = { tz: 'America/Toronto', startHour: 0, endHour: 24, stepMin: 60, daysAhead: 14, minNoticeHours: 12, closedWeekdays: [] };
 const daysEl = document.getElementById('days');
 const slotsEl = document.getElementById('slots');
 let chosenSlot = null;
@@ -256,11 +290,28 @@ function slotsFor(day) {
 const fmtTime = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
 const fmtFull = new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
 
+// Times are grouped by part of the day (in the visitor's own clock) so the list stays short.
+const PERIODS = [['Morning', 6, 12], ['Afternoon', 12, 17], ['Evening', 17, 22], ['Night', 22, 30]];
+const periodsEl = document.getElementById('periods');
+let chosenPeriod = null;
+const inPeriod = (t, p) => { const h = t.getHours() < 6 ? t.getHours() + 24 : t.getHours(); return h >= p[1] && h < p[2]; };
+
 function showSlots(day, btn) {
   daysEl.querySelectorAll('.day').forEach((b) => b.classList.remove('is-on'));
   btn.classList.add('is-on');
+  const all = slotsFor(day);
+  const has = (p) => all.some((t) => inPeriod(t, p));
+  if (!chosenPeriod || !has(chosenPeriod)) chosenPeriod = PERIODS.find(has) || PERIODS[0];
+  periodsEl.innerHTML = '';
+  PERIODS.forEach((p) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'period' + (p === chosenPeriod ? ' is-on' : ''); b.textContent = p[0];
+    b.disabled = !has(p);
+    b.addEventListener('click', () => { chosenPeriod = p; showSlots(day, btn); });
+    periodsEl.appendChild(b);
+  });
   slotsEl.innerHTML = '';
-  slotsFor(day).forEach((t) => {
+  all.filter((t) => inPeriod(t, chosenPeriod)).forEach((t) => {
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'slot'; b.textContent = fmtTime.format(t);
     if (takenSlots.has(t.toISOString())) b.disabled = true;
@@ -329,6 +380,13 @@ bookForm.addEventListener('submit', async function(e){
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+    // The booking only counts once an email has really gone to LYNQ.
+    let sent = data.delivered === true;
+    if (MAIL_KEY && !payload.website) {
+      const mailed = await emailBooking(payload, data.callTime || payload.slotLocal).catch(() => false);
+      sent = sent || mailed;
+    }
+    if (!sent && !payload.website) throw new Error('Could not send right now. Please email mustafa@lynq.build directly.');
 
     bookForm.classList.add('is-hidden');
     formNote.style.display = 'none';

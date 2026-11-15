@@ -177,7 +177,9 @@ module.exports = async (req, res) => {
     } catch (err) { console.error('book-request durable fallback failed:', err); }
   }
 
-  if (!delivered) return res.status(500).json({ error: 'Could not send right now. Please email mustafa@lynq.build directly.' });
+  // No server-side transport reached the inbox. The booking page then sends the email itself
+  // through its form-to-email service, so say so instead of failing the booking here.
+  if (!delivered) return res.status(200).json({ ok: true, delivered: false, callTime });
 
   // Hold the time so nobody else can pick it.
   if (slotMs && process.env.BLOB_READ_WRITE_TOKEN) {
@@ -191,5 +193,5 @@ module.exports = async (req, res) => {
     try { await notifyCompanyInbox(bodyText); } catch (err) { console.error('book-request phone notice failed:', err); }
   }
 
-  return res.status(200).json({ ok: true });
+  return res.status(200).json({ ok: true, delivered: true, callTime });
 };
