@@ -31,7 +31,13 @@ ALLOW="index.html portfolio.html book.html privacy.html terms.html fix.html game
   rm -rf "$OUT" && mkdir -p "$OUT/.vercel"
   for p in $ALLOW; do [ -e "$p" ] && rsync -a --exclude '.DS_Store' --exclude '.env*' "$p" "$OUT/"; done
   printf '{"projectId":"prj_r1FJHhu0vn00xsAaii4A6zTKFGqi","orgId":"team_cc9itQ28cEyYANuFoIMVokYn"}' > "$OUT/.vercel/project.json"
-  echo "files: $(find "$OUT" -type f | wc -l)"
+  N=$(find "$OUT" -type f | wc -l | tr -d ' ')
+  echo "files: $N"
+  # Never publish an empty or half-copied site (15 Nov 2026: an empty upload took lynq.build down).
+  if [ "$N" -lt 40 ]; then echo "STOPPED: only $N files. Nothing was deployed."; exit 1; fi
+  for f in index.html book.html privacy.html terms.html vercel.json api/book-request.js; do
+    [ -s "$OUT/$f" ] || { echo "STOPPED: $f is missing or empty. Nothing was deployed."; exit 1; }
+  done
   cd "$OUT"
   if command -v vercel >/dev/null 2>&1; then V="vercel"; else V="npx -y vercel@latest"; fi
   $V deploy --prod --yes 2>&1
