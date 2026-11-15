@@ -19,12 +19,12 @@ const Shell: React.FC<{ label: string; head: string[]; lime: string; sub: string
     <div style={{ position: "absolute", left: glow[0] - 620, top: glow[1] - 620, width: 1240, height: 1240, borderRadius: 620, background: "radial-gradient(closest-side, rgba(199,255,61,0.13) 0%, rgba(199,255,61,0) 100%)" }} />
     <div style={{ position: "absolute", left: 0, right: 0, top: 262, textAlign: "center", fontFamily: IS, fontSize: 24, letterSpacing: 10, color: LI }}>{label}</div>
     <div style={{ position: "absolute", left: 0, right: 0, top: 340, height: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{children}</div>
-    <div style={{ position: "absolute", left: 80, right: 80, top: 1200, textAlign: "center" }}>
-      <div style={{ fontFamily: IL, fontSize: 84, lineHeight: 1.06, letterSpacing: -4, color: "#fff" }}>
+    <div style={{ position: "absolute", left: 80, right: 80, top: 1210, textAlign: "center" }}>
+      <div style={{ fontFamily: IL, fontSize: 104, lineHeight: 1.04, letterSpacing: -5, color: "#fff" }}>
         {head.map((l) => <div key={l}>{l}</div>)}
         <div style={{ color: LI }}>{lime}</div>
       </div>
-      <div style={{ marginTop: 34, fontFamily: IL, fontSize: 38, lineHeight: 1.3, color: "rgba(255,255,255,0.66)" }}>{sub}</div>
+      <div style={{ marginTop: 30, fontFamily: IL, fontSize: 42, lineHeight: 1.3, color: "rgba(255,255,255,0.66)" }}>{sub}</div>
     </div>
     <div style={{ position: "absolute", left: 0, right: 0, top: 1570, display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
       <div style={{ padding: "22px 46px", borderRadius: 60, background: LI, fontFamily: IS, fontSize: 36, color: "#0b0d0a" }}>Book a consultation</div>
@@ -40,7 +40,7 @@ const Bar: React.FC<{ w: number | string; h?: number; o?: number; c?: string; mt
 /* START HERE: the five things, stacked like a deck. */
 const SERVICES = ["Websites", "ERP and CRM", "AI automation", "Online booking", "Reels and ads"];
 export const HlStart: React.FC = () => (
-  <Shell label="START HERE" head={["Everything your", "business runs on."]} lime="One team." sub="Tap the other highlights to see each one.">
+  <Shell label="LYNQ" head={["What we do."]} lime="One team." sub="Five services. Tap a highlight to see each.">
     <div style={{ width: 760 }}>
       {SERVICES.map((s, i) => (
         <div key={s} style={{ ...card, height: 124, marginTop: i ? 18 : 0, marginLeft: (i % 2) * 44, marginRight: ((i + 1) % 2) * 44, display: "flex", alignItems: "center", padding: "0 40px", gap: 30, borderColor: i === 0 ? LI : line }}>
@@ -55,7 +55,7 @@ export const HlStart: React.FC = () => (
 
 /* WEBSITES: a browser window with a finished page in it. */
 export const HlWebsites: React.FC = () => (
-  <Shell label="WEBSITES" head={["A site that turns", "visitors into"]} lime="customers." sub="Strategy, design, copy and build.">
+  <Shell label="LYNQ" head={["Websites"]} lime="that sell." sub="We design, write and build it.">
     <div style={{ ...card, width: 860, height: 700, overflow: "hidden", background: "#f4f2ec", borderColor: "rgba(255,255,255,0.2)" }}>
       <div style={{ height: 70, background: "#17191a", display: "flex", alignItems: "center", padding: "0 26px", gap: 12 }}>
         {[0, 1, 2].map((d) => <div key={d} style={{ width: 16, height: 16, borderRadius: 8, background: "rgba(255,255,255,0.22)" }} />)}
@@ -84,7 +84,7 @@ const COLS: [string, string[][]][] = [
   ["Done", [["Garden wall", "Paid"]]],
 ];
 export const HlSystems: React.FC = () => (
-  <Shell label="ERP AND CRM" head={["Customers, jobs", "and reports."]} lime="One system." sub="No more spreadsheets and chat threads.">
+  <Shell label="LYNQ" head={["ERP and CRM"]} lime="in one place." sub="Customers, jobs and reports.">
     <div style={{ ...card, width: 900, height: 700, padding: 34 }}>
       <div style={{ display: "flex", gap: 20 }}>
         {["Open jobs", "Waiting on reply", "Due this week"].map((t, i) => (
@@ -124,7 +124,7 @@ const CHAT: [boolean, string][] = [
   [true, "Done. You're booked for Sunday 2:30."],
 ];
 export const HlAi: React.FC = () => (
-  <Shell label="AI AUTOMATION" head={["It answers", "while you"]} lime="sleep." sub="Replies, follow-ups and bookings, handled.">
+  <Shell label="LYNQ" head={["AI assistant"]} lime="that replies for you." sub="Answers, follow-ups and bookings.">
     <div style={{ ...card, width: 700, height: 720, padding: "34px 36px", borderRadius: 44 }}>
       <div style={{ textAlign: "center", fontFamily: IL, fontSize: 24, letterSpacing: 3, color: dim }}>TODAY 11:04 PM</div>
       {CHAT.map(([ai, t]) => (
@@ -141,7 +141,7 @@ export const HlAi: React.FC = () => (
 
 /* BOOKING: a month, a picked day, a picked time, a tick. */
 export const HlBooking: React.FC = () => (
-  <Shell label="ONLINE BOOKING" head={["Customers book", "themselves."]} lime="Day or night." sub="No phone tag. No missed calls.">
+  <Shell label="LYNQ" head={["Online booking"]} lime="open 24/7." sub="Customers book themselves.">
     <div style={{ ...card, width: 760, height: 720, padding: "36px 40px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ fontFamily: IL, fontSize: 40, letterSpacing: -1, color: "#fff" }}>Pick a day</span>
@@ -167,7 +167,7 @@ export const HlBooking: React.FC = () => (
 
 /* REELS AND ADS: a phone playing a reel, with the ad button under it. */
 export const HlReels: React.FC = () => (
-  <Shell label="REELS AND ADS" head={["Reels that explain", "what you do."]} lime="Ads that find buyers." sub="Scripted, built and posted for you.">
+  <Shell label="LYNQ" head={["Reels and ads"]} lime="done for you." sub="We script, build and post them.">
     <div style={{ position: "relative", width: 420, height: 760, borderRadius: 60, border: "10px solid #23261f", background: "linear-gradient(170deg,#1c2114 0%,#070807 55%,#3d5210 150%)", overflow: "hidden" }}>
       <div style={{ position: "absolute", left: 150, top: 16, width: 100, height: 26, borderRadius: 13, background: "#000" }} />
       <div style={{ position: "absolute", left: 30, top: 150, right: 30, fontFamily: IL, fontSize: 50, lineHeight: 1.05, letterSpacing: -2, color: "#fff" }}>I tried to give this shop <span style={{ color: LI }}>my money.</span></div>
