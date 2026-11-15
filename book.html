@@ -233,7 +233,7 @@ const formNote = document.getElementById('formNote');
 
 // Bookings are emailed to LYNQ by Web3Forms, straight from the visitor's browser. The access
 // key is public by design (it can only deliver mail to the inbox it was made for).
-const MAIL_KEY = '';
+const MAIL_KEY = 'a7ace787-ea2c-4358-a04e-a23d245bb043';
 
 async function emailBooking(p, callTime) {
   const res = await fetch('https://api.web3forms.com/submit', {
