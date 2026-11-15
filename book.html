@@ -231,6 +231,35 @@ const submitBtn = document.getElementById('submitBtn');
 const formError = document.getElementById('formError');
 const formNote = document.getElementById('formNote');
 
+// Bookings are emailed to LYNQ by Web3Forms, straight from the visitor's browser. The access
+// key is public by design (it can only deliver mail to the inbox it was made for).
+const MAIL_KEY = '';
+
+async function emailBooking(p, callTime) {
+  const res = await fetch('https://api.web3forms.com/submit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({
+      access_key: MAIL_KEY,
+      subject: 'Call booked: ' + callTime + ' · ' + p.name + (p.business ? ' · ' + p.business : ''),
+      from_name: 'LYNQ Website',
+      replyto: p.email,
+      'Call time': callTime,
+      'Their time': p.slotLocal,
+      Name: p.name,
+      Business: p.business || '-',
+      Email: p.email,
+      Service: p.service || '-',
+      Timeline: p.timeline || '-',
+      Budget: p.budget || '-',
+      Message: p.message || '(none)',
+      botcheck: '',
+    }),
+  });
+  const data = await res.json().catch(() => ({}));
+  return res.ok && data.success === true;
+}
+
 // ---- Call time picker. Hours are LYNQ's working hours in Toronto time. ----
 const CALL = { tz: 'America/Toronto', startHour: 0, endHour: 24, stepMin: 60, daysAhead: 14, minNoticeHours: 12, closedWeekdays: [] };
 const daysEl = document.getElementById('days');
@@ -351,6 +380,13 @@ bookForm.addEventListener('submit', async function(e){
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+    // The booking only counts once an email has really gone to LYNQ.
+    let sent = data.delivered === true;
+    if (MAIL_KEY && !payload.website) {
+      const mailed = await emailBooking(payload, data.callTime || payload.slotLocal).catch(() => false);
+      sent = sent || mailed;
+    }
+    if (!sent && !payload.website) throw new Error('Could not send right now. Please email mustafa@lynq.build directly.');
 
     bookForm.classList.add('is-hidden');
     formNote.style.display = 'none';
