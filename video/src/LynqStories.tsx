@@ -15,7 +15,7 @@ export type Frame = { hl: string; label: string; head: string[]; lime: string[];
 export const FRAMES: Frame[] = [
   { hl: "start", label: "START HERE", head: ["Websites, systems,", "ads and AI."], lime: ["One team."], body: ["For local businesses that are done", "juggling five different vendors."] },
   { hl: "start", label: "WHO IT'S FOR", head: ["You run", "the business."], lime: ["We build", "what runs it."], body: ["Salons, trades, clinics,", "restaurants and studios."] },
-  { hl: "start", label: "HOW IT WORKS", head: ["Three steps."], lime: [], steps: ["Tell us what needs to work better.", "We reply within a day with the right next step.", "A 15 to 20 minute call. Then we build."] },
+  { hl: "start", label: "HOW IT WORKS", head: ["Three steps."], lime: [], steps: ["Pick a time at lynq.build/book.", "We meet on a 15 to 20 minute video call.", "You get a clear plan. Then we build."] },
   { hl: "start", label: "NEXT STEP", head: ["Book a"], lime: ["consultation."], cta: true },
 
   { hl: "websites", label: "WEBSITES", head: ["A site that makes", "the next step"], lime: ["obvious."], body: ["Visitors see what you sell, why it", "matters and how to buy. No hunting."] },
@@ -52,7 +52,7 @@ export const Story: React.FC<{ f: Frame; i: number; n: number }> = ({ f, i, n })
         {Array.from({ length: n }).map((_, k) => <div key={k} style={{ flex: 1, height: 4, borderRadius: 2, background: k <= i ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.18)" }} />)}
       </div>
 
-      <div style={{ position: "absolute", left: 76, right: 70, top: 560 }}>
+      <div style={{ position: "absolute", left: 76, right: 70, top: 440, bottom: 420, display: "flex", flexDirection: "column", justifyContent: "center" }}>
         <div style={{ fontFamily: IL, fontSize: size, lineHeight: 1.03, letterSpacing: -size / 19, color: "#fff", whiteSpace: "nowrap" }}>
           {f.head.map((l) => <div key={l}>{l}</div>)}
           {f.lime.map((l) => <div key={l} style={{ color: LI }}>{l}</div>)}
@@ -71,7 +71,7 @@ export const Story: React.FC<{ f: Frame; i: number; n: number }> = ({ f, i, n })
         {f.cta && (
           <div style={{ marginTop: 90 }}>
             <div style={{ display: "inline-block", padding: "30px 56px", borderRadius: 70, background: LI, fontFamily: IS, fontSize: 46, color: "#0b0d0a" }}>lynq.build/book</div>
-            <div style={{ marginTop: 34, fontFamily: IL, fontSize: 40, lineHeight: 1.3, color: "rgba(255,255,255,0.65)" }}>Send a short form. We reply within a day<br />and set up a 15 to 20 minute call.</div>
+            <div style={{ marginTop: 34, fontFamily: IL, fontSize: 40, lineHeight: 1.3, color: "rgba(255,255,255,0.65)" }}>Pick a time for a free<br />15 to 20 minute video call.</div>
           </div>
         )}
       </div>
