@@ -20,6 +20,7 @@ import { PostAiQuestion, PostFirstProgram, PostFree, PostLessons, PostNoInstall,
 import { PostAchievements, PostArcade, PostRecipe, PostSearch, PostThread, PostWanted } from "./CodeItPosts2";
 import { CodeItBuilt } from "./CodeItBuilt";
 import { FRAMES, HlCover, Story } from "./LynqStories";
+import { HL2, HlCover2 } from "./LynqHighlights";
 import { LynqMoneyAr } from "./PhoneStoryAr";
 import { LynqMoney, LynqMoneyCover, LynqGridCover, LynqMoneyFeedCover, LynqMoneyPhotoCover } from "./PhoneStory";
 import { D3Controller, D3Dial, D3Dinner, D3Fridge, D3Ladybug, D3Remote, D3Snake, D3Trophy, LuxDial, LuxNumbers, LuxOneNumber, LuxOneNumberDark, LuxPhoto } from "./CodeItPosts3";
@@ -62,6 +63,8 @@ export const Root: React.FC = () => (
     {C("lynq-sam-film", LynqSamFilm, 25.5)}
     {C("lynq-idea", LynqIdea, 14)}
     {FRAMES.map((f, k) => { const g = FRAMES.filter((x) => x.hl === f.hl); const i = g.indexOf(f); const P: React.FC = () => <Story f={f} i={i} n={g.length} />; return <Composition key={`st${k}`} id={`lynq-story-${f.hl}-${i + 1}`} component={P} durationInFrames={1} fps={30} width={1080} height={1920} />; })}
+    {HL2.map(([h, P]) => <Composition key={`h2${h}`} id={`lynq-hl2-${h}`} component={P} durationInFrames={1} fps={30} width={1080} height={1920} />)}
+    {HL2.map(([h]) => { const P: React.FC = () => <HlCover2 hl={h} />; return <Composition key={`h2c${h}`} id={`lynq-hl2-cover-${h}`} component={P} durationInFrames={1} fps={30} width={1080} height={1920} />; })}
     {["start", "websites", "systems", "ai", "booking", "reels"].map((h) => { const P: React.FC = () => <HlCover hl={h} />; return <Composition key={`hc${h}`} id={`lynq-hl-${h}`} component={P} durationInFrames={1} fps={30} width={1080} height={1920} />; })}
     {C("lynq-money", LynqMoney, 18.5)}
     {C("codeit-built", CodeItBuilt, 17.5)}
