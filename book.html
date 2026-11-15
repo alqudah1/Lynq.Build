@@ -101,7 +101,7 @@
   .day{padding:10px 14px;text-align:center;min-width:64px}
   .day small{display:block;font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.45);margin-bottom:3px}
   .day b{font-weight:600;font-size:1rem}
-  .slots{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+  .slots{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px;max-height:300px;overflow-y:auto;padding-right:4px}
   .slot{padding:11px 4px;font-size:0.84rem}
   .day:hover,.slot:hover{border-color:rgba(255,255,255,0.4)}
   .day.is-on,.slot.is-on{background:#c8ff5a;border-color:#c8ff5a;color:#080808}
@@ -227,7 +227,7 @@ const formError = document.getElementById('formError');
 const formNote = document.getElementById('formNote');
 
 // ---- Call time picker. Hours are LYNQ's working hours in Toronto time. ----
-const CALL = { tz: 'America/Toronto', startHour: 10, endHour: 19, stepMin: 30, daysAhead: 14, minNoticeHours: 12, closedWeekdays: [0] };
+const CALL = { tz: 'America/Toronto', startHour: 0, endHour: 24, stepMin: 30, daysAhead: 14, minNoticeHours: 12, closedWeekdays: [] };
 const daysEl = document.getElementById('days');
 const slotsEl = document.getElementById('slots');
 let chosenSlot = null;
