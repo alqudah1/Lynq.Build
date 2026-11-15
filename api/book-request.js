@@ -2,7 +2,7 @@ const nodemailer = require('nodemailer');
 const { put, list } = require('@vercel/blob');
 
 // Keep in step with CALL in book.html.
-const CALL_HOURS = { startHour: 10, endHour: 19, stepMin: 30, minNoticeHours: 12, closedDays: ['Sun'] };
+const CALL_HOURS = { startHour: 0, endHour: 24, stepMin: 30, minNoticeHours: 12, closedDays: [] };
 
 const RATE_LIMIT = 8;
 const WINDOW_MS = 60 * 60 * 1000;
