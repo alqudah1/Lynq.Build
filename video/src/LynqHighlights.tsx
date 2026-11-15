@@ -203,3 +203,15 @@ export const HlCover2: React.FC<{ hl: string }> = ({ hl }) => (
 );
 
 export const HL2: [string, React.FC][] = [["start", HlStart], ["websites", HlWebsites], ["systems", HlSystems], ["ai", HlAi], ["booking", HlBooking], ["reels", HlReels]];
+
+/* Matching covers for the client highlights already on the profile: black, thin white name. */
+export const CLIENT_COVERS: [string, string][] = [["kidscoding", "KIDS CODING"], ["housedeals", "HOUSE DEALS"], ["arcubed", "ARCUBED"], ["kingsbridge", "KINGSBRIDGE"], ["amy", "AMY"], ["nasma", "NASMA"]];
+export const ClientCover: React.FC<{ name: string }> = ({ name }) => (
+  <AbsoluteFill style={{ background: "#040404", alignItems: "center", justifyContent: "center" }}>
+    <Fonts />
+    <div style={{ width: 700, height: 700, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 34 }}>
+      <div style={{ fontFamily: IL, fontSize: name.length > 9 ? 62 : 84, letterSpacing: 14, color: "#fff", paddingLeft: 14 }}>{name}</div>
+      <div style={{ width: 90, height: 5, borderRadius: 3, background: LI }} />
+    </div>
+  </AbsoluteFill>
+);
