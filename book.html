@@ -155,7 +155,7 @@ src="https://www.facebook.com/tr?id=1107850298665423&ev=PageView&noscript=1"
 
     <div class="steps">
       <div class="step"><div class="step-num">1</div><div class="step-text"><strong>Pick a day and time below</strong>, it takes about a minute.</div></div>
-      <div class="step"><div class="step-num">2</div><div class="step-text"><strong>We email you the video call link</strong> to confirm.</div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-text"><strong>You get the video call link right away</strong>, with a calendar invite.</div></div>
       <div class="step"><div class="step-num">3</div><div class="step-text"><strong>We meet for 15 to 20 minutes</strong> and you leave with a clear next step.</div></div>
     </div>
 
@@ -207,11 +207,18 @@ src="https://www.facebook.com/tr?id=1107850298665423&ev=PageView&noscript=1"
       <button type="submit" class="submit-btn" id="submitBtn">Book the call →</button>
       <p class="form-error" id="formError"></p>
     </form>
-    <p class="form-note" id="formNote">Sent securely to LYNQ. The video call link comes from mustafa@lynq.build.</p>
+    <p class="form-note" id="formNote">Sent securely to LYNQ. You get your video call link as soon as you book.</p>
 
     <div class="success-box" id="successBox">
       <h2>Your call is booked.</h2>
-      <p><strong id="bookedWhen" style="color:#c8ff5a;font-weight:500"></strong><br>We'll email the video call link to the address you gave us. If it's urgent, email <a href="mailto:mustafa@lynq.build" style="color:#fff">mustafa@lynq.build</a> directly.</p>
+      <p><strong id="bookedWhen" style="color:#c8ff5a;font-weight:500"></strong></p>
+      <p style="margin-top:18px">Your video call link. Open it at the time above:</p>
+      <p style="margin-top:6px"><a id="joinLink" href="#" target="_blank" rel="noopener" style="color:#c8ff5a;word-break:break-all"></a></p>
+      <div class="btn-row" style="margin:24px 0 0">
+        <a class="btn btn-solid" id="gcalLink" href="#" target="_blank" rel="noopener">Add to Google Calendar</a>
+        <a class="btn" id="icsLink" href="#" download="lynq-call.ics" style="border:1px solid rgba(255,255,255,0.25)">Add to Apple or Outlook calendar</a>
+      </div>
+      <p style="margin-top:22px">Save the link now. If anything changes, email <a href="mailto:mustafa@lynq.build" style="color:#fff">mustafa@lynq.build</a>.</p>
     </div>
   </div>
 </main>
@@ -233,6 +240,14 @@ const formNote = document.getElementById('formNote');
 
 // Bookings are emailed to LYNQ by Web3Forms, straight from the visitor's browser. The access
 // key is public by design (it can only deliver mail to the inbox it was made for).
+// The video call link. Put a permanent Google Meet or Teams link here to use it for every call;
+// left empty, each booking gets its own private Jitsi room (no account needed to join).
+const MEET_LINK = '';
+function meetingLink() {
+  if (MEET_LINK) return MEET_LINK;
+  const id = Array.from(crypto.getRandomValues(new Uint8Array(6)), (b) => b.toString(36).padStart(2, '0')).join('').slice(0, 10);
+  return 'https://meet.jit.si/LYNQ-call-' + id;
+}
 const MAIL_KEY = 'a7ace787-ea2c-4358-a04e-a23d245bb043';
 
 async function emailBooking(p, callTime) {
@@ -245,6 +260,7 @@ async function emailBooking(p, callTime) {
       from_name: 'LYNQ Website',
       replyto: p.email,
       'Call time': callTime,
+      'Video call link': p.meet,
       'Their time': p.slotLocal,
       Name: p.name,
       Business: p.business || '-',
@@ -370,6 +386,7 @@ bookForm.addEventListener('submit', async function(e){
     website: bookForm.querySelector('[name="website"]').value,
     slot: chosenSlot.toISOString(),
     slotLocal: fmtFull.format(chosenSlot),
+    meet: meetingLink(),
   };
 
   try {
@@ -391,7 +408,21 @@ bookForm.addEventListener('submit', async function(e){
     bookForm.classList.add('is-hidden');
     formNote.style.display = 'none';
     document.getElementById('bookedWhen').textContent = fmtFull.format(chosenSlot);
+    // Give the visitor the link and a calendar entry right now, no waiting on an email.
+    const end = new Date(chosenSlot.getTime() + 20 * 60000);
+    const stamp = (d) => d.toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z';
+    const joinEl = document.getElementById('joinLink');
+    joinEl.href = payload.meet; joinEl.textContent = payload.meet.replace('https://', '');
+    document.getElementById('gcalLink').href = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent('Call with LYNQ') +
+      '&dates=' + stamp(chosenSlot) + '/' + stamp(end) + '&details=' + encodeURIComponent('Video call link: ' + payload.meet) + '&location=' + encodeURIComponent(payload.meet);
+    const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//LYNQ//Book//EN', 'BEGIN:VEVENT', 'UID:' + stamp(chosenSlot) + '-' + Math.random().toString(36).slice(2) + '@lynq.build',
+      'DTSTAMP:' + stamp(new Date()), 'DTSTART:' + stamp(chosenSlot), 'DTEND:' + stamp(end), 'SUMMARY:Call with LYNQ', 'DESCRIPTION:Video call link: ' + payload.meet,
+      'LOCATION:' + payload.meet, 'URL:' + payload.meet, 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+    document.getElementById('icsLink').href = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(ics);
     document.getElementById('successBox').classList.add('is-visible');
+    document.querySelector('main .btn-row').style.display = 'none';
+    document.querySelector('.steps').style.display = 'none';
+    document.querySelector('.sub').style.display = 'none';
     // Tell Meta a consultation was booked, so ads can be measured on it.
     if (window.fbq && !payload.website) { fbq('track', 'Schedule'); fbq('track', 'Lead'); }
   } catch (err) {
