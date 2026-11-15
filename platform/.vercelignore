@@ -1,0 +1,4 @@
+# The app project (Root Directory: platform) uses this file, so the website allowlist in the
+# repo-root .vercelignore does not apply to app.lynq.build builds.
+.env*
+.DS_Store
