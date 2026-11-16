@@ -20,6 +20,7 @@ import { PostAiQuestion, PostFirstProgram, PostFree, PostLessons, PostNoInstall,
 import { PostAchievements, PostArcade, PostRecipe, PostSearch, PostThread, PostWanted } from "./CodeItPosts2";
 import { CodeItBuilt } from "./CodeItBuilt";
 import { FRAMES, HlCover, Story } from "./LynqStories";
+import { LynqElevenPm } from "./LynqElevenPm";
 import { CLIENT_COVERS, ClientCover, HL2, HlCover2 } from "./LynqHighlights";
 import { LynqMoneyAr } from "./PhoneStoryAr";
 import { LynqMoney, LynqMoneyCover, LynqGridCover, LynqMoneyFeedCover, LynqMoneyPhotoCover } from "./PhoneStory";
@@ -68,6 +69,7 @@ export const Root: React.FC = () => (
     {HL2.map(([h]) => { const P: React.FC = () => <HlCover2 hl={h} />; return <Composition key={`h2c${h}`} id={`lynq-hl2-cover-${h}`} component={P} durationInFrames={1} fps={30} width={1080} height={1920} />; })}
     {["start", "websites", "systems", "ai", "booking", "reels"].map((h) => { const P: React.FC = () => <HlCover hl={h} />; return <Composition key={`hc${h}`} id={`lynq-hl-${h}`} component={P} durationInFrames={1} fps={30} width={1080} height={1920} />; })}
     {C("lynq-money", LynqMoney, 18.5)}
+    {C("lynq-11pm", LynqElevenPm, 18)}
     {C("codeit-built", CodeItBuilt, 17.5)}
     {C("lynq-money-ar", LynqMoneyAr, 18.5)}
     <Composition id="lynq-money-feed-cover" component={LynqMoneyFeedCover} durationInFrames={300} fps={30} width={1080} height={1920} />
