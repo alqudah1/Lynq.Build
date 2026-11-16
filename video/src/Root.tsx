@@ -21,6 +21,8 @@ import { PostAchievements, PostArcade, PostRecipe, PostSearch, PostThread, PostW
 import { CodeItBuilt } from "./CodeItBuilt";
 import { FRAMES, HlCover, Story } from "./LynqStories";
 import { LynqElevenPm } from "./LynqElevenPm";
+import { LynqNotes } from "./LynqNotes";
+import { CodeItLessons, CodeItQuiz } from "./CodeItReels";
 import { CLIENT_COVERS, ClientCover, HL2, HlCover2 } from "./LynqHighlights";
 import { LynqMoneyAr } from "./PhoneStoryAr";
 import { LynqMoney, LynqMoneyCover, LynqGridCover, LynqMoneyFeedCover, LynqMoneyPhotoCover } from "./PhoneStory";
@@ -70,6 +72,9 @@ export const Root: React.FC = () => (
     {["start", "websites", "systems", "ai", "booking", "reels"].map((h) => { const P: React.FC = () => <HlCover hl={h} />; return <Composition key={`hc${h}`} id={`lynq-hl-${h}`} component={P} durationInFrames={1} fps={30} width={1080} height={1920} />; })}
     {C("lynq-money", LynqMoney, 18.5)}
     {C("lynq-11pm", LynqElevenPm, 18)}
+    {C("lynq-notes", LynqNotes, 18)}
+    {C("codeit-quiz", CodeItQuiz, 15)}
+    {C("codeit-lessons", CodeItLessons, 16.5)}
     {C("codeit-built", CodeItBuilt, 17.5)}
     {C("lynq-money-ar", LynqMoneyAr, 18.5)}
     <Composition id="lynq-money-feed-cover" component={LynqMoneyFeedCover} durationInFrames={300} fps={30} width={1080} height={1920} />
