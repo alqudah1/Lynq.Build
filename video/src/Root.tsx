@@ -71,7 +71,7 @@ export const Root: React.FC = () => (
     {HL2.map(([h]) => { const P: React.FC = () => <HlCover2 hl={h} />; return <Composition key={`h2c${h}`} id={`lynq-hl2-cover-${h}`} component={P} durationInFrames={1} fps={30} width={1080} height={1920} />; })}
     {["start", "websites", "systems", "ai", "booking", "reels"].map((h) => { const P: React.FC = () => <HlCover hl={h} />; return <Composition key={`hc${h}`} id={`lynq-hl-${h}`} component={P} durationInFrames={1} fps={30} width={1080} height={1920} />; })}
     {C("lynq-money", LynqMoney, 18.5)}
-    {C("lynq-11pm", LynqElevenPm, 18)}
+    {C("lynq-11pm", LynqElevenPm, 20)}
     {C("lynq-notes", LynqNotes, 18)}
     {C("codeit-quiz", CodeItQuiz, 15)}
     {C("codeit-lessons", CodeItLessons, 16.5)}

@@ -13,7 +13,7 @@ const LI = "#C7FF3D", BG = "#030303", IL = "'Inter Light'", IS = "'Inter SemiBol
 const PW = 566, PH = 1170, PX = (1080 - PW) / 2, PY = 470, BZ = 12;
 const SW = 390, SCALE = (PW - BZ * 2) / SW, SH = (PH - BZ * 2) / SCALE;
 const SHOP_A = "Fern & Fade Barbers", SHOP_B = "Northline Cuts";
-export const DUR = 18;
+export const DUR = 20;
 
 type Msg = { at: number; me?: boolean; text: string; stamp?: string; ai?: boolean };
 
@@ -64,7 +64,7 @@ const ChatA: React.FC = () => {
   const { s } = useT();
   const morning = s >= 13.2;
   return (
-    <Chat shop={SHOP_A} sub={morning ? "Active now" : "Usually replies within a day"} msgs={[{ at: 0.7, me: true, text: ASK, stamp: "Today 11:04 PM" }, { at: 13.7, text: "Hi, sorry, just saw this! Still need Saturday?", stamp: "9:12 AM" }]}>
+    <Chat shop={SHOP_A} sub={morning ? "Active now" : "Usually replies within a day"} msgs={[{ at: 0.7, me: true, text: ASK, stamp: "Today 11:04 PM" }, { at: 13.7, text: "Hi, sorry, just saw this! Still need Saturday?", stamp: "9:12 AM" }, { at: 14.9, me: true, text: "Already booked, thanks." }]}>
       {s >= 1.3 && !morning ? <div style={{ textAlign: "right", fontFamily: IL, fontSize: 13, color: "rgba(255,255,255,0.45)", marginTop: 6 }}>Delivered</div> : null}
     </Chat>
   );
@@ -81,6 +81,7 @@ const ChatB: React.FC = () => {
       { at: 8.5, me: true, text: "9:30" },
       { at: 9.5, ai: true, text: "Booked. Saturday 9:30. See you then." },
     ]}>
+      {s >= 7.35 ? <div style={{ display: "inline-block", marginTop: 8, padding: "5px 12px", borderRadius: 20, border: "1px solid rgba(199,255,61,0.6)", fontFamily: IS, fontSize: 12.5, letterSpacing: 1.5, color: LI }}>REPLIED IN 3 SECONDS</div> : null}
       <Typing from={6.4} to={7.2} />
       <Typing from={8.9} to={9.5} />
       {s >= 10.0 ? (
@@ -131,8 +132,8 @@ export const LynqElevenPm: React.FC = () => {
   const slide = toB - backA; // 0 = A, 1 = B
   const night = s >= 2.9 && s < 5.35;
   const dim = night ? ramp(s, 2.9, 3.6, 0, 0.55) : s < 5.9 ? 1 - ramp(s, 5.35, 5.6) > 0 && s >= 5.35 ? 0.55 * (1 - ramp(s, 5.35, 5.6)) : 0 : 0;
-  const end = ramp(s, 15.0, 15.6);
-  const phoneOut = ramp(s, 14.9, 15.5);
+  const end = ramp(s, 16.5, 17.1);
+  const phoneOut = ramp(s, 16.4, 17.0);
   const float = Math.sin(s * 1.3) * 5;
   const bump = s >= 7.2 && s < 7.5 ? Math.sin((s - 7.2) * 60) * 3 * (1 - (s - 7.2) / 0.3) : 0;
   const glow = slide > 0.5 ? "rgba(199,255,61,0.20)" : s >= 13.2 ? "rgba(255,255,255,0.10)" : "rgba(60,100,255,0.13)";
@@ -141,12 +142,13 @@ export const LynqElevenPm: React.FC = () => {
       <Fonts />
       <div style={{ position: "absolute", left: 540 - 700, top: PY + PH / 2 - 700, width: 1400, height: 1400, borderRadius: 700, background: `radial-gradient(closest-side, ${glow} 0%, rgba(0,0,0,0) 100%)`, opacity: 1 - end }} />
 
-      <Line text="I messaged two shops at 11 PM." at={0.15} out={2.6} lime={["11", "PM"]} />
-      <Line text="The first one said nothing." at={2.9} out={5.2} lime={["nothing"]} />
-      <Line text="The second one answered in seconds." at={5.7} out={8.2} lime={["seconds"]} />
-      <Line text="Booked. Before I put my phone down." at={8.5} out={10.6} lime={["Booked"]} />
-      <Line text="Nobody was awake. Their assistant was." at={10.9} out={12.8} lime={["assistant"]} />
-      <Line text="The first shop replied at 9 AM." at={13.2} out={14.8} lime={["9", "AM"]} />
+      <Line text="11 PM. The only time I'm free to book." at={0.15} out={2.6} lime={["11", "PM"]} />
+      <Line text="Shop one: nothing." at={2.9} out={5.2} lime={["nothing"]} size={76} />
+      <Line text="Shop two: three seconds." at={5.7} out={8.2} lime={["three", "seconds"]} size={76} />
+      <Line text="Saturday, 9:30. Done." at={8.5} out={10.6} lime={["Done"]} size={76} />
+      <Line text="Nobody there was awake. Their assistant was." at={10.9} out={12.8} lime={["assistant"]} />
+      <Line text="Shop one woke up at 9 AM." at={13.2} out={14.7} lime={["9", "AM"]} />
+      <Line text="My Saturday was already taken." at={15.0} out={16.2} lime={["taken"]} />
 
       <div style={{ position: "absolute", left: PX, top: PY + float + phoneOut * 900, width: PW, height: PH, borderRadius: 78, background: "#17191b", boxShadow: "0 60px 140px rgba(0,0,0,0.8), inset 0 0 0 2px rgba(255,255,255,0.10)", transform: `translateX(${bump}px) rotate(${Math.sin(s * 0.9) * 0.5}deg)`, opacity: 1 - phoneOut }}>
         <div style={{ position: "absolute", left: BZ, top: BZ, width: PW - BZ * 2, height: PH - BZ * 2, borderRadius: 66, overflow: "hidden", background: "#000" }}>
@@ -154,7 +156,7 @@ export const LynqElevenPm: React.FC = () => {
             <div style={{ position: "absolute", inset: 0, transform: `translateX(${-slide * SW}px)` }}><ChatA /></div>
             <div style={{ position: "absolute", inset: 0, transform: `translateX(${(1 - slide) * SW}px)` }}><ChatB /></div>
             <div style={{ position: "absolute", inset: 0, background: "#000", opacity: dim, pointerEvents: "none" }} />
-            {night ? <div style={{ position: "absolute", left: 0, right: 0, top: 300, textAlign: "center", fontFamily: IL, fontSize: 64, letterSpacing: -2, color: "#fff", opacity: ramp(s, 3.0, 3.5) }}>{clock(s)}<div style={{ fontFamily: IL, fontSize: 14, letterSpacing: 3, color: "rgba(255,255,255,0.5)", marginTop: 6 }}>NO REPLY</div></div> : null}
+            {night ? <div style={{ position: "absolute", left: 0, right: 0, top: 300, textAlign: "center", fontFamily: IL, fontSize: 64, letterSpacing: -2, color: "#fff", opacity: ramp(s, 3.0, 3.5) }}>{clock(s)}<div style={{ fontFamily: IL, fontSize: 14, letterSpacing: 3, color: "rgba(255,255,255,0.5)", marginTop: 6 }}>STILL NO REPLY</div></div> : null}
             <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: 44, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 26px 0", fontFamily: IS, fontSize: 15, color: "#fff" }}>
               <span>{clock(s)}</span>
               <span style={{ display: "flex", gap: 5, alignItems: "center" }}><span style={{ width: 17, height: 11, borderRadius: 3, border: "1.5px solid #fff", display: "inline-block" }} /></span>
@@ -168,8 +170,8 @@ export const LynqElevenPm: React.FC = () => {
 
       <AbsoluteFill style={{ opacity: end, alignItems: "center", justifyContent: "center" }}>
         <div style={{ textAlign: "center", padding: "0 90px", transform: `translateY(${(1 - end) * 30}px)` }}>
-          <div style={{ fontFamily: IL, fontSize: 84, lineHeight: 1.06, letterSpacing: -4, color: "#fff" }}>Your customers message at night.</div>
-          <div style={{ fontFamily: IL, fontSize: 84, lineHeight: 1.06, letterSpacing: -4, color: LI, marginTop: 26 }}>Answer them at night.</div>
+          <div style={{ fontFamily: IL, fontSize: 84, lineHeight: 1.06, letterSpacing: -4, color: "#fff" }}>Your customers book at night.</div>
+          <div style={{ fontFamily: IL, fontSize: 84, lineHeight: 1.06, letterSpacing: -4, color: LI, marginTop: 26 }}>Be open at night.</div>
           <div style={{ display: "inline-block", marginTop: 70, padding: "24px 50px", borderRadius: 60, background: LI, fontFamily: IS, fontSize: 38, color: "#0b0d0a" }}>Book a consultation</div>
           <div style={{ marginTop: 22, fontFamily: IL, fontSize: 32, letterSpacing: 2, color: "rgba(255,255,255,0.6)" }}>lynq.build/book</div>
         </div>
@@ -184,7 +186,8 @@ export const LynqElevenPm: React.FC = () => {
       <Sfx at={10.0} src="thump.wav" volume={0.4} />
       <Sfx at={12.9} src="whoosh.wav" volume={0.35} />
       <Sfx at={13.7} src="ding.wav" volume={0.4} />
-      <Sfx at={15.0} src="whoosh.wav" volume={0.4} />
+      <Sfx at={14.9} src="pop.wav" volume={0.5} />
+      <Sfx at={16.5} src="whoosh.wav" volume={0.4} />
     </AbsoluteFill>
   );
 };

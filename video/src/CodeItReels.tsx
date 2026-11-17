@@ -48,7 +48,8 @@ const End: React.FC<{ at: number; a: string; b: string }> = ({ at, a, b }) => {
 /* ------------------------------------------------------------------ quiz */
 const CODE = ["score = 0", "score = score + 1", "score = score + 1", "print(score)"];
 const STEP = [5.6, 6.6, 7.6, 8.7]; // when each line runs
-const VAL = ["score is 0", "score is 1", "score is 2", "prints 2"];
+const VAL = ["put 0 in the box", "add 1", "add 1 more", "show the box"];
+const BOX = [0, 1, 2, 2];
 export const QUIZ_DUR = 15;
 
 export const CodeItQuiz: React.FC = () => {
@@ -63,8 +64,8 @@ export const CodeItQuiz: React.FC = () => {
       <div style={{ position: "absolute", left: -200, top: -200, width: 700, height: 700, borderRadius: 350, background: "rgba(254,211,64,0.35)" }} />
       <div style={{ position: "absolute", right: -260, bottom: -220, width: 800, height: 800, borderRadius: 400, background: "rgba(240,86,45,0.14)" }} />
       <Logo />
-      <Head a="What does" b="this print?" at={0.1} out={5.2} />
-      <Head a="Go line" b="by line." at={5.5} out={9.7} />
+      <Head a="Don't run it." b="Guess." at={0.1} out={5.2} size={110} />
+      <Head a="Now watch" b="the box." at={5.5} out={9.7} />
       <Head a="It prints" b="2." at={10.0} out={12.2} size={120} />
 
       {/* the code */}
@@ -96,6 +97,17 @@ export const CodeItQuiz: React.FC = () => {
         })}
       </div>
 
+      {/* the variable, drawn as a box that holds a number */}
+      {cur >= 0 && s < 12.3 ? (
+        <div style={{ position: "absolute", left: 0, right: 0, top: 1420, display: "flex", justifyContent: "center", alignItems: "center", gap: 40 }}>
+          <div style={{ position: "relative", width: 250, height: 250, borderRadius: 50, background: "#fff", border: `8px solid ${INK}`, boxShadow: `0 14px 0 ${INK}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: B, fontWeight: 800, fontSize: 170, color: cur === 3 ? CORAL : INK, transform: `scale(${1 + 0.16 * Math.max(0, 1 - (s - STEP[cur]) / 0.25)})` }}>
+            {BOX[cur]}
+            <div style={{ position: "absolute", left: 34, top: -34, padding: "4px 24px", borderRadius: 24, background: CORAL, fontFamily: M, fontWeight: 600, fontSize: 34, color: "#fff" }}>score</div>
+          </div>
+          {cur === 3 ? <div style={{ fontFamily: B, fontWeight: 800, fontSize: 90, color: INK }}>→ <span style={{ color: CORAL }}>2</span></div> : null}
+        </div>
+      ) : null}
+
       {/* 3, 2, 1 */}
       {count > 0 ? (
         <div style={{ position: "absolute", left: 0, right: 0, top: 1450, textAlign: "center" }}>
@@ -108,7 +120,7 @@ export const CodeItQuiz: React.FC = () => {
         return <div key={i} style={{ position: "absolute", left: 830 + Math.cos(a) * 200 * Math.min(1, t * 2), top: 1220 + Math.sin(a) * 200 * Math.min(1, t * 2), fontSize: 70, color: i % 2 ? YELLOW : CORAL, opacity: Math.max(0, 1 - t / 1.6), transform: `rotate(${t * 120}deg)` }}>{st}</div>;
       }) : null}
 
-      <End at={12.3} a="That's a variable." b="You just read Python." />
+      <End at={12.3} a="That box is a variable." b="You just read Python." />
 
       {CODE.map((_, i) => <Sfx key={i} at={0.5 + i * 0.4} src="click.wav" volume={0.3} />)}
       {[0, 1, 2].map((i) => <Sfx key={`o${i}`} at={2.4 + i * 0.22} src="pop.wav" volume={0.5} />)}
@@ -141,11 +153,11 @@ export const CodeItLessons: React.FC = () => {
       <div style={{ position: "absolute", left: -220, top: -220, width: 720, height: 720, borderRadius: 360, background: "rgba(254,211,64,0.32)" }} />
       <div style={{ position: "absolute", right: -260, bottom: -240, width: 820, height: 820, borderRadius: 410, background: "rgba(240,86,45,0.13)" }} />
       <Logo />
-      <Head a="31 Python lessons." b="Zero downloads." at={0.1} out={2.4} size={92} />
-      <Head a="They type" b="real code." at={2.8} out={5.3} />
-      <Head a="Press Run." b="It works." at={5.6} out={7.2} />
-      <Head a="One small step" b="at a time." at={7.7} out={11.6} size={92} />
-      <Head a="It runs in the browser." b="Nothing to install." at={11.9} out={13.6} size={80} />
+      <Head a="No app. No download." b="Just a tab." at={0.1} out={2.4} size={88} />
+      <Head a="Lesson 1:" b="make it say hello." at={2.8} out={5.3} />
+      <Head a="Press Run." b="It talks back." at={5.6} out={7.2} />
+      <Head a="31 lessons." b="Each one a small step." at={7.7} out={11.6} size={88} />
+      <Head a="Real Python." b="Kid-sized steps." at={11.9} out={13.6} />
 
       {/* opening picture: the 3D art already used on the feed */}
       <div style={{ position: "absolute", left: 90, top: 640, width: 900, height: 900, borderRadius: 60, overflow: "hidden", border: `7px solid ${INK}`, boxShadow: `0 16px 0 ${INK}`, opacity: 1 - heroOut, transform: `scale(${1 + s * 0.012 - heroOut * 0.1})` }}>
