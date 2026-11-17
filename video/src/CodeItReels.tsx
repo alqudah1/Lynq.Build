@@ -266,3 +266,78 @@ export const CodeItToys: React.FC = () => {
     </AbsoluteFill>
   );
 };
+
+/* ---------------------------------------------------------------- dinner */
+/*
+ * "He skipped dinner. I wasn't even mad." A parent's text thread, told in messages: they go to
+ * take the tablet away and find the kid fixing his own game. Made-up story, labelled on screen.
+ * For parents (voice: VALF). The narrator is a made-up parent, never the founder.
+ */
+export const DINNER_DUR = 17.5;
+type Txt = { at: number; me?: boolean; text?: string; shot?: boolean };
+const THREAD: Txt[] = [
+  { at: 0.7, text: "Dinner's ready. Where is he?" },
+  { at: 1.7, me: true, text: "Still on the tablet." },
+  { at: 2.9, text: "AGAIN? Take it away." },
+  { at: 4.3, me: true, text: "I went to. Then I looked at the screen." },
+  { at: 5.8, me: true, shot: true },
+  { at: 7.5, me: true, text: "He's lowering the gravity so his cat stops falling so fast." },
+  { at: 9.4, text: "Our kid said gravity?" },
+  { at: 10.6, me: true, text: "He asked for 5 more minutes. I said okay." },
+  { at: 12.2, text: "Save him a plate." },
+];
+const DINNER_END = 13.9;
+
+const Msg2: React.FC<{ m: Txt }> = ({ m }) => {
+  const { s } = useT();
+  const p = useSpringAt(m.at, { damping: 13, stiffness: 190 });
+  if (s < m.at) return null;
+  const grow = Math.min(1, p * 1.25);
+  return (
+    <div style={{ display: "flex", justifyContent: m.me ? "flex-end" : "flex-start", marginTop: 18 * grow, maxHeight: 420 * grow, opacity: Math.min(1, p * 1.5), transform: `scale(${0.9 + p * 0.1})`, transformOrigin: m.me ? "right bottom" : "left bottom" }}>
+      {m.shot ? (
+        <div style={{ width: 500, borderRadius: 40, border: `6px solid ${INK}`, overflow: "hidden", background: "#1d2147" }}>
+          <div style={{ position: "relative", height: 250 }}>
+            {[60, 180, 330, 430].map((x, i) => <div key={x} style={{ position: "absolute", left: x, top: 30 + (i % 2) * 50, fontSize: 30, color: YELLOW }}>✦</div>)}
+            <div style={{ position: "absolute", left: 200, top: 40 + 70 * Math.abs(Math.sin((s - m.at) * 1.6)), width: 100, height: 76, borderRadius: 38, background: "#ff9a3d", border: `5px solid ${INK}` }}>
+              <div style={{ position: "absolute", left: 26, top: 24, width: 11, height: 15, borderRadius: 7, background: INK }} /><div style={{ position: "absolute", right: 26, top: 24, width: 11, height: 15, borderRadius: 7, background: INK }} />
+            </div>
+            <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 26, background: "#62d26f", borderTop: `5px solid ${INK}` }} />
+          </div>
+          <div style={{ background: INK, padding: "16px 24px", fontFamily: M, fontWeight: 600, fontSize: 34, color: "#8fe39a" }}>gravity = <span style={{ color: "rgba(255,255,255,0.35)", textDecoration: "line-through" }}>9</span> <span style={{ color: YELLOW }}>4</span></div>
+        </div>
+      ) : (
+        <div style={{ maxWidth: 600, padding: "22px 30px", borderRadius: 44, borderBottomRightRadius: m.me ? 12 : 44, borderBottomLeftRadius: m.me ? 44 : 12, background: m.me ? CORAL : "#fff", border: `6px solid ${INK}`, fontFamily: N, fontWeight: 800, fontSize: 40, lineHeight: 1.2, color: m.me ? "#fff" : INK }}>{m.text}</div>
+      )}
+    </div>
+  );
+};
+
+export const CodeItDinner: React.FC = () => {
+  const { s } = useT();
+  return (
+    <AbsoluteFill style={{ background: CREAM }}>
+      <Fonts />
+      <div style={{ position: "absolute", left: -220, top: -220, width: 760, height: 760, borderRadius: 380, background: "rgba(254,211,64,0.40)" }} />
+      <div style={{ position: "absolute", right: -280, bottom: -260, width: 860, height: 860, borderRadius: 430, background: "rgba(240,86,45,0.15)" }} />
+      <Logo />
+      <Head a="He skipped dinner." b="I wasn't even mad." at={0.1} out={4.0} size={100} />
+      <Head a="Then I looked" b="at the screen." at={4.3} out={7.2} />
+      <Head a="He was fixing" b="his own game." at={7.5} out={10.3} />
+      <Head a="“5 more minutes.”" b="I said okay." at={10.6} out={13.6} />
+
+      {/* the thread: newest message at the bottom, older ones pushed up and clipped */}
+      <div style={{ position: "absolute", left: 70, top: 560, width: 940, height: 1090, borderRadius: 60, background: "rgba(255,255,255,0.55)", border: `7px solid ${INK}`, boxShadow: `0 16px 0 ${INK}`, overflow: "hidden", opacity: 1 - ramp(s, DINNER_END - 0.3, DINNER_END) }}>
+        <div style={{ height: 96, background: YELLOW, borderBottom: `6px solid ${INK}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: B, fontWeight: 800, fontSize: 40, color: INK }}>Home</div>
+        <div style={{ position: "absolute", left: 30, right: 30, top: 96, bottom: 34, display: "flex", flexDirection: "column", justifyContent: "flex-end", overflow: "hidden" }}>
+          {THREAD.map((m) => <Msg2 key={m.at} m={m} />)}
+        </div>
+      </div>
+      <div style={{ position: "absolute", left: 0, right: 0, top: 1700, textAlign: "center", fontFamily: N, fontWeight: 900, fontSize: 24, letterSpacing: 5, color: "rgba(22,22,29,0.4)", opacity: 1 - ramp(s, DINNER_END - 0.3, DINNER_END) }}>MADE-UP STORY</div>
+
+      <End at={DINNER_END} a="“5 more minutes.”" b="The good kind." />
+      {THREAD.map((m) => <Sfx key={m.at} at={m.at} src={m.me ? "pop.wav" : "ding.wav"} volume={m.me ? 0.45 : 0.4} />)}
+      <Sfx at={DINNER_END} src="whoosh.wav" volume={0.4} />
+    </AbsoluteFill>
+  );
+};
