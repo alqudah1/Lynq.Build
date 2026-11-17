@@ -209,3 +209,60 @@ export const CodeItLessons: React.FC = () => {
     </AbsoluteFill>
   );
 };
+
+/* ------------------------------------------------------------------ toys */
+/*
+ * "Screen time you'll brag about": the approved 3D toy pictures from the feed, one idea each,
+ * using the same lines the posts already carry. For parents (voice: VALF).
+ */
+export const TOYS_DUR = 17;
+const TOYS: { img: string; a: string; b: string; at: number; blob: string }[] = [
+  { img: "trophy", a: "Screen time", b: "you'll brag about.", at: 0, blob: "rgba(254,211,64,0.42)" },
+  { img: "controller", a: "They don't just play it.", b: "They build it.", at: 2.8, blob: "rgba(240,86,45,0.20)" },
+  { img: "dial", a: "Change one number.", b: "See what breaks.", at: 5.6, blob: "rgba(254,211,64,0.42)" },
+  { img: "ladybug", a: "Find the bug.", b: "Fix it themselves.", at: 8.4, blob: "rgba(240,86,45,0.20)" },
+  { img: "dinner", a: "“5 more minutes.”", b: "The good kind.", at: 11.2, blob: "rgba(254,211,64,0.42)" },
+];
+const TOYS_END = 14.0;
+
+const Toy: React.FC<{ t: (typeof TOYS)[number]; next: number; i: number }> = ({ t, next, i }) => {
+  const { s } = useT();
+  const p = useSpringAt(t.at + 0.05, { damping: 12, stiffness: 150 });
+  const txt = useSpringAt(t.at + 0.3, { damping: 13, stiffness: 170 });
+  if (s < t.at || s > next + 0.35) return null;
+  const out = ramp(s, next, next + 0.35);
+  const dir = i % 2 ? 1 : -1;
+  return (
+    <>
+      <div style={{ position: "absolute", left: 60, right: 60, top: 240, textAlign: "center", fontFamily: B, fontWeight: 800, fontSize: t.a.length > 20 ? 78 : 96, lineHeight: 1.02, letterSpacing: -2, color: INK, opacity: Math.min(1, txt * 1.5) * (1 - out), transform: `translateY(${(1 - txt) * 30}px)` }}>
+        <div>{t.a}</div>
+        <div style={{ color: CORAL }}>{t.b}</div>
+      </div>
+      <div style={{ position: "absolute", left: 90, top: 640, width: 900, height: 900, borderRadius: 70, overflow: "hidden", border: `8px solid ${INK}`, boxShadow: `0 18px 0 ${INK}`, opacity: Math.min(1, p * 1.6) * (1 - out), transform: `translateX(${(1 - p) * 500 * dir - out * 500 * dir}px) rotate(${(1 - p) * 10 * dir - out * 8 * dir}deg) scale(${0.86 + p * 0.14})` }}>
+        <Img src={staticFile(`c3d/${t.img}.jpg`)} style={{ width: "100%", height: "100%", objectFit: "cover", transform: `scale(${1.04 + (s - t.at) * 0.022})` }} />
+      </div>
+    </>
+  );
+};
+
+export const CodeItToys: React.FC = () => {
+  const { s } = useT();
+  const cur = TOYS.filter((t) => s >= t.at).length - 1;
+  return (
+    <AbsoluteFill style={{ background: CREAM }}>
+      <Fonts />
+      <div style={{ position: "absolute", left: -220, top: -220, width: 760, height: 760, borderRadius: 380, background: TOYS[Math.max(0, cur)].blob }} />
+      <div style={{ position: "absolute", right: -280, bottom: -260, width: 860, height: 860, borderRadius: 430, background: TOYS[Math.max(0, cur)].blob, opacity: 0.7 }} />
+      <Logo />
+      {TOYS.map((t, i) => <Toy key={t.img} t={t} i={i} next={i + 1 < TOYS.length ? TOYS[i + 1].at : TOYS_END} />)}
+      {/* progress dots */}
+      <div style={{ position: "absolute", left: 0, right: 0, top: 1620, display: "flex", justifyContent: "center", gap: 18, opacity: 1 - ramp(s, TOYS_END - 0.2, TOYS_END) }}>
+        {TOYS.map((t, i) => <div key={t.img} style={{ width: i === cur ? 54 : 20, height: 20, borderRadius: 10, background: i === cur ? CORAL : "rgba(22,22,29,0.2)" }} />)}
+      </div>
+      <End at={TOYS_END} a="Real Python." b="Built for kids." />
+      {TOYS.map((t) => <Sfx key={t.img} at={t.at + 0.05} src={t.at === 0 ? "pop.wav" : "whoosh.wav"} volume={0.4} />)}
+      {TOYS.map((t) => <Sfx key={`p${t.img}`} at={t.at + 0.35} src="pop.wav" volume={0.45} />)}
+      <Sfx at={TOYS_END} src="ding.wav" volume={0.6} />
+    </AbsoluteFill>
+  );
+};
