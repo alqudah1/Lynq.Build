@@ -1180,7 +1180,8 @@ export const WEEK_PLANS: WeekPlan[] = [
       CodeIt: ["START HERE", "BUILDS", "LESSONS", "ASK THE TEACHER", "FREE", "ABOUT", "QUIZ", "PIP"],
     },
     // Replaced on Nov 13 by finished pictures the owner approved (the new LYNQ object post and the CodeIt 3D set).
-    retired: ["p3-lynq-cases", "p3-codeit-cheat-if", "p3-codeit-split-score", "p3-codeit-pip-variable"],
+    // Nov 17: the last day of this plan now uses the owner's approved pictures instead of the older cards.
+    retired: ["p3-lynq-cases", "p3-codeit-cheat-if", "p3-codeit-split-score", "p3-codeit-pip-variable", "p3-lynq-ab-headline", "p3-l-ab-headline", "p3-codeit-ask-2"],
     feed: [
       // ---- Approved finished pictures (attached as they are, never drawn or generated) ----
       {
@@ -1329,13 +1330,14 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: `A matte black smartphone standing upright on the black studio floor next to a much larger closed black laptop lying flat behind it, hard light from the upper left; the phone's side button is acid lime. No text. ${HONEST_CARD} ${LYNQ_LOOK}`,
       },
       {
-        key: "p3-lynq-ab-headline", brand: LYNQ, day: "2026-11-18", time: "12:15", pillar: "TEACH", storyHighlight: "FIX THIS",
-        title: "LYNQ · A or B: which headline gets the booking?", kind: "image_post", platforms: ["instagram", "facebook"],
-        hook: "Two headlines for the same plumber. One gets the booking. A or B?",
-        body: "A or B, round two.\n\nSame plumber, same website, two first lines:\nA: \"Welcome to our family business, serving you since 1998.\"\nB: \"Burst pipe? We pick up 24/7. Call now.\"\n\nComment A or B. Tomorrow's story has the answer, and the one rule behind it.\n\nGot a headline you're not sure about? Put it in the comments and we'll tell you honestly.",
-        facebookBody: "A or B? Same plumber, two first lines. A: \"Welcome to our family business, serving you since 1998.\" B: \"Burst pipe? We pick up 24/7. Call now.\" Which one gets the booking? Tell us, and share a headline you're unsure about.",
-        hashtags: ["Copywriting", ...LYNQ_TAGS], callToAction: "Comment A or B",
-        creativeDirection: `Two matte black cards standing side by side on the black studio floor, hard light from the upper left, one with a thin white "A" and one with a thin white "B"; a small acid-lime pin holds card B. One line of thin white type: "A or B?" ${HONEST_CARD} ${LYNQ_LOOK}`,
+        // Nov 17: replaces the A or B headline post. The owner's feed is now one object on black with one small line, and the call to action is the booking page.
+        key: "p5-lynq-bottle", brand: LYNQ, day: "2026-11-18", time: "12:15", pillar: "TEACH", storyHighlight: "FIX THIS",
+        title: "LYNQ · How your contact form feels", kind: "image_post", platforms: ["instagram", "facebook"],
+        hook: "How your contact form feels.",
+        body: "How your contact form feels.\n\nThey write, hit send, and hear nothing. The business that replies first usually gets the job.\n\nHow fast do you reply?\n\nBook a free consultation: lynq.build/book",
+        facebookBody: "How your contact form feels. They write, hit send, and hear nothing. The business that replies first usually gets the job. How fast do you reply? Book a free consultation: lynq.build/book",
+        hashtags: ["SmallBusiness", "WebDesign", "LocalBusiness", "LYNQ"], callToAction: "Book a consultation",
+        image: "lynq-grid-bottle.jpg",
       },
       // ---- CodeIt ----
       {
@@ -1471,16 +1473,14 @@ export const WEEK_PLANS: WeekPlan[] = [
         creativeDirection: "Rendered card.",
       },
       {
-        key: "p3-codeit-ask-2", brand: CODEIT, day: "2026-11-18", time: "19:30", pillar: "BUILD", storyHighlight: "BUILDS",
-        title: "CodeIt · You send it, we build it, round two", kind: "image_post", platforms: ["instagram", "facebook"],
-        hook: "Round two: your kid's game idea, built on video. Comment it.",
-        body: "You send it, we build it, round two.\n\nWe're opening the comments for game ideas again.\n\nAsk your kid for one game in one sentence and put it in the comments. A sentence like \"a ghost that steals candy\" is perfect.\n\nWe'll build ideas from the comments on CodeIt, on video. No names needed.\n\nFollow so you see the builds.",
-        facebookBody: "You send it, we build it, round two. Ask your kid for one game in one sentence and put it in the comments. We'll build ideas on CodeIt, on video. No names needed.",
-        hashtags: CODEIT_TAGS, callToAction: "Comment a game idea",
-        card: { eyebrow: "You send it, we build it", headline: "Round two.", sub: "Send your kid's idea.", steps: [], format: {
-          kind: "ask", prompt: "What game should\nwe build next?", example: "a ghost that steals candy", promise: "We build them on video",
-        } },
-        creativeDirection: "Rendered card.",
+        // Nov 17: replaces the round-two ask card with the approved 3D picture, to match the rest of the CodeIt feed.
+        key: "p5-codeit-ladybug", brand: CODEIT, day: "2026-11-18", time: "18:30", pillar: "LEARN", storyHighlight: "LESSONS",
+        title: "CodeIt · Bugs are the lesson.", kind: "image_post", platforms: ["instagram", "facebook"],
+        hook: "Bugs are the lesson.",
+        body: "Bugs are the lesson.\n\nThe game doesn't work the first time. Finding the mistake and fixing it is how they learn.\n\nFree to start at codeitlearn.com",
+        facebookBody: "Bugs are the lesson. The game doesn't work the first time. Finding the mistake and fixing it is how they learn. Free to start at codeitlearn.com",
+        hashtags: ["KidsCoding", "CodingForKids", "LearnToCode", "Parenting", "Python"], callToAction: "Free to start",
+        image: "codeit-3d-ladybug.jpg",
       },
     ],
     reels: [
@@ -1682,7 +1682,6 @@ export const WEEK_PLANS: WeekPlan[] = [
       { key: "p3-l-hire-check", brand: LYNQ, day: "2026-11-15", time: "09:30", highlight: "WHAT YOU GET", spec: { kind: "checklist", brand: "lynq", eyebrow: "Before you hire", headline: ["Before you", "hire anyone."], intro: "Get a clear answer to:", items: [{ text: "Who owns the domain", ok: true }, { text: "Who answers at 9pm", ok: true }, { text: "Who fixes it after launch", ok: true }, { text: "Quote in writing first", ok: true }], close: ["Vague", "answer?", "Keep looking."] } },
       { key: "p3-l-dm-link", brand: LYNQ, day: "2026-11-16", time: "09:30", highlight: "WHAT YOU GET", spec: { kind: "oneFix", brand: "lynq", eyebrow: "This week only", headline: ["Send your link.", "Get three fixes."], fix: "DM AUDIT", detail: "We open it on a phone and reply with three fixes in plain words. Free." } },
       { key: "p3-l-phone-first", brand: LYNQ, day: "2026-11-17", time: "09:30", highlight: "BEHIND", spec: { kind: "teardown", brand: "lynq", series: "How we design", headline: "Phone first.", before: ["Designed on a laptop", "Call button in the footer", "Hours on the contact page"], after: ["Designed for a thumb", "Call button always on screen", "Hours next to the number"], note: "If it works on a phone, it works everywhere." } },
-      { key: "p3-l-ab-headline", brand: LYNQ, day: "2026-11-18", time: "09:30", highlight: "FIX THIS", spec: { kind: "whichSite", brand: "lynq", eyebrow: "A or B, round two", headline: ["Which headline", "gets the booking?"], sticker: { type: "poll", question: "Which gets the booking?", options: ["A: Welcome to our...", "B: Burst pipe? Call"] } } },
       // ---- CodeIt ----
       { key: "p3-c-quiz-space", brand: CODEIT, day: "2026-11-05", time: "17:00", highlight: "QUIZ", spec: { kind: "quiz", brand: "codeit", eyebrow: "Guess the game", headline: "Which game is it?", code: ["rocket.y -= 5", "if touching(asteroid):", "    lives -= 1"], sticker: { type: "quiz", question: "Which game is it?", options: ["Snake", "Space dodge", "Pong"], correct: 1 } } },
       { key: "p3-c-answer-space", brand: CODEIT, day: "2026-11-06", time: "15:45", highlight: "QUIZ", spec: { kind: "answer", brand: "codeit", eyebrow: "Yesterday's answer", headline: "The game is:", answer: "Space dodge", why: ["The rocket moves up,", "an asteroid costs a life,", "so you dodge them."], example: "rocket.y -= 10", tryThis: "Faster rocket. Easier or harder?" } },
