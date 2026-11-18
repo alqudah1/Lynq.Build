@@ -1,5 +1,5 @@
 import React from "react";
-import { AbsoluteFill } from "remotion";
+import { AbsoluteFill, Sequence } from "remotion";
 import { Fonts, Sfx, ramp, useSpringAt, useT } from "./kit";
 
 /*
@@ -213,6 +213,56 @@ export const LynqElevenPm: React.FC = () => {
       <Sfx at={16.4} src="whoosh.wav" volume={0.4} />
       {[17.1, 17.5, 17.9].map((t) => <Sfx key={t} at={t} src="ding.wav" volume={0.5} />)}
       <Sfx at={19.6} src="whoosh.wav" volume={0.4} />
+    </AbsoluteFill>
+  );
+};
+
+/*
+ * Result-first cut: the reel opens on the booking that already happened (a lock screen
+ * notification), then tells the 11 PM story of how. Same body, shifted by COLD seconds.
+ */
+const COLD = 2.5;
+export const DUR_RF = DUR + COLD;
+const ColdOpen: React.FC = () => {
+  const { s } = useT();
+  const card = useSpringAt(0.12, { damping: 13, stiffness: 200 });
+  const tick = useSpringAt(0.75, { damping: 10, stiffness: 240 });
+  const out = ramp(s, COLD - 0.3, COLD);
+  if (s > COLD) return null;
+  const words = "This booking came in while the shop was closed.".split(" ");
+  return (
+    <AbsoluteFill style={{ background: BG, opacity: 1 - out }}>
+      <div style={{ position: "absolute", left: 540 - 700, top: 960 - 700, width: 1400, height: 1400, borderRadius: 700, background: "radial-gradient(closest-side, rgba(199,255,61,0.20) 0%, rgba(0,0,0,0) 100%)" }} />
+      <div style={{ position: "absolute", left: 70, right: 70, top: 470, textAlign: "center", fontFamily: IL, fontSize: 70, lineHeight: 1.08, letterSpacing: -2.8 }}>
+        {words.map((w, i) => {
+          const o = ramp(s, 0.25 + i * 0.07, 0.45 + i * 0.07);
+          return <span key={i} style={{ display: "inline-block", marginRight: "0.24em", opacity: o, transform: `translateY(${(1 - o) * 18}px)`, color: w === "closed." ? LI : "#fff" }}>{w}</span>;
+        })}
+      </div>
+      <div style={{ position: "absolute", left: 90, right: 90, top: 900, borderRadius: 44, background: "rgba(255,255,255,0.10)", border: "1px solid rgba(199,255,61,0.45)", padding: "40px 40px", display: "flex", alignItems: "center", gap: 32, opacity: Math.min(1, card * 1.4), transform: `translateY(${(1 - card) * 60}px) scale(${0.9 + card * 0.1})` }}>
+        <div style={{ width: 104, height: 104, borderRadius: 52, background: LI, display: "flex", alignItems: "center", justifyContent: "center", transform: `scale(${0.4 + tick * 0.6})`, flexShrink: 0 }}>
+          <div style={{ width: 44, height: 24, borderLeft: "9px solid #0b0d0a", borderBottom: "9px solid #0b0d0a", transform: "rotate(-45deg)", marginTop: -10 }} />
+        </div>
+        <div>
+          <div style={{ fontFamily: IS, fontSize: 50, color: "#fff", letterSpacing: -1 }}>New booking confirmed</div>
+          <div style={{ fontFamily: IL, fontSize: 36, color: "rgba(255,255,255,0.7)", marginTop: 8 }}>Saturday · 9:30 AM · Haircut</div>
+          <div style={{ fontFamily: IS, fontSize: 24, letterSpacing: 4, color: LI, marginTop: 14 }}>RECEIVED 11:06 PM</div>
+        </div>
+      </div>
+      <div style={{ position: "absolute", left: 0, right: 0, top: 1700, textAlign: "center", fontFamily: IS, fontSize: 19, letterSpacing: 5, color: "rgba(255,255,255,0.34)" }}>BOTH SHOPS ARE MADE UP</div>
+      <Sfx at={0.12} src="ding.wav" volume={0.6} />
+      <Sfx at={0.75} src="thump.wav" volume={0.4} />
+    </AbsoluteFill>
+  );
+};
+
+export const LynqElevenPmRF: React.FC = () => {
+  const { fps } = useT();
+  return (
+    <AbsoluteFill style={{ background: BG }}>
+      <Fonts />
+      <Sequence from={Math.round(COLD * fps)}><LynqElevenPm /></Sequence>
+      <ColdOpen />
     </AbsoluteFill>
   );
 };

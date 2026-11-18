@@ -20,7 +20,7 @@ import { PostAiQuestion, PostFirstProgram, PostFree, PostLessons, PostNoInstall,
 import { PostAchievements, PostArcade, PostRecipe, PostSearch, PostThread, PostWanted } from "./CodeItPosts2";
 import { CodeItBuilt } from "./CodeItBuilt";
 import { FRAMES, HlCover, Story } from "./LynqStories";
-import { LynqElevenPm } from "./LynqElevenPm";
+import { LynqElevenPm, LynqElevenPmRF } from "./LynqElevenPm";
 import { LynqNotes } from "./LynqNotes";
 import { CodeItDinner, CodeItLessons, CodeItQuiz, CodeItTablet, CodeItToys } from "./CodeItReels";
 import { CLIENT_COVERS, ClientCover, HL2, HlCover2 } from "./LynqHighlights";
@@ -72,6 +72,7 @@ export const Root: React.FC = () => (
     {["start", "websites", "systems", "ai", "booking", "reels"].map((h) => { const P: React.FC = () => <HlCover hl={h} />; return <Composition key={`hc${h}`} id={`lynq-hl-${h}`} component={P} durationInFrames={1} fps={30} width={1080} height={1920} />; })}
     {C("lynq-money", LynqMoney, 18.5)}
     {C("lynq-11pm", LynqElevenPm, 23)}
+    {C("lynq-11pm-rf", LynqElevenPmRF, 25.5)}
     {C("lynq-notes", LynqNotes, 18)}
     {C("codeit-quiz", CodeItQuiz, 15)}
     {C("codeit-lessons", CodeItLessons, 16.5)}
