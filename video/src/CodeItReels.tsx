@@ -341,3 +341,119 @@ export const CodeItDinner: React.FC = () => {
     </AbsoluteFill>
   );
 };
+
+/* ---------------------------------------------------------------- tablet */
+/*
+ * "I tried to take his tablet away." Told like the LYNQ money reel: one object on stage (the
+ * tablet), things that move, and a small character (the timer chip). A parent goes to take the
+ * tablet, sees a game that keeps crashing, and watches the kid fix it by changing one number.
+ * Made-up story, labelled. For parents (voice: VALF). The narrator is a made-up parent.
+ */
+export const TABLET_DUR = 17.5;
+const TW = 780, TH = 1040, TX = (1080 - TW) / 2, TY = 590;
+const SKY = "#1d2147", GROUND = "#62d26f";
+const TABLET_END = 13.8;
+
+const Cat: React.FC<{ x: number; y: number; squash: number; happy: boolean }> = ({ x, y, squash, happy }) => (
+  <div style={{ position: "absolute", left: x - 70, top: y - 110 + squash * 44, width: 140, height: 110, transform: `scale(${1 + squash * 0.35}, ${1 - squash * 0.4})`, transformOrigin: "50% 100%" }}>
+    <div style={{ position: "absolute", left: 8, top: -22, width: 0, height: 0, borderLeft: "22px solid transparent", borderRight: "22px solid transparent", borderBottom: `40px solid ${INK}` }} />
+    <div style={{ position: "absolute", right: 8, top: -22, width: 0, height: 0, borderLeft: "22px solid transparent", borderRight: "22px solid transparent", borderBottom: `40px solid ${INK}` }} />
+    <div style={{ position: "absolute", left: 15, top: -12, width: 0, height: 0, borderLeft: "15px solid transparent", borderRight: "15px solid transparent", borderBottom: "28px solid #ff9a3d" }} />
+    <div style={{ position: "absolute", right: 15, top: -12, width: 0, height: 0, borderLeft: "15px solid transparent", borderRight: "15px solid transparent", borderBottom: "28px solid #ff9a3d" }} />
+    <div style={{ position: "absolute", inset: 0, borderRadius: 54, background: "#ff9a3d", border: `7px solid ${INK}` }} />
+    {happy ? (
+      <>
+        <div style={{ position: "absolute", left: 34, top: 40, width: 22, height: 12, borderTop: `6px solid ${INK}`, borderRadius: "50% 50% 0 0" }} />
+        <div style={{ position: "absolute", right: 34, top: 40, width: 22, height: 12, borderTop: `6px solid ${INK}`, borderRadius: "50% 50% 0 0" }} />
+      </>
+    ) : (
+      <>
+        <div style={{ position: "absolute", left: 36, top: 34, fontFamily: B, fontWeight: 800, fontSize: 34, lineHeight: 1, color: INK }}>{squash > 0.3 ? "×" : "•"}</div>
+        <div style={{ position: "absolute", right: 36, top: 34, fontFamily: B, fontWeight: 800, fontSize: 34, lineHeight: 1, color: INK }}>{squash > 0.3 ? "×" : "•"}</div>
+      </>
+    )}
+  </div>
+);
+
+export const CodeItTablet: React.FC = () => {
+  const { s } = useT();
+  // 1. The grab: the tablet is pulled to the right and tugged back.
+  const pull = ramp(s, 0.5, 1.1) * (1 - ramp(s, 2.2, 2.7));
+  const tug = s > 1.1 && s < 2.2 ? Math.sin((s - 1.1) * 14) * 16 * (1 - (s - 1.1) / 1.1) : 0;
+  // 2. Code panel slides up, the number is changed, Run is pressed.
+  const code = ramp(s, 5.3, 5.9) * (1 - ramp(s, 9.4, 9.9));
+  const fixed = s >= 8.0;                       // gravity is now 4
+  const typed = s >= 7.3 ? "4" : "9";
+  const selecting = s >= 6.6 && s < 7.3;
+  const press = s >= 7.8 && s < 8.0;
+  // The game. Before the fix the cat drops like a stone and splats; after it, it floats down.
+  const gameH = 980 - code * 400;               // game area height in tablet pixels (screen is 720 by 980)
+  const groundY = gameH - 46;
+  const cycle = fixed ? 2.4 : 0.95;
+  const t = (((s - (fixed ? 8.0 : 0)) % cycle) + cycle) % cycle;
+  const fall = fixed ? Math.min(1, t / 1.5) : Math.min(1, (t / 0.34) ** 2);
+  const catY = 70 + (groundY - 70) * (fixed ? 1 - (1 - fall) ** 2 : fall);
+  const landed = fall >= 1;
+  const squash = !fixed && landed ? Math.max(0, 1 - (t - 0.34) / 0.35) : 0;
+  const shake = !fixed && landed && t < 0.5 ? Math.sin(t * 90) * 7 * (1 - (t - 0.34) / 0.16 > 0 ? 1 : 0.4) : 0;
+  const score = fixed ? Math.floor((s - 8.0) / cycle) + (landed ? 1 : 0) : 0;
+  const crashes = fixed ? 0 : Math.floor(s / cycle) + (landed ? 1 : 0);
+  // 3. The timer chip: a plea, then a countdown, then five more minutes.
+  const chip = useSpringAt(1.2, { damping: 9, stiffness: 180 });
+  const more = useSpringAt(11.9, { damping: 9, stiffness: 190 });
+  const left = Math.max(0, Math.ceil(ramp(s, 2.7, 11.6, 300, 0, (x) => x)));
+  const chipText = s < 2.7 ? "5 more minutes?" : s < 11.9 ? `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}` : "+5:00";
+  const out = ramp(s, TABLET_END - 0.35, TABLET_END);
+  return (
+    <AbsoluteFill style={{ background: CREAM }}>
+      <Fonts />
+      <div style={{ position: "absolute", left: -220, top: -220, width: 760, height: 760, borderRadius: 380, background: "rgba(254,211,64,0.40)" }} />
+      <div style={{ position: "absolute", right: -280, bottom: -260, width: 860, height: 860, borderRadius: 430, background: "rgba(240,86,45,0.15)" }} />
+      <Logo />
+      <Head a="I tried to take" b="his tablet away." at={0.1} out={2.4} size={104} />
+      <Head a="Then I saw" b="the screen." at={2.7} out={5.0} size={104} />
+      <Head a="He wasn't playing." b="He was fixing it." at={5.3} out={9.3} size={92} />
+      <Head a="One number." b="No more crashing." at={9.6} out={11.6} />
+      <Head a="So I gave him" b="five more minutes." at={11.9} out={13.5} />
+
+      <div style={{ position: "absolute", left: TX + pull * 250 + tug + shake, top: TY + pull * 40, width: TW, height: TH, opacity: 1 - out, transform: `rotate(${pull * 9 + tug * 0.12}deg) scale(${1 - out * 0.1})`, transformOrigin: "100% 100%" }}>
+        {/* tablet body */}
+        <div style={{ position: "absolute", inset: 0, borderRadius: 70, background: INK, boxShadow: "0 22px 0 rgba(22,22,29,0.25)" }} />
+        <div style={{ position: "absolute", left: 30, top: 30, width: TW - 60, height: TH - 60, borderRadius: 46, overflow: "hidden", background: SKY }}>
+          {/* the game */}
+          <div style={{ position: "absolute", left: 0, top: 0, width: 720, height: gameH, overflow: "hidden" }}>
+            {[[70, 60], [250, 130], [470, 70], [620, 170], [150, 230], [540, 280]].map(([x, y], i) => <div key={i} style={{ position: "absolute", left: x, top: y, fontSize: 34, color: YELLOW, opacity: 0.5 + 0.5 * Math.abs(Math.sin(s * 2 + i)) }}>✦</div>)}
+            <div style={{ position: "absolute", right: 24, top: 22, padding: "6px 22px", borderRadius: 26, background: "rgba(0,0,0,0.35)", fontFamily: M, fontWeight: 600, fontSize: 30, color: "#fff" }}>{fixed ? `SCORE ${score}` : `CRASHES ${crashes}`}</div>
+            <div style={{ position: "absolute", left: 0, right: 0, top: groundY, bottom: 0, background: GROUND, borderTop: `7px solid ${INK}` }} />
+            <Cat x={360} y={catY} squash={squash} happy={fixed} />
+            {!fixed && squash > 0.2 ? <div style={{ position: "absolute", left: 440, top: groundY - 170, fontFamily: B, fontWeight: 800, fontSize: 70, color: CORAL, transform: "rotate(12deg)" }}>OUCH</div> : null}
+            {fixed && landed ? <div style={{ position: "absolute", left: 450, top: groundY - 190 - (t - 1.5) * 60, fontFamily: B, fontWeight: 800, fontSize: 64, color: YELLOW, opacity: Math.max(0, 1 - (t - 1.5) / 0.8) }}>+1 ✦</div> : null}
+          </div>
+          {/* the code */}
+          <div style={{ position: "absolute", left: 0, right: 0, top: gameH, bottom: 0, background: INK, borderTop: `6px solid ${YELLOW}`, padding: "26px 34px" }}>
+            <div style={{ fontFamily: M, fontSize: 26, color: "rgba(255,255,255,0.45)" }}>game.py</div>
+            <div style={{ marginTop: 14, fontFamily: M, fontWeight: 600, fontSize: 58, color: "#8fe39a" }}>gravity = <span style={{ padding: "0 12px", borderRadius: 12, background: selecting ? YELLOW : fixed ? "rgba(254,211,64,0.25)" : "transparent", color: selecting ? INK : YELLOW }}>{typed}</span></div>
+            <div style={{ marginTop: 6, fontFamily: M, fontWeight: 600, fontSize: 58, color: "rgba(143,227,154,0.45)" }}>jump = 12</div>
+            <div style={{ marginTop: 22, display: "inline-block", padding: "12px 44px", borderRadius: 34, background: YELLOW, border: `5px solid #000`, fontFamily: B, fontWeight: 800, fontSize: 40, color: INK, transform: `scale(${press ? 0.9 : 1})` }}>▶ Run</div>
+          </div>
+        </div>
+        {/* the timer chip, stuck to the corner of the tablet */}
+        <div style={{ position: "absolute", left: -46, top: -70, padding: "16px 34px", borderRadius: 50, background: s >= 11.9 ? CORAL : YELLOW, border: `7px solid ${INK}`, boxShadow: `0 10px 0 ${INK}`, fontFamily: B, fontWeight: 800, fontSize: 56, color: s >= 11.9 ? "#fff" : INK, transform: `rotate(-8deg) scale(${(s >= 11.9 ? 0.7 + more * 0.5 : chip) * (s > 2.7 && s < 11.9 && left <= 20 ? 1 + 0.06 * Math.sin(s * 16) : 1)})`, transformOrigin: "20% 80%", opacity: s < 1.2 ? 0 : 1 }}>{chipText}</div>
+      </div>
+
+      <div style={{ position: "absolute", left: 0, right: 0, top: 1720, textAlign: "center", fontFamily: N, fontWeight: 900, fontSize: 24, letterSpacing: 5, color: "rgba(22,22,29,0.4)", opacity: 1 - out }}>MADE-UP STORY</div>
+      <End at={TABLET_END} a="Screen time" b="you'll brag about." />
+
+      <Sfx at={0.5} src="whoosh.wav" volume={0.5} />
+      <Sfx at={1.2} src="pop.wav" volume={0.6} />
+      {[0.34, 1.29, 2.24, 3.19, 4.14, 5.09, 6.04, 6.99].map((x) => <Sfx key={x} at={x} src="thump.wav" volume={0.35} />)}
+      <Sfx at={5.3} src="whoosh.wav" volume={0.35} />
+      <Sfx at={6.6} src="click.wav" volume={0.5} />
+      <Sfx at={7.3} src="click.wav" volume={0.6} />
+      <Sfx at={7.8} src="click.wav" volume={0.7} />
+      {[9.5, 11.9].map((x) => <Sfx key={`d${x}`} at={x} src="ding.wav" volume={0.5} />)}
+      <Sfx at={11.9} src="pop.wav" volume={0.7} />
+      <Sfx at={TABLET_END} src="whoosh.wav" volume={0.4} />
+    </AbsoluteFill>
+  );
+};
