@@ -21,6 +21,7 @@ import { PostAchievements, PostArcade, PostRecipe, PostSearch, PostThread, PostW
 import { CodeItBuilt } from "./CodeItBuilt";
 import { FRAMES, HlCover, Story } from "./LynqStories";
 import { LynqElevenPm, LynqElevenPmRF } from "./LynqElevenPm";
+import { LynqOffer } from "./LynqOffer";
 import { LynqNotes } from "./LynqNotes";
 import { CodeItDinner, CodeItLessons, CodeItQuiz, CodeItTablet, CodeItToys } from "./CodeItReels";
 import { CLIENT_COVERS, ClientCover, HL2, HlCover2 } from "./LynqHighlights";
@@ -73,6 +74,7 @@ export const Root: React.FC = () => (
     {C("lynq-money", LynqMoney, 18.5)}
     {C("lynq-11pm", LynqElevenPm, 23)}
     {C("lynq-11pm-rf", LynqElevenPmRF, 25.5)}
+    {C("lynq-offer", LynqOffer, 13)}
     {C("lynq-notes", LynqNotes, 18)}
     {C("codeit-quiz", CodeItQuiz, 15)}
     {C("codeit-lessons", CodeItLessons, 16.5)}
