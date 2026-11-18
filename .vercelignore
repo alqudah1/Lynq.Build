@@ -1,5 +1,34 @@
-my-video
-og-image.html
-check-dns.sh
-.git
-video
+# Publish only the public website. Everything else in this repo (the platform app, client
+# folders, internal docs, video sources, agent and editor config) must never be uploaded.
+# This mirrors the allowlist in _DEPLOY-LYNQ-SITE.command so a Git deploy and the Mac script
+# publish the same files. To publish a new top-level file, add it to both lists.
+/*
+!/index.html
+!/portfolio.html
+!/book.html
+!/privacy.html
+!/terms.html
+!/fix.html
+!/games.html
+!/digital-transformation.html
+!/office.html
+!/agent.html
+!/website-review.html
+!/admin.html
+!/favicon.svg
+!/logo.svg
+!/og-image.png
+!/site.webmanifest
+!/robots.txt
+!/sitemap.xml
+!/llms.txt
+!/vercel.json
+!/package.json
+!/package-lock.json
+!/pnpm-lock.yaml
+!/api
+!/assets
+!/projects
+!/work
+.env*
+.DS_Store
