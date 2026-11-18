@@ -457,3 +457,97 @@ export const CodeItTablet: React.FC = () => {
     </AbsoluteFill>
   );
 };
+
+/*
+ * CodeIt reel: "One number did this." Result first: the cat is already flying past the moon.
+ * Then the rewind: it barely hopped, jump = 5 becomes jump = 50, Run, and it goes again.
+ */
+export const MOON_DUR = 16.5;
+const MOON_END = 12.9;
+export const CodeItMoon: React.FC = () => {
+  const { s } = useT();
+  const LAUNCH2 = 8.3;
+  const cold = s < 2.3;
+  const flying = cold || s >= LAUNCH2;
+  const tt = cold ? s + 0.55 : s - LAUNCH2;            // time since launch
+  const rewind = ramp(s, 2.3, 2.75);
+  const code = ramp(s, 5.0, 5.6) * (1 - ramp(s, 9.0, 9.5));
+  const selecting = s >= 6.2 && s < 7.0;
+  const typed = s >= 7.4 ? "50" : s >= 7.0 ? "5" + (s >= 7.2 ? "0" : "") : "5";
+  const big = s >= 7.2;
+  const press = s >= 7.9 && s < 8.1;
+  const gameH = 980 - code * 400;
+  const groundY = gameH - 46;
+  // little hop (before) or the launch (after)
+  const hopT = ((s - 2.75) % 0.9 + 0.9) % 0.9;
+  const hop = Math.sin(Math.min(1, hopT / 0.5) * Math.PI) * 70;
+  const rise = Math.min(1, tt / 0.5);
+  const scroll = flying ? Math.max(0, tt - 0.45) * 760 : 0; // the world drops away under the cat
+  const catY = flying ? groundY - (groundY - 400) * (1 - (1 - rise) ** 2) + Math.sin(s * 9) * 8 : groundY - hop;
+  const moonY = -780 + scroll;
+  const passed = flying && moonY > 300;
+  const pop = flying ? ramp(moonY, 300, 420) : 0;
+  const out = ramp(s, MOON_END - 0.35, MOON_END);
+  return (
+    <AbsoluteFill style={{ background: CREAM }}>
+      <Fonts />
+      <div style={{ position: "absolute", left: -220, top: -220, width: 760, height: 760, borderRadius: 380, background: "rgba(254,211,64,0.40)" }} />
+      <div style={{ position: "absolute", right: -280, bottom: -260, width: 860, height: 860, borderRadius: 430, background: "rgba(240,86,45,0.15)" }} />
+      <Logo />
+      <Head a="One number" b="did this." at={0.05} out={2.1} size={112} />
+      <Head a="A minute ago" b="it barely hopped." at={2.8} out={4.8} size={100} />
+      <Head a="jump = 5." b="Make it 50." at={5.3} out={8.0} size={108} />
+      <Head a="Over the moon." b="That's real Python." at={8.5} out={10.9} size={96} />
+      <Head a="What would" b="your kid change?" at={11.1} out={12.5} size={104} />
+
+      <div style={{ position: "absolute", left: TX, top: TY, width: TW, height: TH, opacity: 1 - out, transform: `rotate(${Math.sin(s * 1.2) * 0.8 - rewind * (1 - rewind) * 24}deg) scale(${1 - out * 0.1 - rewind * (1 - rewind) * 0.5})` }}>
+        <div style={{ position: "absolute", inset: 0, borderRadius: 70, background: INK, boxShadow: "0 22px 0 rgba(22,22,29,0.25)" }} />
+        <div style={{ position: "absolute", left: 30, top: 30, width: TW - 60, height: TH - 60, borderRadius: 46, overflow: "hidden", background: SKY }}>
+          <div style={{ position: "absolute", left: 0, top: 0, width: 720, height: gameH, overflow: "hidden" }}>
+            {Array.from({ length: 22 }).map((_, i) => {
+              const x = (i * 197) % 700, y0 = (i * 311) % 1400 - 400;
+              const y = flying ? ((y0 + scroll) % 1400 + 1400) % 1400 - 200 : y0;
+              return <div key={i} style={{ position: "absolute", left: x, top: y, fontSize: 22 + (i % 3) * 10, color: YELLOW, opacity: 0.45 + 0.5 * Math.abs(Math.sin(s * 2 + i)) }}>✦</div>;
+            })}
+            {/* speed lines while flying */}
+            {flying && tt > 0.3 ? [120, 260, 470, 610].map((x, i) => <div key={x} style={{ position: "absolute", left: x, top: ((s * 1900 + i * 260) % 1100) - 100, width: 7, height: 130, borderRadius: 4, background: "rgba(255,255,255,0.28)" }} />) : null}
+            {/* the moon */}
+            <div style={{ position: "absolute", left: 420, top: flying ? moonY : 60, width: flying ? 250 : 120, height: flying ? 250 : 120, borderRadius: 200, background: "#fdf3c4", border: `7px solid ${INK}`, boxShadow: "0 0 80px rgba(253,243,196,0.5)" }}>
+              <div style={{ position: "absolute", left: "22%", top: "25%", width: "22%", height: "22%", borderRadius: 100, background: "rgba(22,22,29,0.14)" }} />
+              <div style={{ position: "absolute", left: "58%", top: "52%", width: "16%", height: "16%", borderRadius: 100, background: "rgba(22,22,29,0.14)" }} />
+            </div>
+            <div style={{ position: "absolute", right: 24, top: 22, padding: "6px 22px", borderRadius: 26, background: "rgba(0,0,0,0.35)", fontFamily: M, fontWeight: 600, fontSize: 30, color: "#fff" }}>{flying ? `HEIGHT ${Math.floor(scroll / 4 + rise * 60)}` : "HEIGHT 3"}</div>
+            <div style={{ position: "absolute", left: 0, right: 0, top: groundY + scroll, bottom: -2000, background: GROUND, borderTop: `7px solid ${INK}` }} />
+            {/* flame under the cat */}
+            {flying ? <div style={{ position: "absolute", left: 360 - 28, top: catY + 6, width: 56, height: 90 + Math.sin(s * 40) * 22, borderRadius: "0 0 40px 40px", background: `linear-gradient(${YELLOW}, ${CORAL})`, opacity: 0.95 }} /> : null}
+            <Cat x={360} y={catY} squash={0} happy={flying} />
+            {passed ? <div style={{ position: "absolute", left: 40, top: 150, fontFamily: B, fontWeight: 800, fontSize: 84, lineHeight: 0.95, color: YELLOW, transform: `rotate(-8deg) scale(${0.5 + pop * 0.5})`, opacity: pop, textShadow: `0 6px 0 ${INK}` }}>OVER<br />THE MOON</div> : null}
+            {!flying ? <div style={{ position: "absolute", left: 470, top: groundY - 210, fontFamily: B, fontWeight: 800, fontSize: 54, color: "rgba(255,255,255,0.7)", transform: "rotate(8deg)" }}>meh.</div> : null}
+          </div>
+          <div style={{ position: "absolute", left: 0, right: 0, top: gameH, bottom: 0, background: INK, borderTop: `6px solid ${YELLOW}`, padding: "26px 34px" }}>
+            <div style={{ fontFamily: M, fontSize: 26, color: "rgba(255,255,255,0.45)" }}>game.py</div>
+            <div style={{ marginTop: 14, fontFamily: M, fontWeight: 600, fontSize: 58, color: "rgba(143,227,154,0.45)" }}>gravity = 4</div>
+            <div style={{ marginTop: 6, fontFamily: M, fontWeight: 600, fontSize: 58, color: "#8fe39a" }}>jump = <span style={{ padding: "0 12px", borderRadius: 12, background: selecting ? YELLOW : big ? "rgba(254,211,64,0.25)" : "transparent", color: selecting ? INK : YELLOW }}>{typed}</span></div>
+            <div style={{ marginTop: 22, display: "inline-block", padding: "12px 44px", borderRadius: 34, background: YELLOW, border: `5px solid #000`, fontFamily: B, fontWeight: 800, fontSize: 40, color: INK, transform: `scale(${press ? 0.9 : 1})` }}>▶ Run</div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ position: "absolute", left: 0, right: 0, top: 1720, textAlign: "center", fontFamily: N, fontWeight: 900, fontSize: 24, letterSpacing: 5, color: "rgba(22,22,29,0.4)", opacity: 1 - out }}>EXAMPLE PROJECT</div>
+      <End at={MOON_END} a="Screen time" b="you'll brag about." />
+
+      <Sfx at={0.0} src="whoosh.wav" volume={0.6} />
+      <Sfx at={1.1} src="ding.wav" volume={0.6} />
+      <Sfx at={2.3} src="whoosh.wav" volume={0.5} />
+      {[3.0, 3.9, 4.8].map((x) => <Sfx key={x} at={x} src="pop.wav" volume={0.3} />)}
+      <Sfx at={5.0} src="whoosh.wav" volume={0.35} />
+      <Sfx at={6.2} src="click.wav" volume={0.5} />
+      <Sfx at={7.0} src="click.wav" volume={0.6} />
+      <Sfx at={7.2} src="click.wav" volume={0.6} />
+      <Sfx at={7.9} src="click.wav" volume={0.7} />
+      <Sfx at={8.3} src="whoosh.wav" volume={0.7} />
+      <Sfx at={9.9} src="ding.wav" volume={0.6} />
+      <Sfx at={MOON_END} src="whoosh.wav" volume={0.4} />
+    </AbsoluteFill>
+  );
+};

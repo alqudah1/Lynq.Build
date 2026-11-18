@@ -23,7 +23,7 @@ import { FRAMES, HlCover, Story } from "./LynqStories";
 import { LynqElevenPm, LynqElevenPmRF } from "./LynqElevenPm";
 import { LynqOffer } from "./LynqOffer";
 import { LynqNotes } from "./LynqNotes";
-import { CodeItDinner, CodeItLessons, CodeItQuiz, CodeItTablet, CodeItToys } from "./CodeItReels";
+import { CodeItDinner, CodeItLessons, CodeItQuiz, CodeItTablet, CodeItToys, CodeItMoon } from "./CodeItReels";
 import { CLIENT_COVERS, ClientCover, HL2, HlCover2 } from "./LynqHighlights";
 import { LynqMoneyAr } from "./PhoneStoryAr";
 import { LynqMoney, LynqMoneyCover, LynqGridCover, LynqMoneyFeedCover, LynqMoneyPhotoCover } from "./PhoneStory";
@@ -81,6 +81,7 @@ export const Root: React.FC = () => (
     {C("codeit-toys", CodeItToys, 17)}
     {C("codeit-dinner", CodeItDinner, 17.5)}
     {C("codeit-tablet", CodeItTablet, 17.5)}
+    {C("codeit-moon", CodeItMoon, 16.5)}
     {C("codeit-built", CodeItBuilt, 17.5)}
     {C("lynq-money-ar", LynqMoneyAr, 18.5)}
     <Composition id="lynq-money-feed-cover" component={LynqMoneyFeedCover} durationInFrames={300} fps={30} width={1080} height={1920} />
