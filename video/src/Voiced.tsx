@@ -2,7 +2,8 @@ import React from "react";
 import { AbsoluteFill, Audio, Freeze, Sequence, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { Sfx, SfxOff } from "./kit";
 import { LynqElevenPmRF } from "./LynqElevenPm";
-import { CodeItTablet } from "./CodeItReels";
+import { CodeItTablet, CodeItMoon } from "./CodeItReels";
+import { LynqSketch } from "./LynqSketch";
 
 /*
  * Voiced cuts. The picture is retimed to the voice: `map` pairs output seconds with the
@@ -39,5 +40,21 @@ export const CodeItTabletVO: React.FC = () => (
     map={[[0, 0], [2.25, 2.65], [4.3, 5.25], [7.0, 9.55], [9.4, 11.85], [11.75, 13.75], [16.6, 17.5]]}
     sfx={[[0.45, "whoosh.wav", 0.3], [6.2, "click.wav", 0.4], [9.4, "pop.wav", 0.4]]}>
     <CodeItTablet />
+  </Retimed>
+);
+
+export const LynqSketchVO: React.FC = () => (
+  <Retimed vo="lynq-sketch.mp3" voAt={0.3}
+    map={[[0, 0], [2.3, 3.5], [4.4, 7.3], [6.6, 10.9], [6.75, 11.05], [12.3, 14]]}
+    sfx={[[2.35, "whoosh.wav", 0.35], [3.2, "ding.wav", 0.3], [4.6, "pop.wav", 0.3], [5.2, "pop.wav", 0.3], [5.8, "pop.wav", 0.3]]}>
+    <LynqSketch />
+  </Retimed>
+);
+
+export const CodeItMoonVO: React.FC = () => (
+  <Retimed vo="codeit-moon.mp3" voAt={0.1}
+    map={[[0, 0], [1.9, 2.3], [2.4, 2.8], [4.4, 5.0], [4.7, 5.3], [6.3, 7.0], [7.6, 8.3], [7.9, 8.5], [11.05, 11.05], [12.7, 12.85], [17.5, 16.5]]}
+    sfx={[[0.0, "whoosh.wav", 0.35], [1.9, "whoosh.wav", 0.3], [6.3, "click.wav", 0.4], [7.6, "whoosh.wav", 0.45]]}>
+    <CodeItMoon />
   </Retimed>
 );
