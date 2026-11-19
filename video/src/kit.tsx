@@ -44,8 +44,12 @@ export const ramp = (s: number, a: number, b: number, from = 0, to = 1, ease = E
   interpolate(s, [a, b], [from, to], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: ease });
 
 /** One sound effect at second `at`. */
+/** Set to true around a time-remapped (frozen) reel so its built-in sound effects stay silent. */
+export const SfxOff = React.createContext(false);
 export const Sfx: React.FC<{ at: number; src: string; volume?: number }> = ({ at, src, volume = 1 }) => {
   const { fps } = useVideoConfig();
+  const off = React.useContext(SfxOff);
+  if (off) return null;
   return (
     <Sequence from={Math.round(at * fps)} durationInFrames={Math.round(fps * 1.2)} layout="none">
       <Audio src={staticFile(`sfx/${src}`)} volume={volume} />
