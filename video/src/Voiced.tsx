@@ -5,6 +5,7 @@ import { LynqElevenPmRF } from "./LynqElevenPm";
 import { CodeItTablet, CodeItMoon, CodeItDay1 } from "./CodeItReels";
 import { LynqNotes } from "./LynqNotes";
 import { LynqOffer } from "./LynqOffer";
+import { LynqOffer2 } from "./LynqOffer2";
 import { LynqSketch } from "./LynqSketch";
 
 /*
@@ -82,5 +83,13 @@ export const CodeItDay1VO: React.FC = () => (
     map={[[0, 0], [2.3, 2.3], [3.1, 2.9], [3.3, 3.1], [5.3, 5.65], [6.5, 6.55], [7.7, 8.6], [9.05, 10.85], [10.2, 11.6], [12.2, 13.25], [16.8, 16.5]]}
     sfx={[[3.3, "crash.wav", 0.35], [6.55, "pop.wav", 0.4], [9.1, "ding.wav", 0.45]]}>
     <CodeItDay1 />
+  </Retimed>
+);
+
+export const LynqOffer2VO: React.FC = () => (
+  <Retimed vo="lynq-offer2.mp3" voAt={0.2}
+    map={[[0, 0], [3.1, 3.85], [3.8, 4.25], [6.4, 5.95], [7.2, 8.55], [8.7, 8.9], [9.6, 9.8], [11.5, 9.98], [12.6, 11.3], [13.9, 12.65], [14.1, 13.2], [18.2, 17]]}
+    sfx={[[0.4, "thump.wav", 0.35], [0.9, "thump.wav", 0.35], [1.4, "thump.wav", 0.35], [3.9, "ding.wav", 0.3], [4.9, "ding.wav", 0.3], [5.9, "ding.wav", 0.3], [11.55, "thump.wav", 0.5], [14.75, "click.wav", 0.4]]}>
+    <LynqOffer2 />
   </Retimed>
 );
