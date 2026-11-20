@@ -5,6 +5,7 @@ import { LynqElevenPmRF } from "./LynqElevenPm";
 import { CodeItTablet, CodeItMoon, CodeItDay1 } from "./CodeItReels";
 import { LynqNotes } from "./LynqNotes";
 import { LynqOffer } from "./LynqOffer";
+import { LynqNeon } from "./LynqNeon";
 import { LynqOffer2 } from "./LynqOffer2";
 import { LynqSketch } from "./LynqSketch";
 
@@ -93,3 +94,30 @@ export const LynqOffer2VO: React.FC = () => (
     <LynqOffer2 />
   </Retimed>
 );
+
+// "The call": three voices cut from three takes, [file, sliceStart, sliceEnd, outputAt]
+const CALL: [string, number, number, number][] = [
+  ["call-narr", 0, 2.7, 0.3], ["call-asst", 0, 2.05, 3.3], ["call-cust", 0, 2.55, 5.45],
+  ["call-asst", 2.25, 4.2, 8.05], ["call-cust", 2.76, 3.63, 10.0], ["call-asst", 4.39, 6.11, 11.05],
+  ["call-narr", 2.98, 5.95, 13.2], ["call-narr", 6.23, 9.8, 16.4], ["call-narr", 10.09, 14.03, 20.2],
+];
+const NEON_MAP: [number, number][] = [[0, 0], [3.3, 3.3], [5.45, 5.3], [8.05, 7.5], [10.0, 9.1], [11.05, 10.1], [12.9, 12.0], [13.2, 12.3], [15.4, 13.0], [16.3, 13.9], [17.9, 14.8], [20.0, 17.0], [21.9, 18.0], [25, 21]];
+export const LynqNeonVO: React.FC = () => {
+  const frame = useCurrentFrame(); const { fps } = useVideoConfig();
+  const bt = interpolate(frame / fps, NEON_MAP.map((m) => m[0]), NEON_MAP.map((m) => m[1]), { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  return (
+    <AbsoluteFill>
+      <SfxOff.Provider value={true}><Freeze frame={Math.round(bt * fps)}><LynqNeon /></Freeze></SfxOff.Provider>
+      {CALL.map(([f, a, b, at]) => (
+        <Sequence key={`${f}${a}`} from={Math.round(at * fps)} durationInFrames={Math.round((b - a) * fps)} layout="none">
+          <Audio src={staticFile(`vo/${f}.mp3`)} startFrom={Math.round(a * fps)} endAt={Math.round(b * fps)} />
+        </Sequence>
+      ))}
+      <Sfx at={0.9} src="ring.wav" volume={0.22} />
+      <Sfx at={1.9} src="ring.wav" volume={0.22} />
+      <Sfx at={12.95} src="ding.wav" volume={0.3} />
+      <Sfx at={16.3} src="thump.wav" volume={0.45} />
+      <Sfx at={21.95} src="click.wav" volume={0.4} />
+    </AbsoluteFill>
+  );
+};

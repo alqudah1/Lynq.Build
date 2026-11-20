@@ -643,3 +643,89 @@ export const CodeItDay1: React.FC = () => {
     </AbsoluteFill>
   );
 };
+
+/* ---------- The fridge: drawings come down, a first game goes up ---------- */
+export const FRIDGE_DUR = 16.5;
+const FRIDGE_END = 13.2;
+export const CodeItFridge: React.FC = () => {
+  const { s } = useT();
+  const fall = ramp(s, 2.5, 3.2, 0, 1, (x) => x * x);
+  const slap = useSpringAt(3.15, { damping: 11, stiffness: 240 });
+  const zoom = ramp(s, 5.7, 6.5) * (1 - ramp(s, 10.1, 10.9));
+  const live = ramp(s, 6.2, 6.7) * (1 - ramp(s, 10.0, 10.5));
+  const out = ramp(s, FRIDGE_END - 0.35, FRIDGE_END);
+  const jump = (t0: number) => { const u = (s - t0) / 0.8; return u > 0 && u < 1 ? Math.sin(u * Math.PI) * 250 : 0; };
+  const y = jump(7.3) + jump(8.6);
+  const got = s >= 8.95;
+  const pop = ramp(s, 8.95, 9.2);
+  const star = useSpringAt(10.9, { damping: 9, stiffness: 220 });
+  const hl = s < 3.9 ? -1 : s < 4.4 ? 0 : s < 4.9 ? 1 : s < 5.4 ? 2 : s < 5.8 ? 3 : -1;
+  const PW = 620, PH = 700;
+  const LINES = ['cat = Sprite("cat")', 'if key("space"):', "    cat.jump()", "    score += 1"];
+  return (
+    <AbsoluteFill style={{ background: CREAM }}>
+      <Fonts />
+      <div style={{ position: "absolute", left: -220, top: -220, width: 760, height: 760, borderRadius: 380, background: "rgba(254,211,64,0.40)" }} />
+      <Logo />
+      <Head a="The fridge used" b="to get drawings." at={0.05} out={2.6} size={100} />
+      <Head a="This week" b="it got this." at={3.2} out={5.5} size={112} />
+      <Head a="And it" b="actually runs." at={5.9} out={9.8} size={112} />
+      <Head a="Same screen." b="New thing to hang up." at={10.4} out={12.8} size={88} />
+
+      {/* fridge door */}
+      <div style={{ position: "absolute", left: 80, top: 600, width: 920, height: 1500, borderRadius: 70, background: "#fdfdfb", border: `8px solid ${INK}`, boxShadow: "0 0 0 14px rgba(22,22,29,0.06)", opacity: 1 - out }}>
+        <div style={{ position: "absolute", left: 46, top: 150, width: 30, height: 380, borderRadius: 15, background: "#e4ddd0", border: `6px solid ${INK}` }} />
+        <div style={{ position: "absolute", left: 0, right: 0, top: 1010, height: 8, background: INK, opacity: 0.85 }} />
+        {/* small magnets */}
+        <div style={{ position: "absolute", right: 70, top: 70, width: 54, height: 54, borderRadius: 27, background: YELLOW, border: `6px solid ${INK}` }} />
+        <div style={{ position: "absolute", right: 150, top: 880, padding: "4px 18px", borderRadius: 12, background: "#62d26f", border: `5px solid ${INK}`, fontFamily: B, fontWeight: 800, fontSize: 30, color: INK, transform: "rotate(8deg)" }}>MILK!</div>
+
+        {/* the drawing */}
+        <div style={{ position: "absolute", left: 230, top: 170, width: 480, height: 580, background: "#fffdf4", border: `5px solid ${INK}`, borderRadius: 8, boxShadow: "8px 10px 0 rgba(22,22,29,0.15)", transform: `translateY(${fall * 1700}px) rotate(${-4 + fall * 40}deg)` }}>
+          <div style={{ position: "absolute", left: 210, top: -30, width: 60, height: 60, borderRadius: 30, background: CORAL, border: `6px solid ${INK}` }} />
+          <div style={{ position: "absolute", right: 50, top: 60, width: 110, height: 110, borderRadius: 55, background: YELLOW, border: `7px solid #e0a800`, transform: "rotate(10deg)" }} />
+          <div style={{ position: "absolute", left: 90, top: 250, width: 0, height: 0, borderLeft: "130px solid transparent", borderRight: "130px solid transparent", borderBottom: `120px solid ${CORAL}` }} />
+          <div style={{ position: "absolute", left: 110, top: 370, width: 220, height: 150, background: "#7db7ff", border: "7px solid #3a78c9", borderRadius: "6px 9px 4px 8px" }} />
+          <div style={{ position: "absolute", left: 190, top: 430, width: 56, height: 90, background: "#8a5a2b", borderRadius: "10px 10px 0 0" }} />
+          <div style={{ position: "absolute", left: 20, right: 20, top: 518, height: 16, borderRadius: 8, background: "#62d26f", transform: "rotate(-1deg)" }} />
+        </div>
+
+        {/* the printout that turns into the game */}
+        {s >= 3.1 ? (
+          <div style={{ position: "absolute", left: (920 - PW) / 2 - 8, top: 130 + zoom * 60, width: PW, height: PH, transform: `rotate(${3 * (1 - zoom)}deg) scale(${(1.5 - slap * 0.5) * (1 + zoom * 0.32)})`, transformOrigin: "50% 40%" }}>
+            <div style={{ position: "absolute", inset: 0, background: "#fffdf4", border: `5px solid ${INK}`, borderRadius: 10, boxShadow: "10px 12px 0 rgba(22,22,29,0.18)", overflow: "hidden" }}>
+              <div style={{ padding: "64px 40px 0" }}>
+                <div style={{ fontFamily: B, fontWeight: 800, fontSize: 58, color: CORAL, letterSpacing: -1 }}>MY FIRST GAME</div>
+                <div style={{ height: 6, background: INK, borderRadius: 3, margin: "6px 0 30px", width: 300 }} />
+                {LINES.map((l, i) => (
+                  <div key={l} style={{ fontFamily: M, fontWeight: 600, fontSize: 36, lineHeight: 1.9, whiteSpace: "pre", color: INK, background: hl === i ? YELLOW : "transparent", borderRadius: 10, padding: "0 12px", margin: "0 -12px" }}>{l}</div>
+                ))}
+              </div>
+              {/* live game */}
+              <div style={{ position: "absolute", inset: 0, background: SKY, opacity: live }}>
+                {Array.from({ length: 9 }).map((_, i) => <div key={i} style={{ position: "absolute", left: (i * 173) % 560, top: 30 + (i * 97) % 380, fontSize: 20 + (i % 3) * 8, color: YELLOW, opacity: 0.4 + 0.5 * Math.abs(Math.sin(s * 2 + i)) }}>✦</div>)}
+                <div style={{ position: "absolute", right: 28, top: 24, fontFamily: B, fontWeight: 800, fontSize: 44, color: "#fff" }}>SCORE {got ? 1 : 0}</div>
+                <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 90, background: GROUND, borderTop: `7px solid ${INK}` }} />
+                {!got ? <div style={{ position: "absolute", left: 270, bottom: 370, fontSize: 90, color: YELLOW, textShadow: `0 5px 0 ${INK}`, transform: `rotate(${Math.sin(s * 3) * 12}deg)` }}>★</div> : <div style={{ position: "absolute", left: 270, bottom: 400 + pop * 70, fontFamily: B, fontWeight: 800, fontSize: 80, color: YELLOW, opacity: 1 - ramp(s, 9.5, 9.9), textShadow: `0 5px 0 ${INK}` }}>+1</div>}
+                <div style={{ position: "absolute", left: 0, bottom: 90 + y }}><Cat x={310} y={0} squash={0} happy={got} /></div>
+              </div>
+            </div>
+            <div style={{ position: "absolute", left: PW / 2 - 32, top: -32, width: 64, height: 64, borderRadius: 32, background: CORAL, border: `6px solid ${INK}` }} />
+            <div style={{ position: "absolute", right: -44, bottom: -36, fontSize: 150, lineHeight: 1, color: YELLOW, WebkitTextStroke: `7px ${INK}`, transform: `rotate(14deg) scale(${star})` }}>★</div>
+          </div>
+        ) : null}
+      </div>
+
+      <div style={{ position: "absolute", left: 0, right: 0, top: 1800, textAlign: "center", fontFamily: N, fontWeight: 900, fontSize: 24, letterSpacing: 5, color: "rgba(22,22,29,0.4)", opacity: 1 - out }}>EXAMPLE PROJECT</div>
+      <End at={FRIDGE_END} a="Screen time" b="you'll brag about." />
+
+      <Sfx at={2.5} src="whoosh.wav" volume={0.4} />
+      <Sfx at={3.15} src="thump.wav" volume={0.6} />
+      {[3.9, 4.4, 4.9, 5.4].map((t) => <Sfx key={t} at={t} src="click.wav" volume={0.35} />)}
+      <Sfx at={6.2} src="pop.wav" volume={0.5} />
+      <Sfx at={8.95} src="ding.wav" volume={0.6} />
+      <Sfx at={10.9} src="pop.wav" volume={0.5} />
+      <Sfx at={FRIDGE_END} src="whoosh.wav" volume={0.4} />
+    </AbsoluteFill>
+  );
+};
