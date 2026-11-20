@@ -23,9 +23,9 @@ import { FRAMES, HlCover, Story } from "./LynqStories";
 import { LynqElevenPm, LynqElevenPmRF } from "./LynqElevenPm";
 import { LynqOffer } from "./LynqOffer";
 import { LynqSketch } from "./LynqSketch";
-import { LynqElevenPmVO, CodeItTabletVO, LynqSketchVO, CodeItMoonVO } from "./Voiced";
+import { LynqElevenPmVO, CodeItTabletVO, LynqSketchVO, CodeItMoonVO, LynqNotesVO, LynqOfferVO, CodeItDay1VO } from "./Voiced";
 import { LynqNotes } from "./LynqNotes";
-import { CodeItDinner, CodeItLessons, CodeItQuiz, CodeItTablet, CodeItToys, CodeItMoon } from "./CodeItReels";
+import { CodeItDinner, CodeItLessons, CodeItQuiz, CodeItTablet, CodeItToys, CodeItMoon, CodeItDay1 } from "./CodeItReels";
 import { CLIENT_COVERS, ClientCover, HL2, HlCover2 } from "./LynqHighlights";
 import { LynqMoneyAr } from "./PhoneStoryAr";
 import { LynqMoney, LynqMoneyCover, LynqGridCover, LynqMoneyFeedCover, LynqMoneyPhotoCover } from "./PhoneStory";
@@ -82,6 +82,9 @@ export const Root: React.FC = () => (
     {C("codeit-tablet-vo", CodeItTabletVO, 16.6)}
     {C("lynq-sketch-vo", LynqSketchVO, 12.3)}
     {C("codeit-moon-vo", CodeItMoonVO, 17.5)}
+    {C("lynq-notes-vo", LynqNotesVO, 20)}
+    {C("lynq-offer-vo", LynqOfferVO, 21)}
+    {C("codeit-day1-vo", CodeItDay1VO, 16.8)}
     {C("lynq-notes", LynqNotes, 18)}
     {C("codeit-quiz", CodeItQuiz, 15)}
     {C("codeit-lessons", CodeItLessons, 16.5)}
@@ -89,6 +92,7 @@ export const Root: React.FC = () => (
     {C("codeit-dinner", CodeItDinner, 17.5)}
     {C("codeit-tablet", CodeItTablet, 17.5)}
     {C("codeit-moon", CodeItMoon, 16.5)}
+    {C("codeit-day1", CodeItDay1, 16.5)}
     {C("codeit-built", CodeItBuilt, 17.5)}
     {C("lynq-money-ar", LynqMoneyAr, 18.5)}
     <Composition id="lynq-money-feed-cover" component={LynqMoneyFeedCover} durationInFrames={300} fps={30} width={1080} height={1920} />

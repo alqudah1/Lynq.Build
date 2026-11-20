@@ -2,7 +2,9 @@ import React from "react";
 import { AbsoluteFill, Audio, Freeze, Sequence, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { Sfx, SfxOff } from "./kit";
 import { LynqElevenPmRF } from "./LynqElevenPm";
-import { CodeItTablet, CodeItMoon } from "./CodeItReels";
+import { CodeItTablet, CodeItMoon, CodeItDay1 } from "./CodeItReels";
+import { LynqNotes } from "./LynqNotes";
+import { LynqOffer } from "./LynqOffer";
 import { LynqSketch } from "./LynqSketch";
 
 /*
@@ -56,5 +58,29 @@ export const CodeItMoonVO: React.FC = () => (
     map={[[0, 0], [1.9, 2.3], [2.4, 2.8], [4.4, 5.0], [4.7, 5.3], [6.3, 7.0], [7.6, 8.3], [7.9, 8.5], [11.05, 11.05], [12.7, 12.85], [17.5, 16.5]]}
     sfx={[[0.0, "whoosh.wav", 0.35], [1.9, "whoosh.wav", 0.3], [6.3, "click.wav", 0.4], [7.6, "whoosh.wav", 0.45]]}>
     <CodeItMoon />
+  </Retimed>
+);
+
+export const LynqNotesVO: React.FC = () => (
+  <Retimed vo="lynq-notes.mp3" voAt={0.15}
+    map={[[0, 0], [2.75, 2.85], [5.55, 5.85], [8.1, 8.6], [10.45, 11.45], [11.9, 13.4], [13.5, 15.2], [20, 18]]}
+    sfx={[[6.2, "thump.wav", 0.4], [8.1, "whoosh.wav", 0.3], [12.7, "ding.wav", 0.35]]}>
+    <LynqNotes />
+  </Retimed>
+);
+
+export const LynqOfferVO: React.FC = () => (
+  <Retimed vo="lynq-offer.mp3" voAt={0.1}
+    map={[[0, 0.1], [2.6, 2.4], [4.25, 3.3], [5.8, 4.5], [7.1, 5.7], [8.5, 7.4], [8.7, 7.75], [10.6, 8.15], [12.1, 8.95], [13.95, 9.55], [15.5, 10.6], [15.75, 11.0], [21, 13]]}
+    sfx={[[4.25, "pop.wav", 0.3], [5.8, "pop.wav", 0.3], [7.1, "pop.wav", 0.3], [10.6, "thump.wav", 0.3], [12.1, "thump.wav", 0.3]]}>
+    <LynqOffer />
+  </Retimed>
+);
+
+export const CodeItDay1VO: React.FC = () => (
+  <Retimed vo="codeit-day1.mp3" voAt={0.1}
+    map={[[0, 0], [2.3, 2.3], [3.1, 2.9], [3.3, 3.1], [5.3, 5.65], [6.5, 6.55], [7.7, 8.6], [9.05, 10.85], [10.2, 11.6], [12.2, 13.25], [16.8, 16.5]]}
+    sfx={[[3.3, "crash.wav", 0.35], [6.55, "pop.wav", 0.4], [9.1, "ding.wav", 0.45]]}>
+    <CodeItDay1 />
   </Retimed>
 );

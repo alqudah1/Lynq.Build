@@ -70,6 +70,7 @@ export const LynqOffer: React.FC = () => {
       <div style={{ position: "absolute", left: 90, right: 90, top: 330, fontFamily: IL, fontSize: 84, lineHeight: 1.05, letterSpacing: -4, color: "#fff", opacity: head2, transform: `translateY(${(1 - head2) * 30}px)` }}>Try it with us.<br /><span style={{ color: LI }}>On us.</span></div>
       <Ticket at={8.2} top="NO COST" big="Free consultation" y={640} rot={-2.5} />
       <Ticket at={9.0} top="WHEN YOU START" big="First month of your CRM free" y={930} rot={2} />
+      {s >= 9.6 ? <div style={{ position: "absolute", left: 0, right: 0, top: 1330, textAlign: "center", fontFamily: IS, fontSize: 30, letterSpacing: 7, color: LI, opacity: ramp(s, 9.6, 9.9) * (1 - ramp(s, 10.6, 11.0)) }}>UNTIL DECEMBER 31</div> : null}
 
       <AbsoluteFill style={{ opacity: end, alignItems: "center", justifyContent: "center" }}>
         <div style={{ textAlign: "center", padding: "0 90px", transform: `translateY(${(1 - end) * 30}px)` }}>

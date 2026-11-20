@@ -551,3 +551,95 @@ export const CodeItMoon: React.FC = () => {
     </AbsoluteFill>
   );
 };
+
+/*
+ * CodeIt reel: "Trying to code my first game. Day 1." A diary format: type it, it crashes on a
+ * three-letter typo, fix it, run again, it moves. Built on what is working in the niche:
+ * a first-person story tease and a funny tone. Example project, labelled.
+ */
+export const DAY1_DUR = 16.5;
+const DAY1_END = 13.3;
+export const CodeItDay1: React.FC = () => {
+  const { s } = useT();
+  const L1 = 'cat = Sprite("cat")', L3 = 'if key("right"):';
+  const t1 = L1.slice(0, Math.floor(ramp(s, 0.3, 1.0, 0, L1.length, (x) => x)));
+  const t3 = L3.slice(0, Math.floor(ramp(s, 1.05, 1.6, 0, L3.length, (x) => x)));
+  const fixed = s >= 6.6;
+  const L4 = `    ${fixed ? "cat" : "cta"}.x += 5`;
+  const t4 = L4.slice(0, Math.floor(ramp(s, 1.65, 2.3, 0, L4.length, (x) => x)));
+  const selecting = s >= 5.9 && s < 6.6;
+  const flash = ramp(s, 6.6, 6.75) * (1 - ramp(s, 7.2, 7.6));
+  const press1 = s >= 2.9 && s < 3.1, press2 = s >= 8.7 && s < 8.9;
+  const err = ramp(s, 3.1, 3.3) * (1 - ramp(s, 5.6, 5.9));
+  const shake = s >= 3.1 && s < 3.6 ? Math.sin(s * 90) * 10 * (1 - (s - 3.1) / 0.5) : 0;
+  const run = ramp(s, 8.9, 11.2, 0, 1, (x) => x);
+  const catX = 110 + run * 420;
+  const got = s >= 10.9;
+  const pop = ramp(s, 10.9, 11.1);
+  const out = ramp(s, DAY1_END - 0.35, DAY1_END);
+  const day = useSpringAt(0.5, { damping: 10, stiffness: 220 });
+  const code = (txt: string, n: number) => {
+    // colour the typo/fix on line 4
+    const body = n === 4 && txt.length >= 7
+      ? <>{txt.slice(0, 4)}<span style={{ padding: "0 6px", borderRadius: 8, background: selecting ? CORAL : flash > 0 ? `rgba(254,211,64,${flash})` : "transparent", color: selecting ? "#fff" : fixed ? YELLOW : "#ff8a70" }}>{txt.slice(4, 7)}</span>{txt.slice(7)}</>
+      : txt;
+    return (
+      <div key={n} style={{ display: "flex", gap: 22, fontFamily: M, fontWeight: 600, fontSize: 40, lineHeight: 1.55, color: "#8fe39a", whiteSpace: "pre" }}>
+        <span style={{ width: 30, textAlign: "right", color: "rgba(255,255,255,0.25)" }}>{n}</span><span>{body}</span>
+      </div>
+    );
+  };
+  return (
+    <AbsoluteFill style={{ background: CREAM }}>
+      <Fonts />
+      <div style={{ position: "absolute", left: -220, top: -220, width: 760, height: 760, borderRadius: 380, background: "rgba(254,211,64,0.40)" }} />
+      <div style={{ position: "absolute", right: -280, bottom: -260, width: 860, height: 860, borderRadius: 430, background: "rgba(240,86,45,0.15)" }} />
+      <Logo />
+      <Head a="Trying to code" b="my first game." at={0.05} out={2.5} size={104} />
+      <Head a="It crashed." b="Obviously." at={2.9} out={5.4} size={112} />
+      <Head a="One typo." b="Three letters." at={5.7} out={8.3} size={108} />
+      <Head a="Run it again." b={got ? "IT MOVED." : "..."} at={8.6} out={11.4} size={108} />
+      <Head a="Day 2:" b="make it jump." at={11.6} out={12.9} size={108} />
+
+      <div style={{ position: "absolute", left: TX, top: TY, width: TW, height: TH, opacity: 1 - out, transform: `translateX(${shake}px) scale(${1 - out * 0.1})` }}>
+        <div style={{ position: "absolute", inset: 0, borderRadius: 44, background: INK, boxShadow: "0 22px 0 rgba(22,22,29,0.25)", overflow: "hidden" }}>
+          <div style={{ height: 76, background: "#23232e", display: "flex", alignItems: "center", padding: "0 28px", gap: 12 }}>
+            {[CORAL, YELLOW, "#62d26f"].map((c) => <div key={c} style={{ width: 20, height: 20, borderRadius: 10, background: c }} />)}
+            <div style={{ marginLeft: 18, fontFamily: M, fontSize: 28, color: "rgba(255,255,255,0.6)" }}>my_first_game.py</div>
+            <div style={{ marginLeft: "auto", padding: "8px 30px", borderRadius: 26, background: YELLOW, border: "4px solid #000", fontFamily: B, fontWeight: 800, fontSize: 30, color: INK, transform: `scale(${press1 || press2 ? 0.88 : 1})` }}>▶ Run</div>
+          </div>
+          <div style={{ padding: "30px 30px 0" }}>
+            {code(t1, 1)}{code("", 2)}{code(t3, 3)}{code(t4, 4)}
+          </div>
+          {/* error bar */}
+          <div style={{ position: "absolute", left: 30, right: 30, top: 400, borderRadius: 18, background: "#3a1414", border: `4px solid ${CORAL}`, padding: "18px 24px", opacity: err, transform: `translateY(${(1 - err) * 20}px)` }}>
+            <div style={{ fontFamily: M, fontWeight: 600, fontSize: 30, color: "#ff8a70" }}>NameError: name 'cta' is not defined</div>
+            <div style={{ fontFamily: N, fontWeight: 800, fontSize: 26, color: "rgba(255,255,255,0.6)", marginTop: 4 }}>line 4</div>
+          </div>
+          {/* game preview */}
+          <div style={{ position: "absolute", left: 0, right: 0, top: 560, bottom: 0, background: SKY, borderTop: `6px solid ${YELLOW}`, overflow: "hidden" }}>
+            {Array.from({ length: 10 }).map((_, i) => <div key={i} style={{ position: "absolute", left: (i * 173) % 740, top: 20 + (i * 97) % 260, fontSize: 22 + (i % 3) * 8, color: YELLOW, opacity: 0.4 + 0.5 * Math.abs(Math.sin(s * 2 + i)) }}>✦</div>)}
+            <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 60, background: GROUND, borderTop: `7px solid ${INK}` }} />
+            {!got ? <div style={{ position: "absolute", left: 600, bottom: 96, fontSize: 80, color: YELLOW, textShadow: `0 5px 0 ${INK}`, transform: `rotate(${Math.sin(s * 3) * 12}deg)` }}>★</div> : null}
+            {got ? <div style={{ position: "absolute", left: 560, bottom: 150 + pop * 70, fontFamily: B, fontWeight: 800, fontSize: 72, color: YELLOW, opacity: 1 - ramp(s, 11.5, 11.9), textShadow: `0 5px 0 ${INK}` }}>+1</div> : null}
+            <div style={{ position: "absolute", left: 0, top: 480 - 60 - 560 + 560 - 100 }} />
+            <div style={{ position: "absolute", left: 0, bottom: 60 }}><Cat x={catX} y={0} squash={0} happy={got} /></div>
+            {err > 0.5 ? <div style={{ position: "absolute", left: 200, bottom: 190, fontFamily: B, fontWeight: 800, fontSize: 58, color: "rgba(255,255,255,0.75)", transform: "rotate(-6deg)" }}>...nothing.</div> : null}
+          </div>
+        </div>
+        <div style={{ position: "absolute", left: -26, top: -44, padding: "8px 30px", borderRadius: 30, background: CORAL, border: `6px solid ${INK}`, fontFamily: B, fontWeight: 800, fontSize: 46, color: "#fff", transform: `rotate(-7deg) scale(${day})`, boxShadow: `0 8px 0 ${INK}` }}>DAY 1</div>
+      </div>
+
+      <div style={{ position: "absolute", left: 0, right: 0, top: 1720, textAlign: "center", fontFamily: N, fontWeight: 900, fontSize: 24, letterSpacing: 5, color: "rgba(22,22,29,0.4)", opacity: 1 - out }}>EXAMPLE PROJECT</div>
+      <End at={DAY1_END} a="Screen time" b="you'll brag about." />
+
+      {[0.4, 0.7, 1.1, 1.4, 1.8, 2.1].map((t) => <Sfx key={t} at={t} src="click.wav" volume={0.3} />)}
+      <Sfx at={2.9} src="click.wav" volume={0.7} />
+      <Sfx at={3.1} src="crash.wav" volume={0.5} />
+      <Sfx at={6.6} src="pop.wav" volume={0.5} />
+      <Sfx at={8.7} src="click.wav" volume={0.7} />
+      <Sfx at={10.9} src="ding.wav" volume={0.6} />
+      <Sfx at={DAY1_END} src="whoosh.wav" volume={0.4} />
+    </AbsoluteFill>
+  );
+};
