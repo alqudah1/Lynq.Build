@@ -74,8 +74,8 @@ export const CodeItEp1: React.FC = () => {
           <div style={{ position: "absolute", left: -220, top: -220, width: 760, height: 760, borderRadius: 380, background: "rgba(254,211,64,0.45)" }} />
           <div style={{ position: "absolute", left: 0, right: 0, top: 560, textAlign: "center", transform: `scale(${0.9 + e * 0.1})` }}>
             <div style={{ fontFamily: B, fontWeight: 800, fontSize: 64, color: CORAL }}>CodeIt</div>
-            <div style={{ fontFamily: B, fontWeight: 800, fontSize: 124, lineHeight: 1.0, letterSpacing: -3, color: INK, marginTop: 20 }}>Screen time</div>
-            <div style={{ fontFamily: B, fontWeight: 800, fontSize: 124, lineHeight: 1.0, letterSpacing: -3, color: CORAL }}>you'll brag about.</div>
+            <div style={{ fontFamily: B, fontWeight: 800, fontSize: 112, lineHeight: 1.0, letterSpacing: -3, color: INK, marginTop: 20 }}>Don't just play it.</div>
+            <div style={{ fontFamily: B, fontWeight: 800, fontSize: 168, lineHeight: 1.0, letterSpacing: -4, color: CORAL }}>Build it.</div>
             <div style={{ display: "inline-block", marginTop: 70, padding: "22px 54px", borderRadius: 60, background: YELLOW, border: `7px solid ${INK}`, boxShadow: `0 10px 0 ${INK}`, fontFamily: B, fontWeight: 800, fontSize: 50, color: INK, transform: `scale(${pill})` }}>Free to start · codeitlearn.com</div>
             <div style={{ marginTop: 60, fontFamily: N, fontWeight: 900, fontSize: 30, letterSpacing: 4, color: "rgba(22,22,29,0.55)" }}>EPISODE 2 NEXT WEEK</div>
           </div>
