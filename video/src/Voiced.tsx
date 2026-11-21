@@ -1,3 +1,4 @@
+import { LynqBuilt } from "./LynqBuilt";
 import React from "react";
 import { AbsoluteFill, Audio, Freeze, Sequence, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { Sfx, SfxOff } from "./kit";
@@ -118,6 +119,25 @@ export const LynqNeonVO: React.FC = () => {
       <Sfx at={12.95} src="ding.wav" volume={0.3} />
       <Sfx at={16.3} src="thump.wav" volume={0.45} />
       <Sfx at={21.95} src="click.wav" volume={0.4} />
+    </AbsoluteFill>
+  );
+};
+
+// "One phone. Everything we built.": one take, each line placed on its swipe. [sliceStart, sliceEnd, outputAt]
+const BUILT_LINES: [number, number, number][] = [
+  [0, 2.35, 0.1], [2.55, 5.6, 2.5], [5.75, 8.55, 5.75], [8.72, 11.42, 9.05], [11.58, 14.62, 12.05],
+  [14.76, 17.84, 15.35], [17.95, 21.52, 18.65], [21.66, 26.72, 22.25], [26.9, 33.1, 27.55], [33.25, 36.75, 33.95],
+];
+export const LynqBuiltVO: React.FC = () => {
+  const { fps } = useVideoConfig();
+  return (
+    <AbsoluteFill>
+      <SfxOff.Provider value={true}><LynqBuilt /></SfxOff.Provider>
+      {BUILT_LINES.map(([a, b, at]) => (
+        <Sequence key={a} from={Math.round(at * fps)} durationInFrames={Math.round((b - a) * fps)} layout="none">
+          <Audio src={staticFile("vo/lynq-built.mp3")} startFrom={Math.round(a * fps)} endAt={Math.round(b * fps)} />
+        </Sequence>
+      ))}
     </AbsoluteFill>
   );
 };
