@@ -3,185 +3,162 @@ import { AbsoluteFill, Img, staticFile } from "remotion";
 import { Fonts, Sfx, ramp, useSpringAt, useT } from "./kit";
 
 /*
- * "What we built", second cut: every client, real screens only. Websites, stores and lead
- * sites, a learning platform, an ERP (the demo build, sample data) and the CRM/automation
- * flow. No results are claimed anywhere.
+ * "What we built", third cut: one phone, every client. The phone stays put and each swipe
+ * brings the next client's real site onto it while the room changes colour to match.
+ * Real screens only (the ERP is the demo build with sample data), no results claimed.
  */
 const LI = "#C7FF3D", BG = "#040405", IL = "'Inter Light'", IS = "'Inter SemiBold'";
-type Media = { t: "desk"; img: string; img2?: string; focus?: string } | { t: "phones"; imgs: string[] } | { t: "tall"; img: string; h: number };
-type Slide = { sec: string; name: string; what: string; chips: string[]; media: Media; dur: number; note?: string };
+const PW = 600, PH = 1230, PX = (1080 - PW) / 2, PY = 590, SW = PW - 20, SH = PH - 20, K = SW / 720;
+type Slide = { sec: string; name: string; what: string; chips: string[]; img: string; h: number; glow: string; dur: number; note?: string };
 const SLIDES: Slide[] = [
-  { sec: "WEBSITES", name: "Kingsbridge Group", what: "Custom homes and property management", chips: ["Website", "Two inquiry paths", "SEO"], media: { t: "phones", imgs: ["kb1", "kb3"] }, dur: 3.2 },
-  { sec: "WEBSITES", name: "Nasma", what: "Levantine restaurant", chips: ["Website", "Menu", "Reservations"], media: { t: "desk", img: "nasma", focus: "12% 78%" }, dur: 3.2 },
-  { sec: "WEBSITES", name: "Finding Amy", what: "Photo booth rentals", chips: ["3D website", "Live booking"], media: { t: "desk", img: "amy", focus: "50% 25%" }, dur: 3.2 },
-  { sec: "ONLINE STORES", name: "Arcubed Label", what: "Handmade bags, made to order", chips: ["Online store", "Custom orders", "Checkout"], media: { t: "desk", img: "arcubed-d", focus: "85% 45%" }, dur: 3.2 },
-  { sec: "LEAD SITES", name: "House Deals Direct", what: "Direct home buyers", chips: ["Lead site", "Offer form", "Two audiences"], media: { t: "tall", img: "hd-tall", h: 7000 / 780 }, dur: 3.4 },
-  { sec: "PLATFORMS", name: "CodeIt", what: "Coding platform for kids", chips: ["Lessons", "Browser playground", "Accounts"], media: { t: "desk", img: "ci-lessons", img2: "ci-play" }, dur: 3.4 },
-  { sec: "ERP SYSTEMS", name: "KHAIRAT", what: "One system for a whole factory", chips: ["10 departments", "Approvals", "Arabic and English"], media: { t: "desk", img: "erp-d-dashboard", img2: "erp-d-cold-store" }, dur: 3.2, note: "DEMO BUILD · SAMPLE DATA" },
-  { sec: "ERP SYSTEMS", name: "KHAIRAT", what: "The same system, on every phone", chips: ["Production", "Food safety", "Export orders"], media: { t: "phones", imgs: ["erp-m-dashboard", "erp-m-food-safety", "erp-m-export-orders"] }, dur: 3.0, note: "DEMO BUILD · SAMPLE DATA" },
+  { sec: "WEBSITE", name: "Kingsbridge Group", what: "Custom homes and property management", chips: ["Two inquiry paths", "Built for search", "Fast on phones"], img: "s-kingsbridge", h: 3096, glow: "#c9a45c", dur: 3.3 },
+  { sec: "WEBSITE", name: "Nasma", what: "A restaurant you can book from the menu", chips: ["Reserve a table", "Full menu", "WhatsApp chat"], img: "s-nasma", h: 2203, glow: "#e2853f", dur: 3.3 },
+  { sec: "3D WEBSITE", name: "Finding Amy", what: "A photo booth you can tap", chips: ["Interactive 3D", "Live booking"], img: "s-amy", h: 1502, glow: "#b3263c", dur: 3.0 },
+  { sec: "ONLINE STORE", name: "Arcubed Label", what: "Handmade bags, made to order", chips: ["Custom orders", "Cart and checkout", "Stock or made for you"], img: "s-arcubed", h: 2218, glow: "#f2a8e2", dur: 3.3 },
+  { sec: "LEAD SITE", name: "House Deals Direct", what: "An offer form that takes a minute", chips: ["3-step form", "Leads to inbox", "Two audiences"], img: "s-housedeals", h: 3138, glow: "#27a35c", dur: 3.3 },
+  { sec: "LEARNING PLATFORM", name: "CodeIt", what: "Kids learn Python in the browser", chips: ["31 lessons", "Games to remix", "Runs in the browser"], img: "s-codeit", h: 2870, glow: "#ff7a1a", dur: 3.6 },
+  { sec: "ERP SYSTEM", name: "KHAIRAT", what: "A whole factory in one system", chips: ["Every department", "Approvals", "Arabic and English"], img: "s-erp", h: 3096, glow: "#3fae6a", dur: 5.4, note: "DEMO BUILD · SAMPLE DATA" },
 ];
-const START = 2.6;
+const START = 2.4;
 const AT = SLIDES.map((_, i) => START + SLIDES.slice(0, i).reduce((a, b) => a + b.dur, 0));
 const FLOW_AT = AT[AT.length - 1] + SLIDES[SLIDES.length - 1].dur, FLOW_DUR = 6.0;
 const END = FLOW_AT + FLOW_DUR;
 export const BUILT_DUR = END + 4.6;
+const ease = (x: number) => 1 - Math.pow(1 - x, 3);
 
-const card: React.CSSProperties = { position: "absolute", overflow: "hidden", background: "#111", border: "2px solid rgba(255,255,255,0.18)", boxShadow: "0 50px 140px rgba(0,0,0,0.75), 0 0 90px rgba(199,255,61,0.08)" };
-
-const Desk: React.FC<{ img: string; top: number; w: number; p: number; drift: number; rot: number; left?: number; zoom?: string }> = ({ img, top, w, p, drift, rot, left, zoom }) => {
-  const h = Math.round(w * 0.662);
-  return (
-    <div style={{ ...card, left: left ?? (1080 - w) / 2, top, width: w, height: h + 40, borderRadius: 22, opacity: Math.min(1, p * 1.4), transform: `perspective(1800px) translateY(${(1 - p) * 160}px) rotateX(${6 - drift * 3}deg) rotateZ(${rot}deg) scale(${0.95 + p * 0.05})` }}>
-      <div style={{ height: 40, background: "#17171a", display: "flex", alignItems: "center", padding: "0 16px", gap: 8 }}>
-        {[0, 1, 2].map((k) => <div key={k} style={{ width: 11, height: 11, borderRadius: 6, background: "rgba(255,255,255,0.22)" }} />)}
-      </div>
-      <div style={{ width: w, height: h, overflow: "hidden" }}>
-        <Img src={staticFile(`built/${img}.jpg`)} style={zoom ? { width: w * 2.1, height: h * 2.1, objectFit: "cover", marginLeft: 0, transform: `translate(${-parseFloat(zoom) / 100 * w * 1.1}px, ${-parseFloat(zoom.split(" ")[1]) / 100 * h * 1.1 - drift * 20}px)` } : { width: w, height: h, objectFit: "cover", objectPosition: "top", transform: `scale(${1 + drift * 0.04})`, transformOrigin: "50% 0%" }} />
-      </div>
-    </div>
-  );
-};
-
-const Phone: React.FC<{ img: string; left: number; top: number; w: number; p: number; rot: number; scroll?: number; ratio?: number }> = ({ img, left, top, w, p, rot, scroll = 0, ratio = 2.15 }) => {
-  const h = Math.round(w * 2.05);
-  return (
-    <div style={{ ...card, left, top, width: w, height: h, borderRadius: 54, border: "10px solid #1b1b1f", outline: "2px solid rgba(255,255,255,0.16)", opacity: Math.min(1, p * 1.4), transform: `translateY(${(1 - p) * 200}px) rotate(${rot}deg)` }}>
-      <Img src={staticFile(`built/${img}.jpg`)} style={{ width: w - 20, height: (w - 20) * ratio, transform: `translateY(${-scroll}px)` }} />
-    </div>
-  );
-};
-
-const SlideView: React.FC<{ i: number }> = ({ i }) => {
-  const { s } = useT();
-  const sl = SLIDES[i], at = AT[i];
-  const p = useSpringAt(at, { damping: 16, stiffness: 160 });
-  const q = useSpringAt(at + 0.12, { damping: 15, stiffness: 130 });
-  const r = useSpringAt(at + 0.3, { damping: 15, stiffness: 130 });
-  const r2 = useSpringAt(at + 0.45, { damping: 15, stiffness: 130 });
-  if (s < at || s > at + sl.dur + 0.25) return null;
-  const out = ramp(s, at + sl.dur - 0.25, at + sl.dur);
-  const drift = ramp(s, at, at + sl.dur, 0, 1, (x) => x);
-  const m = sl.media;
-  return (
-    <AbsoluteFill style={{ opacity: 1 - out }}>
-      <div style={{ position: "absolute", left: 70, right: 70, top: 200, opacity: Math.min(1, p * 1.4), transform: `translateY(${(1 - p) * 30}px)` }}>
-        <div style={{ fontFamily: IS, fontSize: 28, letterSpacing: 9, color: LI }}>{sl.sec}</div>
-        <div style={{ fontFamily: IS, fontSize: sl.name.length > 15 ? 86 : 108, letterSpacing: -3.5, color: "#fff", marginTop: 14, lineHeight: 1 }}>{sl.name}</div>
-        <div style={{ fontFamily: IL, fontSize: 42, color: "rgba(255,255,255,0.66)", marginTop: 18 }}>{sl.what}</div>
-        <div style={{ display: "flex", gap: 14, marginTop: 30, flexWrap: "wrap" }}>
-          {sl.chips.map((c, k) => {
-            const cp = ramp(s, at + 0.25 + k * 0.12, at + 0.5 + k * 0.12);
-            return <div key={c} style={{ padding: "12px 26px", borderRadius: 40, border: `2px solid ${k === 0 ? LI : "rgba(255,255,255,0.28)"}`, fontFamily: IS, fontSize: 28, color: k === 0 ? LI : "#fff", opacity: cp, transform: `translateY(${(1 - cp) * 14}px)` }}>{c}</div>;
-          })}
-        </div>
-      </div>
-      {m.t === "desk" ? (
-        <>
-          <Desk img={m.img} top={690} w={1000} p={q} drift={drift} rot={-1.5} />
-          {m.img2 ? <Desk img={m.img2} top={1270} w={820} left={210} p={r} drift={drift} rot={2} /> : <Desk img={m.img} top={1290} w={760} left={250} p={r} drift={drift} rot={2.5} zoom={m.focus} />}
-        </>
-      ) : m.t === "phones" ? (
-        m.imgs.length === 2 ? (
-          <>
-            <Phone img={m.imgs[0]} left={70} top={720} w={470} p={q} rot={-3} />
-            <Phone img={m.imgs[1]} left={545} top={800} w={470} p={r} rot={3} />
-          </>
-        ) : (
-          <>
-            <Phone img={m.imgs[0]} left={20} top={840} w={360} p={q} rot={-5} />
-            <Phone img={m.imgs[2]} left={700} top={840} w={360} p={r2} rot={5} />
-            <Phone img={m.imgs[1]} left={330} top={720} w={420} p={r} rot={0} />
-          </>
-        )
-      ) : (
-        <Phone img={m.img} left={250} top={700} w={580} p={q} rot={0} ratio={m.h} scroll={drift * 1500} />
-      )}
-      {sl.note ? <div style={{ position: "absolute", left: 0, right: 0, top: 1830, textAlign: "center", fontFamily: IS, fontSize: 22, letterSpacing: 6, color: "rgba(255,255,255,0.5)" }}>{sl.note}</div> : null}
-    </AbsoluteFill>
-  );
-};
-
-/* CRM and automation: one enquiry travelling through the steps, a lime line drawing as it goes */
-const STEPS: [string, string][] = [
-  ["New enquiry", "A customer fills the form at 9:14 PM"],
-  ["Saved to the CRM", "Name, need and source, no typing"],
-  ["Answered in a minute", "A reply goes out while you sleep"],
-  ["Follow-up reminder", "Nothing slips after day one"],
-  ["You approve", "Nothing sends without your say"],
+const NOTIFS: [string, string, string][] = [
+  ["New enquiry", "Sara needs a quote for a kitchen", "9:14 PM"],
+  ["Saved to your CRM", "Name, need and where she found you", "9:14 PM"],
+  ["Reply sent", "“Thanks Sara, here are two times to talk”", "9:15 PM"],
+  ["Follow-up set", "Reminder tomorrow at 9:00 AM", "9:15 PM"],
+  ["Ready for you", "Approve the quote in one tap", "9:16 PM"],
 ];
-const Flow: React.FC = () => {
+
+const Notifs: React.FC = () => {
   const { s } = useT();
-  const p = useSpringAt(FLOW_AT, { damping: 16, stiffness: 160 });
-  if (s < FLOW_AT || s > END + 0.25) return null;
-  const out = ramp(s, END - 0.25, END);
-  const line = ramp(s, FLOW_AT + 0.5, FLOW_AT + 4.6, 0, 1, (x) => x);
-  const Y0 = 700, GAP = 196;
   return (
-    <AbsoluteFill style={{ opacity: 1 - out }}>
-      <div style={{ position: "absolute", left: 70, right: 70, top: 200, opacity: Math.min(1, p * 1.4), transform: `translateY(${(1 - p) * 30}px)` }}>
-        <div style={{ fontFamily: IS, fontSize: 28, letterSpacing: 9, color: LI }}>CRM AND AUTOMATION</div>
-        <div style={{ fontFamily: IS, fontSize: 108, letterSpacing: -3.5, color: "#fff", marginTop: 14, lineHeight: 1 }}>LYNQ Office</div>
-        <div style={{ fontFamily: IL, fontSize: 42, color: "rgba(255,255,255,0.66)", marginTop: 18 }}>The follow-up runs itself</div>
-      </div>
-      <div style={{ position: "absolute", left: 128, top: Y0 + 40, width: 4, height: GAP * 4, background: "rgba(255,255,255,0.12)" }} />
-      <div style={{ position: "absolute", left: 128, top: Y0 + 40, width: 4, height: GAP * 4 * line, background: LI, boxShadow: `0 0 24px ${LI}` }} />
-      {STEPS.map(([a, b], k) => {
-        const on = line >= k / 4 - 0.02;
-        const sp = ramp(s, FLOW_AT + 0.3 + k * 0.14, FLOW_AT + 0.6 + k * 0.14);
-        const hit = ramp(s, FLOW_AT + 0.5 + (k / 4) * 4.1, FLOW_AT + 0.75 + (k / 4) * 4.1);
+    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg,#0b0d08 0%,#050505 60%)" }}>
+      <div style={{ textAlign: "center", marginTop: 70, fontFamily: IL, fontSize: 120, letterSpacing: -4, color: "#fff" }}>9:1{s < FLOW_AT + 2.2 ? 4 : s < FLOW_AT + 4.0 ? 5 : 6}</div>
+      <div style={{ textAlign: "center", fontFamily: IL, fontSize: 28, color: "rgba(255,255,255,0.55)", marginTop: -6 }}>Shop closed · LYNQ Office is on</div>
+      {NOTIFS.map(([a, b, t], k) => {
+        const at = FLOW_AT + 0.55 + k * 0.9;
+        const p = ramp(s, at, at + 0.35, 0, 1, ease);
+        const last = k === NOTIFS.length - 1;
         return (
-          <div key={a} style={{ position: "absolute", left: 90, right: 70, top: Y0 + k * GAP, height: 150, opacity: sp, transform: `translateX(${(1 - sp) * 40}px)` }}>
-            <div style={{ position: "absolute", left: 0, top: 0, width: 80, height: 80, borderRadius: 40, background: on ? LI : "#101012", border: `3px solid ${on ? LI : "rgba(255,255,255,0.25)"}`, boxShadow: on ? `0 0 ${30 + hit * 30}px rgba(199,255,61,0.55)` : "none", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: IS, fontSize: 34, color: on ? "#0a0a0a" : "rgba(255,255,255,0.5)", transform: `scale(${1 + (hit > 0 && hit < 1 ? 0.12 : 0)})` }}>{k === 4 ? "✓" : k + 1}</div>
-            <div style={{ position: "absolute", left: 120, right: 0, top: -14, padding: "22px 30px", borderRadius: 26, background: on ? "rgba(199,255,61,0.08)" : "rgba(255,255,255,0.04)", border: `2px solid ${on ? "rgba(199,255,61,0.45)" : "rgba(255,255,255,0.1)"}` }}>
-              <div style={{ fontFamily: IS, fontSize: 46, letterSpacing: -1, color: on ? "#fff" : "rgba(255,255,255,0.5)" }}>{a}</div>
-              <div style={{ fontFamily: IL, fontSize: 30, color: on ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.3)", marginTop: 4 }}>{b}</div>
+          <div key={a} style={{ position: "absolute", left: 22, right: 22, top: 320 + k * 168, padding: "20px 24px", borderRadius: 30, background: last ? "rgba(199,255,61,0.16)" : "rgba(255,255,255,0.09)", border: `2px solid ${last ? LI : "rgba(255,255,255,0.12)"}`, opacity: p, transform: `translateY(${(1 - p) * -40}px) scale(${0.94 + p * 0.06})` }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ width: 30, height: 30, borderRadius: 9, background: LI, fontFamily: IS, fontSize: 19, color: "#0a0a0a", display: "flex", alignItems: "center", justifyContent: "center" }}>L</div>
+              <div style={{ fontFamily: IS, fontSize: 21, letterSpacing: 3, color: "rgba(255,255,255,0.6)", flex: 1 }}>LYNQ OFFICE</div>
+              <div style={{ fontFamily: IL, fontSize: 22, color: "rgba(255,255,255,0.5)" }}>{t}</div>
             </div>
+            <div style={{ fontFamily: IS, fontSize: 36, color: "#fff", marginTop: 8, letterSpacing: -0.5 }}>{a}</div>
+            <div style={{ fontFamily: IL, fontSize: 26, color: "rgba(255,255,255,0.7)", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden" }}>{b}</div>
           </div>
         );
       })}
-      <div style={{ position: "absolute", left: 0, right: 0, top: 1830, textAlign: "center", fontFamily: IS, fontSize: 22, letterSpacing: 6, color: "rgba(255,255,255,0.5)" }}>HOW IT WORKS · EXAMPLE ENQUIRY</div>
-    </AbsoluteFill>
+    </div>
   );
+};
+
+const Screen: React.FC<{ i: number }> = ({ i }) => {
+  const { s } = useT();
+  const sl = SLIDES[i], at = AT[i];
+  const max = Math.max(0, sl.h * K - SH);
+  const sc = ramp(s, at + 0.9, at + sl.dur - 0.2, 0, 1, (x) => x * x * (3 - 2 * x)) * Math.min(max, sl.dur > 5 ? 900 : 760);
+  return <Img src={staticFile(`built/${sl.img}.jpg`)} style={{ position: "absolute", left: 0, top: 0, width: SW, height: sl.h * K, transform: `translateY(${-sc}px)` }} />;
 };
 
 export const LynqBuilt: React.FC = () => {
   const { s } = useT();
-  const h = useSpringAt(0.1, { damping: 14, stiffness: 160 });
-  const hOut = ramp(s, START - 0.35, START);
-  const e = useSpringAt(END + 0.15, { damping: 14, stiffness: 150 });
+  const n = SLIDES.length;
+  const cur = s < START ? -1 : s >= END ? n + 1 : s >= FLOW_AT ? n : AT.filter((a) => s >= a).length - 1;
+  const starts = [...AT, FLOW_AT, END];
+  const tIn = cur >= 0 ? ramp(s, starts[cur], starts[cur] + 0.45, 0, 1, ease) : 1;
+  const rise = useSpringAt(0.15, { damping: 16, stiffness: 110 });
+  const glow = cur < 0 ? LI : cur >= n ? LI : SLIDES[cur].glow;
+  const erpAt = AT[n - 1];
+  const e = ramp(s, erpAt + 1.7, erpAt + 2.3, 0, 1, ease) * (1 - ramp(s, FLOW_AT - 0.3, FLOW_AT + 0.1));
   const tap = s >= END + 2.2 && s < END + 2.45;
-  const total = SLIDES.length + 1;
-  const cur = s < START ? -1 : s >= FLOW_AT ? SLIDES.length : AT.filter((a) => s >= a).length - 1;
+  const layer = (idx: number): React.ReactNode =>
+    idx < 0 ? (
+      <div style={{ position: "absolute", inset: 0, background: "#050505", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ fontFamily: IS, fontSize: 64, letterSpacing: 26, color: "#fff", marginLeft: 26 }}>LYNQ</div>
+        <div style={{ fontFamily: IL, fontSize: 30, color: LI, marginTop: 22 }}>swipe up</div>
+      </div>
+    ) : idx < n ? (
+      <Screen i={idx} />
+    ) : idx === n ? (
+      <Notifs />
+    ) : (
+      <div style={{ position: "absolute", inset: 0, background: "#050505", textAlign: "center" }}>
+        <div style={{ marginTop: 300, fontFamily: IL, fontSize: 76, letterSpacing: -3, color: "#fff", lineHeight: 1.05 }}>Yours</div>
+        <div style={{ fontFamily: IS, fontSize: 76, letterSpacing: -3, color: LI, lineHeight: 1.05 }}>is next.</div>
+        <div style={{ display: "inline-block", marginTop: 90, padding: "28px 44px", borderRadius: 60, background: LI, fontFamily: IS, fontSize: 40, color: "#0a0a0a", transform: `scale(${tap ? 0.93 : 1})`, boxShadow: "0 0 70px rgba(199,255,61,0.4)" }}>Book a consultation</div>
+        <div style={{ marginTop: 120, fontFamily: IS, fontSize: 24, letterSpacing: 7, color: "#fff" }}>LINK IN BIO</div>
+        <div style={{ marginTop: 12, fontFamily: IL, fontSize: 28, color: "rgba(255,255,255,0.55)" }}>lynq.build/book</div>
+      </div>
+    );
+  const head = (sec: string, name: string, what: string, key: string, at: number) => {
+    const p = ramp(s, at + 0.08, at + 0.5, 0, 1, ease);
+    return (
+      <div key={key} style={{ position: "absolute", left: 70, right: 70, top: 190, opacity: p, transform: `translateY(${(1 - p) * 34}px)` }}>
+        <div style={{ fontFamily: IS, fontSize: 28, letterSpacing: 9, color: LI }}>{sec}</div>
+        <div style={{ fontFamily: IS, fontSize: name.length > 15 ? 88 : 112, letterSpacing: -3.5, color: "#fff", marginTop: 12, lineHeight: 1 }}>{name}</div>
+        <div style={{ fontFamily: IL, fontSize: 40, color: "rgba(255,255,255,0.7)", marginTop: 18 }}>{what}</div>
+      </div>
+    );
+  };
+  const chipPos: [number | null, number | null, number, number][] = [[24, null, 800, -5], [null, 24, 1130, 4], [34, null, 1470, -3]];
   return (
     <AbsoluteFill style={{ background: BG }}>
       <Fonts />
-      <div style={{ position: "absolute", left: -200, top: 500, width: 1500, height: 1500, borderRadius: 750, background: "radial-gradient(circle, rgba(199,255,61,0.07) 0%, rgba(199,255,61,0) 60%)" }} />
+      <div style={{ position: "absolute", left: -260, top: 380, width: 1600, height: 1600, borderRadius: 800, background: `radial-gradient(circle, ${glow}55 0%, ${glow}00 62%)`, opacity: 0.55 + tIn * 0.45 }} />
       <div style={{ position: "absolute", left: 70, top: 96, fontFamily: IS, fontSize: 30, letterSpacing: 12, color: "#fff" }}>LYNQ</div>
-      {s >= START && s < END ? (
+      {cur >= 0 && cur <= n ? (
         <div style={{ position: "absolute", right: 70, top: 108, display: "flex", gap: 8 }}>
-          {Array.from({ length: total }).map((_, k) => <div key={k} style={{ width: k === cur ? 44 : 14, height: 6, borderRadius: 3, background: k <= cur ? LI : "rgba(255,255,255,0.2)" }} />)}
+          {Array.from({ length: n + 1 }).map((_, k) => <div key={k} style={{ width: k === cur ? 44 : 14, height: 6, borderRadius: 3, background: k <= cur ? LI : "rgba(255,255,255,0.2)" }} />)}
         </div>
       ) : null}
-      {s < START ? (
-        <div style={{ position: "absolute", left: 70, right: 70, top: 690, opacity: Math.min(1, h * 1.4) * (1 - hOut), transform: `translateY(${(1 - h) * 40}px)` }}>
-          <div style={{ fontFamily: IL, fontSize: 104, lineHeight: 1.04, letterSpacing: -4, color: "#fff" }}>What does LYNQ</div>
-          <div style={{ fontFamily: IS, fontSize: 104, lineHeight: 1.04, letterSpacing: -4, color: LI }}>actually build?</div>
-          <div style={{ fontFamily: IL, fontSize: 42, color: "rgba(255,255,255,0.6)", marginTop: 34 }}>Real clients. Real screens.</div>
+
+      {cur < 0 ? (
+        <div style={{ position: "absolute", left: 70, right: 70, top: 200, opacity: 1 - ramp(s, START - 0.3, START) }}>
+          <div style={{ fontFamily: IL, fontSize: 104, lineHeight: 1.04, letterSpacing: -4, color: "#fff" }}>One phone.</div>
+          <div style={{ fontFamily: IS, fontSize: 104, lineHeight: 1.04, letterSpacing: -4, color: LI }}>Everything we built.</div>
+        </div>
+      ) : cur < n ? head(SLIDES[cur].sec, SLIDES[cur].name, SLIDES[cur].what, `h${cur}`, AT[cur])
+        : cur === n ? head("CRM AND AUTOMATION", "LYNQ Office", "Your follow-up, while you sleep", "hf", FLOW_AT)
+        : head("THAT WAS REAL WORK", "We built those.", "Real clients. Real screens.", "he", END)}
+
+      {/* desktop view of the ERP, behind the phone */}
+      {e > 0.01 ? (
+        <div style={{ position: "absolute", left: 40, top: 640, width: 900, height: 634, borderRadius: 22, overflow: "hidden", border: "2px solid rgba(255,255,255,0.18)", background: "#111", boxShadow: "0 50px 140px rgba(0,0,0,0.8)", opacity: e, transform: `perspective(1800px) translateX(${(1 - e) * -200}px) rotateY(${8 - e * 2}deg) rotateZ(-2deg)` }}>
+          <div style={{ height: 40, background: "#17171a", display: "flex", alignItems: "center", padding: "0 16px", gap: 8 }}>
+            {[0, 1, 2].map((k) => <div key={k} style={{ width: 11, height: 11, borderRadius: 6, background: "rgba(255,255,255,0.22)" }} />)}
+          </div>
+          <Img src={staticFile("built/erp-desk.jpg")} style={{ width: 900 }} />
         </div>
       ) : null}
-      {SLIDES.map((_, i) => <SlideView key={i} i={i} />)}
-      <Flow />
-      {s >= END ? (
-        <div style={{ position: "absolute", left: 70, right: 70, top: 620, textAlign: "center", opacity: Math.min(1, e * 1.4), transform: `translateY(${(1 - e) * 40}px)` }}>
-          <div style={{ fontFamily: IL, fontSize: 98, letterSpacing: -3.5, lineHeight: 1.05, color: "#fff" }}>We built those.</div>
-          <div style={{ fontFamily: IS, fontSize: 98, letterSpacing: -3.5, lineHeight: 1.05, color: LI }}>Yours is next.</div>
-          <div style={{ display: "inline-block", marginTop: 84, padding: "32px 70px", borderRadius: 70, background: LI, fontFamily: IS, fontSize: 50, color: "#0a0a0a", transform: `scale(${tap ? 0.93 : 1})`, boxShadow: "0 0 80px rgba(199,255,61,0.35)" }}>Book a consultation</div>
-          <div style={{ marginTop: 50, fontFamily: IS, fontSize: 28, letterSpacing: 8, color: "#fff" }}>LINK IN BIO</div>
-          <div style={{ marginTop: 14, fontFamily: IL, fontSize: 30, color: "rgba(255,255,255,0.55)" }}>lynq.build/book</div>
-        </div>
-      ) : null}
-      {AT.map((a) => <Sfx key={a} at={a} src="whoosh.wav" volume={0.22} />)}
-      <Sfx at={FLOW_AT} src="whoosh.wav" volume={0.22} />
+
+      {/* the phone */}
+      <div style={{ position: "absolute", left: PX, top: PY, width: PW, height: PH, borderRadius: 66, background: "#000", border: "10px solid #1c1c20", outline: "2px solid rgba(255,255,255,0.2)", overflow: "hidden", boxShadow: `0 60px 160px rgba(0,0,0,0.85), 0 0 120px ${glow}33`, transform: `translate(${e * 190}px, ${(1 - Math.min(1, rise)) * 900 + e * 150}px) scale(${1 - e * 0.22}) rotate(${e * 3}deg)` }}>
+        {cur >= 0 && tIn < 1 ? <div style={{ position: "absolute", inset: 0, transform: `translateY(${-tIn * SH}px)` }}>{layer(cur - 1)}</div> : null}
+        <div style={{ position: "absolute", inset: 0, transform: `translateY(${cur >= 0 ? (1 - tIn) * SH : 0}px)` }}>{layer(cur)}</div>
+        <div style={{ position: "absolute", left: (SW - 150) / 2, top: 14, width: 150, height: 34, borderRadius: 17, background: "#000" }} />
+      </div>
+
+      {/* chips pinned on the phone's edges */}
+      {cur >= 0 && cur < n ? SLIDES[cur].chips.map((c, k) => {
+        const at = AT[cur] + 0.55 + k * 0.28;
+        const p = ramp(s, at, at + 0.3, 0, 1, ease) * (1 - ramp(s, AT[cur] + SLIDES[cur].dur - 0.25, AT[cur] + SLIDES[cur].dur)) * (cur === n - 1 ? 1 - e : 1);
+        const [l, r, t, rot] = chipPos[k];
+        return <div key={c + cur} style={{ position: "absolute", left: l ?? undefined, right: r ?? undefined, top: t, padding: "16px 28px", borderRadius: 44, background: k === 0 ? LI : "#0d0d10", border: `2px solid ${k === 0 ? LI : "rgba(255,255,255,0.35)"}`, fontFamily: IS, fontSize: 32, color: k === 0 ? "#0a0a0a" : "#fff", boxShadow: "0 18px 50px rgba(0,0,0,0.6)", opacity: p, transform: `scale(${0.7 + p * 0.3}) rotate(${rot}deg)` }}>{c}</div>;
+      }) : null}
+
+      {cur >= 0 && cur < n && SLIDES[cur].note ? <div style={{ position: "absolute", left: 0, right: 0, top: 1850, textAlign: "center", fontFamily: IS, fontSize: 22, letterSpacing: 6, color: "rgba(255,255,255,0.5)" }}>{SLIDES[cur].note}</div> : null}
+      {cur === n ? <div style={{ position: "absolute", left: 0, right: 0, top: 1850, textAlign: "center", fontFamily: IS, fontSize: 22, letterSpacing: 6, color: "rgba(255,255,255,0.5)" }}>HOW IT WORKS · EXAMPLE ENQUIRY</div> : null}
+
+      {starts.map((a) => <Sfx key={a} at={a} src="whoosh.wav" volume={0.2} />)}
+      {NOTIFS.map((_, k) => <Sfx key={k} at={FLOW_AT + 0.55 + k * 0.9} src="pop.wav" volume={0.3} />)}
       <Sfx at={END + 2.2} src="click.wav" volume={0.4} />
     </AbsoluteFill>
   );
