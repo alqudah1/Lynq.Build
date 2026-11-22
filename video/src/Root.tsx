@@ -85,7 +85,7 @@ export const Root: React.FC = () => (
     {C("lynq-offer2", LynqOffer2, 17)}
     {C("lynq-neon", LynqNeon, 21)}
     {C("lynq-built", LynqBuilt, 38.2)}
-    {C("codeit-ep1", CodeItEp1, 32)}
+    {C("codeit-ep1", CodeItEp1, 35)}
     {C("lynq-built-vo", LynqBuiltVO, 38.2)}
     {C("lynq-11pm-vo", LynqElevenPmVO, 30.4)}
     {C("codeit-tablet-vo", CodeItTabletVO, 16.6)}
