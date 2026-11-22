@@ -1,3 +1,4 @@
+import { CodeItEp1 } from "./CodeItEp1";
 import { LynqBuilt } from "./LynqBuilt";
 import React from "react";
 import { AbsoluteFill, Audio, Freeze, Sequence, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
@@ -136,6 +137,26 @@ export const LynqBuiltVO: React.FC = () => {
       {BUILT_LINES.map(([a, b, at]) => (
         <Sequence key={a} from={Math.round(at * fps)} durationInFrames={Math.round((b - a) * fps)} layout="none">
           <Audio src={staticFile("vo/lynq-built.mp3")} startFrom={Math.round(a * fps)} endAt={Math.round(b * fps)} />
+        </Sequence>
+      ))}
+    </AbsoluteFill>
+  );
+};
+
+// "Adam Builds It" ep 1: four voices, each line cut from its speaker's take. [file, sliceStart, sliceEnd, outputAt]
+const EP1_LINES: [string, number, number, number][] = [
+  ["sam", 0, 1.6, 0.4], ["adam", 0, 1.6, 2.7], ["sam", 1.78, 3.55, 5.6], ["adam", 1.72, 2.97, 8.1],
+  ["pip", 0, 3.25, 10.7], ["adam", 3.28, 5.23, 14.4], ["adam", 5.4, 6.27, 17.7], ["sam", 3.72, 5.33, 20.3],
+  ["mom", 0, 2.15, 24.8], ["mom", 2.38, 4.0, 28.7], ["pip", 3.38, 4.6, 31.0], ["mom", 4.12, 5.75, 32.3],
+];
+export const CodeItEp1VO: React.FC = () => {
+  const { fps } = useVideoConfig();
+  return (
+    <AbsoluteFill>
+      <SfxOff.Provider value={true}><CodeItEp1 /></SfxOff.Provider>
+      {EP1_LINES.map(([f, a, b, at]) => (
+        <Sequence key={`${f}${a}`} from={Math.round(at * fps)} durationInFrames={Math.round((b - a) * fps)} layout="none">
+          <Audio src={staticFile(`vo/ep1-${f}.mp3`)} startFrom={Math.round(a * fps)} endAt={Math.round(b * fps)} />
         </Sequence>
       ))}
     </AbsoluteFill>
