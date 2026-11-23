@@ -27,6 +27,7 @@ import { LynqOffer2 } from "./LynqOffer2";
 import { CodeItEp1 } from "./CodeItEp1";
 import { CodeItMonster } from "./CodeItMonster";
 import { LynqBuilt } from "./LynqBuilt";
+import { LynqNinePm } from "./LynqNinePm";
 import { LynqNeon } from "./LynqNeon";
 import { LynqElevenPmVO, CodeItTabletVO, LynqSketchVO, CodeItMoonVO, LynqNotesVO, LynqOfferVO, CodeItDay1VO, LynqOffer2VO, LynqNeonVO, LynqBuiltVO, CodeItEp1VO } from "./Voiced";
 import { LynqNotes } from "./LynqNotes";
@@ -86,6 +87,7 @@ export const Root: React.FC = () => (
     {C("lynq-offer2", LynqOffer2, 17)}
     {C("lynq-neon", LynqNeon, 21)}
     {C("lynq-built", LynqBuilt, 38.2)}
+    {C("lynq-9pm", LynqNinePm, 25)}
     {C("codeit-ep1", CodeItEp1, 35)}
     {C("codeit-monster", CodeItMonster, 23.5)}
     {C("codeit-ep1-vo", CodeItEp1VO, 35)}
