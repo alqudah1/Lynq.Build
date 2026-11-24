@@ -30,6 +30,7 @@ import { LynqBuilt } from "./LynqBuilt";
 import { LynqNinePm } from "./LynqNinePm";
 import { LynqNiche } from "./LynqNiche";
 import { LynqScrollReno } from "./LynqScrollReno";
+import { LynqDeskSites } from "./LynqDeskSites";
 import { LynqNeon } from "./LynqNeon";
 import { LynqElevenPmVO, CodeItTabletVO, LynqSketchVO, CodeItMoonVO, LynqNotesVO, LynqOfferVO, CodeItDay1VO, LynqOffer2VO, LynqNeonVO, LynqBuiltVO, CodeItEp1VO } from "./Voiced";
 import { LynqNotes } from "./LynqNotes";
@@ -92,6 +93,7 @@ export const Root: React.FC = () => (
     {C("lynq-9pm", LynqNinePm, 25)}
     {C("lynq-niche-barber", LynqNiche, 22)}
     {C("lynq-scroll-reno", LynqScrollReno, 17.5)}
+    {C("lynq-desk-sites", LynqDeskSites, 20.5)}
     {C("codeit-ep1", CodeItEp1, 35)}
     {C("codeit-monster", CodeItMonster, 23.5)}
     {C("codeit-ep1-vo", CodeItEp1VO, 35)}
