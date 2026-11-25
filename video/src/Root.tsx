@@ -32,7 +32,7 @@ import { LynqNiche } from "./LynqNiche";
 import { LynqScrollReno } from "./LynqScrollReno";
 import { LynqDeskSites } from "./LynqDeskSites";
 import { LynqNeon } from "./LynqNeon";
-import { LynqElevenPmVO, CodeItTabletVO, LynqSketchVO, CodeItMoonVO, LynqNotesVO, LynqOfferVO, CodeItDay1VO, LynqOffer2VO, LynqNeonVO, LynqBuiltVO, CodeItEp1VO } from "./Voiced";
+import { LynqElevenPmVO, CodeItTabletVO, LynqSketchVO, CodeItMoonVO, LynqNotesVO, LynqOfferVO, CodeItDay1VO, LynqOffer2VO, LynqNeonVO, LynqBuiltVO, CodeItEp1VO, LynqDeskSitesVO, CodeItMonsterVO } from "./Voiced";
 import { LynqNotes } from "./LynqNotes";
 import { CodeItDinner, CodeItLessons, CodeItQuiz, CodeItTablet, CodeItToys, CodeItMoon, CodeItDay1, CodeItFridge } from "./CodeItReels";
 import { CLIENT_COVERS, ClientCover, HL2, HlCover2 } from "./LynqHighlights";
@@ -94,6 +94,8 @@ export const Root: React.FC = () => (
     {C("lynq-niche-barber", LynqNiche, 22)}
     {C("lynq-scroll-reno", LynqScrollReno, 17.5)}
     {C("lynq-desk-sites", LynqDeskSites, 20.5)}
+    {C("lynq-desk-sites-vo", LynqDeskSitesVO, 20.5)}
+    {C("codeit-monster-vo", CodeItMonsterVO, 23.5)}
     {C("codeit-ep1", CodeItEp1, 35)}
     {C("codeit-monster", CodeItMonster, 23.5)}
     {C("codeit-ep1-vo", CodeItEp1VO, 35)}

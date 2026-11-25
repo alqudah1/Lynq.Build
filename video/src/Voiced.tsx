@@ -1,3 +1,5 @@
+import { LynqDeskSites } from "./LynqDeskSites";
+import { CodeItMonster } from "./CodeItMonster";
 import { CodeItEp1 } from "./CodeItEp1";
 import { LynqBuilt } from "./LynqBuilt";
 import React from "react";
@@ -162,3 +164,29 @@ export const CodeItEp1VO: React.FC = () => {
     </AbsoluteFill>
   );
 };
+
+// Generic single-take cutter: [slice start, slice end, place at] in seconds.
+const Cut: React.FC<{ file: string; lines: [number, number, number][] }> = ({ file, lines }) => {
+  const { fps } = useVideoConfig();
+  return (
+    <>
+      {lines.map(([a, b, at]) => (
+        <Sequence key={at} from={Math.round(at * fps)} durationInFrames={Math.round((b - a) * fps)} layout="none">
+          <Audio src={staticFile(`vo/${file}`)} startFrom={Math.round(a * fps)} endAt={Math.round(b * fps)} />
+        </Sequence>
+      ))}
+    </>
+  );
+};
+export const LynqDeskSitesVO: React.FC = () => (
+  <AbsoluteFill>
+    <SfxOff.Provider value={true}><LynqDeskSites /></SfxOff.Provider>
+    <Cut file="desk-sites.mp3" lines={[[0, 2.42, 0.05], [2.84, 7.26, 2.6], [7.83, 10.4, 7.8], [10.94, 14.95, 12.7], [15.28, 17.79, 17.8]]} />
+  </AbsoluteFill>
+);
+export const CodeItMonsterVO: React.FC = () => (
+  <AbsoluteFill>
+    <SfxOff.Provider value={true}><CodeItMonster /></SfxOff.Provider>
+    <Cut file="monster-pip.mp3" lines={[[0.25, 1.02, 0.3], [1.3, 2.99, 3.2], [3.19, 4.71, 6.7], [4.87, 6.23, 11.3], [6.57, 7.76, 16.0], [8.26, 10.61, 18.4], [10.93, 11.9, 20.9]]} />
+  </AbsoluteFill>
+);
