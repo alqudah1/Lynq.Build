@@ -1,3 +1,5 @@
+import { LynqNinePm } from "./LynqNinePm";
+import { CodeItFix } from "./CodeItFix";
 import { LynqDeskSites } from "./LynqDeskSites";
 import { CodeItMonster } from "./CodeItMonster";
 import { CodeItEp1 } from "./CodeItEp1";
@@ -188,5 +190,17 @@ export const CodeItMonsterVO: React.FC = () => (
   <AbsoluteFill>
     <SfxOff.Provider value={true}><CodeItMonster /></SfxOff.Provider>
     <Cut file="monster-pip.mp3" lines={[[0.25, 1.02, 0.3], [1.3, 2.99, 3.2], [3.19, 4.71, 6.7], [4.87, 6.23, 11.3], [6.57, 7.76, 16.0], [8.26, 10.61, 18.4], [10.93, 11.9, 20.9]]} />
+  </AbsoluteFill>
+);
+export const LynqNinePmVO: React.FC = () => (
+  <AbsoluteFill>
+    <SfxOff.Provider value={true}><LynqNinePm /></SfxOff.Provider>
+    <Cut file="ninepm.mp3" lines={[[0, 4.6, 0.3], [4.95, 6.75, 6.7], [7.12, 9.2, 11.8], [9.53, 10.9, 15.5], [11.32, 13.2, 19.6], [13.45, 14.28, 21.7], [14.66, 15.88, 22.8]]} />
+  </AbsoluteFill>
+);
+export const CodeItFixVO: React.FC = () => (
+  <AbsoluteFill>
+    <CodeItFix />
+    <Cut file="fix-pip.mp3" lines={[[0.1, 2.42, 0.2], [2.78, 3.85, 3.0], [4.05, 5.8, 5.0], [6.2, 7.68, 8.2], [8.1, 10.03, 11.2], [10.55, 11.95, 13.8], [12.27, 13.5, 15.3]]} />
   </AbsoluteFill>
 );
