@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   // Installed from Safari's share sheet it runs full screen like an app, with the status bar blending into the dark header.
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "LYNQ" },
   icons: { apple: "/icons/apple-touch-icon.png" },
+  // Keep the app out of search results; next.config.ts sends the matching X-Robots-Tag header.
+  robots: { index: false, follow: false },
 };
 
 export const viewport: Viewport = {
