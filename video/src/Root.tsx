@@ -34,7 +34,7 @@ import { LynqDeskSites } from "./LynqDeskSites";
 import { CodeItFix, PostMonsterLoose } from "./CodeItFix";
 import { LynqDeskPicMenu, LynqPicDish } from "./LynqDeskPic";
 import { LynqNeon } from "./LynqNeon";
-import { LynqElevenPmVO, CodeItTabletVO, LynqSketchVO, CodeItMoonVO, LynqNotesVO, LynqOfferVO, CodeItDay1VO, LynqOffer2VO, LynqNeonVO, LynqBuiltVO, CodeItEp1VO, LynqDeskSitesVO, CodeItMonsterVO, LynqNinePmVO, CodeItFixVO, LynqDeskMenuVO, LynqPdfSpinVO } from "./Voiced";
+import { LynqElevenPmVO, CodeItTabletVO, LynqSketchVO, CodeItMoonVO, LynqNotesVO, LynqOfferVO, CodeItDay1VO, LynqOffer2VO, LynqNeonVO, LynqBuiltVO, CodeItEp1VO, LynqDeskSitesVO, CodeItMonsterVO, LynqNinePmVO, CodeItFixVO, LynqDeskMenuVO, LynqPdfSpinVO, LynqLine7VO } from "./Voiced";
 import { LynqNotes } from "./LynqNotes";
 import { CodeItDinner, CodeItLessons, CodeItQuiz, CodeItTablet, CodeItToys, CodeItMoon, CodeItDay1, CodeItFridge } from "./CodeItReels";
 import { CLIENT_COVERS, ClientCover, HL2, HlCover2 } from "./LynqHighlights";
@@ -101,6 +101,7 @@ export const Root: React.FC = () => (
     {C("lynq-9pm-vo", LynqNinePmVO, 25)}
     {C("lynq-desk-menu-vo", LynqDeskMenuVO, 11.5)}
     {C("lynq-pdf-spin-vo", LynqPdfSpinVO, 12.8)}
+    {C("lynq-line7-vo", LynqLine7VO, 11.4)}
     <Composition id="codeit-pic-loose" component={PostMonsterLoose} durationInFrames={1} fps={30} width={1080} height={1350} />
     <Composition id="lynq-pic-dish" component={LynqPicDish} durationInFrames={1} fps={30} width={1080} height={1350} />
     <Composition id="lynq-pic-menu" component={LynqDeskPicMenu} durationInFrames={1} fps={30} width={1080} height={1350} />
