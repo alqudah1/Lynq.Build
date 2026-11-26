@@ -32,10 +32,11 @@ import { LynqNiche } from "./LynqNiche";
 import { LynqScrollReno } from "./LynqScrollReno";
 import { LynqDeskSites } from "./LynqDeskSites";
 import { CodeItRun3D } from "./CodeItRun3D";
+import { CodeItFix3D, CodeItRecap3D, CodeItSleep3D } from "./CodeIt3DWeek";
 import { CodeItFix, PostMonsterLoose } from "./CodeItFix";
 import { LynqDeskPicMenu, LynqPicDish } from "./LynqDeskPic";
 import { LynqNeon } from "./LynqNeon";
-import { LynqElevenPmVO, CodeItTabletVO, LynqSketchVO, CodeItMoonVO, LynqNotesVO, LynqOfferVO, CodeItDay1VO, LynqOffer2VO, LynqNeonVO, LynqBuiltVO, CodeItEp1VO, LynqDeskSitesVO, CodeItMonsterVO, LynqNinePmVO, CodeItFixVO, LynqDeskMenuVO, LynqPdfSpinVO, LynqLine7VO, CodeItRunButtonVO } from "./Voiced";
+import { LynqElevenPmVO, CodeItTabletVO, LynqSketchVO, CodeItMoonVO, LynqNotesVO, LynqOfferVO, CodeItDay1VO, LynqOffer2VO, LynqNeonVO, LynqBuiltVO, CodeItEp1VO, LynqDeskSitesVO, CodeItMonsterVO, LynqNinePmVO, CodeItFixVO, LynqDeskMenuVO, LynqPdfSpinVO, LynqLine7VO, CodeItRunButtonVO, LynqDetailVO, LynqSixWeeksVO } from "./Voiced";
 import { LynqNotes } from "./LynqNotes";
 import { CodeItDinner, CodeItLessons, CodeItQuiz, CodeItTablet, CodeItToys, CodeItMoon, CodeItDay1, CodeItFridge } from "./CodeItReels";
 import { CLIENT_COVERS, ClientCover, HL2, HlCover2 } from "./LynqHighlights";
@@ -98,6 +99,9 @@ export const Root: React.FC = () => (
     {C("lynq-scroll-reno", LynqScrollReno, 17.5)}
     {C("lynq-desk-sites", LynqDeskSites, 20.5)}
     {C("codeit-run3d", CodeItRun3D, 12.6)}
+    {C("codeit-fix3d", CodeItFix3D, 14.4)}
+    {C("codeit-recap3d", CodeItRecap3D, 15)}
+    {C("codeit-sleep3d", CodeItSleep3D, 11.2)}
     {C("codeit-fix", CodeItFix, 19)}
     {C("codeit-fix-vo", CodeItFixVO, 19)}
     {C("lynq-9pm-vo", LynqNinePmVO, 25)}
@@ -105,6 +109,8 @@ export const Root: React.FC = () => (
     {C("lynq-pdf-spin-vo", LynqPdfSpinVO, 12.8)}
     {C("lynq-line7-vo", LynqLine7VO, 11.4)}
     {C("codeit-runbtn-vo", CodeItRunButtonVO, 11)}
+    {C("lynq-detail-vo", LynqDetailVO, 10.8)}
+    {C("lynq-sixweeks-vo", LynqSixWeeksVO, 14.4)}
     <Composition id="codeit-pic-loose" component={PostMonsterLoose} durationInFrames={1} fps={30} width={1080} height={1350} />
     <Composition id="lynq-pic-dish" component={LynqPicDish} durationInFrames={1} fps={30} width={1080} height={1350} />
     <Composition id="lynq-pic-menu" component={LynqDeskPicMenu} durationInFrames={1} fps={30} width={1080} height={1350} />

@@ -1,3 +1,4 @@
+import { LynqDetail, LynqSixWeeks } from "./LynqWeekend";
 import { CodeItRunButton } from "./CodeItRunButton";
 import { LynqLine7 } from "./LynqLine7";
 import { LynqPdfSpin } from "./LynqPdfSpin";
@@ -230,5 +231,17 @@ export const CodeItRunButtonVO: React.FC = () => (
   <AbsoluteFill>
     <CodeItRunButton />
     <Cut file="monster-pip.mp3" lines={[[4.87, 6.23, 0.8], [6.57, 7.76, 3.75], [8.26, 10.61, 5.4], [10.93, 11.9, 8.25]]} />
+  </AbsoluteFill>
+);
+export const LynqDetailVO: React.FC = () => (
+  <AbsoluteFill>
+    <LynqDetail />
+    <Cut file="wk-detail.mp3" lines={[[0, 2.26, 0.1], [2.68, 4.4, 2.5], [4.65, 5.31, 4.5], [5.6, 6.07, 5.75], [6.37, 7.09, 6.7], [7.41, 8.65, 7.9], [8.93, 10.11, 9.25]]} />
+  </AbsoluteFill>
+);
+export const LynqSixWeeksVO: React.FC = () => (
+  <AbsoluteFill>
+    <LynqSixWeeks />
+    <Cut file="wk-reno.mp3" lines={[[0, 2.42, 0.1], [2.87, 4.63, 2.6], [4.86, 5.61, 4.7], [5.88, 6.52, 5.5], [6.72, 9.01, 6.3], [9.21, 11.39, 9.15], [11.65, 12.61, 11.6], [12.84, 14.03, 12.85]]} />
   </AbsoluteFill>
 );
