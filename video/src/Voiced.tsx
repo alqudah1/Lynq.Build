@@ -1,3 +1,4 @@
+import { CodeItRunButton } from "./CodeItRunButton";
 import { LynqLine7 } from "./LynqLine7";
 import { LynqPdfSpin } from "./LynqPdfSpin";
 import { LynqDeskMenu } from "./LynqDeskMenu";
@@ -223,5 +224,11 @@ export const LynqLine7VO: React.FC = () => (
   <AbsoluteFill>
     <LynqLine7 />
     <Cut file="line7.mp3" lines={[[0, 0.98, 0.15], [1.79, 2.65, 1.5], [3.1, 4.22, 2.4], [4.52, 5.03, 3.5], [5.5, 6.63, 4.4], [6.83, 8.72, 6.85], [8.9, 11.0, 9.0]]} />
+  </AbsoluteFill>
+);
+export const CodeItRunButtonVO: React.FC = () => (
+  <AbsoluteFill>
+    <CodeItRunButton />
+    <Cut file="monster-pip.mp3" lines={[[4.87, 6.23, 0.8], [6.57, 7.76, 3.75], [8.26, 10.61, 5.4], [10.93, 11.9, 8.25]]} />
   </AbsoluteFill>
 );
