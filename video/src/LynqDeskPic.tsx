@@ -33,3 +33,21 @@ export const LynqDeskPicMenu: React.FC = () => {
     </AbsoluteFill>
   );
 };
+
+/* Replacement feed picture: the dish itself, straight on, one line. */
+export const LynqPicDish: React.FC = () => (
+  <AbsoluteFill style={{ background: "#050505", overflow: "hidden" }}>
+    <Fonts />
+    <div style={{ position: "absolute", left: -200, top: 300, width: 1500, height: 1500, background: "radial-gradient(closest-side, rgba(199,255,61,0.13), transparent)" }} />
+    <div style={{ position: "absolute", left: 64, top: 64, fontFamily: IS, fontSize: 26, letterSpacing: 10, color: "#fff" }}>LYNQ</div>
+    <div style={{ position: "absolute", left: 64, right: 64, top: 130, fontFamily: IS, fontSize: 104, letterSpacing: -4.5, lineHeight: 1.0, color: "#fff" }}>Your menu<br />is a PDF.</div>
+    {[1, 2, 3].map((k) => <div key={k} style={{ position: "absolute", left: 540 - 390 - k * 34, top: 745 - 390 - k * 34, width: 780 + k * 68, height: 780 + k * 68, borderRadius: "50%", border: `2px ${k === 2 ? "dashed" : "solid"} rgba(199,255,61,${0.34 - k * 0.09})` }} />)}
+    <div style={{ position: "absolute", left: 540 - 345, top: 745 - 345, width: 690, height: 690, borderRadius: "50%", backgroundImage: `url(${staticFile("niche/dish1.jpg")})`, backgroundSize: "127%", backgroundPosition: "center", boxShadow: "0 50px 120px rgba(0,0,0,0.8)", transform: "rotate(-14deg)" }} />
+    <div style={{ position: "absolute", right: 90, top: 440, fontFamily: IS, fontSize: 30, color: "#0a0a0a", background: LI, padding: "14px 26px", borderRadius: 40, transform: "rotate(8deg)" }}>Grilled octopus · $28</div>
+    <div style={{ position: "absolute", left: 64, right: 64, bottom: 128, fontFamily: IS, fontSize: 104, letterSpacing: -4.5, lineHeight: 1.0, color: LI, textAlign: "right" }}>Ours spins.</div>
+    <div style={{ position: "absolute", left: 64, right: 64, bottom: 64, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ fontFamily: IS, fontSize: 20, letterSpacing: 4, color: "rgba(255,255,255,0.5)" }}>CONCEPT SITE · MADE-UP RESTAURANT · AI PHOTO</div>
+      <div style={{ fontFamily: IL, fontSize: 30, color: "#fff" }}>lynq.build/book</div>
+    </div>
+  </AbsoluteFill>
+);

@@ -32,9 +32,9 @@ import { LynqNiche } from "./LynqNiche";
 import { LynqScrollReno } from "./LynqScrollReno";
 import { LynqDeskSites } from "./LynqDeskSites";
 import { CodeItFix, PostMonsterLoose } from "./CodeItFix";
-import { LynqDeskPicMenu } from "./LynqDeskPic";
+import { LynqDeskPicMenu, LynqPicDish } from "./LynqDeskPic";
 import { LynqNeon } from "./LynqNeon";
-import { LynqElevenPmVO, CodeItTabletVO, LynqSketchVO, CodeItMoonVO, LynqNotesVO, LynqOfferVO, CodeItDay1VO, LynqOffer2VO, LynqNeonVO, LynqBuiltVO, CodeItEp1VO, LynqDeskSitesVO, CodeItMonsterVO, LynqNinePmVO, CodeItFixVO } from "./Voiced";
+import { LynqElevenPmVO, CodeItTabletVO, LynqSketchVO, CodeItMoonVO, LynqNotesVO, LynqOfferVO, CodeItDay1VO, LynqOffer2VO, LynqNeonVO, LynqBuiltVO, CodeItEp1VO, LynqDeskSitesVO, CodeItMonsterVO, LynqNinePmVO, CodeItFixVO, LynqDeskMenuVO } from "./Voiced";
 import { LynqNotes } from "./LynqNotes";
 import { CodeItDinner, CodeItLessons, CodeItQuiz, CodeItTablet, CodeItToys, CodeItMoon, CodeItDay1, CodeItFridge } from "./CodeItReels";
 import { CLIENT_COVERS, ClientCover, HL2, HlCover2 } from "./LynqHighlights";
@@ -99,7 +99,9 @@ export const Root: React.FC = () => (
     {C("codeit-fix", CodeItFix, 19)}
     {C("codeit-fix-vo", CodeItFixVO, 19)}
     {C("lynq-9pm-vo", LynqNinePmVO, 25)}
+    {C("lynq-desk-menu-vo", LynqDeskMenuVO, 11.5)}
     <Composition id="codeit-pic-loose" component={PostMonsterLoose} durationInFrames={1} fps={30} width={1080} height={1350} />
+    <Composition id="lynq-pic-dish" component={LynqPicDish} durationInFrames={1} fps={30} width={1080} height={1350} />
     <Composition id="lynq-pic-menu" component={LynqDeskPicMenu} durationInFrames={1} fps={30} width={1080} height={1350} />
     {C("lynq-desk-sites-vo", LynqDeskSitesVO, 20.5)}
     {C("codeit-monster-vo", CodeItMonsterVO, 23.5)}

@@ -1,3 +1,4 @@
+import { LynqDeskMenu } from "./LynqDeskMenu";
 import { LynqNinePm } from "./LynqNinePm";
 import { CodeItFix } from "./CodeItFix";
 import { LynqDeskSites } from "./LynqDeskSites";
@@ -202,5 +203,11 @@ export const CodeItFixVO: React.FC = () => (
   <AbsoluteFill>
     <CodeItFix />
     <Cut file="fix-pip.mp3" lines={[[0.1, 2.42, 0.2], [2.78, 3.85, 3.0], [4.05, 5.8, 5.0], [6.2, 7.68, 8.2], [8.1, 10.03, 11.2], [10.55, 11.95, 13.8], [12.27, 13.5, 15.3]]} />
+  </AbsoluteFill>
+);
+export const LynqDeskMenuVO: React.FC = () => (
+  <AbsoluteFill>
+    <LynqDeskMenu />
+    <Cut file="desk-menu.mp3" lines={[[0, 2.03, 0.1], [2.32, 3.42, 2.0], [3.72, 6.46, 4.3], [6.84, 9.25, 8.4]]} />
   </AbsoluteFill>
 );
