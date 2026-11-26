@@ -1,3 +1,4 @@
+import { LynqPdfSpin } from "./LynqPdfSpin";
 import { LynqDeskMenu } from "./LynqDeskMenu";
 import { LynqNinePm } from "./LynqNinePm";
 import { CodeItFix } from "./CodeItFix";
@@ -209,5 +210,11 @@ export const LynqDeskMenuVO: React.FC = () => (
   <AbsoluteFill>
     <LynqDeskMenu />
     <Cut file="desk-menu.mp3" lines={[[0, 2.03, 0.1], [2.32, 3.42, 2.0], [3.72, 6.46, 4.3], [6.84, 9.25, 8.4]]} />
+  </AbsoluteFill>
+);
+export const LynqPdfSpinVO: React.FC = () => (
+  <AbsoluteFill>
+    <LynqPdfSpin />
+    <Cut file="desk-menu.mp3" lines={[[0, 2.03, 0.4], [2.32, 3.42, 3.75], [3.72, 6.46, 5.5], [6.84, 9.25, 9.9]]} />
   </AbsoluteFill>
 );
