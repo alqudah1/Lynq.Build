@@ -25,6 +25,11 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname),
   },
+  // LYNQ Office is a signed-in tool, not a public site: nothing here belongs in search results.
+  // The header covers every response, including API routes and files that carry no <meta> tag.
+  async headers() {
+    return [{ source: "/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] }];
+  },
 };
 
 export default nextConfig;
